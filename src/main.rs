@@ -98,7 +98,7 @@ struct Graph {
     path_id: Option<usize>,
     step: HashMap<SymRef, (usize, usize)>, // path node -> (1-based pre-order number, anchor index)
     step_parent: HashMap<SymRef, SymRef>,  // path node -> its parent step's node
-    origin: HashMap<SymRef, SymRef>,       // expansion node -> the node whose callees revealed it
+    origin: HashMap<SymRef, (SymRef, bool)>, // expansion node -> (the node that revealed it, via callees?)
     expansions: Vec<(SymRef, bool)>,       // (node, callees?) in the order the user opened them
     expanded: HashSet<SymRef>,             // nodes showing all their lines
     manual: bool,                          // user dragged something: keep positions
@@ -199,8 +199,8 @@ impl Graph {
             let s = idx.sym(r);
             let (list, dc) = if callees { (&s.callees, 1) } else { (&s.callers, -1) };
             for &n in list {
-                if callees && !self.col.contains_key(&n) {
-                    self.origin.insert(n, r);
+                if !self.col.contains_key(&n) {
+                    self.origin.insert(n, (r, callees));
                 }
                 self.add(n, col + dc);
             }
@@ -232,83 +232,122 @@ impl Graph {
         self.rebuild(idx, map);
     }
 
-    /// Recompute every position.
+    /// Recompute every position as a forest of compact subtrees.
+    ///
+    /// x: a column per depth, each as wide as its widest node, anchored at the focus column.
+    /// y: every node owns a block = its own height or the stacked heights of its children's
+    /// blocks, whichever is taller; children stack beside the parent (steps and callee
+    /// expansions to the right, caller expansions to the left) and the parent centres on
+    /// them. Sibling blocks never interleave, so a wide subtree only pushes its own siblings.
+    /// Roots (the focus, other path roots, anything without a parent) stack top to bottom.
+    /// A final pass pushes apart the rare column collisions between different subtrees.
     fn layout(&mut self, idx: &Index, m: Metrics) {
         let Some(focus) = self.focus else { return };
         if self.nodes.is_empty() {
             return;
         }
+
+        // x
         let mut cols: BTreeMap<i32, Vec<SymRef>> = BTreeMap::new();
         for &r in &self.nodes {
             cols.entry(self.col[&r]).or_default().push(r);
         }
         let (first, last) = (*cols.keys().next().unwrap(), *cols.keys().last().unwrap());
         let anchor_col = self.col[&focus];
-
-        // x: columns as wide as their widest node
         let col_w: BTreeMap<i32, f32> = cols.iter().map(|(&c, rs)| (c, rs.iter().map(|&r| self.node_size(idx, r, m).x).fold(0.0, f32::max))).collect();
         let mut col_x: BTreeMap<i32, f32> = BTreeMap::new();
         col_x.insert(anchor_col, 0.0);
         for c in (anchor_col + 1)..=last {
-            col_x.insert(c, col_x[&(c - 1)] + col_w.get(&(c - 1)).unwrap_or(&0.0) + GAP_X);
+            col_x.insert(c, col_x[&(c - 1)] + col_w[&(c - 1)] + GAP_X);
         }
         for c in (first..anchor_col).rev() {
-            col_x.insert(c, col_x[&(c + 1)] - col_w.get(&c).unwrap_or(&0.0) - GAP_X);
+            col_x.insert(c, col_x[&(c + 1)] - col_w[&c] - GAP_X);
         }
 
-        // y: from the focus column outward
-        let spine_cy = self.node_size(idx, focus, m).y / 2.0;
-        let mut order: Vec<i32> = vec![anchor_col];
-        order.extend((anchor_col + 1)..=last);
-        order.extend((first..anchor_col).rev());
-        let children: HashMap<SymRef, Vec<SymRef>> = self.step_parent.iter().fold(HashMap::new(), |mut acc, (&c, &p)| {
-            acc.entry(p).or_default().push(c);
-            acc
-        });
-
-        for c in order {
-            let rs = cols[&c].clone();
-            let inner = if c > anchor_col { c - 1 } else { c + 1 };
-            let center_of = |g: &Graph, n: SymRef| g.pos.contains_key(&n).then(|| g.node_rect(idx, n, m).center().y);
-            let desired: Vec<(SymRef, f32)> = rs
-                .iter()
-                .map(|&r| {
-                    if r == focus {
-                        return (r, spine_cy);
-                    }
-                    // a step follows its parent step (or the mean of its placed children)
-                    let mut ys: Vec<f32> = self.step_parent.get(&r).and_then(|p| center_of(self, *p)).into_iter().collect();
-                    if ys.is_empty() {
-                        ys = children.get(&r).map(|cs| cs.iter().filter_map(|&n| center_of(self, n)).collect()).unwrap_or_default();
-                    }
-                    if ys.is_empty() {
-                        let s = idx.sym(r);
-                        let neigh = if c > anchor_col { &s.callers } else { &s.callees };
-                        ys = neigh.iter().filter(|n| self.col.get(n) == Some(&inner)).filter_map(|&n| center_of(self, n)).collect();
-                    }
-                    (r, if ys.is_empty() { f32::INFINITY } else { ys.iter().sum::<f32>() / ys.len() as f32 })
-                })
-                .collect();
-            let mut sorted = desired.clone();
-            sorted.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
-
-            let mut placed: Vec<(SymRef, f32)> = Vec::new();
-            let mut prev_bottom = f32::NEG_INFINITY;
-            for (r, cy) in &sorted {
-                let h = self.node_size(idx, *r, m).y;
-                let want = if cy.is_finite() { cy - h / 2.0 } else { prev_bottom + GAP_Y };
-                let top = want.max(prev_bottom + GAP_Y);
-                placed.push((*r, top));
-                prev_bottom = top + h;
+        // forest: steps under their parent step, expansions beside what revealed them
+        let mut right: HashMap<SymRef, Vec<SymRef>> = HashMap::new();
+        let mut left: HashMap<SymRef, Vec<SymRef>> = HashMap::new();
+        let mut has_parent: HashSet<SymRef> = HashSet::new();
+        for &n in &self.nodes {
+            if let Some(&p) = self.step_parent.get(&n) {
+                right.entry(p).or_default().push(n);
+                has_parent.insert(n);
+            } else if let Some(&(o, callees)) = self.origin.get(&n) {
+                if callees { right.entry(o).or_default() } else { left.entry(o).or_default() }.push(n);
+                has_parent.insert(n);
             }
-            let shift = if let Some((_, top)) = placed.iter().find(|(r, _)| *r == focus) {
-                spine_cy - (top + self.node_size(idx, focus, m).y / 2.0)
-            } else {
-                let wishes: Vec<f32> = placed.iter().zip(&sorted).filter(|(_, (_, cy))| cy.is_finite()).map(|((r, top), (_, cy))| cy - (top + self.node_size(idx, *r, m).y / 2.0)).collect();
-                if wishes.is_empty() { 0.0 } else { wishes.iter().sum::<f32>() / wishes.len() as f32 }
+        }
+        for kids in right.values_mut() {
+            kids.sort_by_key(|k| self.step.get(k).map_or(usize::MAX, |s| s.0)); // steps first, in step order
+        }
+        let mut roots: Vec<SymRef> = vec![focus];
+        roots.extend(self.nodes.iter().copied().filter(|n| *n != focus && !has_parent.contains(n)));
+
+        // pass 1: block heights, bottom-up
+        let mut height: HashMap<SymRef, f32> = HashMap::new();
+        fn measure(g: &Graph, idx: &Index, m: Metrics, r: SymRef, right: &HashMap<SymRef, Vec<SymRef>>, left: &HashMap<SymRef, Vec<SymRef>>, height: &mut HashMap<SymRef, f32>, seen: &mut HashSet<SymRef>) -> f32 {
+            if !seen.insert(r) {
+                return 0.0;
+            }
+            let stack = |g: &Graph, kids: Option<&Vec<SymRef>>, height: &mut HashMap<SymRef, f32>, seen: &mut HashSet<SymRef>| -> f32 {
+                let mut h = 0.0;
+                for &k in kids.into_iter().flatten() {
+                    let kh = measure(g, idx, m, k, right, left, height, seen);
+                    if kh > 0.0 {
+                        h += kh + GAP_Y;
+                    }
+                }
+                (h - GAP_Y).max(0.0)
             };
-            for (r, top) in placed {
-                self.pos.insert(r, pos2(col_x[&c], top + shift));
+            let rh = stack(g, right.get(&r), height, seen);
+            let lh = stack(g, left.get(&r), height, seen);
+            let h = g.node_size(idx, r, m).y.max(rh).max(lh);
+            height.insert(r, h);
+            h
+        }
+        let mut seen = HashSet::new();
+        for &r in &roots {
+            measure(self, idx, m, r, &right, &left, &mut height, &mut seen);
+        }
+
+        // pass 2: place, top-down
+        fn place(g: &mut Graph, idx: &Index, m: Metrics, r: SymRef, top: f32, col_x: &BTreeMap<i32, f32>, right: &HashMap<SymRef, Vec<SymRef>>, left: &HashMap<SymRef, Vec<SymRef>>, height: &HashMap<SymRef, f32>, done: &mut HashSet<SymRef>) {
+            if !done.insert(r) {
+                return;
+            }
+            let block = height[&r];
+            let own = g.node_size(idx, r, m).y;
+            g.pos.insert(r, pos2(col_x[&g.col[&r]], top + (block - own) / 2.0));
+            for kids in [right.get(&r), left.get(&r)] {
+                let kids: Vec<SymRef> = kids.into_iter().flatten().copied().filter(|k| height.contains_key(k) && !done.contains(k)).collect();
+                let stack_h: f32 = kids.iter().map(|k| height[k] + GAP_Y).sum::<f32>() - GAP_Y;
+                let mut cur = top + (block - stack_h.max(0.0)) / 2.0;
+                for k in kids {
+                    place(g, idx, m, k, cur, col_x, right, left, height, done);
+                    cur += height[&k] + GAP_Y;
+                }
+            }
+        }
+        let mut done = HashSet::new();
+        let mut cur = 0.0;
+        for &r in &roots {
+            if done.contains(&r) {
+                continue;
+            }
+            place(self, idx, m, r, cur, &col_x, &right, &left, &height, &mut done);
+            cur += height[&r] + GAP_Y * 2.0;
+        }
+
+        // pass 3: different subtrees can still meet in one column (a caller's callees land in
+        // the focus column, say); push the later one down.
+        for rs in cols.values_mut() {
+            rs.sort_by(|a, b| self.pos[a].y.partial_cmp(&self.pos[b].y).unwrap());
+            let mut prev_bottom = f32::NEG_INFINITY;
+            for &r in rs.iter() {
+                let h = self.node_size(idx, r, m).y;
+                let y = self.pos[&r].y.max(prev_bottom + GAP_Y);
+                self.pos.get_mut(&r).unwrap().y = y;
+                prev_bottom = y + h;
             }
         }
     }
@@ -492,7 +531,7 @@ impl App {
     /// step, else the focused node's step, else root.
     fn step_parent_for_new(&self, pi: usize, node: Option<SymRef>) -> i32 {
         if self.graph.path_id == Some(pi) {
-            if let Some((_, ai)) = node.and_then(|n| self.graph.origin.get(&n)).and_then(|o| self.graph.step.get(o)) {
+            if let Some((_, ai)) = node.and_then(|n| self.graph.origin.get(&n)).filter(|(_, callees)| *callees).and_then(|(o, _)| self.graph.step.get(o)) {
                 return *ai as i32;
             }
         }
