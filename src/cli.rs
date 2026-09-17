@@ -17,15 +17,16 @@ codemap <root> <command> [args]        text mode (same commands work in the GUI 
   callees <symbol>                     what it calls (xrefs from)
   tree <symbol> [depth]                call tree from a symbol (default depth 4)
   roots [n]                            entry points: symbols nobody calls (default 30)
-  paths                                the map: every path, note, anchors (! = stale, (ai) = AI-authored)
-  path <name>                          print a path's note and anchored code
+  paths                                the map: every path as a tree of steps (! = stale, (ai) = AI-authored)
+  path <name>                          print a path's note and every step's code, tree order
   path-new <name> [note]               create a path (no-op if it exists)
   path-note <name> <note>              set a path's note
-  step-note <name> <index> <note>      set a note on one step (0-based)
-  path-add <name> <file> <start> <end> anchor lines (1-based, inclusive) to a path
-  path-add <name> <symbol>             anchor a whole symbol to a path
-  path-rm <name> [anchor-index]        delete an anchor (0-based) or the whole path
-  promote <symbol> [depth]             create a path from a symbol's call tree (default depth 1)
+  step-note <name> <index> <note>      set a note on one step (index as shown by `paths`)
+  path-add <name> <symbol> [under]     add a symbol as a step under step `under` (default: the last step; -1 = root)
+  path-add <name> <file> <start> <end> [under]
+                                       add lines (1-based, inclusive) as a step
+  path-rm <name> [index]               delete a step (its children move up) or the whole path
+  promote <symbol> [depth]             create a path shaped like a symbol's call tree (default depth 1)
 ";
 
 macro_rules! p {
@@ -107,13 +108,15 @@ pub fn exec(idx: &Index, map: &mut Map, args: &[String], author: Author, out: &m
             }
         }
         "paths" => {
-            for path in &map.paths {
+            for (pi, path) in map.paths.iter().enumerate() {
                 let note = if path.note.is_empty() { String::new() } else { format!(": {}", path.note) };
-                p!(out, "{}{} ({} anchors){}", path.name, path.author.tag(), path.anchors.len(), note);
-                for (i, a) in path.anchors.iter().enumerate() {
+                p!(out, "{}{} ({} steps){}", path.name, path.author.tag(), path.anchors.len(), note);
+                for (i, depth) in map.tree_order(pi) {
+                    let a = &path.anchors[i];
                     p!(
                         out,
-                        "  [{i}] {}{}:{}-{} {}{}{}",
+                        "  {}[{i}] {}{}:{}-{} {}{}{}",
+                        "  ".repeat(depth),
                         if a.stale { "! " } else { "" },
                         a.file,
                         a.line_start + 1,
@@ -126,15 +129,18 @@ pub fn exec(idx: &Index, map: &mut Map, args: &[String], author: Author, out: &m
             }
         }
         "path" => {
-            let path = &map.paths[find_path(map, arg(1)?)?];
+            let pi = find_path(map, arg(1)?)?;
+            let path = &map.paths[pi];
             p!(out, "# {}{}", path.name, path.author.tag());
             if !path.note.is_empty() {
                 p!(out, "{}", path.note);
             }
-            for a in &path.anchors {
+            for (i, depth) in map.tree_order(pi) {
+                let a = &path.anchors[i];
                 p!(
                     out,
-                    "\n== {}{}:{}-{} {}{}",
+                    "\n== {}[{i}] {}{}:{}-{} {}{}",
+                    "  ".repeat(depth),
                     if a.stale { "STALE " } else { "" },
                     a.file,
                     a.line_start + 1,
@@ -171,17 +177,22 @@ pub fn exec(idx: &Index, map: &mut Map, args: &[String], author: Author, out: &m
         }
         "path-add" => {
             let pi = find_path(map, arg(1)?)?;
-            if args.len() >= 5 {
+            let lines_form = args.len() >= 5 && num(3).is_some() && num(4).is_some();
+            let under_arg = args.get(if lines_form { 5 } else { 3 }).map(|s| s.parse::<i32>().map_err(|_| "bad parent index".to_string())).transpose()?;
+            let under = under_arg.unwrap_or(map.paths[pi].anchors.len() as i32 - 1);
+            if lines_form {
                 let fi = find_file(idx, arg(2)?)?;
-                let (start, end) = (num(3).ok_or("bad start line")?, num(4).ok_or("bad end line")?);
+                let (start, end) = (num(3).unwrap(), num(4).unwrap());
                 if start < 1 || end < start || end > idx.files[fi].lines.len() {
                     return Err("line range out of bounds".into());
                 }
-                map.add_anchor(idx, pi, fi, start - 1, end - 1, author);
+                let ai = map.add_anchor(idx, pi, fi, start - 1, end - 1, author, under);
+                p!(out, "step [{ai}] added under [{}]", map.paths[pi].anchors[ai].parent);
             } else {
                 for r in find_symbols(idx, arg(2)?)? {
                     let s = idx.sym(r);
-                    map.add_anchor(idx, pi, r.file, s.start, s.end, author);
+                    let ai = map.add_anchor(idx, pi, r.file, s.start, s.end, author, under);
+                    p!(out, "step [{ai}] {} added under [{}]", s.name, map.paths[pi].anchors[ai].parent);
                 }
             }
             dirty = true;
@@ -189,10 +200,8 @@ pub fn exec(idx: &Index, map: &mut Map, args: &[String], author: Author, out: &m
         "path-rm" => {
             let pi = find_path(map, arg(1)?)?;
             match num(2) {
-                Some(ai) if ai < map.paths[pi].anchors.len() => {
-                    map.paths[pi].anchors.remove(ai);
-                }
-                Some(_) => return Err("no such anchor".into()),
+                Some(ai) if ai < map.paths[pi].anchors.len() => map.remove_anchor(pi, ai),
+                Some(_) => return Err("no such step".into()),
                 None => {
                     map.paths.remove(pi);
                 }
@@ -203,7 +212,7 @@ pub fn exec(idx: &Index, map: &mut Map, args: &[String], author: Author, out: &m
             let depth = num(2).unwrap_or(1);
             for r in find_symbols(idx, arg(1)?)? {
                 let pi = map.promote(idx, r, depth, author);
-                p!(out, "path '{}' now has {} anchors", map.paths[pi].name, map.paths[pi].anchors.len());
+                p!(out, "path '{}' now has {} steps", map.paths[pi].name, map.paths[pi].anchors.len());
             }
             dirty = true;
         }

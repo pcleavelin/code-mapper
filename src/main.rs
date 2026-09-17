@@ -67,9 +67,7 @@ const HEADER_MIN_W: f32 = 380.0;
 const NODE_MAX_W: f32 = 760.0;
 const GAP_X: f32 = 110.0;
 const GAP_Y: f32 = 28.0;
-const GAP_ROW: f32 = 140.0;
 const HEADER_H: f32 = 34.0;
-const STEPS_PER_ROW: usize = 5;
 
 /// Font metrics the layout needs, refreshed every frame.
 #[derive(Clone, Copy)]
@@ -80,31 +78,30 @@ struct Metrics {
 
 /// Nodes are symbols showing their code.
 ///
-/// What is visible is *derived*: a base (the focus symbol, or a path's chain) plus an ordered
-/// list of expansions ("callers of X", "callees of X"). Toggling an expansion off removes it from
-/// the list and rebuilds, so nodes that were only reachable through it disappear too.
+/// What is visible is *derived*: a base (the focus symbol, or a path's tree of steps) plus an
+/// ordered list of expansions ("callers of X", "callees of X"). Toggling an expansion off removes
+/// it from the list and rebuilds, so nodes that were only reachable through it disappear too.
 ///
-/// Layout is layered and, for long chains, wrapped into rows: every STEPS_PER_ROW steps start a
-/// new row (a "group"); a node expanded from a step belongs to that step's row. Within a row a
-/// node's column is its hop distance from the row's first pinned node. Columns are placed from
-/// that column outward. Each node wants to sit level with the mean of its neighbours in the inner
-/// column; chain steps and the focus are pinned to the row's spine so a path reads as a straight
-/// line. Nodes are stacked in that order with measured sizes and a fixed gap. Rows stack
-/// vertically. Dragging a node switches to manual until the next structural change.
+/// Layout is layered. A step's column is its depth in the path tree; any other node's column is
+/// its hop distance from what it was expanded from. Columns are placed from the focus outward.
+/// A step wants to sit level with its parent step; any other node level with the mean of its
+/// neighbours in the inner column; the focus is pinned. Nodes are stacked in that order with
+/// measured sizes and a fixed gap. Dragging a node switches to manual until the next structural
+/// change.
 #[derive(Default)]
 struct Graph {
     nodes: Vec<SymRef>,
     col: HashMap<SymRef, i32>,
-    group: HashMap<SymRef, usize>,
     pos: HashMap<SymRef, egui::Pos2>,
     size: HashMap<SymRef, egui::Vec2>, // measured last frame
     focus: Option<SymRef>,
-    chain: Vec<SymRef>,        // when showing a path: step order
-    chain_anchor: Vec<usize>,  // anchor index behind each chain node
-    chain_path: Option<usize>,
-    expansions: Vec<(SymRef, bool)>, // (node, callees?) in the order the user opened them
-    expanded: HashSet<SymRef>,       // nodes showing all their lines
-    manual: bool,                    // user dragged something: keep positions
+    path_id: Option<usize>,
+    step: HashMap<SymRef, (usize, usize)>, // path node -> (1-based pre-order number, anchor index)
+    step_parent: HashMap<SymRef, SymRef>,  // path node -> its parent step's node
+    origin: HashMap<SymRef, SymRef>,       // expansion node -> the node whose callees revealed it
+    expansions: Vec<(SymRef, bool)>,       // (node, callees?) in the order the user opened them
+    expanded: HashSet<SymRef>,             // nodes showing all their lines
+    manual: bool,                          // user dragged something: keep positions
     scene_rect: Option<egui::Rect>,
 }
 
@@ -143,12 +140,11 @@ impl Graph {
         egui::Rect::from_min_size(self.pos.get(&r).copied().unwrap_or(pos2(0.0, 0.0)), self.node_size(idx, r, m))
     }
 
-    fn add(&mut self, r: SymRef, col: i32, group: usize) {
+    fn add(&mut self, r: SymRef, col: i32) {
         if self.col.contains_key(&r) {
             return;
         }
         self.col.insert(r, col);
-        self.group.insert(r, group);
         self.nodes.push(r);
     }
 
@@ -156,49 +152,57 @@ impl Graph {
         self.expansions.contains(&(r, callees))
     }
 
-    /// Step number (1-based) and anchor index of a chain node.
-    fn step_of(&self, r: SymRef) -> Option<(usize, usize)> {
-        self.chain.iter().position(|&c| c == r).map(|k| (k + 1, self.chain_anchor[k]))
-    }
-
     /// Derive the visible node set from base + expansions.
     fn rebuild(&mut self, idx: &Index, map: &Map) {
         self.nodes.clear();
         self.col.clear();
-        self.group.clear();
-        self.chain.clear();
-        self.chain_anchor.clear();
-        match self.chain_path {
+        self.step.clear();
+        self.step_parent.clear();
+        self.origin.clear();
+        match self.path_id {
             Some(pi) if pi < map.paths.len() => {
-                for (ai, a) in map.paths[pi].anchors.iter().enumerate() {
+                let anchors = &map.paths[pi].anchors;
+                let mut node_of: HashMap<usize, SymRef> = HashMap::new(); // anchor index -> node
+                for (k, (ai, depth)) in map.tree_order(pi).into_iter().enumerate() {
+                    let a = &anchors[ai];
                     let Some(fi) = idx.find_file(&a.file) else { continue };
                     let Some(si) = idx.files[fi].symbols.iter().position(|s| s.name == a.symbol) else { continue };
                     let r = SymRef { file: fi, sym: si };
                     if self.col.contains_key(&r) {
+                        node_of.insert(ai, r);
                         continue; // a symbol twice in one path: one node
                     }
-                    let k = self.chain.len();
-                    self.add(r, (k % STEPS_PER_ROW) as i32, k / STEPS_PER_ROW);
-                    self.chain.push(r);
-                    self.chain_anchor.push(ai);
+                    self.add(r, depth as i32);
+                    self.step.insert(r, (k + 1, ai));
+                    node_of.insert(ai, r);
+                    if a.parent >= 0 {
+                        if let Some(&p) = node_of.get(&(a.parent as usize)) {
+                            if p != r {
+                                self.step_parent.insert(r, p);
+                            }
+                        }
+                    }
                 }
                 if self.focus.is_none_or(|f| !self.col.contains_key(&f)) {
-                    self.focus = self.chain.first().copied();
+                    self.focus = self.nodes.first().copied();
                 }
             }
             _ => {
-                self.chain_path = None;
+                self.path_id = None;
                 if let Some(f) = self.focus {
-                    self.add(f, 0, 0);
+                    self.add(f, 0);
                 }
             }
         }
         for (r, callees) in self.expansions.clone() {
-            let (Some(&col), Some(&group)) = (self.col.get(&r), self.group.get(&r)) else { continue };
+            let Some(&col) = self.col.get(&r) else { continue };
             let s = idx.sym(r);
             let (list, dc) = if callees { (&s.callees, 1) } else { (&s.callers, -1) };
             for &n in list {
-                self.add(n, col + dc, group);
+                if callees && !self.col.contains_key(&n) {
+                    self.origin.insert(n, r);
+                }
+                self.add(n, col + dc);
             }
         }
         self.manual = false;
@@ -211,9 +215,9 @@ impl Graph {
         self.rebuild(idx, map);
     }
 
-    fn build_chain(&mut self, idx: &Index, map: &Map, pi: usize) {
+    fn build_path(&mut self, idx: &Index, map: &Map, pi: usize) {
         self.clear();
-        self.chain_path = Some(pi);
+        self.path_id = Some(pi);
         self.rebuild(idx, map);
     }
 
@@ -228,37 +232,18 @@ impl Graph {
         self.rebuild(idx, map);
     }
 
-    /// Recompute every position: each row laid out on its own, rows stacked.
+    /// Recompute every position.
     fn layout(&mut self, idx: &Index, m: Metrics) {
         let Some(focus) = self.focus else { return };
         if self.nodes.is_empty() {
             return;
         }
-        let ngroups = self.group.values().max().map_or(0, |g| g + 1);
-        let mut row_top = 0.0;
-        for g in 0..ngroups {
-            let members: Vec<SymRef> = self.nodes.iter().copied().filter(|r| self.group[r] == g).collect();
-            if members.is_empty() {
-                continue;
-            }
-            let anchor_col = if self.chain.is_empty() { self.col[&focus] } else { 0 };
-            let (top, bottom) = self.layout_row(idx, m, &members, anchor_col, focus);
-            let dy = row_top - top;
-            for r in &members {
-                self.pos.get_mut(r).unwrap().y += dy;
-            }
-            row_top += bottom - top + GAP_ROW;
-        }
-    }
-
-    /// Lay out one row around column `anchor_col`; returns the row's vertical extent.
-    fn layout_row(&mut self, idx: &Index, m: Metrics, members: &[SymRef], anchor_col: i32, focus: SymRef) -> (f32, f32) {
         let mut cols: BTreeMap<i32, Vec<SymRef>> = BTreeMap::new();
-        for &r in members {
+        for &r in &self.nodes {
             cols.entry(self.col[&r]).or_default().push(r);
         }
         let (first, last) = (*cols.keys().next().unwrap(), *cols.keys().last().unwrap());
-        let anchor_col = anchor_col.clamp(first, last);
+        let anchor_col = self.col[&focus];
 
         // x: columns as wide as their widest node
         let col_w: BTreeMap<i32, f32> = cols.iter().map(|(&c, rs)| (c, rs.iter().map(|&r| self.node_size(idx, r, m).x).fold(0.0, f32::max))).collect();
@@ -271,29 +256,36 @@ impl Graph {
             col_x.insert(c, col_x[&(c + 1)] - col_w.get(&c).unwrap_or(&0.0) - GAP_X);
         }
 
-        // y: from the anchor column outward
-        let pinned: HashSet<SymRef> = self.chain.iter().copied().chain(std::iter::once(focus)).filter(|r| members.contains(r)).collect();
-        let spine_cy = pinned.iter().map(|&r| self.node_size(idx, r, m).y).fold(0.0, f32::max) / 2.0;
+        // y: from the focus column outward
+        let spine_cy = self.node_size(idx, focus, m).y / 2.0;
         let mut order: Vec<i32> = vec![anchor_col];
         order.extend((anchor_col + 1)..=last);
         order.extend((first..anchor_col).rev());
+        let children: HashMap<SymRef, Vec<SymRef>> = self.step_parent.iter().fold(HashMap::new(), |mut acc, (&c, &p)| {
+            acc.entry(p).or_default().push(c);
+            acc
+        });
 
         for c in order {
             let rs = cols[&c].clone();
             let inner = if c > anchor_col { c - 1 } else { c + 1 };
+            let center_of = |g: &Graph, n: SymRef| g.pos.contains_key(&n).then(|| g.node_rect(idx, n, m).center().y);
             let desired: Vec<(SymRef, f32)> = rs
                 .iter()
                 .map(|&r| {
-                    if pinned.contains(&r) {
+                    if r == focus {
                         return (r, spine_cy);
                     }
-                    let s = idx.sym(r);
-                    let neigh = if c > anchor_col { &s.callers } else { &s.callees };
-                    let ys: Vec<f32> = neigh
-                        .iter()
-                        .filter(|n| members.contains(n) && self.col.get(n) == Some(&inner) && self.pos.contains_key(n))
-                        .map(|n| self.node_rect(idx, *n, m).center().y)
-                        .collect();
+                    // a step follows its parent step (or the mean of its placed children)
+                    let mut ys: Vec<f32> = self.step_parent.get(&r).and_then(|p| center_of(self, *p)).into_iter().collect();
+                    if ys.is_empty() {
+                        ys = children.get(&r).map(|cs| cs.iter().filter_map(|&n| center_of(self, n)).collect()).unwrap_or_default();
+                    }
+                    if ys.is_empty() {
+                        let s = idx.sym(r);
+                        let neigh = if c > anchor_col { &s.callers } else { &s.callees };
+                        ys = neigh.iter().filter(|n| self.col.get(n) == Some(&inner)).filter_map(|&n| center_of(self, n)).collect();
+                    }
                     (r, if ys.is_empty() { f32::INFINITY } else { ys.iter().sum::<f32>() / ys.len() as f32 })
                 })
                 .collect();
@@ -309,8 +301,8 @@ impl Graph {
                 placed.push((*r, top));
                 prev_bottom = top + h;
             }
-            let shift = if let Some((r, top)) = placed.iter().find(|(r, _)| pinned.contains(r)) {
-                spine_cy - (top + self.node_size(idx, *r, m).y / 2.0)
+            let shift = if let Some((_, top)) = placed.iter().find(|(r, _)| *r == focus) {
+                spine_cy - (top + self.node_size(idx, focus, m).y / 2.0)
             } else {
                 let wishes: Vec<f32> = placed.iter().zip(&sorted).filter(|(_, (_, cy))| cy.is_finite()).map(|((r, top), (_, cy))| cy - (top + self.node_size(idx, *r, m).y / 2.0)).collect();
                 if wishes.is_empty() { 0.0 } else { wishes.iter().sum::<f32>() / wishes.len() as f32 }
@@ -319,10 +311,6 @@ impl Graph {
                 self.pos.insert(r, pos2(col_x[&c], top + shift));
             }
         }
-
-        let top = members.iter().map(|&r| self.pos[&r].y).fold(f32::INFINITY, f32::min);
-        let bottom = members.iter().map(|&r| self.node_rect(idx, r, m).bottom()).fold(f32::NEG_INFINITY, f32::max);
-        (top, bottom)
     }
 
     fn fit(&mut self) {
@@ -414,7 +402,7 @@ impl App {
     }
 
     /// Make `r` the current symbol: listing position, xrefs, and graph focus (rebuilding the
-    /// graph around it if it is not already on screen).
+    /// graph around it if it is not already on screen). Moves the view.
     fn focus(&mut self, r: SymRef) {
         let s = self.idx.sym(r);
         let (start, end) = (s.start, s.end);
@@ -425,17 +413,23 @@ impl App {
             self.graph.build_around(&self.idx, &self.map, r);
         }
         self.graph.focus = Some(r);
-        self.relayout_and_look();
+        self.relayout();
+        self.graph.look_at_focus(&self.idx, self.metrics);
         if self.tab == Tab::Results {
             self.tab = Tab::Graph;
         }
     }
 
-    fn relayout_and_look(&mut self) {
+    fn relayout(&mut self) {
         if !self.graph.manual {
             self.graph.layout(&self.idx, self.metrics);
         }
-        self.graph.look_at_focus(&self.idx, self.metrics);
+    }
+
+    /// The graph's node set changed (path edited, map reloaded): rebuild in place, view stays.
+    fn refresh_graph(&mut self) {
+        self.graph.rebuild(&self.idx, &self.map);
+        self.relayout();
     }
 
     fn open_line(&mut self, file: usize, line: usize) {
@@ -446,8 +440,9 @@ impl App {
     }
 
     fn show_path(&mut self, pi: usize) {
-        self.graph.build_chain(&self.idx, &self.map, pi);
-        self.relayout_and_look();
+        self.graph.build_path(&self.idx, &self.map, pi);
+        self.relayout();
+        self.graph.look_at_focus(&self.idx, self.metrics);
         if let Some(r) = self.graph.focus {
             let s = self.idx.sym(r);
             let (start, end) = (s.start, s.end);
@@ -492,51 +487,82 @@ impl App {
         self.dirty = true;
     }
 
-    /// Add the listing selection (or, in the graph, the focused symbol) to the selected path.
-    fn add_anchor(&mut self) {
+    /// Parent for a new step of the selected path. A node revealed by opening a step's callees
+    /// goes under that step (that is the call it was reached by); otherwise under the selected
+    /// step, else the focused node's step, else root.
+    fn step_parent_for_new(&self, pi: usize, node: Option<SymRef>) -> i32 {
+        if self.graph.path_id == Some(pi) {
+            if let Some((_, ai)) = node.and_then(|n| self.graph.origin.get(&n)).and_then(|o| self.graph.step.get(o)) {
+                return *ai as i32;
+            }
+        }
+        if let Some(ai) = self.sel_anchor.filter(|&ai| ai < self.map.paths[pi].anchors.len()) {
+            return ai as i32;
+        }
+        if self.graph.path_id == Some(pi) {
+            if let Some((_, ai)) = self.graph.focus.and_then(|f| self.graph.step.get(&f)) {
+                return *ai as i32;
+            }
+        }
+        -1
+    }
+
+    /// Add lines as a step of the selected path. The view does not move; the new step becomes
+    /// the selected one so repeated adds build a chain, and a click on another step starts a
+    /// branch.
+    fn add_step(&mut self, fi: usize, ls: usize, le: usize, node: Option<SymRef>) {
         let Some(pi) = self.sel_path else {
             self.status = "select a path first (Paths window)".into();
             return;
         };
-        let (fi, ls, le) = match (self.tab, self.cur_file, self.sel, self.graph.focus) {
-            (Tab::Listing, Some(fi), Some((a, b)), _) => (fi, a.min(b), a.max(b)),
-            (_, _, _, Some(r)) => {
-                let s = self.idx.sym(r);
-                (r.file, s.start, s.end)
+        let name = &self.idx.files[fi].path;
+        if let Some(s) = self.idx.files[fi].symbols.iter().filter(|s| s.start <= ls && le <= s.end).max_by_key(|s| s.depth) {
+            if s.start == ls && s.end == le {
+                if let Some(ai) = self.map.step_for(pi, name, &s.name) {
+                    self.sel_anchor = Some(ai);
+                    self.status = format!("'{}' is already step [{ai}] of '{}'", s.name, self.map.paths[pi].name);
+                    return;
+                }
             }
-            _ => {
-                self.status = "select lines in the listing or a node in the graph first".into();
-                return;
-            }
-        };
-        self.map.add_anchor(&self.idx, pi, fi, ls, le, Author::Human);
+        }
+        let parent = self.step_parent_for_new(pi, node);
+        let ai = self.map.add_anchor(&self.idx, pi, fi, ls, le, Author::Human, parent);
+        self.sel_anchor = Some(ai);
         self.dirty = true;
-        self.status = format!("step {} added to '{}'", self.map.paths[pi].anchors.len(), self.map.paths[pi].name);
-        if self.graph.chain_path == Some(pi) {
-            self.show_path(pi);
+        self.status = format!("step [{ai}] added to '{}' under [{parent}]", self.map.paths[pi].name);
+        if self.graph.path_id == Some(pi) {
+            self.refresh_graph();
         }
     }
 
-    // ponytail: no undo; deletes the selected step, else the selected path.
+    /// Top-bar button: the listing selection, else the focused node.
+    fn add_selection(&mut self) {
+        match (self.tab, self.cur_file, self.sel, self.graph.focus) {
+            (Tab::Listing, Some(fi), Some((a, b)), _) => self.add_step(fi, a.min(b), a.max(b), None),
+            (_, _, _, Some(r)) => {
+                let s = self.idx.sym(r);
+                let (start, end) = (s.start, s.end);
+                self.add_step(r.file, start, end, Some(r));
+            }
+            _ => self.status = "select lines in the listing or a node in the graph first".into(),
+        }
+    }
+
+    // ponytail: no undo; deletes the selected step (children move up), else the selected path.
     fn delete_selected(&mut self) {
         let Some(pi) = self.sel_path else { return };
         match self.sel_anchor {
             Some(ai) if ai < self.map.paths[pi].anchors.len() => {
-                self.map.paths[pi].anchors.remove(ai);
+                self.map.remove_anchor(pi, ai);
                 self.sel_anchor = None;
             }
             _ => {
                 self.map.paths.remove(pi);
                 self.sel_path = None;
-                if self.graph.chain_path == Some(pi) {
-                    self.graph.chain_path = None;
-                }
             }
         }
         self.dirty = true;
-        if self.graph.chain_path == Some(pi) {
-            self.show_path(pi);
-        }
+        self.refresh_graph();
     }
 
     fn save(&mut self) {
@@ -559,9 +585,7 @@ impl App {
             Ok(true) => {
                 self.dirty = true;
                 self.output.push_str("(map changed, ctrl+s to save)\n");
-                if let Some(pi) = self.graph.chain_path {
-                    self.show_path(pi);
-                }
+                self.refresh_graph();
             }
             Ok(false) => {}
             Err(e) => self.output.push_str(&format!("error: {e}\n")),
@@ -590,8 +614,7 @@ impl App {
                 if self.sel_path.is_some_and(|pi| pi >= self.map.paths.len()) {
                     self.sel_path = None;
                 }
-                self.graph.rebuild(&self.idx, &self.map);
-                self.relayout_and_look();
+                self.refresh_graph();
                 self.status = "map reloaded (changed on disk)".into();
             }
         }
@@ -614,8 +637,7 @@ impl App {
         self.graph.expansions = expansions.into_iter().filter_map(|(k, c)| self.idx.by_key(&k).map(|r| (r, c))).collect();
         self.graph.expanded = expanded.iter().filter_map(|k| self.idx.by_key(k)).collect();
         self.graph.size.clear();
-        self.graph.rebuild(&self.idx, &self.map);
-        self.relayout_and_look();
+        self.refresh_graph();
         self.cur_file = cur_file.and_then(|p| self.idx.find_file(&p));
         self.results.clear();
         self.status = format!("re-indexed: {} files, {} symbols (source changed)", self.idx.files.len(), self.idx.files.iter().map(|f| f.symbols.len()).sum::<usize>());
@@ -629,7 +651,7 @@ enum Action {
     OpenListing(SymRef),
     SelectPath(usize),
     ShowPath(usize),
-    OpenAnchor(usize, usize),
+    SelectStep(usize, usize),
     MoveAnchor(usize, usize, isize),
     Promote(SymRef),
     ExpandCallers(SymRef),
@@ -675,7 +697,7 @@ impl App {
         let mut action = None;
         ui.horizontal(|ui| {
             ui.strong(format!("Paths ({})", self.map.paths.len()));
-            ui.weak("a path = an ordered chain of code steps");
+            ui.weak("a path = a tree of code steps");
         });
         egui::ScrollArea::vertical().id_salt("paths").auto_shrink(false).show(ui, |ui| {
             for pi in 0..self.map.paths.len() {
@@ -688,7 +710,7 @@ impl App {
                     if ui.selectable_label(selected, format!("{name}{tag}  ({n} steps)")).clicked() {
                         action = Some(Action::SelectPath(pi));
                     }
-                    if ui.small_button("graph").on_hover_text("show this path as a chain in the graph").clicked() {
+                    if ui.small_button("graph").on_hover_text("show this path as a tree in the graph").clicked() {
                         action = Some(Action::ShowPath(pi));
                     }
                 });
@@ -699,13 +721,13 @@ impl App {
                     if ui.add(egui::TextEdit::multiline(&mut self.map.paths[pi].note).desired_rows(2).hint_text("what this path is / does").desired_width(f32::INFINITY)).changed() {
                         self.dirty = true;
                     }
+                    ui.weak("steps: click to select (new steps go under the selected one), up/down reorder siblings, * = has a note");
                     let n = self.map.paths[pi].anchors.len();
-                    for ai in 0..n {
+                    for (k, (ai, depth)) in self.map.tree_order(pi).into_iter().enumerate() {
                         let a = &self.map.paths[pi].anchors[ai];
                         let name = if a.symbol.is_empty() { "(lines)" } else { a.symbol.as_str() };
-                        let text = format!("{}. {}{}  {}:{}-{}{}", ai + 1, if a.stale { "! " } else { "" }, name, a.file, a.line_start + 1, a.line_end + 1, a.author.tag());
+                        let text = format!("{}{}. {}{}  {}:{}-{}{}{}", "    ".repeat(depth), k + 1, if a.stale { "! " } else { "" }, name, a.file, a.line_start + 1, a.line_end + 1, a.author.tag(), if a.note.is_empty() { "" } else { " *" });
                         let color = if a.stale { Color32::LIGHT_RED } else { ui.visuals().text_color() };
-                        let has_note = !a.note.is_empty();
                         let step_selected = self.sel_anchor == Some(ai);
                         ui.horizontal(|ui| {
                             if ui.add_enabled(ai > 0, egui::Button::new("up").small()).clicked() {
@@ -714,11 +736,13 @@ impl App {
                             if ui.add_enabled(ai + 1 < n, egui::Button::new("down").small()).clicked() {
                                 action = Some(Action::MoveAnchor(pi, ai, 1));
                             }
-                            let resp = ui.selectable_label(step_selected, egui::RichText::new(if has_note { format!("{text} *") } else { text }).color(color));
+                            let resp = ui.selectable_label(step_selected, egui::RichText::new(text).color(color));
                             if resp.clicked() {
-                                action = Some(Action::OpenAnchor(pi, ai));
+                                action = Some(Action::SelectStep(pi, ai));
                             }
-                            resp.on_hover_text(if a.stale { "stale: the code changed since this step was pinned. Delete and re-add it." } else { "click to view; up/down reorder; * = has a note" });
+                            if a.stale {
+                                resp.on_hover_text("stale: the code changed since this step was pinned. Delete and re-add it.");
+                            }
                         });
                         if step_selected {
                             ui.indent(("note", pi, ai), |ui| {
@@ -734,7 +758,7 @@ impl App {
             // ponytail: every root, one hop deep; the full tree lives in `tree` and the graph.
             let roots = self.idx.roots();
             egui::CollapsingHeader::new(format!("Entry points ({})", roots.len())).show(ui, |ui| {
-                ui.weak("symbols nothing calls. promote = new path from one + what it calls");
+                ui.weak("symbols nothing calls. promote = new path shaped like its call tree");
                 for r in roots {
                     let s = self.idx.sym(r);
                     ui.horizontal(|ui| {
@@ -793,9 +817,9 @@ impl App {
             if ui.add_enabled(self.graph.manual, egui::Button::new("auto layout").small()).clicked() {
                 action = Some(Action::Relayout);
             }
-            if let Some(pi) = self.graph.chain_path {
+            if let Some(pi) = self.graph.path_id {
                 ui.separator();
-                ui.label(format!("showing path '{}' as a chain, {} steps per row", self.map.paths[pi].name, STEPS_PER_ROW));
+                ui.label(format!("showing path '{}' as a tree; green edges are its steps", self.map.paths[pi].name));
             }
         });
 
@@ -824,7 +848,7 @@ impl App {
             let painter = ui.painter().clone();
             let edge = Stroke::new(1.5, ui.visuals().weak_text_color());
             let back = Stroke::new(1.5, Color32::from_rgb(220, 160, 80));
-            let chain_stroke = Stroke::new(3.0, Color32::from_rgb(90, 200, 120));
+            let step_stroke = Stroke::new(3.0, Color32::from_rgb(90, 200, 120));
             let rect_of = |g: &Graph, r: SymRef| g.node_rect(&self.idx, r, m);
             let curve = |p0: egui::Pos2, p1: egui::Pos2, stroke: Stroke| {
                 let dx = ((p1.x - p0.x).abs() * 0.5).max(GAP_X * 0.8);
@@ -833,12 +857,12 @@ impl App {
             let hy = vec2(0.0, HEADER_H / 2.0);
 
             // call edges: caller's right header edge -> callee's left header edge. A callee that
-            // sits to the left of its caller (a step calling an earlier step) gets a short leftward
-            // curve in another colour instead of a loop across the canvas.
+            // sits to the left of its caller gets a short leftward curve in another colour
+            // instead of a loop across the canvas. Pairs that are path steps are drawn below.
             for &a in &self.graph.nodes {
                 let ra = rect_of(&self.graph, a);
                 for &b in &self.idx.sym(a).callees {
-                    if !self.graph.col.contains_key(&b) || a == b {
+                    if !self.graph.col.contains_key(&b) || a == b || self.graph.step_parent.get(&b) == Some(&a) {
                         continue;
                     }
                     let rb = rect_of(&self.graph, b);
@@ -854,20 +878,15 @@ impl App {
                     }
                 }
             }
-            // chain edges: step i -> step i+1, numbered; a row wrap goes out right, down, and in left
-            for (i, w) in self.graph.chain.windows(2).enumerate() {
-                let (ra, rb) = (rect_of(&self.graph, w[0]), rect_of(&self.graph, w[1]));
+            // path edges: parent step -> child step, labelled with the child's number
+            for (&child, &parent) in &self.graph.step_parent {
+                let (ra, rb) = (rect_of(&self.graph, parent), rect_of(&self.graph, child));
                 let (p0, p1) = (ra.right_top() + hy, rb.left_top() + hy);
-                if self.graph.group[&w[0]] == self.graph.group[&w[1]] {
-                    painter.add(curve(p0, p1, chain_stroke));
-                    painter.text((p0 + p1.to_vec2()) / 2.0 - vec2(0.0, 12.0), Align2::CENTER_CENTER, format!("{}", i + 2), font.clone(), chain_stroke.color);
-                } else {
-                    let mid_y = (ra.bottom() + rb.top()) / 2.0;
-                    let pts = vec![p0, pos2(p0.x + GAP_X * 0.5, p0.y), pos2(p0.x + GAP_X * 0.5, mid_y), pos2(p1.x - GAP_X * 0.5, mid_y), pos2(p1.x - GAP_X * 0.5, p1.y), p1];
-                    painter.add(egui::Shape::line(pts, chain_stroke));
-                    painter.text(pos2(p1.x - GAP_X * 0.5, mid_y) - vec2(0.0, 12.0), Align2::CENTER_CENTER, format!("{}", i + 2), font.clone(), chain_stroke.color);
+                painter.add(curve(p0, p1, step_stroke));
+                painter.circle_filled(p1, 4.0, step_stroke.color);
+                if let Some((k, _)) = self.graph.step.get(&child) {
+                    painter.text(p1 - vec2(GAP_X * 0.4, 12.0), Align2::CENTER_CENTER, format!("{k}"), font.clone(), step_stroke.color);
                 }
-                painter.circle_filled(p1, 4.0, chain_stroke.color);
             }
 
             let base_color = ui.visuals().text_color();
@@ -880,11 +899,11 @@ impl App {
                 let border = if focused {
                     Stroke::new(2.0, ui.visuals().selection.stroke.color)
                 } else if on_path {
-                    Stroke::new(2.0, chain_stroke.color)
+                    Stroke::new(2.0, step_stroke.color)
                 } else {
                     Stroke::new(1.0, ui.visuals().widgets.noninteractive.bg_stroke.color)
                 };
-                let step = self.graph.step_of(r);
+                let step = self.graph.step.get(&r).copied();
 
                 let frame = ui.scope_builder(egui::UiBuilder::new().max_rect(egui::Rect::from_min_size(rect.min, vec2(rect.width(), f32::INFINITY))), |ui| {
                     ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Truncate);
@@ -894,7 +913,7 @@ impl App {
                         ui.horizontal(|ui| {
                             let mut title = ui.strong(&s.name);
                             if let Some((k, _)) = step {
-                                title = title.union(ui.colored_label(chain_stroke.color, format!("step {k}")));
+                                title = title.union(ui.colored_label(step_stroke.color, format!("step {k}")));
                             }
                             title = title.union(ui.weak(format!("{}:{}", self.idx.files[r.file].path, s.start + 1)));
                             let drag = ui.interact(title.rect, ui.id().with(("drag", r)), Sense::click_and_drag());
@@ -911,7 +930,7 @@ impl App {
                                 if total > PREVIEW_LINES && ui.small_button(if shown < total { "more" } else { "less" }).on_hover_text("show all / fewer lines").clicked() {
                                     action = Some(Action::ToggleExpand(r));
                                 }
-                                if ui.small_button("+path").on_hover_text("add as the next step of the selected path").clicked() {
+                                if ui.small_button("+path").on_hover_text("add as a step of the selected path, under the selected step").clicked() {
                                     action = Some(Action::AddToPath(r));
                                 }
                                 if ui.small_button("listing").on_hover_text("open in the listing").clicked() {
@@ -927,10 +946,10 @@ impl App {
                             });
                         });
                         // step note: the human's or the AI's annotation for this step of the path
-                        if let (Some((_, ai)), Some(pi)) = (step, self.graph.chain_path) {
+                        if let (Some((_, ai)), Some(pi)) = (step, self.graph.path_id) {
                             let note = &self.map.paths[pi].anchors[ai].note;
                             if !note.is_empty() {
-                                ui.label(egui::RichText::new(note).italics().color(chain_stroke.color));
+                                ui.label(egui::RichText::new(note).italics().color(step_stroke.color));
                             }
                         }
                         ui.separator();
@@ -1073,13 +1092,13 @@ impl App {
                 self.show_path(pi);
                 self.tab = Tab::Graph;
             }
-            Some(Action::OpenAnchor(pi, ai)) => {
+            Some(Action::SelectStep(pi, ai)) => {
                 self.sel_anchor = Some(ai);
                 let a = &self.map.paths[pi].anchors[ai];
                 let (ls, le, file, sym) = (a.line_start, a.line_end, a.file.clone(), a.symbol.clone());
                 if let Some(fi) = self.idx.find_file(&file) {
                     if let Some(si) = self.idx.files[fi].symbols.iter().position(|s| s.name == sym) {
-                        if self.graph.chain_path != Some(pi) {
+                        if self.graph.path_id != Some(pi) {
                             self.show_path(pi);
                         }
                         self.focus(SymRef { file: fi, sym: si });
@@ -1091,12 +1110,10 @@ impl App {
             }
             Some(Action::MoveAnchor(pi, ai, delta)) => {
                 let bi = (ai as isize + delta) as usize;
-                self.map.paths[pi].anchors.swap(ai, bi);
+                self.map.swap_anchors(pi, ai, bi);
                 self.sel_anchor = Some(bi);
                 self.dirty = true;
-                if self.graph.chain_path == Some(pi) {
-                    self.show_path(pi);
-                }
+                self.refresh_graph();
             }
             Some(Action::Promote(r)) => {
                 let pi = self.map.promote(&self.idx, r, 1, Author::Human);
@@ -1108,11 +1125,11 @@ impl App {
             }
             Some(Action::ExpandCallers(r)) => {
                 self.graph.toggle(&self.idx, &self.map, r, false);
-                self.graph.layout(&self.idx, self.metrics);
+                self.relayout();
             }
             Some(Action::ExpandCallees(r)) => {
                 self.graph.toggle(&self.idx, &self.map, r, true);
-                self.graph.layout(&self.idx, self.metrics);
+                self.relayout();
             }
             Some(Action::ToggleExpand(r)) => {
                 if !self.graph.expanded.remove(&r) {
@@ -1122,9 +1139,9 @@ impl App {
                 self.graph.manual = false;
             }
             Some(Action::AddToPath(r)) => {
-                self.graph.focus = Some(r);
-                self.tab = Tab::Graph;
-                self.add_anchor();
+                let s = self.idx.sym(r);
+                let (start, end) = (s.start, s.end);
+                self.add_step(r.file, start, end, Some(r));
             }
             Some(Action::Relayout) => {
                 self.graph.manual = false;
@@ -1165,10 +1182,10 @@ impl eframe::App for App {
                 if ui.add(egui::TextEdit::singleline(&mut self.new_path).desired_width(140.0)).lost_focus() && enter {
                     self.create_path();
                 }
-                if ui.button("add selection to path").on_hover_text("listing: selected lines. graph: focused node").clicked() {
-                    self.add_anchor();
+                if ui.button("add selection to path").on_hover_text("listing: selected lines. graph: focused node. Goes under the selected step.").clicked() {
+                    self.add_selection();
                 }
-                if ui.button("delete selected").on_hover_text("the selected step, else the selected path").clicked() {
+                if ui.button("delete selected").on_hover_text("the selected step (its children move up), else the selected path").clicked() {
                     self.delete_selected();
                 }
                 if ui.button(if self.dirty { "save *" } else { "save" }).clicked() {

@@ -25,7 +25,8 @@ impl Author {
 
 /// Pins a slice of lines. Offsets are relative to the start of the enclosing symbol so the anchor
 /// survives edits elsewhere in the file. `symbol == ""` means absolute lines. `hash` detects when
-/// the anchored text itself changed (-> stale).
+/// the anchored text itself changed (-> stale). `parent` makes a path a tree: the step this one
+/// is reached from, or -1 for a root.
 pub struct Anchor {
     pub file: String,
     pub symbol: String,
@@ -34,6 +35,7 @@ pub struct Anchor {
     pub hash: u64,
     pub author: Author,
     pub note: String,
+    pub parent: i32,
 
     // resolved per session, not stored
     pub line_start: usize,
@@ -56,11 +58,13 @@ pub struct Map {
 // ---- binary file format ----------------------------------------------------------
 // "CMAP" u32 version
 // u32 npaths { str name, str note, u8 author, u32 nanchors {
-//     str file, str symbol, i32 off_start, i32 off_end, u64 hash, u8 author, str note (v3+) } }
-// str = u32 len + utf8 bytes. All little-endian. v2 files (no anchor note) are still read.
+//     str file, str symbol, i32 off_start, i32 off_end, u64 hash, u8 author,
+//     str note (v3+), i32 parent (v4+) } }
+// str = u32 len + utf8 bytes. All little-endian. Older versions are still read: a v2/v3 path is
+// a chain, so each step's parent becomes the step before it.
 
 const MAGIC: &[u8; 4] = b"CMAP";
-const VERSION: u32 = 3;
+const VERSION: u32 = 4;
 
 fn w_str(b: &mut Vec<u8>, s: &str) {
     b.extend_from_slice(&(s.len() as u32).to_le_bytes());
@@ -115,6 +119,7 @@ impl Map {
                 b.extend_from_slice(&a.hash.to_le_bytes());
                 b.push(a.author as u8);
                 w_str(&mut b, &a.note);
+                b.extend_from_slice(&a.parent.to_le_bytes());
             }
         }
         std::fs::write(path, b)
@@ -127,7 +132,7 @@ impl Map {
             return None;
         }
         let version = r.u32()?;
-        if version != 2 && version != VERSION {
+        if !(2..=VERSION).contains(&version) {
             return None;
         }
         let mut m = Map::default();
@@ -138,7 +143,7 @@ impl Map {
                 author: Author::from_u8(r.u8()?)?,
                 anchors: Vec::new(),
             };
-            for _ in 0..r.u32()? {
+            for i in 0..r.u32()? {
                 p.anchors.push(Anchor {
                     file: r.str()?,
                     symbol: r.str()?,
@@ -147,6 +152,7 @@ impl Map {
                     hash: r.u64()?,
                     author: Author::from_u8(r.u8()?)?,
                     note: if version >= 3 { r.str()? } else { String::new() },
+                    parent: if version >= 4 { r.i32()? } else { i as i32 - 1 },
                     line_start: 0,
                     line_end: 0,
                     stale: true,
@@ -172,22 +178,94 @@ impl Map {
         self.paths.len() - 1
     }
 
-    pub fn add_anchor(&mut self, idx: &Index, pi: usize, fi: usize, ls: usize, le: usize, author: Author) {
+    /// Append a step under `parent` (-1 = root). Returns its index.
+    pub fn add_anchor(&mut self, idx: &Index, pi: usize, fi: usize, ls: usize, le: usize, author: Author, parent: i32) -> usize {
         let mut a = Anchor::new(&idx.files[fi], ls, le);
         a.author = author;
+        a.parent = if parent >= 0 && (parent as usize) < self.paths[pi].anchors.len() { parent } else { -1 };
         self.paths[pi].anchors.push(a);
+        self.paths[pi].anchors.len() - 1
     }
 
-    /// A path named after `root`, with one anchor per symbol of its call tree in pre-order.
+    /// Index of the step for `symbol` in `file`, if the path already has one.
+    pub fn step_for(&self, pi: usize, file: &str, symbol: &str) -> Option<usize> {
+        self.paths[pi].anchors.iter().position(|a| a.file == file && a.symbol == symbol)
+    }
+
+    /// Remove a step; its children move up to its parent so the tree stays connected.
+    pub fn remove_anchor(&mut self, pi: usize, ai: usize) {
+        let p = &mut self.paths[pi];
+        let up = p.anchors[ai].parent;
+        let up = if up > ai as i32 { up - 1 } else { up }; // the parent's index after the removal shifts everything above `ai`
+        p.anchors.remove(ai);
+        for a in &mut p.anchors {
+            if a.parent == ai as i32 {
+                a.parent = up;
+            } else if a.parent > ai as i32 {
+                a.parent -= 1;
+            }
+        }
+    }
+
+    /// Swap two steps in list order (sibling order), keeping every parent link pointing at the
+    /// same step.
+    pub fn swap_anchors(&mut self, pi: usize, a: usize, b: usize) {
+        let p = &mut self.paths[pi];
+        p.anchors.swap(a, b);
+        let (a, b) = (a as i32, b as i32);
+        for x in &mut p.anchors {
+            x.parent = if x.parent == a { b } else if x.parent == b { a } else { x.parent };
+        }
+    }
+
+    /// Pre-order walk of a path's tree: (anchor index, depth). Roots in list order, children in
+    /// list order. A dangling parent counts as a root.
+    pub fn tree_order(&self, pi: usize) -> Vec<(usize, usize)> {
+        let anchors = &self.paths[pi].anchors;
+        let n = anchors.len();
+        let mut out = Vec::with_capacity(n);
+        let mut seen = vec![false; n];
+        fn visit(anchors: &[Anchor], i: usize, depth: usize, seen: &mut [bool], out: &mut Vec<(usize, usize)>) {
+            if seen[i] {
+                return; // cycle guard
+            }
+            seen[i] = true;
+            out.push((i, depth));
+            for (j, a) in anchors.iter().enumerate() {
+                if a.parent == i as i32 {
+                    visit(anchors, j, depth + 1, seen, out);
+                }
+            }
+        }
+        for i in 0..n {
+            let par = anchors[i].parent;
+            if par < 0 || par as usize >= n || par as usize == i {
+                visit(anchors, i, 0, &mut seen, &mut out);
+            }
+        }
+        for i in 0..n {
+            if !seen[i] {
+                visit(anchors, i, 0, &mut seen, &mut out); // orphaned cycles
+            }
+        }
+        out
+    }
+
+    /// A path named after `root` shaped like its call tree: one step per symbol, each under the
+    /// step it is called from. Re-promoting adds only symbols the path lacks.
     pub fn promote(&mut self, idx: &Index, root: SymRef, depth: usize, author: Author) -> usize {
         let pi = self.add_path(&idx.sym(root).name.clone(), author);
-        for (r, _) in idx.call_tree(root, depth) {
+        let mut stack: Vec<i32> = Vec::new(); // step index at each depth
+        for (r, d) in idx.call_tree(root, depth) {
             let s = idx.sym(r);
             let file = &idx.files[r.file].path;
-            if self.paths[pi].anchors.iter().any(|a| &a.file == file && a.symbol == s.name) {
-                continue; // re-promoting an existing path adds only what is new
-            }
-            self.add_anchor(idx, pi, r.file, s.start, s.end, author);
+            let parent = if d == 0 { -1 } else { stack.get(d - 1).copied().unwrap_or(-1) };
+            let ai = match self.step_for(pi, file, &s.name) {
+                Some(ai) => ai,
+                None => self.add_anchor(idx, pi, r.file, s.start, s.end, author, parent),
+            };
+            stack.truncate(d);
+            stack.push(ai as i32);
         }
         pi
     }
@@ -224,6 +302,7 @@ impl Anchor {
             hash: slice_hash(&f.lines, ls, le),
             author: Author::Human,
             note: String::new(),
+            parent: -1,
             line_start: ls,
             line_end: le,
             stale: false,
@@ -269,14 +348,18 @@ mod tests {
         Symbol { name: name.into(), kind: "fn", start, end, depth: 0, calls: vec![], callees: vec![], callers: vec![] }
     }
 
+    fn one_file() -> Index {
+        let lines: Vec<String> = ["fn a() {", "  1", "}", "fn b() {", "  2", "}"].map(String::from).to_vec();
+        let file = File { path: "a.rs".into(), hl: vec![Vec::new(); lines.len()], lines, symbols: vec![sym("a", 0, 2), sym("b", 3, 5)], mtime: None };
+        Index { root: ".".into(), files: vec![file] }
+    }
+
     #[test]
     fn round_trip_and_stale() {
-        let lines: Vec<String> = ["fn a() {", "  1", "}", "fn b() {", "  2", "}"].map(String::from).to_vec();
-        let file = File { path: "a.rs".into(), hl: vec![Vec::new(); lines.len()], lines, symbols: vec![sym("b", 3, 5)], mtime: None };
-        let idx = Index { root: ".".into(), files: vec![file] };
+        let idx = one_file();
         let mut m = Map::default();
         let pi = m.add_path("p", Author::Ai);
-        m.add_anchor(&idx, pi, 0, 4, 4, Author::Ai);
+        m.add_anchor(&idx, pi, 0, 4, 4, Author::Ai, -1);
         m.paths[0].anchors[0].note = "the middle".into();
         assert_eq!(m.paths[0].anchors[0].symbol, "b");
         assert_eq!(m.paths[0].anchors[0].off_start, 1);
@@ -287,12 +370,15 @@ mod tests {
         assert_eq!(loaded.paths[0].author, Author::Ai);
         assert_eq!(loaded.paths[0].anchors[0].author, Author::Ai);
         assert_eq!(loaded.paths[0].anchors[0].note, "the middle");
+        assert_eq!(loaded.paths[0].anchors[0].parent, -1);
 
         // symbol `b` moved down two lines: anchor follows it and is not stale
         let mut idx = idx;
         idx.files[0].lines.splice(0..0, ["// x".to_string(), "// y".to_string()]);
-        idx.files[0].symbols[0].start += 2;
-        idx.files[0].symbols[0].end += 2;
+        for s in &mut idx.files[0].symbols {
+            s.start += 2;
+            s.end += 2;
+        }
         loaded.resolve_all(&idx);
         assert_eq!(loaded.paths[0].anchors[0].line_start, 6);
         assert!(!loaded.paths[0].anchors[0].stale);
@@ -301,5 +387,26 @@ mod tests {
         idx.files[0].lines[6] = "  3".into();
         loaded.resolve_all(&idx);
         assert!(loaded.paths[0].anchors[0].stale);
+    }
+
+    #[test]
+    fn tree_edits_keep_parents() {
+        let idx = one_file();
+        let mut m = Map::default();
+        let pi = m.add_path("t", Author::Human);
+        let root = m.add_anchor(&idx, pi, 0, 0, 2, Author::Human, -1) as i32; // a
+        let mid = m.add_anchor(&idx, pi, 0, 3, 5, Author::Human, root) as i32; // b under a
+        let leaf = m.add_anchor(&idx, pi, 0, 1, 1, Author::Human, mid); // line in a, under b
+        assert_eq!(m.tree_order(pi), [(0, 0), (1, 1), (2, 2)]);
+
+        m.swap_anchors(pi, 0, 1); // list order changes, tree does not
+        assert_eq!(m.paths[pi].anchors[1].parent, -1);
+        assert_eq!(m.paths[pi].anchors[0].parent, 1);
+        assert_eq!(m.paths[pi].anchors[leaf].parent, 0);
+        assert_eq!(m.tree_order(pi), [(1, 0), (0, 1), (2, 2)]);
+
+        m.remove_anchor(pi, 0); // remove the middle: leaf moves up under the root
+        assert_eq!(m.paths[pi].anchors.len(), 2);
+        assert_eq!(m.tree_order(pi), [(0, 0), (1, 1)]);
     }
 }
