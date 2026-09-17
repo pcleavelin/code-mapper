@@ -32,11 +32,18 @@ struct Metrics {
     char_w: f32,
 }
 
-/// Nodes are symbols showing their code. Layered layout: a node's column is its hop distance
-/// from the focus (or its step index in a chain). Within a column nodes are ordered by the
-/// average position of their neighbours in the inner column (barycenter) and stacked with
-/// measured heights, so nothing overlaps. Layout reruns after any structural change; dragging a
-/// node switches to manual until the next change. ponytail: no edge routing.
+/// Nodes are symbols showing their code.
+///
+/// What is visible is *derived*: a base (the focus symbol, or a path's chain) plus an ordered
+/// list of expansions ("callers of X", "callees of X"). Toggling an expansion off removes it from
+/// the list and rebuilds, so nodes that were only reachable through it disappear too.
+///
+/// Layout is layered. A node's column is its hop distance from the focus (or its step index in
+/// a chain). Columns are placed from the focus outward. Within a column each node wants to sit
+/// level with the mean of its neighbours in the inner column; chain steps are pinned to one row
+/// so a path reads as a straight line left to right. Nodes are then stacked in that order with
+/// measured sizes and a fixed gap, and the column is shifted so pinned nodes land exactly.
+/// Dragging a node switches to manual until the next structural change.
 #[derive(Default)]
 struct Graph {
     nodes: Vec<SymRef>,
@@ -46,8 +53,9 @@ struct Graph {
     focus: Option<SymRef>,
     chain: Vec<SymRef>, // when showing a path: step order
     chain_path: Option<usize>,
-    expanded: HashSet<SymRef>, // nodes showing all their lines
-    manual: bool,              // user dragged something: keep positions
+    expansions: Vec<(SymRef, bool)>, // (node, callees?) in the order the user opened them
+    expanded: HashSet<SymRef>,       // nodes showing all their lines
+    manual: bool,                    // user dragged something: keep positions
     scene_rect: Option<egui::Rect>,
 }
 
@@ -64,7 +72,12 @@ impl Graph {
         (total.min(cap), total)
     }
 
-    /// Width from the longest shown line; height from the measured frame, else an estimate.
+    /// Characters of code that fit on one row of `r`'s node (lines are cut to this).
+    fn max_chars(&self, idx: &Index, r: SymRef, m: Metrics) -> usize {
+        (((self.node_size(idx, r, m).x - 12.0) / m.char_w) as usize).saturating_sub(6)
+    }
+
+    /// Width from the longest shown line (clamped); height from the measured frame, else estimated.
     fn node_size(&self, idx: &Index, r: SymRef, m: Metrics) -> egui::Vec2 {
         let s = idx.sym(r);
         let (shown, total) = self.lines_shown(idx, r);
@@ -87,100 +100,141 @@ impl Graph {
         }
         self.col.insert(r, col);
         self.nodes.push(r);
+    }
+
+    fn is_expanded(&self, r: SymRef, callees: bool) -> bool {
+        self.expansions.contains(&(r, callees))
+    }
+
+    /// Derive the visible node set from base + expansions.
+    fn rebuild(&mut self, idx: &Index, map: &Map) {
+        self.nodes.clear();
+        self.col.clear();
+        self.chain.clear();
+        match self.chain_path {
+            Some(pi) => {
+                for a in &map.paths[pi].anchors {
+                    let Some(fi) = idx.find_file(&a.file) else { continue };
+                    let Some(si) = idx.files[fi].symbols.iter().position(|s| s.name == a.symbol) else { continue };
+                    let r = SymRef { file: fi, sym: si };
+                    let col = self.chain.len() as i32;
+                    self.add(r, col);
+                    self.chain.push(r);
+                }
+                if self.focus.is_none_or(|f| !self.col.contains_key(&f)) {
+                    self.focus = self.chain.first().copied();
+                }
+            }
+            None => {
+                if let Some(f) = self.focus {
+                    self.add(f, 0);
+                }
+            }
+        }
+        for (r, callees) in self.expansions.clone() {
+            let Some(&col) = self.col.get(&r) else { continue };
+            let s = idx.sym(r);
+            let (list, dc) = if callees { (&s.callees, 1) } else { (&s.callers, -1) };
+            for &n in list {
+                self.add(n, col + dc);
+            }
+        }
         self.manual = false;
     }
 
-    fn build_around(&mut self, idx: &Index, r: SymRef) {
+    fn build_around(&mut self, idx: &Index, map: &Map, r: SymRef) {
         self.clear();
-        self.add(r, 0);
         self.focus = Some(r);
-        self.expand_callers(idx, r);
-        self.expand_callees(idx, r);
+        self.expansions = vec![(r, false), (r, true)];
+        self.rebuild(idx, map);
     }
 
-    fn expand_callees(&mut self, idx: &Index, r: SymRef) {
-        let col = self.col[&r] + 1;
-        for &c in &idx.sym(r).callees {
-            self.add(c, col);
-        }
-        self.manual = false;
-    }
-
-    fn expand_callers(&mut self, idx: &Index, r: SymRef) {
-        let col = self.col[&r] - 1;
-        for &c in &idx.sym(r).callers {
-            self.add(c, col);
-        }
-        self.manual = false;
-    }
-
-    /// A path as a chain: step 1 leftmost, each step one column to the right.
     fn build_chain(&mut self, idx: &Index, map: &Map, pi: usize) {
         self.clear();
         self.chain_path = Some(pi);
-        for a in &map.paths[pi].anchors {
-            let Some(fi) = idx.find_file(&a.file) else { continue };
-            let Some(si) = idx.files[fi].symbols.iter().position(|s| s.name == a.symbol) else { continue };
-            let r = SymRef { file: fi, sym: si };
-            let col = self.chain.len() as i32;
-            self.add(r, col);
-            self.chain.push(r);
-        }
-        self.focus = self.chain.first().copied();
+        self.rebuild(idx, map);
     }
 
-    /// Recompute every position. Columns are laid out from the focus outward so each column can
-    /// be ordered by its neighbours in the column nearer the focus.
+    /// Open or close the callers/callees of `r`.
+    fn toggle(&mut self, idx: &Index, map: &Map, r: SymRef, callees: bool) {
+        match self.expansions.iter().position(|e| *e == (r, callees)) {
+            Some(i) => {
+                self.expansions.remove(i);
+            }
+            None => self.expansions.push((r, callees)),
+        }
+        self.rebuild(idx, map);
+    }
+
+    /// Recompute every position.
     fn layout(&mut self, idx: &Index, m: Metrics) {
+        let Some(focus) = self.focus else { return };
+        if self.nodes.is_empty() {
+            return;
+        }
         let mut cols: BTreeMap<i32, Vec<SymRef>> = BTreeMap::new();
         for &r in &self.nodes {
             cols.entry(self.col[&r]).or_default().push(r);
         }
-        if cols.is_empty() {
-            return;
-        }
-        let Some(focus) = self.focus else { return };
         let focus_col = self.col[&focus];
-        let chain_index: HashMap<SymRef, usize> = self.chain.iter().enumerate().map(|(i, &r)| (r, i)).collect();
+        let (first, last) = (*cols.keys().next().unwrap(), *cols.keys().last().unwrap());
 
+        // x: columns as wide as their widest node
         let col_w: BTreeMap<i32, f32> = cols.iter().map(|(&c, rs)| (c, rs.iter().map(|&r| self.node_size(idx, r, m).x).fold(0.0, f32::max))).collect();
         let mut col_x: BTreeMap<i32, f32> = BTreeMap::new();
         col_x.insert(focus_col, 0.0);
-        for c in (focus_col + 1)..=*cols.keys().last().unwrap() {
+        for c in (focus_col + 1)..=last {
             col_x.insert(c, col_x[&(c - 1)] + col_w.get(&(c - 1)).unwrap_or(&0.0) + GAP_X);
         }
-        for c in (*cols.keys().next().unwrap()..focus_col).rev() {
+        for c in (first..focus_col).rev() {
             col_x.insert(c, col_x[&(c + 1)] - col_w.get(&c).unwrap_or(&0.0) - GAP_X);
         }
 
-        // order + stack, focus column first, then outward
+        // y: from the focus column outward
+        let pinned: HashSet<SymRef> = self.chain.iter().copied().chain(std::iter::once(focus)).collect();
+        let spine_cy = self.node_size(idx, focus, m).y / 2.0; // every pinned node centres here
         let mut order: Vec<i32> = vec![focus_col];
-        order.extend((focus_col + 1)..=*cols.keys().last().unwrap());
-        order.extend((*cols.keys().next().unwrap()..focus_col).rev());
-        let center_y = self.node_size(idx, focus, m).y / 2.0;
+        order.extend((focus_col + 1)..=last);
+        order.extend((first..focus_col).rev());
 
         for c in order {
-            let Some(rs) = cols.get_mut(&c) else { continue };
-            if c != focus_col {
-                let inner = if c > focus_col { c - 1 } else { c + 1 };
-                let key = |g: &Graph, r: SymRef| -> f32 {
-                    if let Some(&i) = chain_index.get(&r) {
-                        return i as f32;
+            let rs = cols[&c].clone();
+            let inner = if c > focus_col { c - 1 } else { c + 1 };
+            // desired centre: pinned -> spine; else mean centre of already-placed inner neighbours
+            let desired: Vec<(SymRef, f32)> = rs
+                .iter()
+                .map(|&r| {
+                    if pinned.contains(&r) {
+                        return (r, spine_cy);
                     }
                     let s = idx.sym(r);
                     let neigh = if c > focus_col { &s.callers } else { &s.callees };
-                    let ys: Vec<f32> = neigh.iter().filter(|n| g.col.get(n) == Some(&inner)).filter_map(|n| g.pos.get(n)).map(|p| p.y).collect();
-                    if ys.is_empty() { f32::MAX } else { ys.iter().sum::<f32>() / ys.len() as f32 }
-                };
-                let mut keyed: Vec<(f32, usize, SymRef)> = rs.iter().enumerate().map(|(i, &r)| (key(self, r), i, r)).collect();
-                keyed.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap().then(a.1.cmp(&b.1)));
-                *rs = keyed.into_iter().map(|k| k.2).collect();
+                    let ys: Vec<f32> = neigh.iter().filter(|n| self.col.get(n) == Some(&inner) && self.pos.contains_key(n)).map(|n| self.node_rect(idx, *n, m).center().y).collect();
+                    (r, if ys.is_empty() { f32::INFINITY } else { ys.iter().sum::<f32>() / ys.len() as f32 })
+                })
+                .collect();
+            let mut sorted = desired.clone();
+            sorted.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
+
+            // stack top-down: each node at its desired top unless the previous one pushes it
+            let mut placed: Vec<(SymRef, f32)> = Vec::new(); // (node, top)
+            let mut prev_bottom = f32::NEG_INFINITY;
+            for (r, cy) in &sorted {
+                let h = self.node_size(idx, *r, m).y;
+                let want = if cy.is_finite() { cy - h / 2.0 } else { prev_bottom + GAP_Y };
+                let top = want.max(prev_bottom + GAP_Y);
+                placed.push((*r, top));
+                prev_bottom = top + h;
             }
-            let total: f32 = rs.iter().map(|&r| self.node_size(idx, r, m).y).sum::<f32>() + GAP_Y * rs.len().saturating_sub(1) as f32;
-            let mut y = center_y - total / 2.0;
-            for &r in rs.iter() {
-                self.pos.insert(r, pos2(col_x[&c], y));
-                y += self.node_size(idx, r, m).y + GAP_Y;
+            // shift so a pinned node lands exactly on the spine, else so the column is centred on its wishes
+            let shift = if let Some((r, top)) = placed.iter().find(|(r, _)| pinned.contains(r)) {
+                spine_cy - (top + self.node_size(idx, *r, m).y / 2.0)
+            } else {
+                let wishes: Vec<f32> = placed.iter().zip(&sorted).filter(|(_, (_, cy))| cy.is_finite()).map(|((r, top), (_, cy))| cy - (top + self.node_size(idx, *r, m).y / 2.0)).collect();
+                if wishes.is_empty() { 0.0 } else { wishes.iter().sum::<f32>() / wishes.len() as f32 }
+            };
+            for (r, top) in placed {
+                self.pos.insert(r, pos2(col_x[&c], top + shift));
             }
         }
     }
@@ -272,7 +326,7 @@ impl App {
         self.sel = Some((start, end));
         self.scroll_to = Some(start.saturating_sub(3));
         if !self.graph.col.contains_key(&r) {
-            self.graph.build_around(&self.idx, r);
+            self.graph.build_around(&self.idx, &self.map, r);
         }
         self.graph.focus = Some(r);
         self.relayout_and_look();
@@ -607,7 +661,10 @@ impl App {
                 egui::epaint::CubicBezierShape::from_points_stroke([p0, p0 + vec2(dx, 0.0), p1 - vec2(dx, 0.0), p1], false, Color32::TRANSPARENT, stroke)
             };
 
-            // call edges: caller's right header edge -> callee's left header edge
+            // call edges: caller's right header edge -> callee's left header edge. A callee that
+            // sits to the left of its caller (a step calling an earlier step) gets a short leftward
+            // curve in another colour instead of a loop across the canvas.
+            let back = Stroke::new(1.5, Color32::from_rgb(220, 160, 80));
             for &a in &self.graph.nodes {
                 let ra = rect_of(&self.graph, a);
                 for &b in &self.idx.sym(a).callees {
@@ -615,9 +672,17 @@ impl App {
                         continue;
                     }
                     let rb = rect_of(&self.graph, b);
-                    let (p0, p1) = (ra.right_top() + vec2(0.0, HEADER_H / 2.0), rb.left_top() + vec2(0.0, HEADER_H / 2.0));
-                    painter.add(curve(p0, p1, edge));
-                    painter.circle_filled(p1, 3.0, edge.color);
+                    let hy = vec2(0.0, HEADER_H / 2.0);
+                    if rb.left() >= ra.right() {
+                        let (p0, p1) = (ra.right_top() + hy, rb.left_top() + hy);
+                        painter.add(curve(p0, p1, edge));
+                        painter.circle_filled(p1, 3.0, edge.color);
+                    } else {
+                        let (p0, p1) = (ra.left_top() + hy, rb.right_top() + hy);
+                        let dx = ((p0.x - p1.x).abs() * 0.5).max(GAP_X * 0.8);
+                        painter.add(egui::epaint::CubicBezierShape::from_points_stroke([p0, p0 - vec2(dx, 0.0), p1 + vec2(dx, 0.0), p1], false, Color32::TRANSPARENT, back));
+                        painter.circle_filled(p1, 3.0, back.color);
+                    }
                 }
             }
             // chain edges: step i -> step i+1, numbered
@@ -667,10 +732,11 @@ impl App {
                                 if ui.small_button("listing").on_hover_text("open in the listing").clicked() {
                                     action = Some(Action::OpenListing(r));
                                 }
-                                if ui.add_enabled(!s.callees.is_empty(), egui::Button::new(format!("callees > {}", s.callees.len())).small()).clicked() {
+                                let (out_open, in_open) = (self.graph.is_expanded(r, true), self.graph.is_expanded(r, false));
+                                if ui.add_enabled(!s.callees.is_empty(), egui::Button::new(format!("callees > {}", s.callees.len())).small().selected(out_open)).on_hover_text("show / hide what this calls").clicked() {
                                     action = Some(Action::ExpandCallees(r));
                                 }
-                                if ui.add_enabled(!s.callers.is_empty(), egui::Button::new(format!("{} < callers", s.callers.len())).small()).clicked() {
+                                if ui.add_enabled(!s.callers.is_empty(), egui::Button::new(format!("{} < callers", s.callers.len())).small().selected(in_open)).on_hover_text("show / hide what calls this").clicked() {
                                     action = Some(Action::ExpandCallers(r));
                                 }
                             });
@@ -678,9 +744,15 @@ impl App {
                         ui.separator();
                         let f = &self.idx.files[r.file];
                         let (shown, total) = self.graph.lines_shown(&self.idx, r);
+                        let max_chars = self.graph.max_chars(&self.idx, r, m);
                         let mut code = String::new();
                         for li in s.start..s.start + shown {
-                            code.push_str(&format!("{:4} {}\n", li + 1, f.lines[li]));
+                            let line = &f.lines[li];
+                            if line.chars().count() > max_chars {
+                                code.push_str(&format!("{:4} {}…\n", li + 1, line.chars().take(max_chars.saturating_sub(1)).collect::<String>()));
+                            } else {
+                                code.push_str(&format!("{:4} {}\n", li + 1, line));
+                            }
                         }
                         if shown < total {
                             code.push_str(&format!("     … {} more lines", total - shown));
@@ -842,11 +914,11 @@ impl App {
                 self.tab = Tab::Graph;
             }
             Some(Action::ExpandCallers(r)) => {
-                self.graph.expand_callers(&self.idx, r);
+                self.graph.toggle(&self.idx, &self.map, r, false);
                 self.graph.layout(&self.idx, self.metrics);
             }
             Some(Action::ExpandCallees(r)) => {
-                self.graph.expand_callees(&self.idx, r);
+                self.graph.toggle(&self.idx, &self.map, r, true);
                 self.graph.layout(&self.idx, self.metrics);
             }
             Some(Action::ToggleExpand(r)) => {
