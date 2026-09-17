@@ -21,6 +21,7 @@ codemap <root> <command> [args]        text mode (same commands work in the GUI 
   path <name>                          print a path's note and anchored code
   path-new <name> [note]               create a path (no-op if it exists)
   path-note <name> <note>              set a path's note
+  step-note <name> <index> <note>      set a note on one step (0-based)
   path-add <name> <file> <start> <end> anchor lines (1-based, inclusive) to a path
   path-add <name> <symbol>             anchor a whole symbol to a path
   path-rm <name> [anchor-index]        delete an anchor (0-based) or the whole path
@@ -112,13 +113,14 @@ pub fn exec(idx: &Index, map: &mut Map, args: &[String], author: Author, out: &m
                 for (i, a) in path.anchors.iter().enumerate() {
                     p!(
                         out,
-                        "  [{i}] {}{}:{}-{} {}{}",
+                        "  [{i}] {}{}:{}-{} {}{}{}",
                         if a.stale { "! " } else { "" },
                         a.file,
                         a.line_start + 1,
                         a.line_end + 1,
                         a.symbol,
-                        a.author.tag()
+                        a.author.tag(),
+                        if a.note.is_empty() { String::new() } else { format!("  -- {}", a.note) }
                     );
                 }
             }
@@ -140,6 +142,9 @@ pub fn exec(idx: &Index, map: &mut Map, args: &[String], author: Author, out: &m
                     a.symbol,
                     a.author.tag()
                 );
+                if !a.note.is_empty() {
+                    p!(out, "-- {}", a.note);
+                }
                 if let Some(fi) = idx.find_file(&a.file) {
                     print_lines(out, &idx.files[fi], a.line_start, a.line_end);
                 }
@@ -155,6 +160,13 @@ pub fn exec(idx: &Index, map: &mut Map, args: &[String], author: Author, out: &m
         "path-note" => {
             let pi = find_path(map, arg(1)?)?;
             map.paths[pi].note = arg(2)?.to_owned();
+            dirty = true;
+        }
+        "step-note" => {
+            let pi = find_path(map, arg(1)?)?;
+            let ai = num(2).ok_or("bad step index")?;
+            let a = map.paths[pi].anchors.get_mut(ai).ok_or("no such step")?;
+            a.note = arg(3)?.to_owned();
             dirty = true;
         }
         "path-add" => {

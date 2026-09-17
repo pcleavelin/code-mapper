@@ -33,6 +33,7 @@ pub struct Anchor {
     pub off_end: i32,
     pub hash: u64,
     pub author: Author,
+    pub note: String,
 
     // resolved per session, not stored
     pub line_start: usize,
@@ -55,11 +56,11 @@ pub struct Map {
 // ---- binary file format ----------------------------------------------------------
 // "CMAP" u32 version
 // u32 npaths { str name, str note, u8 author, u32 nanchors {
-//     str file, str symbol, i32 off_start, i32 off_end, u64 hash, u8 author } }
-// str = u32 len + utf8 bytes. All little-endian.
+//     str file, str symbol, i32 off_start, i32 off_end, u64 hash, u8 author, str note (v3+) } }
+// str = u32 len + utf8 bytes. All little-endian. v2 files (no anchor note) are still read.
 
 const MAGIC: &[u8; 4] = b"CMAP";
-const VERSION: u32 = 2;
+const VERSION: u32 = 3;
 
 fn w_str(b: &mut Vec<u8>, s: &str) {
     b.extend_from_slice(&(s.len() as u32).to_le_bytes());
@@ -113,6 +114,7 @@ impl Map {
                 b.extend_from_slice(&a.off_end.to_le_bytes());
                 b.extend_from_slice(&a.hash.to_le_bytes());
                 b.push(a.author as u8);
+                w_str(&mut b, &a.note);
             }
         }
         std::fs::write(path, b)
@@ -121,7 +123,11 @@ impl Map {
     pub fn load(path: &Path) -> Option<Map> {
         let data = std::fs::read(path).ok()?;
         let mut r = Reader { data: &data, off: 0 };
-        if r.bytes(4)? != MAGIC || r.u32()? != VERSION {
+        if r.bytes(4)? != MAGIC {
+            return None;
+        }
+        let version = r.u32()?;
+        if version != 2 && version != VERSION {
             return None;
         }
         let mut m = Map::default();
@@ -140,6 +146,7 @@ impl Map {
                     off_end: r.i32()?,
                     hash: r.u64()?,
                     author: Author::from_u8(r.u8()?)?,
+                    note: if version >= 3 { r.str()? } else { String::new() },
                     line_start: 0,
                     line_end: 0,
                     stale: true,
@@ -216,6 +223,7 @@ impl Anchor {
             off_end: le as i32,
             hash: slice_hash(&f.lines, ls, le),
             author: Author::Human,
+            note: String::new(),
             line_start: ls,
             line_end: le,
             stale: false,
@@ -263,15 +271,13 @@ mod tests {
 
     #[test]
     fn round_trip_and_stale() {
-        let file = File {
-            path: "a.rs".into(),
-            lines: ["fn a() {", "  1", "}", "fn b() {", "  2", "}"].map(String::from).to_vec(),
-            symbols: vec![sym("b", 3, 5)],
-        };
-        let idx = Index { files: vec![file] };
+        let lines: Vec<String> = ["fn a() {", "  1", "}", "fn b() {", "  2", "}"].map(String::from).to_vec();
+        let file = File { path: "a.rs".into(), hl: vec![Vec::new(); lines.len()], lines, symbols: vec![sym("b", 3, 5)], mtime: None };
+        let idx = Index { root: ".".into(), files: vec![file] };
         let mut m = Map::default();
         let pi = m.add_path("p", Author::Ai);
         m.add_anchor(&idx, pi, 0, 4, 4, Author::Ai);
+        m.paths[0].anchors[0].note = "the middle".into();
         assert_eq!(m.paths[0].anchors[0].symbol, "b");
         assert_eq!(m.paths[0].anchors[0].off_start, 1);
 
@@ -280,6 +286,7 @@ mod tests {
         let mut loaded = Map::load(&tmp).unwrap();
         assert_eq!(loaded.paths[0].author, Author::Ai);
         assert_eq!(loaded.paths[0].anchors[0].author, Author::Ai);
+        assert_eq!(loaded.paths[0].anchors[0].note, "the middle");
 
         // symbol `b` moved down two lines: anchor follows it and is not stale
         let mut idx = idx;

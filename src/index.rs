@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
-use std::path::Path;
-use tree_sitter::{Language, Node, Parser};
+use std::path::{Path, PathBuf};
+use std::time::SystemTime;
+use tree_sitter::{Language, Node, Parser, Query, QueryCursor, StreamingIterator};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct SymRef {
@@ -19,36 +20,86 @@ pub struct Symbol {
     pub callers: Vec<SymRef>,
 }
 
+/// Syntax colour span within one line: byte start, byte end, class (see `HL_*`).
+pub type Span = (u32, u32, u8);
+
+pub const HL_PLAIN: u8 = 0;
+pub const HL_KEYWORD: u8 = 1;
+pub const HL_STRING: u8 = 2;
+pub const HL_COMMENT: u8 = 3;
+pub const HL_FUNCTION: u8 = 4;
+pub const HL_TYPE: u8 = 5;
+pub const HL_CONSTANT: u8 = 6;
+pub const HL_PROPERTY: u8 = 7;
+
 pub struct File {
     pub path: String, // relative to root, forward slashes
     pub lines: Vec<String>,
+    pub hl: Vec<Vec<Span>>, // per line, sorted, non-overlapping
     pub symbols: Vec<Symbol>,
+    pub mtime: Option<SystemTime>,
 }
 
 pub struct Index {
+    pub root: PathBuf,
     pub files: Vec<File>,
 }
 
 const MAX_FILE: usize = 4 << 20;
 const CONTAINERS: [&str; 4] = ["impl", "mod", "trait", "class"];
 
-fn language_for(ext: &str) -> Option<Language> {
+fn language_for(ext: &str) -> Option<(Language, &'static str)> {
     Some(match ext {
-        "rs" => tree_sitter_rust::LANGUAGE.into(),
-        "odin" => tree_sitter_odin::LANGUAGE.into(),
-        "c" | "h" => tree_sitter_c::LANGUAGE.into(),
-        "py" => tree_sitter_python::LANGUAGE.into(),
-        "js" | "mjs" | "cjs" => tree_sitter_javascript::LANGUAGE.into(),
-        "ts" => tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into(),
-        "tsx" => tree_sitter_typescript::LANGUAGE_TSX.into(),
+        "rs" => (tree_sitter_rust::LANGUAGE.into(), tree_sitter_rust::HIGHLIGHTS_QUERY),
+        "odin" => (tree_sitter_odin::LANGUAGE.into(), tree_sitter_odin::HIGHLIGHTS_QUERY),
+        "c" | "h" => (tree_sitter_c::LANGUAGE.into(), tree_sitter_c::HIGHLIGHT_QUERY),
+        "py" => (tree_sitter_python::LANGUAGE.into(), tree_sitter_python::HIGHLIGHTS_QUERY),
+        "js" | "mjs" | "cjs" => (tree_sitter_javascript::LANGUAGE.into(), tree_sitter_javascript::HIGHLIGHT_QUERY),
+        "ts" => (tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into(), tree_sitter_typescript::HIGHLIGHTS_QUERY),
+        "tsx" => (tree_sitter_typescript::LANGUAGE_TSX.into(), tree_sitter_typescript::HIGHLIGHTS_QUERY),
         _ => return None,
     })
+}
+
+/// Parser plus compiled highlight queries, one per extension, reused across files.
+pub struct Parsers {
+    parser: Parser,
+    queries: HashMap<&'static str, Option<(Language, Query)>>,
+}
+
+impl Parsers {
+    pub fn new() -> Parsers {
+        Parsers { parser: Parser::new(), queries: HashMap::new() }
+    }
+
+    /// A free function over the map (not `&mut self`) so the caller can still use `parser`.
+    fn query_for<'a>(queries: &'a mut HashMap<&'static str, Option<(Language, Query)>>, ext: &str) -> Option<&'a (Language, Query)> {
+        let key: &'static str = match ext {
+            "rs" => "rs",
+            "odin" => "odin",
+            "c" | "h" => "c",
+            "py" => "py",
+            "js" | "mjs" | "cjs" => "js",
+            "ts" => "ts",
+            "tsx" => "tsx",
+            _ => return None,
+        };
+        queries
+            .entry(key)
+            .or_insert_with(|| {
+                let (lang, q) = language_for(key)?;
+                // ponytail: a grammar whose bundled query fails to compile just gets no colours
+                let query = Query::new(&lang, q).ok()?;
+                Some((lang, query))
+            })
+            .as_ref()
+    }
 }
 
 // ponytail: reads the whole tree into memory up front on the main thread; move to a background
 // thread with a progress bar when startup on a big repo becomes annoying.
 pub fn build(root: &Path) -> Index {
-    let mut parser = Parser::new();
+    let mut parsers = Parsers::new();
     let mut files = Vec::new();
 
     // require_git(false): honour .gitignore even when the root is not a git repo (target/ etc.)
@@ -70,26 +121,93 @@ pub fn build(root: &Path) -> Index {
             .replace('\\', "/");
         // ponytail: tabs become 4 spaces once, for display and hashing alike
         let text = String::from_utf8_lossy(&raw).replace('\t', "    ");
-        files.push(parse_file(&mut parser, rel, &text, language_for(ext)));
+        let mtime = entry.metadata().ok().and_then(|m| m.modified().ok());
+        let mut f = parse_file(&mut parsers, rel, &text, ext);
+        f.mtime = mtime;
+        files.push(f);
     }
 
     files.sort_by(|a, b| a.path.cmp(&b.path));
-    let mut idx = Index { files };
+    let mut idx = Index { root: root.to_path_buf(), files };
     idx.link();
     idx
 }
 
-pub fn parse_file(parser: &mut Parser, path: String, text: &str, lang: Option<Language>) -> File {
+pub fn parse_file(parsers: &mut Parsers, path: String, text: &str, ext: &str) -> File {
     let lines: Vec<String> = text.lines().map(str::to_owned).collect();
     let mut symbols = Vec::new();
-    if let Some(lang) = lang {
-        if parser.set_language(&lang).is_ok() {
+    let mut hl = vec![Vec::new(); lines.len()];
+    let Parsers { parser, queries } = parsers;
+    if let Some((lang, query)) = Parsers::query_for(queries, ext) {
+        if parser.set_language(lang).is_ok() {
             if let Some(tree) = parser.parse(text, None) {
                 collect(tree.root_node(), text.as_bytes(), &lines, 0, &mut symbols);
+                hl = highlight(tree.root_node(), query, text, &lines);
             }
         }
     }
-    File { path, lines, symbols }
+    File { path, lines, hl, symbols, mtime: None }
+}
+
+fn class_of(capture: &str) -> u8 {
+    match capture.split('.').next().unwrap_or("") {
+        "keyword" | "include" | "repeat" | "conditional" | "storageclass" | "storage" | "exception" => HL_KEYWORD,
+        "string" | "character" | "escape" => HL_STRING,
+        "comment" => HL_COMMENT,
+        "function" | "method" | "constructor" | "macro" => HL_FUNCTION,
+        "type" | "namespace" | "module" => HL_TYPE,
+        "number" | "constant" | "boolean" | "float" => HL_CONSTANT,
+        "property" | "field" | "attribute" | "label" | "tag" => HL_PROPERTY,
+        "variable" if capture.contains("builtin") => HL_CONSTANT,
+        _ => HL_PLAIN,
+    }
+}
+
+/// Run the grammar's highlight query and bucket the captures per line. First capture wins where
+/// they overlap, which is what tree-sitter highlight queries are written for.
+fn highlight(root: Node, query: &Query, text: &str, lines: &[String]) -> Vec<Vec<Span>> {
+    let mut line_starts: Vec<usize> = vec![0];
+    for (i, b) in text.bytes().enumerate() {
+        if b == b'\n' {
+            line_starts.push(i + 1);
+        }
+    }
+    let names = query.capture_names();
+    let mut hl: Vec<Vec<Span>> = vec![Vec::new(); lines.len()];
+    let mut cursor = QueryCursor::new();
+    let mut caps = cursor.captures(query, root, text.as_bytes());
+    while let Some((m, ci)) = caps.next() {
+        let cap = m.captures[*ci];
+        let class = class_of(names[cap.index as usize]);
+        if class == HL_PLAIN {
+            continue;
+        }
+        let (s, e) = (cap.node.start_byte(), cap.node.end_byte());
+        let first = line_starts.partition_point(|&ls| ls <= s).saturating_sub(1);
+        for li in first..lines.len() {
+            let ls = line_starts[li];
+            if ls >= e {
+                break;
+            }
+            let le = ls + lines[li].len();
+            let (a, b) = (s.max(ls), e.min(le));
+            if a < b {
+                hl[li].push(((a - ls) as u32, (b - ls) as u32, class));
+            }
+        }
+    }
+    for spans in &mut hl {
+        spans.sort_by_key(|s| s.0);
+        let mut end = 0;
+        spans.retain(|s| {
+            let keep = s.0 >= end;
+            if keep {
+                end = s.1;
+            }
+            keep
+        });
+    }
+    hl
 }
 
 // Named children of `parent` become symbols. Name comes from the grammar's `name` field when
@@ -173,6 +291,17 @@ impl Index {
         &self.files[r.file].symbols[r.sym]
     }
 
+    /// Stable identity across re-indexes: (file path, symbol name).
+    pub fn key(&self, r: SymRef) -> (String, String) {
+        (self.files[r.file].path.clone(), self.sym(r).name.clone())
+    }
+
+    pub fn by_key(&self, key: &(String, String)) -> Option<SymRef> {
+        let file = self.find_file(&key.0)?;
+        let sym = self.files[file].symbols.iter().position(|s| s.name == key.1)?;
+        Some(SymRef { file, sym })
+    }
+
     /// All symbols with this name (same-file matches are not preferred here; see `link`).
     pub fn find_symbols(&self, name: &str) -> Vec<SymRef> {
         let mut out = Vec::new();
@@ -184,6 +313,12 @@ impl Index {
             }
         }
         out
+    }
+
+    /// True if any indexed file's modification time differs from when it was read.
+    /// ponytail: stats every file; new or deleted files are only noticed on a manual reindex.
+    pub fn changed(&self) -> bool {
+        self.files.iter().any(|f| std::fs::metadata(self.root.join(&f.path)).ok().and_then(|m| m.modified().ok()) != f.mtime)
     }
 
     // ponytail: name-based resolution, no types. Same-file match wins, else the first definition
@@ -256,9 +391,9 @@ mod tests {
     #[test]
     fn links_calls_by_name() {
         let src = "fn a() { b(); c::d(); }\nfn b() {}\nstruct C;\nimpl C { fn d() { b() } }\n";
-        let mut p = Parser::new();
-        let f = parse_file(&mut p, "x.rs".into(), src, language_for("rs"));
-        let mut idx = Index { files: vec![f] };
+        let mut p = Parsers::new();
+        let f = parse_file(&mut p, "x.rs".into(), src, "rs");
+        let mut idx = Index { root: ".".into(), files: vec![f] };
         idx.link();
 
         let names: Vec<&str> = idx.files[0].symbols.iter().map(|s| s.name.as_str()).collect();
@@ -270,5 +405,17 @@ mod tests {
         assert_eq!(idx.sym(idx.find_symbols("b")[0]).callers.len(), 2);
         assert_eq!(idx.roots(), [a]);
         assert_eq!(idx.call_tree(a, 5).len(), 3);
+    }
+
+    #[test]
+    fn highlights_keywords_and_strings() {
+        let src = "fn a() { let s = \"hi\"; } // c\n";
+        let mut p = Parsers::new();
+        let f = parse_file(&mut p, "x.rs".into(), src, "rs");
+        let classes: Vec<u8> = f.hl[0].iter().map(|s| s.2).collect();
+        assert!(classes.contains(&HL_KEYWORD), "{classes:?}");
+        assert!(classes.contains(&HL_STRING), "{classes:?}");
+        assert!(classes.contains(&HL_COMMENT), "{classes:?}");
+        assert!(f.hl[0].windows(2).all(|w| w[0].1 <= w[1].0), "overlap: {:?}", f.hl[0]);
     }
 }

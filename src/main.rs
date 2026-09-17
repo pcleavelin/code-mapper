@@ -2,17 +2,61 @@ mod cli;
 mod index;
 mod map;
 
-use eframe::egui::{self, Align2, Color32, Key, Modifiers, Sense, Stroke, TextStyle, pos2, vec2};
-use index::{Index, SymRef};
+use eframe::egui::{self, Align2, Color32, FontId, Key, Modifiers, Sense, Stroke, TextStyle, pos2, text::LayoutJob, vec2};
+use index::{Index, Span, SymRef};
 use map::{Author, Map};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::{Path, PathBuf};
+use std::time::{Duration, Instant, SystemTime};
 
 #[derive(PartialEq, Clone, Copy)]
 enum Tab {
     Graph,
     Listing,
     Results,
+}
+
+// ---- syntax colours ---------------------------------------------------------------
+
+fn hl_color(class: u8, base: Color32) -> Color32 {
+    match class {
+        index::HL_KEYWORD => Color32::from_rgb(197, 134, 192),
+        index::HL_STRING => Color32::from_rgb(206, 145, 120),
+        index::HL_COMMENT => Color32::from_rgb(106, 153, 85),
+        index::HL_FUNCTION => Color32::from_rgb(220, 220, 170),
+        index::HL_TYPE => Color32::from_rgb(78, 201, 176),
+        index::HL_CONSTANT => Color32::from_rgb(181, 206, 168),
+        index::HL_PROPERTY => Color32::from_rgb(156, 220, 254),
+        _ => base,
+    }
+}
+
+/// Append one source line to `job` with its syntax colours, cut to `max_chars` with an ellipsis.
+fn append_line(job: &mut LayoutJob, line: &str, spans: &[Span], font: &FontId, base: Color32, max_chars: usize) {
+    let fmt = |c: Color32| egui::TextFormat { font_id: font.clone(), color: c, ..Default::default() };
+    let (text, cut) = match line.char_indices().nth(max_chars) {
+        Some((b, _)) if max_chars > 0 => (&line[..line.char_indices().nth(max_chars - 1).map(|(b, _)| b).unwrap_or(b)], true),
+        _ => (line, false),
+    };
+    let mut at = 0usize;
+    for &(s, e, class) in spans {
+        let (s, e) = (s as usize, e as usize);
+        if s >= text.len() {
+            break;
+        }
+        let e = e.min(text.len());
+        if s > at {
+            job.append(&text[at..s], 0.0, fmt(base));
+        }
+        job.append(&text[s..e], 0.0, fmt(hl_color(class, base)));
+        at = e;
+    }
+    if at < text.len() {
+        job.append(&text[at..], 0.0, fmt(base));
+    }
+    if cut {
+        job.append("…", 0.0, fmt(base));
+    }
 }
 
 // ---- graph: the main view ---------------------------------------------------------
@@ -23,7 +67,9 @@ const HEADER_MIN_W: f32 = 380.0;
 const NODE_MAX_W: f32 = 760.0;
 const GAP_X: f32 = 110.0;
 const GAP_Y: f32 = 28.0;
+const GAP_ROW: f32 = 140.0;
 const HEADER_H: f32 = 34.0;
+const STEPS_PER_ROW: usize = 5;
 
 /// Font metrics the layout needs, refreshed every frame.
 #[derive(Clone, Copy)]
@@ -38,20 +84,23 @@ struct Metrics {
 /// list of expansions ("callers of X", "callees of X"). Toggling an expansion off removes it from
 /// the list and rebuilds, so nodes that were only reachable through it disappear too.
 ///
-/// Layout is layered. A node's column is its hop distance from the focus (or its step index in
-/// a chain). Columns are placed from the focus outward. Within a column each node wants to sit
-/// level with the mean of its neighbours in the inner column; chain steps are pinned to one row
-/// so a path reads as a straight line left to right. Nodes are then stacked in that order with
-/// measured sizes and a fixed gap, and the column is shifted so pinned nodes land exactly.
-/// Dragging a node switches to manual until the next structural change.
+/// Layout is layered and, for long chains, wrapped into rows: every STEPS_PER_ROW steps start a
+/// new row (a "group"); a node expanded from a step belongs to that step's row. Within a row a
+/// node's column is its hop distance from the row's first pinned node. Columns are placed from
+/// that column outward. Each node wants to sit level with the mean of its neighbours in the inner
+/// column; chain steps and the focus are pinned to the row's spine so a path reads as a straight
+/// line. Nodes are stacked in that order with measured sizes and a fixed gap. Rows stack
+/// vertically. Dragging a node switches to manual until the next structural change.
 #[derive(Default)]
 struct Graph {
     nodes: Vec<SymRef>,
     col: HashMap<SymRef, i32>,
+    group: HashMap<SymRef, usize>,
     pos: HashMap<SymRef, egui::Pos2>,
     size: HashMap<SymRef, egui::Vec2>, // measured last frame
     focus: Option<SymRef>,
-    chain: Vec<SymRef>, // when showing a path: step order
+    chain: Vec<SymRef>,        // when showing a path: step order
+    chain_anchor: Vec<usize>,  // anchor index behind each chain node
     chain_path: Option<usize>,
     expansions: Vec<(SymRef, bool)>, // (node, callees?) in the order the user opened them
     expanded: HashSet<SymRef>,       // nodes showing all their lines
@@ -94,11 +143,12 @@ impl Graph {
         egui::Rect::from_min_size(self.pos.get(&r).copied().unwrap_or(pos2(0.0, 0.0)), self.node_size(idx, r, m))
     }
 
-    fn add(&mut self, r: SymRef, col: i32) {
+    fn add(&mut self, r: SymRef, col: i32, group: usize) {
         if self.col.contains_key(&r) {
             return;
         }
         self.col.insert(r, col);
+        self.group.insert(r, group);
         self.nodes.push(r);
     }
 
@@ -106,37 +156,49 @@ impl Graph {
         self.expansions.contains(&(r, callees))
     }
 
+    /// Step number (1-based) and anchor index of a chain node.
+    fn step_of(&self, r: SymRef) -> Option<(usize, usize)> {
+        self.chain.iter().position(|&c| c == r).map(|k| (k + 1, self.chain_anchor[k]))
+    }
+
     /// Derive the visible node set from base + expansions.
     fn rebuild(&mut self, idx: &Index, map: &Map) {
         self.nodes.clear();
         self.col.clear();
+        self.group.clear();
         self.chain.clear();
+        self.chain_anchor.clear();
         match self.chain_path {
-            Some(pi) => {
-                for a in &map.paths[pi].anchors {
+            Some(pi) if pi < map.paths.len() => {
+                for (ai, a) in map.paths[pi].anchors.iter().enumerate() {
                     let Some(fi) = idx.find_file(&a.file) else { continue };
                     let Some(si) = idx.files[fi].symbols.iter().position(|s| s.name == a.symbol) else { continue };
                     let r = SymRef { file: fi, sym: si };
-                    let col = self.chain.len() as i32;
-                    self.add(r, col);
+                    if self.col.contains_key(&r) {
+                        continue; // a symbol twice in one path: one node
+                    }
+                    let k = self.chain.len();
+                    self.add(r, (k % STEPS_PER_ROW) as i32, k / STEPS_PER_ROW);
                     self.chain.push(r);
+                    self.chain_anchor.push(ai);
                 }
                 if self.focus.is_none_or(|f| !self.col.contains_key(&f)) {
                     self.focus = self.chain.first().copied();
                 }
             }
-            None => {
+            _ => {
+                self.chain_path = None;
                 if let Some(f) = self.focus {
-                    self.add(f, 0);
+                    self.add(f, 0, 0);
                 }
             }
         }
         for (r, callees) in self.expansions.clone() {
-            let Some(&col) = self.col.get(&r) else { continue };
+            let (Some(&col), Some(&group)) = (self.col.get(&r), self.group.get(&r)) else { continue };
             let s = idx.sym(r);
             let (list, dc) = if callees { (&s.callees, 1) } else { (&s.callers, -1) };
             for &n in list {
-                self.add(n, col + dc);
+                self.add(n, col + dc, group);
             }
         }
         self.manual = false;
@@ -166,41 +228,59 @@ impl Graph {
         self.rebuild(idx, map);
     }
 
-    /// Recompute every position.
+    /// Recompute every position: each row laid out on its own, rows stacked.
     fn layout(&mut self, idx: &Index, m: Metrics) {
         let Some(focus) = self.focus else { return };
         if self.nodes.is_empty() {
             return;
         }
+        let ngroups = self.group.values().max().map_or(0, |g| g + 1);
+        let mut row_top = 0.0;
+        for g in 0..ngroups {
+            let members: Vec<SymRef> = self.nodes.iter().copied().filter(|r| self.group[r] == g).collect();
+            if members.is_empty() {
+                continue;
+            }
+            let anchor_col = if self.chain.is_empty() { self.col[&focus] } else { 0 };
+            let (top, bottom) = self.layout_row(idx, m, &members, anchor_col, focus);
+            let dy = row_top - top;
+            for r in &members {
+                self.pos.get_mut(r).unwrap().y += dy;
+            }
+            row_top += bottom - top + GAP_ROW;
+        }
+    }
+
+    /// Lay out one row around column `anchor_col`; returns the row's vertical extent.
+    fn layout_row(&mut self, idx: &Index, m: Metrics, members: &[SymRef], anchor_col: i32, focus: SymRef) -> (f32, f32) {
         let mut cols: BTreeMap<i32, Vec<SymRef>> = BTreeMap::new();
-        for &r in &self.nodes {
+        for &r in members {
             cols.entry(self.col[&r]).or_default().push(r);
         }
-        let focus_col = self.col[&focus];
         let (first, last) = (*cols.keys().next().unwrap(), *cols.keys().last().unwrap());
+        let anchor_col = anchor_col.clamp(first, last);
 
         // x: columns as wide as their widest node
         let col_w: BTreeMap<i32, f32> = cols.iter().map(|(&c, rs)| (c, rs.iter().map(|&r| self.node_size(idx, r, m).x).fold(0.0, f32::max))).collect();
         let mut col_x: BTreeMap<i32, f32> = BTreeMap::new();
-        col_x.insert(focus_col, 0.0);
-        for c in (focus_col + 1)..=last {
+        col_x.insert(anchor_col, 0.0);
+        for c in (anchor_col + 1)..=last {
             col_x.insert(c, col_x[&(c - 1)] + col_w.get(&(c - 1)).unwrap_or(&0.0) + GAP_X);
         }
-        for c in (first..focus_col).rev() {
+        for c in (first..anchor_col).rev() {
             col_x.insert(c, col_x[&(c + 1)] - col_w.get(&c).unwrap_or(&0.0) - GAP_X);
         }
 
-        // y: from the focus column outward
-        let pinned: HashSet<SymRef> = self.chain.iter().copied().chain(std::iter::once(focus)).collect();
-        let spine_cy = self.node_size(idx, focus, m).y / 2.0; // every pinned node centres here
-        let mut order: Vec<i32> = vec![focus_col];
-        order.extend((focus_col + 1)..=last);
-        order.extend((first..focus_col).rev());
+        // y: from the anchor column outward
+        let pinned: HashSet<SymRef> = self.chain.iter().copied().chain(std::iter::once(focus)).filter(|r| members.contains(r)).collect();
+        let spine_cy = pinned.iter().map(|&r| self.node_size(idx, r, m).y).fold(0.0, f32::max) / 2.0;
+        let mut order: Vec<i32> = vec![anchor_col];
+        order.extend((anchor_col + 1)..=last);
+        order.extend((first..anchor_col).rev());
 
         for c in order {
             let rs = cols[&c].clone();
-            let inner = if c > focus_col { c - 1 } else { c + 1 };
-            // desired centre: pinned -> spine; else mean centre of already-placed inner neighbours
+            let inner = if c > anchor_col { c - 1 } else { c + 1 };
             let desired: Vec<(SymRef, f32)> = rs
                 .iter()
                 .map(|&r| {
@@ -208,16 +288,19 @@ impl Graph {
                         return (r, spine_cy);
                     }
                     let s = idx.sym(r);
-                    let neigh = if c > focus_col { &s.callers } else { &s.callees };
-                    let ys: Vec<f32> = neigh.iter().filter(|n| self.col.get(n) == Some(&inner) && self.pos.contains_key(n)).map(|n| self.node_rect(idx, *n, m).center().y).collect();
+                    let neigh = if c > anchor_col { &s.callers } else { &s.callees };
+                    let ys: Vec<f32> = neigh
+                        .iter()
+                        .filter(|n| members.contains(n) && self.col.get(n) == Some(&inner) && self.pos.contains_key(n))
+                        .map(|n| self.node_rect(idx, *n, m).center().y)
+                        .collect();
                     (r, if ys.is_empty() { f32::INFINITY } else { ys.iter().sum::<f32>() / ys.len() as f32 })
                 })
                 .collect();
             let mut sorted = desired.clone();
             sorted.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap());
 
-            // stack top-down: each node at its desired top unless the previous one pushes it
-            let mut placed: Vec<(SymRef, f32)> = Vec::new(); // (node, top)
+            let mut placed: Vec<(SymRef, f32)> = Vec::new();
             let mut prev_bottom = f32::NEG_INFINITY;
             for (r, cy) in &sorted {
                 let h = self.node_size(idx, *r, m).y;
@@ -226,7 +309,6 @@ impl Graph {
                 placed.push((*r, top));
                 prev_bottom = top + h;
             }
-            // shift so a pinned node lands exactly on the spine, else so the column is centred on its wishes
             let shift = if let Some((r, top)) = placed.iter().find(|(r, _)| pinned.contains(r)) {
                 spine_cy - (top + self.node_size(idx, *r, m).y / 2.0)
             } else {
@@ -237,6 +319,10 @@ impl Graph {
                 self.pos.insert(r, pos2(col_x[&c], top + shift));
             }
         }
+
+        let top = members.iter().map(|&r| self.pos[&r].y).fold(f32::INFINITY, f32::min);
+        let bottom = members.iter().map(|&r| self.node_rect(idx, r, m).bottom()).fold(f32::NEG_INFINITY, f32::max);
+        (top, bottom)
     }
 
     fn fit(&mut self) {
@@ -259,7 +345,10 @@ struct App {
     idx: Index,
     map: Map,
     map_path: PathBuf,
+    map_mtime: Option<SystemTime>,
     dirty: bool,
+    last_poll: Instant,
+    warned_disk: bool,
 
     sel_path: Option<usize>,
     sel_anchor: Option<usize>,
@@ -281,6 +370,10 @@ struct App {
     status: String,
 }
 
+fn mtime(p: &Path) -> Option<SystemTime> {
+    std::fs::metadata(p).ok().and_then(|m| m.modified().ok())
+}
+
 // ---- actions ----------------------------------------------------------------------
 
 impl App {
@@ -293,8 +386,11 @@ impl App {
         let mut app = App {
             idx,
             map,
+            map_mtime: mtime(&map_path),
             map_path,
             dirty: false,
+            last_poll: Instant::now(),
+            warned_disk: false,
             sel_path: None,
             sel_anchor: None,
             tab: Tab::Graph,
@@ -416,6 +512,9 @@ impl App {
         self.map.add_anchor(&self.idx, pi, fi, ls, le, Author::Human);
         self.dirty = true;
         self.status = format!("step {} added to '{}'", self.map.paths[pi].anchors.len(), self.map.paths[pi].name);
+        if self.graph.chain_path == Some(pi) {
+            self.show_path(pi);
+        }
     }
 
     // ponytail: no undo; deletes the selected step, else the selected path.
@@ -435,12 +534,17 @@ impl App {
             }
         }
         self.dirty = true;
+        if self.graph.chain_path == Some(pi) {
+            self.show_path(pi);
+        }
     }
 
     fn save(&mut self) {
         match self.map.save(&self.map_path) {
             Ok(()) => {
                 self.dirty = false;
+                self.warned_disk = false;
+                self.map_mtime = mtime(&self.map_path);
                 self.status = "saved".into();
             }
             Err(e) => self.status = format!("save FAILED: {e}"),
@@ -455,10 +559,66 @@ impl App {
             Ok(true) => {
                 self.dirty = true;
                 self.output.push_str("(map changed, ctrl+s to save)\n");
+                if let Some(pi) = self.graph.chain_path {
+                    self.show_path(pi);
+                }
             }
             Ok(false) => {}
             Err(e) => self.output.push_str(&format!("error: {e}\n")),
         }
+    }
+
+    /// Once a second: pick up a map written by the CLI, and re-index when a source file changed.
+    fn poll_disk(&mut self) {
+        if self.last_poll.elapsed() < Duration::from_secs(1) {
+            return;
+        }
+        self.last_poll = Instant::now();
+
+        let mt = mtime(&self.map_path);
+        if mt != self.map_mtime {
+            if self.dirty {
+                if !self.warned_disk {
+                    self.status = "map changed on disk while you have unsaved changes: save overwrites it, or use the command line to reload".into();
+                    self.warned_disk = true;
+                }
+            } else {
+                self.map = Map::load(&self.map_path).unwrap_or_default();
+                self.map.resolve_all(&self.idx);
+                self.map_mtime = mt;
+                self.sel_anchor = None;
+                if self.sel_path.is_some_and(|pi| pi >= self.map.paths.len()) {
+                    self.sel_path = None;
+                }
+                self.graph.rebuild(&self.idx, &self.map);
+                self.relayout_and_look();
+                self.status = "map reloaded (changed on disk)".into();
+            }
+        }
+
+        if self.idx.changed() {
+            self.reindex();
+        }
+    }
+
+    /// Rebuild the index and carry the graph over by (file, symbol) identity.
+    fn reindex(&mut self) {
+        let focus = self.graph.focus.map(|r| self.idx.key(r));
+        let expansions: Vec<((String, String), bool)> = self.graph.expansions.iter().map(|(r, c)| (self.idx.key(*r), *c)).collect();
+        let expanded: Vec<(String, String)> = self.graph.expanded.iter().map(|r| self.idx.key(*r)).collect();
+        let cur_file = self.cur_file.map(|fi| self.idx.files[fi].path.clone());
+
+        self.idx = index::build(&self.idx.root);
+        self.map.resolve_all(&self.idx);
+        self.graph.focus = focus.and_then(|k| self.idx.by_key(&k));
+        self.graph.expansions = expansions.into_iter().filter_map(|(k, c)| self.idx.by_key(&k).map(|r| (r, c))).collect();
+        self.graph.expanded = expanded.iter().filter_map(|k| self.idx.by_key(k)).collect();
+        self.graph.size.clear();
+        self.graph.rebuild(&self.idx, &self.map);
+        self.relayout_and_look();
+        self.cur_file = cur_file.and_then(|p| self.idx.find_file(&p));
+        self.results.clear();
+        self.status = format!("re-indexed: {} files, {} symbols (source changed)", self.idx.files.len(), self.idx.files.iter().map(|f| f.symbols.len()).sum::<usize>());
     }
 }
 
@@ -545,6 +705,8 @@ impl App {
                         let name = if a.symbol.is_empty() { "(lines)" } else { a.symbol.as_str() };
                         let text = format!("{}. {}{}  {}:{}-{}{}", ai + 1, if a.stale { "! " } else { "" }, name, a.file, a.line_start + 1, a.line_end + 1, a.author.tag());
                         let color = if a.stale { Color32::LIGHT_RED } else { ui.visuals().text_color() };
+                        let has_note = !a.note.is_empty();
+                        let step_selected = self.sel_anchor == Some(ai);
                         ui.horizontal(|ui| {
                             if ui.add_enabled(ai > 0, egui::Button::new("up").small()).clicked() {
                                 action = Some(Action::MoveAnchor(pi, ai, -1));
@@ -552,12 +714,19 @@ impl App {
                             if ui.add_enabled(ai + 1 < n, egui::Button::new("down").small()).clicked() {
                                 action = Some(Action::MoveAnchor(pi, ai, 1));
                             }
-                            let resp = ui.selectable_label(self.sel_anchor == Some(ai), egui::RichText::new(text).color(color));
+                            let resp = ui.selectable_label(step_selected, egui::RichText::new(if has_note { format!("{text} *") } else { text }).color(color));
                             if resp.clicked() {
                                 action = Some(Action::OpenAnchor(pi, ai));
                             }
-                            resp.on_hover_text(if a.stale { "stale: the code changed since this step was pinned. Delete and re-add it." } else { "click to view; up/down reorder" });
+                            resp.on_hover_text(if a.stale { "stale: the code changed since this step was pinned. Delete and re-add it." } else { "click to view; up/down reorder; * = has a note" });
                         });
+                        if step_selected {
+                            ui.indent(("note", pi, ai), |ui| {
+                                if ui.add(egui::TextEdit::multiline(&mut self.map.paths[pi].anchors[ai].note).desired_rows(1).hint_text("note for this step").desired_width(f32::INFINITY)).changed() {
+                                    self.dirty = true;
+                                }
+                            });
+                        }
                     }
                 });
             }
@@ -626,7 +795,7 @@ impl App {
             }
             if let Some(pi) = self.graph.chain_path {
                 ui.separator();
-                ui.label(format!("showing path '{}' as a chain", self.map.paths[pi].name));
+                ui.label(format!("showing path '{}' as a chain, {} steps per row", self.map.paths[pi].name, STEPS_PER_ROW));
             }
         });
 
@@ -654,17 +823,18 @@ impl App {
         egui::Scene::new().zoom_range(0.1..=1.5).show(ui, &mut scene_rect, |ui| {
             let painter = ui.painter().clone();
             let edge = Stroke::new(1.5, ui.visuals().weak_text_color());
+            let back = Stroke::new(1.5, Color32::from_rgb(220, 160, 80));
             let chain_stroke = Stroke::new(3.0, Color32::from_rgb(90, 200, 120));
             let rect_of = |g: &Graph, r: SymRef| g.node_rect(&self.idx, r, m);
             let curve = |p0: egui::Pos2, p1: egui::Pos2, stroke: Stroke| {
                 let dx = ((p1.x - p0.x).abs() * 0.5).max(GAP_X * 0.8);
                 egui::epaint::CubicBezierShape::from_points_stroke([p0, p0 + vec2(dx, 0.0), p1 - vec2(dx, 0.0), p1], false, Color32::TRANSPARENT, stroke)
             };
+            let hy = vec2(0.0, HEADER_H / 2.0);
 
             // call edges: caller's right header edge -> callee's left header edge. A callee that
             // sits to the left of its caller (a step calling an earlier step) gets a short leftward
             // curve in another colour instead of a loop across the canvas.
-            let back = Stroke::new(1.5, Color32::from_rgb(220, 160, 80));
             for &a in &self.graph.nodes {
                 let ra = rect_of(&self.graph, a);
                 for &b in &self.idx.sym(a).callees {
@@ -672,7 +842,6 @@ impl App {
                         continue;
                     }
                     let rb = rect_of(&self.graph, b);
-                    let hy = vec2(0.0, HEADER_H / 2.0);
                     if rb.left() >= ra.right() {
                         let (p0, p1) = (ra.right_top() + hy, rb.left_top() + hy);
                         painter.add(curve(p0, p1, edge));
@@ -685,13 +854,24 @@ impl App {
                     }
                 }
             }
-            // chain edges: step i -> step i+1, numbered
+            // chain edges: step i -> step i+1, numbered; a row wrap goes out right, down, and in left
             for (i, w) in self.graph.chain.windows(2).enumerate() {
-                let (p0, p1) = (rect_of(&self.graph, w[0]).right_top() + vec2(0.0, HEADER_H / 2.0), rect_of(&self.graph, w[1]).left_top() + vec2(0.0, HEADER_H / 2.0));
-                painter.add(curve(p0, p1, chain_stroke));
-                painter.text((p0 + p1.to_vec2()) / 2.0 - vec2(0.0, 12.0), Align2::CENTER_CENTER, format!("{}", i + 2), font.clone(), chain_stroke.color);
+                let (ra, rb) = (rect_of(&self.graph, w[0]), rect_of(&self.graph, w[1]));
+                let (p0, p1) = (ra.right_top() + hy, rb.left_top() + hy);
+                if self.graph.group[&w[0]] == self.graph.group[&w[1]] {
+                    painter.add(curve(p0, p1, chain_stroke));
+                    painter.text((p0 + p1.to_vec2()) / 2.0 - vec2(0.0, 12.0), Align2::CENTER_CENTER, format!("{}", i + 2), font.clone(), chain_stroke.color);
+                } else {
+                    let mid_y = (ra.bottom() + rb.top()) / 2.0;
+                    let pts = vec![p0, pos2(p0.x + GAP_X * 0.5, p0.y), pos2(p0.x + GAP_X * 0.5, mid_y), pos2(p1.x - GAP_X * 0.5, mid_y), pos2(p1.x - GAP_X * 0.5, p1.y), p1];
+                    painter.add(egui::Shape::line(pts, chain_stroke));
+                    painter.text(pos2(p1.x - GAP_X * 0.5, mid_y) - vec2(0.0, 12.0), Align2::CENTER_CENTER, format!("{}", i + 2), font.clone(), chain_stroke.color);
+                }
+                painter.circle_filled(p1, 4.0, chain_stroke.color);
             }
 
+            let base_color = ui.visuals().text_color();
+            let dim = ui.visuals().weak_text_color();
             for r in self.graph.nodes.clone() {
                 let s = self.idx.sym(r);
                 let rect = rect_of(&self.graph, r);
@@ -704,6 +884,7 @@ impl App {
                 } else {
                     Stroke::new(1.0, ui.visuals().widgets.noninteractive.bg_stroke.color)
                 };
+                let step = self.graph.step_of(r);
 
                 let frame = ui.scope_builder(egui::UiBuilder::new().max_rect(egui::Rect::from_min_size(rect.min, vec2(rect.width(), f32::INFINITY))), |ui| {
                     ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Truncate);
@@ -711,7 +892,11 @@ impl App {
                         ui.set_width(rect.width() - 12.0);
                         // title = drag handle; buttons registered after it so they stay clickable
                         ui.horizontal(|ui| {
-                            let title = ui.strong(&s.name).union(ui.weak(format!("{}:{}", self.idx.files[r.file].path, s.start + 1)));
+                            let mut title = ui.strong(&s.name);
+                            if let Some((k, _)) = step {
+                                title = title.union(ui.colored_label(chain_stroke.color, format!("step {k}")));
+                            }
+                            title = title.union(ui.weak(format!("{}:{}", self.idx.files[r.file].path, s.start + 1)));
                             let drag = ui.interact(title.rect, ui.id().with(("drag", r)), Sense::click_and_drag());
                             if drag.dragged() {
                                 *self.graph.pos.get_mut(&r).unwrap() += drag.drag_delta();
@@ -741,24 +926,29 @@ impl App {
                                 }
                             });
                         });
+                        // step note: the human's or the AI's annotation for this step of the path
+                        if let (Some((_, ai)), Some(pi)) = (step, self.graph.chain_path) {
+                            let note = &self.map.paths[pi].anchors[ai].note;
+                            if !note.is_empty() {
+                                ui.label(egui::RichText::new(note).italics().color(chain_stroke.color));
+                            }
+                        }
                         ui.separator();
                         let f = &self.idx.files[r.file];
                         let (shown, total) = self.graph.lines_shown(&self.idx, r);
                         let max_chars = self.graph.max_chars(&self.idx, r, m);
-                        let mut code = String::new();
+                        let mut job = LayoutJob::default();
+                        let numfmt = egui::TextFormat { font_id: font.clone(), color: dim, ..Default::default() };
                         for li in s.start..s.start + shown {
-                            let line = &f.lines[li];
-                            if line.chars().count() > max_chars {
-                                code.push_str(&format!("{:4} {}…\n", li + 1, line.chars().take(max_chars.saturating_sub(1)).collect::<String>()));
-                            } else {
-                                code.push_str(&format!("{:4} {}\n", li + 1, line));
-                            }
+                            job.append(&format!("{:4} ", li + 1), 0.0, numfmt.clone());
+                            append_line(&mut job, &f.lines[li], &f.hl[li], &font, base_color, max_chars);
+                            job.append("\n", 0.0, numfmt.clone());
                         }
                         if shown < total {
-                            code.push_str(&format!("     … {} more lines", total - shown));
+                            job.append(&format!("     … {} more lines", total - shown), 0.0, numfmt.clone());
                         }
                         ui.set_clip_rect(egui::Rect::from_min_size(rect.min, vec2(rect.width(), f32::INFINITY)).intersect(ui.clip_rect()));
-                        ui.add(egui::Label::new(egui::RichText::new(code.trim_end_matches('\n')).monospace()).wrap_mode(egui::TextWrapMode::Extend));
+                        ui.add(egui::Label::new(job).wrap_mode(egui::TextWrapMode::Extend));
                     })
                 });
                 self.graph.size.insert(r, vec2(rect.width(), frame.inner.response.rect.height()));
@@ -809,7 +999,10 @@ impl App {
                 }
                 let p = ui.painter();
                 p.text(rect.left_top() + vec2(8.0, 0.0), Align2::LEFT_TOP, format!("{:5}", li + 1), font.clone(), dim);
-                p.text(rect.left_top() + vec2(64.0, 0.0), Align2::LEFT_TOP, &f.lines[li], font.clone(), text_color);
+                let mut job = LayoutJob::default();
+                append_line(&mut job, &f.lines[li], &f.hl[li], &font, text_color, usize::MAX);
+                let galley = ui.ctx().fonts_mut(|fonts| fonts.layout_job(job));
+                p.galley(rect.left_top() + vec2(64.0, 0.0), galley, text_color);
                 if resp.clicked() {
                     clicked = Some(li);
                 }
@@ -953,6 +1146,8 @@ impl eframe::App for App {
         }
         let mono = TextStyle::Monospace.resolve(&ctx.style()); // resolve outside the fonts lock: ctx.style() inside it deadlocks
         self.metrics = ctx.fonts_mut(|f| Metrics { line_h: f.row_height(&mono), char_w: f.glyph_width(&mono, 'M') });
+        ctx.request_repaint_after(Duration::from_secs(1)); // keep polling while idle
+        self.poll_disk();
 
         egui::TopBottomPanel::top("bar").show(ctx, |ui| {
             ui.horizontal(|ui| {

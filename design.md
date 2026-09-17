@@ -121,7 +121,7 @@ layer. Derived data stays derived.
 `.codemap` at the root. Little-endian. Strings are `u32 len` + UTF-8 bytes.
 
 ```
-"CMAP"  u32 version (=2)
+"CMAP"  u32 version (=3)
 u32 npaths
   str name
   str note
@@ -133,16 +133,17 @@ u32 npaths
     i32 off_end     inclusive
     u64 hash        FNV-1a of the anchored lines joined with \n
     u8  author      0 = human, 1 = AI
+    str note        v3+: the step's own annotation
 ```
 
 Author is recorded on both the path and each anchor, so the human can review "paths
 the AI created" and "anchors the AI added to my paths" separately. The GUI tags AI
-items with `(ai)`; the CLI prints the same tag.
+items with `(ai)`; the CLI prints the same tag. A step note is the comment on one
+step; the path note is the comment on the whole path.
 
-A version bump is required for any layout change; readers reject unknown versions
-rather than guessing. Version 1 files (no author bytes) are not read; none exist
-outside this repo's test run. Hand-rolled reader and writer, about 80 lines, no
-serialization dependency.
+A version bump is required for any layout change. Readers accept version 2 (no step
+notes) and 3, and reject anything else rather than guessing. Hand-rolled reader and
+writer, about 90 lines, no serialization dependency.
 
 ## 7. Anchor semantics
 
@@ -164,11 +165,11 @@ The graph is the main view. Everything else navigates it or annotates it.
 
 | IDA Pro | codemap |
 |---|---|
-| Graph view | **Graph**: a pan-and-zoom canvas (egui `Scene`). Every node is a symbol showing its code: a 12-line preview, expandable to the whole body. Callers sit one column left, callees one column right; each node has buttons to expand its own callers or callees, so the visible graph grows hop by hop along whatever the reader is following. Nodes drag by their title. A path is shown as a chain: step 1 leftmost, green numbered edges between consecutive steps, grey call edges between any two visible nodes. |
+| Graph view | **Graph**: a pan-and-zoom canvas (egui `Scene`). Every node is a symbol showing its syntax-coloured code: a 12-line preview, expandable to the whole body. Callers sit one column left, callees one column right; each node has buttons to open or close its own callers or callees, so the visible graph grows hop by hop along whatever the reader is following. Nodes drag by their title. A path is shown as a chain: step 1 leftmost, green numbered edges between consecutive steps, five steps per row with the chain wrapping down to the next row, each step's note printed under its header, grey call edges between any two visible nodes. |
 | Functions window | **Symbols** window: a filterable table of every symbol with kind, file and line. Click to focus the graph on it. |
 | IDA View (listing) | **Listing** tab: the plain code view with line numbers and anchor bars, for reading beyond a node or selecting arbitrary lines. Reached from a node's "listing" button. |
 | Xrefs to / from | **Xrefs** window for the focused symbol: callers and callees as lists. Click to focus. |
-| Names / comments | **Paths** window: each path with its note (the comment), author tag, and its steps as a numbered ordered list with reorder buttons. "graph" shows the path as a chain. |
+| Names / comments | **Paths** window: each path with its note (the comment), author tag, and its steps as a numbered ordered list with reorder buttons. Selecting a step opens its own note for editing; steps with a note are marked `*`. "graph" shows the path as a chain. |
 | Output window + command line | **Output** panel at the bottom running the same commands as the CLI. |
 | Segments / navigation band | Not carried over. |
 
@@ -206,8 +207,18 @@ the selected path; ▲▼ in the Paths window reorder steps; "promote" on an ent
 creates a path and shows it as a chain. In the listing, click a line, shift-click to
 extend, "add selection to path". Ctrl+S saves; unsaved changes save on exit.
 
-Deliberately absent for now: syntax highlighting, automatic edge routing, undo, a
-folder picker (root comes from the command line).
+Syntax colours come from each grammar's bundled tree-sitter highlight query, run once
+per file at index time and stored as per-line spans; capture names map onto seven
+colour classes (keyword, string, comment, function, type, constant, property).
+
+The GUI polls once a second. If `.codemap` changed on disk and there are no unsaved
+edits, it reloads the map and rebuilds the graph, so a note written by the CLI shows
+up live. With unsaved edits it warns once and leaves the choice to the user. If any
+indexed source file's modification time changed, it re-indexes and carries the graph
+over by (file, symbol) identity; new or deleted files are only noticed on restart.
+
+Deliberately absent for now: automatic edge routing, undo, a folder picker (root comes
+from the command line).
 
 ## 9. AI interface
 
@@ -221,8 +232,8 @@ show <file> [start] [end]             grep <regex>
 callers <sym>   callees <sym>         tree <sym> [depth]   roots [n]
 paths           path <name>           promote <sym> [depth]
 path-new <name> [note]                path-note <name> <note>
+step-note <name> <index> <note>       path-rm <name> [anchor-index]
 path-add <name> <file> <start> <end>  path-add <name> <sym>
-path-rm <name> [anchor-index]
 ```
 
 Intended agent workflow, which `CLAUDE.md` in this repo will state:
@@ -248,16 +259,15 @@ settled. Not before.
 | Item | Trigger |
 |---|---|
 | Dockable / detachable windows (egui_tiles) | the fixed layout gets in the way of a real session |
-| Multi-hop graph with a layout engine | the one-hop neighbourhood graph is not enough to see a path |
 | Background indexing with progress | startup on a real repo takes more than a second |
 | Multi-threaded grep | a search takes more than 100 ms |
-| Virtualized symbols table | more than ~20k symbols |
 | Type-aware xref resolution | wrong `new`/`get` links make auto paths misleading in practice |
-| Anchor-level notes | a path note stops being enough to explain a slice |
 | Edges between paths | paths start referring to each other in their notes |
-| Syntax highlighting | reading code in the tool feels worse than in an editor |
-| GUI reload on file change | last-writer-wins actually loses work |
+| Watch for new / deleted files | editing sessions add files often enough that restarting annoys |
 | MCP server | the CLI is stable and the shell round trip is the bottleneck |
+
+Done since the list was written: multi-hop layered graph layout, virtualized symbols
+table, syntax highlighting, step notes, reload on map or source change.
 
 ## 11. Open questions
 
