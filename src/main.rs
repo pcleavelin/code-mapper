@@ -5,7 +5,7 @@ mod map;
 use eframe::egui::{self, Align2, Color32, Key, Modifiers, Sense, Stroke, TextStyle, pos2, vec2};
 use index::{Index, SymRef};
 use map::{Author, Map};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 #[derive(PartialEq, Clone, Copy)]
@@ -17,41 +17,38 @@ enum Tab {
 
 // ---- graph: the main view ---------------------------------------------------------
 
-const NODE_W: f32 = 520.0;
-const COL_W: f32 = NODE_W + 90.0;
-const ROW_GAP: f32 = 24.0;
 const PREVIEW_LINES: usize = 12;
 const MAX_NODE_LINES: usize = 200;
+const HEADER_MIN_W: f32 = 380.0;
+const NODE_MAX_W: f32 = 760.0;
+const GAP_X: f32 = 110.0;
+const GAP_Y: f32 = 28.0;
+const HEADER_H: f32 = 34.0;
 
-/// Nodes are symbols, each showing its code. Layout is column-based: callers to the left,
-/// callees to the right, a path as a left-to-right chain. Positions persist across frames and
-/// can be dragged. ponytail: no layout engine, no edge routing; drag nodes if it gets tangled.
+/// Font metrics the layout needs, refreshed every frame.
+#[derive(Clone, Copy)]
+struct Metrics {
+    line_h: f32,
+    char_w: f32,
+}
+
+/// Nodes are symbols showing their code. Layered layout: a node's column is its hop distance
+/// from the focus (or its step index in a chain). Within a column nodes are ordered by the
+/// average position of their neighbours in the inner column (barycenter) and stacked with
+/// measured heights, so nothing overlaps. Layout reruns after any structural change; dragging a
+/// node switches to manual until the next change. ponytail: no edge routing.
+#[derive(Default)]
 struct Graph {
     nodes: Vec<SymRef>,
+    col: HashMap<SymRef, i32>,
     pos: HashMap<SymRef, egui::Pos2>,
-    next_y: HashMap<i32, f32>,
+    size: HashMap<SymRef, egui::Vec2>, // measured last frame
     focus: Option<SymRef>,
     chain: Vec<SymRef>, // when showing a path: step order
     chain_path: Option<usize>,
-    expanded: std::collections::HashSet<SymRef>, // nodes showing all their lines
-    size: HashMap<SymRef, egui::Vec2>,           // measured last frame; estimate until then
-    scene_rect: egui::Rect,
-}
-
-impl Default for Graph {
-    fn default() -> Self {
-        Graph {
-            nodes: Vec::new(),
-            pos: HashMap::new(),
-            next_y: HashMap::new(),
-            focus: None,
-            chain: Vec::new(),
-            chain_path: None,
-            expanded: Default::default(),
-            size: HashMap::new(),
-            scene_rect: egui::Rect::ZERO,
-        }
-    }
+    expanded: HashSet<SymRef>, // nodes showing all their lines
+    manual: bool,              // user dragged something: keep positions
+    scene_rect: Option<egui::Rect>,
 }
 
 impl Graph {
@@ -67,58 +64,58 @@ impl Graph {
         (total.min(cap), total)
     }
 
-    fn node_height(&self, idx: &Index, r: SymRef, line_h: f32) -> f32 {
-        if let Some(sz) = self.size.get(&r) {
-            return sz.y;
-        }
+    /// Width from the longest shown line; height from the measured frame, else an estimate.
+    fn node_size(&self, idx: &Index, r: SymRef, m: Metrics) -> egui::Vec2 {
+        let s = idx.sym(r);
         let (shown, total) = self.lines_shown(idx, r);
-        34.0 + shown as f32 * line_h + if shown < total { line_h } else { 0.0 } + 12.0
+        let longest = idx.files[r.file].lines[s.start..s.start + shown].iter().map(|l| l.chars().count()).max().unwrap_or(0);
+        let w = (12.0 + (longest + 6) as f32 * m.char_w).clamp(HEADER_MIN_W, NODE_MAX_W);
+        let h = match self.size.get(&r) {
+            Some(sz) => sz.y,
+            None => HEADER_H + (shown + usize::from(shown < total)) as f32 * m.line_h + 12.0,
+        };
+        vec2(w, h)
     }
 
-    fn node_rect(&self, idx: &Index, r: SymRef, line_h: f32) -> egui::Rect {
-        egui::Rect::from_min_size(self.pos[&r], vec2(NODE_W, self.node_height(idx, r, line_h)))
+    fn node_rect(&self, idx: &Index, r: SymRef, m: Metrics) -> egui::Rect {
+        egui::Rect::from_min_size(self.pos.get(&r).copied().unwrap_or(pos2(0.0, 0.0)), self.node_size(idx, r, m))
     }
 
-    /// Place `r` in column `col` below whatever is already there. No-op if present.
-    fn add(&mut self, idx: &Index, r: SymRef, col: i32, line_h: f32) {
-        if self.pos.contains_key(&r) {
+    fn add(&mut self, r: SymRef, col: i32) {
+        if self.col.contains_key(&r) {
             return;
         }
-        let y = *self.next_y.get(&col).unwrap_or(&0.0);
-        self.pos.insert(r, pos2(col as f32 * COL_W, y));
-        self.next_y.insert(col, y + self.node_height(idx, r, line_h) + ROW_GAP);
+        self.col.insert(r, col);
         self.nodes.push(r);
+        self.manual = false;
     }
 
-    fn col_of(&self, r: SymRef) -> i32 {
-        (self.pos[&r].x / COL_W).round() as i32
-    }
-
-    /// Focus symbol in the middle, its callers one column left, its callees one column right.
-    fn build_around(&mut self, idx: &Index, r: SymRef, line_h: f32) {
+    fn build_around(&mut self, idx: &Index, r: SymRef) {
         self.clear();
-        self.add(idx, r, 0, line_h);
+        self.add(r, 0);
         self.focus = Some(r);
-        self.expand_callers(idx, r, line_h);
-        self.expand_callees(idx, r, line_h);
+        self.expand_callers(idx, r);
+        self.expand_callees(idx, r);
     }
 
-    fn expand_callees(&mut self, idx: &Index, r: SymRef, line_h: f32) {
-        let col = self.col_of(r) + 1;
+    fn expand_callees(&mut self, idx: &Index, r: SymRef) {
+        let col = self.col[&r] + 1;
         for &c in &idx.sym(r).callees {
-            self.add(idx, c, col, line_h);
+            self.add(c, col);
         }
+        self.manual = false;
     }
 
-    fn expand_callers(&mut self, idx: &Index, r: SymRef, line_h: f32) {
-        let col = self.col_of(r) - 1;
+    fn expand_callers(&mut self, idx: &Index, r: SymRef) {
+        let col = self.col[&r] - 1;
         for &c in &idx.sym(r).callers {
-            self.add(idx, c, col, line_h);
+            self.add(c, col);
         }
+        self.manual = false;
     }
 
     /// A path as a chain: step 1 leftmost, each step one column to the right.
-    fn build_chain(&mut self, idx: &Index, map: &Map, pi: usize, line_h: f32) {
+    fn build_chain(&mut self, idx: &Index, map: &Map, pi: usize) {
         self.clear();
         self.chain_path = Some(pi);
         for a in &map.paths[pi].anchors {
@@ -126,23 +123,80 @@ impl Graph {
             let Some(si) = idx.files[fi].symbols.iter().position(|s| s.name == a.symbol) else { continue };
             let r = SymRef { file: fi, sym: si };
             let col = self.chain.len() as i32;
-            self.add(idx, r, col, line_h);
+            self.add(r, col);
             self.chain.push(r);
         }
         self.focus = self.chain.first().copied();
     }
 
+    /// Recompute every position. Columns are laid out from the focus outward so each column can
+    /// be ordered by its neighbours in the column nearer the focus.
+    fn layout(&mut self, idx: &Index, m: Metrics) {
+        let mut cols: BTreeMap<i32, Vec<SymRef>> = BTreeMap::new();
+        for &r in &self.nodes {
+            cols.entry(self.col[&r]).or_default().push(r);
+        }
+        if cols.is_empty() {
+            return;
+        }
+        let Some(focus) = self.focus else { return };
+        let focus_col = self.col[&focus];
+        let chain_index: HashMap<SymRef, usize> = self.chain.iter().enumerate().map(|(i, &r)| (r, i)).collect();
+
+        let col_w: BTreeMap<i32, f32> = cols.iter().map(|(&c, rs)| (c, rs.iter().map(|&r| self.node_size(idx, r, m).x).fold(0.0, f32::max))).collect();
+        let mut col_x: BTreeMap<i32, f32> = BTreeMap::new();
+        col_x.insert(focus_col, 0.0);
+        for c in (focus_col + 1)..=*cols.keys().last().unwrap() {
+            col_x.insert(c, col_x[&(c - 1)] + col_w.get(&(c - 1)).unwrap_or(&0.0) + GAP_X);
+        }
+        for c in (*cols.keys().next().unwrap()..focus_col).rev() {
+            col_x.insert(c, col_x[&(c + 1)] - col_w.get(&c).unwrap_or(&0.0) - GAP_X);
+        }
+
+        // order + stack, focus column first, then outward
+        let mut order: Vec<i32> = vec![focus_col];
+        order.extend((focus_col + 1)..=*cols.keys().last().unwrap());
+        order.extend((*cols.keys().next().unwrap()..focus_col).rev());
+        let center_y = self.node_size(idx, focus, m).y / 2.0;
+
+        for c in order {
+            let Some(rs) = cols.get_mut(&c) else { continue };
+            if c != focus_col {
+                let inner = if c > focus_col { c - 1 } else { c + 1 };
+                let key = |g: &Graph, r: SymRef| -> f32 {
+                    if let Some(&i) = chain_index.get(&r) {
+                        return i as f32;
+                    }
+                    let s = idx.sym(r);
+                    let neigh = if c > focus_col { &s.callers } else { &s.callees };
+                    let ys: Vec<f32> = neigh.iter().filter(|n| g.col.get(n) == Some(&inner)).filter_map(|n| g.pos.get(n)).map(|p| p.y).collect();
+                    if ys.is_empty() { f32::MAX } else { ys.iter().sum::<f32>() / ys.len() as f32 }
+                };
+                let mut keyed: Vec<(f32, usize, SymRef)> = rs.iter().enumerate().map(|(i, &r)| (key(self, r), i, r)).collect();
+                keyed.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap().then(a.1.cmp(&b.1)));
+                *rs = keyed.into_iter().map(|k| k.2).collect();
+            }
+            let total: f32 = rs.iter().map(|&r| self.node_size(idx, r, m).y).sum::<f32>() + GAP_Y * rs.len().saturating_sub(1) as f32;
+            let mut y = center_y - total / 2.0;
+            for &r in rs.iter() {
+                self.pos.insert(r, pos2(col_x[&c], y));
+                y += self.node_size(idx, r, m).y + GAP_Y;
+            }
+        }
+    }
+
     fn fit(&mut self) {
-        self.scene_rect = egui::Rect::ZERO; // Scene resets an invalid rect to fit the contents
+        self.scene_rect = None; // Scene resets an invalid rect to fit the contents
     }
 
     /// Readable zoom centred on the focused node (fit-all is unreadable past a few nodes).
-    fn look_at_focus(&mut self, idx: &Index, line_h: f32) {
-        if let Some(r) = self.focus {
-            let c = self.node_rect(idx, r, line_h).center();
-            self.scene_rect = egui::Rect::from_center_size(c, vec2(COL_W * 2.6, 1000.0));
-        } else {
-            self.fit();
+    fn look_at_focus(&mut self, idx: &Index, m: Metrics) {
+        match self.focus {
+            Some(r) => {
+                let c = self.node_rect(idx, r, m).center();
+                self.scene_rect = Some(egui::Rect::from_center_size(c, vec2(1900.0, 1100.0)));
+            }
+            None => self.fit(),
         }
     }
 }
@@ -158,6 +212,7 @@ struct App {
 
     tab: Tab,
     graph: Graph,
+    metrics: Metrics,
     cur_file: Option<usize>,
     sel: Option<(usize, usize)>, // (anchor line, active line) of the line selection
     scroll_to: Option<usize>,
@@ -190,6 +245,7 @@ impl App {
             sel_anchor: None,
             tab: Tab::Graph,
             graph: Graph::default(),
+            metrics: Metrics { line_h: 15.0, char_w: 7.5 },
             cur_file: None,
             sel: None,
             scroll_to: None,
@@ -202,27 +258,34 @@ impl App {
             status,
         };
         if let Some(r) = app.idx.roots().first().copied() {
-            app.focus(r, 14.0);
+            app.focus(r);
         }
         app
     }
 
     /// Make `r` the current symbol: listing position, xrefs, and graph focus (rebuilding the
     /// graph around it if it is not already on screen).
-    fn focus(&mut self, r: SymRef, line_h: f32) {
+    fn focus(&mut self, r: SymRef) {
         let s = self.idx.sym(r);
         let (start, end) = (s.start, s.end);
         self.cur_file = Some(r.file);
         self.sel = Some((start, end));
         self.scroll_to = Some(start.saturating_sub(3));
-        if !self.graph.pos.contains_key(&r) {
-            self.graph.build_around(&self.idx, r, line_h);
+        if !self.graph.col.contains_key(&r) {
+            self.graph.build_around(&self.idx, r);
         }
         self.graph.focus = Some(r);
-        self.graph.look_at_focus(&self.idx, line_h);
+        self.relayout_and_look();
         if self.tab == Tab::Results {
             self.tab = Tab::Graph;
         }
+    }
+
+    fn relayout_and_look(&mut self) {
+        if !self.graph.manual {
+            self.graph.layout(&self.idx, self.metrics);
+        }
+        self.graph.look_at_focus(&self.idx, self.metrics);
     }
 
     fn open_line(&mut self, file: usize, line: usize) {
@@ -232,9 +295,9 @@ impl App {
         self.tab = Tab::Listing;
     }
 
-    fn show_path(&mut self, pi: usize, line_h: f32) {
-        self.graph.build_chain(&self.idx, &self.map, pi, line_h);
-        self.graph.look_at_focus(&self.idx, line_h);
+    fn show_path(&mut self, pi: usize) {
+        self.graph.build_chain(&self.idx, &self.map, pi);
+        self.relayout_and_look();
         if let Some(r) = self.graph.focus {
             let s = self.idx.sym(r);
             let (start, end) = (s.start, s.end);
@@ -359,6 +422,7 @@ enum Action {
     ExpandCallees(SymRef),
     ToggleExpand(SymRef),
     AddToPath(SymRef),
+    Relayout,
 }
 
 impl App {
@@ -428,17 +492,17 @@ impl App {
                         let text = format!("{}. {}{}  {}:{}-{}{}", ai + 1, if a.stale { "! " } else { "" }, name, a.file, a.line_start + 1, a.line_end + 1, a.author.tag());
                         let color = if a.stale { Color32::LIGHT_RED } else { ui.visuals().text_color() };
                         ui.horizontal(|ui| {
-                            if ui.small_button("▲").clicked() && ai > 0 {
+                            if ui.add_enabled(ai > 0, egui::Button::new("up").small()).clicked() {
                                 action = Some(Action::MoveAnchor(pi, ai, -1));
                             }
-                            if ui.small_button("▼").clicked() && ai + 1 < n {
+                            if ui.add_enabled(ai + 1 < n, egui::Button::new("down").small()).clicked() {
                                 action = Some(Action::MoveAnchor(pi, ai, 1));
                             }
                             let resp = ui.selectable_label(self.sel_anchor == Some(ai), egui::RichText::new(text).color(color));
                             if resp.clicked() {
                                 action = Some(Action::OpenAnchor(pi, ai));
                             }
-                            resp.on_hover_text(if a.stale { "stale: the code changed since this step was pinned. Delete and re-add it." } else { "click to view; ▲▼ reorder" });
+                            resp.on_hover_text(if a.stale { "stale: the code changed since this step was pinned. Delete and re-add it." } else { "click to view; up/down reorder" });
                         });
                     }
                 });
@@ -503,14 +567,20 @@ impl App {
             if ui.small_button("fit").clicked() {
                 self.graph.fit();
             }
+            if ui.add_enabled(self.graph.manual, egui::Button::new("auto layout").small()).clicked() {
+                action = Some(Action::Relayout);
+            }
             if let Some(pi) = self.graph.chain_path {
                 ui.separator();
                 ui.label(format!("showing path '{}' as a chain", self.map.paths[pi].name));
             }
         });
 
+        let m = self.metrics;
+        if !self.graph.manual {
+            self.graph.layout(&self.idx, m); // measured sizes from last frame settle the layout
+        }
         let font = TextStyle::Monospace.resolve(ui.style());
-        let line_h = ui.ctx().fonts_mut(|f| f.row_height(&font));
         let in_path: Vec<SymRef> = self
             .sel_path
             .map(|pi| {
@@ -526,36 +596,34 @@ impl App {
             })
             .unwrap_or_default();
 
-        let mut scene_rect = self.graph.scene_rect;
+        let mut scene_rect = self.graph.scene_rect.unwrap_or(egui::Rect::ZERO);
         egui::Scene::new().zoom_range(0.1..=1.5).show(ui, &mut scene_rect, |ui| {
             let painter = ui.painter().clone();
             let edge = Stroke::new(1.5, ui.visuals().weak_text_color());
             let chain_stroke = Stroke::new(3.0, Color32::from_rgb(90, 200, 120));
+            let rect_of = |g: &Graph, r: SymRef| g.node_rect(&self.idx, r, m);
+            let curve = |p0: egui::Pos2, p1: egui::Pos2, stroke: Stroke| {
+                let dx = ((p1.x - p0.x).abs() * 0.5).max(GAP_X * 0.8);
+                egui::epaint::CubicBezierShape::from_points_stroke([p0, p0 + vec2(dx, 0.0), p1 - vec2(dx, 0.0), p1], false, Color32::TRANSPARENT, stroke)
+            };
 
-            // sizes from line counts so edges land on node borders
-            let rect_of = |g: &Graph, r: SymRef| g.node_rect(&self.idx, r, line_h);
-
-            // call edges: right side of caller -> left side of callee
+            // call edges: caller's right header edge -> callee's left header edge
             for &a in &self.graph.nodes {
                 let ra = rect_of(&self.graph, a);
                 for &b in &self.idx.sym(a).callees {
-                    if !self.graph.pos.contains_key(&b) || a == b {
+                    if !self.graph.col.contains_key(&b) || a == b {
                         continue;
                     }
                     let rb = rect_of(&self.graph, b);
-                    // leave and arrive at header height, with a wide horizontal departure so the
-                    // curve is visible beside the node instead of diving behind it
-                    let (p0, p1) = (ra.right_top() + vec2(0.0, 14.0), rb.left_top() + vec2(0.0, 14.0));
-                    let dx = ((p1.x - p0.x).abs() * 0.5).max(160.0);
-                    painter.add(egui::epaint::CubicBezierShape::from_points_stroke([p0, p0 + vec2(dx, 0.0), p1 - vec2(dx, 0.0), p1], false, Color32::TRANSPARENT, edge));
+                    let (p0, p1) = (ra.right_top() + vec2(0.0, HEADER_H / 2.0), rb.left_top() + vec2(0.0, HEADER_H / 2.0));
+                    painter.add(curve(p0, p1, edge));
                     painter.circle_filled(p1, 3.0, edge.color);
                 }
             }
             // chain edges: step i -> step i+1, numbered
             for (i, w) in self.graph.chain.windows(2).enumerate() {
-                let (p0, p1) = (rect_of(&self.graph, w[0]).right_top() + vec2(0.0, 14.0), rect_of(&self.graph, w[1]).left_top() + vec2(0.0, 14.0));
-                let dx = ((p1.x - p0.x).abs() * 0.5).max(160.0);
-                painter.add(egui::epaint::CubicBezierShape::from_points_stroke([p0, p0 + vec2(dx, 0.0), p1 - vec2(dx, 0.0), p1], false, Color32::TRANSPARENT, chain_stroke));
+                let (p0, p1) = (rect_of(&self.graph, w[0]).right_top() + vec2(0.0, HEADER_H / 2.0), rect_of(&self.graph, w[1]).left_top() + vec2(0.0, HEADER_H / 2.0));
+                painter.add(curve(p0, p1, chain_stroke));
                 painter.text((p0 + p1.to_vec2()) / 2.0 - vec2(0.0, 12.0), Align2::CENTER_CENTER, format!("{}", i + 2), font.clone(), chain_stroke.color);
             }
 
@@ -572,40 +640,41 @@ impl App {
                     Stroke::new(1.0, ui.visuals().widgets.noninteractive.bg_stroke.color)
                 };
 
-                let inner = ui.scope_builder(egui::UiBuilder::new().max_rect(rect), |ui| {
+                let frame = ui.scope_builder(egui::UiBuilder::new().max_rect(egui::Rect::from_min_size(rect.min, vec2(rect.width(), f32::INFINITY))), |ui| {
                     ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Truncate);
                     egui::Frame::new().fill(ui.visuals().extreme_bg_color).stroke(border).corner_radius(4.0).inner_margin(6.0).show(ui, |ui| {
-                        ui.set_width(NODE_W - 12.0);
-                        // header = drag handle
-                        let header = ui.horizontal(|ui| {
-                            ui.strong(&s.name);
-                            ui.weak(format!("{}:{}", self.idx.files[r.file].path, s.start + 1));
+                        ui.set_width(rect.width() - 12.0);
+                        // title = drag handle; buttons registered after it so they stay clickable
+                        ui.horizontal(|ui| {
+                            let title = ui.strong(&s.name).union(ui.weak(format!("{}:{}", self.idx.files[r.file].path, s.start + 1)));
+                            let drag = ui.interact(title.rect, ui.id().with(("drag", r)), Sense::click_and_drag());
+                            if drag.dragged() {
+                                *self.graph.pos.get_mut(&r).unwrap() += drag.drag_delta();
+                                self.graph.manual = true;
+                            }
+                            if drag.clicked() {
+                                action = Some(Action::Focus(r));
+                            }
+                            drag.on_hover_text("drag to move, click to focus");
                             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                let expanded = self.graph.expanded.contains(&r);
-                                if ui.small_button(if expanded { "▴" } else { "▾" }).on_hover_text("show all / fewer lines").clicked() {
+                                let (shown, total) = self.graph.lines_shown(&self.idx, r);
+                                if total > PREVIEW_LINES && ui.small_button(if shown < total { "more" } else { "less" }).on_hover_text("show all / fewer lines").clicked() {
                                     action = Some(Action::ToggleExpand(r));
                                 }
-                                if ui.small_button("+path").on_hover_text("add this symbol as a step of the selected path").clicked() {
+                                if ui.small_button("+path").on_hover_text("add as the next step of the selected path").clicked() {
                                     action = Some(Action::AddToPath(r));
                                 }
                                 if ui.small_button("listing").on_hover_text("open in the listing").clicked() {
                                     action = Some(Action::OpenListing(r));
                                 }
-                                if ui.small_button(format!("callees ▶ {}", s.callees.len())).clicked() {
+                                if ui.add_enabled(!s.callees.is_empty(), egui::Button::new(format!("callees > {}", s.callees.len())).small()).clicked() {
                                     action = Some(Action::ExpandCallees(r));
                                 }
-                                if ui.small_button(format!("{} ◀ callers", s.callers.len())).clicked() {
+                                if ui.add_enabled(!s.callers.is_empty(), egui::Button::new(format!("{} < callers", s.callers.len())).small()).clicked() {
                                     action = Some(Action::ExpandCallers(r));
                                 }
                             });
                         });
-                        let drag = ui.interact(header.response.rect, ui.id().with(("drag", r)), Sense::click_and_drag());
-                        if drag.dragged() {
-                            *self.graph.pos.get_mut(&r).unwrap() += drag.drag_delta();
-                        }
-                        if drag.clicked() {
-                            action = Some(Action::Focus(r));
-                        }
                         ui.separator();
                         let f = &self.idx.files[r.file];
                         let (shown, total) = self.graph.lines_shown(&self.idx, r);
@@ -614,16 +683,16 @@ impl App {
                             code.push_str(&format!("{:4} {}\n", li + 1, f.lines[li]));
                         }
                         if shown < total {
-                            code.push_str(&format!("     … {} more lines (▾ to show, or listing)", total - shown));
+                            code.push_str(&format!("     … {} more lines", total - shown));
                         }
-                        ui.set_clip_rect(egui::Rect::from_min_size(rect.min, vec2(NODE_W, f32::INFINITY)).intersect(ui.clip_rect()));
+                        ui.set_clip_rect(egui::Rect::from_min_size(rect.min, vec2(rect.width(), f32::INFINITY)).intersect(ui.clip_rect()));
                         ui.add(egui::Label::new(egui::RichText::new(code.trim_end_matches('\n')).monospace()).wrap_mode(egui::TextWrapMode::Extend));
-                    });
+                    })
                 });
-                self.graph.size.insert(r, inner.response.rect.size());
+                self.graph.size.insert(r, vec2(rect.width(), frame.inner.response.rect.height()));
             }
         });
-        self.graph.scene_rect = scene_rect;
+        self.graph.scene_rect = Some(scene_rect);
         action
     }
 
@@ -722,11 +791,11 @@ impl App {
         });
     }
 
-    fn apply(&mut self, action: Option<Action>, line_h: f32) {
+    fn apply(&mut self, action: Option<Action>) {
         match action {
-            Some(Action::Focus(r)) => self.focus(r, line_h),
+            Some(Action::Focus(r)) => self.focus(r),
             Some(Action::OpenListing(r)) => {
-                self.focus(r, line_h);
+                self.focus(r);
                 self.tab = Tab::Listing;
             }
             Some(Action::SelectPath(pi)) => {
@@ -736,7 +805,7 @@ impl App {
             Some(Action::ShowPath(pi)) => {
                 self.sel_path = Some(pi);
                 self.sel_anchor = None;
-                self.show_path(pi, line_h);
+                self.show_path(pi);
                 self.tab = Tab::Graph;
             }
             Some(Action::OpenAnchor(pi, ai)) => {
@@ -746,9 +815,9 @@ impl App {
                 if let Some(fi) = self.idx.find_file(&file) {
                     if let Some(si) = self.idx.files[fi].symbols.iter().position(|s| s.name == sym) {
                         if self.graph.chain_path != Some(pi) {
-                            self.show_path(pi, line_h);
+                            self.show_path(pi);
                         }
-                        self.focus(SymRef { file: fi, sym: si }, line_h);
+                        self.focus(SymRef { file: fi, sym: si });
                     }
                     self.cur_file = Some(fi);
                     self.sel = Some((ls, le));
@@ -761,7 +830,7 @@ impl App {
                 self.sel_anchor = Some(bi);
                 self.dirty = true;
                 if self.graph.chain_path == Some(pi) {
-                    self.show_path(pi, line_h);
+                    self.show_path(pi);
                 }
             }
             Some(Action::Promote(r)) => {
@@ -769,24 +838,32 @@ impl App {
                 self.sel_path = Some(pi);
                 self.sel_anchor = None;
                 self.dirty = true;
-                self.show_path(pi, line_h);
+                self.show_path(pi);
                 self.tab = Tab::Graph;
             }
             Some(Action::ExpandCallers(r)) => {
-                self.graph.expand_callers(&self.idx, r, line_h);
+                self.graph.expand_callers(&self.idx, r);
+                self.graph.layout(&self.idx, self.metrics);
             }
             Some(Action::ExpandCallees(r)) => {
-                self.graph.expand_callees(&self.idx, r, line_h);
+                self.graph.expand_callees(&self.idx, r);
+                self.graph.layout(&self.idx, self.metrics);
             }
             Some(Action::ToggleExpand(r)) => {
                 if !self.graph.expanded.remove(&r) {
                     self.graph.expanded.insert(r);
                 }
+                self.graph.size.remove(&r); // re-measure
+                self.graph.manual = false;
             }
             Some(Action::AddToPath(r)) => {
                 self.graph.focus = Some(r);
                 self.tab = Tab::Graph;
                 self.add_anchor();
+            }
+            Some(Action::Relayout) => {
+                self.graph.manual = false;
+                self.graph.layout(&self.idx, self.metrics);
             }
             None => {}
         }
@@ -803,7 +880,7 @@ impl eframe::App for App {
             self.save();
         }
         let mono = TextStyle::Monospace.resolve(&ctx.style()); // resolve outside the fonts lock: ctx.style() inside it deadlocks
-        let line_h = ctx.fonts_mut(|f| f.row_height(&mono));
+        self.metrics = ctx.fonts_mut(|f| Metrics { line_h: f.row_height(&mono), char_w: f.glyph_width(&mono, 'M') });
 
         egui::TopBottomPanel::top("bar").show(ctx, |ui| {
             ui.horizontal(|ui| {
@@ -860,7 +937,7 @@ impl eframe::App for App {
             Tab::Listing => self.listing(ui),
             Tab::Results => self.results_view(ui),
         });
-        self.apply(action, line_h);
+        self.apply(action);
     }
 
     fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
