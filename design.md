@@ -160,29 +160,35 @@ than heuristics.
 
 ## 8. GUI (IDA Pro model)
 
-The IDA Pro affordances that carry over, and what each maps to here:
+The graph is the main view. Everything else navigates it or annotates it.
 
 | IDA Pro | codemap |
 |---|---|
-| Functions window | **Symbols** window: a filterable table of every symbol with file, kind, line range, xref counts. Click to jump. |
-| IDA View (listing) | **Listing**: the code view. Monospace, line numbers, anchor bars in the gutter. |
-| Xrefs to / from | **Xrefs** window for the symbol under the cursor: callers on one side, callees on the other. Click to jump. Always visible, never a popup. |
-| Graph view | **Graph** tab: the selected symbol in the centre, callers as a column on the left, callees as a column on the right, edges drawn between. Click a node to recentre. One hop each way; no layout engine. |
-| Names / comments | **Paths** window: paths with note, author tag, and anchors. The note is the comment. |
-| Output window + command line | **Output** panel at the bottom with a command line that runs the same commands as the CLI, output appended above it. |
+| Graph view | **Graph**: a pan-and-zoom canvas (egui `Scene`). Every node is a symbol showing its code: a 12-line preview, expandable to the whole body. Callers sit one column left, callees one column right; each node has buttons to expand its own callers or callees, so the visible graph grows hop by hop along whatever the reader is following. Nodes drag by their title. A path is shown as a chain: step 1 leftmost, green numbered edges between consecutive steps, grey call edges between any two visible nodes. |
+| Functions window | **Symbols** window: a filterable table of every symbol with kind, file and line. Click to focus the graph on it. |
+| IDA View (listing) | **Listing** tab: the plain code view with line numbers and anchor bars, for reading beyond a node or selecting arbitrary lines. Reached from a node's "listing" button. |
+| Xrefs to / from | **Xrefs** window for the focused symbol: callers and callees as lists. Click to focus. |
+| Names / comments | **Paths** window: each path with its note (the comment), author tag, and its steps as a numbered ordered list with reorder buttons. "graph" shows the path as a chain. |
+| Output window + command line | **Output** panel at the bottom running the same commands as the CLI. |
 | Segments / navigation band | Not carried over. |
 
-Layout: symbols and paths stacked on the left; listing, graph, and results as tabs in
+Layout: symbols and paths stacked on the left; graph, listing, and results as tabs in
 the centre; xrefs on the right; output at the bottom. Panels are resizable. Docking
 and detachable windows are deferred (section 10); fixed positions first.
 
-Interactions: click a line in the listing to select, shift-click to extend, "add
-selection to path" puts it on the selected path. Selecting a path highlights its
-anchors in the listing. Promote is a button on an Auto root and a command. Ctrl+S
-saves; unsaved changes save on exit. Enter in the command line runs the command.
+Graph layout is column-based with no layout engine: a node's column is its hop
+distance from the focus (or its step index in a chain), and nodes stack downwards
+within a column in insertion order. Focusing a symbol that is not on screen rebuilds
+the graph around it and centres the view on it at readable zoom; "fit" zooms to show
+everything. Node sizes are measured after the first frame so edges land on borders.
 
-Deliberately absent for now: syntax highlighting, multi-hop graph layout, undo, drag
-reordering of anchors, a folder picker (root comes from the command line).
+Interactions: focus a node by clicking its title; "+path" adds it as the next step of
+the selected path; ▲▼ in the Paths window reorder steps; "promote" on an entry point
+creates a path and shows it as a chain. In the listing, click a line, shift-click to
+extend, "add selection to path". Ctrl+S saves; unsaved changes save on exit.
+
+Deliberately absent for now: syntax highlighting, automatic edge routing, undo, a
+folder picker (root comes from the command line).
 
 ## 9. AI interface
 
