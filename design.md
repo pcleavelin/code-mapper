@@ -176,18 +176,30 @@ Layout: symbols and paths stacked on the left; graph, listing, and results as ta
 the centre; xrefs on the right; output at the bottom. Panels are resizable. Docking
 and detachable windows are deferred (section 10); fixed positions first.
 
-Graph layout is layered: a node's column is its hop distance from the focus (or its
-step index in a chain). Columns are laid out from the focus outward; within a column,
-nodes are ordered by the average y of their neighbours in the column nearer the focus
-(barycenter), then stacked with measured heights and a fixed gap, and the column is
-centred on the focus row. Node width comes from the longest shown line, clamped so the
-header buttons always fit. Layout reruns every frame until the user drags a node, and
-resumes after any structural change or the "auto layout" button. Focusing a symbol not
-on screen rebuilds the graph around it and centres the view at readable zoom.
+What the graph shows is derived, never accumulated: a base (the focused symbol, or a
+path's chain) plus an ordered list of expansions, each "callers of X" or "callees of
+X". The buttons on a node toggle its expansion; closing one rebuilds the node set from
+the list, so anything that was only reachable through it disappears with it.
 
-Known rough edge: a call edge that points backwards (callee to the left of its caller,
-which happens in chains) is drawn as the same forward S-curve and loops across the
-canvas behind the nodes. Route or style backward edges when it bothers someone.
+Layout is layered. A node's column is its hop distance from the focus, or its step
+index in a chain. Columns are placed from the focus outward, each as wide as its widest
+node. Vertically, chain steps and the focus are pinned to one row so a path reads as a
+straight line; every other node wants to sit level with the mean of its neighbours in
+the column nearer the focus. Nodes are stacked in that order with measured heights and
+a fixed gap, then the column is shifted so pinned nodes land exactly on the row (or,
+without a pinned node, so the column sits as close to its wishes as possible). Node
+width comes from the longest shown line, clamped between a header-fitting minimum and
+a maximum; lines longer than that are cut with an ellipsis so a frame never exceeds
+its column. Layout reruns every frame until the user drags a node, and resumes after
+any structural change or the "auto layout" button. Focusing a symbol not on screen
+rebuilds the graph around it and centres the view at readable zoom.
+
+Edges leave a caller's header on the right and arrive at the callee's header on the
+left. A callee that sits left of or level with its caller (a step calling an earlier
+step, or two nodes in one column) gets a short leftward curve in a second colour.
+
+Known rough edge: a long path is one very wide row. A wrapped or snaking chain layout
+is the next step if reviewing 20-step paths means too much horizontal panning.
 
 Interactions: focus a node by clicking its title; "+path" adds it as the next step of
 the selected path; ▲▼ in the Paths window reorder steps; "promote" on an entry point
