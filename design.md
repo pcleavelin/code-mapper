@@ -176,11 +176,18 @@ Layout: symbols and paths stacked on the left; graph, listing, and results as ta
 the centre; xrefs on the right; output at the bottom. Panels are resizable. Docking
 and detachable windows are deferred (section 10); fixed positions first.
 
-Graph layout is column-based with no layout engine: a node's column is its hop
-distance from the focus (or its step index in a chain), and nodes stack downwards
-within a column in insertion order. Focusing a symbol that is not on screen rebuilds
-the graph around it and centres the view on it at readable zoom; "fit" zooms to show
-everything. Node sizes are measured after the first frame so edges land on borders.
+Graph layout is layered: a node's column is its hop distance from the focus (or its
+step index in a chain). Columns are laid out from the focus outward; within a column,
+nodes are ordered by the average y of their neighbours in the column nearer the focus
+(barycenter), then stacked with measured heights and a fixed gap, and the column is
+centred on the focus row. Node width comes from the longest shown line, clamped so the
+header buttons always fit. Layout reruns every frame until the user drags a node, and
+resumes after any structural change or the "auto layout" button. Focusing a symbol not
+on screen rebuilds the graph around it and centres the view at readable zoom.
+
+Known rough edge: a call edge that points backwards (callee to the left of its caller,
+which happens in chains) is drawn as the same forward S-curve and loops across the
+canvas behind the nodes. Route or style backward edges when it bothers someone.
 
 Interactions: focus a node by clicking its title; "+path" adds it as the next step of
 the selected path; ▲▼ in the Paths window reorder steps; "promote" on an entry point
