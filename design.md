@@ -88,13 +88,31 @@ Symbol extraction is deliberately grammar-agnostic so it survives across languag
    `body` field with depth 1. These container nodes have no calls of their own.
 
 Xref extraction walks each non-container symbol's subtree for nodes whose kind contains
-`call`, takes the `function` field (or first named child), and keeps the last segment
-after `.` or `::`, stripped of generics, macro bangs, and arguments.
+`call`, takes the `function` field (or first named child), strips generics and
+argument lists, and keeps the called name plus its qualifier: the segment before it.
+`a.b.c()` is `c` via `b`; `Foo::new()` is `new` via `Foo`; `self.f()`, `Self::f()`,
+`this.f()` are `f` via self. Members of impl / class bodies record their owner type
+(`impl X for Y` gives `Y`). Import statements (`use`, `import`, `from ... import`) are
+parsed loosely into a per-file table from imported name or alias to the module it came
+from, the same string rules for every language.
 
-Linking is name-based with no type information. For each raw callee name, the target is
-the symbol of that name in the same file, else the first definition in path order.
-Overloaded names like `new` will link wrong. This is accepted for v1; a per-language
-scope resolver is the upgrade path and the data model does not change.
+Linking resolves each call in order, without types:
+
+1. Via self: a member of the caller's owner type; else same file.
+2. Via `Q`: a member of type `Q`; else a symbol in module `Q` (a file stem or directory
+   named `Q`, so Odin packages and Rust modules both work); else via the import table.
+   If `Q` is capitalised and none of that matched, it is an external type and the call
+   links nowhere. If `Q` is a lowercase receiver variable, some type's member: the
+   caller's own type first, else any member, else anything.
+3. Unqualified: a free function in the same file; else the file the import table maps
+   the name to; else a free function in the same directory (package). Only C goes on
+   to any free function anywhere (headers); in other languages an unqualified name
+   that is not local or imported is a builtin or a library call and links nowhere.
+
+Struct, enum, and union declarations are never call targets, since `Foo{...}` parses as
+a call in Odin. Still wrong when two of this repo's types share a method name and the
+receiver is a variable of unknown type; the language-server route is the upgrade if
+that matters in practice.
 
 Derived queries: `callers`, `callees`, `roots`, and `call_tree` (pre-order,
 depth-limited, each symbol once).
@@ -192,13 +210,16 @@ path's tree of steps) plus an ordered list of expansions, each "callers of X" or
 node set from the list, so anything that was only reachable through it disappears
 with it.
 
-Layout is layered. A step's column is its depth in the path tree; any other node's
-column is its hop distance from what it was expanded from. Columns are laid out from
-the focus outward, each as wide as its widest node. Vertically, a step wants to sit
-level with its parent step, every other node level with the mean of its neighbours in
-the column nearer the focus, and the focus is pinned. Nodes are stacked in that order
-with measured heights and a fixed gap, then the column is shifted so the focus lands
-exactly (or, without it, so the column sits as close to its wishes as possible). Node
+Layout is a forest of compact subtrees. Horizontally, a step's column is its depth in
+the path tree and any other node's column is its hop distance from what it was
+expanded from; columns share x, each as wide as its widest node, anchored at the
+focus. Vertically, every node owns a block: its own height, or the stacked heights of
+its children's blocks if that is taller. Children stack beside their parent (steps and
+callee expansions to the right, caller expansions to the left) and the parent centres
+on them. Sibling blocks never interleave, so a wide subtree only pushes its own
+siblings, never its cousins. Roots (the focus, other path roots, anything without a
+parent) stack top to bottom. A last per-column pass pushes apart the rare collision
+between different subtrees (a caller's callees land in the focus column, say). Node
 width comes from the longest shown line, clamped between a header-fitting minimum and
 a maximum; lines longer than that are cut with an ellipsis so a frame never exceeds
 its column. Layout reruns every frame until the user drags a node, and resumes after
@@ -274,7 +295,7 @@ settled. Not before.
 
 | Item | Trigger |
 |---|---|
-| Type-aware xref resolution (next) | wrong `new`/`get` links make auto paths misleading in practice |
+| Language-server xref resolution (rust-analyzer, ols) | the qualifier-based resolver's misses matter in practice |
 | Click a call in a node's code to open that callee | reading a node and wanting one specific callee, not all of them |
 | Documentation panel for the focused symbol | per language: doc comments first (tree-sitter), then external docs (rustdoc, odin docs) |
 | Dockable / detachable windows (egui_tiles) | the fixed layout gets in the way of a real session |
@@ -312,6 +333,7 @@ Verified on two repos. The odin_editor repo: 94 files, `promote main` produced a
 CLI itself: `update` and `cli_main` are promoted and annotated with `(ai)` tags, and
 editing `update` after promoting it correctly flagged that anchor stale.
 
-Known rough edges, all accepted per section 4 and 10: `new`, `get` and similar names
-link to the first definition; `Key` shows as a callee of `main` in Odin because a
-struct literal parses as a call-shaped node.
+Known rough edges, accepted per sections 4 and 10: a method called on a variable of
+unknown type binds to the caller's own type first, then the first type that has it;
+platform-conditional duplicates (`font_darwin.odin` and `font_windows.odin` both
+defining a proc) link to whichever file sorts first.
