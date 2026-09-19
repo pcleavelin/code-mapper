@@ -205,7 +205,8 @@ rehash. Any failure marks the anchor stale. A stale anchor whose symbol still ex
 keeps its resolved lines so the reader can see where it was. A stale anchor whose file
 or symbol is gone resolves to nothing and must be re-pinned or deleted.
 
-There is no automatic re-anchoring. The agent that changed the code re-pins.
+There is no automatic re-anchoring. The agent that changed the code re-pins; `stale` says
+where a step's unchanged text now sits when it merely moved, so that re-pin is one command.
 
 ## 10. Architecture and the CLI
 
@@ -237,9 +238,10 @@ files [filter]                        symbols [filter]
 show <file> [start] [end]             grep <regex>          notes <regex>
 callers <sym>   callees <sym>         refs <sym>
 tree <sym> [depth]                    roots [n]
-paths           path <name>           promote <sym> [depth]
-path-new <name> <kind> [note]         path-note <name> <note>
-step-note <name> <index> <note>       path-rm <name> [index]
+paths [name]    path <name>           promote <sym> [depth] [name]
+path-new <name> <kind> [note]         path-note <name> <note>       path-rename <name> <new>
+step-note <name> <index> <note>       note-edit <name> <index> <old> <new>
+path-rm <name> [index]
 path-add <name> <sym> [under]         path-add <name> <file> <start> <end> [under]
 path-pin <name> <index> <file> <start> <end>
 path-move <name> <index> <under>

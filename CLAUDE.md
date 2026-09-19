@@ -34,7 +34,8 @@ After changing code, before the commit:
    step that calls it, in call order. Scaffold it with `promote <sym> [depth]`, then trim
    and annotate; when adding by hand, always give `under` explicitly and read the
    "does not call" note `path-add` prints. `path-move <name> <index> <under>` fixes a
-   misplaced step. `path <name>` shows the result; check that it reads top-down.
+   misplaced step, `note-edit` fixes one clause of a note, `paths <name>` shows one
+   path's step indices. `path <name>` shows the result; check that it reads top-down.
 5. `check` must pass. It exits non-zero on any stale step.
 
 After a rebase the same applies: run `stale`, re-pin.

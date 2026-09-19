@@ -197,7 +197,7 @@ impl Graph {
                 for (k, (ai, depth)) in map.tree_order(pi).into_iter().enumerate() {
                     let a = &anchors[ai];
                     let Some(fi) = idx.find_file(&a.file) else { continue };
-                    let Some(si) = idx.files[fi].symbols.iter().position(|s| s.name == a.symbol) else { continue };
+                    let Some(si) = a.sym else { continue };
                     let r = SymRef { file: fi, sym: si };
                     if self.col.contains_key(&r) {
                         node_of.insert(ai, r);
@@ -1163,7 +1163,7 @@ impl App {
                     (a.file.clone(), a.symbol.clone(), a.line_start, a.line_end, a.stale, a.author.tag())
                 };
                 let fi = self.idx.find_file(&file);
-                let sym = fi.and_then(|fi| self.idx.files[fi].symbols.iter().find(|s| s.name == symbol)).map(|s| (s.start, s.end));
+                let sym = fi.zip(self.map.paths[pi].anchors[ai].sym).map(|(fi, si)| &self.idx.files[fi].symbols[si]).map(|s| (s.start, s.end));
                 let gone = match (fi, symbol.is_empty(), sym) {
                     (None, _, _) => Some("file gone"),
                     (Some(_), false, None) => Some("symbol gone"),
@@ -1305,9 +1305,7 @@ impl App {
                     .anchors
                     .iter()
                     .filter_map(|a| {
-                        let fi = self.idx.find_file(&a.file)?;
-                        let si = self.idx.files[fi].symbols.iter().position(|s| s.name == a.symbol)?;
-                        Some(SymRef { file: fi, sym: si })
+                        Some(SymRef { file: self.idx.find_file(&a.file)?, sym: a.sym? })
                     })
                     .collect()
             })
@@ -1573,9 +1571,9 @@ impl App {
             Some(Action::SelectStep(pi, ai)) => {
                 self.sel_anchor = Some(ai);
                 let a = &self.map.paths[pi].anchors[ai];
-                let (ls, le, file, sym) = (a.line_start, a.line_end, a.file.clone(), a.symbol.clone());
+                let (ls, le, file, si) = (a.line_start, a.line_end, a.file.clone(), a.sym);
                 if let Some(fi) = self.idx.find_file(&file) {
-                    if let Some(si) = self.idx.files[fi].symbols.iter().position(|s| s.name == sym) {
+                    if let Some(si) = si {
                         if self.graph.path_id != Some(pi) {
                             self.show_path(pi);
                         }
@@ -1780,7 +1778,6 @@ fn cli_main(root: &Path, args: &[String]) -> i32 {
                     eprintln!("save failed: {e}");
                     return 1;
                 }
-                println!("saved {}", map_path.display());
             }
             0
         }

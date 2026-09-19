@@ -42,8 +42,8 @@ pub enum Command {
         #[arg(default_value_t = 30)]
         n: usize,
     },
-    /// the map: every path as a tree of steps (! = stale, (ai) = AI-authored)
-    Paths,
+    /// [name]                           the map: every path (or one) as a tree of steps (! = stale, (ai) = AI-authored)
+    Paths { name: Option<String> },
     /// <name>                           print a path's note and every step's code, tree order
     Path { name: String },
     /// <name> <kind> [note]             create a path; kind = flow | layer | type (no-op if it exists)
@@ -57,6 +57,11 @@ pub enum Command {
     PathNote { name: String, note: String },
     /// <name> <index> <note>            set a note on one step (index as shown by `paths`)
     StepNote { name: String, index: usize, note: String },
+    /// <name> <index> <old> <new>       replace the first `old` in a note with `new` (index -1 = the path note)
+    #[command(allow_negative_numbers = true)]
+    NoteEdit { name: String, index: i64, old: String, new: String },
+    /// <name> <new>                     rename a path
+    PathRename { name: String, new: String },
     /// <name> <sym|file start end> [under]  add a step under step `under` (default: the last step; -1 = root)
     #[command(allow_negative_numbers = true)]
     PathAdd {
@@ -72,11 +77,12 @@ pub enum Command {
     PathMove { name: String, index: usize, under: i64 },
     /// <name> [index]                   delete a step (its children move up) or the whole path
     PathRm { name: String, index: Option<usize> },
-    /// <symbol> [depth]                 create a path shaped like a symbol's call tree (default depth 1)
+    /// <symbol> [depth] [name]          create a path shaped like a symbol's call tree (default depth 1, named after the symbol)
     Promote {
         symbol: String,
         #[arg(default_value_t = 1)]
         depth: usize,
+        name: Option<String>,
     },
     /// every step whose text no longer matches, or whose file or symbol is gone
     Stale,
@@ -202,8 +208,11 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
                 p!(out, "{} ({} calls)", describe(idx, r), idx.sym(r).callees.len());
             }
         }
-        Command::Paths => {
-            for (pi, path) in map.paths.iter().enumerate() {
+        Command::Paths { name } => {
+            if let Some(n) = &name {
+                find_path(map, n)?;
+            }
+            for (pi, path) in map.paths.iter().enumerate().filter(|(_, p)| name.as_ref().is_none_or(|n| &p.name == n)) {
                 let note = if path.note.is_empty() { String::new() } else { format!(": {}", path.note) };
                 p!(out, "{} [{}]{} ({} steps){}", path.name, path.kind.name(), path.author.tag(), path.anchors.len(), note);
                 for (i, depth) in map.tree_order(pi) {
@@ -261,6 +270,21 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
             map.paths[pi].anchors.get_mut(index).ok_or("no such step")?.note = note;
             dirty = true;
         }
+        Command::NoteEdit { name, index, old, new } => {
+            let pi = find_path(map, &name)?;
+            let note = if index < 0 { &mut map.paths[pi].note } else { &mut map.paths[pi].anchors.get_mut(index as usize).ok_or("no such step")?.note };
+            if !note.contains(&old) {
+                return Err(format!("the note does not contain '{old}'"));
+            }
+            *note = note.replacen(&old, &new, 1);
+            p!(out, "{note}");
+            dirty = true;
+        }
+        Command::PathRename { name, new } => {
+            let pi = find_path(map, &name)?;
+            map.rename(pi, &new)?;
+            dirty = true;
+        }
         Command::PathAdd { name, target, nums } => {
             let pi = find_path(map, &name)?;
             let last = map.paths[pi].anchors.len() as i64 - 1;
@@ -271,6 +295,10 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
                 [start, end, under] => (Some((start, end)), under),
                 _ => unreachable!(),
             };
+            let n = map.paths[pi].anchors.len() as i64;
+            if under < -1 || under >= n {
+                return Err(format!("no step [{under}] to go under: the path has {n} steps (-1 = root)"));
+            }
             let under = under as i32;
             match lines {
                 Some((start, end)) => {
@@ -278,6 +306,7 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
                     let (start, end) = check_range(&idx.files[fi], start, end)?;
                     let ai = map.add_anchor(idx, pi, fi, start, end, author, under);
                     p!(out, "step [{ai}] added under [{}]", map.paths[pi].anchors[ai].parent);
+                    absolute_warning(out, &map.paths[pi].anchors[ai]);
                     call_warning(out, idx, map, pi, ai);
                 }
                 None => {
@@ -309,6 +338,7 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
             let (start, end) = check_range(&idx.files[fi], start as i64, end as i64)?;
             map.pin_anchor(idx, pi, index, fi, start, end, author);
             p!(out, "step [{index}] pinned to {}", where_is(idx, &map.paths[pi].anchors[index]));
+            absolute_warning(out, &map.paths[pi].anchors[index]);
             dirty = true;
         }
         Command::PathRm { name, index } => {
@@ -322,8 +352,8 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
             }
             dirty = true;
         }
-        Command::Promote { symbol, depth } => {
-            let pi = map.promote(idx, find_symbol(idx, &symbol)?, depth, author);
+        Command::Promote { symbol, depth, name } => {
+            let pi = map.promote(idx, find_symbol(idx, &symbol)?, depth, name.as_deref(), author);
             p!(out, "path '{}' now has {} steps", map.paths[pi].name, map.paths[pi].anchors.len());
             dirty = true;
         }
@@ -333,6 +363,9 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
                 for (i, a) in path.anchors.iter().enumerate().filter(|(_, a)| a.stale) {
                     n += 1;
                     p!(out, "{}[{i}] {} {}", path.name, where_is(idx, a), a.symbol);
+                    if let Some((ls, le)) = idx.find_file(&a.file).and_then(|fi| moved_to(&idx.files[fi], a)) {
+                        p!(out, "  same text at {}:{}-{}   path-pin {} {i} {} {} {}", a.file, ls + 1, le + 1, path.name, a.file, ls + 1, le + 1);
+                    }
                 }
             }
             if check {
@@ -438,11 +471,27 @@ fn call_warning(out: &mut String, idx: &Index, map: &Map, pi: usize, ai: usize) 
     }
     let a = &path.anchors[ai];
     let Some(parent) = usize::try_from(a.parent).ok().and_then(|p| path.anchors.get(p)) else { return };
-    let sym_of = |x: &Anchor| idx.find_file(&x.file).and_then(|fi| idx.files[fi].symbols.iter().position(|s| s.name == x.symbol).map(|si| SymRef { file: fi, sym: si }));
+    let sym_of = |x: &Anchor| Some(SymRef { file: idx.find_file(&x.file)?, sym: x.sym? });
+    let callable = |k: &str| ["function", "method", "macro", "constructor", "proc"].iter().any(|w| k.contains(w));
     if let (Some(p), Some(c)) = (sym_of(parent), sym_of(a)) {
-        if p != c && !idx.sym(p).callees.contains(&c) {
+        // data under the function that works on it is a normal step; only a misplaced call is noted
+        if p != c && callable(&idx.sym(c).kind) && !idx.sym(p).callees.contains(&c) {
             p!(out, "note: {} does not call {}; in a flow a step goes under the step that calls it (path-move <name> {ai} <under>)", parent.symbol, a.symbol);
         }
+    }
+}
+
+/// Where a stale step's unchanged text now sits in its file, if it moved rather than changed:
+/// the same number of lines with the same hash. The re-pin stays the agent's explicit call.
+fn moved_to(f: &File, a: &Anchor) -> Option<(usize, usize)> {
+    let len = (a.off_end - a.off_start) as usize;
+    (0..f.lines.len().checked_sub(len)?).map(|ls| (ls, ls + len)).find(|&(ls, le)| (ls, le) != (a.line_start, a.line_end) && crate::map::slice_hash(&f.lines, ls, le) == a.hash)
+}
+
+/// A slice that no single symbol contains only survives edits below it.
+fn absolute_warning(out: &mut String, a: &Anchor) {
+    if a.symbol.is_empty() {
+        p!(out, "note: lines {}-{} are not inside one symbol; pinned as absolute lines, which go stale with any edit above them", a.line_start + 1, a.line_end + 1);
     }
 }
 
@@ -450,7 +499,7 @@ fn call_warning(out: &mut String, idx: &Index, map: &Map, pi: usize, ai: usize) 
 fn where_is(idx: &Index, a: &Anchor) -> String {
     match idx.find_file(&a.file) {
         None => format!("{} (file gone)", a.file),
-        Some(fi) if !a.symbol.is_empty() && !idx.files[fi].symbols.iter().any(|s| s.name == a.symbol) => format!("{} (symbol gone)", a.file),
+        Some(_) if !a.symbol.is_empty() && a.sym.is_none() => format!("{} (symbol gone)", a.file),
         Some(_) => format!("{}:{}-{}", a.file, a.line_start + 1, a.line_end + 1),
     }
 }
@@ -481,14 +530,24 @@ fn find_symbols(idx: &Index, name: &str) -> Result<Vec<SymRef>, String> {
     if found.is_empty() { Err(format!("no such symbol: {name}")) } else { Ok(found) }
 }
 
-/// Exactly one symbol; an ambiguous name lists the candidates to qualify with.
+/// Exactly one symbol; an ambiguous name lists each candidate with the qualified name that
+/// selects it.
 fn find_symbol(idx: &Index, name: &str) -> Result<SymRef, String> {
     let found = find_symbols(idx, name)?;
     if found.len() > 1 {
-        let list: Vec<String> = found.iter().map(|&r| describe(idx, r)).collect();
-        return Err(format!("ambiguous: {name}; qualify as Owner::{name} or file.rs:{name}
-  {}", list.join("
-  ")));
+        let bare = name.rsplit([':']).next().unwrap_or(name);
+        let list: Vec<String> = found
+            .iter()
+            .map(|&r| {
+                let (s, f) = (idx.sym(r), &idx.files[r.file]);
+                let qualified = match &s.owner {
+                    Some(o) => format!("{o}::{bare}"),
+                    None => format!("{}:{bare}", f.stem()),
+                };
+                format!("{qualified:<40} {}", describe(idx, r))
+            })
+            .collect();
+        return Err(format!("ambiguous: {name}; use one of\n  {}", list.join("\n  ")));
     }
     Ok(found[0])
 }

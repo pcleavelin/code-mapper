@@ -71,6 +71,7 @@ pub struct Anchor {
     pub line_start: usize,
     pub line_end: usize,
     pub stale: bool,
+    pub sym: Option<usize>, // index of the enclosing symbol in its file, when it was found
 }
 
 pub struct PathDef {
@@ -200,6 +201,7 @@ impl Map {
                     line_start: 0,
                     line_end: 0,
                     stale: true,
+                    sym: None,
                 });
             }
             m.paths.push(p);
@@ -248,9 +250,17 @@ impl Map {
         self.paths[pi].anchors.len() - 1
     }
 
-    /// Index of the step for `symbol` in `file`, if the path already has one.
-    pub fn step_for(&self, pi: usize, file: &str, symbol: &str) -> Option<usize> {
-        self.paths[pi].anchors.iter().position(|a| a.file == file && a.symbol == symbol)
+    /// Index of the step pinned to whole symbol `si` of `file`, if the path already has one.
+    pub fn step_for(&self, pi: usize, file: &str, si: usize) -> Option<usize> {
+        self.paths[pi].anchors.iter().position(|a| a.file == file && a.sym == Some(si) && a.off_start == 0)
+    }
+
+    pub fn rename(&mut self, pi: usize, new: &str) -> Result<(), String> {
+        if self.find(new).is_some_and(|other| other != pi) {
+            return Err(format!("a path named '{new}' already exists"));
+        }
+        self.paths[pi].name = new.to_owned();
+        Ok(())
     }
 
     /// Put step `ai` under `parent` (-1 = root). Refuses a parent that is the step itself or
@@ -325,16 +335,17 @@ impl Map {
         out
     }
 
-    /// A path named after `root` shaped like its call tree: one step per symbol, each under the
-    /// step it is called from. Re-promoting adds only symbols the path lacks.
-    pub fn promote(&mut self, idx: &Index, root: SymRef, depth: usize, author: Author) -> usize {
-        let pi = self.add_path(&idx.sym(root).name.clone(), Kind::Flow, author);
+    /// A path named `name` (default: after `root`) shaped like the root's call tree: one step per
+    /// symbol, each under the step it is called from. Re-promoting adds only symbols the path
+    /// lacks.
+    pub fn promote(&mut self, idx: &Index, root: SymRef, depth: usize, name: Option<&str>, author: Author) -> usize {
+        let pi = self.add_path(name.unwrap_or(&idx.sym(root).name.clone()), Kind::Flow, author);
         let mut stack: Vec<i32> = Vec::new(); // step index at each depth
         for (r, d) in idx.call_tree(root, depth) {
             let s = idx.sym(r);
             let file = &idx.files[r.file].path;
             let parent = if d == 0 { -1 } else { stack.get(d - 1).copied().unwrap_or(-1) };
-            let ai = match self.step_for(pi, file, &s.name) {
+            let ai = match self.step_for(pi, file, r.sym) {
                 Some(ai) => ai,
                 None => self.add_anchor(idx, pi, r.file, s.start, s.end, author, parent),
             };
@@ -422,36 +433,54 @@ impl Anchor {
             line_start: ls,
             line_end: le,
             stale: false,
+            sym: None,
         };
         // innermost symbol containing the slice
-        if let Some(s) = f.symbols.iter().filter(|s| s.start <= ls && le <= s.end).max_by_key(|s| s.depth) {
+        if let Some((si, s)) = f.symbols.iter().enumerate().filter(|(_, s)| s.start <= ls && le <= s.end).max_by_key(|(_, s)| s.depth) {
             a.symbol = s.name.clone();
+            a.sym = Some(si);
             a.off_start = (ls - s.start) as i32;
             a.off_end = (le - s.start) as i32;
         }
         a
     }
 
+    /// Several symbols in one file can share a name (`Author::tag`, `Kind::tag`): the one whose
+    /// text still hashes right wins, else the first, so a re-pin is only needed when the text
+    /// itself changed.
     pub fn resolve(&mut self, idx: &Index) {
         self.stale = true;
+        self.sym = None;
         let Some(f) = idx.find_file(&self.file).map(|i| &idx.files[i]) else { return };
 
-        let base = if self.symbol.is_empty() {
-            0
+        let cands: Vec<Option<usize>> = if self.symbol.is_empty() {
+            vec![None]
         } else {
-            match f.symbols.iter().find(|s| s.name == self.symbol) {
-                Some(s) => s.start as i64,
-                None => return,
-            }
+            f.symbols.iter().enumerate().filter(|(_, s)| s.name == self.symbol).map(|(i, _)| Some(i)).collect()
         };
-        let ls = base + self.off_start as i64;
-        let le = base + self.off_end as i64;
-        if ls < 0 || le >= f.lines.len() as i64 || ls > le {
-            return;
+        let mut best: Option<(Option<usize>, usize, usize, bool)> = None;
+        for si in cands {
+            let base = si.map_or(0, |i| f.symbols[i].start as i64);
+            let ls = base + self.off_start as i64;
+            let le = base + self.off_end as i64;
+            if ls < 0 || le >= f.lines.len() as i64 || ls > le {
+                continue;
+            }
+            let (ls, le) = (ls as usize, le as usize);
+            let current = slice_hash(&f.lines, ls, le) == self.hash;
+            if best.is_none() || current {
+                best = Some((si, ls, le, current));
+            }
+            if current {
+                break;
+            }
         }
-        self.line_start = ls as usize;
-        self.line_end = le as usize;
-        self.stale = slice_hash(&f.lines, self.line_start, self.line_end) != self.hash;
+        if let Some((si, ls, le, current)) = best {
+            self.sym = si;
+            self.line_start = ls;
+            self.line_end = le;
+            self.stale = !current;
+        }
     }
 }
 
