@@ -308,6 +308,7 @@ pub struct App {
     output: String,
     status: String,
     shot: Option<(PathBuf, u32)>, // screenshot mode: write the window to this file after a few frames, then quit
+    shot_next: Option<PathBuf>,   // a script asked for a screenshot of the next frame
 }
 
 impl App {
@@ -369,6 +370,7 @@ impl App {
             output: "type 'help' for commands; roots and promote live here\n".into(),
             status,
             shot: std::env::var_os("CODEMAP_SHOT").map(|p| (PathBuf::from(p), 0)),
+            shot_next: None,
         };
         if let Some(pi) = first_path {
             app.select_path(pi);
@@ -587,7 +589,9 @@ impl App {
         self.sel = Some((start, end));
         self.scroll_to = Some(start);
         self.focus = Some(r);
-        self.graph.want_look = true;
+        if !std::mem::take(&mut self.graph.hold_look) {
+            self.graph.want_look = true;
+        }
     }
 
     /// Select a symbol reached outside any path. When it is a whole-symbol step of the path
@@ -1576,6 +1580,45 @@ enum Which {
 }
 
 impl gfx::App for App {
+    /// Script commands: `tab <path|graph|listing|diff|results>`, `scroll <panel> <n>`,
+    /// `shot <file.png>`, `dump` (state to stderr: selection, tab, scrolls, graph camera and
+    /// node rectangles, the canvas rectangle).
+    fn script(&mut self, line: &str) {
+        let w: Vec<&str> = line.split_whitespace().collect();
+        match w[0] {
+            "tab" => {
+                self.tab = match w.get(1).copied() {
+                    Some("graph") => Tab::Graph,
+                    Some("listing") => Tab::Listing,
+                    Some("diff") => Tab::Diff,
+                    Some("results") => Tab::Results,
+                    _ => Tab::Path,
+                }
+            }
+            "scroll" => {
+                if let (Some(name), Some(n)) = (w.get(1), w.get(2).and_then(|v| v.parse::<i32>().ok())) {
+                    self.scrolls.insert(ui::id(name), n);
+                }
+            }
+            "shot" => self.shot_next = w.get(1).map(PathBuf::from),
+            "dump" => {
+                eprintln!("DUMP tab={:?} path={:?} step={:?} focus={:?} file={:?} sel={:?}", self.tab, self.sel_path, self.sel_anchor, self.focus.map(|r| self.idx.sym(r).name.clone()), self.cur_file.map(|f| self.idx.files[f].path.clone()), self.sel);
+                for name in ["document", "listing", "paths", "output"] {
+                    let id = ui::id(name);
+                    if let Some((c, r)) = self.ui.content_of(id) {
+                        eprintln!("DUMP scroll {name} off={} rect={:?} content={:?}", self.scrolls.get(&id).copied().unwrap_or(0), r, c);
+                    }
+                }
+                eprintln!("DUMP graph zoom={:.3} pan={:?} canvas={:?}", self.graph.zoom, self.graph.pan, self.ui.content_of(ui::id("graph-canvas")).map(|(_, r)| r));
+                eprintln!("DUMP input mouse={:?} down={:?} hot_is_canvas={} active_is_canvas={} drag={:?}", self.ui.input.mouse, self.ui.input.down, self.ui.hot() == Some(ui::id("graph-canvas")), self.ui.active() == Some(ui::id("graph-canvas")), self.graph.drag_state());
+                for (name, r) in self.graph.node_rects(&self.idx) {
+                    eprintln!("DUMP node {name} rect={r:?}");
+                }
+            }
+            _ => eprintln!("script: unknown command '{line}'"),
+        }
+    }
+
     fn frame(&mut self, gfx: &mut Gfx, input: &mut ui::Input) -> gfx::Frame {
         self.px = (14.0 * gfx.scale).round().max(8.0) as u32;
         self.cell = gfx.cell(self.px);
@@ -1603,6 +1646,9 @@ impl gfx::App for App {
             if *frame > 20 {
                 quit = true;
             }
+        }
+        if let Some(p) = self.shot_next.take() {
+            gfx.shot = Some(p);
         }
         self.poll_backend();
         self.poll_base();

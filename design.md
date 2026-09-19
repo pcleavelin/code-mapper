@@ -250,7 +250,9 @@ and closes elements (nothing, text, or custom drawing) whose sizes are exact, fi
 content, or grow; layout runs once at the end of the frame; input answers from the
 previous frame's rectangles. One monospace font at whole-pixel sizes, every glyph in
 one GPU atlas, so text is never scaled. `CODEMAP_SHOT=<file.png>` writes the first
-settled frame to a file and quits, so rendering claims are checked against pixels.
+settled frame to a file and quits, and `CODEMAP_SCRIPT=<file>` plays mouse and keyboard
+input from a script and dumps state on request, so rendering and interaction claims are
+checked against pixels and numbers, never against the code alone.
 
 `index` and `map` know nothing about the UI. `cli` and `gui` are two front ends over
 the same two structs. Any operation that mutates the map lives on `Map` so both call

@@ -1,8 +1,9 @@
 //! The Graph tab: the selection as a left-to-right tree of nodes showing their code, derived
 //! every frame from the selected path (or the selected symbol alone) plus the expansions the
-//! reader opened. The tree is laid out in pixels at the current zoom, so text is drawn at a
-//! whole pixel size and never scaled. Everything is drawn by one custom element; clicks are
-//! resolved against the rectangles the last frame recorded.
+//! reader opened. The tree is laid out in cells and rows of the node font and drawn at the
+//! cell size of the current zoom, so text is drawn at a whole pixel size and never scaled, and
+//! zooming scales positions by exactly the factor the text grew by. Everything is drawn by one
+//! custom element; clicks are resolved against the rectangles the last frame recorded.
 
 use crate::gfx::{Color, Gfx, Rect};
 use crate::gui::{self, Action, App, ACCENT, BORDER, FIELD, GREEN, HOVER, ORANGE, PANEL, TEXT, WEAK};
@@ -19,16 +20,16 @@ pub type Node = (SymRef, Option<usize>);
 const PREVIEW_LINES: usize = 12;
 const MIN_COLS: i32 = 44;
 const MAX_COLS: i32 = 110;
-const GAP_X: i32 = 110;
-const GAP_Y: i32 = 28;
+const GAP_X: i32 = 12; // cells between columns
+const GAP_Y: i32 = 2; // rows between stacked subtrees
 
+/// The node font's cell at the current zoom. Layout happens in cells and rows; these turn it
+/// into pixels.
 #[derive(Clone, Copy)]
 struct Metrics {
     cell_w: i32,
     row_h: i32,
-    pad: i32,
-    gap_x: i32, // the gaps scale with the zoom so the tree keeps its shape
-    gap_y: i32,
+    pad: i32, // inside a node, in pixels
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -58,9 +59,11 @@ enum Drag {
 pub struct Graph {
     nodes: Vec<Node>,
     col: HashMap<Node, i32>,
-    pos: HashMap<Node, (i32, i32)>,        // this frame, canvas pixels
-    manual: HashMap<Node, (f32, f32)>,     // dragged positions, in zoom-1 pixels; layout stops while any exist
-    size: HashMap<Node, (i32, i32)>,
+    pos: HashMap<Node, (i32, i32)>,     // this frame, in cells and rows
+    manual: HashMap<Node, (f32, f32)>,  // dragged positions, in cells and rows
+    size: HashMap<Node, (i32, i32)>,    // in cells and rows
+    pos_px: HashMap<Node, (i32, i32)>,  // this frame, canvas pixels
+    size_px: HashMap<Node, (i32, i32)>,
     range: HashMap<Node, (usize, usize)>, // lines a node shows: the step's slice, or the whole symbol
     by_sym: HashMap<SymRef, Node>,
     path_id: Option<usize>,
@@ -74,6 +77,7 @@ pub struct Graph {
     pub pan: (i32, i32),
     pub zoom: f32,
     pub want_look: bool, // centre on the focus once it has a position
+    pub hold_look: bool, // the next focus change came from the graph itself: do not move the camera
     hits: Vec<(Rect, Hit)>,
     drag: Option<Drag>,
 }
@@ -81,6 +85,25 @@ pub struct Graph {
 impl Graph {
     pub fn new() -> Graph {
         Graph { zoom: 1.0, ..Default::default() }
+    }
+
+    pub fn drag_state(&self) -> String {
+        match self.drag {
+            None => "none".into(),
+            Some(Drag::Pan) => "pan".into(),
+            Some(Drag::Node(_)) => "node".into(),
+        }
+    }
+
+    /// Every node's name (with its step number) and last frame's window rectangle.
+    pub fn node_rects(&self, idx: &Index) -> Vec<(String, Rect)> {
+        self.hits
+            .iter()
+            .filter_map(|(r, h)| match h {
+                Hit::Body(n) => Some((format!("{}{}", self.step.get(n).map(|s| format!("{} ", s.2)).unwrap_or_default(), idx.sym(n.0).name), *r)),
+                _ => None,
+            })
+            .collect()
     }
 }
 
@@ -204,7 +227,8 @@ impl Graph {
         let cols = longest.clamp(MIN_COLS, MAX_COLS);
         let note_rows = i32::from(self.has_note.contains(&n));
         let rows = 1 + note_rows + shown as i32 + usize::from(shown < total) as i32;
-        (cols * m.cell_w + m.pad * 2, rows * m.row_h + m.pad * 2 + 4)
+        let _ = m;
+        (cols + 1, rows + 1) // one cell and one row of padding
     }
 
     /// Recompute every position as a left-to-right forest: a column per depth anchored at
@@ -224,10 +248,10 @@ impl Graph {
         let mut col_x: BTreeMap<i32, i32> = BTreeMap::new();
         col_x.insert(anchor, 0);
         for c in (anchor + 1)..=last {
-            col_x.insert(c, col_x[&(c - 1)] + col_w[&(c - 1)] + m.gap_x);
+            col_x.insert(c, col_x[&(c - 1)] + col_w[&(c - 1)] + GAP_X);
         }
         for c in (first..anchor).rev() {
-            col_x.insert(c, col_x[&(c + 1)] - col_w[&c] - m.gap_x);
+            col_x.insert(c, col_x[&(c + 1)] - col_w[&c] - GAP_X);
         }
         // the forest
         let mut right: HashMap<Node, Vec<Node>> = HashMap::new();
@@ -250,7 +274,8 @@ impl Graph {
 
         // block heights, bottom-up
         let mut height: HashMap<Node, i32> = HashMap::new();
-        let gap_y = m.gap_y;
+        let gap_y = GAP_Y;
+        let _ = m;
         fn measure(g: &Graph, gap_y: i32, r: Node, right: &HashMap<Node, Vec<Node>>, left: &HashMap<Node, Vec<Node>>, height: &mut HashMap<Node, i32>, seen: &mut HashSet<Node>) -> i32 {
             if !seen.insert(r) {
                 return 0;
@@ -345,6 +370,7 @@ impl App {
         let canvas_id = ui::id("graph-canvas");
         let it = self.ui.interaction_of(canvas_id);
         let canvas = it.rect.unwrap_or(Rect::new(0, 0, 100, 100));
+        let canvas_known = it.rect.is_some();
         let mouse = self.ui.input.mouse;
         let mods = self.ui.input.mods;
 
@@ -353,11 +379,13 @@ impl App {
             if mods.ctrl {
                 let old = self.graph.zoom;
                 let new = (old * if it.wheel.1 > 0.0 { 1.1 } else { 1.0 / 1.1 }).clamp(0.3, 2.0);
-                // keep the scene point under the mouse still
-                let (mx, my) = ((mouse.0 - canvas.x) as f32, (mouse.1 - canvas.y) as f32);
-                let (px, py) = ((mx - self.graph.pan.0 as f32) / old, (my - self.graph.pan.1 as f32) / old);
-                self.graph.pan = ((mx - px * new).round() as i32, (my - py * new).round() as i32);
+                // keep the cell under the mouse still: positions scale by the cell, not the zoom
+                let (oc, or) = gfx.cell(self.graph_px());
                 self.graph.zoom = new;
+                let (nc, nr) = gfx.cell(self.graph_px());
+                let (mx, my) = ((mouse.0 - canvas.x) as f32, (mouse.1 - canvas.y) as f32);
+                let (ux, uy) = ((mx - self.graph.pan.0 as f32) / oc as f32, (my - self.graph.pan.1 as f32) / or as f32);
+                self.graph.pan = ((mx - ux * nc as f32).round() as i32, (my - uy * nr as f32).round() as i32);
             } else if mods.shift {
                 self.graph.pan.0 += it.wheel.1 as i32;
             } else {
@@ -386,11 +414,10 @@ impl App {
                         (Some(ai), Some(pi)) => Action::SelectStep(pi, ai, false),
                         _ => Action::Focus(n.0),
                     });
-                    self.graph.want_look = false;
+                    self.graph.hold_look = true; // selecting from the graph must not move the camera
                 }
                 Some(Hit::Line(n, li)) => {
-                    let (lo, _) = self.graph.range[&n];
-                    let _ = lo;
+                    self.graph.drag = Some(Drag::Node(n)); // dragging code moves the node without selecting it
                     if let Some(rect) = self.graph.hits.iter().find(|(_, h)| matches!(h, Hit::Line(m, l) if *m == n && *l == li)).map(|(r, _)| *r) {
                         let cell = gfx.cell(self.graph_px()).0.max(1);
                         let col = (((mouse.0 - rect.x) / cell) as usize).saturating_sub(5);
@@ -403,7 +430,7 @@ impl App {
                         }
                     }
                 }
-                Some(Hit::Body(_)) => {}
+                Some(Hit::Body(n)) => self.graph.drag = Some(Drag::Node(n)),
                 None => self.graph.drag = Some(Drag::Pan),
             }
         }
@@ -414,10 +441,10 @@ impl App {
                     self.graph.pan.1 += d.1;
                 }
                 Some(Drag::Node(n)) => {
-                    let z = self.graph.zoom;
+                    let (cw, rh) = gfx.cell(self.graph_px());
                     let base = self.graph.pos.get(&n).copied().unwrap_or((0, 0));
-                    let cur = self.graph.manual.get(&n).copied().unwrap_or((base.0 as f32 / z, base.1 as f32 / z));
-                    self.graph.manual.insert(n, (cur.0 + d.0 as f32 / z, cur.1 + d.1 as f32 / z));
+                    let cur = self.graph.manual.get(&n).copied().unwrap_or((base.0 as f32, base.1 as f32));
+                    self.graph.manual.insert(n, (cur.0 + d.0 as f32 / cw.max(1) as f32, cur.1 + d.1 as f32 / rh.max(1) as f32));
                 }
                 None => {}
             }
@@ -441,19 +468,27 @@ impl App {
         let px = self.graph_px();
         let (cell_w, row_h) = gfx.cell(px);
         let z = self.graph.zoom;
-        let m = Metrics { cell_w, row_h, pad: (6.0 * z).round() as i32, gap_x: (GAP_X as f32 * z).round() as i32, gap_y: (GAP_Y as f32 * z).round() as i32 };
+        let m = Metrics { cell_w, row_h, pad: cell_w / 2 };
         for &n in &self.graph.nodes.clone() {
             let s = self.graph.node_size(&self.idx, n, m);
             self.graph.size.insert(n, s);
         }
         self.graph.layout(&self.idx, m);
-        let z = self.graph.zoom;
         for (n, p) in self.graph.manual.clone() {
-            self.graph.pos.insert(n, ((p.0 * z).round() as i32, (p.1 * z).round() as i32));
+            self.graph.pos.insert(n, (p.0.round() as i32, p.1.round() as i32));
+        }
+        // cells and rows to pixels
+        self.graph.pos_px.clear();
+        self.graph.size_px.clear();
+        for &n in &self.graph.nodes.clone() {
+            let (x, y) = self.graph.pos[&n];
+            let (w, h) = self.graph.size[&n];
+            self.graph.pos_px.insert(n, (x * cell_w, y * row_h));
+            self.graph.size_px.insert(n, (w * cell_w, h * row_h));
         }
         let focus_node = self.graph.focus_node(self.focus, self.sel_anchor);
-        if self.graph.want_look {
-            if let Some(f) = focus_node.and_then(|f| self.graph.pos.get(&f).map(|p| (*p, self.graph.size[&f]))) {
+        if self.graph.want_look && canvas_known {
+            if let Some(f) = focus_node.and_then(|f| self.graph.pos_px.get(&f).map(|p| (*p, self.graph.size_px[&f]))) {
                 let ((x, y), (w, h)) = f;
                 self.graph.pan = (canvas.w / 2 - x - w / 2, canvas.h / 2 - y - h / 2);
                 self.graph.want_look = false;
@@ -502,8 +537,8 @@ impl App {
         let step_color = GREEN;
         // nodes
         for &n in &self.graph.nodes {
-            let (x, y) = self.graph.pos[&n];
-            let (w, h) = self.graph.size[&n];
+            let (x, y) = self.graph.pos_px[&n];
+            let (w, h) = self.graph.size_px[&n];
             let rect = Rect::new(ox + x, oy + y, w, h);
             let s = self.idx.sym(n.0);
             let f = &self.idx.files[n.0.file];
@@ -571,8 +606,8 @@ impl App {
         }
         // edges: where an edge leaves a node is level with the call line when it is shown
         let rect_of = |g: &Graph, n: Node| {
-            let (x, y) = g.pos[&n];
-            let (w, h) = g.size[&n];
+            let (x, y) = g.pos_px[&n];
+            let (w, h) = g.size_px[&n];
             Rect::new(ox + x, oy + y, w, h)
         };
         let edge_out = |g: &Graph, n: Node, word: &str| -> (f32, f32) {
@@ -596,12 +631,12 @@ impl App {
                 if rb.x >= ra.right() {
                     let p0 = edge_out(&self.graph, a, &self.idx.sym(bs).name);
                     let p1 = (rb.x as f32, rb.y as f32 + hy);
-                    let dx = ((p1.0 - p0.0).abs() * 0.5).max(m.gap_x as f32 * 0.8);
+                    let dx = ((p1.0 - p0.0).abs() * 0.5).max((GAP_X * m.cell_w) as f32 * 0.8);
                     edges.push(([p0, (p0.0 + dx, p0.1), (p1.0 - dx, p1.1), p1], WEAK, 1.5, true));
                 } else {
                     let p0 = (ra.x as f32, ra.y as f32 + hy);
                     let p1 = (rb.right() as f32, rb.y as f32 + hy);
-                    let dx = ((p0.0 - p1.0).abs() * 0.5).max(m.gap_x as f32 * 0.8);
+                    let dx = ((p0.0 - p1.0).abs() * 0.5).max((GAP_X * m.cell_w) as f32 * 0.8);
                     edges.push(([p0, (p0.0 - dx, p0.1), (p1.0 + dx, p1.1), p1], ORANGE, 1.5, true));
                 }
             }
@@ -610,7 +645,7 @@ impl App {
             let rb = rect_of(&self.graph, child);
             let p0 = edge_out(&self.graph, parent, &self.idx.sym(child.0).name);
             let p1 = (rb.x as f32, rb.y as f32 + hy);
-            let dx = ((p1.0 - p0.0).abs() * 0.5).max(m.gap_x as f32 * 0.8);
+            let dx = ((p1.0 - p0.0).abs() * 0.5).max((GAP_X * m.cell_w) as f32 * 0.8);
             edges.push(([p0, (p0.0 + dx, p0.1), (p1.0 - dx, p1.1), p1], step_color, 3.0, true));
         }
         self.graph.hits = hits.into_iter().map(|(r, h)| (r.intersect(&canvas), h)).collect();

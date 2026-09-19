@@ -64,6 +64,19 @@ force a full re-query.
 ## Build
 
 `cargo build`, `cargo test`. The GUI is winit + wgpu + fontdue with the tool's own element
-tree (`src/ui.rs`); there is no UI framework underneath. To see a change on screen without
-a hand on the mouse, `CODEMAP_SHOT=<file.png> [CODEMAP_SHOT_TAB=path|graph|listing|diff]
-target\release\codemap.exe <root>` writes the first settled frame and quits.
+tree (`src/ui.rs`); there is no UI framework underneath.
+
+## Testing the GUI without a hand on the mouse
+
+Never claim a visual or interactive behaviour from reading the code; drive it and look.
+
+- `CODEMAP_SHOT=<file.png> [CODEMAP_SHOT_TAB=path|graph|listing|diff] [CODEMAP_SHOT_SCROLL=n]
+  target\release\codemap.exe <root>` writes the first settled frame and quits.
+- `CODEMAP_SCRIPT=<file> target\release\codemap.exe <root>` plays a script, one command per
+  line, as real input: `wait n`, `mouse x y`, `down`, `up`, `click x y`, `dblclick x y`,
+  `drag x0 y0 x1 y1`, `wheel dy [ctrl|shift]`, `key <name> [ctrl] [alt]`, `text ...`, `quit`;
+  app commands `tab <name>`, `scroll <panel> <n>`, `shot <file.png>`, `dump`. `dump` prints
+  the selection, scroll offsets, the graph camera and every node's rectangle to stderr as
+  `DUMP` lines, so a script can measure what a gesture did (grep `^DUMP`). Coordinates are
+  window pixels; the window opens maximised.
+- Crop or scale a PNG with PowerShell's System.Drawing and Read it.
