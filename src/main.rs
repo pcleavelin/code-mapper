@@ -407,9 +407,13 @@ impl App {
     fn new(root: &Path) -> App {
         let idx = index::build(root);
         let map_path = root.join(".codemap");
-        let mut map = Map::load(&map_path).unwrap_or_default();
+        let map = Map::load(&map_path);
+        let mut status = format!("{} files, {} symbols indexed", idx.files.len(), idx.files.iter().map(|f| f.symbols.len()).sum::<usize>());
+        if map.is_none() && map_path.exists() {
+            status = ".codemap is unreadable or an old format: starting from an empty map, saving overwrites it".into();
+        }
+        let mut map = map.unwrap_or_default();
         map.resolve_all(&idx);
-        let status = format!("{} files, {} symbols indexed", idx.files.len(), idx.files.iter().map(|f| f.symbols.len()).sum::<usize>());
         let mut app = App {
             idx,
             map,
@@ -1289,12 +1293,20 @@ fn cli_main(root: &Path, args: &[String]) -> i32 {
     };
     let idx = index::build(root);
     let map_path = root.join(".codemap");
-    let mut map = Map::load(&map_path).unwrap_or_default();
+    let map = Map::load(&map_path);
+    if map.is_none() && map_path.exists() {
+        eprintln!("{}: unreadable or an old format, starting from an empty map", map_path.display());
+    }
+    let mut map = map.unwrap_or_default();
     map.resolve_all(&idx);
     let mut out = String::new();
+    // A closed pipe (`| head`) is not an error worth a panic.
+    let emit = |s: &str| {
+        let _ = std::io::Write::write_all(&mut std::io::stdout(), s.as_bytes());
+    };
     match cli::exec(&idx, &mut map, cmd, Author::Ai, &mut out) {
         Ok(dirty) => {
-            print!("{out}");
+            emit(&out);
             if dirty {
                 if let Err(e) = map.save(&map_path) {
                     eprintln!("save failed: {e}");
@@ -1305,7 +1317,7 @@ fn cli_main(root: &Path, args: &[String]) -> i32 {
             0
         }
         Err(e) => {
-            print!("{out}");
+            emit(&out);
             eprintln!("{e}");
             2
         }
