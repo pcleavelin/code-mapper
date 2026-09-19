@@ -4,7 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-eframe = "0.33"
+winit = "0.30"
+wgpu = "27"
+pollster = "0.4"
+fontdue = "0.9"
 clap = { version = "4", default-features = false, features = ["std", "derive", "help", "usage", "error-context", "suggestions"] }
 ignore = "0.4"
 regex = "1"
