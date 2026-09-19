@@ -610,7 +610,7 @@ impl Ui {
         }
         for layer in 0..2u8 {
             for (l, e) in layers.iter_mut() {
-                if *l != layer {
+                if *l != layer || e.rect.intersect(&e.clip).is_empty() {
                     continue;
                 }
                 gfx.push_clip(e.clip);
