@@ -88,29 +88,46 @@ judged trivial, and size says which. `coverage` prints covered/total per file.
 
 ## 6. The human surface (GUI)
 
-Reader first. Opening a path lands on its **document**: steps in tree order, indented
-by depth and numbered in pre-order, each step's note above its anchored lines, syntax
-coloured, with an expand control to show the whole enclosing symbol. Stale steps are
-red. Clicking a step focuses the graph on it.
-
-Around the document, a general code browser:
+Reader first. One **selection** for the whole app: a symbol, with a step behind it when
+it was reached through a path. Steps are selected from the outline, the document, the
+breadcrumb, or a graph node that is a step; symbols alone from the Symbols tab, xrefs,
+jumps and off-path graph nodes. Every view shows the selection; nothing selected means
+every view is empty. The document, outline and graph are three views of one thing and
+never disagree.
 
 | Panel | Contents |
 |---|---|
-| Left, tabs | **Paths**: every path with kind, note, author tag, stale count. **Symbols**: filterable table with kind, file, line, covered. **Files**: a tree of the indexed files with covered/total per file. |
-| Centre, tabs | **Path** document. **Diff**: the map against the parent revision's, every added, removed or changed path, click to read. **Graph**: pan-and-zoom canvas of symbol nodes with their code, callers left, callees right, expansion buttons per node, a path drawn as a tree with green numbered edges. **Listing**: the file viewer with line numbers, anchor bars, and go-to-line. **Results**: grep output. In the document and the listing, double-click or ctrl-click an identifier to jump to its definition. |
-| Right | **Xrefs** for the focused symbol. |
+| Left, tabs | **Paths**: every path with kind, author tag and stale count; the selected path expanded into its **outline**, one row per step with hierarchical number (1, 1.2, 1.2.3), symbol and file, a hidden count on folded subtrees. The topmost step visible in the document is highlighted and the outline scrolls to keep it in view. Clicking a row selects the step. **Symbols**: filterable table with kind, file, line, covered. **Files**: a tree of the indexed files with covered/total per file. |
+| Centre, tabs | **Path** document, below. **Diff**: the map against the parent revision's, every added, removed or changed path, click to read. **Graph**: the selection as a left-to-right tree, below. **Listing**: the file viewer with line numbers, anchor bars, and go-to-line. **Results**: grep output. In the document and the listing, double-click or ctrl-click an identifier to jump to its definition. |
+| Right | **Xrefs** for the selected symbol. |
 | Bottom | **Output**: runs the same commands as the CLI. |
 
-Editing in the GUI is limited to what a reader needs: edit a note, delete a step or a
-path, and pin a selection from the listing when hand-authoring. There is no Auto
-window; `roots` and `promote` are CLI commands and run from the output panel.
+**The document.** A sticky breadcrumb of the topmost visible step's ancestors, name and
+file per crumb, each clickable. Then the steps in tree order: a header with the
+hierarchical number, symbol, file:lines and tags; the note as text, double-click to
+edit; the anchored lines inline, syntax coloured, full length. Per step: collapse the
+code, fold the subtree (the header shows how many steps are hidden), and a whole-symbol
+toggle that shows the enclosing symbol with the slice highlighted inside it. Path-wide
+collapse all and expand all. Stale steps are red. The selected step carries an accent
+bar; selecting it from outside the document scrolls its header to the top, selecting it
+inside does not scroll. Selecting an off-path symbol leaves the document and outline on
+the path with no step highlighted; back returns to the step. The flat step index the
+CLI uses is not shown.
 
-The graph is derived, never accumulated: a base (the focused symbol, or a path's tree)
-plus an ordered list of expansions. Layout is a forest of compact subtrees anchored at
-the focus; it reruns every frame until the user drags a node. The camera moves only on
-explicit navigation, never on an edit. Edge and column rules live in the code; they
-are not design decisions.
+**The graph.** The selected path drawn as a left-to-right tree: root left, children to
+the right, siblings stacked in call order, every node showing its code. Callers and
+callees expansions per node reveal off-path nodes, drawn distinctly, hanging left or
+right of the step; a revealed symbol that is also a step is one node with an extra
+edge. Green step edges, grey expansion edges, orange back-edges, no edge labels. With no
+path selected the graph is the symbol and its expansions; a symbol selected off the path
+while one is being read joins the tree as its own root, callers and callees open. The graph is
+derived, never accumulated: the selection plus an ordered list of expansions. Layout
+reruns every frame until the user drags a node. The camera moves only on explicit
+navigation, never on an edit.
+
+Editing in the GUI is limited to what a reader needs: edit a note, delete a step or a
+path, and pin a selection from the listing when hand-authoring. `roots` and `promote`
+are CLI commands and run from the output panel.
 
 If `.codemap` changed on disk and there are no unsaved edits, it reloads. If any
 indexed source file changed, it re-indexes and carries the graph over by

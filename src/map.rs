@@ -335,6 +335,31 @@ impl Map {
         out
     }
 
+    /// Tree order with each step's hierarchical number: roots 1, 2, ...; the children of 1 are
+    /// 1.1, 1.2, ...
+    pub fn numbered(&self, pi: usize) -> Vec<(usize, usize, String)> {
+        let mut counters: Vec<usize> = Vec::new();
+        self.tree_order(pi)
+            .into_iter()
+            .map(|(ai, depth)| {
+                counters.truncate(depth + 1);
+                match counters.get_mut(depth) {
+                    Some(c) => *c += 1,
+                    None => counters.push(1),
+                }
+                (ai, depth, counters.iter().map(usize::to_string).collect::<Vec<_>>().join("."))
+            })
+            .collect()
+    }
+
+    /// How many steps sit below `ai` in the tree.
+    pub fn descendants(&self, pi: usize, ai: usize) -> usize {
+        let order = self.tree_order(pi);
+        let Some(pos) = order.iter().position(|&(i, _)| i == ai) else { return 0 };
+        let depth = order[pos].1;
+        order[pos + 1..].iter().take_while(|&&(_, d)| d > depth).count()
+    }
+
     /// A path named `name` (default: after `root`) shaped like the root's call tree: one step per
     /// symbol, each under the step it is called from. Re-promoting adds only symbols the path
     /// lacks.
@@ -550,6 +575,10 @@ mod tests {
         let mid = m.add_anchor(&idx, pi, 0, 3, 5, Author::Human, root) as i32; // b under a
         let leaf = m.add_anchor(&idx, pi, 0, 1, 1, Author::Human, mid); // line in a, under b
         assert_eq!(m.tree_order(pi), [(0, 0), (1, 1), (2, 2)]);
+        let numbers: Vec<String> = m.numbered(pi).into_iter().map(|(_, _, n)| n).collect();
+        assert_eq!(numbers, ["1", "1.1", "1.1.1"]);
+        assert_eq!(m.descendants(pi, 0), 2);
+        assert_eq!(m.descendants(pi, 2), 0);
 
         m.remove_anchor(pi, mid as usize); // remove the middle: leaf moves up under the root
         assert_eq!(m.paths[pi].anchors.len(), 2);

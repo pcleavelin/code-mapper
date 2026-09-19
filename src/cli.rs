@@ -238,13 +238,13 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
                 p!(out, "{}", path.note);
             }
             let mut prev_depth = 0;
-            for (i, depth) in map.tree_order(pi) {
+            for (i, depth, number) in map.numbered(pi) {
                 let a = &path.anchors[i];
                 if depth < prev_depth {
                     p!(out, "\n{}-- back in {} --", "  ".repeat(depth), map.parent_name(pi, i));
                 }
                 prev_depth = depth;
-                p!(out, "\n== {}[{i}] {}{} {}{}", "  ".repeat(depth), if a.stale { "STALE " } else { "" }, where_is(idx, a), a.symbol, a.author.tag());
+                p!(out, "\n== {}{number} [{i}] {}{} {}{}", "  ".repeat(depth), if a.stale { "STALE " } else { "" }, where_is(idx, a), a.symbol, a.author.tag());
                 if !a.note.is_empty() {
                     p!(out, "-- {}", a.note);
                 }
