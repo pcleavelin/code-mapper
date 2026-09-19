@@ -30,6 +30,16 @@ enum LeftTab {
 /// Width of the line-number gutter in a code row.
 const GUTTER: f32 = 64.0;
 
+/// A place in the centre panel, kept so the reader can go back to it.
+#[derive(Clone, PartialEq)]
+struct Loc {
+    tab: Tab,
+    file: Option<String>,
+    sel: Option<(usize, usize)>,
+    focus: Option<(String, String)>,
+    path: Option<usize>,
+}
+
 // ---- syntax colours ---------------------------------------------------------------
 
 fn hl_color(class: u8, base: Color32) -> Color32 {
@@ -407,6 +417,7 @@ struct App {
     sel_path: Option<usize>,
     sel_anchor: Option<usize>,
     expanded_steps: HashSet<(usize, usize)>, // (path, step) showing the whole enclosing symbol
+    history: Vec<Loc>,                       // where the reader was before each navigation
 
     tab: Tab,
     left: LeftTab,
@@ -461,6 +472,7 @@ impl App {
             sel_path: first_path,
             sel_anchor: None,
             expanded_steps: HashSet::new(),
+            history: Vec::new(),
             tab: Tab::Path,
             left: LeftTab::Paths,
             graph: Graph::default(),
@@ -573,22 +585,68 @@ impl App {
         }
     }
 
-    /// Make `r` the current symbol: listing position, xrefs, and graph focus (rebuilding the
-    /// graph around it if it is not already on screen). Moves the view.
-    fn focus(&mut self, r: SymRef) {
-        let s = self.idx.sym(r);
-        let (start, end) = (s.start, s.end);
-        self.cur_file = Some(r.file);
-        self.sel = Some((start, end));
-        self.scroll_to = Some(start.saturating_sub(3));
+    fn here(&self) -> Loc {
+        Loc {
+            tab: self.tab,
+            file: self.cur_file.map(|fi| self.idx.files[fi].path.clone()),
+            sel: self.sel,
+            focus: self.graph.focus.map(|r| self.idx.key(r)),
+            path: self.sel_path,
+        }
+    }
+
+    /// Record the current place before a navigation.
+    fn remember(&mut self) {
+        let here = self.here();
+        if self.history.last() != Some(&here) {
+            self.history.push(here);
+            if self.history.len() > 200 {
+                self.history.remove(0);
+            }
+        }
+    }
+
+    /// Back to the place before the last navigation.
+    fn back(&mut self) {
+        let Some(loc) = self.history.pop() else { return };
+        self.tab = loc.tab;
+        self.sel_path = loc.path.filter(|&pi| pi < self.map.paths.len());
+        self.cur_file = loc.file.and_then(|p| self.idx.find_file(&p));
+        self.sel = loc.sel;
+        if let Some((a, _)) = loc.sel {
+            self.scroll_to = Some(a.saturating_sub(3));
+        }
+        if let Some(r) = loc.focus.and_then(|k| self.idx.by_key(&k)) {
+            self.focus_graph(r);
+        }
+    }
+
+    fn focus_graph(&mut self, r: SymRef) {
         if !self.graph.col.contains_key(&r) {
             self.graph.build_around(&self.idx, &self.map, r);
         }
         self.graph.focus = Some(r);
         self.relayout();
         self.graph.look_at_focus(&self.idx, self.metrics);
-        if self.tab == Tab::Results {
-            self.tab = Tab::Graph;
+    }
+
+    /// Make `r` the current symbol: listing position, xrefs, and graph focus (rebuilding the
+    /// graph around it if it is not already on screen). Moves the view, not the tab.
+    fn focus(&mut self, r: SymRef) {
+        self.remember();
+        let s = self.idx.sym(r);
+        let (start, end) = (s.start, s.end);
+        self.cur_file = Some(r.file);
+        self.sel = Some((start, end));
+        self.scroll_to = Some(start.saturating_sub(3));
+        self.focus_graph(r);
+    }
+
+    /// Focus `r` and show its code: the graph follows when it is up, else the listing opens.
+    fn go_to_symbol(&mut self, r: SymRef) {
+        self.focus(r);
+        if self.tab != Tab::Graph {
+            self.tab = Tab::Listing;
         }
     }
 
@@ -605,6 +663,7 @@ impl App {
     }
 
     fn open_line(&mut self, file: usize, line: usize) {
+        self.remember();
         self.cur_file = Some(file);
         self.sel = Some((line, line));
         self.scroll_to = Some(line.saturating_sub(8));
@@ -1063,8 +1122,16 @@ impl App {
         ui.separator();
         egui::ScrollArea::both().id_salt("document").auto_shrink(false).show(ui, |ui| {
             let width = ui.available_width().max(2000.0);
+            let mut prev_depth = 0;
             for (k, (ai, depth)) in self.map.tree_order(pi).into_iter().enumerate() {
                 let indent = depth as f32 * 24.0;
+                if depth < prev_depth {
+                    ui.horizontal(|ui| {
+                        ui.add_space(indent);
+                        ui.weak(format!("^ back in {}", self.map.parent_name(pi, ai)));
+                    });
+                }
+                prev_depth = depth;
                 let (file, symbol, ls, le, stale, tag) = {
                     let a = &self.map.paths[pi].anchors[ai];
                     (a.file.clone(), a.symbol.clone(), a.line_start, a.line_end, a.stale, a.author.tag())
@@ -1461,17 +1528,19 @@ impl App {
 
     fn apply(&mut self, action: Option<Action>) {
         match action {
-            Some(Action::Focus(r)) => self.focus(r),
+            Some(Action::Focus(r)) => self.go_to_symbol(r),
             Some(Action::OpenListing(r)) => {
                 self.focus(r);
                 self.tab = Tab::Listing;
             }
             Some(Action::SelectPath(pi)) => {
+                self.remember();
                 self.sel_path = Some(pi);
                 self.sel_anchor = None;
                 self.tab = Tab::Path;
             }
             Some(Action::ShowPath(pi)) => {
+                self.remember();
                 self.sel_path = Some(pi);
                 self.sel_anchor = None;
                 self.show_path(pi);
@@ -1530,7 +1599,12 @@ impl App {
                 self.graph.manual = false;
             }
             Some(Action::GoTo(fi, line)) => self.open_line(fi, line),
-            Some(Action::Jump(fi, line, col)) => self.jump_to(fi, line, col),
+            Some(Action::Jump(fi, line, col)) => {
+                self.jump_to(fi, line, col);
+                if self.tab != Tab::Graph {
+                    self.tab = Tab::Listing;
+                }
+            }
             Some(Action::Relayout) => {
                 self.graph.manual = false;
                 self.graph.layout(&self.idx, self.metrics);
@@ -1549,6 +1623,9 @@ impl eframe::App for App {
         if ctx.input_mut(|i| i.consume_key(Modifiers::COMMAND, Key::S)) {
             self.save();
         }
+        if ctx.input_mut(|i| i.consume_key(Modifiers::ALT, Key::ArrowLeft)) || ctx.input(|i| i.pointer.button_pressed(egui::PointerButton::Extra1)) {
+            self.back();
+        }
         let mono = TextStyle::Monospace.resolve(&ctx.style()); // resolve outside the fonts lock: ctx.style() inside it deadlocks
         self.metrics = ctx.fonts_mut(|f| Metrics { line_h: f.row_height(&mono), char_w: f.glyph_width(&mono, 'M') });
         ctx.request_repaint_after(if self.backend.is_some() { Duration::from_millis(100) } else { Duration::from_secs(1) }); // keep polling while idle
@@ -1564,6 +1641,9 @@ impl eframe::App for App {
                     self.run_search();
                 }
                 ui.separator();
+                if ui.add_enabled(!self.history.is_empty(), egui::Button::new("< back")).on_hover_text("alt+left or the mouse back button").clicked() {
+                    self.back();
+                }
                 ui.selectable_value(&mut self.tab, Tab::Path, "Path");
                 ui.selectable_value(&mut self.tab, Tab::Diff, "Diff");
                 ui.selectable_value(&mut self.tab, Tab::Graph, "Graph");

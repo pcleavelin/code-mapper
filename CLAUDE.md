@@ -29,7 +29,12 @@ After changing code, before the commit:
 4. Every new non-trivial symbol goes into a path: `path-add` to an existing one, or
    `path-new <name> <kind> [note]` (kind = flow | layer | type) with a note written for
    someone who did not see the diff. `step-note` says what a step does for that path.
-   `promote <sym>` scaffolds a path from a call tree. Your edits are tagged `(ai)`.
+   Your edits are tagged `(ai)`.
+   A flow reads like a book: every function the workflow calls, each step under the
+   step that calls it, in call order. Scaffold it with `promote <sym> [depth]`, then trim
+   and annotate; when adding by hand, always give `under` explicitly and read the
+   "does not call" note `path-add` prints. `path-move <name> <index> <under>` fixes a
+   misplaced step. `path <name>` shows the result; check that it reads top-down.
 5. `check` must pass. It exits non-zero on any stale step.
 
 After a rebase the same applies: run `stale`, re-pin.

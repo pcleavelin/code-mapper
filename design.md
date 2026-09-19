@@ -242,6 +242,7 @@ path-new <name> <kind> [note]         path-note <name> <note>
 step-note <name> <index> <note>       path-rm <name> [index]
 path-add <name> <sym> [under]         path-add <name> <file> <start> <end> [under]
 path-pin <name> <index> <file> <start> <end>
+path-move <name> <index> <under>
 stale           check                 uncovered [filter]    coverage
 diff
 ```

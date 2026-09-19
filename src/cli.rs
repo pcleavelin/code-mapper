@@ -67,6 +67,9 @@ pub enum Command {
     },
     /// <name> <index> <file> <start> <end>  re-anchor a step; its note and place in the tree stay
     PathPin { name: String, index: usize, file: String, start: usize, end: usize },
+    /// <name> <index> <under>          move a step (with its subtree) under step `under` (-1 = root)
+    #[command(allow_negative_numbers = true)]
+    PathMove { name: String, index: usize, under: i64 },
     /// <name> [index]                   delete a step (its children move up) or the whole path
     PathRm { name: String, index: Option<usize> },
     /// <symbol> [depth]                 create a path shaped like a symbol's call tree (default depth 1)
@@ -225,8 +228,13 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
             if !path.note.is_empty() {
                 p!(out, "{}", path.note);
             }
+            let mut prev_depth = 0;
             for (i, depth) in map.tree_order(pi) {
                 let a = &path.anchors[i];
+                if depth < prev_depth {
+                    p!(out, "\n{}-- back in {} --", "  ".repeat(depth), map.parent_name(pi, i));
+                }
+                prev_depth = depth;
                 p!(out, "\n== {}[{i}] {}{} {}{}", "  ".repeat(depth), if a.stale { "STALE " } else { "" }, where_is(idx, a), a.symbol, a.author.tag());
                 if !a.note.is_empty() {
                     p!(out, "-- {}", a.note);
@@ -270,14 +278,26 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
                     let (start, end) = check_range(&idx.files[fi], start, end)?;
                     let ai = map.add_anchor(idx, pi, fi, start, end, author, under);
                     p!(out, "step [{ai}] added under [{}]", map.paths[pi].anchors[ai].parent);
+                    call_warning(out, idx, map, pi, ai);
                 }
                 None => {
                     let r = find_symbol(idx, &target)?;
                     let s = idx.sym(r);
                     let ai = map.add_anchor(idx, pi, r.file, s.start, s.end, author, under);
                     p!(out, "step [{ai}] {} added under [{}]", s.name, map.paths[pi].anchors[ai].parent);
+                    call_warning(out, idx, map, pi, ai);
                 }
             }
+            dirty = true;
+        }
+        Command::PathMove { name, index, under } => {
+            let pi = find_path(map, &name)?;
+            if index >= map.paths[pi].anchors.len() {
+                return Err("no such step".into());
+            }
+            map.reparent(pi, index, under as i32)?;
+            p!(out, "step [{index}] now under [{under}]");
+            call_warning(out, idx, map, pi, index);
             dirty = true;
         }
         Command::PathPin { name, index, file, start, end } => {
@@ -408,6 +428,22 @@ pub fn tokenize(line: &str) -> Vec<String> {
 pub fn describe(idx: &Index, r: SymRef) -> String {
     let s = idx.sym(r);
     format!("{} {}:{}-{}", s.name, idx.files[r.file].path, s.start + 1, s.end + 1)
+}
+
+/// In a flow, a step belongs under the step that calls it. Says so when it does not.
+fn call_warning(out: &mut String, idx: &Index, map: &Map, pi: usize, ai: usize) {
+    let path = &map.paths[pi];
+    if path.kind != Kind::Flow {
+        return;
+    }
+    let a = &path.anchors[ai];
+    let Some(parent) = usize::try_from(a.parent).ok().and_then(|p| path.anchors.get(p)) else { return };
+    let sym_of = |x: &Anchor| idx.find_file(&x.file).and_then(|fi| idx.files[fi].symbols.iter().position(|s| s.name == x.symbol).map(|si| SymRef { file: fi, sym: si }));
+    if let (Some(p), Some(c)) = (sym_of(parent), sym_of(a)) {
+        if p != c && !idx.sym(p).callees.contains(&c) {
+            p!(out, "note: {} does not call {}; in a flow a step goes under the step that calls it (path-move <name> {ai} <under>)", parent.symbol, a.symbol);
+        }
+    }
 }
 
 /// `file:start-end` for a resolved anchor; says what is gone otherwise.

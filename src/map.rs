@@ -253,6 +253,30 @@ impl Map {
         self.paths[pi].anchors.iter().position(|a| a.file == file && a.symbol == symbol)
     }
 
+    /// Put step `ai` under `parent` (-1 = root). Refuses a parent that is the step itself or
+    /// one of its descendants.
+    pub fn reparent(&mut self, pi: usize, ai: usize, parent: i32) -> Result<(), String> {
+        let anchors = &self.paths[pi].anchors;
+        let mut p = parent;
+        while p >= 0 {
+            if p as usize == ai {
+                return Err("a step cannot go under itself or its own descendants".into());
+            }
+            p = anchors.get(p as usize).ok_or("no such parent step")?.parent;
+        }
+        self.paths[pi].anchors[ai].parent = parent;
+        Ok(())
+    }
+
+    /// Name of the step `ai` is under, for a reader coming back up the tree.
+    pub fn parent_name(&self, pi: usize, ai: usize) -> String {
+        match usize::try_from(self.paths[pi].anchors[ai].parent).ok().and_then(|p| self.paths[pi].anchors.get(p)) {
+            Some(a) if !a.symbol.is_empty() => a.symbol.clone(),
+            Some(a) => format!("{}:{}", a.file, a.line_start + 1),
+            None => "top level".into(),
+        }
+    }
+
     /// Remove a step; its children move up to its parent so the tree stays connected.
     pub fn remove_anchor(&mut self, pi: usize, ai: usize) {
         let p = &mut self.paths[pi];
