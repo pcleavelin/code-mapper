@@ -30,7 +30,7 @@ enum LeftTab {
 /// Width of the line-number gutter in a code row.
 const GUTTER: f32 = 64.0;
 
-/// A place in the centre panel, kept so the reader can go back to it.
+/// A place in the centre panel, kept so the reader can go back and forward.
 #[derive(Clone, PartialEq)]
 struct Loc {
     tab: Tab,
@@ -38,6 +38,13 @@ struct Loc {
     sel: Option<(usize, usize)>,
     focus: Option<(String, String)>,
     path: Option<usize>,
+}
+
+impl Loc {
+    /// Same place for history purposes: a changed line selection alone is not a navigation.
+    fn same_place(&self, o: &Loc) -> bool {
+        self.tab == o.tab && self.file == o.file && self.focus == o.focus && self.path == o.path
+    }
 }
 
 // ---- syntax colours ---------------------------------------------------------------
@@ -417,7 +424,9 @@ struct App {
     sel_path: Option<usize>,
     sel_anchor: Option<usize>,
     expanded_steps: HashSet<(usize, usize)>, // (path, step) showing the whole enclosing symbol
-    history: Vec<Loc>,                       // where the reader was before each navigation
+    history: Vec<Loc>,     // places before each navigation, newest last
+    forward: Vec<Loc>,     // places left by going back, newest last
+    last_loc: Option<Loc>, // the place at the end of the last frame
 
     tab: Tab,
     left: LeftTab,
@@ -473,6 +482,8 @@ impl App {
             sel_anchor: None,
             expanded_steps: HashSet::new(),
             history: Vec::new(),
+            forward: Vec::new(),
+            last_loc: None,
             tab: Tab::Path,
             left: LeftTab::Paths,
             graph: Graph::default(),
@@ -595,20 +606,36 @@ impl App {
         }
     }
 
-    /// Record the current place before a navigation.
-    fn remember(&mut self) {
-        let here = self.here();
-        if self.history.last() != Some(&here) {
-            self.history.push(here);
-            if self.history.len() > 200 {
-                self.history.remove(0);
+    /// Once a frame: whatever moved the reader (a click anywhere, a tab, a command), the place
+    /// they left goes into the history and the forward stack is dropped.
+    fn track_navigation(&mut self) {
+        let now = self.here();
+        if let Some(prev) = self.last_loc.take() {
+            if !prev.same_place(&now) {
+                self.history.push(prev);
+                self.forward.clear();
+                if self.history.len() > 200 {
+                    self.history.remove(0);
+                }
             }
         }
+        self.last_loc = Some(now);
     }
 
-    /// Back to the place before the last navigation.
     fn back(&mut self) {
         let Some(loc) = self.history.pop() else { return };
+        self.forward.push(self.here());
+        self.go(loc);
+    }
+
+    fn forward(&mut self) {
+        let Some(loc) = self.forward.pop() else { return };
+        self.history.push(self.here());
+        self.go(loc);
+    }
+
+    /// Restore a place without it counting as a navigation.
+    fn go(&mut self, loc: Loc) {
         self.tab = loc.tab;
         self.sel_path = loc.path.filter(|&pi| pi < self.map.paths.len());
         self.cur_file = loc.file.and_then(|p| self.idx.find_file(&p));
@@ -619,6 +646,7 @@ impl App {
         if let Some(r) = loc.focus.and_then(|k| self.idx.by_key(&k)) {
             self.focus_graph(r);
         }
+        self.last_loc = Some(self.here());
     }
 
     fn focus_graph(&mut self, r: SymRef) {
@@ -633,7 +661,6 @@ impl App {
     /// Make `r` the current symbol: listing position, xrefs, and graph focus (rebuilding the
     /// graph around it if it is not already on screen). Moves the view, not the tab.
     fn focus(&mut self, r: SymRef) {
-        self.remember();
         let s = self.idx.sym(r);
         let (start, end) = (s.start, s.end);
         self.cur_file = Some(r.file);
@@ -663,7 +690,6 @@ impl App {
     }
 
     fn open_line(&mut self, file: usize, line: usize) {
-        self.remember();
         self.cur_file = Some(file);
         self.sel = Some((line, line));
         self.scroll_to = Some(line.saturating_sub(8));
@@ -1534,13 +1560,11 @@ impl App {
                 self.tab = Tab::Listing;
             }
             Some(Action::SelectPath(pi)) => {
-                self.remember();
                 self.sel_path = Some(pi);
                 self.sel_anchor = None;
                 self.tab = Tab::Path;
             }
             Some(Action::ShowPath(pi)) => {
-                self.remember();
                 self.sel_path = Some(pi);
                 self.sel_anchor = None;
                 self.show_path(pi);
@@ -1626,6 +1650,9 @@ impl eframe::App for App {
         if ctx.input_mut(|i| i.consume_key(Modifiers::ALT, Key::ArrowLeft)) || ctx.input(|i| i.pointer.button_pressed(egui::PointerButton::Extra1)) {
             self.back();
         }
+        if ctx.input_mut(|i| i.consume_key(Modifiers::ALT, Key::ArrowRight)) || ctx.input(|i| i.pointer.button_pressed(egui::PointerButton::Extra2)) {
+            self.forward();
+        }
         let mono = TextStyle::Monospace.resolve(&ctx.style()); // resolve outside the fonts lock: ctx.style() inside it deadlocks
         self.metrics = ctx.fonts_mut(|f| Metrics { line_h: f.row_height(&mono), char_w: f.glyph_width(&mono, 'M') });
         ctx.request_repaint_after(if self.backend.is_some() { Duration::from_millis(100) } else { Duration::from_secs(1) }); // keep polling while idle
@@ -1641,8 +1668,11 @@ impl eframe::App for App {
                     self.run_search();
                 }
                 ui.separator();
-                if ui.add_enabled(!self.history.is_empty(), egui::Button::new("< back")).on_hover_text("alt+left or the mouse back button").clicked() {
+                if ui.add_enabled(!self.history.is_empty(), egui::Button::new("<")).on_hover_text("back: alt+left or the mouse back button").clicked() {
                     self.back();
+                }
+                if ui.add_enabled(!self.forward.is_empty(), egui::Button::new(">")).on_hover_text("forward: alt+right or the mouse forward button").clicked() {
+                    self.forward();
                 }
                 ui.selectable_value(&mut self.tab, Tab::Path, "Path");
                 ui.selectable_value(&mut self.tab, Tab::Diff, "Diff");
@@ -1704,6 +1734,7 @@ impl eframe::App for App {
             Tab::Results => self.results_view(ui),
         });
         self.apply(action);
+        self.track_navigation();
     }
 
     fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
