@@ -114,8 +114,13 @@ inside does not scroll. Selecting an off-path symbol leaves the document and out
 the path with no step highlighted; back returns to the step. The flat step index the
 CLI uses is not shown.
 
+**Peek.** In any code view, hovering an identifier that is defined in the repo shows its
+definition; alt-click pins it in the right panel above the xrefs.
+
 **The graph.** The selected path drawn as a left-to-right tree: root left, children to
-the right, siblings stacked in call order, every node showing its code. Callers and
+the right, siblings stacked in call order, every node showing its code in full (a node
+can be cut to a preview). Edges leave a node level with the line that makes the call,
+and that line is tinted; a slice node's callees are the ones its lines name. Callers and
 callees expansions per node reveal off-path nodes, drawn distinctly, hanging left or
 right of the step; a revealed symbol that is also a step is one node with an extra
 edge. Green step edges, grey expansion edges, orange back-edges, no edge labels. With no

@@ -94,7 +94,6 @@ fn append_line(job: &mut LayoutJob, line: &str, spans: &[Span], font: &FontId, b
 // ---- graph: the main view ---------------------------------------------------------
 
 const PREVIEW_LINES: usize = 12;
-const MAX_NODE_LINES: usize = 200;
 const HEADER_MIN_W: f32 = 380.0;
 const NODE_MAX_W: f32 = 760.0;
 const GAP_X: f32 = 110.0;
@@ -138,7 +137,9 @@ struct Graph {
     step_parent: HashMap<Node, Node>,            // step node -> its parent step's node
     origin: HashMap<Node, (Node, bool)>,         // expansion node -> (the node that revealed it, via callees?)
     expansions: Vec<(Node, bool)>,               // (node, callees?) in the order the user opened them
-    expanded: HashSet<Node>,                     // nodes showing all their lines
+    collapsed: HashSet<Node>,                    // nodes cut to a preview
+    call_rows: HashMap<Node, f32>,               // y of each node's first code row, measured last frame
+    viewport: egui::Vec2,                        // the canvas size, for a 1:1 look at the focus
     manual: bool,                                // user dragged something: keep positions
     scene_rect: Option<egui::Rect>,
 }
@@ -159,8 +160,7 @@ impl Graph {
     fn lines_shown(&self, n: Node) -> (usize, usize) {
         let (lo, hi) = self.range[&n];
         let total = hi - lo + 1;
-        let cap = if self.expanded.contains(&n) { MAX_NODE_LINES } else { PREVIEW_LINES };
-        (total.min(cap), total)
+        (if self.collapsed.contains(&n) { total.min(PREVIEW_LINES) } else { total }, total)
     }
 
     /// Characters of code that fit on one row of `n`'s node (lines are cut to this).
@@ -201,6 +201,35 @@ impl Graph {
         self.expansions.contains(&(n, callees))
     }
 
+    /// The first line of `n` that names `word` as an identifier: where a call to it sits.
+    fn call_line(&self, idx: &Index, n: Node, word: &str) -> Option<usize> {
+        let (lo, hi) = self.range[&n];
+        let lines = &idx.files[n.0.file].lines;
+        (lo..=hi.min(lines.len().saturating_sub(1))).find(|&li| has_word(&lines[li], word))
+    }
+
+    /// What `n` calls: the symbol's callees, narrowed to the ones its lines name when the node
+    /// is a slice of the symbol.
+    fn callees_of(&self, idx: &Index, n: Node) -> Vec<SymRef> {
+        let s = idx.sym(n.0);
+        if self.range[&n] == (s.start, s.end) {
+            return s.callees.clone();
+        }
+        s.callees.iter().copied().filter(|c| self.call_line(idx, n, &idx.sym(*c).name).is_some()).collect()
+    }
+
+    /// Where an edge out of `n` towards `word` starts: level with the call line when it is on
+    /// screen, else the header.
+    fn edge_out(&self, idx: &Index, n: Node, word: &str, m: Metrics) -> egui::Pos2 {
+        let r = self.node_rect(idx, n, m);
+        let (lo, _) = self.range[&n];
+        let (shown, _) = self.lines_shown(n);
+        match (self.call_line(idx, n, word), self.call_rows.get(&n)) {
+            (Some(li), Some(&top)) if li < lo + shown => pos2(r.right(), top + (li - lo) as f32 * m.line_h + m.line_h / 2.0),
+            _ => r.right_top() + vec2(0.0, HEADER_H / 2.0),
+        }
+    }
+
     /// Derive the visible node set from the selection + expansions.
     fn rebuild(&mut self, idx: &Index, map: &Map) {
         self.nodes.clear();
@@ -239,8 +268,9 @@ impl Graph {
         for (n, callees) in self.expansions.clone() {
             let Some(&col) = self.col.get(&n) else { continue };
             let s = idx.sym(n.0);
-            let (list, dc) = if callees { (&s.callees, 1) } else { (&s.callers, -1) };
-            for &r in list {
+            let list = if callees { self.callees_of(idx, n) } else { s.callers.clone() };
+            let dc = if callees { 1 } else { -1 };
+            for r in list {
                 if self.by_sym.contains_key(&r) {
                     continue;
                 }
@@ -406,7 +436,8 @@ impl Graph {
         match self.focus_node() {
             Some(r) => {
                 let c = self.node_rect(idx, r, m).center();
-                self.scene_rect = Some(egui::Rect::from_center_size(c, vec2(1900.0, 1100.0)));
+                let size = if self.viewport.x > 0.0 { self.viewport } else { vec2(1900.0, 1100.0) };
+                self.scene_rect = Some(egui::Rect::from_center_size(c, size)); // 1:1, so the text is crisp
             }
             None => self.fit(),
         }
@@ -444,6 +475,7 @@ struct App {
     top_step: Option<usize>,                 // the step whose header is topmost in the document viewport
     scroll_to_step: Option<usize>,           // the document scrolls this step's header to the top next frame
     outline_tracked: Option<usize>,          // the step the outline last scrolled to
+    peek: Option<SymRef>,                    // a definition pinned in the right panel
     history: Vec<Loc>,     // places before each navigation, newest last
     forward: Vec<Loc>,     // places left by going back, newest last
     last_loc: Option<Loc>, // the place at the end of the last frame
@@ -507,6 +539,7 @@ impl App {
             top_step: None,
             scroll_to_step: None,
             outline_tracked: None,
+            peek: None,
             history: Vec::new(),
             forward: Vec::new(),
             last_loc: None,
@@ -858,29 +891,76 @@ impl App {
         }
     }
 
-    /// Identifier at `col` of a line, if it names a symbol here: a definition that lists this
-    /// line among its references wins, then one in the same file, then any. Focuses it.
-    fn jump_to(&mut self, fi: usize, li: usize, col: usize) {
-        let chars: Vec<char> = self.idx.files[fi].lines[li].chars().collect();
+    /// The identifier at `col` of a line.
+    fn word_at(&self, fi: usize, li: usize, col: usize) -> Option<String> {
+        let chars: Vec<char> = self.idx.files[fi].lines.get(li)?.chars().collect();
         let is_id = |c: &char| c.is_alphanumeric() || *c == '_';
         if !chars.get(col).is_some_and(is_id) {
-            return;
+            return None;
         }
         let start = (0..col).rev().take_while(|&i| is_id(&chars[i])).last().unwrap_or(col);
         let end = (col..chars.len()).take_while(|&i| is_id(&chars[i])).last().unwrap_or(col);
-        let word: String = chars[start..=end].iter().collect();
+        Some(chars[start..=end].iter().collect())
+    }
+
+    /// The symbol the identifier at `col` names, if it is defined here: a definition that lists
+    /// this line among its references wins, then one in the same file, then any.
+    fn symbol_at(&self, fi: usize, li: usize, col: usize) -> Option<SymRef> {
+        let word = self.word_at(fi, li, col)?;
         let cands = self.idx.find_symbols(&word);
         let here = (self.idx.files[fi].path.clone(), li as u32);
-        let target = cands
-            .iter()
-            .copied()
-            .find(|r| self.idx.sym(*r).refs.contains(&here))
-            .or_else(|| cands.iter().copied().find(|r| r.file == fi))
-            .or_else(|| cands.first().copied());
-        match target {
-            Some(r) => self.focus(r),
-            None => self.status = format!("no definition of '{word}' in this repo"),
+        cands.iter().copied().find(|r| self.idx.sym(*r).refs.contains(&here)).or_else(|| cands.iter().copied().find(|r| r.file == fi)).or_else(|| cands.first().copied())
+    }
+
+    fn jump_to(&mut self, fi: usize, li: usize, col: usize) {
+        match self.symbol_at(fi, li, col) {
+            Some(r) => self.select_symbol(r),
+            None => self.status = format!("no definition of '{}' in this repo", self.word_at(fi, li, col).unwrap_or_default()),
         }
+    }
+
+    /// A hovered code row: the definition under the pointer as a tooltip, alt-click pins it in
+    /// the peek panel, ctrl-click or double-click goes there.
+    fn code_hover(&self, resp: &egui::Response, fi: usize, li: usize, col: usize) -> Option<Action> {
+        let r = self.symbol_at(fi, li, col)?;
+        let (alt, ctrl) = resp.ctx.input(|i| (i.modifiers.alt, i.modifiers.command));
+        if resp.clicked() && alt {
+            return Some(Action::Peek(r));
+        }
+        if resp.double_clicked() || (resp.clicked() && ctrl) {
+            return Some(Action::Jump(fi, li, col));
+        }
+        resp.clone().on_hover_ui_at_pointer(|ui| self.peek_tooltip(ui, r));
+        None
+    }
+
+    /// A symbol's definition, as a tooltip: header and the first lines of its code.
+    fn peek_tooltip(&self, ui: &mut egui::Ui, r: SymRef) {
+        let s = self.idx.sym(r);
+        ui.strong(&s.name);
+        ui.weak(format!("{} {}:{}-{}", s.kind, self.idx.files[r.file].path, s.start + 1, s.end + 1));
+        self.code_block(ui, r, 24);
+        ui.weak("alt-click: pin in the peek panel   ctrl-click or double-click: go there");
+    }
+
+    /// The first `max` lines of a symbol, syntax coloured, one label.
+    fn code_block(&self, ui: &mut egui::Ui, r: SymRef, max: usize) {
+        let s = self.idx.sym(r);
+        let f = &self.idx.files[r.file];
+        let font = TextStyle::Monospace.resolve(ui.style());
+        let (base, dim) = (ui.visuals().text_color(), ui.visuals().weak_text_color());
+        let numfmt = egui::TextFormat { font_id: font.clone(), color: dim, ..Default::default() };
+        let mut job = LayoutJob::default();
+        let end = s.end.min(f.lines.len().saturating_sub(1)).min(s.start + max - 1);
+        for li in s.start..=end {
+            job.append(&format!("{:4} ", li + 1), 0.0, numfmt.clone());
+            append_line(&mut job, &f.lines[li], &f.hl[li], &font, base, 120);
+            job.append("\n", 0.0, numfmt.clone());
+        }
+        if end < s.end {
+            job.append(&format!("     … {} more lines", s.end - end), 0.0, numfmt.clone());
+        }
+        ui.add(egui::Label::new(job).wrap_mode(egui::TextWrapMode::Extend));
     }
 
     fn save(&mut self) {
@@ -955,14 +1035,16 @@ impl App {
     fn with_index_change(&mut self, change: impl FnOnce(&mut App)) {
         let focus = self.graph.focus.map(|r| self.idx.key(r));
         let expansions: Vec<((String, String), Option<usize>, bool)> = self.graph.expansions.iter().map(|(n, c)| (self.idx.key(n.0), n.1, *c)).collect();
-        let expanded: Vec<((String, String), Option<usize>)> = self.graph.expanded.iter().map(|n| (self.idx.key(n.0), n.1)).collect();
+        let collapsed: Vec<((String, String), Option<usize>)> = self.graph.collapsed.iter().map(|n| (self.idx.key(n.0), n.1)).collect();
         let cur_file = self.cur_file.map(|fi| self.idx.files[fi].path.clone());
+        let peek = self.peek.map(|r| self.idx.key(r));
 
         change(self);
+        self.peek = peek.and_then(|k| self.idx.by_key(&k));
         self.map.resolve_all(&self.idx);
         self.graph.focus = focus.and_then(|k| self.idx.by_key(&k));
         self.graph.expansions = expansions.into_iter().filter_map(|(k, st, c)| self.idx.by_key(&k).map(|r| ((r, st), c))).collect();
-        self.graph.expanded = expanded.iter().filter_map(|(k, st)| self.idx.by_key(k).map(|r| (r, *st))).collect();
+        self.graph.collapsed = collapsed.iter().filter_map(|(k, st)| self.idx.by_key(k).map(|r| (r, *st))).collect();
         self.graph.size.clear();
         self.refresh_graph();
         self.cur_file = cur_file.and_then(|p| self.idx.find_file(&p));
@@ -995,6 +1077,8 @@ enum Action {
     ExpandCallers(Node),
     ExpandCallees(Node),
     ToggleExpand(Node),
+    Peek(SymRef),              // pin a definition in the right panel
+    ClosePeek,
     GoTo(usize, usize),        // (file, line) in the listing
     Jump(usize, usize, usize), // (file, line, column): to the definition of the identifier there
     Relayout,
@@ -1280,7 +1364,6 @@ impl App {
         };
         let font = TextStyle::Monospace.resolve(ui.style());
         let row_h = ui.text_style_height(&TextStyle::Monospace);
-        let ctrl = ui.input(|i| i.modifiers.command);
         let diff = self.diffs().into_iter().find(|d| d.name == self.map.paths[pi].name);
         let accent = ui.visuals().selection.stroke.color;
         let slice_bg = ui.visuals().selection.bg_fill.linear_multiply(0.3);
@@ -1429,10 +1512,8 @@ impl App {
                             ui.painter().rect_filled(egui::Rect::from_min_size(rect.left_top(), vec2(3.0, row_h)), 0.0, accent);
                         }
                         self.draw_code_line(ui, rect, fi, li, &font);
-                        if resp.double_clicked() || (resp.clicked() && ctrl) {
-                            if let Some(pos) = resp.interact_pointer_pos() {
-                                action = Some(Action::Jump(fi, li, self.code_col(rect, pos)));
-                            }
+                        if let Some(pos) = resp.hover_pos() {
+                            action = self.code_hover(&resp, fi, li, self.code_col(rect, pos)).or(action.take());
                         }
                     }
                 }
@@ -1510,6 +1591,9 @@ impl App {
             if ui.small_button("fit").clicked() {
                 self.graph.fit();
             }
+            if ui.small_button("1:1").on_hover_text("zoom to 1:1 on the selected node; text is crisp only at 1:1").clicked() {
+                self.graph.look_at_focus(&self.idx, self.metrics);
+            }
             if ui.add_enabled(self.graph.manual, egui::Button::new("auto layout").small()).clicked() {
                 action = Some(Action::Relayout);
             }
@@ -1520,6 +1604,7 @@ impl App {
         });
 
         let m = self.metrics;
+        self.graph.viewport = ui.available_size();
         if !self.graph.manual {
             self.graph.layout(&self.idx, m); // measured sizes from last frame settle the layout
         }
@@ -1544,14 +1629,14 @@ impl App {
             // instead of a loop across the canvas. Pairs that are path steps are drawn below.
             for &a in &self.graph.nodes {
                 let ra = rect_of(&self.graph, a);
-                for &bs in &self.idx.sym(a.0).callees {
+                for bs in self.graph.callees_of(&self.idx, a) {
                     let Some(&b) = self.graph.by_sym.get(&bs) else { continue };
                     if a.0 == bs || self.graph.step_parent.get(&b) == Some(&a) {
                         continue;
                     }
                     let rb = rect_of(&self.graph, b);
                     if rb.left() >= ra.right() {
-                        let (p0, p1) = (ra.right_top() + hy, rb.left_top() + hy);
+                        let (p0, p1) = (self.graph.edge_out(&self.idx, a, &self.idx.sym(bs).name, m), rb.left_top() + hy);
                         painter.add(curve(p0, p1, edge));
                         painter.circle_filled(p1, 3.0, edge.color);
                     } else {
@@ -1564,8 +1649,8 @@ impl App {
             }
             // path edges: parent step -> child step
             for (&child, &parent) in &self.graph.step_parent {
-                let (ra, rb) = (rect_of(&self.graph, parent), rect_of(&self.graph, child));
-                let (p0, p1) = (ra.right_top() + hy, rb.left_top() + hy);
+                let rb = rect_of(&self.graph, child);
+                let (p0, p1) = (self.graph.edge_out(&self.idx, parent, &self.idx.sym(child.0).name, m), rb.left_top() + hy);
                 painter.add(curve(p0, p1, step_stroke));
                 painter.circle_filled(p1, 4.0, step_stroke.color);
             }
@@ -1585,8 +1670,9 @@ impl App {
                 } else {
                     Stroke::new(1.0, ui.visuals().widgets.noninteractive.bg_stroke.color)
                 };
-                let fill = if off_path { ui.visuals().faint_bg_color } else { ui.visuals().extreme_bg_color };
+                let fill = if off_path { ui.visuals().panel_fill } else { ui.visuals().extreme_bg_color };
                 let step = self.graph.step.get(&r).cloned();
+                let mut hover: Option<(egui::Response, usize, usize)> = None;
 
                 let frame = ui.scope_builder(egui::UiBuilder::new().max_rect(egui::Rect::from_min_size(rect.min, vec2(rect.width(), f32::INFINITY))), |ui| {
                     ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Truncate);
@@ -1624,7 +1710,8 @@ impl App {
                                     action = Some(Action::OpenListing(r.0));
                                 }
                                 let (out_open, in_open) = (self.graph.is_expanded(r, true), self.graph.is_expanded(r, false));
-                                if ui.add_enabled(!s.callees.is_empty(), egui::Button::new(format!("callees > {}", s.callees.len())).small().selected(out_open)).on_hover_text("show / hide what this calls").clicked() {
+                                let n_callees = self.graph.callees_of(&self.idx, r).len();
+                                if ui.add_enabled(n_callees > 0, egui::Button::new(format!("callees > {n_callees}")).small().selected(out_open)).on_hover_text("show / hide what this calls").clicked() {
                                     action = Some(Action::ExpandCallees(r));
                                 }
                                 if ui.add_enabled(!s.callers.is_empty(), egui::Button::new(format!("{} < callers", s.callers.len())).small().selected(in_open)).on_hover_text("show / hide what calls this").clicked() {
@@ -1655,9 +1742,28 @@ impl App {
                             job.append(&format!("     … {} more lines", total - shown), 0.0, numfmt.clone());
                         }
                         ui.set_clip_rect(egui::Rect::from_min_size(rect.min, vec2(rect.width(), f32::INFINITY)).intersect(ui.clip_rect()));
-                        ui.add(egui::Label::new(job).wrap_mode(egui::TextWrapMode::Extend));
+                        let code = ui.add(egui::Label::new(job).wrap_mode(egui::TextWrapMode::Extend).sense(Sense::click()));
+                        self.graph.call_rows.insert(r, code.rect.top());
+                        // the lines that call the nodes hanging off this one
+                        let children: Vec<Node> = self.graph.nodes.iter().copied().filter(|c| self.graph.step_parent.get(c) == Some(&r) || self.graph.origin.get(c).is_some_and(|(o, callees)| *o == r && *callees)).collect();
+                        for c in children {
+                            if let Some(li) = self.graph.call_line(&self.idx, r, &self.idx.sym(c.0).name).filter(|&li| li < lo + shown) {
+                                let row = egui::Rect::from_min_size(pos2(code.rect.left(), code.rect.top() + (li - lo) as f32 * m.line_h), vec2(code.rect.width(), m.line_h));
+                                ui.painter().rect_filled(row, 0.0, step_stroke.color.gamma_multiply(0.18));
+                            }
+                        }
+                        if let Some(pos) = code.hover_pos() {
+                            let li = lo + ((pos.y - code.rect.top()) / m.line_h).max(0.0) as usize;
+                            let col = (((pos.x - code.rect.left()) / m.char_w) as usize).saturating_sub(5);
+                            if li < lo + shown {
+                                hover = Some((code, li, col));
+                            }
+                        }
                     })
                 });
+                if let Some((code, li, col)) = hover {
+                    action = self.code_hover(&code, r.0.file, li, col).or(action.take());
+                }
                 self.graph.size.insert(r, vec2(rect.width(), frame.inner.response.rect.height()));
             }
         });
@@ -1665,16 +1771,16 @@ impl App {
         action
     }
 
-    fn listing(&mut self, ui: &mut egui::Ui) {
+    fn listing(&mut self, ui: &mut egui::Ui) -> Option<Action> {
         let Some(fi) = self.cur_file else {
             ui.weak("click a symbol to open its file");
-            return;
+            return None;
         };
         let font = TextStyle::Monospace.resolve(ui.style());
         let row_h = ui.text_style_height(&TextStyle::Monospace);
         let row_stride = row_h + ui.spacing().item_spacing.y; // show_rows adds spacing between rows
         let sel_bg = ui.visuals().selection.bg_fill.linear_multiply(0.4);
-        let (shift, ctrl) = ui.input(|i| (i.modifiers.shift, i.modifiers.command));
+        let shift = ui.input(|i| i.modifiers.shift);
         let n = self.idx.files[fi].lines.len();
 
         ui.horizontal(|ui| {
@@ -1695,7 +1801,7 @@ impl App {
         }
 
         let mut clicked = None;
-        let mut jump = None;
+        let mut action = None;
         area.show_rows(ui, row_h, n, |ui, range| {
             let f = &self.idx.files[fi];
             let (lo, hi) = self.sel.map(|(a, b)| (a.min(b), a.max(b))).unwrap_or((usize::MAX, usize::MAX));
@@ -1715,23 +1821,22 @@ impl App {
                     ui.painter().rect_filled(bar, 0.0, if stale { Color32::LIGHT_RED } else { Color32::LIGHT_GREEN });
                 }
                 self.draw_code_line(ui, rect, fi, li, &font);
-                if resp.double_clicked() || (resp.clicked() && ctrl) {
-                    jump = resp.interact_pointer_pos().map(|pos| (li, self.code_col(rect, pos)));
+                let hovered = resp.hover_pos().and_then(|pos| self.code_hover(&resp, fi, li, self.code_col(rect, pos)));
+                if hovered.is_some() {
+                    action = hovered;
                 } else if resp.clicked() {
                     clicked = Some(li);
                 }
             }
         });
 
-        if let Some((li, col)) = jump {
-            self.jump_to(fi, li, col);
-        }
         if let Some(li) = clicked {
             self.sel = match (shift, self.sel) {
                 (true, Some((a, _))) => Some((a, li)),
                 _ => Some((li, li)),
             };
         }
+        action
     }
 
     fn results_view(&mut self, ui: &mut egui::Ui) {
@@ -1844,12 +1949,14 @@ impl App {
                 self.relayout();
             }
             Some(Action::ToggleExpand(r)) => {
-                if !self.graph.expanded.remove(&r) {
-                    self.graph.expanded.insert(r);
+                if !self.graph.collapsed.remove(&r) {
+                    self.graph.collapsed.insert(r);
                 }
                 self.graph.size.remove(&r); // re-measure
                 self.graph.manual = false;
             }
+            Some(Action::Peek(r)) => self.peek = Some(r),
+            Some(Action::ClosePeek) => self.peek = None,
             Some(Action::GoTo(fi, line)) => self.open_line(fi, line),
             Some(Action::Jump(fi, line, col)) => {
                 self.jump_to(fi, line, col);
@@ -1864,6 +1971,12 @@ impl App {
             None => {}
         }
     }
+}
+
+/// `word` appears in `line` as a whole identifier.
+fn has_word(line: &str, word: &str) -> bool {
+    let is_id = |c: char| c.is_alphanumeric() || c == '_';
+    line.match_indices(word).any(|(i, _)| !line[..i].chars().next_back().is_some_and(is_id) && !line[i + word.len()..].chars().next().is_some_and(is_id))
 }
 
 fn trunc(s: &str, n: usize) -> String {
@@ -1952,13 +2065,28 @@ impl eframe::App for App {
         });
         egui::SidePanel::right("xrefs").default_width(300.0).resizable(true).show(ctx, |ui| {
             ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Truncate);
+            if let Some(r) = self.peek.filter(|r| r.file < self.idx.files.len() && r.sym < self.idx.files[r.file].symbols.len()) {
+                let s = self.idx.sym(r);
+                ui.horizontal(|ui| {
+                    ui.strong(format!("Peek: {}", s.name));
+                    ui.weak(format!("{}:{}", self.idx.files[r.file].path, s.start + 1));
+                    if ui.small_button("go").clicked() {
+                        action = Some(Action::Focus(r));
+                    }
+                    if ui.small_button("x").clicked() {
+                        action = Some(Action::ClosePeek);
+                    }
+                });
+                egui::ScrollArea::both().id_salt("peek").max_height(ui.available_height() * 0.45).auto_shrink([false, true]).show(ui, |ui| self.code_block(ui, r, usize::MAX));
+                ui.separator();
+            }
             action = self.xrefs_window(ui).or(action.take());
         });
         egui::CentralPanel::default().show(ctx, |ui| match self.tab {
             Tab::Path => action = self.path_document(ui).or(action.take()),
             Tab::Diff => action = self.diff_view(ui).or(action.take()),
             Tab::Graph => action = self.graph_view(ui).or(action.take()),
-            Tab::Listing => self.listing(ui),
+            Tab::Listing => action = self.listing(ui).or(action.take()),
             Tab::Results => self.results_view(ui),
         });
         self.apply(action);
