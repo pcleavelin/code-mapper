@@ -63,4 +63,7 @@ force a full re-query.
 
 ## Build
 
-`cargo build`, `cargo test`. eframe is pinned to 0.33 for rustc 1.94; bump both together.
+`cargo build`, `cargo test`. The GUI is winit + wgpu + fontdue with the tool's own element
+tree (`src/ui.rs`); there is no UI framework underneath. To see a change on screen without
+a hand on the mouse, `CODEMAP_SHOT=<file.png> [CODEMAP_SHOT_TAB=path|graph|listing|diff]
+targetelease\codemap.exe <root>` writes the first settled frame and quits.

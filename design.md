@@ -104,8 +104,8 @@ never disagree.
 
 **The document.** A sticky breadcrumb of the topmost visible step's ancestors, name and
 file per crumb, each clickable. Then the steps in tree order: a header with the
-hierarchical number, symbol, file:lines and tags; the note as text, double-click to
-edit; the anchored lines inline, syntax coloured, full length. Per step: collapse the
+hierarchical number, symbol, file:lines and tags; the note as text (editing notes is the
+agent's, through the CLI, until the UI grows a text editor); the anchored lines inline, syntax coloured, full length. Per step: collapse the
 code, fold the subtree (the header shows how many steps are hidden), and a whole-symbol
 toggle that shows the enclosing symbol with the slice highlighted inside it. Path-wide
 collapse all and expand all. Stale steps are red. The selected step carries an accent
@@ -130,8 +130,8 @@ derived, never accumulated: the selection plus an ordered list of expansions. La
 reruns every frame until the user drags a node. The camera moves only on explicit
 navigation, never on an edit.
 
-Editing in the GUI is limited to what a reader needs: edit a note, delete a step or a
-path, and pin a selection from the listing when hand-authoring. `roots` and `promote`
+Editing in the GUI is limited to what a reader needs: delete a step or a path, and pin
+a selection from the listing when hand-authoring. `roots` and `promote`
 are CLI commands and run from the output panel.
 
 If `.codemap` changed on disk and there are no unsaved edits, it reloads. If any
@@ -238,10 +238,21 @@ src/
   lsp.rs     a minimal language-server client: JSON-RPC over stdio, used by index.rs
   map.rs     paths, anchors, binary format, staleness             (manual layer)
   cli.rs     text commands over index + map                       (agent interface, and the GUI's output panel)
-  main.rs    egui app over index + map                            (human interface)
+  gfx.rs     the window (winit) and the GPU (wgpu): one pipeline, one glyph atlas, clipping
+  ui.rs      the element tree: open/close, Exact/Fit/Grow, layout passes, one-frame-late input
+  gui.rs     the app: selection, panels, actions                   (human interface)
+  graph.rs   the Graph tab: node tree, layout, scene, hit testing
+  main.rs    entry: CLI or GUI
 ```
 
-`index` and `map` know nothing about the UI. `cli` and `main` are two front ends over
+The UI is its own library, in the shape of odin_editor's `ui`: every frame the app opens
+and closes elements (nothing, text, or custom drawing) whose sizes are exact, fit their
+content, or grow; layout runs once at the end of the frame; input answers from the
+previous frame's rectangles. One monospace font at whole-pixel sizes, every glyph in
+one GPU atlas, so text is never scaled. `CODEMAP_SHOT=<file.png>` writes the first
+settled frame to a file and quits, so rendering claims are checked against pixels.
+
+`index` and `map` know nothing about the UI. `cli` and `gui` are two front ends over
 the same two structs. Any operation that mutates the map lives on `Map` so both call
 the same code. `cli::run` writes to a `String` so the output panel and stdout share one
 code path.
