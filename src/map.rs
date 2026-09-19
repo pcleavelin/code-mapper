@@ -1,4 +1,4 @@
-use crate::index::{File, Index, SymRef};
+use crate::index::{File, Index, Reader, SymRef, w_str};
 use std::path::Path;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -94,40 +94,6 @@ pub struct Map {
 
 const MAGIC: &[u8; 4] = b"CMAP";
 const VERSION: u32 = 5;
-
-fn w_str(b: &mut Vec<u8>, s: &str) {
-    b.extend_from_slice(&(s.len() as u32).to_le_bytes());
-    b.extend_from_slice(s.as_bytes());
-}
-
-struct Reader<'a> {
-    data: &'a [u8],
-    off: usize,
-}
-
-impl Reader<'_> {
-    fn bytes(&mut self, n: usize) -> Option<&[u8]> {
-        let s = self.data.get(self.off..self.off + n)?;
-        self.off += n;
-        Some(s)
-    }
-    fn u8(&mut self) -> Option<u8> {
-        Some(self.bytes(1)?[0])
-    }
-    fn u32(&mut self) -> Option<u32> {
-        Some(u32::from_le_bytes(self.bytes(4)?.try_into().ok()?))
-    }
-    fn i32(&mut self) -> Option<i32> {
-        Some(i32::from_le_bytes(self.bytes(4)?.try_into().ok()?))
-    }
-    fn u64(&mut self) -> Option<u64> {
-        Some(u64::from_le_bytes(self.bytes(8)?.try_into().ok()?))
-    }
-    fn str(&mut self) -> Option<String> {
-        let n = self.u32()? as usize;
-        Some(String::from_utf8_lossy(self.bytes(n)?).into_owned())
-    }
-}
 
 impl Map {
     pub fn save(&self, path: &Path) -> std::io::Result<()> {
@@ -392,12 +358,12 @@ mod tests {
     use crate::index::Symbol;
 
     fn sym(name: &str, start: usize, end: usize) -> Symbol {
-        Symbol { name: name.into(), kind: "fn", start, end, depth: 0, owner: None, calls: vec![], callees: vec![], callers: vec![] }
+        Symbol { name: name.into(), kind: "fn".into(), start, end, depth: 0, owner: None, calls: vec![], targets: vec![], refs: vec![], callees: vec![], callers: vec![] }
     }
 
     fn one_file() -> Index {
         let lines: Vec<String> = ["fn a() {", "  1", "}", "fn b() {", "  2", "}"].map(String::from).to_vec();
-        let file = File { path: "a.rs".into(), hl: vec![Vec::new(); lines.len()], lines, symbols: vec![sym("a", 0, 2), sym("b", 3, 5)], imports: Default::default(), mtime: None };
+        let file = File { path: "a.rs".into(), hl: vec![Vec::new(); lines.len()], lines, symbols: vec![sym("a", 0, 2), sym("b", 3, 5)], imports: Default::default(), mtime: None, hash: 0, backend: crate::index::Backend::TreeSitter, pending: false };
         Index { root: ".".into(), files: vec![file] }
     }
 

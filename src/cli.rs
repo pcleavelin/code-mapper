@@ -1,7 +1,7 @@
 //! Text commands over the same index + map the GUI uses. Runs from the shell (the AI's way in)
 //! and from the GUI's output panel. Output is plain lines, grep-style, written to a String.
 
-use crate::index::{File, Index, SymRef};
+use crate::index::{Backend, File, Index, SymRef};
 use crate::map::{Anchor, Author, Kind, Map};
 use clap::{CommandFactory, Parser};
 use std::fmt::Write;
@@ -29,6 +29,8 @@ pub enum Command {
     Callers { symbol: String },
     /// <symbol>                         what it calls (xrefs from)
     Callees { symbol: String },
+    /// <symbol>                         every reference to it, file:line: text (needs the language's server)
+    Refs { symbol: String },
     /// <symbol> [depth]                 call tree from a symbol (default depth 4)
     Tree {
         symbol: String,
@@ -166,6 +168,20 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
                 p!(out, "{}", describe(idx, r));
                 for &t in if callers { &s.callers } else { &s.callees } {
                     p!(out, "  {}", describe(idx, t));
+                }
+            }
+        }
+        Command::Refs { symbol } => {
+            for r in find_symbols(idx, &symbol)? {
+                let s = idx.sym(r);
+                p!(out, "{}", describe(idx, r));
+                if idx.files[r.file].backend != Backend::Server {
+                    let server = crate::index::lang_for(&idx.files[r.file].path).map_or("no server for this language", |l| l.server);
+                    p!(out, "  (references need {server})");
+                }
+                for (path, line) in &s.refs {
+                    let text = idx.find_file(path).and_then(|fi| idx.files[fi].lines.get(*line as usize)).map(|l| l.trim()).unwrap_or("");
+                    p!(out, "  {path}:{}: {text}", line + 1);
                 }
             }
         }

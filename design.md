@@ -212,6 +212,7 @@ There is no automatic re-anchoring. The agent that changed the code re-pins.
 ```
 src/
   index.rs   walk, per-language backends, cache, derived queries  (auto layer)
+  lsp.rs     a minimal language-server client: JSON-RPC over stdio, used by index.rs
   map.rs     paths, anchors, binary format, staleness             (manual layer)
   cli.rs     text commands over index + map                       (agent interface, and the GUI's output panel)
   main.rs    egui app over index + map                            (human interface)

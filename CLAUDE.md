@@ -17,8 +17,9 @@ Before working on an area:
 1. `paths` to see what is already named. `path <name>` to read a code path as one
    document instead of opening files. `notes <regex>` to search what earlier sessions
    wrote.
-2. `tree <sym>`, `callers <sym>`, `callees <sym>` to move along the graph. `roots` for
-   entry points. `show <file> [start] [end]` only for lines no path covers.
+2. `tree <sym>`, `callers <sym>`, `callees <sym>` to move along the graph, `refs <sym>`
+   for every reference. `roots` for entry points. `show <file> [start] [end]` only for
+   lines no path covers.
 
 After changing code, before the commit:
 
@@ -46,6 +47,13 @@ writer wins).
   command line runs the same code.
 - Keep it small and snappy. No new dependencies for what a few lines can do.
 - Anything mutating the map goes on `Map` so the GUI and CLI share it.
+
+## Indexing
+
+Xrefs come from the language's server when it is on PATH (`rust-analyzer` for this repo),
+otherwise from a tree-sitter resolver. Results live in `.codemap-cache`, never committed;
+a cold run waits for the server, a warm one answers from the cache. Delete the cache to
+force a full re-query.
 
 ## Build
 

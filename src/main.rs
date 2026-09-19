@@ -1,12 +1,14 @@
 mod cli;
 mod index;
+mod lsp;
 mod map;
 
 use eframe::egui::{self, Align2, Color32, FontId, Key, Modifiers, Sense, Stroke, TextStyle, pos2, text::LayoutJob, vec2};
-use index::{Index, Span, SymRef};
+use index::{Index, ServerFile, Span, SymRef};
 use map::{Author, Kind, Map};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::{Path, PathBuf};
+use std::sync::mpsc::{Receiver, channel};
 use std::time::{Duration, Instant, SystemTime};
 
 #[derive(PartialEq, Clone, Copy)]
@@ -368,8 +370,19 @@ impl Graph {
     }
 }
 
+/// What the language-server thread sends back.
+enum Msg {
+    File(ServerFile),
+    Progress(String),
+    Failed(&'static index::Lang, String),
+    Done,
+}
+
 struct App {
     idx: Index,
+    backend: Option<Receiver<Msg>>, // a server thread is running
+    backend_progress: String,
+    restart_backend: bool, // the index changed while a server thread ran: run again when it ends
     map: Map,
     map_path: PathBuf,
     map_mtime: Option<SystemTime>,
@@ -416,6 +429,9 @@ impl App {
         map.resolve_all(&idx);
         let mut app = App {
             idx,
+            backend: None,
+            backend_progress: String::new(),
+            restart_backend: false,
             map,
             map_mtime: mtime(&map_path),
             map_path,
@@ -441,7 +457,74 @@ impl App {
         if let Some(r) = app.idx.roots().first().copied() {
             app.focus(r);
         }
+        app.start_backend();
         app
+    }
+
+    /// Ask every pending language's server on a thread; answers arrive through `poll_backend`.
+    fn start_backend(&mut self) {
+        if self.backend.is_some() {
+            self.restart_backend = true;
+            return;
+        }
+        let pending = self.idx.pending();
+        if pending.is_empty() {
+            return;
+        }
+        self.backend_progress = pending.iter().map(|(l, f)| format!("{}: 0/{}", l.server, f.len())).collect::<Vec<_>>().join("  ");
+        let root = self.idx.root.clone();
+        let (tx, rx) = channel();
+        std::thread::spawn(move || {
+            for (lang, files) in pending {
+                let n = files.len();
+                let mut done = 0;
+                let run = index::query_server(&root, lang, &files, |f| {
+                    done += 1;
+                    let _ = tx.send(Msg::Progress(format!("{}: {done}/{n}", lang.server)));
+                    let _ = tx.send(Msg::File(f));
+                });
+                if let Err(e) = run {
+                    let _ = tx.send(Msg::Failed(lang, e));
+                }
+            }
+            let _ = tx.send(Msg::Done);
+        });
+        self.backend = Some(rx);
+    }
+
+    /// Merge whatever the server thread has answered since the last frame.
+    fn poll_backend(&mut self) {
+        let Some(rx) = self.backend.take() else { return };
+        let mut files = Vec::new();
+        let mut done = false;
+        while let Ok(msg) = rx.try_recv() {
+            match msg {
+                Msg::File(f) => files.push(f),
+                Msg::Progress(p) => self.backend_progress = p,
+                Msg::Failed(lang, e) => {
+                    self.idx.give_up(lang);
+                    self.status = format!("{e}: {} files keep the tree-sitter resolver", lang.server);
+                }
+                Msg::Done => done = true,
+            }
+        }
+        if !files.is_empty() {
+            self.with_index_change(|app| {
+                for f in files {
+                    app.idx.apply(f);
+                }
+                app.idx.link();
+            });
+        }
+        if done {
+            self.idx.save_cache();
+            self.backend_progress.clear();
+            if std::mem::take(&mut self.restart_backend) {
+                self.start_backend();
+            }
+        } else {
+            self.backend = Some(rx);
+        }
     }
 
     /// Make `r` the current symbol: listing position, xrefs, and graph focus (rebuilding the
@@ -670,14 +753,15 @@ impl App {
         }
     }
 
-    /// Rebuild the index and carry the graph over by (file, symbol) identity.
-    fn reindex(&mut self) {
+    /// Run `change` on the index and carry the graph, the listing and the map's anchors over by
+    /// (file, symbol) identity, since symbol indices do not survive it.
+    fn with_index_change(&mut self, change: impl FnOnce(&mut App)) {
         let focus = self.graph.focus.map(|r| self.idx.key(r));
         let expansions: Vec<((String, String), bool)> = self.graph.expansions.iter().map(|(r, c)| (self.idx.key(*r), *c)).collect();
         let expanded: Vec<(String, String)> = self.graph.expanded.iter().map(|r| self.idx.key(*r)).collect();
         let cur_file = self.cur_file.map(|fi| self.idx.files[fi].path.clone());
 
-        self.idx = index::build(&self.idx.root);
+        change(self);
         self.map.resolve_all(&self.idx);
         self.graph.focus = focus.and_then(|k| self.idx.by_key(&k));
         self.graph.expansions = expansions.into_iter().filter_map(|(k, c)| self.idx.by_key(&k).map(|r| (r, c))).collect();
@@ -685,8 +769,14 @@ impl App {
         self.graph.size.clear();
         self.refresh_graph();
         self.cur_file = cur_file.and_then(|p| self.idx.find_file(&p));
+    }
+
+    /// Rebuild the index from disk and the cache, then ask the servers about what changed.
+    fn reindex(&mut self) {
+        self.with_index_change(|app| app.idx = index::build(&app.idx.root));
         self.results.clear();
         self.status = format!("re-indexed: {} files, {} symbols (source changed)", self.idx.files.len(), self.idx.files.iter().map(|f| f.symbols.len()).sum::<usize>());
+        self.start_backend();
     }
 }
 
@@ -704,6 +794,7 @@ enum Action {
     ExpandCallees(SymRef),
     ToggleExpand(SymRef),
     AddToPath(SymRef),
+    GoTo(usize, usize), // (file, line) in the listing
     Relayout,
 }
 
@@ -728,8 +819,10 @@ impl App {
         egui::ScrollArea::vertical().id_salt("symbols").auto_shrink(false).show_rows(ui, row_h, rows.len(), |ui, range| {
             for r in &rows[range] {
                 let s = self.idx.sym(*r);
-                let text = format!("{}{:<26} {:<12} {}:{}", if s.depth > 0 { "  " } else { "" }, trunc(&s.name, 26), trunc(s.kind, 12), self.idx.files[r.file].path, s.start + 1);
-                let resp = ui.selectable_label(cur == Some(*r), egui::RichText::new(text).monospace());
+                let text = format!("{}{:<26} {:<12} {}:{}", if s.depth > 0 { "  " } else { "" }, trunc(&s.name, 26), trunc(&s.kind, 12), self.idx.files[r.file].path, s.start + 1);
+                let text = egui::RichText::new(text).monospace();
+                let text = if self.idx.files[r.file].pending { text.weak() } else { text };
+                let resp = ui.selectable_label(cur == Some(*r), text);
                 if resp.clicked() {
                     action = Some(Action::Focus(*r));
                 }
@@ -830,8 +923,13 @@ impl App {
         let s = self.idx.sym(cur);
         ui.strong(&s.name);
         ui.weak(format!("{} {}:{}-{}", s.kind, self.idx.files[cur.file].path, s.start + 1, s.end + 1));
+        let pending = self.idx.files[cur.file].pending;
+        if pending {
+            ui.weak(format!("waiting for {}", index::lang_for(&self.idx.files[cur.file].path).map_or("the server", |l| l.server)));
+        }
         ui.separator();
         egui::ScrollArea::vertical().id_salt("xrefs").auto_shrink(false).show(ui, |ui| {
+            ui.add_enabled_ui(!pending, |ui| {
             ui.label(format!("Xrefs to ({})", s.callers.len()));
             for &r in &s.callers {
                 if ui.selectable_label(false, cli::describe(&self.idx, r)).clicked() {
@@ -845,6 +943,17 @@ impl App {
                     action = Some(Action::Focus(r));
                 }
             }
+            ui.separator();
+            ui.label(format!("References ({})", s.refs.len()));
+            for (path, line) in &s.refs {
+                if let Some(fi) = self.idx.find_file(path) {
+                    let text = self.idx.files[fi].lines.get(*line as usize).map(|l| l.trim()).unwrap_or("");
+                    if ui.selectable_label(false, format!("{path}:{}: {text}", line + 1)).clicked() {
+                        action = Some(Action::GoTo(fi, *line as usize));
+                    }
+                }
+            }
+            });
         });
         action
     }
@@ -1189,6 +1298,7 @@ impl App {
                 let (start, end) = (s.start, s.end);
                 self.add_step(r.file, start, end, Some(r));
             }
+            Some(Action::GoTo(fi, line)) => self.open_line(fi, line),
             Some(Action::Relayout) => {
                 self.graph.manual = false;
                 self.graph.layout(&self.idx, self.metrics);
@@ -1209,7 +1319,8 @@ impl eframe::App for App {
         }
         let mono = TextStyle::Monospace.resolve(&ctx.style()); // resolve outside the fonts lock: ctx.style() inside it deadlocks
         self.metrics = ctx.fonts_mut(|f| Metrics { line_h: f.row_height(&mono), char_w: f.glyph_width(&mono, 'M') });
-        ctx.request_repaint_after(Duration::from_secs(1)); // keep polling while idle
+        ctx.request_repaint_after(if self.backend.is_some() { Duration::from_millis(100) } else { Duration::from_secs(1) }); // keep polling while idle
+        self.poll_backend();
         self.poll_disk();
 
         egui::TopBottomPanel::top("bar").show(ctx, |ui| {
@@ -1245,6 +1356,10 @@ impl eframe::App for App {
                 ui.monospace(self.map_path.display().to_string());
                 ui.separator();
                 ui.label(&self.status);
+                if !self.backend_progress.is_empty() {
+                    ui.separator();
+                    ui.weak(&self.backend_progress);
+                }
             });
         });
 
@@ -1291,7 +1406,8 @@ fn cli_main(root: &Path, args: &[String]) -> i32 {
             return 0;
         }
     };
-    let idx = index::build(root);
+    let mut idx = index::build(root);
+    idx.run_backends(|m| eprintln!("{m}"));
     let map_path = root.join(".codemap");
     let map = Map::load(&map_path);
     if map.is_none() && map_path.exists() {

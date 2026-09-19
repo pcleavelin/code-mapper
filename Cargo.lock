@@ -659,6 +659,7 @@ dependencies = [
  "eframe",
  "ignore",
  "regex",
+ "serde_json",
  "tree-sitter",
  "tree-sitter-c",
  "tree-sitter-javascript",
