@@ -66,4 +66,4 @@ force a full re-query.
 `cargo build`, `cargo test`. The GUI is winit + wgpu + fontdue with the tool's own element
 tree (`src/ui.rs`); there is no UI framework underneath. To see a change on screen without
 a hand on the mouse, `CODEMAP_SHOT=<file.png> [CODEMAP_SHOT_TAB=path|graph|listing|diff]
-targetelease\codemap.exe <root>` writes the first settled frame and quits.
+target\release\codemap.exe <root>` writes the first settled frame and quits.
