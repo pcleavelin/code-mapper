@@ -296,6 +296,8 @@ pub struct App {
     left: LeftTab,
     pub scrolls: HashMap<Id, i32>,
     pub actions: Vec<Action>,
+    pub graph: crate::graph::Graph,
+    pub tooltip: Option<(SymRef, (i32, i32))>, // a definition to show at the pointer this frame
 
     search: Field,
     new_path: Field,
@@ -356,6 +358,8 @@ impl App {
             left: LeftTab::Paths,
             scrolls: HashMap::new(),
             actions: Vec::new(),
+            graph: crate::graph::Graph::new(),
+            tooltip: None,
             search: Field::default(),
             new_path: Field::default(),
             cmd: Field { focused: true, ..Default::default() },
@@ -583,6 +587,7 @@ impl App {
         self.sel = Some((start, end));
         self.scroll_to = Some(start);
         self.focus = Some(r);
+        self.graph.want_look = true;
     }
 
     /// Select a symbol reached outside any path. When it is a whole-symbol step of the path
@@ -928,6 +933,10 @@ impl App {
                     }
                 } else if it.double_clicked || (it.clicked && mods.ctrl) {
                     self.actions.push(Action::Jump(fi, li, col));
+                } else if !self.ui.input.down[0] {
+                    if let Some(r) = self.symbol_at(fi, li, col) {
+                        self.tooltip = Some((r, self.ui.input.mouse));
+                    }
                 }
             }
         }
@@ -1555,10 +1564,6 @@ impl App {
         self.ui.close();
     }
 
-    fn graph_tab(&mut self, gfx: &mut Gfx) {
-        let _ = gfx;
-        self.label("the graph arrives in the next step", WEAK);
-    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -1648,6 +1653,7 @@ impl gfx::App for App {
         self.output_panel(out_h);
         self.status_bar();
         self.ui.close();
+        self.tooltip_element();
         self.ui.end(gfx);
         self.ui.draw(gfx, TEXT);
 

@@ -1,5 +1,6 @@
 mod cli;
 mod gfx;
+mod graph;
 mod gui;
 mod index;
 mod lsp;
