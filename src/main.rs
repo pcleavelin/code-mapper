@@ -108,7 +108,12 @@ struct Metrics {
     char_w: f32,
 }
 
-/// Nodes are symbols showing their code.
+/// A graph node: a symbol, and the step it stands for when it is one. Two slice steps of one
+/// symbol are two nodes; an expansion that reveals a symbol some step already shows reuses
+/// that step's node.
+type Node = (SymRef, Option<usize>);
+
+/// Nodes are symbols showing their code, or a step's slice of it.
 ///
 /// What is visible is *derived* from the selection: the selected path's tree of steps (or the
 /// selected symbol alone), plus an ordered list of expansions ("callers of X", "callees of X").
@@ -120,18 +125,21 @@ struct Metrics {
 /// node switches to manual until the next structural change.
 #[derive(Default)]
 struct Graph {
-    nodes: Vec<SymRef>,
-    col: HashMap<SymRef, i32>,
-    pos: HashMap<SymRef, egui::Pos2>,
-    size: HashMap<SymRef, egui::Vec2>, // measured last frame
-    focus: Option<SymRef>,
+    nodes: Vec<Node>,
+    col: HashMap<Node, i32>,
+    pos: HashMap<Node, egui::Pos2>,
+    size: HashMap<Node, egui::Vec2>,      // measured last frame
+    range: HashMap<Node, (usize, usize)>, // lines a node shows: the step's slice, or the whole symbol
+    by_sym: HashMap<SymRef, Node>,        // the node edges and expansions land on for a symbol
+    focus: Option<SymRef>,                // the selected symbol
+    focus_step: Option<usize>,            // the selected step, when the symbol was reached through one
     path_id: Option<usize>,
-    step: HashMap<SymRef, (usize, usize, String)>, // path node -> (pre-order position, anchor index, hierarchical number)
-    step_parent: HashMap<SymRef, SymRef>,           // path node -> its parent step's node
-    origin: HashMap<SymRef, (SymRef, bool)>, // expansion node -> (the node that revealed it, via callees?)
-    expansions: Vec<(SymRef, bool)>,       // (node, callees?) in the order the user opened them
-    expanded: HashSet<SymRef>,             // nodes showing all their lines
-    manual: bool,                          // user dragged something: keep positions
+    step: HashMap<Node, (usize, usize, String)>, // step node -> (pre-order position, anchor index, hierarchical number)
+    step_parent: HashMap<Node, Node>,            // step node -> its parent step's node
+    origin: HashMap<Node, (Node, bool)>,         // expansion node -> (the node that revealed it, via callees?)
+    expansions: Vec<(Node, bool)>,               // (node, callees?) in the order the user opened them
+    expanded: HashSet<Node>,                     // nodes showing all their lines
+    manual: bool,                                // user dragged something: keep positions
     scene_rect: Option<egui::Rect>,
 }
 
@@ -140,75 +148,82 @@ impl Graph {
         *self = Graph::default();
     }
 
-    /// Lines shown for `r`: (shown, total).
-    fn lines_shown(&self, idx: &Index, r: SymRef) -> (usize, usize) {
-        let s = idx.sym(r);
-        let total = s.end - s.start + 1;
-        let cap = if self.expanded.contains(&r) { MAX_NODE_LINES } else { PREVIEW_LINES };
+    /// The node the selection sits on.
+    fn focus_node(&self) -> Option<Node> {
+        let f = self.focus?;
+        let stepped = (f, self.focus_step);
+        if self.col.contains_key(&stepped) { Some(stepped) } else { self.by_sym.get(&f).copied() }
+    }
+
+    /// Lines shown for `n`: (shown, total).
+    fn lines_shown(&self, n: Node) -> (usize, usize) {
+        let (lo, hi) = self.range[&n];
+        let total = hi - lo + 1;
+        let cap = if self.expanded.contains(&n) { MAX_NODE_LINES } else { PREVIEW_LINES };
         (total.min(cap), total)
     }
 
-    /// Characters of code that fit on one row of `r`'s node (lines are cut to this).
-    fn max_chars(&self, idx: &Index, r: SymRef, m: Metrics) -> usize {
-        (((self.node_size(idx, r, m).x - 12.0) / m.char_w) as usize).saturating_sub(6)
+    /// Characters of code that fit on one row of `n`'s node (lines are cut to this).
+    fn max_chars(&self, idx: &Index, n: Node, m: Metrics) -> usize {
+        (((self.node_size(idx, n, m).x - 12.0) / m.char_w) as usize).saturating_sub(6)
     }
 
     /// Width from the longest shown line (clamped); height from the measured frame, else estimated.
-    fn node_size(&self, idx: &Index, r: SymRef, m: Metrics) -> egui::Vec2 {
-        let s = idx.sym(r);
-        let (shown, total) = self.lines_shown(idx, r);
-        let longest = idx.files[r.file].lines[s.start..s.start + shown].iter().map(|l| l.chars().count()).max().unwrap_or(0);
+    fn node_size(&self, idx: &Index, n: Node, m: Metrics) -> egui::Vec2 {
+        let (lo, _) = self.range[&n];
+        let (shown, total) = self.lines_shown(n);
+        let longest = idx.files[n.0.file].lines[lo..lo + shown].iter().map(|l| l.chars().count()).max().unwrap_or(0);
         let w = (12.0 + (longest + 6) as f32 * m.char_w).clamp(HEADER_MIN_W, NODE_MAX_W);
-        let h = match self.size.get(&r) {
+        let h = match self.size.get(&n) {
             Some(sz) => sz.y,
             None => HEADER_H + (shown + usize::from(shown < total)) as f32 * m.line_h + 12.0,
         };
         vec2(w, h)
     }
 
-    fn node_rect(&self, idx: &Index, r: SymRef, m: Metrics) -> egui::Rect {
-        egui::Rect::from_min_size(self.pos.get(&r).copied().unwrap_or(pos2(0.0, 0.0)), self.node_size(idx, r, m))
+    fn node_rect(&self, idx: &Index, n: Node, m: Metrics) -> egui::Rect {
+        egui::Rect::from_min_size(self.pos.get(&n).copied().unwrap_or(pos2(0.0, 0.0)), self.node_size(idx, n, m))
     }
 
-    fn add(&mut self, r: SymRef, col: i32) {
-        if self.col.contains_key(&r) {
+    fn add(&mut self, idx: &Index, n: Node, col: i32, range: (usize, usize)) {
+        if self.col.contains_key(&n) {
             return;
         }
-        self.col.insert(r, col);
-        self.nodes.push(r);
+        let f = &idx.files[n.0.file];
+        let hi = range.1.min(f.lines.len().saturating_sub(1));
+        self.col.insert(n, col);
+        self.range.insert(n, (range.0.min(hi), hi));
+        self.by_sym.entry(n.0).or_insert(n);
+        self.nodes.push(n);
     }
 
-    fn is_expanded(&self, r: SymRef, callees: bool) -> bool {
-        self.expansions.contains(&(r, callees))
+    fn is_expanded(&self, n: Node, callees: bool) -> bool {
+        self.expansions.contains(&(n, callees))
     }
 
     /// Derive the visible node set from the selection + expansions.
     fn rebuild(&mut self, idx: &Index, map: &Map) {
         self.nodes.clear();
         self.col.clear();
+        self.range.clear();
+        self.by_sym.clear();
         self.step.clear();
         self.step_parent.clear();
         self.origin.clear();
         if let Some(pi) = self.path_id.filter(|&pi| pi < map.paths.len()) {
             let anchors = &map.paths[pi].anchors;
-            let mut node_of: HashMap<usize, SymRef> = HashMap::new(); // anchor index -> node
+            let mut node_of: HashMap<usize, Node> = HashMap::new(); // anchor index -> node
             for (k, (ai, depth, number)) in map.numbered(pi).into_iter().enumerate() {
                 let a = &anchors[ai];
                 let Some(fi) = idx.find_file(&a.file) else { continue };
                 let Some(si) = a.sym else { continue };
-                let r = SymRef { file: fi, sym: si };
-                if self.col.contains_key(&r) {
-                    node_of.insert(ai, r);
-                    continue; // a symbol twice in one path: one node
-                }
-                self.add(r, depth as i32);
-                self.step.insert(r, (k, ai, number));
-                node_of.insert(ai, r);
+                let n = (SymRef { file: fi, sym: si }, Some(ai));
+                self.add(idx, n, depth as i32, (a.line_start, a.line_end));
+                self.step.insert(n, (k, ai, number));
+                node_of.insert(ai, n);
                 if a.parent >= 0 {
                     if let Some(&p) = node_of.get(&(a.parent as usize)) {
-                        if p != r {
-                            self.step_parent.insert(r, p);
-                        }
+                        self.step_parent.insert(n, p);
                     }
                 }
             }
@@ -216,17 +231,23 @@ impl Graph {
             self.path_id = None;
         }
         if let Some(f) = self.focus {
-            self.add(f, 0); // an off-path selection is its own root
+            if !self.by_sym.contains_key(&f) {
+                let s = idx.sym(f);
+                self.add(idx, (f, None), 0, (s.start, s.end)); // an off-path selection is its own root
+            }
         }
-        for (r, callees) in self.expansions.clone() {
-            let Some(&col) = self.col.get(&r) else { continue };
-            let s = idx.sym(r);
+        for (n, callees) in self.expansions.clone() {
+            let Some(&col) = self.col.get(&n) else { continue };
+            let s = idx.sym(n.0);
             let (list, dc) = if callees { (&s.callees, 1) } else { (&s.callers, -1) };
-            for &n in list {
-                if !self.col.contains_key(&n) {
-                    self.origin.insert(n, (r, callees));
+            for &r in list {
+                if self.by_sym.contains_key(&r) {
+                    continue;
                 }
-                self.add(n, col + dc);
+                let t = idx.sym(r);
+                let m = (r, None);
+                self.origin.insert(m, (n, callees));
+                self.add(idx, m, col + dc, (t.start, t.end));
             }
         }
         self.manual = false;
@@ -236,7 +257,7 @@ impl Graph {
     fn build_around(&mut self, idx: &Index, map: &Map, r: SymRef) {
         self.clear();
         self.focus = Some(r);
-        self.expansions = vec![(r, false), (r, true)];
+        self.expansions = vec![((r, None), false), ((r, None), true)];
         self.rebuild(idx, map);
     }
 
@@ -246,13 +267,13 @@ impl Graph {
         self.rebuild(idx, map);
     }
 
-    /// Open or close the callers/callees of `r`.
-    fn toggle(&mut self, idx: &Index, map: &Map, r: SymRef, callees: bool) {
-        match self.expansions.iter().position(|e| *e == (r, callees)) {
+    /// Open or close the callers/callees of `n`.
+    fn toggle(&mut self, idx: &Index, map: &Map, n: Node, callees: bool) {
+        match self.expansions.iter().position(|e| *e == (n, callees)) {
             Some(i) => {
                 self.expansions.remove(i);
             }
-            None => self.expansions.push((r, callees)),
+            None => self.expansions.push((n, callees)),
         }
         self.rebuild(idx, map);
     }
@@ -272,7 +293,7 @@ impl Graph {
         }
 
         // x
-        let mut cols: BTreeMap<i32, Vec<SymRef>> = BTreeMap::new();
+        let mut cols: BTreeMap<i32, Vec<Node>> = BTreeMap::new();
         for &r in &self.nodes {
             cols.entry(self.col[&r]).or_default().push(r);
         }
@@ -289,9 +310,9 @@ impl Graph {
         }
 
         // forest: steps under their parent step, expansions beside what revealed them
-        let mut right: HashMap<SymRef, Vec<SymRef>> = HashMap::new();
-        let mut left: HashMap<SymRef, Vec<SymRef>> = HashMap::new();
-        let mut has_parent: HashSet<SymRef> = HashSet::new();
+        let mut right: HashMap<Node, Vec<Node>> = HashMap::new();
+        let mut left: HashMap<Node, Vec<Node>> = HashMap::new();
+        let mut has_parent: HashSet<Node> = HashSet::new();
         for &n in &self.nodes {
             if let Some(&p) = self.step_parent.get(&n) {
                 right.entry(p).or_default().push(n);
@@ -304,16 +325,16 @@ impl Graph {
         for kids in right.values_mut() {
             kids.sort_by_key(|k| self.step.get(k).map_or(usize::MAX, |s| s.0)); // steps first, in step order
         }
-        let mut roots: Vec<SymRef> = self.nodes.iter().copied().filter(|n| !has_parent.contains(n)).collect();
+        let mut roots: Vec<Node> = self.nodes.iter().copied().filter(|n| !has_parent.contains(n)).collect();
         roots.sort_by_key(|r| self.step.get(r).map_or(usize::MAX, |s| s.0));
 
         // pass 1: block heights, bottom-up
-        let mut height: HashMap<SymRef, f32> = HashMap::new();
-        fn measure(g: &Graph, idx: &Index, m: Metrics, r: SymRef, right: &HashMap<SymRef, Vec<SymRef>>, left: &HashMap<SymRef, Vec<SymRef>>, height: &mut HashMap<SymRef, f32>, seen: &mut HashSet<SymRef>) -> f32 {
+        let mut height: HashMap<Node, f32> = HashMap::new();
+        fn measure(g: &Graph, idx: &Index, m: Metrics, r: Node, right: &HashMap<Node, Vec<Node>>, left: &HashMap<Node, Vec<Node>>, height: &mut HashMap<Node, f32>, seen: &mut HashSet<Node>) -> f32 {
             if !seen.insert(r) {
                 return 0.0;
             }
-            let stack = |g: &Graph, kids: Option<&Vec<SymRef>>, height: &mut HashMap<SymRef, f32>, seen: &mut HashSet<SymRef>| -> f32 {
+            let stack = |g: &Graph, kids: Option<&Vec<Node>>, height: &mut HashMap<Node, f32>, seen: &mut HashSet<Node>| -> f32 {
                 let mut h = 0.0;
                 for &k in kids.into_iter().flatten() {
                     let kh = measure(g, idx, m, k, right, left, height, seen);
@@ -335,7 +356,7 @@ impl Graph {
         }
 
         // pass 2: place, top-down
-        fn place(g: &mut Graph, idx: &Index, m: Metrics, r: SymRef, top: f32, col_x: &BTreeMap<i32, f32>, right: &HashMap<SymRef, Vec<SymRef>>, left: &HashMap<SymRef, Vec<SymRef>>, height: &HashMap<SymRef, f32>, done: &mut HashSet<SymRef>) {
+        fn place(g: &mut Graph, idx: &Index, m: Metrics, r: Node, top: f32, col_x: &BTreeMap<i32, f32>, right: &HashMap<Node, Vec<Node>>, left: &HashMap<Node, Vec<Node>>, height: &HashMap<Node, f32>, done: &mut HashSet<Node>) {
             if !done.insert(r) {
                 return;
             }
@@ -343,7 +364,7 @@ impl Graph {
             let own = g.node_size(idx, r, m).y;
             g.pos.insert(r, pos2(col_x[&g.col[&r]], top + (block - own) / 2.0));
             for kids in [right.get(&r), left.get(&r)] {
-                let kids: Vec<SymRef> = kids.into_iter().flatten().copied().filter(|k| height.contains_key(k) && !done.contains(k)).collect();
+                let kids: Vec<Node> = kids.into_iter().flatten().copied().filter(|k| height.contains_key(k) && !done.contains(k)).collect();
                 let stack_h: f32 = kids.iter().map(|k| height[k] + GAP_Y).sum::<f32>() - GAP_Y;
                 let mut cur = top + (block - stack_h.max(0.0)) / 2.0;
                 for k in kids {
@@ -382,7 +403,7 @@ impl Graph {
 
     /// Readable zoom centred on the focused node (fit-all is unreadable past a few nodes).
     fn look_at_focus(&mut self, idx: &Index, m: Metrics) {
-        match self.focus {
+        match self.focus_node() {
             Some(r) => {
                 let c = self.node_rect(idx, r, m).center();
                 self.scene_rect = Some(egui::Rect::from_center_size(c, vec2(1900.0, 1100.0)));
@@ -665,13 +686,14 @@ impl App {
     /// callers and callees open.
     fn focus_graph(&mut self, r: SymRef) {
         self.graph.focus = Some(r);
-        if !self.graph.col.contains_key(&r) {
+        if !self.graph.by_sym.contains_key(&r) {
             if self.graph.path_id.is_none() {
                 self.graph.build_around(&self.idx, &self.map, r);
             } else {
-                self.graph.expansions.retain(|(n, _)| *n != r);
-                self.graph.expansions.push((r, false));
-                self.graph.expansions.push((r, true));
+                let n = (r, None);
+                self.graph.expansions.retain(|(m, _)| *m != n);
+                self.graph.expansions.push((n, false));
+                self.graph.expansions.push((n, true));
                 self.graph.rebuild(&self.idx, &self.map);
             }
         }
@@ -701,6 +723,7 @@ impl App {
             }
         }
         self.sel_anchor = None;
+        self.graph.focus_step = None;
         self.focus(r);
     }
 
@@ -712,6 +735,7 @@ impl App {
         if self.graph.path_id != Some(pi) {
             self.graph.build_path(&self.idx, &self.map, pi);
         }
+        self.graph.focus_step = Some(ai);
         let a = &self.map.paths[pi].anchors[ai];
         let (file, sym, ls, le) = (a.file.clone(), a.sym, a.line_start, a.line_end);
         match (self.idx.find_file(&file), sym) {
@@ -930,15 +954,15 @@ impl App {
     /// (file, symbol) identity, since symbol indices do not survive it.
     fn with_index_change(&mut self, change: impl FnOnce(&mut App)) {
         let focus = self.graph.focus.map(|r| self.idx.key(r));
-        let expansions: Vec<((String, String), bool)> = self.graph.expansions.iter().map(|(r, c)| (self.idx.key(*r), *c)).collect();
-        let expanded: Vec<(String, String)> = self.graph.expanded.iter().map(|r| self.idx.key(*r)).collect();
+        let expansions: Vec<((String, String), Option<usize>, bool)> = self.graph.expansions.iter().map(|(n, c)| (self.idx.key(n.0), n.1, *c)).collect();
+        let expanded: Vec<((String, String), Option<usize>)> = self.graph.expanded.iter().map(|n| (self.idx.key(n.0), n.1)).collect();
         let cur_file = self.cur_file.map(|fi| self.idx.files[fi].path.clone());
 
         change(self);
         self.map.resolve_all(&self.idx);
         self.graph.focus = focus.and_then(|k| self.idx.by_key(&k));
-        self.graph.expansions = expansions.into_iter().filter_map(|(k, c)| self.idx.by_key(&k).map(|r| (r, c))).collect();
-        self.graph.expanded = expanded.iter().filter_map(|k| self.idx.by_key(k)).collect();
+        self.graph.expansions = expansions.into_iter().filter_map(|(k, st, c)| self.idx.by_key(&k).map(|r| ((r, st), c))).collect();
+        self.graph.expanded = expanded.iter().filter_map(|(k, st)| self.idx.by_key(k).map(|r| (r, *st))).collect();
         self.graph.size.clear();
         self.refresh_graph();
         self.cur_file = cur_file.and_then(|p| self.idx.find_file(&p));
@@ -968,9 +992,9 @@ enum Action {
     EditNote(usize, Option<usize>), // open a note for editing; None = the path note
     DeleteStep(usize, usize),
     DeletePath(usize),
-    ExpandCallers(SymRef),
-    ExpandCallees(SymRef),
-    ToggleExpand(SymRef),
+    ExpandCallers(Node),
+    ExpandCallees(Node),
+    ToggleExpand(Node),
     GoTo(usize, usize),        // (file, line) in the listing
     Jump(usize, usize, usize), // (file, line, column): to the definition of the identifier there
     Relayout,
@@ -1378,8 +1402,8 @@ impl App {
                     }
                 });
                 let hrect = header.response.rect;
-                if top_step.is_none() && hrect.bottom() >= viewport_top {
-                    top_step = Some(ai);
+                if top_step.is_none() || hrect.top() <= viewport_top {
+                    top_step = Some(ai); // the step the reader is in: the last header at or above the top
                 }
                 if scroll_to_step == Some(ai) {
                     ui.scroll_to_rect(hrect, Some(egui::Align::TOP));
@@ -1500,18 +1524,7 @@ impl App {
             self.graph.layout(&self.idx, m); // measured sizes from last frame settle the layout
         }
         let font = TextStyle::Monospace.resolve(ui.style());
-        let in_path: Vec<SymRef> = self
-            .sel_path
-            .map(|pi| {
-                self.map.paths[pi]
-                    .anchors
-                    .iter()
-                    .filter_map(|a| {
-                        Some(SymRef { file: self.idx.find_file(&a.file)?, sym: a.sym? })
-                    })
-                    .collect()
-            })
-            .unwrap_or_default();
+        let focus_node = self.graph.focus_node();
 
         let mut scene_rect = self.graph.scene_rect.unwrap_or(egui::Rect::ZERO);
         egui::Scene::new().zoom_range(0.1..=1.5).show(ui, &mut scene_rect, |ui| {
@@ -1519,7 +1532,7 @@ impl App {
             let edge = Stroke::new(1.5, ui.visuals().weak_text_color());
             let back = Stroke::new(1.5, Color32::from_rgb(220, 160, 80));
             let step_stroke = Stroke::new(3.0, Color32::from_rgb(90, 200, 120));
-            let rect_of = |g: &Graph, r: SymRef| g.node_rect(&self.idx, r, m);
+            let rect_of = |g: &Graph, n: Node| g.node_rect(&self.idx, n, m);
             let curve = |p0: egui::Pos2, p1: egui::Pos2, stroke: Stroke| {
                 let dx = ((p1.x - p0.x).abs() * 0.5).max(GAP_X * 0.8);
                 egui::epaint::CubicBezierShape::from_points_stroke([p0, p0 + vec2(dx, 0.0), p1 - vec2(dx, 0.0), p1], false, Color32::TRANSPARENT, stroke)
@@ -1531,8 +1544,9 @@ impl App {
             // instead of a loop across the canvas. Pairs that are path steps are drawn below.
             for &a in &self.graph.nodes {
                 let ra = rect_of(&self.graph, a);
-                for &b in &self.idx.sym(a).callees {
-                    if !self.graph.col.contains_key(&b) || a == b || self.graph.step_parent.get(&b) == Some(&a) {
+                for &bs in &self.idx.sym(a.0).callees {
+                    let Some(&b) = self.graph.by_sym.get(&bs) else { continue };
+                    if a.0 == bs || self.graph.step_parent.get(&b) == Some(&a) {
                         continue;
                     }
                     let rb = rect_of(&self.graph, b);
@@ -1559,10 +1573,10 @@ impl App {
             let base_color = ui.visuals().text_color();
             let dim = ui.visuals().weak_text_color();
             for r in self.graph.nodes.clone() {
-                let s = self.idx.sym(r);
+                let s = self.idx.sym(r.0);
                 let rect = rect_of(&self.graph, r);
-                let focused = self.graph.focus == Some(r);
-                let on_path = in_path.contains(&r);
+                let focused = focus_node == Some(r);
+                let on_path = self.graph.step.contains_key(&r);
                 let off_path = self.graph.path_id.is_some() && !on_path;
                 let border = if focused {
                     Stroke::new(2.0, ui.visuals().selection.stroke.color)
@@ -1587,7 +1601,8 @@ impl App {
                             if off_path {
                                 title = title.union(ui.weak("off path"));
                             }
-                            title = title.union(ui.weak(format!("{}:{}", self.idx.files[r.file].path, s.start + 1)));
+                            let (lo, hi) = self.graph.range[&r];
+                            title = title.union(ui.weak(format!("{}:{}-{}", self.idx.files[r.0.file].path, lo + 1, hi + 1)));
                             let drag = ui.interact(title.rect, ui.id().with(("drag", r)), Sense::click_and_drag());
                             if drag.dragged() {
                                 *self.graph.pos.get_mut(&r).unwrap() += drag.drag_delta();
@@ -1596,17 +1611,17 @@ impl App {
                             if drag.clicked() {
                                 action = Some(match (&step, self.graph.path_id) {
                                     (Some((_, ai, _)), Some(pi)) => Action::SelectStep(pi, *ai, false),
-                                    _ => Action::Focus(r),
+                                    _ => Action::Focus(r.0),
                                 });
                             }
                             drag.on_hover_text("drag to move, click to select");
                             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                let (shown, total) = self.graph.lines_shown(&self.idx, r);
+                                let (shown, total) = self.graph.lines_shown(r);
                                 if total > PREVIEW_LINES && ui.small_button(if shown < total { "more" } else { "less" }).on_hover_text("show all / fewer lines").clicked() {
                                     action = Some(Action::ToggleExpand(r));
                                 }
                                 if ui.small_button("listing").on_hover_text("open in the listing").clicked() {
-                                    action = Some(Action::OpenListing(r));
+                                    action = Some(Action::OpenListing(r.0));
                                 }
                                 let (out_open, in_open) = (self.graph.is_expanded(r, true), self.graph.is_expanded(r, false));
                                 if ui.add_enabled(!s.callees.is_empty(), egui::Button::new(format!("callees > {}", s.callees.len())).small().selected(out_open)).on_hover_text("show / hide what this calls").clicked() {
@@ -1625,12 +1640,13 @@ impl App {
                             }
                         }
                         ui.separator();
-                        let f = &self.idx.files[r.file];
-                        let (shown, total) = self.graph.lines_shown(&self.idx, r);
+                        let f = &self.idx.files[r.0.file];
+                        let (shown, total) = self.graph.lines_shown(r);
                         let max_chars = self.graph.max_chars(&self.idx, r, m);
                         let mut job = LayoutJob::default();
                         let numfmt = egui::TextFormat { font_id: font.clone(), color: dim, ..Default::default() };
-                        for li in s.start..s.start + shown {
+                        let (lo, _) = self.graph.range[&r];
+                        for li in lo..lo + shown {
                             job.append(&format!("{:4} ", li + 1), 0.0, numfmt.clone());
                             append_line(&mut job, &f.lines[li], &f.hl[li], &font, base_color, max_chars);
                             job.append("\n", 0.0, numfmt.clone());
