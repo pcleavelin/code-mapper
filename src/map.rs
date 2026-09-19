@@ -321,7 +321,7 @@ impl Map {
     }
 
     /// This map against `base`: every path in either, in this map's order then the removed
-    /// ones. Steps match by (file, symbol) (by start line when there is no symbol); a match
+    /// ones. Steps match by (file, symbol); with no symbol, by start line or by note. A match
     /// with different lines or text is re-pinned, one with a different note is edited.
     pub fn diff(&self, base: &Map) -> Vec<PathDiff> {
         let mut out = Vec::new();
@@ -331,7 +331,7 @@ impl Map {
                 continue;
             };
             let mut used = vec![false; b.anchors.len()];
-            let same_place = |a: &Anchor, x: &Anchor| a.file == x.file && a.symbol == x.symbol && (!a.symbol.is_empty() || a.off_start == x.off_start);
+            let same_place = |a: &Anchor, x: &Anchor| a.file == x.file && a.symbol == x.symbol && (!a.symbol.is_empty() || a.off_start == x.off_start || (!a.note.is_empty() && a.note == x.note));
             let steps: Vec<Option<StepChange>> = p
                 .anchors
                 .iter()
