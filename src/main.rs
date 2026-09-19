@@ -13,10 +13,21 @@ use std::time::{Duration, Instant, SystemTime};
 
 #[derive(PartialEq, Clone, Copy)]
 enum Tab {
+    Path,
     Graph,
     Listing,
     Results,
 }
+
+#[derive(PartialEq, Clone, Copy)]
+enum LeftTab {
+    Paths,
+    Symbols,
+    Files,
+}
+
+/// Width of the line-number gutter in a code row.
+const GUTTER: f32 = 64.0;
 
 // ---- syntax colours ---------------------------------------------------------------
 
@@ -392,8 +403,10 @@ struct App {
 
     sel_path: Option<usize>,
     sel_anchor: Option<usize>,
+    expanded_steps: HashSet<(usize, usize)>, // (path, step) showing the whole enclosing symbol
 
     tab: Tab,
+    left: LeftTab,
     graph: Graph,
     metrics: Metrics,
     cur_file: Option<usize>,
@@ -401,6 +414,7 @@ struct App {
     scroll_to: Option<usize>,
 
     sym_filter: String,
+    goto_line: String,
     search: String,
     new_path: String,
     results: Vec<(usize, usize)>, // (file, line)
@@ -427,6 +441,7 @@ impl App {
         }
         let mut map = map.unwrap_or_default();
         map.resolve_all(&idx);
+        let first_path = if map.paths.is_empty() { None } else { Some(0) };
         let mut app = App {
             idx,
             backend: None,
@@ -438,20 +453,23 @@ impl App {
             dirty: false,
             last_poll: Instant::now(),
             warned_disk: false,
-            sel_path: None,
+            sel_path: first_path,
             sel_anchor: None,
-            tab: Tab::Graph,
+            expanded_steps: HashSet::new(),
+            tab: Tab::Path,
+            left: LeftTab::Paths,
             graph: Graph::default(),
             metrics: Metrics { line_h: 15.0, char_w: 7.5 },
             cur_file: None,
             sel: None,
             scroll_to: None,
             sym_filter: String::new(),
+            goto_line: String::new(),
             search: String::new(),
             new_path: String::new(),
             results: Vec::new(),
             cmd: String::new(),
-            output: "type 'help' for commands\n".into(),
+            output: "type 'help' for commands; roots and promote live here\n".into(),
             status,
         };
         if let Some(r) = app.idx.roots().first().copied() {
@@ -613,82 +631,52 @@ impl App {
         self.dirty = true;
     }
 
-    /// Parent for a new step of the selected path. A node revealed by opening a step's callees
-    /// goes under that step (that is the call it was reached by); otherwise under the selected
-    /// step, else the focused node's step, else root.
-    fn step_parent_for_new(&self, pi: usize, node: Option<SymRef>) -> i32 {
-        if self.graph.path_id == Some(pi) {
-            if let Some((_, ai)) = node.and_then(|n| self.graph.origin.get(&n)).filter(|(_, callees)| *callees).and_then(|(o, _)| self.graph.step.get(o)) {
-                return *ai as i32;
-            }
-        }
-        if let Some(ai) = self.sel_anchor.filter(|&ai| ai < self.map.paths[pi].anchors.len()) {
-            return ai as i32;
-        }
-        if self.graph.path_id == Some(pi) {
-            if let Some((_, ai)) = self.graph.focus.and_then(|f| self.graph.step.get(&f)) {
-                return *ai as i32;
-            }
-        }
-        -1
-    }
-
-    /// Add lines as a step of the selected path. The view does not move; the new step becomes
-    /// the selected one so repeated adds build a chain, and a click on another step starts a
-    /// branch.
-    fn add_step(&mut self, fi: usize, ls: usize, le: usize, node: Option<SymRef>) {
+    /// Pin lines as a step of the selected path, under the selected step (else a root). The
+    /// new step becomes the selected one so repeated pins build a chain.
+    fn add_step(&mut self, fi: usize, ls: usize, le: usize) {
         let Some(pi) = self.sel_path else {
-            self.status = "select a path first (Paths window)".into();
+            self.status = "select a path first".into();
             return;
         };
-        let name = &self.idx.files[fi].path;
-        if let Some(s) = self.idx.files[fi].symbols.iter().filter(|s| s.start <= ls && le <= s.end).max_by_key(|s| s.depth) {
-            if s.start == ls && s.end == le {
-                if let Some(ai) = self.map.step_for(pi, name, &s.name) {
-                    self.sel_anchor = Some(ai);
-                    self.status = format!("'{}' is already step [{ai}] of '{}'", s.name, self.map.paths[pi].name);
-                    return;
-                }
-            }
-        }
-        let parent = self.step_parent_for_new(pi, node);
+        let parent = self.sel_anchor.filter(|&ai| ai < self.map.paths[pi].anchors.len()).map_or(-1, |ai| ai as i32);
         let ai = self.map.add_anchor(&self.idx, pi, fi, ls, le, Author::Human, parent);
         self.sel_anchor = Some(ai);
         self.dirty = true;
         self.status = format!("step [{ai}] added to '{}' under [{parent}]", self.map.paths[pi].name);
-        if self.graph.path_id == Some(pi) {
-            self.refresh_graph();
-        }
-    }
-
-    /// Top-bar button: the listing selection, else the focused node.
-    fn add_selection(&mut self) {
-        match (self.tab, self.cur_file, self.sel, self.graph.focus) {
-            (Tab::Listing, Some(fi), Some((a, b)), _) => self.add_step(fi, a.min(b), a.max(b), None),
-            (_, _, _, Some(r)) => {
-                let s = self.idx.sym(r);
-                let (start, end) = (s.start, s.end);
-                self.add_step(r.file, start, end, Some(r));
-            }
-            _ => self.status = "select lines in the listing or a node in the graph first".into(),
-        }
-    }
-
-    // ponytail: no undo; deletes the selected step (children move up), else the selected path.
-    fn delete_selected(&mut self) {
-        let Some(pi) = self.sel_path else { return };
-        match self.sel_anchor {
-            Some(ai) if ai < self.map.paths[pi].anchors.len() => {
-                self.map.remove_anchor(pi, ai);
-                self.sel_anchor = None;
-            }
-            _ => {
-                self.map.paths.remove(pi);
-                self.sel_path = None;
-            }
-        }
-        self.dirty = true;
         self.refresh_graph();
+    }
+
+    /// Top-bar button: the listing's selected lines.
+    fn add_selection(&mut self) {
+        match (self.tab, self.cur_file, self.sel) {
+            (Tab::Listing, Some(fi), Some((a, b))) => self.add_step(fi, a.min(b), a.max(b)),
+            _ => self.status = "select lines in the listing first".into(),
+        }
+    }
+
+    /// Identifier at `col` of a line, if it names a symbol here: a definition that lists this
+    /// line among its references wins, then one in the same file, then any. Focuses it.
+    fn jump_to(&mut self, fi: usize, li: usize, col: usize) {
+        let chars: Vec<char> = self.idx.files[fi].lines[li].chars().collect();
+        let is_id = |c: &char| c.is_alphanumeric() || *c == '_';
+        if !chars.get(col).is_some_and(is_id) {
+            return;
+        }
+        let start = (0..col).rev().take_while(|&i| is_id(&chars[i])).last().unwrap_or(col);
+        let end = (col..chars.len()).take_while(|&i| is_id(&chars[i])).last().unwrap_or(col);
+        let word: String = chars[start..=end].iter().collect();
+        let cands = self.idx.find_symbols(&word);
+        let here = (self.idx.files[fi].path.clone(), li as u32);
+        let target = cands
+            .iter()
+            .copied()
+            .find(|r| self.idx.sym(*r).refs.contains(&here))
+            .or_else(|| cands.iter().copied().find(|r| r.file == fi))
+            .or_else(|| cands.first().copied());
+        match target {
+            Some(r) => self.focus(r),
+            None => self.status = format!("no definition of '{word}' in this repo"),
+        }
     }
 
     fn save(&mut self) {
@@ -788,13 +776,14 @@ enum Action {
     SelectPath(usize),
     ShowPath(usize),
     SelectStep(usize, usize),
-    MoveAnchor(usize, usize, isize),
-    Promote(SymRef),
+    ToggleStep(usize, usize), // show the whole symbol / just the slice in the document
+    DeleteStep(usize, usize),
+    DeletePath(usize),
     ExpandCallers(SymRef),
     ExpandCallees(SymRef),
     ToggleExpand(SymRef),
-    AddToPath(SymRef),
-    GoTo(usize, usize), // (file, line) in the listing
+    GoTo(usize, usize),        // (file, line) in the listing
+    Jump(usize, usize, usize), // (file, line, column): to the definition of the identifier there
     Relayout,
 }
 
@@ -803,6 +792,7 @@ impl App {
         let mut action = None;
         ui.horizontal(|ui| {
             ui.strong("Symbols");
+            ui.weak("+ = in a path");
             ui.add(egui::TextEdit::singleline(&mut self.sym_filter).hint_text("filter").desired_width(f32::INFINITY));
         });
         let filter = self.sym_filter.to_lowercase();
@@ -819,7 +809,8 @@ impl App {
         egui::ScrollArea::vertical().id_salt("symbols").auto_shrink(false).show_rows(ui, row_h, rows.len(), |ui, range| {
             for r in &rows[range] {
                 let s = self.idx.sym(*r);
-                let text = format!("{}{:<26} {:<12} {}:{}", if s.depth > 0 { "  " } else { "" }, trunc(&s.name, 26), trunc(&s.kind, 12), self.idx.files[r.file].path, s.start + 1);
+                let covered = if self.map.covers(&self.idx.files[r.file].path, s.start, s.end) { "+" } else { " " };
+                let text = format!("{covered} {}{:<26} {:<12} {}:{}", if s.depth > 0 { "  " } else { "" }, trunc(&s.name, 26), trunc(&s.kind, 12), self.idx.files[r.file].path, s.start + 1);
                 let text = egui::RichText::new(text).monospace();
                 let text = if self.idx.files[r.file].pending { text.weak() } else { text };
                 let resp = ui.selectable_label(cur == Some(*r), text);
@@ -836,80 +827,181 @@ impl App {
         let mut action = None;
         ui.horizontal(|ui| {
             ui.strong(format!("Paths ({})", self.map.paths.len()));
-            ui.weak("a path = a tree of code steps");
+            ui.weak("click to read");
         });
         egui::ScrollArea::vertical().id_salt("paths").auto_shrink(false).show(ui, |ui| {
-            for pi in 0..self.map.paths.len() {
-                let selected = self.sel_path == Some(pi);
-                let (name, kind, tag, n) = {
-                    let p = &self.map.paths[pi];
-                    (p.name.clone(), p.kind.name(), p.author.tag(), p.anchors.len())
+            for (pi, p) in self.map.paths.iter().enumerate() {
+                let stale = p.anchors.iter().filter(|a| a.stale).count();
+                let mut text = egui::RichText::new(format!("{} [{}]{}  {} steps", p.name, p.kind.name(), p.author.tag(), p.anchors.len()));
+                if stale > 0 {
+                    text = text.color(Color32::LIGHT_RED);
+                }
+                let resp = ui.selectable_label(self.sel_path == Some(pi), text);
+                if resp.clicked() {
+                    action = Some(Action::SelectPath(pi));
+                }
+                if stale > 0 {
+                    resp.on_hover_text(format!("{stale} stale steps: the code changed since they were pinned"));
+                }
+                if let Some(first) = p.note.lines().next() {
+                    ui.indent(pi, |ui| ui.weak(first));
+                }
+            }
+        });
+        action
+    }
+
+    fn files_window(&mut self, ui: &mut egui::Ui) -> Option<Action> {
+        let mut action = None;
+        ui.horizontal(|ui| {
+            ui.strong("Files");
+            ui.weak("covered/total symbols");
+        });
+        let cov: Vec<(usize, usize)> = self.idx.files.iter().map(|f| (f.symbols.iter().filter(|s| self.map.covers(&f.path, s.start, s.end)).count(), f.symbols.len())).collect();
+        egui::ScrollArea::vertical().id_salt("files").auto_shrink(false).show(ui, |ui| {
+            let all: Vec<usize> = (0..self.idx.files.len()).collect();
+            self.files_tree(ui, &all, 0, &cov, &mut action);
+        });
+        action
+    }
+
+    /// `files` are sorted by path and share their first `depth` components; a run with the
+    /// same next component is a directory.
+    fn files_tree(&self, ui: &mut egui::Ui, files: &[usize], depth: usize, cov: &[(usize, usize)], action: &mut Option<Action>) {
+        let comp = |fi: usize| self.idx.files[fi].path.split('/').nth(depth).unwrap_or("");
+        let is_file = |fi: usize| self.idx.files[fi].path.split('/').count() == depth + 1;
+        let mut i = 0;
+        while i < files.len() {
+            let fi = files[i];
+            if is_file(fi) {
+                let (c, t) = cov[fi];
+                let label = if t > 0 { format!("{}  {c}/{t}", comp(fi)) } else { comp(fi).to_owned() };
+                let mut text = egui::RichText::new(label);
+                if t > 0 && c == 0 {
+                    text = text.weak();
+                }
+                if ui.selectable_label(self.cur_file == Some(fi), text).clicked() {
+                    *action = Some(Action::GoTo(fi, 0));
+                }
+                i += 1;
+                continue;
+            }
+            let dir = comp(fi);
+            let j = i + files[i..].iter().take_while(|&&g| !is_file(g) && comp(g) == dir).count();
+            let (c, t) = files[i..j].iter().fold((0, 0), |acc, &g| (acc.0 + cov[g].0, acc.1 + cov[g].1));
+            let prefix: String = self.idx.files[fi].path.split('/').take(depth + 1).collect::<Vec<_>>().join("/");
+            egui::CollapsingHeader::new(format!("{dir}/  {c}/{t}")).id_salt(&prefix).default_open(depth == 0).show(ui, |ui| {
+                self.files_tree(ui, &files[i..j], depth + 1, cov, action);
+            });
+            i = j;
+        }
+    }
+
+    /// One numbered, syntax-coloured source line in `rect`.
+    fn draw_code_line(&self, ui: &egui::Ui, rect: egui::Rect, fi: usize, li: usize, font: &FontId) {
+        let f = &self.idx.files[fi];
+        let text_color = ui.visuals().text_color();
+        let p = ui.painter();
+        p.text(rect.left_top() + vec2(8.0, 0.0), Align2::LEFT_TOP, format!("{:5}", li + 1), font.clone(), ui.visuals().weak_text_color());
+        let mut job = LayoutJob::default();
+        append_line(&mut job, &f.lines[li], &f.hl[li], font, text_color, usize::MAX);
+        let galley = ui.ctx().fonts_mut(|fonts| fonts.layout_job(job));
+        p.galley(rect.left_top() + vec2(GUTTER, 0.0), galley, text_color);
+    }
+
+    /// Character column of a pointer position in a code row.
+    fn code_col(&self, rect: egui::Rect, pos: egui::Pos2) -> usize {
+        ((pos.x - rect.min.x - GUTTER) / self.metrics.char_w).max(0.0) as usize
+    }
+
+    /// The reader's landing view: the selected path as one document. Steps in tree order,
+    /// numbered in pre-order and indented by depth, each step's note above its lines.
+    fn path_document(&mut self, ui: &mut egui::Ui) -> Option<Action> {
+        let mut action = None;
+        let Some(pi) = self.sel_path.filter(|&pi| pi < self.map.paths.len()) else {
+            ui.weak(if self.map.paths.is_empty() { "no paths yet: the agent writes them (path-new, path-add in the output panel)" } else { "pick a path on the left" });
+            return None;
+        };
+        let font = TextStyle::Monospace.resolve(ui.style());
+        let row_h = ui.text_style_height(&TextStyle::Monospace);
+        let ctrl = ui.input(|i| i.modifiers.command);
+        ui.horizontal(|ui| {
+            let p = &self.map.paths[pi];
+            ui.heading(&p.name);
+            ui.weak(format!("[{}]{}  {} steps", p.kind.name(), p.author.tag(), p.anchors.len()));
+            if ui.small_button("graph").on_hover_text("show this path as a tree in the graph").clicked() {
+                action = Some(Action::ShowPath(pi));
+            }
+            if ui.small_button("delete path").clicked() {
+                action = Some(Action::DeletePath(pi));
+            }
+        });
+        if ui.add(egui::TextEdit::multiline(&mut self.map.paths[pi].note).desired_rows(2).hint_text("what this path is / does").desired_width(f32::INFINITY)).changed() {
+            self.dirty = true;
+        }
+        ui.weak("click a step to focus the graph and xrefs on it; double-click or ctrl-click an identifier to jump to its definition");
+        ui.separator();
+        egui::ScrollArea::both().id_salt("document").auto_shrink(false).show(ui, |ui| {
+            let width = ui.available_width().max(2000.0);
+            for (k, (ai, depth)) in self.map.tree_order(pi).into_iter().enumerate() {
+                let indent = depth as f32 * 24.0;
+                let (file, symbol, ls, le, stale, tag) = {
+                    let a = &self.map.paths[pi].anchors[ai];
+                    (a.file.clone(), a.symbol.clone(), a.line_start, a.line_end, a.stale, a.author.tag())
+                };
+                let fi = self.idx.find_file(&file);
+                let sym = fi.and_then(|fi| self.idx.files[fi].symbols.iter().find(|s| s.name == symbol)).map(|s| (s.start, s.end));
+                let gone = match (fi, symbol.is_empty(), sym) {
+                    (None, _, _) => Some("file gone"),
+                    (Some(_), false, None) => Some("symbol gone"),
+                    _ => None,
+                };
+                let name = if symbol.is_empty() { "(lines)" } else { symbol.as_str() };
+                let place = match gone {
+                    Some(g) => format!("{file} ({g})"),
+                    None => format!("{file}:{}-{}", ls + 1, le + 1),
                 };
                 ui.horizontal(|ui| {
-                    if ui.selectable_label(selected, format!("{name} [{kind}]{tag}  ({n} steps)")).clicked() {
-                        action = Some(Action::SelectPath(pi));
+                    ui.add_space(indent);
+                    let mut text = egui::RichText::new(format!("{}. {}{name}  {place}{tag}", k + 1, if stale { "STALE " } else { "" })).strong();
+                    if stale {
+                        text = text.color(Color32::LIGHT_RED);
                     }
-                    if ui.small_button("graph").on_hover_text("show this path as a tree in the graph").clicked() {
-                        action = Some(Action::ShowPath(pi));
+                    if ui.selectable_label(self.sel_anchor == Some(ai), text).clicked() {
+                        action = Some(Action::SelectStep(pi, ai));
+                    }
+                    if sym.is_some_and(|s| s != (ls, le)) {
+                        let whole = self.expanded_steps.contains(&(pi, ai));
+                        if ui.small_button(if whole { "slice" } else { "whole symbol" }).clicked() {
+                            action = Some(Action::ToggleStep(pi, ai));
+                        }
+                    }
+                    if ui.small_button("delete").on_hover_text("remove this step; its children move up").clicked() {
+                        action = Some(Action::DeleteStep(pi, ai));
                     }
                 });
-                if !selected {
-                    continue;
-                }
-                ui.indent(pi, |ui| {
-                    if ui.add(egui::TextEdit::multiline(&mut self.map.paths[pi].note).desired_rows(2).hint_text("what this path is / does").desired_width(f32::INFINITY)).changed() {
+                ui.horizontal(|ui| {
+                    ui.add_space(indent);
+                    if ui.add(egui::TextEdit::multiline(&mut self.map.paths[pi].anchors[ai].note).desired_rows(1).hint_text("what this step does for this path").desired_width(f32::INFINITY)).changed() {
                         self.dirty = true;
                     }
-                    ui.weak("steps: click to select (new steps go under the selected one), up/down reorder siblings, * = has a note");
-                    let n = self.map.paths[pi].anchors.len();
-                    for (k, (ai, depth)) in self.map.tree_order(pi).into_iter().enumerate() {
-                        let a = &self.map.paths[pi].anchors[ai];
-                        let name = if a.symbol.is_empty() { "(lines)" } else { a.symbol.as_str() };
-                        let text = format!("{}{}. {}{}  {}:{}-{}{}{}", "    ".repeat(depth), k + 1, if a.stale { "! " } else { "" }, name, a.file, a.line_start + 1, a.line_end + 1, a.author.tag(), if a.note.is_empty() { "" } else { " *" });
-                        let color = if a.stale { Color32::LIGHT_RED } else { ui.visuals().text_color() };
-                        let step_selected = self.sel_anchor == Some(ai);
-                        ui.horizontal(|ui| {
-                            if ui.add_enabled(ai > 0, egui::Button::new("up").small()).clicked() {
-                                action = Some(Action::MoveAnchor(pi, ai, -1));
+                });
+                if let (Some(fi), None) = (fi, gone) {
+                    let (lo, hi) = if self.expanded_steps.contains(&(pi, ai)) { sym.unwrap_or((ls, le)) } else { (ls, le) };
+                    let hi = hi.min(self.idx.files[fi].lines.len().saturating_sub(1));
+                    for li in lo..=hi {
+                        let (rect, resp) = ui.allocate_exact_size(vec2(width, row_h), Sense::click());
+                        let rect = rect.translate(vec2(indent, 0.0));
+                        self.draw_code_line(ui, rect, fi, li, &font);
+                        if resp.double_clicked() || (resp.clicked() && ctrl) {
+                            if let Some(pos) = resp.interact_pointer_pos() {
+                                action = Some(Action::Jump(fi, li, self.code_col(rect, pos)));
                             }
-                            if ui.add_enabled(ai + 1 < n, egui::Button::new("down").small()).clicked() {
-                                action = Some(Action::MoveAnchor(pi, ai, 1));
-                            }
-                            let resp = ui.selectable_label(step_selected, egui::RichText::new(text).color(color));
-                            if resp.clicked() {
-                                action = Some(Action::SelectStep(pi, ai));
-                            }
-                            if a.stale {
-                                resp.on_hover_text("stale: the code changed since this step was pinned. Delete and re-add it.");
-                            }
-                        });
-                        if step_selected {
-                            ui.indent(("note", pi, ai), |ui| {
-                                if ui.add(egui::TextEdit::multiline(&mut self.map.paths[pi].anchors[ai].note).desired_rows(1).hint_text("note for this step").desired_width(f32::INFINITY)).changed() {
-                                    self.dirty = true;
-                                }
-                            });
                         }
                     }
-                });
-            }
-
-            // ponytail: every root, one hop deep; the full tree lives in `tree` and the graph.
-            let roots = self.idx.roots();
-            egui::CollapsingHeader::new(format!("Entry points ({})", roots.len())).show(ui, |ui| {
-                ui.weak("symbols nothing calls. promote = new path shaped like its call tree");
-                for r in roots {
-                    let s = self.idx.sym(r);
-                    ui.horizontal(|ui| {
-                        if ui.small_button("promote").clicked() {
-                            action = Some(Action::Promote(r));
-                        }
-                        if ui.selectable_label(self.graph.focus == Some(r), format!("{} ({} calls)", s.name, s.callees.len())).clicked() {
-                            action = Some(Action::Focus(r));
-                        }
-                    });
                 }
-            });
+                ui.add_space(10.0);
+            }
         });
         action
     }
@@ -961,7 +1053,7 @@ impl App {
     fn graph_view(&mut self, ui: &mut egui::Ui) -> Option<Action> {
         let mut action = None;
         if self.graph.nodes.is_empty() {
-            ui.weak("click a symbol, an entry point, or a path's 'graph' button");
+            ui.weak("click a symbol, or a path's 'graph' button");
             return None;
         }
         ui.horizontal(|ui| {
@@ -1085,9 +1177,6 @@ impl App {
                                 if total > PREVIEW_LINES && ui.small_button(if shown < total { "more" } else { "less" }).on_hover_text("show all / fewer lines").clicked() {
                                     action = Some(Action::ToggleExpand(r));
                                 }
-                                if ui.small_button("+path").on_hover_text("add as a step of the selected path, under the selected step").clicked() {
-                                    action = Some(Action::AddToPath(r));
-                                }
                                 if ui.small_button("listing").on_hover_text("open in the listing").clicked() {
                                     action = Some(Action::OpenListing(r));
                                 }
@@ -1140,19 +1229,29 @@ impl App {
         let font = TextStyle::Monospace.resolve(ui.style());
         let row_h = ui.text_style_height(&TextStyle::Monospace);
         let row_stride = row_h + ui.spacing().item_spacing.y; // show_rows adds spacing between rows
-        let text_color = ui.visuals().text_color();
-        let dim = ui.visuals().weak_text_color();
         let sel_bg = ui.visuals().selection.bg_fill.linear_multiply(0.4);
-        let shift = ui.input(|i| i.modifiers.shift);
+        let (shift, ctrl) = ui.input(|i| (i.modifiers.shift, i.modifiers.command));
         let n = self.idx.files[fi].lines.len();
 
-        ui.weak(format!("{}  —  click a line, shift-click to extend, then 'add selection to path'", self.idx.files[fi].path));
+        ui.horizontal(|ui| {
+            ui.weak(format!("{}  —  click a line, shift-click to extend, then 'pin selection'; double-click or ctrl-click an identifier to jump to its definition", self.idx.files[fi].path));
+            ui.label("line");
+            let resp = ui.add(egui::TextEdit::singleline(&mut self.goto_line).desired_width(60.0));
+            if resp.lost_focus() && ui.input(|i| i.key_pressed(Key::Enter)) {
+                if let Ok(line) = self.goto_line.trim().parse::<usize>() {
+                    let line = line.clamp(1, n) - 1;
+                    self.sel = Some((line, line));
+                    self.scroll_to = Some(line.saturating_sub(8));
+                }
+            }
+        });
         let mut area = egui::ScrollArea::both().id_salt("listing").auto_shrink(false);
         if let Some(line) = self.scroll_to.take() {
             area = area.vertical_scroll_offset(line as f32 * row_stride);
         }
 
         let mut clicked = None;
+        let mut jump = None;
         area.show_rows(ui, row_h, n, |ui, range| {
             let f = &self.idx.files[fi];
             let (lo, hi) = self.sel.map(|(a, b)| (a.min(b), a.max(b))).unwrap_or((usize::MAX, usize::MAX));
@@ -1171,18 +1270,18 @@ impl App {
                     let bar = egui::Rect::from_min_size(rect.min, vec2(4.0, row_h));
                     ui.painter().rect_filled(bar, 0.0, if stale { Color32::LIGHT_RED } else { Color32::LIGHT_GREEN });
                 }
-                let p = ui.painter();
-                p.text(rect.left_top() + vec2(8.0, 0.0), Align2::LEFT_TOP, format!("{:5}", li + 1), font.clone(), dim);
-                let mut job = LayoutJob::default();
-                append_line(&mut job, &f.lines[li], &f.hl[li], &font, text_color, usize::MAX);
-                let galley = ui.ctx().fonts_mut(|fonts| fonts.layout_job(job));
-                p.galley(rect.left_top() + vec2(64.0, 0.0), galley, text_color);
-                if resp.clicked() {
+                self.draw_code_line(ui, rect, fi, li, &font);
+                if resp.double_clicked() || (resp.clicked() && ctrl) {
+                    jump = resp.interact_pointer_pos().map(|pos| (li, self.code_col(rect, pos)));
+                } else if resp.clicked() {
                     clicked = Some(li);
                 }
             }
         });
 
+        if let Some((li, col)) = jump {
+            self.jump_to(fi, li, col);
+        }
         if let Some(li) = clicked {
             self.sel = match (shift, self.sel) {
                 (true, Some((a, _))) => Some((a, li)),
@@ -1238,8 +1337,9 @@ impl App {
                 self.tab = Tab::Listing;
             }
             Some(Action::SelectPath(pi)) => {
-                self.sel_path = if self.sel_path == Some(pi) { None } else { Some(pi) };
+                self.sel_path = Some(pi);
                 self.sel_anchor = None;
+                self.tab = Tab::Path;
             }
             Some(Action::ShowPath(pi)) => {
                 self.sel_path = Some(pi);
@@ -1263,20 +1363,26 @@ impl App {
                     self.scroll_to = Some(ls.saturating_sub(3));
                 }
             }
-            Some(Action::MoveAnchor(pi, ai, delta)) => {
-                let bi = (ai as isize + delta) as usize;
-                self.map.swap_anchors(pi, ai, bi);
-                self.sel_anchor = Some(bi);
+            Some(Action::ToggleStep(pi, ai)) => {
+                if !self.expanded_steps.remove(&(pi, ai)) {
+                    self.expanded_steps.insert((pi, ai));
+                }
+            }
+            // ponytail: no undo
+            Some(Action::DeleteStep(pi, ai)) => {
+                self.map.remove_anchor(pi, ai);
+                self.sel_anchor = None;
+                self.expanded_steps.clear();
                 self.dirty = true;
                 self.refresh_graph();
             }
-            Some(Action::Promote(r)) => {
-                let pi = self.map.promote(&self.idx, r, 1, Author::Human);
-                self.sel_path = Some(pi);
+            Some(Action::DeletePath(pi)) => {
+                self.map.paths.remove(pi);
+                self.sel_path = None;
                 self.sel_anchor = None;
+                self.expanded_steps.clear();
                 self.dirty = true;
-                self.show_path(pi);
-                self.tab = Tab::Graph;
+                self.refresh_graph();
             }
             Some(Action::ExpandCallers(r)) => {
                 self.graph.toggle(&self.idx, &self.map, r, false);
@@ -1293,12 +1399,8 @@ impl App {
                 self.graph.size.remove(&r); // re-measure
                 self.graph.manual = false;
             }
-            Some(Action::AddToPath(r)) => {
-                let s = self.idx.sym(r);
-                let (start, end) = (s.start, s.end);
-                self.add_step(r.file, start, end, Some(r));
-            }
             Some(Action::GoTo(fi, line)) => self.open_line(fi, line),
+            Some(Action::Jump(fi, line, col)) => self.jump_to(fi, line, col),
             Some(Action::Relayout) => {
                 self.graph.manual = false;
                 self.graph.layout(&self.idx, self.metrics);
@@ -1331,6 +1433,7 @@ impl eframe::App for App {
                     self.run_search();
                 }
                 ui.separator();
+                ui.selectable_value(&mut self.tab, Tab::Path, "Path");
                 ui.selectable_value(&mut self.tab, Tab::Graph, "Graph");
                 ui.selectable_value(&mut self.tab, Tab::Listing, "Listing");
                 ui.selectable_value(&mut self.tab, Tab::Results, format!("Results ({})", self.results.len()));
@@ -1339,11 +1442,8 @@ impl eframe::App for App {
                 if ui.add(egui::TextEdit::singleline(&mut self.new_path).desired_width(140.0)).lost_focus() && enter {
                     self.create_path();
                 }
-                if ui.button("add selection to path").on_hover_text("listing: selected lines. graph: focused node. Goes under the selected step.").clicked() {
+                if ui.button("pin selection").on_hover_text("the listing's selected lines become a step of the selected path, under the selected step").clicked() {
                     self.add_selection();
-                }
-                if ui.button("delete selected").on_hover_text("the selected step (its children move up), else the selected path").clicked() {
-                    self.delete_selected();
                 }
                 if ui.button(if self.dirty { "save *" } else { "save" }).clicked() {
                     self.save();
@@ -1368,16 +1468,24 @@ impl eframe::App for App {
         let mut action = None;
         egui::SidePanel::left("left").default_width(420.0).resizable(true).show(ctx, |ui| {
             ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Truncate);
-            let half = ui.available_height() / 2.0;
-            ui.allocate_ui(vec2(ui.available_width(), half), |ui| action = self.symbols_window(ui));
+            ui.horizontal(|ui| {
+                ui.selectable_value(&mut self.left, LeftTab::Paths, "Paths");
+                ui.selectable_value(&mut self.left, LeftTab::Symbols, "Symbols");
+                ui.selectable_value(&mut self.left, LeftTab::Files, "Files");
+            });
             ui.separator();
-            ui.allocate_ui(vec2(ui.available_width(), ui.available_height()), |ui| action = self.paths_window(ui).or(action.take()));
+            action = match self.left {
+                LeftTab::Paths => self.paths_window(ui),
+                LeftTab::Symbols => self.symbols_window(ui),
+                LeftTab::Files => self.files_window(ui),
+            };
         });
         egui::SidePanel::right("xrefs").default_width(300.0).resizable(true).show(ctx, |ui| {
             ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Truncate);
             action = self.xrefs_window(ui).or(action.take());
         });
         egui::CentralPanel::default().show(ctx, |ui| match self.tab {
+            Tab::Path => action = self.path_document(ui).or(action.take()),
             Tab::Graph => action = self.graph_view(ui).or(action.take()),
             Tab::Listing => self.listing(ui),
             Tab::Results => self.results_view(ui),

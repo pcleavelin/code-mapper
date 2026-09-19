@@ -220,17 +220,6 @@ impl Map {
         }
     }
 
-    /// Swap two steps in list order (sibling order), keeping every parent link pointing at the
-    /// same step.
-    pub fn swap_anchors(&mut self, pi: usize, a: usize, b: usize) {
-        let p = &mut self.paths[pi];
-        p.anchors.swap(a, b);
-        let (a, b) = (a as i32, b as i32);
-        for x in &mut p.anchors {
-            x.parent = if x.parent == a { b } else if x.parent == b { a } else { x.parent };
-        }
-    }
-
     /// Pre-order walk of a path's tree: (anchor index, depth). Roots in list order, children in
     /// list order. A dangling parent counts as a root.
     pub fn tree_order(&self, pi: usize) -> Vec<(usize, usize)> {
@@ -419,14 +408,9 @@ mod tests {
         let leaf = m.add_anchor(&idx, pi, 0, 1, 1, Author::Human, mid); // line in a, under b
         assert_eq!(m.tree_order(pi), [(0, 0), (1, 1), (2, 2)]);
 
-        m.swap_anchors(pi, 0, 1); // list order changes, tree does not
-        assert_eq!(m.paths[pi].anchors[1].parent, -1);
-        assert_eq!(m.paths[pi].anchors[0].parent, 1);
-        assert_eq!(m.paths[pi].anchors[leaf].parent, 0);
-        assert_eq!(m.tree_order(pi), [(1, 0), (0, 1), (2, 2)]);
-
-        m.remove_anchor(pi, 0); // remove the middle: leaf moves up under the root
+        m.remove_anchor(pi, mid as usize); // remove the middle: leaf moves up under the root
         assert_eq!(m.paths[pi].anchors.len(), 2);
+        assert_eq!(m.paths[pi].anchors[leaf - 1].parent, root);
         assert_eq!(m.tree_order(pi), [(0, 0), (1, 1)]);
     }
 }

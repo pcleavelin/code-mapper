@@ -98,7 +98,7 @@ Around the document, a general code browser:
 | Panel | Contents |
 |---|---|
 | Left, tabs | **Paths**: every path with kind, note, author tag, stale count. **Symbols**: filterable table with kind, file, line, covered. **Files**: a tree of the indexed files with covered/total per file. |
-| Centre, tabs | **Path** document. **Graph**: pan-and-zoom canvas of symbol nodes with their code, callers left, callees right, expansion buttons per node, a path drawn as a tree with green numbered edges. **Listing**: the file viewer with line numbers, anchor bars, and go-to-line. **Results**: grep output. |
+| Centre, tabs | **Path** document. **Graph**: pan-and-zoom canvas of symbol nodes with their code, callers left, callees right, expansion buttons per node, a path drawn as a tree with green numbered edges. **Listing**: the file viewer with line numbers, anchor bars, and go-to-line. **Results**: grep output. In the document and the listing, double-click or ctrl-click an identifier to jump to its definition. |
 | Right | **Xrefs** for the focused symbol. |
 | Bottom | **Output**: runs the same commands as the CLI. |
 
