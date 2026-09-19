@@ -9,6 +9,7 @@ clap = { version = "4", default-features = false, features = ["std", "derive", "
 ignore = "0.4"
 regex = "1"
 serde_json = "1"
+image = { version = "0.25", default-features = false, features = ["png"] }
 tree-sitter = "0.25"
 tree-sitter-rust = "0.24"
 tree-sitter-odin = "1"

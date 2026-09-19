@@ -138,8 +138,9 @@ struct Graph {
     origin: HashMap<Node, (Node, bool)>,         // expansion node -> (the node that revealed it, via callees?)
     expansions: Vec<(Node, bool)>,               // (node, callees?) in the order the user opened them
     collapsed: HashSet<Node>,                    // nodes cut to a preview
-    call_rows: HashMap<Node, f32>,               // y of each node's first code row, measured last frame
+    call_rows: HashMap<Node, (f32, f32)>,        // (y of the first code row, row pitch) per node, measured last frame
     viewport: egui::Vec2,                        // the canvas size, for a 1:1 look at the focus
+    want_look: bool,                             // a look at the focus was asked for before the canvas had a size
     manual: bool,                                // user dragged something: keep positions
     scene_rect: Option<egui::Rect>,
 }
@@ -204,8 +205,8 @@ impl Graph {
     /// The first line of `n` that names `word` as an identifier: where a call to it sits.
     fn call_line(&self, idx: &Index, n: Node, word: &str) -> Option<usize> {
         let (lo, hi) = self.range[&n];
-        let lines = &idx.files[n.0.file].lines;
-        (lo..=hi.min(lines.len().saturating_sub(1))).find(|&li| has_word(&lines[li], word))
+        let f = &idx.files[n.0.file];
+        (lo..=hi.min(f.lines.len().saturating_sub(1))).find(|&li| index::call_site(f, li, word))
     }
 
     /// What `n` calls: the symbol's callees, narrowed to the ones its lines name when the node
@@ -225,7 +226,7 @@ impl Graph {
         let (lo, _) = self.range[&n];
         let (shown, _) = self.lines_shown(n);
         match (self.call_line(idx, n, word), self.call_rows.get(&n)) {
-            (Some(li), Some(&top)) if li < lo + shown => pos2(r.right(), top + (li - lo) as f32 * m.line_h + m.line_h / 2.0),
+            (Some(li), Some(&(top, row_h))) if li < lo + shown => pos2(r.right(), top + (li - lo) as f32 * row_h + row_h / 2.0),
             _ => r.right_top() + vec2(0.0, HEADER_H / 2.0),
         }
     }
@@ -242,7 +243,7 @@ impl Graph {
         if let Some(pi) = self.path_id.filter(|&pi| pi < map.paths.len()) {
             let anchors = &map.paths[pi].anchors;
             let mut node_of: HashMap<usize, Node> = HashMap::new(); // anchor index -> node
-            for (k, (ai, depth, number)) in map.numbered(pi).into_iter().enumerate() {
+            for (k, (ai, depth, number)) in map.numbered(idx, pi).into_iter().enumerate() {
                 let a = &anchors[ai];
                 let Some(fi) = idx.find_file(&a.file) else { continue };
                 let Some(si) = a.sym else { continue };
@@ -352,8 +353,9 @@ impl Graph {
                 has_parent.insert(n);
             }
         }
-        for kids in right.values_mut() {
-            kids.sort_by_key(|k| self.step.get(k).map_or(usize::MAX, |s| s.0)); // steps first, in step order
+        for (&p, kids) in right.iter_mut() {
+            // the order the parent's code makes the calls; steps before other nodes at a tie
+            kids.sort_by_key(|k| (self.call_line(idx, p, &idx.sym(k.0).name).unwrap_or(usize::MAX), self.step.get(k).map_or(usize::MAX, |s| s.0)));
         }
         let mut roots: Vec<Node> = self.nodes.iter().copied().filter(|n| !has_parent.contains(n)).collect();
         roots.sort_by_key(|r| self.step.get(r).map_or(usize::MAX, |s| s.0));
@@ -436,8 +438,9 @@ impl Graph {
         match self.focus_node() {
             Some(r) => {
                 let c = self.node_rect(idx, r, m).center();
+                self.want_look = self.viewport.x <= 0.0;
                 let size = if self.viewport.x > 0.0 { self.viewport } else { vec2(1900.0, 1100.0) };
-                self.scene_rect = Some(egui::Rect::from_center_size(c, size)); // 1:1, so the text is crisp
+                self.scene_rect = Some(egui::Rect::from_center_size(c, size)); // 1:1
             }
             None => self.fit(),
         }
@@ -497,6 +500,8 @@ struct App {
     cmd: String,
     output: String,
     status: String,
+
+    shot: Option<(PathBuf, u32)>, // screenshot mode: write the window to this file after a few frames, then quit
 }
 
 fn mtime(p: &Path) -> Option<SystemTime> {
@@ -558,6 +563,7 @@ impl App {
             cmd: String::new(),
             output: "type 'help' for commands; roots and promote live here\n".into(),
             status,
+            shot: std::env::var_os("CODEMAP_SHOT").map(|p| (PathBuf::from(p), 0)),
         };
         if let Some(pi) = first_path {
             app.select_path(pi);
@@ -951,7 +957,7 @@ impl App {
         let (base, dim) = (ui.visuals().text_color(), ui.visuals().weak_text_color());
         let numfmt = egui::TextFormat { font_id: font.clone(), color: dim, ..Default::default() };
         let mut job = LayoutJob::default();
-        let end = s.end.min(f.lines.len().saturating_sub(1)).min(s.start + max - 1);
+        let end = s.end.min(f.lines.len().saturating_sub(1)).min(s.start.saturating_add(max).saturating_sub(1));
         for li in s.start..=end {
             job.append(&format!("{:4} ", li + 1), 0.0, numfmt.clone());
             append_line(&mut job, &f.lines[li], &f.hl[li], &font, base, 120);
@@ -1155,7 +1161,7 @@ impl App {
                 }
                 // the outline: every step of the path being read, folded subtrees hidden
                 let mut hide_below: Option<usize> = None;
-                for (ai, depth, number) in self.map.numbered(pi) {
+                for (ai, depth, number) in self.map.numbered(&self.idx, pi) {
                     if hide_below.is_some_and(|d| depth > d) {
                         continue;
                     }
@@ -1393,7 +1399,7 @@ impl App {
         ui.separator();
 
         // breadcrumb: the ancestors of the step under the top of the viewport
-        let numbered = self.map.numbered(pi);
+        let numbered = self.map.numbered(&self.idx, pi);
         let number_of: HashMap<usize, &str> = numbered.iter().map(|(ai, _, n)| (*ai, n.as_str())).collect();
         ui.horizontal(|ui| {
             let mut chain = Vec::new();
@@ -1605,6 +1611,9 @@ impl App {
 
         let m = self.metrics;
         self.graph.viewport = ui.available_size();
+        if std::mem::take(&mut self.graph.want_look) {
+            self.graph.look_at_focus(&self.idx, m); // the first look happened before the canvas had a size
+        }
         if !self.graph.manual {
             self.graph.layout(&self.idx, m); // measured sizes from last frame settle the layout
         }
@@ -1612,6 +1621,7 @@ impl App {
         let focus_node = self.graph.focus_node();
 
         let mut scene_rect = self.graph.scene_rect.unwrap_or(egui::Rect::ZERO);
+        let outer = ui.available_rect_before_wrap();
         egui::Scene::new().zoom_range(0.1..=1.5).show(ui, &mut scene_rect, |ui| {
             let painter = ui.painter().clone();
             let edge = Stroke::new(1.5, ui.visuals().weak_text_color());
@@ -1723,7 +1733,7 @@ impl App {
                         if let (Some((_, ai, _)), Some(pi)) = (step, self.graph.path_id) {
                             let note = &self.map.paths[pi].anchors[ai].note;
                             if !note.is_empty() {
-                                ui.label(egui::RichText::new(note).italics().color(step_stroke.color));
+                                ui.add(egui::Label::new(egui::RichText::new(note).italics().color(step_stroke.color)).wrap());
                             }
                         }
                         ui.separator();
@@ -1743,17 +1753,17 @@ impl App {
                         }
                         ui.set_clip_rect(egui::Rect::from_min_size(rect.min, vec2(rect.width(), f32::INFINITY)).intersect(ui.clip_rect()));
                         let code = ui.add(egui::Label::new(job).wrap_mode(egui::TextWrapMode::Extend).sense(Sense::click()));
-                        self.graph.call_rows.insert(r, code.rect.top());
+                        self.graph.call_rows.insert(r, (code.rect.top(), code.rect.height() / shown.max(1) as f32));
                         // the lines that call the nodes hanging off this one
                         let children: Vec<Node> = self.graph.nodes.iter().copied().filter(|c| self.graph.step_parent.get(c) == Some(&r) || self.graph.origin.get(c).is_some_and(|(o, callees)| *o == r && *callees)).collect();
-                        for c in children {
-                            if let Some(li) = self.graph.call_line(&self.idx, r, &self.idx.sym(c.0).name).filter(|&li| li < lo + shown) {
-                                let row = egui::Rect::from_min_size(pos2(code.rect.left(), code.rect.top() + (li - lo) as f32 * m.line_h), vec2(code.rect.width(), m.line_h));
-                                ui.painter().rect_filled(row, 0.0, step_stroke.color.gamma_multiply(0.18));
-                            }
+                        let call_lines: HashSet<usize> = children.iter().filter_map(|c| self.graph.call_line(&self.idx, r, &self.idx.sym(c.0).name)).filter(|&li| li < lo + shown).collect();
+                        let row_h = code.rect.height() / shown.max(1) as f32; // the label's own row pitch, so the tint sits on the text
+                        for li in call_lines {
+                            let row = egui::Rect::from_min_size(pos2(code.rect.left(), code.rect.top() + (li - lo) as f32 * row_h), vec2(code.rect.width(), row_h));
+                            ui.painter().rect_filled(row, 0.0, step_stroke.color.gamma_multiply(0.18));
                         }
                         if let Some(pos) = code.hover_pos() {
-                            let li = lo + ((pos.y - code.rect.top()) / m.line_h).max(0.0) as usize;
+                            let li = lo + ((pos.y - code.rect.top()) / row_h).max(0.0) as usize;
                             let col = (((pos.x - code.rect.left()) / m.char_w) as usize).saturating_sub(5);
                             if li < lo + shown {
                                 hover = Some((code, li, col));
@@ -1767,6 +1777,13 @@ impl App {
                 self.graph.size.insert(r, vec2(rect.width(), frame.inner.response.rect.height()));
             }
         });
+        // At 1:1 the scene's translation is snapped to whole physical pixels: text laid out on
+        // the pixel grid and then shifted by a fraction of a pixel is what reads as blur.
+        if (scene_rect.size() - outer.size()).abs().max_elem() < 0.01 {
+            let ppp = ui.ctx().pixels_per_point();
+            let shift = ((outer.min - scene_rect.min) * ppp).round() / ppp;
+            scene_rect = egui::Rect::from_min_size(outer.min - shift, outer.size());
+        }
         self.graph.scene_rect = Some(scene_rect);
         action
     }
@@ -1864,17 +1881,23 @@ impl App {
                 self.output.clear();
             }
         });
-        let cmd_h = ui.text_style_height(&TextStyle::Body) + 8.0;
-        egui::ScrollArea::vertical().id_salt("output").auto_shrink(false).stick_to_bottom(true).max_height(ui.available_height() - cmd_h).show(ui, |ui| {
-            ui.add(egui::Label::new(egui::RichText::new(&self.output).monospace()).selectable(true));
-        });
-        ui.horizontal(|ui| {
-            ui.monospace(">");
-            let resp = ui.add(egui::TextEdit::singleline(&mut self.cmd).desired_width(f32::INFINITY).font(TextStyle::Monospace));
-            if resp.lost_focus() && ui.input(|i| i.key_pressed(Key::Enter)) && !self.cmd.trim().is_empty() {
-                self.run_cmd();
-                resp.request_focus();
-            }
+        // The command line sits at the bottom and the log fills what is left, so the content is
+        // exactly the panel's height: a resizable panel remembers its content height, and a
+        // shorter content would shrink it a little every frame.
+        ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
+            ui.horizontal(|ui| {
+                ui.monospace(">");
+                let resp = ui.add(egui::TextEdit::singleline(&mut self.cmd).desired_width(f32::INFINITY).font(TextStyle::Monospace));
+                if resp.lost_focus() && ui.input(|i| i.key_pressed(Key::Enter)) && !self.cmd.trim().is_empty() {
+                    self.run_cmd();
+                    resp.request_focus();
+                }
+            });
+            egui::ScrollArea::vertical().id_salt("output").auto_shrink(false).stick_to_bottom(true).show(ui, |ui| {
+                ui.with_layout(egui::Layout::top_down(egui::Align::Min), |ui| {
+                    ui.add(egui::Label::new(egui::RichText::new(&self.output).monospace()).selectable(true));
+                });
+            });
         });
     }
 
@@ -1973,10 +1996,39 @@ impl App {
     }
 }
 
-/// `word` appears in `line` as a whole identifier.
-fn has_word(line: &str, word: &str) -> bool {
-    let is_id = |c: char| c.is_alphanumeric() || c == '_';
-    line.match_indices(word).any(|(i, _)| !line[..i].chars().next_back().is_some_and(is_id) && !line[i + word.len()..].chars().next().is_some_and(is_id))
+impl App {
+    /// Development aid: with `CODEMAP_SHOT=<file.png>` the window is written to that file once
+    /// the first frames have settled, and the app quits. `CODEMAP_SHOT_TAB` picks the centre tab.
+    fn screenshot_mode(&mut self, ctx: &egui::Context) {
+        let Some((path, frame)) = self.shot.as_mut() else { return };
+        *frame += 1;
+        let frame = *frame;
+        let path = path.clone();
+        ctx.request_repaint();
+        if frame == 5 {
+            self.tab = match std::env::var("CODEMAP_SHOT_TAB").as_deref() {
+                Ok("graph") => Tab::Graph,
+                Ok("listing") => Tab::Listing,
+                _ => Tab::Path,
+            };
+        }
+        if frame == 40 {
+            ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::default()));
+        }
+        let shot = ctx.input(|i| i.raw.events.iter().find_map(|e| if let egui::Event::Screenshot { image, .. } = e { Some(image.clone()) } else { None }));
+        if let Some(img) = shot {
+            let [w, h] = img.size;
+            let bytes: Vec<u8> = img.pixels.iter().flat_map(|c| c.to_srgba_unmultiplied()).collect();
+            match image::RgbaImage::from_raw(w as u32, h as u32, bytes) {
+                Some(buf) => match buf.save(&path) {
+                    Ok(()) => eprintln!("screenshot: {}", path.display()),
+                    Err(e) => eprintln!("screenshot failed: {e}"),
+                },
+                None => eprintln!("screenshot failed: bad size"),
+            }
+            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+        }
+    }
 }
 
 fn trunc(s: &str, n: usize) -> String {
@@ -1985,6 +2037,7 @@ fn trunc(s: &str, n: usize) -> String {
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        self.screenshot_mode(ctx);
         if ctx.input_mut(|i| i.consume_key(Modifiers::COMMAND, Key::S)) {
             self.save();
         }

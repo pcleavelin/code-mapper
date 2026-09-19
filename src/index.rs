@@ -759,6 +759,19 @@ fn parse_callee(text: &str) -> Option<Call> {
     Some(Call { name: name.to_owned(), qual })
 }
 
+/// `word` appears on line `li` of `f` as a whole identifier outside comments and strings: a
+/// place that names it in code.
+pub fn call_site(f: &File, li: usize, word: &str) -> bool {
+    let Some(line) = f.lines.get(li) else { return false };
+    let is_id = |c: char| c.is_alphanumeric() || c == '_';
+    let spans = f.hl.get(li).map(Vec::as_slice).unwrap_or(&[]);
+    line.match_indices(word).any(|(i, _)| {
+        let whole = !line[..i].chars().next_back().is_some_and(is_id) && !line[i + word.len()..].chars().next().is_some_and(is_id);
+        let quoted = spans.iter().any(|&(s, e, class)| (class == HL_COMMENT || class == HL_STRING) && (s as usize) <= i && i < e as usize);
+        whole && !quoted
+    })
+}
+
 impl Index {
     pub fn find_file(&self, path: &str) -> Option<usize> {
         self.files.iter().position(|f| f.path == path)

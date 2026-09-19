@@ -658,6 +658,7 @@ dependencies = [
  "clap",
  "eframe",
  "ignore",
+ "image",
  "regex",
  "serde_json",
  "tree-sitter",

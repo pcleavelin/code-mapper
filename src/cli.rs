@@ -238,7 +238,7 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
                 p!(out, "{}", path.note);
             }
             let mut prev_depth = 0;
-            for (i, depth, number) in map.numbered(pi) {
+            for (i, depth, number) in map.numbered(idx, pi) {
                 let a = &path.anchors[i];
                 if depth < prev_depth {
                     p!(out, "\n{}-- back in {} --", "  ".repeat(depth), map.parent_name(pi, i));

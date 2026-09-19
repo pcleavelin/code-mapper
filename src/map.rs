@@ -305,31 +305,38 @@ impl Map {
     /// Pre-order walk of a path's tree: (anchor index, depth). Roots in list order, children in
     /// list order. A dangling parent counts as a root.
     pub fn tree_order(&self, pi: usize) -> Vec<(usize, usize)> {
+        self.tree_order_by(pi, &|_, _| 0)
+    }
+
+    /// Tree order with the children of each step sorted by `key(parent, child)`, list order
+    /// breaking ties. The key the views use is the line of the parent's slice that names the
+    /// child, so siblings read in the order the code calls them.
+    pub fn tree_order_by(&self, pi: usize, key: &dyn Fn(usize, usize) -> usize) -> Vec<(usize, usize)> {
         let anchors = &self.paths[pi].anchors;
         let n = anchors.len();
         let mut out = Vec::with_capacity(n);
         let mut seen = vec![false; n];
-        fn visit(anchors: &[Anchor], i: usize, depth: usize, seen: &mut [bool], out: &mut Vec<(usize, usize)>) {
+        fn visit(anchors: &[Anchor], i: usize, depth: usize, key: &dyn Fn(usize, usize) -> usize, seen: &mut [bool], out: &mut Vec<(usize, usize)>) {
             if seen[i] {
                 return; // cycle guard
             }
             seen[i] = true;
             out.push((i, depth));
-            for (j, a) in anchors.iter().enumerate() {
-                if a.parent == i as i32 {
-                    visit(anchors, j, depth + 1, seen, out);
-                }
+            let mut kids: Vec<usize> = (0..anchors.len()).filter(|&j| anchors[j].parent == i as i32).collect();
+            kids.sort_by_key(|&j| (key(i, j), j));
+            for j in kids {
+                visit(anchors, j, depth + 1, key, seen, out);
             }
         }
         for i in 0..n {
             let par = anchors[i].parent;
             if par < 0 || par as usize >= n || par as usize == i {
-                visit(anchors, i, 0, &mut seen, &mut out);
+                visit(anchors, i, 0, key, &mut seen, &mut out);
             }
         }
         for i in 0..n {
             if !seen[i] {
-                visit(anchors, i, 0, &mut seen, &mut out); // orphaned cycles
+                visit(anchors, i, 0, key, &mut seen, &mut out); // orphaned cycles
             }
         }
         out
@@ -337,9 +344,19 @@ impl Map {
 
     /// Tree order with each step's hierarchical number: roots 1, 2, ...; the children of 1 are
     /// 1.1, 1.2, ...
-    pub fn numbered(&self, pi: usize) -> Vec<(usize, usize, String)> {
+    pub fn numbered(&self, idx: &Index, pi: usize) -> Vec<(usize, usize, String)> {
+        let anchors = &self.paths[pi].anchors;
+        // the line of the parent's slice that names the child's symbol, or last
+        let call_line = |p: usize, c: usize| -> usize {
+            let (parent, child) = (&anchors[p], &anchors[c]);
+            if child.symbol.is_empty() {
+                return usize::MAX;
+            }
+            let Some(f) = idx.find_file(&parent.file).map(|fi| &idx.files[fi]) else { return usize::MAX };
+            (parent.line_start..=parent.line_end).find(|&li| crate::index::call_site(f, li, &child.symbol)).unwrap_or(usize::MAX)
+        };
         let mut counters: Vec<usize> = Vec::new();
-        self.tree_order(pi)
+        self.tree_order_by(pi, &call_line)
             .into_iter()
             .map(|(ai, depth)| {
                 counters.truncate(depth + 1);
@@ -575,7 +592,7 @@ mod tests {
         let mid = m.add_anchor(&idx, pi, 0, 3, 5, Author::Human, root) as i32; // b under a
         let leaf = m.add_anchor(&idx, pi, 0, 1, 1, Author::Human, mid); // line in a, under b
         assert_eq!(m.tree_order(pi), [(0, 0), (1, 1), (2, 2)]);
-        let numbers: Vec<String> = m.numbered(pi).into_iter().map(|(_, _, n)| n).collect();
+        let numbers: Vec<String> = m.numbered(&idx, pi).into_iter().map(|(_, _, n)| n).collect();
         assert_eq!(numbers, ["1", "1.1", "1.1.1"]);
         assert_eq!(m.descendants(pi, 0), 2);
         assert_eq!(m.descendants(pi, 2), 0);
