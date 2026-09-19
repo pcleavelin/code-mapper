@@ -26,8 +26,8 @@ has unsaved changes (last writer wins).
 
 ## Constraints
 
-- No JSON anywhere on disk. The map is a bespoke binary file, see design.md section 6.
-  Bump `VERSION` for any layout change.
+- No JSON anywhere on disk. The map is a bespoke binary file, see design.md section 8.
+  Layout changes are free: no migration code, old maps are regenerated.
 - Humans edit only through the GUI. The CLI is the AI's interface and the GUI's
   command line runs the same code.
 - Keep it small and snappy. No new dependencies for what a few lines can do.

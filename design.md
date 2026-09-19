@@ -1,339 +1,315 @@
 # codemap — design
 
-A tool that turns the mental map a programmer carries of a codebase into a file that
-can be seen, edited, and queried. Used by humans through a native GUI and by AI agents
-through a text interface over the same engine. The GUI model is IDA Pro: a listing you
-read, a functions window you navigate from, cross-references everywhere, a graph of the
-neighbourhood, and an output window with a command line.
+The developer no longer writes the code; an AI does. The developer still has to
+understand it: the workflows, the abstraction layers, the data structures. Today that
+understanding is a side effect of writing the code, and it disappears when the writing
+is delegated. codemap moves the building of that mental model from the human to the
+tool: the AI writes the map as a side effect of writing the code, and the human reads
+the map instead of the diff.
 
-## 1. Goals and constraints
+This document is the source of truth. It is written to be read by an agent at the
+start of a session and by the owner when deciding what to build next.
 
-Goals
+## 1. Users and roles
 
-- Every line of the project is one click (or one command) away.
-- Named **code paths**: an ordered list of code slices, each smaller than a file and
-  possibly smaller than a function, that together are what people mean by "the login
-  flow" or "the render loop".
-- An **automatic first pass** that proposes paths from the call graph, which the human
-  or the AI then corrects, names, and annotates.
-- **Structural queries** (who calls what, what is in this path, entry points) beside
-  ripgrep-style text queries.
-- A **machine interface** so an AI agent reads the codebase through the map instead of
-  through grep and file reads.
+- **The agent** writes code and, as part of the same session, writes the map: which
+  paths the change touched, what the new code is for, how the pieces relate. Its
+  interface is the CLI.
+- **The human** reads the map to understand what was built, and uses the same tool to
+  browse the codebase in general (files, grep, symbols, xrefs). Hand-authoring paths is
+  possible but rare. Its interface is the GUI.
 
-Constraints (from the owner)
+## 2. Goals
 
-- Small and snappy native app. Rust + egui, single executable, no web stack.
-- No JSON on disk. Bespoke binary formats only.
-- Humans never hand-edit the data files. All editing goes through the GUI. The CLI is
-  the AI's GUI, and the same commands are available inside the GUI's output window.
+- Understanding an unfamiliar codebase, or a change you did not write, takes less
+  friction through codemap than through an editor with an LSP.
+- The map is a second channel beside the source: high-level notes about workflows that
+  do not fit as code comments because workflows overlap in the code they touch. The
+  agent greps it the way it greps source.
+- Code that no path covers is visible, so the human can audit whether the agent mapped
+  what it built.
+- Small and snappy native app.
 
-## 2. Core concepts
+## 3. Non-goals
+
+Permanent: editing source code from codemap; any web or remote surface; multi-root or
+workspaces. The tool reads code, it does not write it.
+
+Deferred items and their triggers are in section 11.
+
+## 4. Concepts
 
 | Term | Meaning |
 |---|---|
 | **File** | A text file under the root, held in memory as lines. Tabs are expanded to 4 spaces on load, everywhere, so display and hashing agree. |
-| **Symbol** | A top-level declaration found by tree-sitter (functions, structs, consts, impl blocks), plus one level of nesting for members of impl / mod / trait / class bodies. Has a name, kind, inclusive line range, and depth 0 or 1. IDA's "function". |
-| **Xref** | Symbol A calls symbol B. Derived by name: every `*call*` node inside A whose callee's last path segment matches a symbol name. "Xrefs to" = callers, "xrefs from" = callees. |
-| **Anchor** | A pinned slice of lines in one file. Stored relative to the enclosing symbol so it follows the symbol when code above it moves. Carries a hash of its text; if the hash no longer matches, the anchor is **stale** and shown in red. |
-| **Path** | A named **tree** of anchors ("steps"): each step records the step it is reached from, or none for a root. A path has a free-text note and an author (human or AI). This is the unit of the mental model: a code path is what one entry point does, which branches, not a line. |
-| **Map** | All paths for one root. One file, `.codemap`, at the root. |
-| **Auto layer** | Everything derived from source at startup: files, symbols, xrefs, roots, call trees. Never persisted; recomputed every launch. |
-| **Manual layer** | The map. Authored by the human in the GUI or by the AI through the CLI. The only thing persisted. |
+| **Symbol** | A top-level declaration (functions, structs, consts, impl blocks), plus one level of nesting for members of impl / mod / trait / class bodies. Has a name, kind, inclusive line range, and depth 0 or 1. Found by the language's backend, section 7. |
+| **Xref** | Symbol A calls symbol B, or symbol A references symbol B. From the language's backend, section 7. "Xrefs to" = callers, "xrefs from" = callees. |
+| **Anchor** | A pinned slice of lines in one file, stored relative to the enclosing symbol so it follows the symbol when code above it moves. Carries a hash of its text; if the hash no longer matches, the anchor is **stale**. |
+| **Path** | A named tree of anchors (**steps**), with a **kind**, a path note, an author, and a step note per step. The one unit of the mental model. |
+| **Kind** | `flow`: a workflow, what happens when X. `layer`: an abstraction boundary, the functions that form its surface. `type`: a data structure and what mutates it. A module is a layer whose root is the file. Kinds are a tag: listed and filterable, no rendering difference. |
+| **Coverage** | A symbol is covered if any step's anchor overlaps its line range. Derived, never stored. |
+| **Map** | All paths for one root. One file, `.codemap`, at the root, committed with the code. |
+| **Auto layer** | Everything derived from source: files, symbols, xrefs, roots, call trees, coverage. Cached on disk for startup speed, never committed. |
+| **Manual layer** | The map. Written by the agent through the CLI, occasionally by the human through the GUI. The only thing persisted. |
 
-The two layers meet in one operation: **promote**. A call tree from the auto layer
-becomes a path in the manual layer, and from then on it is the human's or the AI's to
-trim, reorder, and annotate.
+What goes in a note: the path note describes the workflow as a whole; a step note
+says what this step does for this path. Anything true of the code regardless of which
+path you read it in is a code comment, not a note. The same function can be a step in
+several paths and play a different role in each.
 
-## 3. Architecture
+## 5. The agent contract
+
+This goes in the `CLAUDE.md` of every mapped repo. It is what makes the map exist
+without anyone asking for it.
+
+Before working on an area:
+
+1. `paths` to see what is already named. `path <name>` to read a code path as one
+   document instead of opening files. `notes <regex>` to search what earlier sessions
+   wrote.
+2. `tree`, `callers`, `callees` to move along the graph. `show` only for lines no path
+   covers.
+
+After changing code, before the commit:
+
+3. `stale` lists every step whose text no longer matches. Re-pin each with `path-pin`.
+   The agent broke it and has the diff; the human never re-pins.
+4. Every new non-trivial symbol goes into a path: `path-add` to an existing one, or
+   `path-new <name> <kind>` with a note written for someone who did not see the diff.
+   "Trivial" is the agent's judgement; the human audits it through `uncovered`.
+5. `check` must pass. It exits non-zero on any stale step.
+
+After a rebase the same rule applies: the map is stale, run `stale`, re-pin. There is
+no merge story and none is needed.
+
+Coverage is observable, not enforced. `uncovered` lists symbols in no path, largest
+first, so what remains after a session is either pre-existing or something the agent
+judged trivial, and size says which. `coverage` prints covered/total per file.
+
+## 6. The human surface (GUI)
+
+Reader first. Opening a path lands on its **document**: steps in tree order, indented
+by depth and numbered in pre-order, each step's note above its anchored lines, syntax
+coloured, with an expand control to show the whole enclosing symbol. Stale steps are
+red. Clicking a step focuses the graph on it.
+
+Around the document, a general code browser:
+
+| Panel | Contents |
+|---|---|
+| Left, tabs | **Paths**: every path with kind, note, author tag, stale count. **Symbols**: filterable table with kind, file, line, covered. **Files**: a tree of the indexed files with covered/total per file. |
+| Centre, tabs | **Path** document. **Graph**: pan-and-zoom canvas of symbol nodes with their code, callers left, callees right, expansion buttons per node, a path drawn as a tree with green numbered edges. **Listing**: the file viewer with line numbers, anchor bars, and go-to-line. **Results**: grep output. |
+| Right | **Xrefs** for the focused symbol. |
+| Bottom | **Output**: runs the same commands as the CLI. |
+
+Editing in the GUI is limited to what a reader needs: edit a note, delete a step or a
+path, and pin a selection from the listing when hand-authoring. There is no Auto
+window; `roots` and `promote` are CLI commands and run from the output panel.
+
+The graph is derived, never accumulated: a base (the focused symbol, or a path's tree)
+plus an ordered list of expansions. Layout is a forest of compact subtrees anchored at
+the focus; it reruns every frame until the user drags a node. The camera moves only on
+explicit navigation, never on an edit. Edge and column rules live in the code; they
+are not design decisions.
+
+If `.codemap` changed on disk and there are no unsaved edits, it reloads. If any
+indexed source file changed, it re-indexes and carries the graph over by
+(file, symbol) identity. New or deleted files need a restart.
+
+## 7. Indexing (auto layer)
+
+Walk: the `ignore` crate, so `.gitignore` and hidden directories are respected. Files
+over 4 MB or with a NUL byte in the first 1 KB are skipped. Other text files are
+indexed for viewing and grep but have no symbols.
+
+**One backend per language.** Each language is indexed by its language server when
+one is on PATH, otherwise by a hand-written tree-sitter resolver for that language.
+There is no language-agnostic resolver: a language's rules are the server's rules, or
+a resolver written for that language when a target repo needs it and has no server.
+
+| Language | Server (on PATH) |
+|---|---|
+| Rust | `rust-analyzer` |
+| Odin | `ols` |
+| C | `clangd` |
+| Python | `pyright-langserver` |
+| JavaScript / TypeScript / TSX | `typescript-language-server` |
+
+No config file. A different server goes on PATH under that name. A language whose
+server is missing says so once in the output and uses its resolver; a language with
+neither has symbols only if its grammar is bundled, and no xrefs.
+
+**What the server provides.** `textDocument/documentSymbol` for symbols, filtered to
+top level plus one level of nesting so the shape matches section 4 and anchors are
+unaffected. `callHierarchy/outgoingCalls` per symbol for xrefs.
+`textDocument/references` for references to a symbol: what a `type` path means by
+"what touches this struct", and what the GUI uses to jump from an identifier to its
+definition. A tree-sitter resolver provides the same three things for its language,
+as well as it can.
+
+**The cache.** Servers take seconds to warm up. Every result is written to
+`.codemap-cache` at the root, a bespoke binary file, per source file, keyed by the
+file's content hash. It is derived from the backend and never committed; it exists so
+the app opens at once and only files that changed are re-queried. The GUI opens on the
+cache and greys out what the cache cannot answer until the server has answered;
+progress is shown. The CLI answers from the cache when the files involved are current,
+otherwise waits for the server.
+
+Syntax highlighting is tree-sitter for every language regardless of backend, run once
+per file and cached the same way.
+
+**Derived queries.** Callers, callees, references. **Roots** are exactly the symbols
+with at least one callee and zero callers. **Call trees** are pre-order,
+depth-limited, each symbol once. **Promote** turns a call tree into a path shaped like
+it, default depth 1; it is a scaffold the agent then trims and annotates. Auto paths
+are never persisted.
+
+## 8. Map file format
+
+`.codemap` at the root. Little-endian. Strings are `u32 len` + UTF-8 bytes. Hand-rolled
+reader and writer, no serialization dependency, no JSON anywhere on disk.
 
 ```
-src/
-  index.rs   walk + parse + symbols + xrefs              (auto layer)
-  map.rs     paths, anchors, binary format, staleness   (manual layer)
-  cli.rs     text commands over index + map             (AI interface, and the GUI's command line)
-  main.rs    egui app over index + map                  (human interface)
-```
-
-`index` and `map` know nothing about the UI. `cli` and `main` are two front ends over
-the same two structs. Any operation that mutates the map lives on `Map` so both call
-the same code. `cli::run` writes its output to a `String` so the GUI's output window
-and the process's stdout are the same code path.
-
-Startup, both front ends: build the index (walk, parse, link), load the map, resolve
-every anchor against the index. The GUI then loops; the CLI runs one command, saves if
-it mutated the map, and exits.
-
-Invocation: `codemap <root>` opens the GUI. `codemap <root> <command> [args]` runs one
-text command. The executable keeps a console subsystem so CLI output is visible; the
-cost is a console window behind the GUI when launched from Explorer. One root per
-process; open two windows for two projects.
-
-## 4. Indexing (auto layer)
-
-Walk: the `ignore` crate, so `.gitignore` and hidden directories are respected without
-configuration. Files over 4 MB or with a NUL byte in the first 1 KB are skipped.
-
-Languages: Rust, Odin, C, Python, JavaScript, TypeScript, TSX, chosen by extension.
-Other text files are indexed for viewing and grep but have no symbols. Adding a
-language is one line in `language_for` plus a grammar crate.
-
-Symbol extraction is deliberately grammar-agnostic so it survives across languages:
-
-1. Every named child of the root node is a candidate. Comments, imports, package and
-   use declarations are skipped by node kind.
-2. The name is the grammar's `name` field when present. Otherwise the first line of the
-   node, split at `::` (Odin) and stripped of a trailing `{` (Rust impl, C functions).
-3. Nodes whose kind contains impl, mod, trait, or class recurse one level into their
-   `body` field with depth 1. These container nodes have no calls of their own.
-
-Xref extraction walks each non-container symbol's subtree for nodes whose kind contains
-`call`, takes the `function` field (or first named child), strips generics and
-argument lists, and keeps the called name plus its qualifier: the segment before it.
-`a.b.c()` is `c` via `b`; `Foo::new()` is `new` via `Foo`; `self.f()`, `Self::f()`,
-`this.f()` are `f` via self. Members of impl / class bodies record their owner type
-(`impl X for Y` gives `Y`). Import statements (`use`, `import`, `from ... import`) are
-parsed loosely into a per-file table from imported name or alias to the module it came
-from, the same string rules for every language.
-
-Linking resolves each call in order, without types:
-
-1. Via self: a member of the caller's owner type; else same file.
-2. Via `Q`: a member of type `Q`; else a symbol in module `Q` (a file stem or directory
-   named `Q`, so Odin packages and Rust modules both work); else via the import table.
-   If `Q` is capitalised and none of that matched, it is an external type and the call
-   links nowhere. If `Q` is a lowercase receiver variable, some type's member: the
-   caller's own type first, else any member, else anything.
-3. Unqualified: a free function in the same file; else the file the import table maps
-   the name to; else a free function in the same directory (package). Only C goes on
-   to any free function anywhere (headers); in other languages an unqualified name
-   that is not local or imported is a builtin or a library call and links nowhere.
-
-Struct, enum, and union declarations are never call targets, since `Foo{...}` parses as
-a call in Odin. Still wrong when two of this repo's types share a method name and the
-receiver is a variable of unknown type; the language-server route is the upgrade if
-that matters in practice.
-
-Derived queries: `callers`, `callees`, `roots`, and `call_tree` (pre-order,
-depth-limited, each symbol once).
-
-**Roots** are exactly the symbols with at least one callee and zero callers. A `main`
-that something calls is not a root. No special cases.
-
-## 5. Automatic mapping
-
-An auto path is the call tree rooted at a root symbol, depth-limited. It is not stored;
-the GUI lists roots in the Auto window as expandable trees, and the CLI prints them
-with `roots` and `tree`.
-
-**Promote** turns a call tree into a real path named after the root, with one step per
-symbol and each step under the step it is called from, so the path has the shape of
-the call tree. Trimming steps that don't belong, renaming, and writing the notes are
-the human's or the AI's job. This is the "materialize, then correct" loop the tool
-exists for. Default depth is 1 (the root and what it calls directly); `promote <sym>
-<depth>` for more.
-
-Why not persist auto paths: they would go stale on every edit and drown the manual
-layer. Derived data stays derived.
-
-## 6. Map file format
-
-`.codemap` at the root. Little-endian. Strings are `u32 len` + UTF-8 bytes.
-
-```
-"CMAP"  u32 version (=4)
+"CMAP"  u32 version
 u32 npaths
   str name
+  u8  kind          0 = flow, 1 = layer, 2 = type
   str note
   u8  author        0 = human (GUI), 1 = AI (CLI)
-  u32 nanchors
+  u32 nsteps
     str file        relative path, forward slashes
     str symbol      enclosing symbol name, "" = absolute lines
     i32 off_start   line offset from symbol start (or absolute line)
     i32 off_end     inclusive
     u64 hash        FNV-1a of the anchored lines joined with \n
-    u8  author      0 = human, 1 = AI
-    str note        v3+: the step's own annotation
-    i32 parent      v4+: index of the parent step in this list, -1 = root
+    u8  author
+    str note
+    i32 parent      index of the parent step in this list, -1 = root
 ```
-
-Author is recorded on both the path and each anchor, so the human can review "paths
-the AI created" and "anchors the AI added to my paths" separately. The GUI tags AI
-items with `(ai)`; the CLI prints the same tag. A step note is the comment on one
-step; the path note is the comment on the whole path.
 
 Steps are stored in list order; tree order is derived (roots in list order, children
 in list order, pre-order). Removing a step moves its children up to its parent.
-Swapping two steps in the list reorders siblings and rewrites parent links so the tree
-is unchanged.
 
-A version bump is required for any layout change. Readers accept versions 2 to 4 (a
-v2/v3 path was a chain, so each step's parent becomes the step before it) and reject
-anything else rather than guessing. Hand-rolled reader and writer, no serialization
-dependency.
+The tool is in development: the layout changes whenever it needs to, the reader
+rejects any version it does not write, and an old map is regenerated rather than
+migrated. No backward-compatibility code.
 
-## 7. Anchor semantics
+## 9. Anchor semantics
 
-Creating an anchor from lines `[ls, le]` in file F: pick the innermost symbol whose range
-contains the slice, store offsets relative to its start, hash the slice text. If no
-symbol contains it, offsets are absolute.
+Creating an anchor from lines `[ls, le]` in file F: pick the innermost symbol whose
+range contains the slice, store offsets relative to its start, hash the slice text. If
+no symbol contains it, offsets are absolute.
 
 Resolving on load: find the file, find the symbol by name, add offsets, bounds-check,
 rehash. Any failure marks the anchor stale. A stale anchor whose symbol still exists
-keeps its resolved lines so the user can see where it was and re-pin it. A stale anchor
-whose file or symbol is gone resolves to nothing and must be deleted or re-pinned.
+keeps its resolved lines so the reader can see where it was. A stale anchor whose file
+or symbol is gone resolves to nothing and must be re-pinned or deleted.
 
-There is no automatic re-anchoring. Red bar, human decides. Cheaper and more honest
-than heuristics.
+There is no automatic re-anchoring. The agent that changed the code re-pins.
 
-## 8. GUI (IDA Pro model)
+## 10. Architecture and the CLI
 
-The graph is the main view. Everything else navigates it or annotates it.
+```
+src/
+  index.rs   walk, per-language backends, cache, derived queries  (auto layer)
+  map.rs     paths, anchors, binary format, staleness             (manual layer)
+  cli.rs     text commands over index + map                       (agent interface, and the GUI's output panel)
+  main.rs    egui app over index + map                            (human interface)
+```
 
-| IDA Pro | codemap |
-|---|---|
-| Graph view | **Graph**: a pan-and-zoom canvas (egui `Scene`). Every node is a symbol showing its syntax-coloured code: a 12-line preview, expandable to the whole body. Callers sit one column left, callees one column right; each node has buttons to open or close its own callers or callees, so the visible graph grows hop by hop along whatever the reader is following. Nodes drag by their title. A path is shown as a tree in the same view: its root at the focus, each step one column right of its parent, green numbered edges from parent to child, each step's note printed under its header, grey call edges between any other two visible nodes. The same expansion buttons work on steps, so the reader explores around a path without leaving it. |
-| Functions window | **Symbols** window: a filterable table of every symbol with kind, file and line. Click to focus the graph on it. |
-| IDA View (listing) | **Listing** tab: the plain code view with line numbers and anchor bars, for reading beyond a node or selecting arbitrary lines. Reached from a node's "listing" button. |
-| Xrefs to / from | **Xrefs** window for the focused symbol: callers and callees as lists. Click to focus. |
-| Names / comments | **Paths** window: each path with its note (the comment), author tag, and its steps as an indented tree, numbered in pre-order, with buttons to reorder siblings. Selecting a step opens its own note for editing and makes it the parent of the next step added; steps with a note are marked `*`. "graph" shows the path as a tree. |
-| Output window + command line | **Output** panel at the bottom running the same commands as the CLI. |
-| Segments / navigation band | Not carried over. |
+`index` and `map` know nothing about the UI. `cli` and `main` are two front ends over
+the same two structs. Any operation that mutates the map lives on `Map` so both call
+the same code. `cli::run` writes to a `String` so the output panel and stdout share one
+code path.
 
-Layout: symbols and paths stacked on the left; graph, listing, and results as tabs in
-the centre; xrefs on the right; output at the bottom. Panels are resizable. Docking
-and detachable windows are deferred (section 10); fixed positions first.
+`codemap <root>` opens the GUI. `codemap <root> <command> [args]` runs one command,
+saves if it mutated the map, and exits. One root per process. Output is plain text,
+one item per line, in the `file:line` shapes grep users already parse. Every CLI
+mutation is tagged author = AI.
 
-What the graph shows is derived, never accumulated: a base (the focused symbol, or a
-path's tree of steps) plus an ordered list of expansions, each "callers of X" or
-"callees of X". The buttons on a node toggle its expansion; closing one rebuilds the
-node set from the list, so anything that was only reachable through it disappears
-with it.
-
-Layout is a forest of compact subtrees. Horizontally, a step's column is its depth in
-the path tree and any other node's column is its hop distance from what it was
-expanded from; columns share x, each as wide as its widest node, anchored at the
-focus. Vertically, every node owns a block: its own height, or the stacked heights of
-its children's blocks if that is taller. Children stack beside their parent (steps and
-callee expansions to the right, caller expansions to the left) and the parent centres
-on them. Sibling blocks never interleave, so a wide subtree only pushes its own
-siblings, never its cousins. Roots (the focus, other path roots, anything without a
-parent) stack top to bottom. A last per-column pass pushes apart the rare collision
-between different subtrees (a caller's callees land in the focus column, say). Node
-width comes from the longest shown line, clamped between a header-fitting minimum and
-a maximum; lines longer than that are cut with an ellipsis so a frame never exceeds
-its column. Layout reruns every frame until the user drags a node, and resumes after
-any structural change or the "auto layout" button.
-
-The view moves only on an explicit navigation: focusing a symbol, opening a path,
-selecting a step. Editing the path (adding a step from a node, deleting, reordering,
-a CLI edit picked up by reload) rebuilds the node set in place and leaves the camera
-where it is.
-
-Edges leave a caller's header on the right and arrive at the callee's header on the
-left. A callee that sits left of or level with its caller gets a short leftward curve
-in a second colour. Tree edges are green and labelled with the child's step number.
-
-Interactions: focus a node by clicking its title; "+path" adds it as a step of the
-selected path under the selected step (or under the focused step, or as a root) and
-selects the new step, so repeated adds build a chain and clicking another step starts
-a branch; up/down in the Paths window reorder siblings; "promote" on an entry point
-creates a path shaped like its call tree. In the listing, click a line, shift-click to
-extend, "add selection to path". Ctrl+S saves; unsaved changes save on exit.
-
-Syntax colours come from each grammar's bundled tree-sitter highlight query, run once
-per file at index time and stored as per-line spans; capture names map onto seven
-colour classes (keyword, string, comment, function, type, constant, property).
-
-The GUI polls once a second. If `.codemap` changed on disk and there are no unsaved
-edits, it reloads the map and rebuilds the graph, so a note written by the CLI shows
-up live. With unsaved edits it warns once and leaves the choice to the user. If any
-indexed source file's modification time changed, it re-indexes and carries the graph
-over by (file, symbol) identity; new or deleted files are only noticed on restart.
-
-Deliberately absent for now: automatic edge routing, undo, a folder picker (root comes
-from the command line).
-
-## 9. AI interface
-
-The CLI is the AI's way in, and the same commands run in the GUI's output panel.
-Output is plain text, one item per line, in the `file:line` shapes grep users already
-parse. Every mutation through the CLI saves immediately and is tagged author = AI.
+Arguments are parsed with `clap` (derive). The same `Command` enum is parsed from the
+process arguments and from the output panel's input line, so `help` and argument
+errors read identically in both.
 
 ```
 files [filter]                        symbols [filter]
-show <file> [start] [end]             grep <regex>
-callers <sym>   callees <sym>         tree <sym> [depth]   roots [n]
+show <file> [start] [end]             grep <regex>          notes <regex>
+callers <sym>   callees <sym>         refs <sym>
+tree <sym> [depth]                    roots [n]
 paths           path <name>           promote <sym> [depth]
-path-new <name> [note]                path-note <name> <note>
+path-new <name> <kind> [note]         path-note <name> <note>
 step-note <name> <index> <note>       path-rm <name> [index]
 path-add <name> <sym> [under]         path-add <name> <file> <start> <end> [under]
+path-pin <name> <index> <file> <start> <end>
+stale           check                 uncovered [filter]    coverage
 ```
 
-`path-add` places the new step under step `under`; by default under the last step
-added, so consecutive adds build a chain and an explicit index starts a branch.
+`path-add` places the new step under `under`; by default under the last step added, so
+consecutive adds build a chain and an explicit index starts a branch.
 
-Intended agent workflow, which `CLAUDE.md` in this repo will state:
+Concurrency: the GUI holds the map in memory and saves whole; the CLI loads, mutates,
+saves whole. Last writer wins. Do not run the CLI while the GUI has unsaved changes.
 
-1. `roots` and `paths` first, to see the entry points and what has already been named.
-2. `path <name>` to read a code path as one document instead of opening files.
-3. `tree` and `callers` to move along the graph instead of grepping for a name.
-4. `show` only for the lines a path doesn't cover.
-5. After understanding something, record it: `promote`, `path-new`, `path-note`,
-   `path-add`, `path-rm`. The map is the agent's notes, kept in the repo for the next
-   session and for the human, who can filter on the `(ai)` tag to review them.
+## 11. Roadmap
 
-Concurrency: the GUI holds the map in memory and saves whole. The CLI loads, mutates,
-saves whole. If both run at once, last writer wins. Rule for now: don't run the CLI
-while the GUI has unsaved changes. A file-watch reload in the GUI is the fix if this
-bites.
+Each milestone has a done-when that can be checked without a judgement call. Work
+outside the current milestone needs a reason written here first.
 
-An MCP server is a later thin wrapper over the same functions once the CLI shape has
-settled. Not before.
+**M1 — the agent loop.** CLI parsing moved to `clap`, `kind` on paths,
+`path-new <name> <kind>`, `notes`, `stale`, `path-pin`, `check`, `uncovered`,
+`coverage`, and the contract of section 5 in this repo's `CLAUDE.md`. Done when: after an agent session on this repo and on
+odin_editor, `check` passes, nothing the session added appears in `uncovered`, and the
+owner can say what the session changed from `paths` and `path <name>` output alone,
+without reading the diff.
 
-## 10. Deferred, and what would trigger each
+**M2 — language-server indexing.** Per-language backends, the server table, symbols
++ outgoing calls + references from the server, the `.codemap-cache`, `refs`, and the
+GUI opening on the cache with greyed-out queries and progress until the server
+answers. The grammar-agnostic resolver is retired language by language as each gets
+a server or its own resolver. Done when: on this repo with `rust-analyzer` on PATH,
+`callees update` and `refs Map` match what the same server shows in an editor; with it
+off PATH, the Rust resolver's output is what it is today; and a second launch opens
+without waiting on the server.
+
+**M3 — the reader GUI.** Path document as the landing view, Files tree, coverage in
+Symbols and Files, click an identifier to jump to its definition, Auto window and
+graph-side authoring buttons removed. Done when: the M1 test passes in the GUI
+without a terminal.
+
+**M4 — map diff in the GUI.** The working map against the map at the parent revision
+(`jj file show -r @- .codemap`; the GUI shells out, no VCS library). Done when: the
+owner reviews an agent session's map changes without reading `path` output.
+
+Deferred, with the trigger that would pull each in:
 
 | Item | Trigger |
 |---|---|
-| Language-server xref resolution (rust-analyzer, ols) | the qualifier-based resolver's misses matter in practice |
-| Click a call in a node's code to open that callee | reading a node and wanting one specific callee, not all of them |
-| Documentation panel for the focused symbol | per language: doc comments first (tree-sitter), then external docs (rustdoc, odin docs) |
-| Dockable / detachable windows (egui_tiles) | the fixed layout gets in the way of a real session |
-| Background indexing with progress | startup on a real repo takes more than a second |
+| A daemon holding the server sessions for the CLI | cold CLI runs on changed files are the bottleneck of an agent session |
+| Hand-written resolver for a language | a target repo uses it and has no server |
+| "Intentionally unmapped" marker on symbols | `uncovered` is mostly things already decided not to matter |
+| Step-level review state | a long path gets one re-pinned step and rereading it all is a cost |
+| Kind-specific rendering | a list of 50 mixed-kind paths is unreadable |
+| Documentation panel for the focused symbol | per language: doc comments first, then external docs |
+| Dockable / detachable windows | the fixed layout gets in the way of a real session |
 | Multi-threaded grep | a search takes more than 100 ms |
-| Edges between paths | paths start referring to each other in their notes |
-| Watch for new / deleted files | editing sessions add files often enough that restarting annoys |
+| Watch for new / deleted files | restarting for new files annoys |
 | Undo | a mis-click deletes something that took effort to build |
 | MCP server | the CLI is stable and the shell round trip is the bottleneck |
+| More languages | a target repo needs one |
 
-Done since the list was written: multi-hop layered graph layout, virtualized symbols
-table, syntax highlighting, step notes, reload on map or source change, paths as
-trees.
+## 12. Resolved
 
-## 11. Open questions
-
-- **Promote depth.** When you promote `main`, the new path can contain either `main`
-  plus the functions it calls directly (maybe 6 anchors, you add more by hand), or
-  `main` plus everything reachable within N calls (maybe 80 anchors, you delete the
-  extras). Which default? Proposed: direct callees only, with `promote <sym> <depth>`
-  for more.
-
-Resolved: roots are strictly "no callers". Author is recorded per path and per anchor.
-One root per process.
-
-## 12. Status
-
-Everything in sections 3 to 9 is implemented and verified: index with xrefs, roots and
-call trees (unit-tested), map format v2 with author bytes (round-trip and staleness
-unit-tested), the CLI, the GUI in the IDA layout with the output panel running CLI
-commands, and `CLAUDE.md`.
-
-Verified on two repos. The odin_editor repo: 94 files, `promote main` produced a
-29-anchor path, xrefs and trees matched a manual reading. This repo, mapped by the
-CLI itself: `update` and `cli_main` are promoted and annotated with `(ai)` tags, and
-editing `update` after promoting it correctly flagged that anchor stale.
-
-Known rough edges, accepted per sections 4 and 10: a method called on a variable of
-unknown type binds to the caller's own type first, then the first type that has it;
-platform-conditional duplicates (`font_darwin.odin` and `font_windows.odin` both
-defining a proc) link to whichever file sorts first.
+- The map is the product; the GUI and CLI are two editors for it.
+- One concept (paths) with a kind tag, not separate concepts for layers and types.
+- No review state on paths. If the human feels unfamiliar with something they know it
+  and read it.
+- Author is recorded per path and per step, shown as `(ai)`.
+- Promote default depth is 1; the agent asks for more.
+- Roots are strictly "no callers". One root per process.
+- The map file stays binary. Reviewing map changes is a GUI feature (M3), not a format
+  property.
+- Coverage is observable, never a `check` failure.
+- Indexing is per language: the language server when present, a resolver written for
+  that language otherwise. No language-agnostic resolver.
+- The index cache is derived from the backend and exists only for startup speed. It
+  is never committed and never the source of truth.
