@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 eframe = "0.33"
+clap = { version = "4", default-features = false, features = ["std", "derive", "help", "usage", "error-context", "suggestions"] }
 ignore = "0.4"
 regex = "1"
 tree-sitter = "0.25"

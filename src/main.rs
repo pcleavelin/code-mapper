@@ -4,7 +4,7 @@ mod map;
 
 use eframe::egui::{self, Align2, Color32, FontId, Key, Modifiers, Sense, Stroke, TextStyle, pos2, text::LayoutJob, vec2};
 use index::{Index, Span, SymRef};
-use map::{Author, Map};
+use map::{Author, Kind, Map};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant, SystemTime};
@@ -520,7 +520,7 @@ impl App {
         if name.is_empty() {
             return;
         }
-        self.sel_path = Some(self.map.add_path(&name, Author::Human));
+        self.sel_path = Some(self.map.add_path(&name, Kind::Flow, Author::Human));
         self.sel_anchor = None;
         self.new_path.clear();
         self.dirty = true;
@@ -618,9 +618,12 @@ impl App {
 
     fn run_cmd(&mut self) {
         let line = std::mem::take(&mut self.cmd);
-        let args = cli::tokenize(&line);
         self.output.push_str(&format!("> {line}\n"));
-        match cli::exec(&self.idx, &mut self.map, &args, Author::Human, &mut self.output) {
+        let cmd = match cli::parse(&cli::tokenize(&line)) {
+            Ok(cmd) => cmd,
+            Err(e) => return self.output.push_str(&e.to_string()),
+        };
+        match cli::exec(&self.idx, &mut self.map, cmd, Author::Human, &mut self.output) {
             Ok(true) => {
                 self.dirty = true;
                 self.output.push_str("(map changed, ctrl+s to save)\n");
@@ -741,12 +744,12 @@ impl App {
         egui::ScrollArea::vertical().id_salt("paths").auto_shrink(false).show(ui, |ui| {
             for pi in 0..self.map.paths.len() {
                 let selected = self.sel_path == Some(pi);
-                let (name, tag, n) = {
+                let (name, kind, tag, n) = {
                     let p = &self.map.paths[pi];
-                    (p.name.clone(), p.author.tag(), p.anchors.len())
+                    (p.name.clone(), p.kind.name(), p.author.tag(), p.anchors.len())
                 };
                 ui.horizontal(|ui| {
-                    if ui.selectable_label(selected, format!("{name}{tag}  ({n} steps)")).clicked() {
+                    if ui.selectable_label(selected, format!("{name} [{kind}]{tag}  ({n} steps)")).clicked() {
                         action = Some(Action::SelectPath(pi));
                     }
                     if ui.small_button("graph").on_hover_text("show this path as a tree in the graph").clicked() {
@@ -1273,16 +1276,23 @@ impl eframe::App for App {
 // ---- entry -------------------------------------------------------------------------
 
 fn cli_main(root: &Path, args: &[String]) -> i32 {
-    if args[0] == "help" {
-        print!("{}", cli::HELP);
-        return 0;
-    }
+    let cmd = match cli::parse(args) {
+        Ok(cmd) => cmd,
+        Err(e) if e.use_stderr() => {
+            eprint!("{e}");
+            return 2;
+        }
+        Err(e) => {
+            print!("{e}");
+            return 0;
+        }
+    };
     let idx = index::build(root);
     let map_path = root.join(".codemap");
     let mut map = Map::load(&map_path).unwrap_or_default();
     map.resolve_all(&idx);
     let mut out = String::new();
-    match cli::exec(&idx, &mut map, args, Author::Ai, &mut out) {
+    match cli::exec(&idx, &mut map, cmd, Author::Ai, &mut out) {
         Ok(dirty) => {
             print!("{out}");
             if dirty {
@@ -1295,6 +1305,7 @@ fn cli_main(root: &Path, args: &[String]) -> i32 {
             0
         }
         Err(e) => {
+            print!("{out}");
             eprintln!("{e}");
             2
         }
@@ -1304,7 +1315,7 @@ fn cli_main(root: &Path, args: &[String]) -> i32 {
 fn main() -> eframe::Result {
     let args: Vec<String> = std::env::args().skip(1).collect();
     if args.first().is_some_and(|a| a == "help" || a == "--help" || a == "-h") {
-        print!("{}", cli::HELP);
+        print!("{}", cli::help());
         return Ok(());
     }
     let root = args.first().map(PathBuf::from).unwrap_or_else(|| std::env::current_dir().expect("cwd"));

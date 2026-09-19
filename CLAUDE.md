@@ -12,17 +12,31 @@ cargo build --release
 target\release\codemap.exe <root> <command> [args]
 ```
 
-Order of operations:
+Before working on an area:
 
-1. `roots` and `paths` to see entry points and what is already named.
-2. `path <name>` to read a code path as one document.
-3. `tree <sym>`, `callers <sym>`, `callees <sym>` to move along the graph.
-4. `show <file> [start] [end]` only for lines a path does not cover.
-5. Record what you learned: `promote <sym>`, `path-new`, `path-note`, `path-add`,
-   `path-rm`. Your edits are tagged `(ai)` so the human can review them.
+1. `paths` to see what is already named. `path <name>` to read a code path as one
+   document instead of opening files. `notes <regex>` to search what earlier sessions
+   wrote.
+2. `tree <sym>`, `callers <sym>`, `callees <sym>` to move along the graph. `roots` for
+   entry points. `show <file> [start] [end]` only for lines no path covers.
 
-`codemap help` prints the full command list. Do not run CLI mutations while the GUI
-has unsaved changes (last writer wins).
+After changing code, before the commit:
+
+3. `stale` lists every step whose text no longer matches. Re-pin each with
+   `path-pin <name> <index> <file> <start> <end>`. You broke it and have the diff; the
+   human never re-pins.
+4. Every new non-trivial symbol goes into a path: `path-add` to an existing one, or
+   `path-new <name> <kind> [note]` (kind = flow | layer | type) with a note written for
+   someone who did not see the diff. `step-note` says what a step does for that path.
+   `promote <sym>` scaffolds a path from a call tree. Your edits are tagged `(ai)`.
+5. `check` must pass. It exits non-zero on any stale step.
+
+After a rebase the same applies: run `stale`, re-pin.
+
+`uncovered` lists symbols in no path, largest first, so the human can audit what you
+judged trivial. `coverage` prints covered/total per file. `codemap help` prints the
+full command list. Do not run CLI mutations while the GUI has unsaved changes (last
+writer wins).
 
 ## Constraints
 

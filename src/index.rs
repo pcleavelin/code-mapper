@@ -462,11 +462,17 @@ impl Index {
     }
 
     /// All symbols with this name.
+    /// Every symbol called `name`. `Owner::name` narrows to that owner or file stem,
+    /// `path/file.rs:name` to that file.
     pub fn find_symbols(&self, name: &str) -> Vec<SymRef> {
+        let (qual, name) = match name.rsplit_once("::").or_else(|| name.rsplit_once(':')) {
+            Some((q, n)) => (Some(q.replace('\\', "/")), n),
+            None => (None, name),
+        };
         let mut out = Vec::new();
         for (file, f) in self.files.iter().enumerate() {
             for (sym, s) in f.symbols.iter().enumerate() {
-                if s.name == name {
+                if s.name == name && qual.as_deref().is_none_or(|q| s.owner.as_deref() == Some(q) || f.stem() == q || f.path.ends_with(q)) {
                     out.push(SymRef { file, sym });
                 }
             }

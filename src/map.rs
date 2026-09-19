@@ -23,6 +23,35 @@ impl Author {
     }
 }
 
+/// What a path describes. A tag only: listed and filterable, no rendering difference.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Kind {
+    /// A workflow: what happens when X.
+    Flow = 0,
+    /// An abstraction boundary: the functions that form its surface.
+    Layer = 1,
+    /// A data structure and what mutates it.
+    Type = 2,
+}
+
+impl Kind {
+    pub const NAMES: [&'static str; 3] = ["flow", "layer", "type"];
+    pub fn name(self) -> &'static str {
+        Self::NAMES[self as usize]
+    }
+    pub fn parse(s: &str) -> Option<Kind> {
+        match s {
+            "flow" => Some(Kind::Flow),
+            "layer" => Some(Kind::Layer),
+            "type" => Some(Kind::Type),
+            _ => None,
+        }
+    }
+    fn from_u8(b: u8) -> Option<Kind> {
+        Self::parse(Self::NAMES.get(b as usize)?)
+    }
+}
+
 /// Pins a slice of lines. Offsets are relative to the start of the enclosing symbol so the anchor
 /// survives edits elsewhere in the file. `symbol == ""` means absolute lines. `hash` detects when
 /// the anchored text itself changed (-> stale). `parent` makes a path a tree: the step this one
@@ -45,6 +74,7 @@ pub struct Anchor {
 
 pub struct PathDef {
     pub name: String,
+    pub kind: Kind,
     pub note: String,
     pub author: Author,
     pub anchors: Vec<Anchor>,
@@ -57,14 +87,13 @@ pub struct Map {
 
 // ---- binary file format ----------------------------------------------------------
 // "CMAP" u32 version
-// u32 npaths { str name, str note, u8 author, u32 nanchors {
-//     str file, str symbol, i32 off_start, i32 off_end, u64 hash, u8 author,
-//     str note (v3+), i32 parent (v4+) } }
-// str = u32 len + utf8 bytes. All little-endian. Older versions are still read: a v2/v3 path is
-// a chain, so each step's parent becomes the step before it.
+// u32 npaths { str name, u8 kind, str note, u8 author, u32 nanchors {
+//     str file, str symbol, i32 off_start, i32 off_end, u64 hash, u8 author, str note, i32 parent } }
+// str = u32 len + utf8 bytes. All little-endian. Any other version is rejected: an old map is
+// regenerated, never migrated.
 
 const MAGIC: &[u8; 4] = b"CMAP";
-const VERSION: u32 = 4;
+const VERSION: u32 = 5;
 
 fn w_str(b: &mut Vec<u8>, s: &str) {
     b.extend_from_slice(&(s.len() as u32).to_le_bytes());
@@ -108,6 +137,7 @@ impl Map {
         b.extend_from_slice(&(self.paths.len() as u32).to_le_bytes());
         for p in &self.paths {
             w_str(&mut b, &p.name);
+            b.push(p.kind as u8);
             w_str(&mut b, &p.note);
             b.push(p.author as u8);
             b.extend_from_slice(&(p.anchors.len() as u32).to_le_bytes());
@@ -131,19 +161,19 @@ impl Map {
         if r.bytes(4)? != MAGIC {
             return None;
         }
-        let version = r.u32()?;
-        if !(2..=VERSION).contains(&version) {
+        if r.u32()? != VERSION {
             return None;
         }
         let mut m = Map::default();
         for _ in 0..r.u32()? {
             let mut p = PathDef {
                 name: r.str()?,
+                kind: Kind::from_u8(r.u8()?)?,
                 note: r.str()?,
                 author: Author::from_u8(r.u8()?)?,
                 anchors: Vec::new(),
             };
-            for i in 0..r.u32()? {
+            for _ in 0..r.u32()? {
                 p.anchors.push(Anchor {
                     file: r.str()?,
                     symbol: r.str()?,
@@ -151,8 +181,8 @@ impl Map {
                     off_end: r.i32()?,
                     hash: r.u64()?,
                     author: Author::from_u8(r.u8()?)?,
-                    note: if version >= 3 { r.str()? } else { String::new() },
-                    parent: if version >= 4 { r.i32()? } else { i as i32 - 1 },
+                    note: r.str()?,
+                    parent: r.i32()?,
                     line_start: 0,
                     line_end: 0,
                     stale: true,
@@ -170,12 +200,29 @@ impl Map {
     }
 
     /// Returns the existing path of that name, or creates it.
-    pub fn add_path(&mut self, name: &str, author: Author) -> usize {
+    pub fn add_path(&mut self, name: &str, kind: Kind, author: Author) -> usize {
         if let Some(pi) = self.find(name) {
             return pi;
         }
-        self.paths.push(PathDef { name: name.to_owned(), note: String::new(), author, anchors: Vec::new() });
+        self.paths.push(PathDef { name: name.to_owned(), kind, note: String::new(), author, anchors: Vec::new() });
         self.paths.len() - 1
+    }
+
+    /// Re-anchor an existing step to new lines. Note and parent stay; the pinning author is
+    /// recorded.
+    pub fn pin_anchor(&mut self, idx: &Index, pi: usize, ai: usize, fi: usize, ls: usize, le: usize, author: Author) {
+        let old = &self.paths[pi].anchors[ai];
+        let mut a = Anchor::new(&idx.files[fi], ls, le);
+        a.author = author;
+        a.note = old.note.clone();
+        a.parent = old.parent;
+        self.paths[pi].anchors[ai] = a;
+    }
+
+    /// Whether any current (non-stale) step overlaps lines `[start, end]` of `file`. Coverage is
+    /// derived here and never stored.
+    pub fn covers(&self, file: &str, start: usize, end: usize) -> bool {
+        self.paths.iter().flat_map(|p| &p.anchors).any(|a| !a.stale && a.file == file && a.line_start <= end && start <= a.line_end)
     }
 
     /// Append a step under `parent` (-1 = root). Returns its index.
@@ -254,7 +301,7 @@ impl Map {
     /// A path named after `root` shaped like its call tree: one step per symbol, each under the
     /// step it is called from. Re-promoting adds only symbols the path lacks.
     pub fn promote(&mut self, idx: &Index, root: SymRef, depth: usize, author: Author) -> usize {
-        let pi = self.add_path(&idx.sym(root).name.clone(), author);
+        let pi = self.add_path(&idx.sym(root).name.clone(), Kind::Flow, author);
         let mut stack: Vec<i32> = Vec::new(); // step index at each depth
         for (r, d) in idx.call_tree(root, depth) {
             let s = idx.sym(r);
@@ -358,7 +405,7 @@ mod tests {
     fn round_trip_and_stale() {
         let idx = one_file();
         let mut m = Map::default();
-        let pi = m.add_path("p", Author::Ai);
+        let pi = m.add_path("p", Kind::Type, Author::Ai);
         m.add_anchor(&idx, pi, 0, 4, 4, Author::Ai, -1);
         m.paths[0].anchors[0].note = "the middle".into();
         assert_eq!(m.paths[0].anchors[0].symbol, "b");
@@ -368,6 +415,7 @@ mod tests {
         m.save(&tmp).unwrap();
         let mut loaded = Map::load(&tmp).unwrap();
         assert_eq!(loaded.paths[0].author, Author::Ai);
+        assert_eq!(loaded.paths[0].kind, Kind::Type);
         assert_eq!(loaded.paths[0].anchors[0].author, Author::Ai);
         assert_eq!(loaded.paths[0].anchors[0].note, "the middle");
         assert_eq!(loaded.paths[0].anchors[0].parent, -1);
@@ -383,17 +431,23 @@ mod tests {
         assert_eq!(loaded.paths[0].anchors[0].line_start, 6);
         assert!(!loaded.paths[0].anchors[0].stale);
 
-        // text changed: stale
+        // text changed: stale, and no longer covers; re-pin restores both and keeps the note
         idx.files[0].lines[6] = "  3".into();
         loaded.resolve_all(&idx);
         assert!(loaded.paths[0].anchors[0].stale);
+        assert!(!loaded.covers("a.rs", 6, 6));
+        loaded.pin_anchor(&idx, 0, 0, 0, 6, 6, Author::Ai);
+        assert!(!loaded.paths[0].anchors[0].stale);
+        assert_eq!(loaded.paths[0].anchors[0].note, "the middle");
+        assert!(loaded.covers("a.rs", 5, 7));
+        assert!(!loaded.covers("a.rs", 0, 2));
     }
 
     #[test]
     fn tree_edits_keep_parents() {
         let idx = one_file();
         let mut m = Map::default();
-        let pi = m.add_path("t", Author::Human);
+        let pi = m.add_path("t", Kind::Flow, Author::Human);
         let root = m.add_anchor(&idx, pi, 0, 0, 2, Author::Human, -1) as i32; // a
         let mid = m.add_anchor(&idx, pi, 0, 3, 5, Author::Human, root) as i32; // b under a
         let leaf = m.add_anchor(&idx, pi, 0, 1, 1, Author::Human, mid); // line in a, under b
