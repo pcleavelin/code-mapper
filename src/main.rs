@@ -38,13 +38,16 @@ fn cli_main(root: &Path, args: &[String]) -> i32 {
     };
     match cli::exec(&idx, &mut map, cmd, Author::Ai, &mut out) {
         Ok(dirty) => {
-            emit(&out);
+            // the map is saved before the command's output is shown, so a line that says a
+            // step was added is never printed for a change that did not reach the disk
             if dirty {
                 if let Err(e) = map.save(&map_path) {
+                    emit(&out);
                     eprintln!("save failed: {e}");
                     return 1;
                 }
             }
+            emit(&out);
             0
         }
         Err(e) => {

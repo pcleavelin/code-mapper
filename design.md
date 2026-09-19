@@ -277,7 +277,7 @@ step-note <name> <index> <note>       note-edit <name> <index> <old> <new>
 path-rm <name> [index]
 path-add <name> <sym> [under]         path-add <name> <file> <start> <end> [under]
 path-pin <name> <index> <file> <start> <end>
-path-move <name> <index> <under>
+path-move <name> <index> <under>      path-swap <name> <a> <b>
 stale           check                 uncovered [filter]    coverage
 diff
 ```

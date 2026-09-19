@@ -846,7 +846,7 @@ impl Index {
                 }
             }
         }
-        let _ = std::fs::write(self.root.join(CACHE), b);
+        let _ = crate::map::write_retry(&self.root.join(CACHE), &b);
     }
 
     /// Files waiting on a server, grouped by language.
@@ -909,17 +909,35 @@ impl Index {
     }
 
     /// All symbols with this name.
-    /// Every symbol called `name`. `Owner::name` narrows to that owner or file stem,
-    /// `path/file.rs:name` to that file.
+    /// Every symbol called `name`. `Owner::name` narrows to that owner, `file:name` to a file
+    /// (its stem or a path suffix), `file:Owner::name` to both; a bare qualifier that is neither
+    /// is tried as each.
     pub fn find_symbols(&self, name: &str) -> Vec<SymRef> {
         let (qual, name) = match name.rsplit_once("::").or_else(|| name.rsplit_once(':')) {
             Some((q, n)) => (Some(q.replace('\\', "/")), n),
             None => (None, name),
         };
+        let (file_q, owner_q): (Option<&str>, Option<&str>) = match qual.as_deref() {
+            None => (None, None),
+            Some(q) => match q.split_once(':') {
+                Some((f, o)) if !f.is_empty() && !o.is_empty() => (Some(f), Some(o)),
+                _ => (None, Some(q)),
+            },
+        };
+        let in_file = |f: &File, q: &str| f.stem() == q || f.path.ends_with(q);
         let mut out = Vec::new();
         for (file, f) in self.files.iter().enumerate() {
             for (sym, s) in f.symbols.iter().enumerate() {
-                if s.name == name && qual.as_deref().is_none_or(|q| s.owner.as_deref() == Some(q) || f.stem() == q || f.path.ends_with(q)) {
+                if s.name != name {
+                    continue;
+                }
+                let ok = match (file_q, owner_q) {
+                    (None, None) => true,
+                    (Some(fq), Some(oq)) => in_file(f, fq) && s.owner.as_deref() == Some(oq),
+                    (None, Some(q)) => s.owner.as_deref() == Some(q) || in_file(f, q),
+                    (Some(fq), None) => in_file(f, fq),
+                };
+                if ok {
                     out.push(SymRef { file, sym });
                 }
             }

@@ -125,7 +125,8 @@ impl Atlas {
 /// Everything drawn this frame: quads in one batch, split into commands where the clip changes.
 struct Cmd {
     clip: Rect,
-    end: u32, // index count up to here
+    start: u32, // index range of this command
+    end: u32,
 }
 
 pub struct Gfx {
@@ -399,8 +400,8 @@ impl Gfx {
         let n = self.idx.len() as u32;
         let clip = self.clip();
         match self.cmds.last_mut() {
-            Some(c) if c.end == n => c.clip = clip,
-            _ => self.cmds.push(Cmd { clip, end: n }),
+            Some(c) if c.start == c.end => c.clip = clip, // nothing drawn under the old clip yet
+            _ => self.cmds.push(Cmd { clip, start: n, end: n }),
         }
     }
 
@@ -571,15 +572,13 @@ impl Gfx {
                 pass.set_bind_group(0, &self.bind_group, &[]);
                 pass.set_vertex_buffer(0, self.vbuf.as_ref().unwrap().0.slice(..));
                 pass.set_index_buffer(self.ibuf.as_ref().unwrap().0.slice(..), wgpu::IndexFormat::Uint32);
-                let mut start = 0;
                 let screen = Rect::new(0, 0, self.size.0, self.size.1);
                 for cmd in &self.cmds {
                     let r = cmd.clip.intersect(&screen);
-                    if cmd.end > start && !r.is_empty() {
+                    if cmd.end > cmd.start && !r.is_empty() {
                         pass.set_scissor_rect(r.x as u32, r.y as u32, r.w as u32, r.h as u32);
-                        pass.draw_indexed(start..cmd.end, 0, 0..1);
+                        pass.draw_indexed(cmd.start..cmd.end, 0, 0..1);
                     }
-                    start = cmd.end;
                 }
             }
         }

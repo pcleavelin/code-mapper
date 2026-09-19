@@ -27,6 +27,8 @@ struct Metrics {
     cell_w: i32,
     row_h: i32,
     pad: i32,
+    gap_x: i32, // the gaps scale with the zoom so the tree keeps its shape
+    gap_y: i32,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -222,10 +224,10 @@ impl Graph {
         let mut col_x: BTreeMap<i32, i32> = BTreeMap::new();
         col_x.insert(anchor, 0);
         for c in (anchor + 1)..=last {
-            col_x.insert(c, col_x[&(c - 1)] + col_w[&(c - 1)] + GAP_X);
+            col_x.insert(c, col_x[&(c - 1)] + col_w[&(c - 1)] + m.gap_x);
         }
         for c in (first..anchor).rev() {
-            col_x.insert(c, col_x[&(c + 1)] - col_w[&c] - GAP_X);
+            col_x.insert(c, col_x[&(c + 1)] - col_w[&c] - m.gap_x);
         }
         // the forest
         let mut right: HashMap<Node, Vec<Node>> = HashMap::new();
@@ -248,19 +250,20 @@ impl Graph {
 
         // block heights, bottom-up
         let mut height: HashMap<Node, i32> = HashMap::new();
-        fn measure(g: &Graph, r: Node, right: &HashMap<Node, Vec<Node>>, left: &HashMap<Node, Vec<Node>>, height: &mut HashMap<Node, i32>, seen: &mut HashSet<Node>) -> i32 {
+        let gap_y = m.gap_y;
+        fn measure(g: &Graph, gap_y: i32, r: Node, right: &HashMap<Node, Vec<Node>>, left: &HashMap<Node, Vec<Node>>, height: &mut HashMap<Node, i32>, seen: &mut HashSet<Node>) -> i32 {
             if !seen.insert(r) {
                 return 0;
             }
             let mut stack = |kids: Option<&Vec<Node>>, height: &mut HashMap<Node, i32>, seen: &mut HashSet<Node>| -> i32 {
                 let mut h = 0;
                 for &k in kids.into_iter().flatten() {
-                    let kh = measure(g, k, right, left, height, seen);
+                    let kh = measure(g, gap_y, k, right, left, height, seen);
                     if kh > 0 {
-                        h += kh + GAP_Y;
+                        h += kh + gap_y;
                     }
                 }
-                (h - GAP_Y).max(0)
+                (h - gap_y).max(0)
             };
             let rh = stack(right.get(&r), height, seen);
             let lh = stack(left.get(&r), height, seen);
@@ -270,10 +273,10 @@ impl Graph {
         }
         let mut seen = HashSet::new();
         for &r in &roots {
-            measure(self, r, &right, &left, &mut height, &mut seen);
+            measure(self, gap_y, r, &right, &left, &mut height, &mut seen);
         }
         // place, top-down
-        fn place(g: &mut Graph, r: Node, top: i32, col_x: &BTreeMap<i32, i32>, right: &HashMap<Node, Vec<Node>>, left: &HashMap<Node, Vec<Node>>, height: &HashMap<Node, i32>, done: &mut HashSet<Node>) {
+        fn place(g: &mut Graph, gap_y: i32, r: Node, top: i32, col_x: &BTreeMap<i32, i32>, right: &HashMap<Node, Vec<Node>>, left: &HashMap<Node, Vec<Node>>, height: &HashMap<Node, i32>, done: &mut HashSet<Node>) {
             if !done.insert(r) {
                 return;
             }
@@ -282,11 +285,11 @@ impl Graph {
             g.pos.insert(r, (col_x[&g.col[&r]], top + (block - own) / 2));
             for kids in [right.get(&r), left.get(&r)] {
                 let kids: Vec<Node> = kids.into_iter().flatten().copied().filter(|k| height.contains_key(k) && !done.contains(k)).collect();
-                let stack_h: i32 = kids.iter().map(|k| height[k] + GAP_Y).sum::<i32>() - GAP_Y;
+                let stack_h: i32 = kids.iter().map(|k| height[k] + gap_y).sum::<i32>() - gap_y;
                 let mut cur = top + (block - stack_h.max(0)) / 2;
                 for k in kids {
-                    place(g, k, cur, col_x, right, left, height, done);
-                    cur += height[&k] + GAP_Y;
+                    place(g, gap_y, k, cur, col_x, right, left, height, done);
+                    cur += height[&k] + gap_y;
                 }
             }
         }
@@ -296,8 +299,8 @@ impl Graph {
             if done.contains(&r) {
                 continue;
             }
-            place(self, r, cur, &col_x, &right, &left, &height, &mut done);
-            cur += height[&r] + GAP_Y * 2;
+            place(self, gap_y, r, cur, &col_x, &right, &left, &height, &mut done);
+            cur += height[&r] + gap_y * 2;
         }
         // different subtrees can still meet in one column; push the later one down
         for ns in cols.values_mut() {
@@ -305,12 +308,11 @@ impl Graph {
             let mut prev_bottom = i32::MIN / 2;
             for &n in ns.iter() {
                 let h = self.size[&n].1;
-                let y = self.pos[&n].1.max(prev_bottom + GAP_Y);
+                let y = self.pos[&n].1.max(prev_bottom + gap_y);
                 self.pos.get_mut(&n).unwrap().1 = y;
                 prev_bottom = y + h;
             }
         }
-        let _ = m;
     }
 }
 
@@ -438,7 +440,8 @@ impl App {
         self.graph.rebuild(&self.idx, &self.map, path_id, self.focus);
         let px = self.graph_px();
         let (cell_w, row_h) = gfx.cell(px);
-        let m = Metrics { cell_w, row_h, pad: (6.0 * self.graph.zoom).round() as i32 };
+        let z = self.graph.zoom;
+        let m = Metrics { cell_w, row_h, pad: (6.0 * z).round() as i32, gap_x: (GAP_X as f32 * z).round() as i32, gap_y: (GAP_Y as f32 * z).round() as i32 };
         for &n in &self.graph.nodes.clone() {
             let s = self.graph.node_size(&self.idx, n, m);
             self.graph.size.insert(n, s);
@@ -510,6 +513,7 @@ impl App {
             let off_path = self.graph.path_id.is_some() && !on_path;
             let focused = focus_node == Some(n);
             let (border, border_w) = if focused { (ACCENT, 2) } else if on_path { (step_color, 2) } else { (BORDER, 1) };
+            let node_hits_from = hits.len();
             let fill = if off_path { PANEL } else { FIELD };
             let mut header = Vec::new();
             if let Some((_, _, number)) = self.graph.step.get(&n) {
@@ -535,13 +539,14 @@ impl App {
                 labels.push((Btn::Callers, format!("{} < callers", s.callers.len())));
             }
             let mut buttons = Vec::new();
+            let mut button_hits = Vec::new();
             let mut bx = rect.right() - m.pad;
             for (b, label) in labels.into_iter().rev() {
                 let bw = (label.chars().count() as i32 + 2) * m.cell_w;
                 bx -= bw + 4;
                 let br = Rect::new(bx, rect.y + m.pad, bw, m.row_h);
                 let hovered = br.contains(mouse.0, mouse.1);
-                hits.push((br, Hit::Button(n, b)));
+                button_hits.push((br, Hit::Button(n, b)));
                 buttons.push((br, label, hovered));
             }
             let header_rect = Rect::new(rect.x, rect.y, (bx - rect.x).max(0), m.row_h + m.pad);
@@ -554,11 +559,14 @@ impl App {
                 hits.push((lr, Hit::Line(n, li)));
                 lines.push((li, gui::code_runs(f, li, true)));
             }
+            hits.extend(button_hits);
             // the lines that call the nodes hanging off this one
             let children: Vec<Node> = self.graph.nodes.iter().copied().filter(|c| self.graph.step_parent.get(c) == Some(&n) || self.graph.origin.get(c).is_some_and(|(o, callees)| *o == n && *callees)).collect();
             let tinted: HashSet<usize> = children.iter().filter_map(|c| self.graph.call_line(&self.idx, n, &self.idx.sym(c.0).name)).filter(|&li| li < lo + shown).collect();
-            hits.push((rect, Hit::Body(n)));
-            hits.push((header_rect, Hit::Header(n)));
+            // later hits win: body, then the header, then lines, then the buttons
+            let mut ordered = vec![(rect, Hit::Body(n)), (header_rect, Hit::Header(n))];
+            ordered.extend(hits.drain(node_hits_from..));
+            hits.extend(ordered);
             nodes.push(SceneNode { rect, fill, border, border_w, header, buttons, note, code_top, lines, tinted, more: (shown < total).then_some(total - shown) });
         }
         // edges: where an edge leaves a node is level with the call line when it is shown
@@ -588,12 +596,12 @@ impl App {
                 if rb.x >= ra.right() {
                     let p0 = edge_out(&self.graph, a, &self.idx.sym(bs).name);
                     let p1 = (rb.x as f32, rb.y as f32 + hy);
-                    let dx = ((p1.0 - p0.0).abs() * 0.5).max(GAP_X as f32 * 0.8);
+                    let dx = ((p1.0 - p0.0).abs() * 0.5).max(m.gap_x as f32 * 0.8);
                     edges.push(([p0, (p0.0 + dx, p0.1), (p1.0 - dx, p1.1), p1], WEAK, 1.5, true));
                 } else {
                     let p0 = (ra.x as f32, ra.y as f32 + hy);
                     let p1 = (rb.right() as f32, rb.y as f32 + hy);
-                    let dx = ((p0.0 - p1.0).abs() * 0.5).max(GAP_X as f32 * 0.8);
+                    let dx = ((p0.0 - p1.0).abs() * 0.5).max(m.gap_x as f32 * 0.8);
                     edges.push(([p0, (p0.0 - dx, p0.1), (p1.0 + dx, p1.1), p1], ORANGE, 1.5, true));
                 }
             }
@@ -602,7 +610,7 @@ impl App {
             let rb = rect_of(&self.graph, child);
             let p0 = edge_out(&self.graph, parent, &self.idx.sym(child.0).name);
             let p1 = (rb.x as f32, rb.y as f32 + hy);
-            let dx = ((p1.0 - p0.0).abs() * 0.5).max(GAP_X as f32 * 0.8);
+            let dx = ((p1.0 - p0.0).abs() * 0.5).max(m.gap_x as f32 * 0.8);
             edges.push(([p0, (p0.0 + dx, p0.1), (p1.0 - dx, p1.1), p1], step_color, 3.0, true));
         }
         self.graph.hits = hits.into_iter().map(|(r, h)| (r.intersect(&canvas), h)).collect();

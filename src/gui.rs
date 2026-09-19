@@ -1584,6 +1584,11 @@ impl gfx::App for App {
         // first frames have settled, and the app quits. CODEMAP_SHOT_TAB picks the centre tab.
         if let Some((path, frame)) = self.shot.as_mut() {
             *frame += 1;
+            if *frame == 6 {
+                if let Some(n) = std::env::var("CODEMAP_SHOT_SCROLL").ok().and_then(|v| v.parse::<i32>().ok()) {
+                    self.scrolls.insert(ui::id("document"), n);
+                }
+            }
             if *frame == 3 {
                 self.tab = match std::env::var("CODEMAP_SHOT_TAB").as_deref() {
                     Ok("graph") => Tab::Graph,

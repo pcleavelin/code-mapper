@@ -96,6 +96,20 @@ impl Input {
     }
 }
 
+pub const SCROLLBAR_W: i32 = 8;
+
+/// The track and thumb of a scrollbar for a clipped element, or None when it all fits.
+pub fn scrollbar(r: Rect, content_h: i32, scroll: i32) -> Option<(Rect, Rect)> {
+    if content_h <= r.h || r.h <= 0 {
+        return None;
+    }
+    let track = Rect::new(r.right() - SCROLLBAR_W, r.y, SCROLLBAR_W, r.h);
+    let th = ((r.h as i64 * r.h as i64) / content_h as i64).max(20) as i32;
+    let max = (content_h - r.h).max(1);
+    let ty = r.y + ((scroll.clamp(0, max) as i64 * (r.h - th) as i64) / max as i64) as i32;
+    Some((track, Rect::new(track.x, ty, SCROLLBAR_W, th)))
+}
+
 /// What the renderer knows about fonts.
 pub trait Measure {
     /// (cell width, row height) at `px`.
@@ -271,6 +285,7 @@ pub struct Ui {
     hot: Option<Id>,
     active: Option<Id>,
     last_mouse: (i32, i32),
+    scroll_drag: Option<(Id, i32)>, // a scrollbar thumb being dragged, and where in it the mouse grabbed
     pub input: InputView,
     pub size: (i32, i32),
 }
@@ -378,14 +393,36 @@ impl Ui {
 
     /// Scroll `offset` by the wheel when the element with `id` is hovered, clamped to what it
     /// showed last frame. Returns the clamped offset to build the element with.
-    pub fn scroll_by_wheel(&self, id: Id, offset: &mut i32) -> i32 {
-        if self.hot == Some(id) || self.prev.get(&id).is_some_and(|(r, c, _)| r.contains(self.input.mouse.0, self.input.mouse.1) && c.contains(self.input.mouse.0, self.input.mouse.1)) {
+    pub fn scroll_by_wheel(&mut self, id: Id, offset: &mut i32) -> i32 {
+        let (mx, my) = self.input.mouse;
+        let inside = self.prev.get(&id).is_some_and(|(r, c, _)| r.contains(mx, my) && c.contains(mx, my));
+        if self.hot == Some(id) || inside {
             *offset -= self.input.wheel.1 as i32;
         }
+        // the scrollbar: press on the thumb and drag it, or click the track to jump
         if let Some((content, r)) = self.content_of(id) {
+            if let Some((track, thumb)) = scrollbar(r, content[1], *offset) {
+                let max = (content[1] - r.h).max(0);
+                if self.input.pressed[0] && inside && track.contains(mx, my) {
+                    if thumb.contains(mx, my) {
+                        self.scroll_drag = Some((id, my - thumb.y));
+                    } else {
+                        *offset = ((my - r.y) as i64 * content[1] as i64 / r.h.max(1) as i64) as i32 - r.h / 2;
+                    }
+                }
+                if let Some((did, grab)) = self.scroll_drag {
+                    if did == id && self.input.down[0] {
+                        let span = (r.h - thumb.h).max(1);
+                        *offset = ((my - grab - r.y) as i64 * max as i64 / span as i64) as i32;
+                    }
+                }
+            }
             *offset = (*offset).min((content[1] - r.h).max(0)).max(0);
         } else {
             *offset = (*offset).max(0);
+        }
+        if !self.input.down[0] {
+            self.scroll_drag = None;
         }
         *offset
     }
@@ -531,7 +568,7 @@ impl Ui {
         let screen = Rect::new(0, 0, win[0], win[1]);
         for i in 0..n {
             let (pos, clip) = match self.els[i].parent {
-                None => ([0, 0], screen),
+                None => (self.els[i].layout.floating.map_or([0, 0], |(x, y)| [x, y]), screen),
                 Some(p) => {
                     let pe = &self.els[p];
                     let clip = if pe.layout.clip { pe.clip.intersect(&pe.rect) } else { pe.clip };
@@ -655,6 +692,18 @@ impl Ui {
                     gfx.rect(Rect::new(r.x, r.bottom() - 1, r.w, 1), c);
                 }
                 gfx.pop_clip();
+            }
+            // scrollbars over this layer's clipped elements
+            for (l, e) in layers.iter() {
+                if *l != layer || !e.layout.clip {
+                    continue;
+                }
+                if let Some((track, thumb)) = scrollbar(e.rect, e.content[1], e.layout.scroll.1) {
+                    gfx.push_clip(e.clip);
+                    gfx.rect(track, [0, 0, 0, 60]);
+                    gfx.rect(thumb.shrink(1), [140, 140, 148, 150]);
+                    gfx.pop_clip();
+                }
             }
         }
     }

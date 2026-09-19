@@ -75,6 +75,8 @@ pub enum Command {
     /// <name> <index> <under>          move a step (with its subtree) under step `under` (-1 = root)
     #[command(allow_negative_numbers = true)]
     PathMove { name: String, index: usize, under: i64 },
+    /// <name> <a> <b>                  swap two steps' places in the list, which orders siblings when the code does not
+    PathSwap { name: String, a: usize, b: usize },
     /// <name> [index]                   delete a step (its children move up) or the whole path
     PathRm { name: String, index: Option<usize> },
     /// <symbol> [depth] [name]          create a path shaped like a symbol's call tree (default depth 1, named after the symbol)
@@ -319,6 +321,15 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
             }
             dirty = true;
         }
+        Command::PathSwap { name, a, b } => {
+            let pi = find_path(map, &name)?;
+            let n = map.paths[pi].anchors.len();
+            if a >= n || b >= n {
+                return Err("no such step".into());
+            }
+            map.swap_anchors(pi, a, b);
+            dirty = true;
+        }
         Command::PathMove { name, index, under } => {
             let pi = find_path(map, &name)?;
             if index >= map.paths[pi].anchors.len() {
@@ -365,6 +376,12 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
                     p!(out, "{}[{i}] {} {}", path.name, where_is(idx, a), a.symbol);
                     if let Some((ls, le)) = idx.find_file(&a.file).and_then(|fi| moved_to(&idx.files[fi], a)) {
                         p!(out, "  same text at {}:{}-{}   path-pin {} {i} {} {} {}", a.file, ls + 1, le + 1, path.name, a.file, ls + 1, le + 1);
+                    } else if a.sym.is_none() && !a.symbol.is_empty() {
+                        // the symbol is gone from its file: the same name elsewhere is the likely home
+                        for r in idx.find_symbols(&a.symbol) {
+                            let (s, f) = (idx.sym(r), &idx.files[r.file]);
+                            p!(out, "  same name at {}:{}-{}   path-pin {} {i} {} {} {}", f.path, s.start + 1, s.end + 1, path.name, f.path, s.start + 1, s.end + 1);
+                        }
                     }
                 }
             }
@@ -535,21 +552,29 @@ fn find_symbols(idx: &Index, name: &str) -> Result<Vec<SymRef>, String> {
 fn find_symbol(idx: &Index, name: &str) -> Result<SymRef, String> {
     let found = find_symbols(idx, name)?;
     if found.len() > 1 {
-        let bare = name.rsplit([':']).next().unwrap_or(name);
-        let list: Vec<String> = found
-            .iter()
-            .map(|&r| {
-                let (s, f) = (idx.sym(r), &idx.files[r.file]);
-                let qualified = match &s.owner {
-                    Some(o) => format!("{o}::{bare}"),
-                    None => format!("{}:{bare}", f.stem()),
-                };
-                format!("{qualified:<40} {}", describe(idx, r))
-            })
-            .collect();
+        let list: Vec<String> = found.iter().map(|&r| format!("{:<40} {}", unique_name(idx, r), describe(idx, r))).collect();
         return Err(format!("ambiguous: {name}; use one of\n  {}", list.join("\n  ")));
     }
     Ok(found[0])
+}
+
+/// The shortest qualified name that selects exactly `r`: `Owner::name`, `stem:name`,
+/// `stem:Owner::name`, or the full path forms.
+pub fn unique_name(idx: &Index, r: SymRef) -> String {
+    let (s, f) = (idx.sym(r), &idx.files[r.file]);
+    let mut tries = Vec::new();
+    if let Some(o) = &s.owner {
+        tries.push(format!("{o}::{}", s.name));
+    }
+    tries.push(format!("{}:{}", f.stem(), s.name));
+    if let Some(o) = &s.owner {
+        tries.push(format!("{}:{o}::{}", f.stem(), s.name));
+    }
+    tries.push(format!("{}:{}", f.path, s.name));
+    if let Some(o) = &s.owner {
+        tries.push(format!("{}:{o}::{}", f.path, s.name));
+    }
+    tries.into_iter().find(|t| idx.find_symbols(t) == [r]).unwrap_or_else(|| describe(idx, r))
 }
 
 fn find_path(map: &Map, name: &str) -> Result<usize, String> {

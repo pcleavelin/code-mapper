@@ -154,7 +154,7 @@ impl Map {
                 b.extend_from_slice(&a.parent.to_le_bytes());
             }
         }
-        std::fs::write(path, b)
+        write_retry(path, &b)
     }
 
     pub fn load(path: &Path) -> Option<Map> {
@@ -241,7 +241,8 @@ impl Map {
         self.paths.iter().flat_map(|p| &p.anchors).any(|a| !a.stale && a.file == file && a.line_start <= end && start <= a.line_end)
     }
 
-    /// Append a step under `parent` (-1 = root). Returns its index.
+    /// Append a step under `parent`; -1, or an index the path does not have, makes a root. The
+    /// CLI rejects an out-of-range parent before calling this. Returns the new index.
     pub fn add_anchor(&mut self, idx: &Index, pi: usize, fi: usize, ls: usize, le: usize, author: Author, parent: i32) -> usize {
         let mut a = Anchor::new(&idx.files[fi], ls, le);
         a.author = author;
@@ -284,6 +285,17 @@ impl Map {
             Some(a) if !a.symbol.is_empty() => a.symbol.clone(),
             Some(a) => format!("{}:{}", a.file, a.line_start + 1),
             None => "top level".into(),
+        }
+    }
+
+    /// Swap two steps in list order, which is what orders siblings that nothing else orders,
+    /// keeping every parent link pointing at the same step.
+    pub fn swap_anchors(&mut self, pi: usize, a: usize, b: usize) {
+        let p = &mut self.paths[pi];
+        p.anchors.swap(a, b);
+        let (a, b) = (a as i32, b as i32);
+        for x in &mut p.anchors {
+            x.parent = if x.parent == a { b } else if x.parent == b { a } else { x.parent };
         }
     }
 
@@ -446,6 +458,23 @@ impl Map {
             }
         }
     }
+}
+
+/// `fs::write` that retries when the OS refuses the file for a moment (Windows reports
+/// error 1224 or 32 while another process, or a scanner, has it mapped or open).
+pub fn write_retry(path: &Path, data: &[u8]) -> std::io::Result<()> {
+    let mut last = None;
+    for _ in 0..6 {
+        match std::fs::write(path, data) {
+            Ok(()) => return Ok(()),
+            Err(e) if matches!(e.raw_os_error(), Some(1224) | Some(32) | Some(5)) => {
+                std::thread::sleep(std::time::Duration::from_millis(40));
+                last = Some(e);
+            }
+            Err(e) => return Err(e),
+        }
+    }
+    Err(last.unwrap())
 }
 
 // ---- anchoring --------------------------------------------------------------------
