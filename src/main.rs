@@ -1885,6 +1885,7 @@ impl App {
         // exactly the panel's height: a resizable panel remembers its content height, and a
         // shorter content would shrink it a little every frame.
         ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
+            ui.add_space(4.0); // the text box's frame hangs a pixel below its row; keep it inside the panel
             ui.horizontal(|ui| {
                 ui.monospace(">");
                 let resp = ui.add(egui::TextEdit::singleline(&mut self.cmd).desired_width(f32::INFINITY).font(TextStyle::Monospace));
