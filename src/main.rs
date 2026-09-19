@@ -5,7 +5,7 @@ mod map;
 
 use eframe::egui::{self, Align2, Color32, FontId, Key, Modifiers, Sense, Stroke, TextStyle, pos2, text::LayoutJob, vec2};
 use index::{Index, ServerFile, Span, SymRef};
-use map::{Author, Kind, Map};
+use map::{Author, Change, Kind, Map, PathDiff, StepChange};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{Receiver, channel};
@@ -14,6 +14,7 @@ use std::time::{Duration, Instant, SystemTime};
 #[derive(PartialEq, Clone, Copy)]
 enum Tab {
     Path,
+    Diff,
     Graph,
     Listing,
     Results,
@@ -395,6 +396,8 @@ struct App {
     backend_progress: String,
     restart_backend: bool, // the index changed while a server thread ran: run again when it ends
     map: Map,
+    base: Option<Map>,                       // the map at the parent revision, for the diff
+    base_rx: Option<Receiver<Option<Map>>>, // jj is being asked for it
     map_path: PathBuf,
     map_mtime: Option<SystemTime>,
     dirty: bool,
@@ -448,6 +451,8 @@ impl App {
             backend_progress: String::new(),
             restart_backend: false,
             map,
+            base: None,
+            base_rx: None,
             map_mtime: mtime(&map_path),
             map_path,
             dirty: false,
@@ -476,7 +481,30 @@ impl App {
             app.focus(r);
         }
         app.start_backend();
+        app.load_base();
         app
+    }
+
+    /// Ask jj for the parent revision's map on a thread; `poll_base` picks it up.
+    fn load_base(&mut self) {
+        let root = self.idx.root.clone();
+        let (tx, rx) = channel();
+        std::thread::spawn(move || {
+            let _ = tx.send(Map::base_from_vcs(&root));
+        });
+        self.base_rx = Some(rx);
+    }
+
+    fn poll_base(&mut self) {
+        if let Some(base) = self.base_rx.as_ref().and_then(|rx| rx.try_recv().ok()) {
+            self.base = base;
+            self.base_rx = None;
+        }
+    }
+
+    /// The working map against the parent revision's, when that is known.
+    fn diffs(&self) -> Vec<PathDiff> {
+        self.base.as_ref().map(|b| self.map.diff(b)).unwrap_or_default()
     }
 
     /// Ask every pending language's server on a thread; answers arrive through `poll_backend`.
@@ -732,6 +760,7 @@ impl App {
                     self.sel_path = None;
                 }
                 self.refresh_graph();
+                self.load_base();
                 self.status = "map reloaded (changed on disk)".into();
             }
         }
@@ -829,12 +858,20 @@ impl App {
             ui.strong(format!("Paths ({})", self.map.paths.len()));
             ui.weak("click to read");
         });
+        let diffs = self.diffs();
         egui::ScrollArea::vertical().id_salt("paths").auto_shrink(false).show(ui, |ui| {
             for (pi, p) in self.map.paths.iter().enumerate() {
                 let stale = p.anchors.iter().filter(|a| a.stale).count();
-                let mut text = egui::RichText::new(format!("{} [{}]{}  {} steps", p.name, p.kind.name(), p.author.tag(), p.anchors.len()));
+                let mark = match diffs.iter().find(|d| d.name == p.name).map(|d| d.change) {
+                    Some(Change::Added) => "+ ",
+                    Some(Change::Changed) => "~ ",
+                    _ => "",
+                };
+                let mut text = egui::RichText::new(format!("{mark}{} [{}]{}  {} steps", p.name, p.kind.name(), p.author.tag(), p.anchors.len()));
                 if stale > 0 {
                     text = text.color(Color32::LIGHT_RED);
+                } else if !mark.is_empty() {
+                    text = text.color(Color32::LIGHT_GREEN);
                 }
                 let resp = ui.selectable_label(self.sel_path == Some(pi), text);
                 if resp.clicked() {
@@ -846,6 +883,83 @@ impl App {
                 if let Some(first) = p.note.lines().next() {
                     ui.indent(pi, |ui| ui.weak(first));
                 }
+            }
+            for d in diffs.iter().filter(|d| d.change == Change::Removed) {
+                ui.weak(format!("- {}  (removed, {} steps)", d.name, d.removed.len()));
+            }
+        });
+        action
+    }
+
+    /// The map against the parent revision's: what an agent session changed.
+    fn diff_view(&mut self, ui: &mut egui::Ui) -> Option<Action> {
+        let mut action = None;
+        ui.horizontal(|ui| {
+            ui.strong("Changes against the parent revision");
+            ui.weak("jj file show -r @- .codemap");
+            if ui.small_button("refresh").clicked() {
+                self.load_base();
+            }
+        });
+        ui.separator();
+        if self.base.is_none() {
+            ui.weak(if self.base_rx.is_some() { "asking jj..." } else { "no map in the parent revision: this needs a jj repo with a committed .codemap" });
+            return None;
+        }
+        let diffs = self.diffs();
+        if diffs.iter().all(|d| d.change == Change::Same) {
+            ui.weak("no changes");
+            return None;
+        }
+        egui::ScrollArea::vertical().id_salt("diff").auto_shrink(false).show(ui, |ui| {
+            for d in &diffs {
+                let (mark, color) = match d.change {
+                    Change::Same => continue,
+                    Change::Added => ("+", Color32::LIGHT_GREEN),
+                    Change::Removed => ("-", Color32::LIGHT_RED),
+                    Change::Changed => ("~", Color32::LIGHT_GREEN),
+                };
+                let summary = match d.change {
+                    Change::Added => format!("{} steps", d.steps.len()),
+                    Change::Removed => format!("{} steps", d.removed.len()),
+                    _ => {
+                        let count = |c: StepChange| d.steps.iter().filter(|s| **s == Some(c)).count();
+                        let mut parts = Vec::new();
+                        for (n, what) in [(count(StepChange::Added), "new"), (d.removed.len(), "removed"), (count(StepChange::Repinned), "re-pinned"), (count(StepChange::NoteEdited), "note edited")] {
+                            if n > 0 {
+                                parts.push(format!("{n} {what}"));
+                            }
+                        }
+                        if d.note_changed {
+                            parts.push("path note or kind changed".into());
+                        }
+                        parts.join(", ")
+                    }
+                };
+                let text = egui::RichText::new(format!("{mark} {}   {summary}", d.name)).color(color).strong();
+                match self.map.find(&d.name) {
+                    Some(pi) => {
+                        if ui.selectable_label(false, text).on_hover_text("read it").clicked() {
+                            action = Some(Action::SelectPath(pi));
+                        }
+                    }
+                    None => {
+                        ui.label(text);
+                    }
+                }
+                ui.indent(&d.name, |ui| {
+                    if let Some(pi) = self.map.find(&d.name).filter(|_| d.change == Change::Changed) {
+                        for (i, c) in d.steps.iter().enumerate() {
+                            if let Some(c) = c {
+                                let a = &self.map.paths[pi].anchors[i];
+                                ui.weak(format!("{} [{i}] {} {}:{}-{}  {}", if *c == StepChange::Added { "+" } else { "~" }, a.symbol, a.file, a.line_start + 1, a.line_end + 1, c.tag()));
+                            }
+                        }
+                    }
+                    for a in &d.removed {
+                        ui.weak(format!("- {} {} (removed)", a.file, a.symbol));
+                    }
+                });
             }
         });
         action
@@ -925,10 +1039,16 @@ impl App {
         let font = TextStyle::Monospace.resolve(ui.style());
         let row_h = ui.text_style_height(&TextStyle::Monospace);
         let ctrl = ui.input(|i| i.modifiers.command);
+        let diff = self.diffs().into_iter().find(|d| d.name == self.map.paths[pi].name);
         ui.horizontal(|ui| {
             let p = &self.map.paths[pi];
             ui.heading(&p.name);
             ui.weak(format!("[{}]{}  {} steps", p.kind.name(), p.author.tag(), p.anchors.len()));
+            match diff.as_ref().map(|d| d.change) {
+                Some(Change::Added) => ui.colored_label(Color32::LIGHT_GREEN, "new since the parent revision"),
+                Some(Change::Changed) => ui.colored_label(Color32::LIGHT_GREEN, "changed since the parent revision"),
+                _ => ui.label(""),
+            };
             if ui.small_button("graph").on_hover_text("show this path as a tree in the graph").clicked() {
                 action = Some(Action::ShowPath(pi));
             }
@@ -970,6 +1090,9 @@ impl App {
                     if ui.selectable_label(self.sel_anchor == Some(ai), text).clicked() {
                         action = Some(Action::SelectStep(pi, ai));
                     }
+                    if let Some(c) = diff.as_ref().filter(|d| d.change == Change::Changed).and_then(|d| d.steps.get(ai).copied().flatten()) {
+                        ui.colored_label(Color32::LIGHT_GREEN, c.tag());
+                    }
                     if sym.is_some_and(|s| s != (ls, le)) {
                         let whole = self.expanded_steps.contains(&(pi, ai));
                         if ui.small_button(if whole { "slice" } else { "whole symbol" }).clicked() {
@@ -1001,6 +1124,13 @@ impl App {
                     }
                 }
                 ui.add_space(10.0);
+            }
+            if let Some(d) = diff.as_ref().filter(|d| !d.removed.is_empty()) {
+                ui.separator();
+                ui.weak("steps removed since the parent revision:");
+                for a in &d.removed {
+                    ui.weak(format!("- {} {}{}", a.file, a.symbol, if a.note.is_empty() { String::new() } else { format!("  -- {}", a.note) }));
+                }
             }
         });
         action
@@ -1423,6 +1553,7 @@ impl eframe::App for App {
         self.metrics = ctx.fonts_mut(|f| Metrics { line_h: f.row_height(&mono), char_w: f.glyph_width(&mono, 'M') });
         ctx.request_repaint_after(if self.backend.is_some() { Duration::from_millis(100) } else { Duration::from_secs(1) }); // keep polling while idle
         self.poll_backend();
+        self.poll_base();
         self.poll_disk();
 
         egui::TopBottomPanel::top("bar").show(ctx, |ui| {
@@ -1434,6 +1565,7 @@ impl eframe::App for App {
                 }
                 ui.separator();
                 ui.selectable_value(&mut self.tab, Tab::Path, "Path");
+                ui.selectable_value(&mut self.tab, Tab::Diff, "Diff");
                 ui.selectable_value(&mut self.tab, Tab::Graph, "Graph");
                 ui.selectable_value(&mut self.tab, Tab::Listing, "Listing");
                 ui.selectable_value(&mut self.tab, Tab::Results, format!("Results ({})", self.results.len()));
@@ -1486,6 +1618,7 @@ impl eframe::App for App {
         });
         egui::CentralPanel::default().show(ctx, |ui| match self.tab {
             Tab::Path => action = self.path_document(ui).or(action.take()),
+            Tab::Diff => action = self.diff_view(ui).or(action.take()),
             Tab::Graph => action = self.graph_view(ui).or(action.take()),
             Tab::Listing => self.listing(ui),
             Tab::Results => self.results_view(ui),

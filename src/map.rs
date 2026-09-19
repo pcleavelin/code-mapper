@@ -56,6 +56,7 @@ impl Kind {
 /// survives edits elsewhere in the file. `symbol == ""` means absolute lines. `hash` detects when
 /// the anchored text itself changed (-> stale). `parent` makes a path a tree: the step this one
 /// is reached from, or -1 for a root.
+#[derive(Clone)]
 pub struct Anchor {
     pub file: String,
     pub symbol: String,
@@ -83,6 +84,40 @@ pub struct PathDef {
 #[derive(Default)]
 pub struct Map {
     pub paths: Vec<PathDef>,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Change {
+    Same,
+    Added,
+    Removed,
+    Changed,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum StepChange {
+    Added,
+    Repinned,
+    NoteEdited,
+}
+
+impl StepChange {
+    pub fn tag(self) -> &'static str {
+        match self {
+            StepChange::Added => "new",
+            StepChange::Repinned => "re-pinned",
+            StepChange::NoteEdited => "note edited",
+        }
+    }
+}
+
+/// One path's difference against the parent revision's map.
+pub struct PathDiff {
+    pub name: String,
+    pub change: Change,
+    pub note_changed: bool,         // the path note or kind
+    pub steps: Vec<Option<StepChange>>, // per step of the working path
+    pub removed: Vec<Anchor>,       // base steps no longer present (unresolved)
 }
 
 // ---- binary file format ----------------------------------------------------------
@@ -122,8 +157,21 @@ impl Map {
     }
 
     pub fn load(path: &Path) -> Option<Map> {
-        let data = std::fs::read(path).ok()?;
-        let mut r = Reader { data: &data, off: 0 };
+        Map::from_bytes(&std::fs::read(path).ok()?)
+    }
+
+    /// The map as committed in the parent revision, by shelling out to jj. None when there is
+    /// no jj repo, no committed map, or it cannot be read.
+    pub fn base_from_vcs(root: &Path) -> Option<Map> {
+        let out = std::process::Command::new("jj").args(["file", "show", "-r", "@-", ".codemap"]).current_dir(root).output().ok()?;
+        if !out.status.success() {
+            return None;
+        }
+        Map::from_bytes(&out.stdout)
+    }
+
+    pub fn from_bytes(data: &[u8]) -> Option<Map> {
+        let mut r = Reader { data, off: 0 };
         if r.bytes(4)? != MAGIC {
             return None;
         }
@@ -270,6 +318,48 @@ impl Map {
             stack.push(ai as i32);
         }
         pi
+    }
+
+    /// This map against `base`: every path in either, in this map's order then the removed
+    /// ones. Steps match by (file, symbol) (by start line when there is no symbol); a match
+    /// with different lines or text is re-pinned, one with a different note is edited.
+    pub fn diff(&self, base: &Map) -> Vec<PathDiff> {
+        let mut out = Vec::new();
+        for p in &self.paths {
+            let Some(b) = base.paths.iter().find(|b| b.name == p.name) else {
+                out.push(PathDiff { name: p.name.clone(), change: Change::Added, note_changed: false, steps: vec![Some(StepChange::Added); p.anchors.len()], removed: Vec::new() });
+                continue;
+            };
+            let mut used = vec![false; b.anchors.len()];
+            let same_place = |a: &Anchor, x: &Anchor| a.file == x.file && a.symbol == x.symbol && (!a.symbol.is_empty() || a.off_start == x.off_start);
+            let steps: Vec<Option<StepChange>> = p
+                .anchors
+                .iter()
+                .map(|a| {
+                    let exact = b.anchors.iter().enumerate().position(|(i, x)| !used[i] && same_place(a, x) && (x.off_start, x.off_end, x.hash) == (a.off_start, a.off_end, a.hash));
+                    let Some(bi) = exact.or_else(|| b.anchors.iter().enumerate().position(|(i, x)| !used[i] && same_place(a, x))) else {
+                        return Some(StepChange::Added);
+                    };
+                    used[bi] = true;
+                    let x = &b.anchors[bi];
+                    if exact.is_none() {
+                        Some(StepChange::Repinned)
+                    } else if x.note != a.note {
+                        Some(StepChange::NoteEdited)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            let removed: Vec<Anchor> = b.anchors.iter().zip(&used).filter(|(_, u)| !**u).map(|(a, _)| a.clone()).collect();
+            let note_changed = p.note != b.note || p.kind != b.kind;
+            let change = if note_changed || !removed.is_empty() || steps.iter().any(Option::is_some) { Change::Changed } else { Change::Same };
+            out.push(PathDiff { name: p.name.clone(), change, note_changed, steps, removed });
+        }
+        for b in base.paths.iter().filter(|b| self.find(&b.name).is_none()) {
+            out.push(PathDiff { name: b.name.clone(), change: Change::Removed, note_changed: false, steps: Vec::new(), removed: b.anchors.clone() });
+        }
+        out
     }
 
     pub fn resolve_all(&mut self, idx: &Index) {

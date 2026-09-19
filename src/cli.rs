@@ -2,7 +2,7 @@
 //! and from the GUI's output panel. Output is plain lines, grep-style, written to a String.
 
 use crate::index::{Backend, File, Index, SymRef};
-use crate::map::{Anchor, Author, Kind, Map};
+use crate::map::{Anchor, Author, Change, Kind, Map, StepChange};
 use clap::{CommandFactory, Parser};
 use std::fmt::Write;
 
@@ -83,6 +83,8 @@ pub enum Command {
     Uncovered { filter: Option<String> },
     /// covered/total symbols per file
     Coverage,
+    /// the map against the parent revision's (jj file show -r @- .codemap)
+    Diff,
 }
 
 fn parse_kind(s: &str) -> Result<Kind, String> {
@@ -334,6 +336,37 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
             for (n, r) in list {
                 let s = idx.sym(r);
                 p!(out, "{}:{}-{} {} {} ({n} lines)", idx.files[r.file].path, s.start + 1, s.end + 1, s.kind, s.name);
+            }
+        }
+        Command::Diff => {
+            let base = Map::base_from_vcs(&idx.root).ok_or("no map in the parent revision (needs a jj repo with a committed .codemap)")?;
+            for d in map.diff(&base) {
+                match d.change {
+                    Change::Same => continue,
+                    Change::Added => {
+                        p!(out, "+ {} ({} steps)", d.name, d.steps.len());
+                    }
+                    Change::Removed => {
+                        p!(out, "- {} ({} steps)", d.name, d.removed.len());
+                    }
+                    Change::Changed => {
+                        p!(out, "~ {}{}", d.name, if d.note_changed { "  (note or kind changed)" } else { "" });
+                    }
+                }
+                if d.change == Change::Added || d.change == Change::Removed {
+                    continue;
+                }
+                let pi = find_path(map, &d.name)?;
+                for (i, c) in d.steps.iter().enumerate() {
+                    if let Some(c) = c {
+                        let a = &map.paths[pi].anchors[i];
+                        let mark = if *c == StepChange::Added { '+' } else { '~' };
+                        p!(out, "    {mark} [{i}] {} {}  {}", where_is(idx, a), a.symbol, c.tag());
+                    }
+                }
+                for a in &d.removed {
+                    p!(out, "    - {} {} (removed)", a.file, a.symbol);
+                }
             }
         }
         Command::Coverage => {
