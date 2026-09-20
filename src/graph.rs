@@ -246,12 +246,65 @@ impl Graph {
         self.manual.clear();
     }
 
+    /// A node's header runs and the buttons the header carries, left to right.
+    fn header(&self, idx: &Index, n: Node) -> (Vec<(String, Color)>, Vec<(Btn, String)>) {
+        let s = idx.sym(n.0);
+        let f = &idx.files[n.0.file];
+        let (lo, hi) = self.view[&n];
+        let (shown, total) = self.lines_shown(n);
+        let off_path = self.path_id.is_some() && !self.step.contains_key(&n);
+        let mut header = Vec::new();
+        if let Some((_, _, number)) = self.step.get(&n) {
+            header.push((format!("{number} "), GREEN));
+        }
+        header.push((s.name.clone(), TEXT));
+        if off_path {
+            header.push(("  off path".into(), WEAK));
+        }
+        let (rlo, rhi) = self.range[&n];
+        header.push((format!("  {}:{}-{}", f.path, rlo + 1, rhi + 1), WEAK));
+        let mut labels: Vec<(Btn, String)> = Vec::new();
+        if total > PREVIEW_LINES {
+            labels.push((Btn::Less, if shown < total { "more".into() } else { "less".into() }));
+        }
+        if !self.collapsed.contains(&n) {
+            if lo > 0 {
+                labels.push((Btn::Above, "▲".into()));
+            }
+            if hi + 1 < f.lines.len() {
+                labels.push((Btn::Below, "▼".into()));
+            }
+            if self.context.contains_key(&n) {
+                labels.push((Btn::NoContext, "no context".into()));
+            }
+        }
+        labels.push((Btn::Listing, "listing".into()));
+        let n_callees = self.callees_of(idx, n).len();
+        if n_callees > 0 {
+            labels.push((Btn::Callees, format!("callees > {n_callees}")));
+        }
+        if !s.callers.is_empty() {
+            labels.push((Btn::Callers, format!("{} < callers", s.callers.len())));
+        }
+        (header, labels)
+    }
+
+    /// Cells the header needs: its text, then every button with its padding and gap.
+    fn header_cols(&self, idx: &Index, n: Node) -> i32 {
+        let (header, labels) = self.header(idx, n);
+        let text: usize = header.iter().map(|(s, _)| s.chars().count()).sum();
+        let buttons: usize = labels.iter().map(|(_, l)| l.chars().count() + 3).sum();
+        (text + buttons + 2) as i32
+    }
+
+    /// A node is as wide as its longest shown line within limits, and never narrower than
+    /// its header, so the buttons always sit inside it.
     fn node_size(&self, idx: &Index, n: Node, m: Metrics) -> (i32, i32) {
         let (lo, _) = self.view[&n];
         let (shown, total) = self.lines_shown(n);
         let f = &idx.files[n.0.file];
         let longest = f.lines[lo..lo + shown].iter().map(|l| l.chars().count()).max().unwrap_or(0) as i32 + 6;
-        let cols = longest.clamp(MIN_COLS, MAX_COLS);
+        let cols = longest.clamp(MIN_COLS, MAX_COLS).max(self.header_cols(idx, n));
         let note_rows = i32::from(self.has_note.contains(&n));
         let rows = 1 + note_rows + shown as i32 + usize::from(shown < total) as i32;
         let _ = m;
@@ -576,48 +629,14 @@ impl App {
             let (lo, hi) = self.graph.view[&n];
             let (shown, total) = self.graph.lines_shown(n);
             let code = self.grid(n.0.file, lo, lo + shown - 1);
-            let s = self.idx.sym(n.0);
-            let f = &self.idx.files[n.0.file];
             let on_path = self.graph.step.contains_key(&n);
             let off_path = self.graph.path_id.is_some() && !on_path;
             let focused = focus_node == Some(n);
             let (border, border_w) = if focused { (ACCENT, 2) } else if on_path { (step_color, 2) } else { (BORDER, 1) };
             let node_hits_from = hits.len();
             let fill = if off_path { PANEL } else { FIELD };
-            let mut header = Vec::new();
-            if let Some((_, _, number)) = self.graph.step.get(&n) {
-                header.push((format!("{number} "), step_color));
-            }
-            header.push((s.name.clone(), TEXT));
-            if off_path {
-                header.push(("  off path".into(), WEAK));
-            }
-            let (rlo, rhi) = self.graph.range[&n];
-            header.push((format!("  {}:{}-{}", f.path, rlo + 1, rhi + 1), WEAK));
+            let (header, labels) = self.graph.header(&self.idx, n);
             // buttons, right-aligned in the header
-            let n_callees = self.graph.callees_of(&self.idx, n).len();
-            let mut labels: Vec<(Btn, String)> = Vec::new();
-            if total > PREVIEW_LINES {
-                labels.push((Btn::Less, if shown < total { "more".into() } else { "less".into() }));
-            }
-            if !self.graph.collapsed.contains(&n) {
-                if lo > 0 {
-                    labels.push((Btn::Above, "▲".into()));
-                }
-                if hi + 1 < f.lines.len() {
-                    labels.push((Btn::Below, "▼".into()));
-                }
-                if self.graph.context.contains_key(&n) {
-                    labels.push((Btn::NoContext, "no context".into()));
-                }
-            }
-            labels.push((Btn::Listing, "listing".into()));
-            if n_callees > 0 {
-                labels.push((Btn::Callees, format!("callees > {n_callees}")));
-            }
-            if !s.callers.is_empty() {
-                labels.push((Btn::Callers, format!("{} < callers", s.callers.len())));
-            }
             let mut buttons = Vec::new();
             let mut button_hits = Vec::new();
             let mut bx = rect.right() - m.pad;
@@ -645,6 +664,7 @@ impl App {
             let mut ordered = vec![(rect, Hit::Body(n)), (header_rect, Hit::Header(n))];
             ordered.extend(hits.drain(node_hits_from..));
             hits.extend(ordered);
+            let (rlo, rhi) = self.graph.range[&n];
             let slice = ((lo, hi) != (rlo, rhi)).then_some((rlo, rhi));
             nodes.push(SceneNode { rect, fill, border, border_w, header, buttons, note, code_top, code, lo, tinted, slice, more: (shown < total).then_some(total - shown) });
         }
