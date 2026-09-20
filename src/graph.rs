@@ -657,9 +657,11 @@ impl App {
                 hits.push((lr, Hit::Line(n, li)));
             }
             hits.extend(button_hits);
-            // the lines that call the nodes hanging off this one
-            let children: Vec<Node> = self.graph.nodes.iter().copied().filter(|c| self.graph.step_parent.get(c) == Some(&n) || self.graph.origin.get(c).is_some_and(|(o, callees)| *o == n && *callees)).collect();
-            let tinted: HashSet<usize> = children.iter().filter_map(|c| self.graph.call_line(&self.idx, n, &self.idx.sym(c.0).name)).filter(|&li| li < lo + shown).collect();
+            // the lines an edge leaves from: every node on the canvas this one calls, plus its
+            // child steps, whichever way either was revealed
+            let mut targets: Vec<SymRef> = self.graph.callees_of(&self.idx, n).into_iter().filter(|c| *c != n.0 && self.graph.by_sym.contains_key(c)).collect();
+            targets.extend(self.graph.step_parent.iter().filter(|(_, p)| **p == n).map(|(c, _)| c.0));
+            let tinted: HashSet<usize> = targets.iter().filter_map(|c| self.graph.call_line(&self.idx, n, &self.idx.sym(*c).name)).filter(|&li| li < lo + shown).collect();
             // later hits win: body, then the header, then lines, then the buttons
             let mut ordered = vec![(rect, Hit::Body(n)), (header_rect, Hit::Header(n))];
             ordered.extend(hits.drain(node_hits_from..));
