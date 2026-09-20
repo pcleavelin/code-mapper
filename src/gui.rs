@@ -6,11 +6,12 @@
 use crate::cli;
 use crate::gfx::{self, Color, Gfx, Rect};
 use crate::index::{self, Index, ServerFile, SymRef};
+use crate::lsp;
 use crate::map::{Author, Change, Kind as PathKind, Map, PathDiff, StepChange};
 use crate::ui::{self, Align, Id, Interaction, Key, Kind, Layout, Measure, Style, Text, Ui, BORDER_BOTTOM, BORDER_LEFT, BORDER_RIGHT, BORDER_TOP};
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::{Path, PathBuf};
-use std::sync::mpsc::{Receiver, channel};
+use std::sync::mpsc::{Receiver, Sender, TryRecvError, channel};
 use std::time::{Duration, Instant, SystemTime};
 
 // ---- theme ----
@@ -200,12 +201,137 @@ impl Field {
     }
 }
 
+/// A request to a language's server thread.
+enum Req {
+    Index(Vec<(String, u64)>),
+    Hover(Probe),
+    Def(Probe),
+}
+
+/// A position asked about: the file's path and text hash, so an answer for text that has
+/// since changed is never used, and the 0-based line and UTF-16 column of an identifier.
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+struct Probe {
+    path: String,
+    hash: u64,
+    line: u32,
+    col: u32,
+}
+
+/// A definition the server found: the file relative to the root when it is inside, the
+/// absolute path either way, the 0-based line, and the text around it read from disk
+/// (starting at `first`) for when the file is not indexed.
+struct Def {
+    rel: Option<String>,
+    abs: PathBuf,
+    line: usize,
+    first: usize,
+    around: Vec<String>,
+}
+
 /// What the language-server thread sends back.
 enum Msg {
     File(ServerFile),
     Progress(String),
     Failed(&'static index::Lang, String),
-    Done,
+    Done(&'static index::Lang),
+    Hover(Probe, Option<String>),
+    Def(Probe, Option<Def>),
+}
+
+/// Why a definition was asked for.
+#[derive(Clone, Copy, PartialEq, Debug)]
+enum Intent {
+    Jump,
+    Peek,
+}
+
+/// What a definition lookup landed on.
+enum Found {
+    Sym(SymRef),
+    Line(usize, usize), // (file, line): a definition inside a symbol, or in a file with none
+    Outside(PathBuf, usize, usize, Vec<String>), // path, line, first line of the text, the text
+}
+
+/// What the tooltip under the pointer shows.
+pub enum Tip {
+    Sym(SymRef),
+    Text(String),
+}
+
+/// What the peek panel shows.
+#[derive(Clone, Debug)]
+pub enum Peek {
+    Sym(SymRef),
+    Line(usize, usize),
+    Outside(PathBuf, usize, usize, Vec<String>),
+}
+
+/// Lines one press of a context button adds above or below a step's code.
+pub const CONTEXT_LINES: usize = 10;
+
+/// A language's server, alive on its own thread for the life of the window. It indexes the
+/// files it is sent a batch at a time and answers hover and definition requests between
+/// files, so the pointer never waits behind a batch.
+fn serve(root: PathBuf, lang: &'static index::Lang, rx: Receiver<Req>, tx: Sender<Msg>) {
+    let (mut c, abs) = match index::start_server(&root, lang) {
+        Ok(x) => x,
+        Err(e) => {
+            let _ = tx.send(Msg::Failed(lang, e));
+            return;
+        }
+    };
+    let mut queue: VecDeque<(String, u64)> = VecDeque::new();
+    let (mut n, mut done) = (0, 0);
+    loop {
+        let req = match rx.try_recv() {
+            Ok(r) => Some(r),
+            Err(TryRecvError::Empty) if queue.is_empty() => match rx.recv() {
+                Ok(r) => Some(r),
+                Err(_) => return,
+            },
+            Err(TryRecvError::Empty) => None,
+            Err(TryRecvError::Disconnected) => return,
+        };
+        match req {
+            Some(Req::Index(files)) => {
+                if queue.is_empty() {
+                    (n, done) = (0, 0);
+                }
+                n += files.len();
+                queue.extend(files);
+            }
+            Some(Req::Hover(p)) => {
+                let t = c.hover(&abs.join(&p.path), p.line, p.col);
+                let _ = tx.send(Msg::Hover(p, t));
+            }
+            Some(Req::Def(p)) => {
+                let d = c.definition(&abs.join(&p.path), p.line, p.col).map(|(path, line, _)| {
+                    let line = line as usize;
+                    let first = line.saturating_sub(6);
+                    let text = std::fs::read_to_string(&path).unwrap_or_default();
+                    let around = text.lines().skip(first).take(30).map(|l| l.replace('\t', "    ")).collect();
+                    Def { rel: lsp::relative(&path, &abs), abs: path, line, first, around }
+                });
+                let _ = tx.send(Msg::Def(p, d));
+            }
+            None => {
+                let Some((path, hash)) = queue.pop_front() else { continue };
+                let f = index::index_file(&mut c, &abs, &path, hash);
+                done += 1;
+                let _ = tx.send(Msg::Progress(format!("{}: {done}/{n}", lang.server)));
+                let _ = tx.send(Msg::File(f));
+                if queue.is_empty() {
+                    let _ = tx.send(Msg::Done(lang));
+                }
+            }
+        }
+    }
+}
+
+/// The UTF-16 column of char index `col` in `line`, which is how servers count.
+fn utf16_col(line: &str, col: usize) -> u32 {
+    line.chars().take(col).map(|c| c.len_utf16() as u32).sum()
 }
 
 /// A place in the centre panel, kept so the reader can go back and forward.
@@ -239,10 +365,11 @@ pub enum Action {
     DeleteStep(usize, usize),
     DeletePath(usize),
     GoTo(usize, usize),        // (file, line) in the listing
-    Jump(usize, usize, usize), // (file, line, column): to the definition of the identifier there
-    SelectLine(usize, bool),   // (line, extend) in the listing
-    Peek(SymRef),
+    Jump(usize, usize, usize),   // (file, line, column): to the definition of the identifier there
+    PeekAt(usize, usize, usize), // the same, pinned in the peek panel
+    SelectLine(usize, bool),     // (line, extend) in the listing
     ClosePeek,
+    Context(usize, usize, i8), // (path, step): more lines above (-1), below (1), or back to the slice (0)
     ToggleDir(String),
     Tab(Tab),
     Back,
@@ -258,9 +385,14 @@ fn mtime(p: &Path) -> Option<SystemTime> {
 
 pub struct App {
     pub idx: Index,
-    backend: Option<Receiver<Msg>>, // a server thread is running
+    servers: HashMap<&'static str, (Sender<Req>, Receiver<Msg>)>, // a live server thread per language, by server name
+    no_server: HashSet<&'static str>,                             // servers that failed to start: not tried again
+    indexing: HashSet<&'static str>,                              // servers with a batch of files in flight
     backend_progress: String,
-    restart_backend: bool, // the index changed while a server thread ran: run again when it ends
+    restart_backend: bool, // the index changed while a batch ran: send the next when it ends
+    hovers: HashMap<Probe, Option<Option<String>>>, // asked (None) or answered (Some: text or nothing)
+    asked: usize,                                    // hover and definition requests not yet answered
+    want_def: Option<(Probe, Intent)>,               // the definition lookup whose answer is awaited
     pub map: Map,
     base: Option<Map>,                       // the map at the parent revision, for the diff
     base_rx: Option<Receiver<Option<Map>>>, // jj is being asked for it
@@ -281,10 +413,11 @@ pub struct App {
     top_step: Option<usize>,             // the step whose header is topmost in the document viewport
 
     expanded_steps: HashSet<(usize, usize)>, // (path, step) showing the whole enclosing symbol
+    context: HashMap<(usize, usize), (usize, usize)>, // (path, step) -> extra lines shown above and below
     collapsed: HashSet<(usize, usize)>,      // (path, step) with its code hidden
     folded: HashSet<(usize, usize)>,         // (path, step) with its subtree hidden
     dir_toggled: HashSet<String>,            // directories in the Files tab whose default open state is flipped
-    peek: Option<SymRef>,                    // a definition pinned in the right panel
+    peek: Option<Peek>,                      // a definition pinned in the right panel
     history: Vec<Loc>,
     forward: Vec<Loc>,
     last_loc: Option<Loc>,
@@ -297,7 +430,8 @@ pub struct App {
     pub scrolls: HashMap<Id, i32>,
     pub actions: Vec<Action>,
     pub graph: crate::graph::Graph,
-    pub tooltip: Option<(SymRef, (i32, i32))>, // a definition to show at the pointer this frame
+    pub tooltip: Option<(Tip, (i32, i32))>, // what to show at the pointer this frame
+    pub tip_shown: Option<String>,         // the first line of last frame's tooltip, for dumps
 
     search: Field,
     new_path: Field,
@@ -325,9 +459,14 @@ impl App {
         let first_path = if map.paths.is_empty() { None } else { Some(0) };
         let mut app = App {
             idx,
-            backend: None,
+            servers: HashMap::new(),
+            no_server: HashSet::new(),
+            indexing: HashSet::new(),
             backend_progress: String::new(),
             restart_backend: false,
+            hovers: HashMap::new(),
+            asked: 0,
+            want_def: None,
             map,
             base: None,
             base_rx: None,
@@ -345,6 +484,7 @@ impl App {
             scroll_to_step: None,
             top_step: None,
             expanded_steps: HashSet::new(),
+            context: HashMap::new(),
             collapsed: HashSet::new(),
             folded: HashSet::new(),
             dir_toggled: HashSet::new(),
@@ -361,6 +501,7 @@ impl App {
             actions: Vec::new(),
             graph: crate::graph::Graph::new(),
             tooltip: None,
+            tip_shown: None,
             search: Field::default(),
             new_path: Field::default(),
             cmd: Field { focused: true, ..Default::default() },
@@ -404,51 +545,94 @@ impl App {
         self.base.as_ref().map(|b| self.map.diff(b)).unwrap_or_default()
     }
 
-    /// Ask every pending language's server on a thread; answers arrive through `poll_backend`.
+    /// The live server for a language, started on first use. None once it has failed to start.
+    fn server(&mut self, lang: &'static index::Lang) -> Option<&Sender<Req>> {
+        if self.no_server.contains(lang.server) {
+            return None;
+        }
+        if !self.servers.contains_key(lang.server) {
+            let (rtx, rrx) = channel();
+            let (mtx, mrx) = channel();
+            let root = self.idx.root.clone();
+            std::thread::spawn(move || serve(root, lang, rrx, mtx));
+            self.servers.insert(lang.server, (rtx, mrx));
+            self.status = format!("{}: starting", lang.server);
+        }
+        self.servers.get(lang.server).map(|(tx, _)| tx)
+    }
+
+    /// Send every pending language's files to its server; answers arrive through
+    /// `poll_backend`. A language whose server cannot start keeps the tree-sitter answer.
     fn start_backend(&mut self) {
-        if self.backend.is_some() {
+        if !self.indexing.is_empty() {
             self.restart_backend = true;
             return;
         }
-        let pending = self.idx.pending();
-        if pending.is_empty() {
-            return;
-        }
-        self.backend_progress = pending.iter().map(|(l, f)| format!("{}: 0/{}", l.server, f.len())).collect::<Vec<_>>().join("  ");
-        let root = self.idx.root.clone();
-        let (tx, rx) = channel();
-        std::thread::spawn(move || {
-            for (lang, files) in pending {
-                let n = files.len();
-                let mut done = 0;
-                let run = index::query_server(&root, lang, &files, |f| {
-                    done += 1;
-                    let _ = tx.send(Msg::Progress(format!("{}: {done}/{n}", lang.server)));
-                    let _ = tx.send(Msg::File(f));
-                });
-                if let Err(e) = run {
-                    let _ = tx.send(Msg::Failed(lang, e));
+        for (lang, files) in self.idx.pending() {
+            let n = files.len();
+            match self.server(lang) {
+                Some(tx) => {
+                    let _ = tx.send(Req::Index(files));
+                    self.indexing.insert(lang.server);
+                    self.backend_progress = format!("{}: 0/{n}", lang.server);
                 }
+                None => self.idx.give_up(lang),
             }
-            let _ = tx.send(Msg::Done);
-        });
-        self.backend = Some(rx);
+        }
     }
 
-    /// Merge whatever the server thread has answered since the last frame.
+    /// Merge whatever the server threads have answered since the last frame.
     fn poll_backend(&mut self) {
-        let Some(rx) = self.backend.take() else { return };
+        let mut msgs = Vec::new();
+        for (_, rx) in self.servers.values() {
+            while let Ok(m) = rx.try_recv() {
+                msgs.push(m);
+            }
+        }
         let mut files = Vec::new();
-        let mut done = false;
-        while let Ok(msg) = rx.try_recv() {
-            match msg {
+        let mut batch_ended = false;
+        for m in msgs {
+            match m {
                 Msg::File(f) => files.push(f),
                 Msg::Progress(p) => self.backend_progress = p,
                 Msg::Failed(lang, e) => {
+                    self.servers.remove(lang.server);
+                    self.no_server.insert(lang.server);
+                    self.indexing.remove(lang.server);
                     self.idx.give_up(lang);
-                    self.status = format!("{e}: {} files keep the tree-sitter resolver", lang.server);
+                    self.hovers.clear();
+                    self.asked = 0;
+                    self.want_def = None;
+                    self.status = format!("{e}: its files keep the tree-sitter resolver, no hover or go-to for them");
+                    batch_ended = true;
                 }
-                Msg::Done => done = true,
+                Msg::Done(lang) => {
+                    self.indexing.remove(lang.server);
+                    batch_ended = true;
+                }
+                Msg::Hover(p, t) => {
+                    self.asked = self.asked.saturating_sub(1);
+                    self.hovers.insert(p, Some(t));
+                }
+                Msg::Def(p, d) => {
+                    self.asked = self.asked.saturating_sub(1);
+                    if self.want_def.as_ref().is_some_and(|(w, _)| *w == p) {
+                        let (_, intent) = self.want_def.take().unwrap();
+                        match d {
+                            Some(d) => {
+                                let found = match d.rel.as_deref().and_then(|r| self.idx.find_file(r)) {
+                                    Some(fi) => match self.idx.by_line(&self.idx.files[fi].path, d.line).filter(|r| self.idx.sym(*r).start == d.line) {
+                                        Some(r) => Found::Sym(r),
+                                        None => Found::Line(fi, d.line),
+                                    },
+                                    None => Found::Outside(d.abs, d.line, d.first, d.around),
+                                };
+                                self.land(found, intent);
+                            }
+                            None => self.status = "no definition found".into(),
+                        }
+                    }
+                }
             }
         }
         if !files.is_empty() {
@@ -459,14 +643,12 @@ impl App {
                 app.idx.link();
             });
         }
-        if done {
+        if batch_ended && self.indexing.is_empty() {
             self.idx.save_cache();
             self.backend_progress.clear();
             if std::mem::take(&mut self.restart_backend) {
                 self.start_backend();
             }
-        } else {
-            self.backend = Some(rx);
         }
     }
 
@@ -508,9 +690,21 @@ impl App {
     fn with_index_change(&mut self, change: impl FnOnce(&mut App)) {
         let focus = self.focus.map(|r| self.idx.key(r));
         let cur_file = self.cur_file.map(|fi| self.idx.files[fi].path.clone());
-        let peek = self.peek.map(|r| self.idx.key(r));
+        let peek_sym = match self.peek {
+            Some(Peek::Sym(r)) => Some(self.idx.key(r)),
+            _ => None,
+        };
+        let peek_line = match &self.peek {
+            Some(Peek::Line(fi, li)) => Some((self.idx.files[*fi].path.clone(), *li)),
+            _ => None,
+        };
         change(self);
-        self.peek = peek.and_then(|k| self.idx.by_key(&k));
+        if let Some(k) = peek_sym {
+            self.peek = self.idx.by_key(&k).map(Peek::Sym);
+        } else if let Some((p, li)) = peek_line {
+            self.peek = self.idx.find_file(&p).map(|fi| Peek::Line(fi, li));
+        }
+        self.hovers.clear();
         self.map.resolve_all(&self.idx);
         self.focus = focus.and_then(|k| self.idx.by_key(&k));
         self.cur_file = cur_file.and_then(|p| self.idx.find_file(&p));
@@ -661,8 +855,8 @@ impl App {
         self.tab = Tab::Listing;
     }
 
-    /// The identifier at `col` of a line.
-    fn word_at(&self, fi: usize, li: usize, col: usize) -> Option<String> {
+    /// The identifier at `col` of a line, as (first column, text).
+    fn word_at(&self, fi: usize, li: usize, col: usize) -> Option<(usize, String)> {
         let chars: Vec<char> = self.idx.files[fi].lines.get(li)?.chars().collect();
         let is_id = |c: &char| c.is_alphanumeric() || *c == '_';
         if !chars.get(col).is_some_and(is_id) {
@@ -670,23 +864,90 @@ impl App {
         }
         let start = (0..col).rev().take_while(|&i| is_id(&chars[i])).last().unwrap_or(col);
         let end = (col..chars.len()).take_while(|&i| is_id(&chars[i])).last().unwrap_or(col);
-        Some(chars[start..=end].iter().collect())
+        Some((start, chars[start..=end].iter().collect()))
     }
 
-    /// The symbol the identifier at `col` names, if it is defined here: a definition that lists
-    /// this line among its references wins, then one in the same file, then any.
-    pub fn symbol_at(&self, fi: usize, li: usize, col: usize) -> Option<SymRef> {
-        let word = self.word_at(fi, li, col)?;
+    /// The position the language's server is asked about for the identifier at a column, when
+    /// there is a server for the file. Err(true) when the file has a grammar and names are
+    /// looked up in the index instead; Err(false) when nothing answers for it.
+    fn probe_for(&self, fi: usize, li: usize, col: usize) -> Result<(&'static index::Lang, Probe), bool> {
+        let f = &self.idx.files[fi];
+        match index::lang_for(&f.path).filter(|l| !self.no_server.contains(l.server)) {
+            Some(lang) => Ok((lang, Probe { path: f.path.clone(), hash: f.hash, line: li as u32, col: utf16_col(&f.lines[li], col) })),
+            None => Err(index::has_grammar(&f.path)),
+        }
+    }
+
+    /// What is known about the identifier at a position. A language with a live server is
+    /// asked once per position and answers a frame or more later; a language with only a
+    /// grammar answers with the symbol of that name; prose answers nothing.
+    pub fn probe(&mut self, fi: usize, li: usize, col: usize) -> Option<Tip> {
+        let (start, _) = self.word_at(fi, li, col)?;
+        match self.probe_for(fi, li, start) {
+            Ok((lang, p)) => match self.hovers.get(&p) {
+                Some(Some(t)) => t.clone().map(Tip::Text),
+                Some(None) => None,
+                None => {
+                    self.hovers.insert(p.clone(), None);
+                    if let Some(tx) = self.server(lang) {
+                        let _ = tx.send(Req::Hover(p));
+                        self.asked += 1;
+                    }
+                    None
+                }
+            },
+            Err(true) => self.symbol_at(fi, li, col).map(Tip::Sym),
+            Err(false) => None,
+        }
+    }
+
+    /// Look up where the identifier at a position is defined and act on it: the server
+    /// answers later through `poll_backend`, the index at once.
+    fn probe_def(&mut self, fi: usize, li: usize, col: usize, intent: Intent) {
+        let Some((start, word)) = self.word_at(fi, li, col) else { return };
+        match self.probe_for(fi, li, start) {
+            Ok((lang, p)) => {
+                if let Some(tx) = self.server(lang) {
+                    let _ = tx.send(Req::Def(p.clone()));
+                    self.asked += 1;
+                    self.want_def = Some((p, intent));
+                }
+            }
+            Err(true) => match self.symbol_at(fi, li, col) {
+                Some(r) => self.land(Found::Sym(r), intent),
+                None => self.status = format!("no definition of '{word}' in this repo"),
+            },
+            Err(false) => {}
+        }
+    }
+
+    /// Go to, or pin, what a definition lookup found.
+    fn land(&mut self, found: Found, intent: Intent) {
+        match (intent, found) {
+            (Intent::Jump, Found::Sym(r)) => {
+                self.select_symbol(r);
+                if self.tab != Tab::Graph {
+                    self.tab = Tab::Listing;
+                }
+            }
+            (Intent::Jump, Found::Line(fi, li)) => self.open_line(fi, li),
+            (Intent::Peek, Found::Sym(r)) => self.peek = Some(Peek::Sym(r)),
+            (Intent::Peek, Found::Line(fi, li)) => self.peek = Some(Peek::Line(fi, li)),
+            (_, Found::Outside(p, li, first, text)) => {
+                self.status = format!("defined outside the repo: {}:{}", p.display(), li + 1);
+                self.peek = Some(Peek::Outside(p, li, first, text));
+            }
+        }
+    }
+
+    /// The symbol the identifier at `col` names, by name: a definition that lists this line
+    /// among its references wins, then one in the same file, then any. For files whose
+    /// language has a grammar but no server.
+    fn symbol_at(&self, fi: usize, li: usize, col: usize) -> Option<SymRef> {
+        let (_, word) = self.word_at(fi, li, col)?;
         let cands = self.idx.find_symbols(&word);
         let here = (self.idx.files[fi].path.clone(), li as u32);
         cands.iter().copied().find(|r| self.idx.sym(*r).refs.contains(&here)).or_else(|| cands.iter().copied().find(|r| r.file == fi)).or_else(|| cands.first().copied())
-    }
-
-    fn jump_to(&mut self, fi: usize, li: usize, col: usize) {
-        match self.symbol_at(fi, li, col) {
-            Some(r) => self.select_symbol(r),
-            None => self.status = format!("no definition of '{}' in this repo", self.word_at(fi, li, col).unwrap_or_default()),
-        }
     }
 
     // ---- edits ----
@@ -831,10 +1092,18 @@ impl App {
                 self.dirty = true;
             }
             Action::GoTo(fi, line) => self.open_line(fi, line),
-            Action::Jump(fi, line, col) => {
-                self.jump_to(fi, line, col);
-                if self.tab != Tab::Graph {
-                    self.tab = Tab::Listing;
+            Action::Jump(fi, line, col) => self.probe_def(fi, line, col, Intent::Jump),
+            Action::PeekAt(fi, line, col) => self.probe_def(fi, line, col, Intent::Peek),
+            Action::Context(pi, ai, dir) => {
+                if dir == 0 {
+                    self.context.remove(&(pi, ai));
+                } else {
+                    let e = self.context.entry((pi, ai)).or_default();
+                    if dir < 0 {
+                        e.0 += CONTEXT_LINES;
+                    } else {
+                        e.1 += CONTEXT_LINES;
+                    }
                 }
             }
             Action::SelectLine(li, extend) => {
@@ -843,7 +1112,6 @@ impl App {
                     _ => Some((li, li)),
                 };
             }
-            Action::Peek(r) => self.peek = Some(r),
             Action::ClosePeek => self.peek = None,
             Action::ToggleDir(d) => {
                 if !self.dir_toggled.remove(&d) {
@@ -932,14 +1200,12 @@ impl App {
                 let col = (((self.ui.input.mouse.0 - rect.x) / self.cell.0.max(1)) as usize).saturating_sub(6);
                 let mods = self.ui.input.mods;
                 if it.clicked && mods.alt {
-                    if let Some(r) = self.symbol_at(fi, li, col) {
-                        self.actions.push(Action::Peek(r));
-                    }
+                    self.actions.push(Action::PeekAt(fi, li, col));
                 } else if it.double_clicked || (it.clicked && mods.ctrl) {
                     self.actions.push(Action::Jump(fi, li, col));
                 } else if !self.ui.input.down[0] {
-                    if let Some(r) = self.symbol_at(fi, li, col) {
-                        self.tooltip = Some((r, self.ui.input.mouse));
+                    if let Some(t) = self.probe(fi, li, col) {
+                        self.tooltip = Some((t, self.ui.input.mouse));
                     }
                 }
             }
@@ -1171,15 +1437,28 @@ impl App {
 
     fn xrefs_panel(&mut self, w: i32) {
         self.ui.open(Kind::None, Layout::col().w(w).grow_y(), Style::bg(PANEL).border(BORDER_LEFT, BORDER), None);
-        if let Some(r) = self.peek.filter(|r| r.file < self.idx.files.len() && r.sym < self.idx.files[r.file].symbols.len()) {
-            let s = self.idx.sym(r);
-            let (name, place, start, end) = (s.name.clone(), format!("{}:{}", self.idx.files[r.file].path, s.start + 1), s.start, s.end);
+        // the peek: a symbol's definition, a line inside one, or text from a file outside the repo
+        let peek = match self.peek.clone() {
+            Some(Peek::Sym(r)) if r.file < self.idx.files.len() && r.sym < self.idx.files[r.file].symbols.len() => {
+                let s = self.idx.sym(r);
+                Some((format!("Peek: {}", s.name), format!("{}:{}", self.idx.files[r.file].path, s.start + 1), Some(Action::Focus(r)), Ok((r.file, s.start, s.end, None))))
+            }
+            Some(Peek::Line(fi, li)) if fi < self.idx.files.len() => {
+                let last = self.idx.files[fi].lines.len().saturating_sub(1);
+                Some(("Peek".to_owned(), format!("{}:{}", self.idx.files[fi].path, li + 1), Some(Action::GoTo(fi, li)), Ok((fi, li.saturating_sub(6), (li + 20).min(last), Some(li)))))
+            }
+            Some(Peek::Outside(p, li, first, text)) => Some(("Peek (outside the repo)".to_owned(), format!("{}:{}", p.display(), li + 1), None, Err((first, li, text)))),
+            _ => None,
+        };
+        if let Some((title, place, go, body)) = peek {
             self.ui.open(Kind::None, Layout::row().grow_x().pad(4).gap(6).cross(Align::Center), Style::default(), None);
-            self.label(&format!("Peek: {name}"), TEXT);
+            self.label(&title, TEXT);
             self.label(&place, WEAK);
             self.ui.leaf(Kind::None, Layout::row().grow_x(), Style::default(), None);
-            if self.small_button("go", ui::id("peek-go")).clicked {
-                self.actions.push(Action::Focus(r));
+            if let Some(go) = go {
+                if self.small_button("go", ui::id("peek-go")).clicked {
+                    self.actions.push(go);
+                }
             }
             if self.small_button("x", ui::id("peek-x")).clicked {
                 self.actions.push(Action::ClosePeek);
@@ -1187,9 +1466,21 @@ impl App {
             self.ui.close();
             let h = (self.ui.size.1 / 3).max(100);
             self.scroll_open(ui::id("peek"), Layout::col().grow_x().h(h).pad(4), Style::bg(FIELD));
-            let end = end.min(self.idx.files[r.file].lines.len().saturating_sub(1));
-            for li in start..=end {
-                self.code_row(r.file, li, ui::id_n(ui::id("peekrow"), li), None);
+            match body {
+                Ok((fi, start, end, mark)) => {
+                    let end = end.min(self.idx.files[fi].lines.len().saturating_sub(1));
+                    for li in start..=end {
+                        self.code_row(fi, li, ui::id_n(ui::id("peekrow"), li), (mark == Some(li)).then_some(dim(SELECTED, 120)));
+                    }
+                }
+                Err((first, mark, around)) => {
+                    let px = self.px;
+                    for (k, l) in around.iter().enumerate() {
+                        let li = first + k;
+                        let t = format!("{:5} {l}", li + 1);
+                        self.ui.leaf(text(&t, px, TEXT), Layout::row().grow_x(), Style { bg: (li == mark).then_some(dim(SELECTED, 120)), ..Default::default() }, None);
+                    }
+                }
             }
             self.ui.close();
         }
@@ -1364,6 +1655,7 @@ impl App {
             let selected = self.sel_anchor == Some(ai);
             let folded = self.folded.contains(&(pi, ai));
             let collapsed = self.collapsed.contains(&(pi, ai));
+            let ctx = self.context.get(&(pi, ai)).copied().unwrap_or((0, 0));
             let kids = self.map.descendants(pi, ai);
             // header row
             self.ui.open(Kind::None, Layout::row().grow_x().gap(6).cross(Align::Center), Style { bg: None, border: if selected { BORDER_LEFT } else { 0 }, border_color: ACCENT }, None);
@@ -1398,6 +1690,9 @@ impl App {
                     self.actions.push(Action::ToggleStep(pi, ai));
                 }
             }
+            if ctx != (0, 0) && self.small_button("no context", ui::id_n(ui::id("ctx0"), ai)).clicked {
+                self.actions.push(Action::Context(pi, ai, 0));
+            }
             if self.small_button("delete", ui::id_n(ui::id("del"), ai)).clicked {
                 self.actions.push(Action::DeleteStep(pi, ai));
             }
@@ -1407,17 +1702,36 @@ impl App {
             self.ui.leaf(Kind::None, Layout::row().w(indent + 4 + 3 * self.cell.0), Style::default(), None);
             self.ui.leaf(wrapped(if anote.is_empty() { "(no note)" } else { &anote }, px, if anote.is_empty() { dim(WEAK, 120) } else { GREEN }), Layout::row().grow_x().pad(2), Style::default(), None);
             self.ui.close();
-            // code
+            // code: the slice, or the whole symbol, plus the context asked for above and below;
+            // the slice is highlighted whenever anything else shows
             if let (Some(fi), None, false) = (fi, gone, collapsed) {
                 let whole = self.expanded_steps.contains(&(pi, ai));
-                let (lo, hi) = if whole { sym.unwrap_or((ls, le)) } else { (ls, le) };
-                let hi = hi.min(self.idx.files[fi].lines.len().saturating_sub(1));
+                let (blo, bhi) = if whole { sym.unwrap_or((ls, le)) } else { (ls, le) };
+                let last = self.idx.files[fi].lines.len().saturating_sub(1);
+                let (lo, hi) = (blo.saturating_sub(ctx.0), (bhi + ctx.1).min(last));
+                let marked = (lo, hi) != (ls, le);
                 self.ui.open(Kind::None, Layout::col().grow_x(), Style { bg: None, border: if selected { BORDER_LEFT } else { 0 }, border_color: ACCENT }, None);
+                if lo > 0 {
+                    self.ui.open(Kind::None, Layout::row().grow_x(), Style::default(), None);
+                    self.ui.leaf(Kind::None, Layout::row().w(indent + 4), Style::default(), None);
+                    if self.small_button(&format!("▲ {CONTEXT_LINES} lines above"), ui::id_n(ui::id("ctx-a"), ai)).clicked {
+                        self.actions.push(Action::Context(pi, ai, -1));
+                    }
+                    self.ui.close();
+                }
                 for li in lo..=hi {
-                    let bg = if whole && li >= ls && li <= le { Some(dim(SELECTED, 120)) } else { None };
+                    let bg = if marked && li >= ls && li <= le { Some(dim(SELECTED, 120)) } else { None };
                     self.ui.open(Kind::None, Layout::row().grow_x(), Style::default(), None);
                     self.ui.leaf(Kind::None, Layout::row().w(indent + 4), Style::default(), None);
                     self.code_row(fi, li, ui::id_n(ui::id_n(ui::id("docrow"), ai), li), bg);
+                    self.ui.close();
+                }
+                if hi < last {
+                    self.ui.open(Kind::None, Layout::row().grow_x(), Style::default(), None);
+                    self.ui.leaf(Kind::None, Layout::row().w(indent + 4), Style::default(), None);
+                    if self.small_button(&format!("▼ {CONTEXT_LINES} lines below"), ui::id_n(ui::id("ctx-b"), ai)).clicked {
+                        self.actions.push(Action::Context(pi, ai, 1));
+                    }
                     self.ui.close();
                 }
                 self.ui.close();
@@ -1580,12 +1894,23 @@ enum Which {
 }
 
 impl gfx::App for App {
-    /// Script commands: `tab <path|graph|listing|diff|results>`, `scroll <panel> <n>`,
-    /// `shot <file.png>`, `dump` (state to stderr: selection, tab, scrolls, graph camera and
-    /// node rectangles, the canvas rectangle).
-    fn script(&mut self, line: &str) {
+    /// Script commands: `tab <path|graph|listing|diff|results>`, `open <file> [line]`, `scroll <panel> <n>`,
+    /// `idle` (waits until no server request is in flight), `shot <file.png>`, `rect <id> [n]`
+    /// (last frame's rectangle of an element by its id name), `dump` (state to stderr:
+    /// selection, tab, scrolls, tooltip, peek, graph camera, node and button rectangles, the
+    /// canvas rectangle).
+    fn script(&mut self, line: &str) -> bool {
         let w: Vec<&str> = line.split_whitespace().collect();
         match w[0] {
+            "idle" => return self.asked == 0 && self.indexing.is_empty() && self.base_rx.is_none(),
+            "rect" => {
+                let id = match (w.get(1), w.get(2).and_then(|v| v.parse::<usize>().ok())) {
+                    (Some(name), Some(n)) => ui::id_n(ui::id(name), n),
+                    (Some(name), None) => ui::id(name),
+                    _ => return true,
+                };
+                eprintln!("DUMP rect {} = {:?}", w[1..].join(" "), self.ui.interaction_of(id).rect);
+            }
             "tab" => {
                 self.tab = match w.get(1).copied() {
                     Some("graph") => Tab::Graph,
@@ -1601,6 +1926,11 @@ impl gfx::App for App {
                 }
             }
             "shot" => self.shot_next = w.get(1).map(PathBuf::from),
+            "open" => {
+                if let Some(fi) = w.get(1).and_then(|p| self.idx.find_file(p)) {
+                    self.open_line(fi, w.get(2).and_then(|v| v.parse().ok()).unwrap_or(0));
+                }
+            }
             "dump" => {
                 eprintln!("DUMP tab={:?} path={:?} step={:?} focus={:?} file={:?} sel={:?}", self.tab, self.sel_path, self.sel_anchor, self.focus.map(|r| self.idx.sym(r).name.clone()), self.cur_file.map(|f| self.idx.files[f].path.clone()), self.sel);
                 for name in ["document", "listing", "paths", "output"] {
@@ -1609,14 +1939,19 @@ impl gfx::App for App {
                         eprintln!("DUMP scroll {name} off={} rect={:?} content={:?}", self.scrolls.get(&id).copied().unwrap_or(0), r, c);
                     }
                 }
+                eprintln!("DUMP tip={:?} peek={:?} status={:?}", self.tip_shown, self.peek, self.status);
                 eprintln!("DUMP graph zoom={:.3} pan={:?} canvas={:?}", self.graph.zoom, self.graph.pan, self.ui.content_of(ui::id("graph-canvas")).map(|(_, r)| r));
                 eprintln!("DUMP input mouse={:?} down={:?} hot_is_canvas={} active_is_canvas={} drag={:?}", self.ui.input.mouse, self.ui.input.down, self.ui.hot() == Some(ui::id("graph-canvas")), self.ui.active() == Some(ui::id("graph-canvas")), self.graph.drag_state());
                 for (name, r) in self.graph.node_rects(&self.idx) {
                     eprintln!("DUMP node {name} rect={r:?}");
                 }
+                for (name, label, r) in self.graph.button_rects(&self.idx) {
+                    eprintln!("DUMP button {name} '{label}' rect={r:?}");
+                }
             }
             _ => eprintln!("script: unknown command '{line}'"),
         }
+        true
     }
 
     fn frame(&mut self, gfx: &mut Gfx, input: &mut ui::Input) -> gfx::Frame {
@@ -1712,7 +2047,7 @@ impl gfx::App for App {
             self.apply(a);
         }
         self.track_navigation();
-        let busy = self.backend.is_some() || self.base_rx.is_some() || self.shot.is_some();
+        let busy = !self.indexing.is_empty() || self.asked > 0 || self.base_rx.is_some() || self.shot.is_some();
         gfx::Frame { redraw_after: Some(if busy { Duration::from_millis(50) } else { Duration::from_millis(1000) }), quit, clear: BG }
     }
 }

@@ -646,8 +646,11 @@ pub struct Frame {
 
 pub trait App {
     fn frame(&mut self, gfx: &mut Gfx, input: &mut Input) -> Frame;
-    /// A line of a test script the loop did not understand: the app's own commands.
-    fn script(&mut self, _line: &str) {}
+    /// A line of a test script the loop did not understand: the app's own commands. False
+    /// means the line is not done yet and is run again next frame.
+    fn script(&mut self, _line: &str) -> bool {
+        true
+    }
 }
 
 /// A test script from `CODEMAP_SCRIPT=<file>`: one command per line, fed to the app as if the
@@ -763,7 +766,15 @@ impl<A: App> Runner<A> {
                     return false;
                 }
                 "quit" => return true,
-                _ => self.app.script(&line),
+                _ => {
+                    if !self.app.script(&line) {
+                        sc.pc -= 1;
+                        return false;
+                    }
+                    if line.starts_with("shot") {
+                        return false; // the screenshot is of the frame that follows, before the next command
+                    }
+                }
             }
         }
     }

@@ -1,6 +1,7 @@
 //! A minimal Language Server Protocol client: JSON-RPC over the server's stdio, synchronous
 //! requests, and just enough of the server-to-client traffic (progress, configuration,
-//! capability registration) to keep a server happy. Positions are 0-based like LSP's own.
+//! capability registration) to keep a server happy. Positions are 0-based like LSP's own;
+//! columns are UTF-16 units.
 
 use serde_json::{Value, json};
 use std::io::{BufRead, BufReader, Write};
@@ -67,15 +68,26 @@ fn percent_decode(s: &str) -> String {
     String::from_utf8_lossy(&out).into_owned()
 }
 
+/// The absolute path a `file:` URI names.
+pub fn uri_path(uri: &str) -> Option<PathBuf> {
+    let d = percent_decode(uri.strip_prefix("file://")?);
+    Some(PathBuf::from(if cfg!(windows) { d.trim_start_matches('/').to_owned() } else { d }))
+}
+
 /// Path relative to `root` (forward slashes) for a `file:` URI, or None when it lies outside.
-/// `root` must be absolute. Drive letters compare case-insensitively on Windows.
+/// `root` must be absolute.
 pub fn from_uri(uri: &str, root: &Path) -> Option<String> {
-    let decoded = percent_decode(uri.strip_prefix("file://")?);
-    let decoded = if cfg!(windows) { decoded.trim_start_matches('/') } else { decoded.as_str() };
+    relative(&uri_path(uri)?, root)
+}
+
+/// `path` relative to `root` (forward slashes), or None when it lies outside. Both absolute.
+/// Drive letters compare case-insensitively on Windows.
+pub fn relative(path: &Path, root: &Path) -> Option<String> {
+    let p = path.to_string_lossy().replace('\\', "/");
     let root = root.to_string_lossy().replace('\\', "/");
-    let (a, b) = if cfg!(windows) { (decoded.to_ascii_lowercase(), root.to_ascii_lowercase()) } else { (decoded.to_owned(), root) };
+    let (a, b) = if cfg!(windows) { (p.to_ascii_lowercase(), root.to_ascii_lowercase()) } else { (p.clone(), root) };
     let tail = a.strip_prefix(&b)?.strip_prefix('/')?;
-    Some(decoded[decoded.len() - tail.len()..].to_owned())
+    Some(p[p.len() - tail.len()..].to_owned())
 }
 
 fn read_message(r: &mut impl BufRead) -> Option<Value> {
@@ -126,7 +138,9 @@ impl Client {
                 "textDocument": {
                     "documentSymbol": {"hierarchicalDocumentSymbolSupport": true},
                     "callHierarchy": {},
-                    "references": {}
+                    "references": {},
+                    "hover": {"contentFormat": ["markdown", "plaintext"]},
+                    "definition": {}
                 },
                 "window": {"workDoneProgress": true},
                 "workspace": {"configuration": true},
@@ -213,6 +227,43 @@ impl Client {
                 return;
             }
         }
+    }
+
+    fn at(path: &Path, line: u32, col: u32) -> Value {
+        json!({"textDocument": {"uri": to_uri(path)}, "position": {"line": line, "character": col}})
+    }
+
+    /// What the server knows about the thing at a position, as plain lines: the markdown's
+    /// code fences are dropped and blank lines never repeat, everything else is kept. None
+    /// when it knows nothing.
+    pub fn hover(&mut self, path: &Path, line: u32, col: u32) -> Option<String> {
+        let v = self.request("textDocument/hover", Self::at(path, line, col)).ok()?;
+        let mut out = String::new();
+        let mut push = |s: &str| {
+            for l in s.lines().filter(|l| !l.trim_start().starts_with("```")) {
+                if l.trim().is_empty() && (out.is_empty() || out.ends_with("\n\n")) {
+                    continue;
+                }
+                out.push_str(l);
+                out.push('\n');
+            }
+        };
+        match &v["contents"] {
+            Value::Array(a) => a.iter().for_each(|x| push(x.as_str().or_else(|| x["value"].as_str()).unwrap_or(""))),
+            Value::String(s) => push(s),
+            o => push(o["value"].as_str().unwrap_or("")),
+        }
+        let out = out.trim().to_owned();
+        (!out.is_empty()).then_some(out)
+    }
+
+    /// Where the thing at a position is defined: the first location the server names, as an
+    /// absolute path and 0-based line and column.
+    pub fn definition(&mut self, path: &Path, line: u32, col: u32) -> Option<(PathBuf, u32, u32)> {
+        let v = self.request("textDocument/definition", Self::at(path, line, col)).ok()?;
+        let l = if let Some(a) = v.as_array() { a.first()?.clone() } else { v };
+        let (uri, range) = if l.get("targetUri").is_some() { (&l["targetUri"], &l["targetSelectionRange"]) } else { (&l["uri"], &l["range"]) };
+        Some((uri_path(uri.as_str()?)?, range["start"]["line"].as_u64()? as u32, range["start"]["character"].as_u64()? as u32))
     }
 
     pub fn shutdown(mut self) {

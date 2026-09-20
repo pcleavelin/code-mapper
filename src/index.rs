@@ -357,38 +357,57 @@ fn locations(v: &Value, root: &Path, item: impl Fn(&Value) -> (&Value, &Value)) 
     out
 }
 
-/// Asks the language's server for symbols, outgoing calls and references of each file, handing
-/// each file over as it completes. Err when the server is not on PATH or will not start.
-pub fn query_server(root: &Path, lang: &Lang, files: &[(String, u64)], mut each: impl FnMut(ServerFile)) -> Result<(), String> {
+/// Starts the language's server on the root and waits for it to finish its own indexing.
+/// Err when it is not on PATH or will not start. The returned root is absolute, which is
+/// what the server's URIs are compared against.
+pub fn start_server(root: &Path, lang: &Lang) -> Result<(lsp::Client, PathBuf), String> {
     let exe = lsp::find_on_path(lang.server).ok_or_else(|| format!("{} not on PATH", lang.server))?;
     let root = std::path::absolute(root).map_err(|e| e.to_string())?;
     let mut c = lsp::Client::start(&exe, lang.args, &root).ok_or_else(|| format!("{} would not start", lang.server))?;
     c.wait_ready(Duration::from_secs(300));
+    Ok((c, root))
+}
+
+/// One file's symbols, outgoing calls and references from a running server.
+pub fn index_file(c: &mut lsp::Client, root: &Path, path: &str, hash: u64) -> ServerFile {
+    let doc = json!({"uri": lsp::to_uri(&root.join(path))});
+    let syms = c.request("textDocument/documentSymbol", json!({"textDocument": doc})).unwrap_or(Value::Null);
+    let mut symbols = Vec::new();
+    let mut sel = Vec::new();
+    for s in syms.as_array().into_iter().flatten() {
+        push_symbol(s, 0, None, &mut symbols, &mut sel);
+    }
+    for (s, (line, ch)) in symbols.iter_mut().zip(&sel) {
+        let at = json!({"textDocument": doc, "position": {"line": line, "character": ch}});
+        for item in c.request("textDocument/prepareCallHierarchy", at.clone()).unwrap_or(Value::Null).as_array().into_iter().flatten() {
+            let calls = c.request("callHierarchy/outgoingCalls", json!({"item": item})).unwrap_or(Value::Null);
+            s.targets.extend(locations(&calls, root, |call| (&call["to"]["uri"], &call["to"]["selectionRange"]["start"])));
+        }
+        let mut at = at;
+        at["context"] = json!({"includeDeclaration": false});
+        let refs = c.request("textDocument/references", at).unwrap_or(Value::Null);
+        s.refs = locations(&refs, root, |l| (&l["uri"], &l["range"]["start"]));
+        s.targets.sort();
+        s.targets.dedup();
+    }
+    ServerFile { path: path.to_owned(), hash, symbols }
+}
+
+/// Asks the language's server for symbols, outgoing calls and references of each file, handing
+/// each file over as it completes, then stops it. Err when the server is not on PATH or will
+/// not start.
+pub fn query_server(root: &Path, lang: &Lang, files: &[(String, u64)], mut each: impl FnMut(ServerFile)) -> Result<(), String> {
+    let (mut c, root) = start_server(root, lang)?;
     for (path, hash) in files {
-        let doc = json!({"uri": lsp::to_uri(&root.join(path))});
-        let syms = c.request("textDocument/documentSymbol", json!({"textDocument": doc})).unwrap_or(Value::Null);
-        let mut symbols = Vec::new();
-        let mut sel = Vec::new();
-        for s in syms.as_array().into_iter().flatten() {
-            push_symbol(s, 0, None, &mut symbols, &mut sel);
-        }
-        for (s, (line, ch)) in symbols.iter_mut().zip(&sel) {
-            let at = json!({"textDocument": doc, "position": {"line": line, "character": ch}});
-            for item in c.request("textDocument/prepareCallHierarchy", at.clone()).unwrap_or(Value::Null).as_array().into_iter().flatten() {
-                let calls = c.request("callHierarchy/outgoingCalls", json!({"item": item})).unwrap_or(Value::Null);
-                s.targets.extend(locations(&calls, &root, |call| (&call["to"]["uri"], &call["to"]["selectionRange"]["start"])));
-            }
-            let mut at = at;
-            at["context"] = json!({"includeDeclaration": false});
-            let refs = c.request("textDocument/references", at).unwrap_or(Value::Null);
-            s.refs = locations(&refs, &root, |l| (&l["uri"], &l["range"]["start"]));
-            s.targets.sort();
-            s.targets.dedup();
-        }
-        each(ServerFile { path: path.clone(), hash: *hash, symbols });
+        each(index_file(&mut c, &root, path, *hash));
     }
     c.shutdown();
     Ok(())
+}
+
+/// A bundled grammar exists for the file, so it has symbols even without a server.
+pub fn has_grammar(path: &str) -> bool {
+    language_for(path.rsplit('.').next().unwrap_or("")).is_some()
 }
 
 // ---- cache ----------------------------------------------------------------------------

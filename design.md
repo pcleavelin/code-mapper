@@ -106,20 +106,30 @@ never disagree.
 file per crumb, each clickable. Then the steps in tree order: a header with the
 hierarchical number, symbol, file:lines and tags; the note as text (editing notes is the
 agent's, through the CLI, until the UI grows a text editor); the anchored lines inline, syntax coloured, full length. Per step: collapse the
-code, fold the subtree (the header shows how many steps are hidden), and a whole-symbol
-toggle that shows the enclosing symbol with the slice highlighted inside it. Path-wide
+code, fold the subtree (the header shows how many steps are hidden), a whole-symbol
+toggle that shows the enclosing symbol with the slice highlighted inside it, and context
+buttons at the top and bottom of the code that show ten more lines of the file each
+press, the way a diff hunk expands; whenever anything beyond the slice shows, the slice
+is highlighted. Path-wide
 collapse all and expand all. Stale steps are red. The selected step carries an accent
 bar; selecting it from outside the document scrolls its header to the top, selecting it
 inside does not scroll. Selecting an off-path symbol leaves the document and outline on
 the path with no step highlighted; back returns to the step. The flat step index the
 CLI uses is not shown.
 
-**Peek.** In any code view, hovering an identifier that is defined in the repo shows its
-definition; alt-click pins it in the right panel above the xrefs.
+**Peek.** In any code view, hovering an identifier shows what the language's server
+knows about it: signature, type, docs, for anything the server resolves, a local, a
+field, a macro, an item of a dependency. Ctrl-click or double-click goes to its
+definition; alt-click pins the definition in the right panel above the xrefs. A
+definition inside the repo lands on the symbol, or on the line when it is inside one
+(a field, a local); one outside the repo is shown from the file on disk in the panel
+and cannot be jumped to. A language with a grammar but no server falls back to the
+symbol of that name; prose files have neither, so hovering a word in them shows nothing.
 
 **The graph.** The selected path drawn as a left-to-right tree: root left, children to
 the right, siblings stacked in call order, every node showing its code in full (a node
-can be cut to a preview). Edges leave a node level with the line that makes the call,
+can be cut to a preview, or widened with the same context buttons as the document, its
+own lines highlighted). Edges leave a node level with the line that makes the call,
 and that line is tinted; a slice node's callees are the ones its lines name. Callers and
 callees expansions per node reveal off-path nodes, drawn distinctly, hanging left or
 right of the step; a revealed symbol that is also a step is one node with an extra
@@ -165,9 +175,14 @@ neither has symbols only if its grammar is bundled, and no xrefs.
 top level plus one level of nesting so the shape matches section 4 and anchors are
 unaffected. `callHierarchy/outgoingCalls` per symbol for xrefs.
 `textDocument/references` for references to a symbol: what a `type` path means by
-"what touches this struct", and what the GUI uses to jump from an identifier to its
-definition. A tree-sitter resolver provides the same three things for its language,
-as well as it can.
+"what touches this struct". A tree-sitter resolver provides the same three things for
+its language, as well as it can.
+
+**The live session.** The GUI keeps one server per language running for the life of
+the window, on its own thread. It indexes the files it is sent a batch at a time and
+answers `textDocument/hover` and `textDocument/definition` for the pointer between
+files, so hovering never waits behind a batch. Answers are keyed by file hash and
+position and kept for the session; the CLI starts a server per command and stops it.
 
 **The cache.** Servers take seconds to warm up. Every result is written to
 `.codemap-cache` at the root, a bespoke binary file, per source file, keyed by the
@@ -251,8 +266,9 @@ content, or grow; layout runs once at the end of the frame; input answers from t
 previous frame's rectangles. One monospace font at whole-pixel sizes, every glyph in
 one GPU atlas, so text is never scaled. `CODEMAP_SHOT=<file.png>` writes the first
 settled frame to a file and quits, and `CODEMAP_SCRIPT=<file>` plays mouse and keyboard
-input from a script and dumps state on request, so rendering and interaction claims are
-checked against pixels and numbers, never against the code alone.
+input from a script, waits for the servers when told to, and dumps state and element
+rectangles on request, so rendering and interaction claims are checked against pixels
+and numbers, never against the code alone.
 
 `index` and `map` know nothing about the UI. `cli` and `gui` are two front ends over
 the same two structs. Any operation that mutates the map lives on `Map` so both call

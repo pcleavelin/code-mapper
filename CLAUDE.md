@@ -73,10 +73,13 @@ Never claim a visual or interactive behaviour from reading the code; drive it an
 - `CODEMAP_SHOT=<file.png> [CODEMAP_SHOT_TAB=path|graph|listing|diff] [CODEMAP_SHOT_SCROLL=n]
   target\release\codemap.exe <root>` writes the first settled frame and quits.
 - `CODEMAP_SCRIPT=<file> target\release\codemap.exe <root>` plays a script, one command per
-  line, as real input: `wait n`, `mouse x y`, `down`, `up`, `click x y`, `dblclick x y`,
-  `drag x0 y0 x1 y1`, `wheel dy [ctrl|shift]`, `key <name> [ctrl] [alt]`, `text ...`, `quit`;
-  app commands `tab <name>`, `scroll <panel> <n>`, `shot <file.png>`, `dump`. `dump` prints
-  the selection, scroll offsets, the graph camera and every node's rectangle to stderr as
-  `DUMP` lines, so a script can measure what a gesture did (grep `^DUMP`). Coordinates are
-  window pixels; the window opens maximised.
+  line, as real input: `wait n`, `mouse x y`, `down`, `up`, `click x y [ctrl|alt|shift]`,
+  `dblclick x y`, `drag x0 y0 x1 y1`, `wheel dy [ctrl|shift]`, `key <name> [ctrl] [alt]`,
+  `text ...`, `quit`; app commands `tab <name>`, `open <file> [line]`, `scroll <panel> <n>`,
+  `idle` (waits until every server request is answered), `rect <id> [n]` (an element's
+  rectangle by id name), `shot <file.png>`, `dump`. `dump` prints the selection, scroll
+  offsets, the tooltip and peek, the graph camera and every node's and node button's
+  rectangle to stderr as `DUMP` lines, so a script can measure what a gesture did (grep
+  `^DUMP`). Coordinates are window pixels; the window opens maximised. Write script files
+  with the Write tool and forward-slash paths: a heredoc mangles backslashes.
 - Crop or scale a PNG with PowerShell's System.Drawing and Read it.
