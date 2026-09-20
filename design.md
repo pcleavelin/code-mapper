@@ -336,6 +336,14 @@ without a terminal.
 (`jj file show -r @- .codemap`; the GUI shells out, no VCS library). Done when: the
 owner reviews an agent session's map changes without reading `path` output.
 
+**M5 — prompts in the code.** The owner leaves a marker comment in a source file where
+a question or a request for the map belongs (`// codemap: why does this retry three
+times?`). `prompts` lists every marker with file:line and text; the agent contract tells
+a session to answer each one in the map (a note, a step, a path) and remove the marker
+in the same commit; the GUI shows the open markers in the listing and counts them in the
+status bar. Done when: the owner writes a question in a comment, the next agent
+session's map answers it, and the marker is gone from the diff.
+
 Deferred, with the trigger that would pull each in:
 
 | Item | Trigger |

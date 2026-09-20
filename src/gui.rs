@@ -4,13 +4,14 @@
 //! applied once the frame is built.
 
 use crate::cli;
-use crate::gfx::{self, Color, Gfx, Rect};
+use crate::gfx::{self, Color, Gfx, Glyphs, Rect};
 use crate::index::{self, Index, ServerFile, SymRef};
 use crate::lsp;
 use crate::map::{Author, Change, Kind as PathKind, Map, PathDiff, StepChange};
 use crate::ui::{self, Align, Id, Interaction, Key, Kind, Layout, Measure, Style, Text, Ui, BORDER_BOTTOM, BORDER_LEFT, BORDER_RIGHT, BORDER_TOP};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
 use std::sync::mpsc::{Receiver, Sender, TryRecvError, channel};
 use std::time::{Duration, Instant, SystemTime};
 
@@ -61,28 +62,32 @@ fn runs(runs: Vec<(String, Color)>, px: u32) -> Kind {
     Kind::Text(Text { runs, px, wrap: false })
 }
 
-/// One source line as coloured runs, with its number in the gutter.
-pub fn code_runs(f: &index::File, li: usize, gutter: bool) -> Vec<(String, Color)> {
-    let mut out = Vec::new();
-    if gutter {
-        out.push((format!("{:5} ", li + 1), WEAK));
-    }
-    let line = &f.lines[li];
-    let mut at = 0;
-    for &(s, e, class) in f.hl.get(li).map(Vec::as_slice).unwrap_or(&[]) {
-        let (s, e) = (s as usize, e.min(line.len() as u32) as usize);
-        if s > at && s <= line.len() {
-            out.push((line[at..s].to_owned(), TEXT));
+/// Columns of line number and a space in front of every code line.
+pub const GUTTER: usize = 6;
+
+/// Lines `lo..=hi` of a file as a grid: the line number in the gutter, then the line with
+/// its syntax colours, one cell per character.
+pub fn build_grid(f: &index::File, lo: usize, hi: usize) -> Glyphs {
+    let w = (lo..=hi).map(|li| f.lines[li].chars().count()).max().unwrap_or(0) + GUTTER;
+    let mut g = Glyphs::new(w, hi + 1 - lo);
+    for (row, li) in (lo..=hi).enumerate() {
+        for (x, c) in format!("{:5} ", li + 1).chars().enumerate() {
+            g.set(x, row, c, WEAK);
         }
-        if s < e {
-            out.push((line[s..e].to_owned(), hl_color(class)));
+        let spans = f.hl.get(li).map(Vec::as_slice).unwrap_or(&[]);
+        let mut si = 0;
+        for (x, (b, c)) in f.lines[li].char_indices().enumerate() {
+            while si < spans.len() && spans[si].1 as usize <= b {
+                si += 1;
+            }
+            let color = match spans.get(si) {
+                Some(&(s, _, class)) if s as usize <= b => hl_color(class),
+                _ => TEXT,
+            };
+            g.set(GUTTER + x, row, c, color);
         }
-        at = e.max(at);
     }
-    if at < line.len() {
-        out.push((line[at..].to_owned(), TEXT));
-    }
-    out
+    g
 }
 
 fn trunc(s: &str, n: usize) -> String {
@@ -391,6 +396,7 @@ pub struct App {
     backend_progress: String,
     restart_backend: bool, // the index changed while a batch ran: send the next when it ends
     hovers: HashMap<Probe, Option<Option<String>>>, // asked (None) or answered (Some: text or nothing)
+    grids: HashMap<(usize, u64, usize, usize), Rc<Glyphs>>, // (file, text hash, first line, last line) -> its drawn form
     asked: usize,                                    // hover and definition requests not yet answered
     want_def: Option<(Probe, Intent)>,               // the definition lookup whose answer is awaited
     pub map: Map,
@@ -465,6 +471,7 @@ impl App {
             backend_progress: String::new(),
             restart_backend: false,
             hovers: HashMap::new(),
+            grids: HashMap::new(),
             asked: 0,
             want_def: None,
             map,
@@ -705,6 +712,7 @@ impl App {
             self.peek = self.idx.find_file(&p).map(|fi| Peek::Line(fi, li));
         }
         self.hovers.clear();
+        self.grids.clear();
         self.map.resolve_all(&self.idx);
         self.focus = focus.and_then(|k| self.idx.by_key(&k));
         self.cur_file = cur_file.and_then(|p| self.idx.find_file(&p));
@@ -1189,28 +1197,71 @@ impl App {
         self.ui.open(Kind::None, layout.scroll(0, off), style, Some(id))
     }
 
-    /// A code row: a syntax-coloured line with hover, double-click and ctrl-click to jump,
-    /// alt-click to peek.
-    pub fn code_row(&mut self, fi: usize, li: usize, id: Id, bg: Option<Color>) -> Interaction {
+    /// The drawn form of lines `lo..=hi` of a file, built once per (file text, range) and
+    /// shared by every element that shows it. The cache is dropped whole when it grows large
+    /// or the index changes.
+    pub fn grid(&mut self, fi: usize, lo: usize, hi: usize) -> Rc<Glyphs> {
+        let key = (fi, self.idx.files[fi].hash, lo, hi);
+        if let Some(g) = self.grids.get(&key) {
+            return g.clone();
+        }
+        if self.grids.len() > 512 {
+            self.grids.clear();
+        }
+        let g = Rc::new(build_grid(&self.idx.files[fi], lo, hi));
+        self.grids.insert(key, g.clone());
+        g
+    }
+
+    /// A block of a file's lines as one element drawn from its grid. Hovering an identifier
+    /// shows its tooltip, ctrl-click or double-click jumps to its definition, alt-click
+    /// peeks. `bg(line)` paints a row, `bar(line)` its left edge; `wide` takes the full width
+    /// rather than the grid's. Returns the interaction and, under the pointer, the line and
+    /// the text column (None in the gutter).
+    pub fn code_block(&mut self, fi: usize, lo: usize, hi: usize, id: Id, wide: bool, bg: &dyn Fn(usize) -> Option<Color>, bar: &dyn Fn(usize) -> Option<Color>) -> (Interaction, Option<(usize, Option<usize>)>) {
+        let hi = hi.min(self.idx.files[fi].lines.len().saturating_sub(1));
+        if hi < lo || self.idx.files[fi].lines.is_empty() {
+            return (Interaction::default(), None);
+        }
+        let g = self.grid(fi, lo, hi);
         let px = self.px;
-        let r = code_runs(&self.idx.files[fi], li, true);
-        let it = self.ui.leaf(runs(r, px), Layout::row().grow_x(), Style { bg, ..Default::default() }, Some(id));
-        if it.hovered {
-            if let Some(rect) = it.rect {
-                let col = (((self.ui.input.mouse.0 - rect.x) / self.cell.0.max(1)) as usize).saturating_sub(6);
-                let mods = self.ui.input.mods;
-                if it.clicked && mods.alt {
-                    self.actions.push(Action::PeekAt(fi, li, col));
-                } else if it.double_clicked || (it.clicked && mods.ctrl) {
-                    self.actions.push(Action::Jump(fi, li, col));
-                } else if !self.ui.input.down[0] {
-                    if let Some(t) = self.probe(fi, li, col) {
-                        self.tooltip = Some((t, self.ui.input.mouse));
-                    }
+        let (cw, rh) = self.cell;
+        let (w, h) = (g.w as i32 * cw, g.h as i32 * rh);
+        let rows: Vec<(Option<Color>, Option<Color>)> = (lo..=hi).map(|li| (bg(li), bar(li))).collect();
+        let draw = move |gfx: &mut Gfx, r: Rect| {
+            for (k, (bg, bar)) in rows.iter().enumerate() {
+                let y = r.y + k as i32 * rh;
+                if let Some(c) = bg {
+                    gfx.rect(Rect::new(r.x, y, r.w, rh), *c);
+                }
+                if let Some(c) = bar {
+                    gfx.rect(Rect::new(r.x, y, 2, rh), *c);
+                }
+            }
+            gfx.glyphs(r.x, r.y, px, &g);
+        };
+        let layout = if wide { Layout::row().grow_x().h(h) } else { Layout::row().w(w).h(h) };
+        let it = self.ui.leaf(Kind::Custom(Box::new(draw)), layout, Style::default(), Some(id));
+        let mut at = None;
+        if let Some(rect) = it.rect.filter(|_| it.hovered) {
+            let (mx, my) = self.ui.input.mouse;
+            let row = ((my - rect.y) / rh).clamp(0, (hi - lo) as i32) as usize;
+            let col = ((mx - rect.x) / cw).max(0) as usize;
+            at = Some((lo + row, col.checked_sub(GUTTER)));
+        }
+        if let Some((li, Some(col))) = at {
+            let mods = self.ui.input.mods;
+            if it.clicked && mods.alt {
+                self.actions.push(Action::PeekAt(fi, li, col));
+            } else if it.double_clicked || (it.clicked && mods.ctrl) {
+                self.actions.push(Action::Jump(fi, li, col));
+            } else if !self.ui.input.down[0] {
+                if let Some(t) = self.probe(fi, li, col) {
+                    self.tooltip = Some((t, self.ui.input.mouse));
                 }
             }
         }
-        it
+        (it, at)
     }
 
     // ---- panels ----
@@ -1468,10 +1519,7 @@ impl App {
             self.scroll_open(ui::id("peek"), Layout::col().grow_x().h(h).pad(4), Style::bg(FIELD));
             match body {
                 Ok((fi, start, end, mark)) => {
-                    let end = end.min(self.idx.files[fi].lines.len().saturating_sub(1));
-                    for li in start..=end {
-                        self.code_row(fi, li, ui::id_n(ui::id("peekrow"), li), (mark == Some(li)).then_some(dim(SELECTED, 120)));
-                    }
+                    self.code_block(fi, start, end, ui::id("peekcode"), true, &|li| (mark == Some(li)).then_some(dim(SELECTED, 120)), &|_| None);
                 }
                 Err((first, mark, around)) => {
                     let px = self.px;
@@ -1719,13 +1767,10 @@ impl App {
                     }
                     self.ui.close();
                 }
-                for li in lo..=hi {
-                    let bg = if marked && li >= ls && li <= le { Some(dim(SELECTED, 120)) } else { None };
-                    self.ui.open(Kind::None, Layout::row().grow_x(), Style::default(), None);
-                    self.ui.leaf(Kind::None, Layout::row().w(indent + 4), Style::default(), None);
-                    self.code_row(fi, li, ui::id_n(ui::id_n(ui::id("docrow"), ai), li), bg);
-                    self.ui.close();
-                }
+                self.ui.open(Kind::None, Layout::row().grow_x(), Style::default(), None);
+                self.ui.leaf(Kind::None, Layout::row().w(indent + 4), Style::default(), None);
+                self.code_block(fi, lo, hi, ui::id_n(ui::id("doccode"), ai), true, &|li| (marked && li >= ls && li <= le).then_some(dim(SELECTED, 120)), &|_| None);
+                self.ui.close();
                 if hi < last {
                     self.ui.open(Kind::None, Layout::row().grow_x(), Style::default(), None);
                     self.ui.leaf(Kind::None, Layout::row().w(indent + 4), Style::default(), None);
@@ -1778,15 +1823,16 @@ impl App {
         let (lo, hi) = self.sel.map(|(a, b)| (a.min(b), a.max(b))).unwrap_or((usize::MAX, usize::MAX));
         let anchors: Vec<(usize, usize, bool)> = self.sel_path.map(|pi| self.map.paths[pi].anchors.iter().filter(|a| a.file == self.idx.files[fi].path).map(|a| (a.line_start, a.line_end, a.stale)).collect()).unwrap_or_default();
         self.ui.leaf(Kind::None, Layout::row().h(first as i32 * row_h), Style::default(), None);
-        for li in first..(first + visible).min(n) {
-            let selected = li >= lo && li <= hi;
-            let bar = anchors.iter().find(|&&(s, e, _)| li >= s && li <= e).map(|&(_, _, stale)| if stale { RED } else { GREEN });
-            self.ui.open(Kind::None, Layout::row().grow_x(), Style { bg: if selected { Some(dim(SELECTED, 160)) } else { None }, border: if bar.is_some() { BORDER_LEFT } else { 0 }, border_color: bar.unwrap_or(BORDER) }, None);
-            let it = self.code_row(fi, li, ui::id_n(ui::id("line"), li), None);
-            if it.clicked && !self.ui.input.mods.ctrl && !self.ui.input.mods.alt && !it.double_clicked {
-                self.actions.push(Action::SelectLine(li, self.ui.input.mods.shift));
+        let last = (first + visible).min(n).saturating_sub(1);
+        if n > 0 && first <= last {
+            let bar = |li: usize| anchors.iter().find(|&&(s, e, _)| li >= s && li <= e).map(|&(_, _, stale)| if stale { RED } else { GREEN });
+            let (it, at) = self.code_block(fi, first, last, ui::id("lines"), true, &|li| (li >= lo && li <= hi).then_some(dim(SELECTED, 160)), &bar);
+            let mods = self.ui.input.mods;
+            if let Some((li, _)) = at {
+                if it.clicked && !mods.ctrl && !mods.alt && !it.double_clicked {
+                    self.actions.push(Action::SelectLine(li, mods.shift));
+                }
             }
-            self.ui.close();
         }
         let rest = n.saturating_sub(first + visible) as i32 * row_h;
         self.ui.leaf(Kind::None, Layout::row().h(rest), Style::default(), None);

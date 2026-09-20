@@ -314,7 +314,10 @@ impl Ui {
             .prev
             .iter()
             .filter(|(_, (r, c, _))| r.contains(mx, my) && c.contains(mx, my))
-            .max_by_key(|(id, (r, _, _))| (r.w as i64 * r.h as i64 * -1, **id)) // smallest rect wins among nested ids
+            .max_by_key(|(id, (r, c, _))| {
+                let v = r.intersect(c); // smallest visible rect wins among nested ids
+                (v.w as i64 * v.h as i64 * -1, **id)
+            })
             .map(|(id, _)| *id);
         if input.pressed[0] {
             self.active = self.hot;

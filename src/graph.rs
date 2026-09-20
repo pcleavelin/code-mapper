@@ -5,12 +5,13 @@
 //! zooming scales positions by exactly the factor the text grew by. Everything is drawn by one
 //! custom element; clicks are resolved against the rectangles the last frame recorded.
 
-use crate::gfx::{Color, Gfx, Rect};
+use crate::gfx::{Color, Gfx, Glyphs, Rect};
 use crate::gui::{self, Action, App, Tip, ACCENT, BORDER, CONTEXT_LINES, FIELD, GREEN, HOVER, ORANGE, PANEL, SELECTED, TEXT, WEAK};
 use crate::index::{self, Index, SymRef};
 use crate::map::Map;
 use crate::ui::{self, Kind, Layout, Measure, Style};
 use std::collections::{BTreeMap, HashMap, HashSet};
+use std::rc::Rc;
 
 /// A graph node: a symbol, and the step it stands for when it is one. Two slice steps of one
 /// symbol are two nodes; an expansion that reveals a symbol some step already shows reuses
@@ -228,7 +229,8 @@ impl Graph {
         self.view.clear();
         for &n in &self.nodes {
             let (lo, hi) = self.range[&n];
-            let (a, b) = self.context.get(&n).copied().unwrap_or((0, 0));
+            // a preview is of the node's own lines: context waits until the node is opened
+            let (a, b) = if self.collapsed.contains(&n) { (0, 0) } else { self.context.get(&n).copied().unwrap_or((0, 0)) };
             let last = idx.files[n.0.file].lines.len().saturating_sub(1);
             self.view.insert(n, (lo.saturating_sub(a), (hi + b).min(last)));
         }
@@ -383,7 +385,8 @@ struct SceneNode {
     buttons: Vec<(Rect, String, bool)>, // rect, label, hovered
     note: Option<String>,
     code_top: i32,
-    lines: Vec<(usize, Vec<(String, Color)>)>, // (file line, runs)
+    code: Rc<Glyphs>, // the shown lines, the first being file line `lo`
+    lo: usize,
     tinted: HashSet<usize>,
     slice: Option<(usize, usize)>, // the node's own lines, highlighted when context shows around them
     more: Option<usize>,
@@ -565,14 +568,16 @@ impl App {
         let mut nodes = Vec::new();
         let step_color = GREEN;
         // nodes
-        for &n in &self.graph.nodes {
+        for i in 0..self.graph.nodes.len() {
+            let n = self.graph.nodes[i];
             let (x, y) = self.graph.pos_px[&n];
             let (w, h) = self.graph.size_px[&n];
             let rect = Rect::new(ox + x, oy + y, w, h);
-            let s = self.idx.sym(n.0);
-            let f = &self.idx.files[n.0.file];
             let (lo, hi) = self.graph.view[&n];
             let (shown, total) = self.graph.lines_shown(n);
+            let code = self.grid(n.0.file, lo, lo + shown - 1);
+            let s = self.idx.sym(n.0);
+            let f = &self.idx.files[n.0.file];
             let on_path = self.graph.step.contains_key(&n);
             let off_path = self.graph.path_id.is_some() && !on_path;
             let focused = focus_node == Some(n);
@@ -595,14 +600,16 @@ impl App {
             if total > PREVIEW_LINES {
                 labels.push((Btn::Less, if shown < total { "more".into() } else { "less".into() }));
             }
-            if lo > 0 {
-                labels.push((Btn::Above, "▲".into()));
-            }
-            if hi + 1 < f.lines.len() {
-                labels.push((Btn::Below, "▼".into()));
-            }
-            if self.graph.context.contains_key(&n) {
-                labels.push((Btn::NoContext, "no context".into()));
+            if !self.graph.collapsed.contains(&n) {
+                if lo > 0 {
+                    labels.push((Btn::Above, "▲".into()));
+                }
+                if hi + 1 < f.lines.len() {
+                    labels.push((Btn::Below, "▼".into()));
+                }
+                if self.graph.context.contains_key(&n) {
+                    labels.push((Btn::NoContext, "no context".into()));
+                }
             }
             labels.push((Btn::Listing, "listing".into()));
             if n_callees > 0 {
@@ -626,11 +633,9 @@ impl App {
             let note = n.1.and_then(|ai| self.graph.path_id.map(|pi| self.map.paths[pi].anchors[ai].note.clone())).filter(|s| !s.is_empty());
             let code_top = rect.y + m.pad + m.row_h + if note.is_some() { m.row_h } else { 0 } + 4;
             self.graph.code_top.insert(n, code_top);
-            let mut lines = Vec::new();
             for (k, li) in (lo..lo + shown).enumerate() {
                 let lr = Rect::new(rect.x + m.pad, code_top + k as i32 * m.row_h, rect.w - m.pad * 2, m.row_h);
                 hits.push((lr, Hit::Line(n, li)));
-                lines.push((li, gui::code_runs(f, li, true)));
             }
             hits.extend(button_hits);
             // the lines that call the nodes hanging off this one
@@ -641,7 +646,7 @@ impl App {
             ordered.extend(hits.drain(node_hits_from..));
             hits.extend(ordered);
             let slice = ((lo, hi) != (rlo, rhi)).then_some((rlo, rhi));
-            nodes.push(SceneNode { rect, fill, border, border_w, header, buttons, note, code_top, lines, tinted, slice, more: (shown < total).then_some(total - shown) });
+            nodes.push(SceneNode { rect, fill, border, border_w, header, buttons, note, code_top, code, lo, tinted, slice, more: (shown < total).then_some(total - shown) });
         }
         // edges: where an edge leaves a node is level with the call line when it is shown
         let rect_of = |g: &Graph, n: Node| {
@@ -718,21 +723,19 @@ fn draw_scene(gfx: &mut Gfx, _r: Rect, scene: &Scene) {
             gfx.text(n.rect.x + m.pad, y + m.row_h, scene.px, note, GREEN);
         }
         gfx.rect(Rect::new(n.rect.x + m.pad, n.code_top - 2, n.rect.w - m.pad * 2, 1), BORDER);
-        for (k, (li, runs)) in n.lines.iter().enumerate() {
+        for k in 0..n.code.h {
+            let li = n.lo + k;
             let ly = n.code_top + k as i32 * m.row_h;
-            if n.slice.is_some_and(|(a, b)| *li >= a && *li <= b) {
+            if n.slice.is_some_and(|(a, b)| li >= a && li <= b) {
                 gfx.rect(Rect::new(n.rect.x + m.pad, ly, n.rect.w - m.pad * 2, m.row_h), gui::dim(SELECTED, 120));
             }
-            if n.tinted.contains(li) {
+            if n.tinted.contains(&li) {
                 gfx.rect(Rect::new(n.rect.x + m.pad, ly, n.rect.w - m.pad * 2, m.row_h), gui::dim(GREEN, 46));
             }
-            let mut pen = n.rect.x + m.pad;
-            for (s, c) in runs {
-                pen = gfx.text(pen, ly, scene.px, s, *c);
-            }
         }
+        gfx.glyphs(n.rect.x + m.pad, n.code_top, scene.px, &n.code);
         if let Some(more) = n.more {
-            gfx.text(n.rect.x + m.pad, n.code_top + n.lines.len() as i32 * m.row_h, scene.px, &format!("      … {more} more lines"), WEAK);
+            gfx.text(n.rect.x + m.pad, n.code_top + n.code.h as i32 * m.row_h, scene.px, &format!("      … {more} more lines"), WEAK);
         }
         gfx.pop_clip();
     }
@@ -760,10 +763,7 @@ impl App {
                 self.label(&name, TEXT);
                 self.label(&place, WEAK);
                 let end = end.min(self.idx.files[r.file].lines.len().saturating_sub(1)).min(start + 23);
-                for li in start..=end {
-                    let runs = gui::code_runs(&self.idx.files[r.file], li, true);
-                    self.ui.leaf(Kind::Text(ui::Text { runs, px, wrap: false }), Layout::row(), Style::default(), None);
-                }
+                self.code_block(r.file, start, end, ui::id("tip-code"), false, &|_| None, &|_| None);
                 if end < s_end {
                     self.label(&format!("      … {} more lines", s_end - end), WEAK);
                 }

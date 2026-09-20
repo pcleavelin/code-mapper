@@ -15,6 +15,27 @@ use winit::window::{Window, WindowId};
 
 pub type Color = [u8; 4];
 
+/// A block of text as it will be drawn: a grid of characters with a colour each, one cell
+/// per character, row-major, '\0' past the end of a line. Built when the text or its
+/// colours change and drawn every frame without allocating.
+pub struct Glyphs {
+    pub w: usize,
+    pub h: usize,
+    pub cells: Vec<(char, Color)>,
+}
+
+impl Glyphs {
+    pub fn new(w: usize, h: usize) -> Glyphs {
+        Glyphs { w, h, cells: vec![('\0', [0; 4]); w * h] }
+    }
+
+    pub fn set(&mut self, x: usize, y: usize, c: char, color: Color) {
+        if x < self.w && y < self.h {
+            self.cells[y * self.w + x] = (c, color);
+        }
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
 pub struct Rect {
     pub x: i32,
@@ -490,6 +511,16 @@ impl Gfx {
         self.cmds.last_mut().unwrap().end = self.idx.len() as u32;
     }
 
+    /// One character from the atlas at a pen position on a baseline.
+    fn put(&mut self, px: u32, c: char, pen: i32, baseline: i32, color: Color) {
+        if let Some(g) = self.glyph(px, c) {
+            let s = self.atlas.size as f32;
+            let (gx, gy) = ((pen + g.dx) as f32, (baseline + g.dy) as f32);
+            let uv = [g.u as f32 / s, g.v as f32 / s, (g.u + g.w) as f32 / s, (g.v + g.h) as f32 / s];
+            self.quad(gx, gy, gx + g.w as f32, gy + g.h as f32, uv, color);
+        }
+    }
+
     /// Text at `px` with its top-left at (x, y), one cell per character. Returns the pen x.
     pub fn text(&mut self, x: i32, y: i32, px: u32, text: &str, color: Color) -> i32 {
         let m = self.font(px);
@@ -501,16 +532,39 @@ impl Gfx {
                 break;
             }
             if pen + m.cell_w > clip.x && c != ' ' {
-                if let Some(g) = self.glyph(px, c) {
-                    let s = self.atlas.size as f32;
-                    let (gx, gy) = ((pen + g.dx) as f32, (baseline + g.dy) as f32);
-                    let uv = [g.u as f32 / s, g.v as f32 / s, (g.u + g.w) as f32 / s, (g.v + g.h) as f32 / s];
-                    self.quad(gx, gy, gx + g.w as f32, gy + g.h as f32, uv, color);
-                }
+                self.put(px, c, pen, baseline, color);
             }
             pen += m.cell_w;
         }
         pen
+    }
+
+    /// A grid at `px` with its top-left at (x, y): rows `row_h` apart, columns `cell_w`.
+    /// Rows and cells outside the clip are skipped, nothing is allocated.
+    pub fn glyphs(&mut self, x: i32, y: i32, px: u32, g: &Glyphs) {
+        let m = self.font(px);
+        let clip = self.clip();
+        for row in 0..g.h {
+            let ty = y + row as i32 * m.row_h;
+            if ty >= clip.bottom() {
+                break;
+            }
+            if ty + m.row_h <= clip.y {
+                continue;
+            }
+            let baseline = ty + m.ascent;
+            let mut pen = x;
+            for i in row * g.w..(row + 1) * g.w {
+                let (c, color) = g.cells[i];
+                if c == '\0' || pen >= clip.right() {
+                    break;
+                }
+                if c != ' ' && pen + m.cell_w > clip.x {
+                    self.put(px, c, pen, baseline, color);
+                }
+                pen += m.cell_w;
+            }
+        }
     }
 
     fn render(&mut self, clear: Color) {
