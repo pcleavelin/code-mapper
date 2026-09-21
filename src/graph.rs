@@ -6,7 +6,7 @@
 //! custom element; clicks are resolved against the rectangles the last frame recorded.
 
 use crate::gfx::{Color, Gfx, Glyphs, Rect};
-use crate::gui::{self, Action, App, Tip, ACCENT, BORDER, CONTEXT_LINES, FIELD, GREEN, HOVER, ORANGE, PANEL, SELECTED, TEXT, WEAK};
+use crate::gui::{self, Action, App, Tip, ACCENT, BORDER, CONTEXT_LINES, FIELD, GREEN, HOVER, ORANGE, PANEL, RED, SELECTED, TEXT, WEAK};
 use crate::index::{self, Index, SymRef};
 use crate::map::Map;
 use crate::ui::{self, Kind, Layout, Measure, Style};
@@ -18,11 +18,26 @@ use std::rc::Rc;
 /// that step's node.
 pub type Node = (SymRef, Option<usize>);
 
+/// A node across a re-index: (file path, symbol name) instead of the symbol's index.
+type NodeKey = ((String, String), Option<usize>);
+
+/// The graph state that is the reader's, not the index's, held while the index is rebuilt.
+pub struct Saved {
+    expansions: Vec<(NodeKey, bool)>,
+    collapsed: Vec<NodeKey>,
+    context: Vec<(NodeKey, (usize, usize))>,
+    manual: Vec<(NodeKey, (f32, f32))>,
+    auto_open: Option<NodeKey>,
+}
+
 const PREVIEW_LINES: usize = 12;
 const MIN_COLS: i32 = 44;
 const MAX_COLS: i32 = 110;
 const GAP_X: i32 = 12; // cells between columns
 const GAP_Y: i32 = 2; // rows between stacked subtrees
+const WHEEL_NOTCH: f32 = 40.0; // pixels one wheel notch reports
+const PAN_ROWS: i32 = 3; // rows the wheel pans per notch
+const MARGIN: i32 = 8; // pixels kept between the canvas edge and what a camera move brings in
 
 /// The node font's cell at the current zoom. Layout happens in cells and rows; these turn it
 /// into pixels.
@@ -78,6 +93,7 @@ pub struct Graph {
     step_parent: HashMap<Node, Node>,
     origin: HashMap<Node, (Node, bool)>, // expansion node -> (the node that revealed it, via callees?)
     expansions: Vec<(Node, bool)>,
+    auto_open: Option<Node>,  // the off-path root whose callers and callees were opened for it
     collapsed: HashSet<Node>, // nodes cut to a preview
     code_top: HashMap<Node, i32>, // y of each node's first code row, this frame
     has_note: HashSet<Node>,      // step nodes with a note row
@@ -85,6 +101,8 @@ pub struct Graph {
     pub zoom: f32,
     pub want_look: bool, // centre on the focus once it has a position
     pub hold_look: bool, // the next focus change came from the graph itself: do not move the camera
+    want_fit: bool,      // zoom out and pan so the whole tree is on the canvas
+    reveal: Option<(Node, bool)>, // an expansion just opened: pan the least that brings it into view
     hits: Vec<(Rect, Hit)>,
     drag: Option<Drag>,
 }
@@ -92,6 +110,35 @@ pub struct Graph {
 impl Graph {
     pub fn new() -> Graph {
         Graph { zoom: 1.0, ..Default::default() }
+    }
+
+    /// Everything the reader built on top of the selection, keyed by symbol name instead of
+    /// symbol index, so it survives a re-index that renumbers the symbols of a file.
+    pub fn save(&self, idx: &Index) -> Saved {
+        let key = |n: &Node| (idx.key(n.0), n.1);
+        Saved {
+            expansions: self.expansions.iter().map(|(n, c)| (key(n), *c)).collect(),
+            collapsed: self.collapsed.iter().map(key).collect(),
+            context: self.context.iter().map(|(n, v)| (key(n), *v)).collect(),
+            manual: self.manual.iter().map(|(n, v)| (key(n), *v)).collect(),
+            auto_open: self.auto_open.as_ref().map(key),
+        }
+    }
+
+    /// Put it back on the new index, dropping whatever no longer has a symbol. The camera is
+    /// not touched: a re-index is not a navigation.
+    pub fn restore(&mut self, idx: &Index, s: Saved) {
+        let node = |k: &NodeKey| idx.by_key(&k.0).map(|r| (r, k.1));
+        self.expansions = s.expansions.iter().filter_map(|(k, c)| Some((node(k)?, *c))).collect();
+        self.collapsed = s.collapsed.iter().filter_map(node).collect();
+        self.context = s.context.iter().filter_map(|(k, v)| Some((node(k)?, *v))).collect();
+        self.manual = s.manual.iter().filter_map(|(k, v)| Some((node(k)?, *v))).collect();
+        self.auto_open = s.auto_open.as_ref().and_then(node);
+    }
+
+    /// What the camera still owes the reader, for dumps: a pending fit, look or reveal.
+    pub fn camera_state(&self) -> String {
+        format!("fit={} look={} reveal={}", self.want_fit, self.want_look, self.reveal.is_some())
     }
 
     pub fn drag_state(&self) -> String {
@@ -102,12 +149,15 @@ impl Graph {
         }
     }
 
-    /// Every node button's node name, label and last frame's window rectangle.
+    /// Every node button's node name, drawn label and last frame's window rectangle.
     pub fn button_rects(&self, idx: &Index) -> Vec<(String, String, Rect)> {
         self.hits
             .iter()
             .filter_map(|(r, h)| match h {
-                Hit::Button(n, b) => Some((idx.sym(n.0).name.clone(), format!("{b:?}"), *r)),
+                Hit::Button(n, b) => {
+                    let label = self.header(idx, *n).1.into_iter().find(|(k, _)| k == b).map(|(_, l)| l)?;
+                    Some((idx.sym(n.0).name.clone(), label, *r))
+                }
                 _ => None,
             })
             .collect()
@@ -184,11 +234,31 @@ impl Graph {
         self.path_id = path_id.filter(|&pi| pi < map.paths.len());
         if let Some(pi) = self.path_id {
             let anchors = &map.paths[pi].anchors;
+            // a step that gets no node passes its parent on, so its children stay in the tree
             let mut node_of: HashMap<usize, Node> = HashMap::new();
             for (k, (ai, depth, number)) in map.numbered(idx, pi).into_iter().enumerate() {
                 let a = &anchors[ai];
-                let Some(fi) = idx.find_file(&a.file) else { continue };
-                let Some(si) = a.sym else { continue };
+                let parent = (a.parent >= 0).then(|| node_of.get(&(a.parent as usize)).copied()).flatten();
+                let mut skip = || {
+                    if let Some(p) = parent {
+                        node_of.insert(ai, p);
+                    }
+                };
+                let Some(fi) = idx.find_file(&a.file) else {
+                    skip();
+                    continue;
+                };
+                let si = match a.sym {
+                    Some(si) => Some(si),
+                    // a lines-only anchor takes the symbol its first line is inside, else the
+                    // file's first symbol; a file with no symbols at all has no node
+                    None if a.symbol.is_empty() => idx.by_line(&a.file, a.line_start).map(|r| r.sym).or(Some(0)).filter(|&si| si < idx.files[fi].symbols.len()),
+                    None => None,
+                };
+                let Some(si) = si else {
+                    skip();
+                    continue;
+                };
                 let n = (SymRef { file: fi, sym: si }, Some(ai));
                 self.add(idx, n, depth as i32, (a.line_start, a.line_end));
                 self.step.insert(n, (k, ai, number));
@@ -196,10 +266,8 @@ impl Graph {
                     self.has_note.insert(n);
                 }
                 node_of.insert(ai, n);
-                if a.parent >= 0 {
-                    if let Some(&p) = node_of.get(&(a.parent as usize)) {
-                        self.step_parent.insert(n, p);
-                    }
+                if let Some(p) = parent {
+                    self.step_parent.insert(n, p);
                 }
             }
         }
@@ -207,6 +275,15 @@ impl Graph {
             if !self.by_sym.contains_key(&f) {
                 let s = idx.sym(f);
                 self.add(idx, (f, None), 0, (s.start, s.end)); // an off-path selection is its own root
+                // it arrives with its neighbourhood open, once: closing them again sticks
+                if self.auto_open != Some((f, None)) {
+                    self.auto_open = Some((f, None));
+                    for callees in [true, false] {
+                        if !self.expansions.contains(&((f, None), callees)) {
+                            self.expansions.push(((f, None), callees));
+                        }
+                    }
+                }
             }
         }
         for (n, callees) in self.expansions.clone() {
@@ -240,10 +317,30 @@ impl Graph {
         match self.expansions.iter().position(|e| *e == (n, callees)) {
             Some(i) => {
                 self.expansions.remove(i);
+                self.reveal = None;
             }
-            None => self.expansions.push((n, callees)),
+            None => {
+                self.expansions.push((n, callees));
+                self.reveal = Some((n, callees));
+            }
         }
-        self.manual.clear();
+        self.manual.remove(&n);
+    }
+
+    /// The column of the file line under the pointer, or None over the line-number gutter.
+    /// The grid a node draws is the one `code_block` draws, so the gutter is the same width.
+    fn code_col(&self, cell_w: i32, n: Node, li: usize, mouse: (i32, i32)) -> Option<usize> {
+        let rect = self.hits.iter().find(|(_, h)| matches!(h, Hit::Line(m, l) if *m == n && *l == li)).map(|(r, _)| *r)?;
+        let col = ((mouse.0 - rect.x) / cell_w.max(1)).max(0) as usize;
+        col.checked_sub(gui::GUTTER)
+    }
+
+    /// Keep `n` where it is when its own size is about to change, so the button under the
+    /// pointer does not move.
+    fn pin(&mut self, n: Node) {
+        if let Some(&(x, y)) = self.pos.get(&n) {
+            self.manual.insert(n, (x as f32, y as f32));
+        }
     }
 
     /// A node's header runs and the buttons the header carries, left to right.
@@ -279,12 +376,19 @@ impl Graph {
             }
         }
         labels.push((Btn::Listing, "listing".into()));
-        let n_callees = self.callees_of(idx, n).len();
-        if n_callees > 0 {
-            labels.push((Btn::Callees, format!("callees > {n_callees}")));
+        // an expansion that is open says so and closes on a click; a closed one that would
+        // reveal nothing new is not offered at all
+        let hidden = |list: &[SymRef]| list.iter().filter(|r| !self.by_sym.contains_key(r)).count();
+        let callees = self.callees_of(idx, n);
+        if self.expansions.contains(&(n, true)) && !callees.is_empty() {
+            labels.push((Btn::Callees, format!("hide {} callees", callees.len())));
+        } else if hidden(&callees) > 0 {
+            labels.push((Btn::Callees, format!("callees > {}", hidden(&callees))));
         }
-        if !s.callers.is_empty() {
-            labels.push((Btn::Callers, format!("{} < callers", s.callers.len())));
+        if self.expansions.contains(&(n, false)) && !s.callers.is_empty() {
+            labels.push((Btn::Callers, format!("hide {} callers", s.callers.len())));
+        } else if hidden(&s.callers) > 0 {
+            labels.push((Btn::Callers, format!("{} < callers", hidden(&s.callers))));
         }
         (header, labels)
     }
@@ -299,7 +403,7 @@ impl Graph {
 
     /// A node is as wide as its longest shown line within limits, and never narrower than
     /// its header, so the buttons always sit inside it.
-    fn node_size(&self, idx: &Index, n: Node, m: Metrics) -> (i32, i32) {
+    fn node_size(&self, idx: &Index, n: Node) -> (i32, i32) {
         let (lo, _) = self.view[&n];
         let (shown, total) = self.lines_shown(n);
         let f = &idx.files[n.0.file];
@@ -307,14 +411,13 @@ impl Graph {
         let cols = longest.clamp(MIN_COLS, MAX_COLS).max(self.header_cols(idx, n));
         let note_rows = i32::from(self.has_note.contains(&n));
         let rows = 1 + note_rows + shown as i32 + usize::from(shown < total) as i32;
-        let _ = m;
         (cols + 1, rows + 1) // one cell and one row of padding
     }
 
     /// Recompute every position as a left-to-right forest: a column per depth anchored at
     /// column 0, each subtree stacked beside its parent, children in the order the parent's
     /// code calls them.
-    fn layout(&mut self, idx: &Index, m: Metrics) {
+    fn layout(&mut self, idx: &Index) {
         if self.nodes.is_empty() {
             return;
         }
@@ -355,7 +458,6 @@ impl Graph {
         // block heights, bottom-up
         let mut height: HashMap<Node, i32> = HashMap::new();
         let gap_y = GAP_Y;
-        let _ = m;
         fn measure(g: &Graph, gap_y: i32, r: Node, right: &HashMap<Node, Vec<Node>>, left: &HashMap<Node, Vec<Node>>, height: &mut HashMap<Node, i32>, seen: &mut HashSet<Node>) -> i32 {
             if !seen.insert(r) {
                 return 0;
@@ -421,6 +523,73 @@ impl Graph {
     }
 }
 
+impl Graph {
+    /// The bounding box of the whole tree in cells and rows, which no zoom changes.
+    fn bbox_cells(&self) -> Option<(i32, i32, i32, i32)> {
+        let mut b: Option<(i32, i32, i32, i32)> = None;
+        for n in &self.nodes {
+            let (Some(&(x, y)), Some(&(w, h))) = (self.pos.get(n), self.size.get(n)) else { continue };
+            b = Some(match b {
+                None => (x, y, x + w, y + h),
+                Some((l, t, r, bo)) => (l.min(x), t.min(y), r.max(x + w), bo.max(y + h)),
+            });
+        }
+        b.map(|(l, t, r, bo)| (l, t, r - l, bo - t))
+    }
+
+    /// The bounding box of some nodes in canvas pixels, as (x, y, w, h).
+    fn bbox(&self, ns: impl Iterator<Item = Node>) -> Option<(i32, i32, i32, i32)> {
+        let mut b: Option<(i32, i32, i32, i32)> = None;
+        for n in ns {
+            let (Some(&(x, y)), Some(&(w, h))) = (self.pos_px.get(&n), self.size_px.get(&n)) else { continue };
+            b = Some(match b {
+                None => (x, y, x + w, y + h),
+                Some((l, t, r, bo)) => (l.min(x), t.min(y), r.max(x + w), bo.max(y + h)),
+            });
+        }
+        b.map(|(l, t, r, bo)| (l, t, r - l, bo - t))
+    }
+
+    /// Pan by the least that puts `(x, y, w, h)` inside the canvas, left and top edges first so
+    /// a box larger than the canvas shows its header and buttons rather than its middle.
+    fn pan_onto(&mut self, canvas: Rect, (x, y, w, h): (i32, i32, i32, i32)) {
+        let fit = |pan: i32, lo: i32, len: i32, span: i32| {
+            let (a, b) = (pan + lo, pan + lo + len);
+            if a < MARGIN || len + MARGIN * 2 > span {
+                pan + MARGIN - a
+            } else if b > span - MARGIN {
+                pan + (span - MARGIN) - b
+            } else {
+                pan
+            }
+        };
+        self.pan.0 = fit(self.pan.0, x, w, canvas.w);
+        self.pan.1 = fit(self.pan.1, y, h, canvas.h);
+    }
+
+    /// The camera moves only on an explicit request: a new focus, the fit button, or an
+    /// expansion that landed outside the canvas.
+    fn move_camera(&mut self, canvas: Rect, focus_node: Option<Node>) {
+        if self.want_look {
+            if let Some(f) = focus_node.and_then(|f| self.pos_px.get(&f).map(|p| (*p, self.size_px[&f]))) {
+                let ((x, y), (w, h)) = f;
+                // a node taller than the canvas is aligned to its top: its header and buttons
+                // are what the reader came for
+                let y = if h + MARGIN * 2 > canvas.h { MARGIN - y } else { canvas.h / 2 - y - h / 2 };
+                self.pan = (canvas.w / 2 - x - w / 2, y);
+                self.want_look = false;
+            }
+            return;
+        }
+        if let Some(e) = self.reveal.take() {
+            let revealed: Vec<Node> = self.origin.iter().filter(|(_, o)| **o == e).map(|(n, _)| *n).collect();
+            if let Some(b) = self.bbox(revealed.into_iter()) {
+                self.pan_onto(canvas, b);
+            }
+        }
+    }
+}
+
 /// Everything the custom element draws, in window pixels.
 struct Scene {
     px: u32,
@@ -468,11 +637,15 @@ impl App {
                 let (mx, my) = ((mouse.0 - canvas.x) as f32, (mouse.1 - canvas.y) as f32);
                 let (ux, uy) = ((mx - self.graph.pan.0 as f32) / oc as f32, (my - self.graph.pan.1 as f32) / or as f32);
                 self.graph.pan = ((mx - ux * nc as f32).round() as i32, (my - uy * nr as f32).round() as i32);
-            } else if mods.shift {
-                self.graph.pan.0 += it.wheel.1 as i32;
             } else {
-                self.graph.pan.1 += it.wheel.1 as i32;
-                self.graph.pan.0 += it.wheel.0 as i32;
+                let per_notch = (gfx.cell(self.graph_px()).1 * PAN_ROWS) as f32;
+                let step = |d: f32| (d / WHEEL_NOTCH * per_notch).round() as i32;
+                if mods.shift {
+                    self.graph.pan.0 += step(it.wheel.1);
+                } else {
+                    self.graph.pan.1 += step(it.wheel.1);
+                    self.graph.pan.0 += step(it.wheel.0);
+                }
             }
         }
         // clicks and drags against last frame's hit rectangles
@@ -484,15 +657,22 @@ impl App {
                         if !self.graph.collapsed.remove(&n) {
                             self.graph.collapsed.insert(n);
                         }
-                        self.graph.manual.clear();
+                        self.graph.manual.remove(&n);
                     }
                     Btn::Listing => self.actions.push(Action::GoTo(n.0.file, self.graph.range[&n].0)),
                     Btn::Callees => self.graph.toggle(n, true),
                     Btn::Callers => self.graph.toggle(n, false),
-                    Btn::Above => self.graph.context.entry(n).or_default().0 += CONTEXT_LINES,
-                    Btn::Below => self.graph.context.entry(n).or_default().1 += CONTEXT_LINES,
+                    Btn::Above => {
+                        self.graph.context.entry(n).or_default().0 += CONTEXT_LINES;
+                        self.graph.pin(n);
+                    }
+                    Btn::Below => {
+                        self.graph.context.entry(n).or_default().1 += CONTEXT_LINES;
+                        self.graph.pin(n);
+                    }
                     Btn::NoContext => {
                         self.graph.context.remove(&n);
+                        self.graph.pin(n);
                     }
                 },
                 Some(Hit::Header(n)) => {
@@ -505,9 +685,7 @@ impl App {
                 }
                 Some(Hit::Line(n, li)) => {
                     self.graph.drag = Some(Drag::Node(n)); // dragging code moves the node without selecting it
-                    if let Some(rect) = self.graph.hits.iter().find(|(_, h)| matches!(h, Hit::Line(m, l) if *m == n && *l == li)).map(|(r, _)| *r) {
-                        let cell = gfx.cell(self.graph_px()).0.max(1);
-                        let col = (((mouse.0 - rect.x) / cell) as usize).saturating_sub(5);
+                    if let Some(col) = self.graph.code_col(gfx.cell(self.graph_px()).0, n, li, mouse) {
                         if mods.alt {
                             self.actions.push(Action::PeekAt(n.0.file, li, col));
                         } else if mods.ctrl || it.double_clicked {
@@ -538,30 +716,44 @@ impl App {
             self.graph.drag = None;
         }
         if let Some(Hit::Line(n, li)) = hit.filter(|_| it.hovered && !self.ui.input.down[0]) {
-            if let Some(rect) = self.graph.hits.iter().find(|(_, h)| matches!(h, Hit::Line(m, l) if *m == n && *l == li)).map(|(r, _)| *r) {
-                let cell = gfx.cell(self.graph_px()).0.max(1);
-                let col = (((mouse.0 - rect.x) / cell) as usize).saturating_sub(5);
+            if let Some(col) = self.graph.code_col(gfx.cell(self.graph_px()).0, n, li, mouse) {
                 if let Some(t) = self.probe(n.0.file, li, col) {
                     self.tooltip = Some((t, mouse));
                 }
             }
         }
 
-        // the tree for this selection
-        let path_id = if self.sel_anchor.is_some() { self.sel_path } else { None };
-        self.graph.rebuild(&self.idx, &self.map, path_id, self.focus);
+        // the tree for this selection: the whole selected path, whatever is selected inside it
+        self.graph.rebuild(&self.idx, &self.map, self.sel_path, self.focus);
+        let px = self.graph_px();
+        for &n in &self.graph.nodes.clone() {
+            let s = self.graph.node_size(&self.idx, n);
+            self.graph.size.insert(n, s);
+        }
+        self.graph.layout(&self.idx);
+        for (n, p) in self.graph.manual.clone() {
+            self.graph.pos.insert(n, (p.0.round() as i32, p.1.round() as i32));
+        }
+        // fit: the layout is in cells, so the largest font at which the tree fits the canvas
+        // settles both the zoom and the pan in one frame
+        if self.graph.want_fit && canvas_known {
+            self.graph.want_fit = false;
+            if let Some((x, y, w, h)) = self.graph.bbox_cells() {
+                let smallest = ((self.px as f32) * 0.3).round().max(6.0) as u32;
+                let mut size = px;
+                let mut cell = gfx.cell(size);
+                while size > smallest && (w * cell.0 > canvas.w - MARGIN * 2 || h * cell.1 > canvas.h - MARGIN * 2) {
+                    size -= 1;
+                    cell = gfx.cell(size);
+                }
+                self.graph.zoom = size as f32 / self.px as f32;
+                self.graph.pan = (MARGIN - x * cell.0, MARGIN - y * cell.1);
+            }
+        }
         let px = self.graph_px();
         let (cell_w, row_h) = gfx.cell(px);
         let z = self.graph.zoom;
         let m = Metrics { cell_w, row_h, pad: cell_w / 2 };
-        for &n in &self.graph.nodes.clone() {
-            let s = self.graph.node_size(&self.idx, n, m);
-            self.graph.size.insert(n, s);
-        }
-        self.graph.layout(&self.idx, m);
-        for (n, p) in self.graph.manual.clone() {
-            self.graph.pos.insert(n, (p.0.round() as i32, p.1.round() as i32));
-        }
         // cells and rows to pixels
         self.graph.pos_px.clear();
         self.graph.size_px.clear();
@@ -572,12 +764,8 @@ impl App {
             self.graph.size_px.insert(n, (w * cell_w, h * row_h));
         }
         let focus_node = self.graph.focus_node(self.focus, self.sel_anchor);
-        if self.graph.want_look && canvas_known {
-            if let Some(f) = focus_node.and_then(|f| self.graph.pos_px.get(&f).map(|p| (*p, self.graph.size_px[&f]))) {
-                let ((x, y), (w, h)) = f;
-                self.graph.pan = (canvas.w / 2 - x - w / 2, canvas.h / 2 - y - h / 2);
-                self.graph.want_look = false;
-            }
+        if canvas_known {
+            self.graph.move_camera(canvas, focus_node);
         }
 
         // toolbar
@@ -589,6 +777,9 @@ impl App {
         }
         if self.small_button("auto layout", ui::id("graph-auto")).clicked {
             self.graph.manual.clear();
+        }
+        if self.small_button("fit", ui::id("graph-fit")).clicked {
+            self.graph.want_fit = true;
         }
         if let Some(pi) = self.graph.path_id {
             let s = format!("path '{}': green edges are its steps, grey ones expansions, orange a call back up the tree", self.map.paths[pi].name);
@@ -632,7 +823,8 @@ impl App {
             let on_path = self.graph.step.contains_key(&n);
             let off_path = self.graph.path_id.is_some() && !on_path;
             let focused = focus_node == Some(n);
-            let (border, border_w) = if focused { (ACCENT, 2) } else if on_path { (step_color, 2) } else { (BORDER, 1) };
+            let stale = n.1.zip(self.graph.path_id).is_some_and(|(ai, pi)| self.map.paths[pi].anchors[ai].stale);
+            let (border, border_w) = if stale { (RED, 2) } else if focused { (ACCENT, 2) } else if on_path { (step_color, 2) } else { (BORDER, 1) };
             let node_hits_from = hits.len();
             let fill = if off_path { PANEL } else { FIELD };
             let (header, labels) = self.graph.header(&self.idx, n);

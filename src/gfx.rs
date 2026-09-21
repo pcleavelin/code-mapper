@@ -714,6 +714,7 @@ pub trait App {
 /// A test script from `CODEMAP_SCRIPT=<file>`: one command per line, fed to the app as if the
 /// mouse and keyboard had done it. `wait <n>` lets n frames pass; `mouse <x> <y>`, `down`, `up`,
 /// `click <x> <y>`, `dblclick <x> <y>`, `drag <x0> <y0> <x1> <y1>`, `wheel <dy> [ctrl|shift]`,
+/// `down [ctrl|shift|alt] [twice]` (`twice` makes the press a double-click),
 /// `key <name> [ctrl] [alt]`, `text <chars>`, `quit`; anything else goes to the app. Every
 /// input command is its own frame, so the app sees it exactly as a real event.
 struct Script {
@@ -768,7 +769,7 @@ impl<A: App> Runner<A> {
                 "down" => {
                     self.input.down[0] = true;
                     self.input.pressed[0] = true;
-                    self.input.clicks[0] = 1;
+                    self.input.clicks[0] = if w.contains(&"twice") { 2 } else { 1 };
                     self.input.mods = mods(1);
                     return false;
                 }
@@ -778,20 +779,23 @@ impl<A: App> Runner<A> {
                     return false;
                 }
                 "click" | "dblclick" => {
-                    // expands into its own frames
-                    let rest: String = w[3.min(w.len())..].join(" ");
+                    // expands into its own frames; the press carries the click count
+                    let mut rest: String = w[3.min(w.len())..].join(" ");
+                    if w[0] == "dblclick" {
+                        rest.push_str(" twice");
+                    }
                     let at = sc.pc;
                     sc.lines.splice(at..at, [format!("mouse {} {}", w[1], w[2]), format!("down {rest}"), "wait 1".into(), "up".into(), "wait 1".into()]);
-                    if w[0] == "dblclick" {
-                        sc.lines.insert(at + 1, "twice".into());
-                    }
                 }
                 "click-id" | "hover-id" | "dblclick-id" => {
                     // the element by name, then the plain form of the same gesture
                     let Some(name) = w.get(1) else { continue };
                     match self.app.locate(name) {
                         Some((x, y)) => {
-                            let verb = &w[0][..w[0].len() - 3];
+                            let verb = match &w[0][..w[0].len() - 3] {
+                                "hover" => "mouse",
+                                v => v,
+                            };
                             let line = format!("{verb} {x} {y} {}", w[2.min(w.len())..].join(" "));
                             let at = sc.pc;
                             sc.lines.insert(at, line);
@@ -799,7 +803,6 @@ impl<A: App> Runner<A> {
                         None => eprintln!("script: no element '{name}' last frame"),
                     }
                 }
-                "twice" => self.input.clicks[0] = 2,
                 "drag" => {
                     let (x0, y0, x1, y1) = (num(1), num(2), num(3), num(4));
                     let n = 8;

@@ -596,6 +596,7 @@ impl App {
                 msgs.push(m);
             }
         }
+        let answered = !msgs.is_empty(); // any message at all means a server is past "starting"
         let mut files = Vec::new();
         let mut batch_ended = false;
         for m in msgs {
@@ -650,6 +651,9 @@ impl App {
                 app.idx.link();
             });
         }
+        if answered && self.status.ends_with(": starting") {
+            self.status = format!("{} files, {} symbols indexed", self.idx.files.len(), self.idx.files.iter().map(|f| f.symbols.len()).sum::<usize>());
+        }
         if batch_ended && self.indexing.is_empty() {
             self.idx.save_cache();
             self.backend_progress.clear();
@@ -673,16 +677,8 @@ impl App {
                     self.warned_disk = true;
                 }
             } else {
-                self.map = Map::load(&self.map_path).unwrap_or_default();
-                self.map.resolve_all(&self.idx);
+                self.reload_map();
                 self.map_mtime = mt;
-                self.sel_anchor = None;
-                self.expanded_steps.clear();
-                self.collapsed.clear();
-                self.folded.clear();
-                if self.sel_path.is_some_and(|pi| pi >= self.map.paths.len()) {
-                    self.sel_path = None;
-                }
                 self.load_base();
                 self.status = "map reloaded (changed on disk)".into();
             }
@@ -690,6 +686,41 @@ impl App {
         if self.idx.changed() {
             self.reindex();
         }
+    }
+
+    /// Read `.codemap` again and keep as much of the reading position as the new map still
+    /// supports: the path by name, the step when the step at that index is still the same lines
+    /// of the same symbol, and a path's fold, collapse and context sets when its step count is
+    /// unchanged. Paths are matched by name, so adding one does not shift another's state.
+    fn reload_map(&mut self) {
+        let was: Vec<(String, usize)> = self.map.paths.iter().map(|p| (p.name.clone(), p.anchors.len())).collect();
+        let path_name = self.sel_path.map(|pi| self.map.paths[pi].name.clone());
+        let step = self.sel_anchor.zip(self.sel_path).map(|(ai, pi)| {
+            let a = &self.map.paths[pi].anchors[ai];
+            (ai, a.file.clone(), a.symbol.clone(), a.off_start, a.off_end)
+        });
+        self.map = Map::load(&self.map_path).unwrap_or_default();
+        self.map.resolve_all(&self.idx);
+        self.sel_path = path_name.and_then(|name| self.map.paths.iter().position(|p| p.name == name));
+        self.sel_anchor = match (self.sel_path, step) {
+            (Some(pi), Some((ai, file, symbol, os, oe))) => self.map.paths[pi]
+                .anchors
+                .get(ai)
+                .filter(|a| a.file == file && a.symbol == symbol && (a.off_start, a.off_end) == (os, oe))
+                .map(|_| ai),
+            _ => None,
+        };
+        // old path index -> new one, for the paths whose steps cannot have moved
+        let kept: HashMap<usize, usize> = was
+            .iter()
+            .enumerate()
+            .filter_map(|(old, (name, n))| self.map.paths.iter().position(|p| p.name == *name && p.anchors.len() == *n).map(|new| (old, new)))
+            .collect();
+        let keep = |set: &mut HashSet<(usize, usize)>| *set = set.iter().filter_map(|&(pi, ai)| kept.get(&pi).map(|&p| (p, ai))).collect();
+        keep(&mut self.expanded_steps);
+        keep(&mut self.collapsed);
+        keep(&mut self.folded);
+        self.context = self.context.iter().filter_map(|(&(pi, ai), &v)| kept.get(&pi).map(|&p| ((p, ai), v))).collect();
     }
 
     /// Run `change` on the index and carry the selection, the listing and the map's anchors
@@ -705,7 +736,9 @@ impl App {
             Some(Peek::Line(fi, li)) => Some((self.idx.files[*fi].path.clone(), *li)),
             _ => None,
         };
+        let graph = self.graph.save(&self.idx);
         change(self);
+        self.graph.restore(&self.idx, graph);
         if let Some(k) = peek_sym {
             self.peek = self.idx.by_key(&k).map(Peek::Sym);
         } else if let Some((p, li)) = peek_line {
@@ -1997,7 +2030,7 @@ impl gfx::App for App {
                     }
                 }
                 eprintln!("DUMP tip={:?} peek={:?} status={:?}", self.tip_shown, self.peek, self.status);
-                eprintln!("DUMP graph zoom={:.3} pan={:?} canvas={:?}", self.graph.zoom, self.graph.pan, self.ui.content_of(ui::id("graph-canvas")).map(|(_, r)| r));
+                eprintln!("DUMP graph zoom={:.3} pan={:?} canvas={:?} camera={}", self.graph.zoom, self.graph.pan, self.ui.content_of(ui::id("graph-canvas")).map(|(_, r)| r), self.graph.camera_state());
                 eprintln!("DUMP input mouse={:?} down={:?} hot_is_canvas={} active_is_canvas={} drag={:?}", self.ui.input.mouse, self.ui.input.down, self.ui.hot() == Some(ui::id("graph-canvas")), self.ui.active() == Some(ui::id("graph-canvas")), self.graph.drag_state());
                 for (name, r) in self.graph.node_rects(&self.idx) {
                     eprintln!("DUMP node {name} rect={r:?}");

@@ -85,8 +85,7 @@ are removed.
     keystrokes land there.
 17. Back and forward never show whether there is anywhere to go; smallest targets in the
     bar.
-18. Script harness: `hover-id` expands to a `hover` verb that does not exist (should be
-    `mouse`).
+
 
 ### Listing, peek, output, diff, results
 
@@ -99,72 +98,34 @@ are removed.
 4. The tooltip is pushed ~200 px away from the pointer near the bottom or right edge: the
    clamp reserves 90x30 cells instead of the measured size; text lines are cut at 110
    columns, wider than the clamp assumes.
-5. The status bar says "rust-analyzer: starting" for the rest of the session.
-6. Fields keep their text and caret after enter, so the next entry is appended
+5. Fields keep their text and caret after enter, so the next entry is appended
    (`200099999`); no select-all, no paste, ctrl+u undocumented.
-7. Multi-line status text renders newlines as tofu (also in the document list).
-8. Script harness: `dblclick` inserts `twice` before `down`, which overwrites it, so no
-   script has ever produced a double-click; `hover-id` expands to a `hover` verb that does
-   not exist.
-9. Long lines are cut with no horizontal scroll and no marker; the 320 px peek panel
+6. Multi-line status text renders newlines as tofu (also in the document list).
+7. Long lines are cut with no horizontal scroll and no marker; the 320 px peek panel
    shows about 30 columns of a signature.
-10. Ctrl-click in the document always leaves for the Listing, even when the target is a
+8. Ctrl-click in the document always leaves for the Listing, even when the target is a
     step of the path being read.
-11. Hover has no debounce: every word the pointer crosses is a server request, answered
+9. Hover has no debounce: every word the pointer crosses is a server request, answered
     in order; the hover cache is never evicted.
-12. Bad go-to-line input is silently ignored; out of range clamps silently.
-13. The output panel is a fixed sixth of the window, not resizable, no `clear`, one
+10. Bad go-to-line input is silently ignored; out of range clamps silently.
+11. The output panel is a fixed sixth of the window, not resizable, no `clear`, one
     element per log line every frame.
-14. Diff rows for removed paths are inert.
-15. The References count can exceed the rows shown (refs in unindexed files are skipped).
-16. The stale/step anchor bar is 2 px wide at the left edge: invisible in practice.
-17. No clipboard: ctrl and alt drop text input, nothing pastes or copies.
-18. Back/forward are alt+arrows (the design says ctrl); a focused field also moves its
+12. Diff rows for removed paths are inert.
+13. The References count can exceed the rows shown (refs in unindexed files are skipped).
+14. The stale/step anchor bar is 2 px wide at the left edge: invisible in practice.
+15. No clipboard: ctrl and alt drop text input, nothing pastes or copies.
+16. Back/forward are alt+arrows (the design says ctrl); a focused field also moves its
     caret on alt+arrows.
-19. Minor: empty Results shows nothing; the peek reserves a third of the height for a
+17. Minor: empty Results shows nothing; the peek reserves a third of the height for a
     12-line body; `x` is 12x20 px; the map path in the status bar mixes separators; the
     last file line is clipped by a few pixels; out-of-repo peek text has no colours.
 
-### Graph
+### Graph and state
 
-1. Ctrl-click or double-click on node code selects an off-path symbol, which clears the
-   selected step, and the graph gates the whole path on the step: twelve nodes become
-   one. The design says the symbol joins the tree as its own root with callers and
-   callees open; nothing of that is implemented. Same from the Symbols tab and xrefs rows.
-2. Steps with no symbol (lines-only anchors) get no node and no marker; their children
-   detach into extra roots; the numbering shows gaps. Seven of `legacy-v1`'s fourteen
-   steps are missing.
-3. All graph state (expansions, collapsed, context, dragged positions) is keyed by
-   symbol index and discarded or misattached when the server's batch or a re-index
-   replaces a file's symbols. A drag undoes itself when the batch lands.
-4. Hover, ctrl-click and alt-click in node code land one character to the right: the
-   graph subtracts 5 for the gutter, the grid has 6. The last character of every
-   identifier is dead; gutter clicks probe column 0.
-5. `callees > n` / `n < callers` is a silent no-op when every target is already on the
-   canvas, and the button never shows whether it is open.
-6. Any more/less/callees/callers click clears every dragged position, not just the
-   node's.
-7. ▲ / ▼ move the header out from under the pointer (the node is re-centred on its
-   block), so repeated presses miss.
-8. A large path cannot be brought into view at any zoom (no fit-to-view; the 0.3 floor is
-   still taller than the canvas); the first frame centres a 3000 px node so the opening
-   view is the middle of its body.
-9. Wheel pan is one pixel per notch.
-10. An expansion lands off-canvas with no camera move; hit rects are clipped to the
-    canvas so its buttons are dead.
-
-### State over time
-
-1. When `.codemap` changes on disk (an agent's CLI run while the GUI is open), the reload
-   clears the selected step; the graph loses its path and collapses to the focused symbol,
-   expansions included. Reproduced: 12 nodes to 1 after a `path-note`.
-2. Steps anchored to a generic `impl` block do not resolve on a tree-sitter index
-   (`impl<R> Service<R>` vs rust-analyzer's `impl Service<R>`), so on a cold cache they
-   are stale and the graph draws no node for them; numbering shows gaps (1.3, 1.6).
-3. Centring the focus node when it is taller than the canvas puts its header and buttons
-   above the visible area.
-4. A source change re-indexes and shifts symbol indices, and `with_index_change` carries
-   over only the focus and the peek: the graph's expansions, collapsed, context and
-   manual positions are keyed by symbol index and are lost or reattached to the wrong
-   symbol. Reproduced: three callee expansions gone after a `fn` was inserted at the top
-   of main.rs. The camera also jumped, and the status stayed at "rust-analyzer: starting".
+1. The 0.3 zoom floor is not reachable: `graph_px` floors the node font at 6 px, so on a
+   14 px UI the real floor is about 0.43 and `fit` cannot show a very tall tree
+   (`legacy-v1`, 5400 px); it lands at the floor, top-left aligned. Readable text and a
+   whole-tree overview conflict; an overview mode without text is the way out.
+2. Bodyless `mod foo;` declarations differ between backends: tree-sitter skips them so
+   `.map()` does not link to `mod map;`, rust-analyzer reports them; on a tree-sitter
+   index `module-tree` has two "symbol gone" steps.

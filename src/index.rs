@@ -638,6 +638,23 @@ fn record_import(text: &str, imports: &mut HashMap<String, String>) {
     }
 }
 
+/// A Rust `impl` block's name in the shape `rust-analyzer` reports it: the trait and the type,
+/// without the block's own generic parameters and with any newline in them folded to a space.
+/// The two backends must agree on it, or a step anchored to an impl block under one of them is
+/// stale under the other.
+fn impl_name(node: Node, src: &[u8]) -> String {
+    let field = |f: &str| {
+        node.child_by_field_name(f)
+            .and_then(|n| n.utf8_text(src).ok())
+            .map(|t| t.split_whitespace().collect::<Vec<_>>().join(" "))
+    };
+    match (field("trait"), field("type")) {
+        (Some(t), Some(ty)) => format!("impl {t} for {ty}"),
+        (None, Some(ty)) => format!("impl {ty}"),
+        _ => String::new(),
+    }
+}
+
 // Named children of `parent` become symbols. Name comes from the grammar's `name` field when
 // there is one, else the first line (Odin's `foo :: proc` splits on `::`). One level of recursion
 // into impl/mod/trait/class bodies so methods show up, tagged with their owner type.
@@ -671,11 +688,14 @@ fn collect(parent: Node, src: &[u8], lines: &[String], depth: u8, owner: Option<
             name_row += 1;
         }
         let first = lines.get(name_row).map(|l| l.trim()).unwrap_or("");
-        let name = match node.child_by_field_name("name") {
-            Some(n) => n.utf8_text(src).unwrap_or("").to_owned(),
-            None => first.split('{').next().unwrap_or(first).split("::").next().unwrap_or(first).trim().to_owned(),
+        // a name the grammar spells out is taken as is; only the first-line guess is length
+        // capped, since a bad guess is a whole line of code
+        let (name, guessed) = match node.child_by_field_name("name") {
+            Some(n) => (n.utf8_text(src).unwrap_or("").to_owned(), false),
+            None if kind == "impl_item" => (impl_name(node, src), false),
+            None => (first.split('{').next().unwrap_or(first).split("::").next().unwrap_or(first).trim().to_owned(), true),
         };
-        if name.is_empty() || name.len() > 80 {
+        if name.is_empty() || (guessed && name.len() > 80) {
             continue;
         }
 
@@ -1163,6 +1183,16 @@ mod tests {
         assert_eq!(idx.sym(idx.find_symbols("b")[0]).callers.len(), 2);
         assert_eq!(idx.roots(), [a]);
         assert_eq!(idx.call_tree(a, 5).len(), 3);
+    }
+
+    /// An impl block's name must read the way rust-analyzer reports it, or a step anchored to
+    /// one under the server is stale under the resolver and the other way round.
+    #[test]
+    fn impl_names_match_the_server() {
+        let src = "pub struct S<R, RA>;\nimpl<R, RA> S<R, RA>\nwhere\n    R: Repo,\n{\n    fn new() {}\n}\nimpl<R, RA> Service<Form<Long>, (A, B, C)> for S<R, RA> {\n    fn go() {}\n}\n";
+        let idx = index(&[("x.rs", src)]);
+        let names: Vec<&str> = idx.files[0].symbols.iter().map(|s| s.name.as_str()).collect();
+        assert_eq!(names, ["S", "impl S<R, RA>", "new", "impl Service<Form<Long>, (A, B, C)> for S<R, RA>", "go"]);
     }
 
     #[test]
