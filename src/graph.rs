@@ -966,13 +966,24 @@ impl App {
         }
         let px = self.px;
         let (w, h) = (self.ui.size.0, self.ui.size.1);
-        let x = (mx + 16).min(w - 90 * self.cell.0).max(0);
-        let y = (my + 16).min(h - 30 * self.cell.1).max(0);
+        let (cw, rh) = self.cell;
+        let max_cols = ((w - 40) / cw.max(1)).max(20) as usize;
+        // the box goes beside the pointer, flipping above or to the left when it would not fit
+        let place_at = |cols: i32, rows: i32| {
+            let (tw, th) = (cols * cw + 12, rows * (rh + 2) + 12);
+            let x = if mx + 16 + tw <= w { mx + 16 } else { (mx - 16 - tw).max(0) };
+            let y = if my + 16 + th <= h { my + 16 } else { (my - 16 - th).max(0) };
+            (x, y)
+        };
         match tip {
             Tip::Sym(r) if r.file < self.idx.files.len() => {
                 let s = self.idx.sym(r);
                 let (name, place, start, end, s_end) = (s.name.clone(), format!("{} {}:{}-{}", s.kind, self.idx.files[r.file].path, s.start + 1, s.end + 1), s.start, s.end, s.end);
                 self.tip_shown = Some(name.clone());
+                let f = &self.idx.files[r.file];
+                let last = end.min(f.lines.len().saturating_sub(1)).min(start + 23);
+                let widest = (start..=last).map(|li| f.lines[li].chars().count() + gui::GUTTER).max().unwrap_or(0).max(place.len()).max(70) as i32;
+                let (x, y) = place_at(widest, (last - start) as i32 + 5);
                 self.ui.open(Kind::None, Layout::col().floating(x, y).pad(6).gap(2), Style::bg(PANEL).border(ui::BORDER_ALL, BORDER), None);
                 self.label(&name, TEXT);
                 self.label(&place, WEAK);
@@ -986,10 +997,12 @@ impl App {
             }
             Tip::Text(t) => {
                 self.tip_shown = t.lines().next().map(str::to_owned);
-                self.ui.open(Kind::None, Layout::col().floating(x, y).pad(6).gap(2), Style::bg(PANEL).border(ui::BORDER_ALL, BORDER), None);
                 let lines: Vec<&str> = t.lines().collect();
+                let widest = lines.iter().take(24).map(|l| l.chars().count()).max().unwrap_or(0).min(max_cols).max(84) as i32;
+                let (x, y) = place_at(widest, lines.len().min(24) as i32 + 2);
+                self.ui.open(Kind::None, Layout::col().floating(x, y).pad(6).gap(2), Style::bg(PANEL).border(ui::BORDER_ALL, BORDER), None);
                 for l in lines.iter().take(24) {
-                    let l: String = l.chars().take(110).collect();
+                    let l: String = l.chars().take(max_cols).collect();
                     let weak = l.starts_with("---");
                     self.ui.leaf(Kind::Text(ui::Text { runs: vec![(if weak { "─".repeat(20) } else { l }, if weak { WEAK } else { TEXT })], px, wrap: false }), Layout::row(), Style::default(), None);
                 }

@@ -390,6 +390,11 @@ impl Ui {
     }
 
     /// Last frame's content extent of the element with `id`, for scroll clamping.
+    /// A scrollbar thumb is being dragged.
+    pub fn dragging(&self) -> bool {
+        self.scroll_drag.is_some()
+    }
+
     pub fn content_of(&self, id: Id) -> Option<([i32; 2], Rect)> {
         self.prev.get(&id).map(|(r, _, c)| (*c, *r))
     }

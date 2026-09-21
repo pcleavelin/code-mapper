@@ -94,6 +94,12 @@ fn trunc(s: &str, n: usize) -> String {
     if s.chars().count() <= n { s.to_owned() } else { s.chars().take(n.saturating_sub(1)).chain(std::iter::once('…')).collect() }
 }
 
+/// Cuts from the front, keeping the tail: what a path needs, since the file name is at the end.
+fn trunc_left(s: &str, n: usize) -> String {
+    let count = s.chars().count();
+    if count <= n { s.to_owned() } else { std::iter::once('…').chain(s.chars().skip(count + 1 - n.max(1))).collect() }
+}
+
 /// The tab of the centre panel.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Tab {
@@ -117,6 +123,7 @@ pub struct Field {
     pub text: String,
     cursor: usize, // in chars
     pub focused: bool,
+    selected: bool, // the whole text is selected: the next character typed replaces it
     history: Vec<String>,
     hist_at: Option<usize>,
 }
@@ -132,7 +139,9 @@ impl Field {
             match k {
                 Key::Enter => {
                     let line = if keep_on_enter { self.text.clone() } else { std::mem::take(&mut self.text) };
-                    if !keep_on_enter {
+                    if keep_on_enter {
+                        self.selected = !self.text.is_empty(); // the next entry replaces this one
+                    } else {
                         self.cursor = 0;
                     }
                     self.hist_at = None;
@@ -140,6 +149,11 @@ impl Field {
                         self.history.push(line.clone());
                         submitted = Some(line);
                     }
+                }
+                Key::Backspace | Key::Delete if self.selected => {
+                    self.text.clear();
+                    self.cursor = 0;
+                    self.selected = false;
                 }
                 Key::Backspace => {
                     if self.cursor > 0 {
@@ -154,10 +168,24 @@ impl Field {
                         self.text.remove(i);
                     }
                 }
-                Key::Left => self.cursor = self.cursor.saturating_sub(1),
-                Key::Right => self.cursor = (self.cursor + 1).min(self.text.chars().count()),
-                Key::Home => self.cursor = 0,
-                Key::End => self.cursor = self.text.chars().count(),
+                Key::Left | Key::Right if m.ctrl || m.alt => {} // those chords belong to the app
+                Key::Left => {
+                    self.cursor = self.cursor.saturating_sub(1);
+                    self.selected = false;
+                }
+                Key::Right => {
+                    self.cursor = (self.cursor + 1).min(self.text.chars().count());
+                    self.selected = false;
+                }
+                Key::Home => {
+                    self.cursor = 0;
+                    self.selected = false;
+                }
+                Key::End => {
+                    self.cursor = self.text.chars().count();
+                    self.selected = false;
+                }
+                Key::Char('a') if m.ctrl => self.selected = !self.text.is_empty(),
                 Key::Up | Key::Down => {
                     if !self.history.is_empty() {
                         let at = match (self.hist_at, k) {
@@ -185,6 +213,10 @@ impl Field {
             }
         }
         if !input.text.is_empty() {
+            if std::mem::take(&mut self.selected) {
+                self.text.clear();
+                self.cursor = 0;
+            }
             let i = self.byte_at(self.cursor);
             self.text.insert_str(i, &input.text);
             self.cursor += input.text.chars().count();
@@ -202,7 +234,8 @@ impl Field {
             return vec![(hint.to_owned(), WEAK)];
         }
         let i = self.byte_at(self.cursor);
-        vec![(self.text[..i].to_owned(), TEXT), (if self.focused { "▏" } else { "" }.to_owned(), ACCENT), (self.text[i..].to_owned(), TEXT)]
+        let color = if self.selected && self.focused { ACCENT } else { TEXT };
+        vec![(self.text[..i].to_owned(), color), (if self.focused { "▏" } else { "" }.to_owned(), ACCENT), (self.text[i..].to_owned(), color)]
     }
 }
 
@@ -230,8 +263,7 @@ struct Def {
     rel: Option<String>,
     abs: PathBuf,
     line: usize,
-    first: usize,
-    around: Vec<String>,
+    file: index::File, // the whole target file parsed with its grammar, for a peek outside the repo
 }
 
 /// What the language-server thread sends back.
@@ -255,7 +287,7 @@ enum Intent {
 enum Found {
     Sym(SymRef),
     Line(usize, usize), // (file, line): a definition inside a symbol, or in a file with none
-    Outside(PathBuf, usize, usize, Vec<String>), // path, line, first line of the text, the text
+    Outside(PathBuf, usize, index::File), // path, line, the parsed file
 }
 
 /// What the tooltip under the pointer shows.
@@ -265,11 +297,21 @@ pub enum Tip {
 }
 
 /// What the peek panel shows.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub enum Peek {
     Sym(SymRef),
     Line(usize, usize),
-    Outside(PathBuf, usize, usize, Vec<String>),
+    Outside(PathBuf, usize, usize, Rc<Glyphs>), // path, line, first line of the grid, the grid
+}
+
+impl std::fmt::Debug for Peek {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Peek::Sym(r) => write!(f, "Sym({r:?})"),
+            Peek::Line(fi, li) => write!(f, "Line({fi}, {li})"),
+            Peek::Outside(p, li, first, g) => write!(f, "Outside({}, {li}, {first}, {} rows)", p.display(), g.h),
+        }
+    }
 }
 
 /// Lines one press of a context button adds above or below a step's code.
@@ -312,11 +354,10 @@ fn serve(root: PathBuf, lang: &'static index::Lang, rx: Receiver<Req>, tx: Sende
             }
             Some(Req::Def(p)) => {
                 let d = c.definition(&abs.join(&p.path), p.line, p.col).map(|(path, line, _)| {
-                    let line = line as usize;
-                    let first = line.saturating_sub(6);
-                    let text = std::fs::read_to_string(&path).unwrap_or_default();
-                    let around = text.lines().skip(first).take(30).map(|l| l.replace('\t', "    ")).collect();
-                    Def { rel: lsp::relative(&path, &abs), abs: path, line, first, around }
+                    let text = std::fs::read_to_string(&path).unwrap_or_default().replace('\t', "    ");
+                    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_owned();
+                    let file = index::parse_file(&mut index::Parsers::new(), path.to_string_lossy().replace('\\', "/"), &text, &ext);
+                    Def { rel: lsp::relative(&path, &abs), abs: path, line: line as usize, file }
                 });
                 let _ = tx.send(Msg::Def(p, d));
             }
@@ -366,7 +407,8 @@ pub enum Action {
     ToggleStep(usize, usize),       // show the whole symbol / just the slice in the document
     ToggleCode(usize, usize),       // hide / show a step's code
     ToggleFold(usize, usize),       // hide / show a step's subtree
-    CollapseAll(usize, bool),
+    CollapseAll(usize, bool), // (path, hide): hide every step's code, or show all and unfold all
+    FoldAll(usize, bool),     // (path, fold): fold every step with children, or unfold all
     DeleteStep(usize, usize),
     DeletePath(usize),
     GoTo(usize, usize),        // (file, line) in the listing
@@ -380,7 +422,6 @@ pub enum Action {
     Back,
     Forward,
     Save,
-    NewPath,
     PinSelection,
 }
 
@@ -396,7 +437,12 @@ pub struct App {
     backend_progress: String,
     restart_backend: bool, // the index changed while a batch ran: send the next when it ends
     hovers: HashMap<Probe, Option<Option<String>>>, // asked (None) or answered (Some: text or nothing)
+    hover_want: Option<(Probe, f64)>,               // the position under the pointer and since when
+    hover_inflight: bool,                           // a hover request the server has not answered
+    now: f64,                                       // the frame's time, seconds since the window opened
     grids: HashMap<(usize, u64, usize, usize), Rc<Glyphs>>, // (file, text hash, first line, last line) -> its drawn form
+    hscroll: HashMap<Id, i32>,                             // horizontal offset of each code block, in pixels
+    output_bottom: u8,                                     // frames left in which the log is pinned to its end
     asked: usize,                                    // hover and definition requests not yet answered
     want_def: Option<(Probe, Intent)>,               // the definition lookup whose answer is awaited
     pub map: Map,
@@ -417,6 +463,7 @@ pub struct App {
     scroll_to: Option<usize>,            // the listing scrolls this line into view next frame
     scroll_to_step: Option<(usize, u8)>, // the document scrolls this step's header to the top; tries left
     top_step: Option<usize>,             // the step whose header is topmost in the document viewport
+    outline_shown: Option<usize>,        // the top step the outline last scrolled to keep in view
 
     expanded_steps: HashSet<(usize, usize)>, // (path, step) showing the whole enclosing symbol
     context: HashMap<(usize, usize), (usize, usize)>, // (path, step) -> extra lines shown above and below
@@ -471,7 +518,12 @@ impl App {
             backend_progress: String::new(),
             restart_backend: false,
             hovers: HashMap::new(),
+            hover_want: None,
+            hover_inflight: false,
+            now: 0.0,
             grids: HashMap::new(),
+            hscroll: HashMap::new(),
+            output_bottom: 0,
             asked: 0,
             want_def: None,
             map,
@@ -490,6 +542,7 @@ impl App {
             scroll_to: None,
             scroll_to_step: None,
             top_step: None,
+            outline_shown: None,
             expanded_steps: HashSet::new(),
             context: HashMap::new(),
             collapsed: HashSet::new(),
@@ -511,7 +564,7 @@ impl App {
             tip_shown: None,
             search: Field::default(),
             new_path: Field::default(),
-            cmd: Field { focused: true, ..Default::default() },
+            cmd: Field::default(),
             sym_filter: Field::default(),
             goto_line: Field::default(),
             results: Vec::new(),
@@ -620,6 +673,7 @@ impl App {
                 }
                 Msg::Hover(p, t) => {
                     self.asked = self.asked.saturating_sub(1);
+                    self.hover_inflight = false;
                     self.hovers.insert(p, Some(t));
                 }
                 Msg::Def(p, d) => {
@@ -633,7 +687,7 @@ impl App {
                                         Some(r) => Found::Sym(r),
                                         None => Found::Line(fi, d.line),
                                     },
-                                    None => Found::Outside(d.abs, d.line, d.first, d.around),
+                                    None => Found::Outside(d.abs, d.line, d.file),
                                 };
                                 self.land(found, intent);
                             }
@@ -793,9 +847,9 @@ impl App {
         self.go(loc);
     }
 
-    /// Restore a place without it counting as a navigation.
+    /// Restore a place without it counting as a navigation. The tab is set last, since
+    /// selecting a step moves the tab on its own.
     fn go(&mut self, loc: Loc) {
-        self.tab = loc.tab;
         self.sel_path = loc.path.filter(|&pi| pi < self.map.paths.len());
         match (self.sel_path, loc.step) {
             (Some(pi), Some(ai)) if ai < self.map.paths[pi].anchors.len() => self.select_step(pi, ai, false),
@@ -811,7 +865,50 @@ impl App {
         if let Some((a, _)) = loc.sel {
             self.scroll_to = Some(a);
         }
+        self.tab = loc.tab;
         self.last_loc = Some(self.here());
+    }
+
+    /// Every per-step record of path `pi` after its step `ai` was removed: the step's own
+    /// entries go and the ones above it move down one, in the fold, code, whole-symbol and
+    /// context sets and in the history.
+    fn step_removed(&mut self, pi: usize, ai: usize) {
+        let shift = |a: usize| if a == ai { None } else if a > ai { Some(a - 1) } else { Some(a) };
+        for set in [&mut self.expanded_steps, &mut self.collapsed, &mut self.folded] {
+            *set = set.drain().filter_map(|(p, a)| if p == pi { shift(a).map(|a| (p, a)) } else { Some((p, a)) }).collect();
+        }
+        self.context = self.context.drain().filter_map(|((p, a), v)| if p == pi { shift(a).map(|a| ((p, a), v)) } else { Some(((p, a), v)) }).collect();
+        for loc in self.history.iter_mut().chain(self.forward.iter_mut()).chain(self.last_loc.iter_mut()) {
+            if loc.path == Some(pi) {
+                loc.step = loc.step.and_then(shift);
+            }
+        }
+    }
+
+    /// The same after path `pi` was removed: its records go, later paths move down one.
+    fn path_removed(&mut self, pi: usize) {
+        let shift = |p: usize| if p == pi { None } else if p > pi { Some(p - 1) } else { Some(p) };
+        for set in [&mut self.expanded_steps, &mut self.collapsed, &mut self.folded] {
+            *set = set.drain().filter_map(|(p, a)| shift(p).map(|p| (p, a))).collect();
+        }
+        self.context = self.context.drain().filter_map(|((p, a), v)| shift(p).map(|p| ((p, a), v))).collect();
+        self.history.retain(|l| l.path != Some(pi));
+        self.forward.retain(|l| l.path != Some(pi));
+        for loc in self.history.iter_mut().chain(self.forward.iter_mut()).chain(self.last_loc.iter_mut()) {
+            loc.path = loc.path.and_then(shift);
+        }
+        self.top_step = None;
+    }
+
+    /// Move the selected step through the path in reading order.
+    fn step_by(&mut self, d: i32) {
+        let Some(pi) = self.sel_path.filter(|&pi| pi < self.map.paths.len()) else { return };
+        let order = self.map.tree_order(pi);
+        if order.is_empty() {
+            return;
+        }
+        let at = self.sel_anchor.and_then(|ai| order.iter().position(|&(a, _)| a == ai)).map_or(0, |i| (i as i32 + d).clamp(0, order.len() as i32 - 1) as usize);
+        self.select_step(pi, order[at].0, false);
     }
 
     // ---- selection ----
@@ -848,6 +945,12 @@ impl App {
     pub fn select_step(&mut self, pi: usize, ai: usize, in_document: bool) {
         self.sel_path = Some(pi);
         self.sel_anchor = Some(ai);
+        // a folded ancestor would hide the step: unfold the way down to it
+        let mut up = self.map.paths[pi].anchors[ai].parent;
+        while up >= 0 {
+            self.folded.remove(&(pi, up as usize));
+            up = self.map.paths[pi].anchors[up as usize].parent;
+        }
         let a = &self.map.paths[pi].anchors[ai];
         let (file, sym, ls, le) = (a.file.clone(), a.sym, a.line_start, a.line_end);
         match (self.idx.find_file(&file), sym) {
@@ -857,9 +960,13 @@ impl App {
                 self.scroll_to = Some(ls);
             }
             (Some(fi), None) => {
+                // lines with no symbol of their own: the right panel shows the one around them
                 self.cur_file = Some(fi);
                 self.sel = Some((ls, le));
                 self.scroll_to = Some(ls);
+                if let Some(r) = self.idx.by_line(&file, ls) {
+                    self.focus = Some(r);
+                }
             }
             _ => {}
         }
@@ -884,8 +991,12 @@ impl App {
     /// listing opens.
     fn go_to_symbol(&mut self, r: SymRef) {
         self.select_symbol(r);
-        if self.sel_anchor.is_none() && !matches!(self.tab, Tab::Graph | Tab::Path) {
-            self.tab = Tab::Listing;
+        if self.sel_anchor.is_none() {
+            if !matches!(self.tab, Tab::Graph | Tab::Path) {
+                self.tab = Tab::Listing;
+            } else if let Some(pi) = self.sel_path {
+                self.status = format!("{} selected; not a step of '{}'", self.idx.sym(r).name, self.map.paths[pi].name);
+            }
         }
     }
 
@@ -920,7 +1031,8 @@ impl App {
     }
 
     /// What is known about the identifier at a position. A language with a live server is
-    /// asked once per position and answers a frame or more later; a language with only a
+    /// asked once per position, after the pointer has rested on it for a moment and with no
+    /// other hover in flight, and answers a frame or more later; a language with only a
     /// grammar answers with the symbol of that name; prose answers nothing.
     pub fn probe(&mut self, fi: usize, li: usize, col: usize) -> Option<Tip> {
         let (start, _) = self.word_at(fi, li, col)?;
@@ -929,10 +1041,23 @@ impl App {
                 Some(Some(t)) => t.clone().map(Tip::Text),
                 Some(None) => None,
                 None => {
-                    self.hovers.insert(p.clone(), None);
-                    if let Some(tx) = self.server(lang) {
-                        let _ = tx.send(Req::Hover(p));
-                        self.asked += 1;
+                    let since = match &self.hover_want {
+                        Some((w, t)) if *w == p => *t,
+                        _ => {
+                            self.hover_want = Some((p.clone(), self.now));
+                            self.now
+                        }
+                    };
+                    if self.now - since >= 0.15 && !self.hover_inflight {
+                        if self.hovers.len() > 500 {
+                            self.hovers.clear();
+                        }
+                        self.hovers.insert(p.clone(), None);
+                        if let Some(tx) = self.server(lang) {
+                            let _ = tx.send(Req::Hover(p));
+                            self.asked += 1;
+                            self.hover_inflight = true;
+                        }
                     }
                     None
                 }
@@ -967,16 +1092,20 @@ impl App {
         match (intent, found) {
             (Intent::Jump, Found::Sym(r)) => {
                 self.select_symbol(r);
-                if self.tab != Tab::Graph {
+                let on_step = self.sel_anchor.is_some() && self.tab == Tab::Path;
+                if self.tab != Tab::Graph && !on_step {
                     self.tab = Tab::Listing;
                 }
             }
             (Intent::Jump, Found::Line(fi, li)) => self.open_line(fi, li),
             (Intent::Peek, Found::Sym(r)) => self.peek = Some(Peek::Sym(r)),
             (Intent::Peek, Found::Line(fi, li)) => self.peek = Some(Peek::Line(fi, li)),
-            (_, Found::Outside(p, li, first, text)) => {
+            (_, Found::Outside(p, li, file)) => {
                 self.status = format!("defined outside the repo: {}:{}", p.display(), li + 1);
-                self.peek = Some(Peek::Outside(p, li, first, text));
+                let first = li.saturating_sub(6);
+                let last = (li + 24).min(file.lines.len().saturating_sub(1));
+                let grid = if file.lines.is_empty() { Glyphs::new(0, 0) } else { build_grid(&file, first, last) };
+                self.peek = Some(Peek::Outside(p, li, first, Rc::new(grid)));
             }
         }
     }
@@ -1006,11 +1135,19 @@ impl App {
     }
 
     fn run_cmd(&mut self, line: String) {
+        if line.trim() == "clear" {
+            self.output.clear();
+            return;
+        }
         self.output.push_str(&format!("> {line}\n"));
+        self.output_bottom = 2;
         let cmd = match cli::parse(&cli::tokenize(&line)) {
             Ok(cmd) => cmd,
             Err(e) => {
-                self.output.push_str(&e.to_string());
+                let e = e.to_string();
+                self.status = e.lines().next().unwrap_or("").to_owned();
+                self.output.push_str(e.trim_end());
+                self.output.push('\n');
                 return;
             }
         };
@@ -1020,20 +1157,22 @@ impl App {
                 self.output.push_str("(map changed, ctrl+s to save)\n");
             }
             Ok(false) => {}
-            Err(e) => self.output.push_str(&format!("error: {e}\n")),
+            Err(e) => {
+                self.status = format!("error: {e}");
+                self.output.push_str(&format!("error: {e}\n"));
+            }
         }
-        self.scrolls.insert(ui::id("output"), i32::MAX);
     }
 
     fn run_search(&mut self) {
-        self.results.clear();
         let re = match regex::Regex::new(&self.search.text) {
             Ok(re) => re,
             Err(e) => {
-                self.status = format!("bad regex: {e}");
+                self.status = format!("bad regex: {}", e.to_string().lines().last().unwrap_or("").trim());
                 return;
             }
         };
+        self.results.clear();
         // ponytail: single-threaded scan of the in-memory index; rayon it when it takes >100ms.
         'outer: for (fi, f) in self.idx.files.iter().enumerate() {
             for (li, line) in f.lines.iter().enumerate() {
@@ -1049,15 +1188,15 @@ impl App {
         self.tab = Tab::Results;
     }
 
-    fn create_path(&mut self) {
-        let name = self.new_path.text.trim().to_owned();
+    /// A new empty flow from the top bar, selected so 'pin selection' lands in it.
+    fn create_path(&mut self, name: String) {
         if name.is_empty() {
             return;
         }
         self.sel_path = Some(self.map.add_path(&name, PathKind::Flow, Author::Human));
         self.sel_anchor = None;
-        self.new_path.text.clear();
-        self.new_path.cursor = 0;
+        self.tab = Tab::Path;
+        self.status = format!("path '{name}' created (unsaved)");
         self.dirty = true;
     }
 
@@ -1083,7 +1222,9 @@ impl App {
         match a {
             Action::Focus(r) => self.go_to_symbol(r),
             Action::SelectPath(pi) => {
-                self.select_path(pi);
+                if self.sel_path != Some(pi) {
+                    self.select_path(pi);
+                }
                 self.tab = Tab::Path;
             }
             Action::ShowPath(pi) => {
@@ -1112,24 +1253,33 @@ impl App {
                 self.collapsed.retain(|&(p, _)| p != pi);
                 if hide {
                     self.collapsed.extend((0..self.map.paths[pi].anchors.len()).map(|ai| (pi, ai)));
+                } else {
+                    self.folded.retain(|&(p, _)| p != pi);
+                }
+            }
+            Action::FoldAll(pi, fold) => {
+                self.folded.retain(|&(p, _)| p != pi);
+                if fold {
+                    let with_kids: Vec<usize> = (0..self.map.paths[pi].anchors.len()).filter(|&ai| self.map.descendants(pi, ai) > 0).collect();
+                    self.folded.extend(with_kids.into_iter().map(|ai| (pi, ai)));
                 }
             }
             // ponytail: no undo
             Action::DeleteStep(pi, ai) => {
+                let number = self.map.numbered(&self.idx, pi).iter().find(|(a, _, _)| *a == ai).map(|(_, _, n)| n.clone()).unwrap_or_default();
+                let a = &self.map.paths[pi].anchors[ai];
+                self.status = format!("deleted step {number} {} ({}) from '{}'; unsaved", a.symbol, a.file, self.map.paths[pi].name);
                 self.map.remove_anchor(pi, ai);
                 self.sel_anchor = None;
-                self.expanded_steps.clear();
-                self.collapsed.clear();
-                self.folded.clear();
+                self.step_removed(pi, ai);
                 self.dirty = true;
             }
             Action::DeletePath(pi) => {
-                self.map.paths.remove(pi);
+                let p = self.map.paths.remove(pi);
+                self.status = format!("deleted path '{}' ({} steps); unsaved", p.name, p.anchors.len());
                 self.sel_path = None;
                 self.sel_anchor = None;
-                self.expanded_steps.clear();
-                self.collapsed.clear();
-                self.folded.clear();
+                self.path_removed(pi);
                 self.dirty = true;
             }
             Action::GoTo(fi, line) => self.open_line(fi, line),
@@ -1163,7 +1313,6 @@ impl App {
             Action::Back => self.back(),
             Action::Forward => self.forward(),
             Action::Save => self.save(),
-            Action::NewPath => self.create_path(),
             Action::PinSelection => self.add_selection(),
         }
     }
@@ -1185,20 +1334,45 @@ impl App {
         self.ui.leaf(text(s, self.px, if it.hovered { TEXT } else { WEAK }), Layout::row().pad(2), Style::bg(if it.hovered { HOVER } else { FIELD }).border(ui::BORDER_ALL, BORDER), Some(id))
     }
 
+    /// A small button `cols` cells wide whatever its label, so a label that changes on click
+    /// does not move the buttons beside it.
+    pub fn small_button_w(&mut self, s: &str, cols: usize, id: Id) -> Interaction {
+        let it = self.ui.interaction_of(id);
+        self.ui.leaf(text(s, self.px, if it.hovered { TEXT } else { WEAK }), Layout::row().pad(2).w(cols as i32 * self.cell.0 + 4), Style::bg(if it.hovered { HOVER } else { FIELD }).border(ui::BORDER_ALL, BORDER), Some(id))
+    }
+
+    /// A navigation button three cells wide, dimmed when it has nowhere to go.
+    fn nav_button(&mut self, s: &str, id: Id, enabled: bool) -> Interaction {
+        let it = self.ui.interaction_of(id);
+        let color = if !enabled { dim(WEAK, 90) } else if it.hovered { TEXT } else { WEAK };
+        self.ui.leaf(text(s, self.px, color), Layout::row().pad(4).w(3 * self.cell.0 + 8), Style::bg(if it.hovered && enabled { HOVER } else { PANEL }).border(ui::BORDER_ALL, BORDER), Some(id))
+    }
+
     /// A selectable row: a full-width line of text with a hover and selection background.
     fn row(&mut self, runs_: Vec<(String, Color)>, id: Id, selected: bool) -> Interaction {
+        self.row_bg(runs_, id, selected.then_some(SELECTED))
+    }
+
+    /// A row with its own background when it is marked; hover shows otherwise.
+    fn row_bg(&mut self, runs_: Vec<(String, Color)>, id: Id, marked: Option<Color>) -> Interaction {
         let it = self.ui.interaction_of(id);
-        let bg = if selected { Some(SELECTED) } else if it.hovered { Some(HOVER) } else { None };
+        let bg = marked.or(if it.hovered { Some(HOVER) } else { None });
         self.ui.leaf(runs(runs_, self.px), Layout::row().grow_x().pad(2), Style { bg, ..Default::default() }, Some(id))
     }
 
-    /// A text field; clicking it takes the keyboard.
+    /// A text field; clicking it takes the keyboard. The text is clipped to the box and
+    /// scrolled so the caret stays in view.
     fn field(&mut self, which: Which, hint: &str, width: i32) -> Interaction {
         let id = ui::id_with(ui::id("field"), hint);
+        let cw = self.cell.0;
         let f = self.field_mut(which);
         let focused = f.focused;
+        let caret = f.cursor as i32 + 1;
         let r = f.runs(hint);
-        let it = self.ui.leaf(runs(r, self.px), Layout::row().w(width).pad(3), Style::bg(FIELD).border(ui::BORDER_ALL, if focused { ACCENT } else { BORDER }), Some(id));
+        let x = (caret * cw - (width - 6)).max(0);
+        let it = self.ui.open(Kind::None, Layout::row().w(width).pad(3).scroll(x, 0), Style::bg(FIELD).border(ui::BORDER_ALL, if focused { ACCENT } else { BORDER }), Some(id));
+        self.ui.leaf(runs(r, self.px), Layout::row(), Style::default(), None);
+        self.ui.close();
         if it.clicked {
             self.take_focus(which);
         }
@@ -1260,6 +1434,14 @@ impl App {
         let px = self.px;
         let (cw, rh) = self.cell;
         let (w, h) = (g.w as i32 * cw, g.h as i32 * rh);
+        // shift+wheel over the block scrolls it sideways when its lines are wider than it
+        let prev = self.ui.interaction_of(id);
+        let mut hx = self.hscroll.get(&id).copied().unwrap_or(0);
+        if prev.hovered && self.ui.input.mods.shift && self.ui.input.wheel.1 != 0.0 {
+            hx -= (self.ui.input.wheel.1 * 3.0 * cw as f32) as i32;
+        }
+        hx = hx.clamp(0, prev.rect.map_or(0, |r| (w - r.w).max(0)));
+        self.hscroll.insert(id, hx);
         let rows: Vec<(Option<Color>, Option<Color>)> = (lo..=hi).map(|li| (bg(li), bar(li))).collect();
         let draw = move |gfx: &mut Gfx, r: Rect| {
             for (k, (bg, bar)) in rows.iter().enumerate() {
@@ -1268,10 +1450,13 @@ impl App {
                     gfx.rect(Rect::new(r.x, y, r.w, rh), *c);
                 }
                 if let Some(c) = bar {
-                    gfx.rect(Rect::new(r.x, y, 2, rh), *c);
+                    gfx.rect(Rect::new(r.x, y, cw - 1, rh), *c);
                 }
             }
-            gfx.glyphs(r.x, r.y, px, &g);
+            gfx.glyphs(r.x - hx, r.y, px, &g);
+            if hx > 0 {
+                gfx.rect(Rect::new(r.x, r.y, 2, r.h), WEAK); // the left edge is cut off
+            }
         };
         let layout = if wide { Layout::row().grow_x().h(h) } else { Layout::row().w(w).h(h) };
         let it = self.ui.leaf(Kind::Custom(Box::new(draw)), layout, Style::default(), Some(id));
@@ -1279,7 +1464,7 @@ impl App {
         if let Some(rect) = it.rect.filter(|_| it.hovered) {
             let (mx, my) = self.ui.input.mouse;
             let row = ((my - rect.y) / rh).clamp(0, (hi - lo) as i32) as usize;
-            let col = ((mx - rect.x) / cw).max(0) as usize;
+            let col = ((mx - rect.x + hx) / cw).max(0) as usize;
             at = Some((lo + row, col.checked_sub(GUTTER)));
         }
         if let Some((li, Some(col))) = at {
@@ -1303,10 +1488,11 @@ impl App {
         self.ui.open(Kind::None, Layout::row().grow_x().pad(4).gap(6).cross(Align::Center), Style::bg(PANEL).border(BORDER_BOTTOM, BORDER), None);
         self.label("search", WEAK);
         self.field(Which::Search, "regex", 24 * self.cell.0);
-        if self.button("<", ui::id("back"), false).clicked {
+        let (has_back, has_forward) = (!self.history.is_empty(), !self.forward.is_empty());
+        if self.nav_button("<", ui::id("back"), has_back).clicked {
             self.actions.push(Action::Back);
         }
-        if self.button(">", ui::id("forward"), false).clicked {
+        if self.nav_button(">", ui::id("forward"), has_forward).clicked {
             self.actions.push(Action::Forward);
         }
         let n = self.results.len();
@@ -1331,9 +1517,9 @@ impl App {
 
     fn status_bar(&mut self) {
         self.ui.open(Kind::None, Layout::row().grow_x().pad(4).gap(12).cross(Align::Center), Style::bg(PANEL).border(BORDER_TOP, BORDER), None);
-        let p = self.map_path.display().to_string();
+        let p = self.map_path.display().to_string().replace('\\', "/");
         self.label(&p, WEAK);
-        let s = self.status.clone();
+        let s: String = self.status.lines().map(str::trim).filter(|l| !l.is_empty()).collect::<Vec<_>>().join(" ");
         self.label(&s, TEXT);
         if !self.backend_progress.is_empty() {
             let b = self.backend_progress.clone();
@@ -1344,11 +1530,27 @@ impl App {
 
     fn output_panel(&mut self, h: i32) {
         let px = self.px;
+        let id = ui::id("output");
         self.ui.open(Kind::None, Layout::col().grow_x().h(h), Style::bg(FIELD).border(BORDER_TOP, BORDER), None);
-        self.scroll_open(ui::id("output"), Layout::col().grow().pad(4), Style::default());
-        for line in self.output.lines() {
+        // a command's output exists only after this frame's layout, so the pin to the end is
+        // asked for two frames running: the second one lands on the new content
+        if self.output_bottom > 0 {
+            self.output_bottom -= 1;
+            self.scrolls.insert(id, i32::MAX);
+        }
+        let it = self.scroll_open(id, Layout::col().grow().pad(4), Style::default());
+        // only the visible window of log lines is built
+        let row_h = self.cell.1;
+        let off = self.scrolls.get(&id).copied().unwrap_or(0);
+        let lines: Vec<&str> = self.output.lines().collect();
+        let visible = it.rect.map_or(20, |r| r.h / row_h + 2) as usize;
+        let first = ((off / row_h).max(0) as usize).min(lines.len());
+        self.ui.leaf(Kind::None, Layout::row().h(first as i32 * row_h), Style::default(), None);
+        for line in lines.iter().skip(first).take(visible) {
             self.ui.leaf(text(line, px, TEXT), Layout::row(), Style::default(), None);
         }
+        let rest = lines.len().saturating_sub(first + visible) as i32 * row_h;
+        self.ui.leaf(Kind::None, Layout::row().h(rest), Style::default(), None);
         self.ui.close();
         let focus = self.cmd.focused;
         let it = self.ui.open(Kind::None, Layout::row().grow_x().pad(4).gap(4).cross(Align::Center), Style::bg(if focus { PANEL } else { FIELD }).border(BORDER_TOP, BORDER), Some(ui::id("cmd")));
@@ -1382,7 +1584,8 @@ impl App {
     fn paths_window(&mut self) {
         let diffs = self.diffs();
         let base = ui::id("paths");
-        self.scroll_open(base, Layout::col().grow().pad(4), Style::default());
+        let it = self.scroll_open(base, Layout::col().grow().pad(4), Style::default());
+        let cols = it.rect.map_or(44, |r| ((r.w - 8 - ui::SCROLLBAR_W) / self.cell.0.max(1)).max(20)) as usize;
         for pi in 0..self.map.paths.len() {
             let (name, kind, tag, n, stale) = {
                 let p = &self.map.paths[pi];
@@ -1395,7 +1598,8 @@ impl App {
             };
             let color = if stale > 0 { RED } else if !mark.is_empty() { GREEN } else { TEXT };
             let selected = self.sel_path == Some(pi);
-            let it = self.row(vec![(format!("{mark}{name} [{kind}]{tag}  {n} steps"), color)], ui::id_n(base, pi), selected);
+            let rest = format!(" [{kind}]{tag}  {n} steps");
+            let it = self.row(vec![(format!("{mark}{}{rest}", trunc(&name, cols.saturating_sub(mark.len() + rest.chars().count()))), color)], ui::id_n(base, pi), selected);
             if it.clicked {
                 self.actions.push(Action::SelectPath(pi));
             }
@@ -1422,9 +1626,23 @@ impl App {
                 let stale = a.stale;
                 let line = format!("  {}{number}  {name}{}", "  ".repeat(depth), if hidden > 0 { format!("  +{hidden}") } else { String::new() });
                 let at_top = self.top_step == Some(ai);
-                let it = self.row(vec![(line, if stale { RED } else if at_top { TEXT } else { WEAK }), (format!("  {file}"), dim(WEAK, 140))], ui::id_n(ui::id("outline"), ai), at_top || self.sel_anchor == Some(ai));
+                let marked = if self.sel_anchor == Some(ai) { Some(SELECTED) } else if at_top { Some(dim(SELECTED, 110)) } else { None };
+                let it = self.row_bg(vec![(line, if stale { RED } else if at_top { TEXT } else { WEAK }), (format!("  {file}"), dim(WEAK, 140))], ui::id_n(ui::id("outline"), ai), marked);
                 if it.clicked {
                     self.actions.push(Action::SelectStep(pi, ai, false));
+                }
+            }
+            // the outline follows the document: when the topmost step changes and its row is
+            // out of view, scroll it to the upper third, never under a scrollbar drag
+            if let (Some(ai), Some((_, view))) = (self.top_step, self.ui.content_of(base)) {
+                if self.outline_shown != Some(ai) && !self.ui.dragging() {
+                    if let Some(row) = self.ui.interaction_of(ui::id_n(ui::id("outline"), ai)).rect {
+                        if row.y < view.y || row.bottom() > view.bottom() {
+                            let off = self.scrolls.get(&base).copied().unwrap_or(0) + (row.y - view.y) - view.h / 3;
+                            self.scrolls.insert(base, off.max(0));
+                        }
+                    }
+                    self.outline_shown = Some(ai);
                 }
             }
         }
@@ -1455,12 +1673,15 @@ impl App {
         let row_h = self.cell.1 + 4;
         let off = self.scrolls.get(&id).copied().unwrap_or(0);
         let visible = it.rect.map_or(40, |r| r.h / row_h + 2) as usize;
+        let cols = it.rect.map_or(60, |r| ((r.w - 8 - ui::SCROLLBAR_W) / self.cell.0.max(1)).max(30)) as usize;
         let first = (off / row_h).max(0) as usize;
         self.ui.leaf(Kind::None, Layout::row().h(first as i32 * row_h), Style::default(), None);
         for &r in rows.iter().skip(first).take(visible) {
             let s = self.idx.sym(r);
             let covered = if self.map.covers(&self.idx.files[r.file].path, s.start, s.end) { "+" } else { " " };
-            let line = format!("{covered} {}{:<26} {:<12} {}:{}", if s.depth > 0 { "  " } else { "" }, trunc(&s.name, 26), trunc(&s.kind, 12), self.idx.files[r.file].path, s.start + 1);
+            let indent = if s.depth > 0 { "  " } else { "" };
+            let place = format!("{}:{}", self.idx.files[r.file].path, s.start + 1);
+            let line = format!("{covered} {indent}{:<20} {:<8} {}", trunc(&s.name, 20), trunc(&s.kind, 8), trunc_left(&place, cols.saturating_sub(32 + indent.len())));
             let pending = self.idx.files[r.file].pending;
             let it = self.row(vec![(line, if pending { dim(WEAK, 120) } else { TEXT })], ui::id_n(ui::id("sym"), r.file * 100_000 + r.sym), self.focus == Some(r));
             if it.clicked {
@@ -1531,10 +1752,14 @@ impl App {
                 let last = self.idx.files[fi].lines.len().saturating_sub(1);
                 Some(("Peek".to_owned(), format!("{}:{}", self.idx.files[fi].path, li + 1), Some(Action::GoTo(fi, li)), Ok((fi, li.saturating_sub(6), (li + 20).min(last), Some(li)))))
             }
-            Some(Peek::Outside(p, li, first, text)) => Some(("Peek (outside the repo)".to_owned(), format!("{}:{}", p.display(), li + 1), None, Err((first, li, text)))),
+            Some(Peek::Outside(p, li, first, grid)) => Some(("Peek (outside)".to_owned(), format!("{}:{}", p.display().to_string().replace('\\', "/"), li + 1), None, Err((first, li, grid)))),
             _ => None,
         };
         if let Some((title, place, go, body)) = peek {
+            // the header fits the panel whatever the path's length: the buttons never leave it
+            let cols = (w / self.cell.0.max(1)) as usize;
+            let title = trunc(&title, 24.min(cols / 2));
+            let place = trunc_left(&place, cols.saturating_sub(title.chars().count() + 14));
             self.ui.open(Kind::None, Layout::row().grow_x().pad(4).gap(6).cross(Align::Center), Style::default(), None);
             self.label(&title, TEXT);
             self.label(&place, WEAK);
@@ -1544,23 +1769,32 @@ impl App {
                     self.actions.push(go);
                 }
             }
-            if self.small_button("x", ui::id("peek-x")).clicked {
+            if self.small_button_w("x", 3, ui::id("peek-x")).clicked {
                 self.actions.push(Action::ClosePeek);
             }
             self.ui.close();
-            let h = (self.ui.size.1 / 3).max(100);
+            let rows = match &body {
+                Ok((fi, start, end, _)) => end.min(&self.idx.files[*fi].lines.len().saturating_sub(1)).saturating_sub(*start) + 1,
+                Err((_, _, grid)) => grid.h,
+            };
+            let h = (rows as i32 * self.cell.1 + 8).min((self.ui.size.1 / 3).max(100));
             self.scroll_open(ui::id("peek"), Layout::col().grow_x().h(h).pad(4), Style::bg(FIELD));
             match body {
                 Ok((fi, start, end, mark)) => {
                     self.code_block(fi, start, end, ui::id("peekcode"), true, &|li| (mark == Some(li)).then_some(dim(SELECTED, 120)), &|_| None);
                 }
-                Err((first, mark, around)) => {
+                Err((first, mark, grid)) => {
                     let px = self.px;
-                    for (k, l) in around.iter().enumerate() {
-                        let li = first + k;
-                        let t = format!("{:5} {l}", li + 1);
-                        self.ui.leaf(text(&t, px, TEXT), Layout::row().grow_x(), Style { bg: (li == mark).then_some(dim(SELECTED, 120)), ..Default::default() }, None);
-                    }
+                    let (cw, rh) = self.cell;
+                    let g = grid.clone();
+                    let draw = move |gfx: &mut Gfx, r: Rect| {
+                        if mark >= first && mark < first + g.h {
+                            gfx.rect(Rect::new(r.x, r.y + (mark - first) as i32 * rh, r.w, rh), dim(SELECTED, 120));
+                        }
+                        gfx.glyphs(r.x, r.y, px, &g);
+                    };
+                    let _ = cw;
+                    self.ui.leaf(Kind::Custom(Box::new(draw)), Layout::row().grow_x().h(grid.h as i32 * rh), Style::default(), Some(ui::id("peekout")));
                 }
             }
             self.ui.close();
@@ -1598,7 +1832,8 @@ impl App {
                 self.actions.push(Action::Focus(*r));
             }
         }
-        self.label(&format!("References ({})", refs.len()), WEAK);
+        let shown = refs.iter().filter(|(p, _)| self.idx.find_file(p).is_some()).count();
+        self.label(&format!("References ({shown})"), WEAK);
         for (i, (path, line)) in refs.iter().enumerate() {
             if let Some(fi) = self.idx.find_file(path) {
                 let t = self.idx.files[fi].lines.get(*line as usize).map(|l| l.trim()).unwrap_or("").to_owned();
@@ -1667,11 +1902,17 @@ impl App {
         if self.small_button("graph", ui::id("doc-graph")).clicked {
             self.actions.push(Action::ShowPath(pi));
         }
-        if self.small_button("collapse all", ui::id("doc-collapse")).clicked {
+        if self.small_button("hide all code", ui::id("doc-collapse")).clicked {
             self.actions.push(Action::CollapseAll(pi, true));
         }
-        if self.small_button("expand all", ui::id("doc-expand")).clicked {
+        if self.small_button("show all", ui::id("doc-expand")).clicked {
             self.actions.push(Action::CollapseAll(pi, false));
+        }
+        if self.small_button("fold all", ui::id("doc-fold")).clicked {
+            self.actions.push(Action::FoldAll(pi, true));
+        }
+        if self.small_button("unfold all", ui::id("doc-unfold")).clicked {
+            self.actions.push(Action::FoldAll(pi, false));
         }
         if self.small_button("delete path", ui::id("doc-delete")).clicked {
             self.actions.push(Action::DeletePath(pi));
@@ -1762,18 +2003,21 @@ impl App {
             if it.clicked {
                 self.actions.push(Action::SelectStep(pi, ai, true));
             }
-            if gone.is_none() && self.small_button(if collapsed { "code" } else { "hide code" }, ui::id_n(ui::id("hide"), ai)).clicked {
+            // toggles keep their width across labels, and the one destructive button sits alone
+            // at the far right, so nothing slides under a pointer that clicks twice
+            if gone.is_none() && self.small_button_w(if collapsed { "code" } else { "hide code" }, 9, ui::id_n(ui::id("hide"), ai)).clicked {
                 self.actions.push(Action::ToggleCode(pi, ai));
             }
-            if sym.is_some_and(|s| s != (ls, le)) {
+            if !collapsed && sym.is_some_and(|s| s != (ls, le)) {
                 let whole = self.expanded_steps.contains(&(pi, ai));
-                if self.small_button(if whole { "slice" } else { "whole symbol" }, ui::id_n(ui::id("whole"), ai)).clicked {
+                if self.small_button_w(if whole { "slice" } else { "whole symbol" }, 12, ui::id_n(ui::id("whole"), ai)).clicked {
                     self.actions.push(Action::ToggleStep(pi, ai));
                 }
             }
             if ctx != (0, 0) && self.small_button("no context", ui::id_n(ui::id("ctx0"), ai)).clicked {
                 self.actions.push(Action::Context(pi, ai, 0));
             }
+            self.ui.leaf(Kind::None, Layout::row().grow_x(), Style::default(), None);
             if self.small_button("delete", ui::id_n(ui::id("del"), ai)).clicked {
                 self.actions.push(Action::DeleteStep(pi, ai));
             }
@@ -1867,12 +2111,16 @@ impl App {
                 }
             }
         }
-        let rest = n.saturating_sub(first + visible) as i32 * row_h;
+        let rest = n.saturating_sub(first + visible) as i32 * row_h + row_h; // a row of slack so the last line clears the edge
         self.ui.leaf(Kind::None, Layout::row().h(rest), Style::default(), None);
         self.ui.close();
     }
 
     fn results_view(&mut self) {
+        if self.results.is_empty() {
+            self.label(if self.search.text.is_empty() { "type a regex in the search box and press enter" } else { "no hits" }, WEAK);
+            return;
+        }
         let id = ui::id("results");
         let row_h = self.cell.1 + 4;
         let it = self.scroll_open(id, Layout::col().grow().pad(4), Style::default());
@@ -1940,8 +2188,9 @@ impl App {
             let pi = self.map.find(&d.name);
             let it = self.row(vec![(format!("{mark} {}   ", d.name), color), (summary, WEAK)], ui::id_n(ui::id("diffrow"), k), false);
             if it.clicked {
-                if let Some(pi) = pi {
-                    self.actions.push(Action::SelectPath(pi));
+                match pi {
+                    Some(pi) => self.actions.push(Action::SelectPath(pi)),
+                    None => self.status = format!("'{}' exists only in the parent revision; its {} steps are listed under the path it was removed from", d.name, d.removed.len()),
                 }
             }
             if let Some(pi) = pi.filter(|_| d.change == Change::Changed) {
@@ -2084,13 +2333,14 @@ impl gfx::App for App {
         self.poll_disk();
 
         // keys
+        self.now = input.time;
         if input.key_with(Key::Char('s'), true, false) {
             self.save();
         }
-        if input.key_with(Key::Left, false, true) || input.back {
+        if input.key_with(Key::Left, false, true) || input.key_with(Key::Left, true, false) || input.back {
             self.back();
         }
-        if input.key_with(Key::Right, false, true) || input.forward {
+        if input.key_with(Key::Right, false, true) || input.key_with(Key::Right, true, false) || input.forward {
             self.forward();
         }
         if let Some(line) = self.cmd.handle(input, false) {
@@ -2099,15 +2349,32 @@ impl gfx::App for App {
         if self.search.handle(input, true).is_some() {
             self.run_search();
         }
-        if self.new_path.handle(input, false).is_some() {
-            self.create_path();
+        if let Some(name) = self.new_path.handle(input, false) {
+            self.create_path(name.trim().to_owned());
+        }
+        // with no field focused, up and down walk the path
+        if ![&self.search, &self.new_path, &self.cmd, &self.sym_filter, &self.goto_line].iter().any(|f| f.focused) {
+            if input.key_with(Key::Down, false, false) {
+                self.step_by(1);
+            }
+            if input.key_with(Key::Up, false, false) {
+                self.step_by(-1);
+            }
         }
         self.sym_filter.handle(input, true);
         if let Some(l) = self.goto_line.handle(input, true) {
-            if let (Ok(line), Some(fi)) = (l.trim().parse::<usize>(), self.cur_file) {
-                let line = line.clamp(1, self.idx.files[fi].lines.len().max(1)) - 1;
-                self.sel = Some((line, line));
-                self.scroll_to = Some(line);
+            match (l.trim().parse::<usize>(), self.cur_file) {
+                (Ok(line), Some(fi)) => {
+                    let n = self.idx.files[fi].lines.len().max(1);
+                    if line < 1 || line > n {
+                        self.status = format!("line {line} is outside 1-{n}; went to the nearest");
+                    }
+                    let line = line.clamp(1, n) - 1;
+                    self.sel = Some((line, line));
+                    self.scroll_to = Some(line);
+                }
+                (Err(_), _) => self.status = format!("'{}' is not a line number", l.trim()),
+                (_, None) => self.status = "no file open in the listing".into(),
             }
         }
 

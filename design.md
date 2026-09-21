@@ -111,7 +111,8 @@ toggle that shows the enclosing symbol with the slice highlighted inside it, and
 buttons at the top and bottom of the code that show ten more lines of the file each
 press, the way a diff hunk expands; whenever anything beyond the slice shows, the slice
 is highlighted. Path-wide
-collapse all and expand all. Stale steps are red. The selected step carries an accent
+hide all code, show all, fold all, unfold all. Up and down walk the steps when no field
+has the keyboard. Stale steps are red. The selected step carries an accent
 bar; selecting it from outside the document scrolls its header to the top, selecting it
 inside does not scroll. Selecting an off-path symbol leaves the document and outline on
 the path with no step highlighted; back returns to the step. The flat step index the
