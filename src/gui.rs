@@ -1939,6 +1939,20 @@ enum Which {
     GotoLine,
 }
 
+impl App {
+    /// Element names for `rect`, `click-id` and `hover-id`: `name`, `name/<n>` (an id_n) or
+    /// `name@<suffix>` (an id_with).
+    fn named_id(name: &str) -> Id {
+        if let Some((base, n)) = name.split_once('/') {
+            ui::id_n(ui::id(base), n.parse().unwrap_or(0))
+        } else if let Some((base, s)) = name.split_once('@') {
+            ui::id_with(ui::id(base), s)
+        } else {
+            ui::id(name)
+        }
+    }
+}
+
 impl gfx::App for App {
     /// Script commands: `tab <path|graph|listing|diff|results>`, `open <file> [line]`, `scroll <panel> <n>`,
     /// `idle` (waits until no server request is in flight), `shot <file.png>`, `rect <id> [n]`
@@ -1950,12 +1964,9 @@ impl gfx::App for App {
         match w[0] {
             "idle" => return self.asked == 0 && self.indexing.is_empty() && self.base_rx.is_none(),
             "rect" => {
-                let id = match (w.get(1), w.get(2).and_then(|v| v.parse::<usize>().ok())) {
-                    (Some(name), Some(n)) => ui::id_n(ui::id(name), n),
-                    (Some(name), None) => ui::id(name),
-                    _ => return true,
-                };
-                eprintln!("DUMP rect {} = {:?}", w[1..].join(" "), self.ui.interaction_of(id).rect);
+                if let Some(name) = w.get(1) {
+                    eprintln!("DUMP rect {name} = {:?}", self.ui.interaction_of(Self::named_id(name)).rect);
+                }
             }
             "tab" => {
                 self.tab = match w.get(1).copied() {
@@ -1998,6 +2009,10 @@ impl gfx::App for App {
             _ => eprintln!("script: unknown command '{line}'"),
         }
         true
+    }
+
+    fn locate(&mut self, name: &str) -> Option<(i32, i32)> {
+        self.ui.interaction_of(Self::named_id(name)).rect.map(|r| (r.x + r.w / 2, r.y + r.h / 2))
     }
 
     fn frame(&mut self, gfx: &mut Gfx, input: &mut ui::Input) -> gfx::Frame {

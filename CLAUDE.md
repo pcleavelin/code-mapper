@@ -76,8 +76,14 @@ Never claim a visual or interactive behaviour from reading the code; drive it an
   line, as real input: `wait n`, `mouse x y`, `down`, `up`, `click x y [ctrl|alt|shift]`,
   `dblclick x y`, `drag x0 y0 x1 y1`, `wheel dy [ctrl|shift]`, `key <name> [ctrl] [alt]`,
   `text ...`, `quit`; app commands `tab <name>`, `open <file> [line]`, `scroll <panel> <n>`,
-  `idle` (waits until every server request is answered), `rect <id> [n]` (an element's
-  rectangle by id name), `shot <file.png>`, `dump`. `dump` prints the selection, scroll
+  `idle` (waits until every server request is answered), `rect <id>` (an element's
+  rectangle by id name), `click-id <id> [ctrl|alt|shift]`, `dblclick-id <id>`, `hover-id <id>`
+  (the same gestures aimed at an element's centre), `shot <file.png>`, `dump`. An id is the
+  name passed to `ui::id`, `name/<n>` for `id_n`, `name@<suffix>` for `id_with` (tabs:
+  `tab@Graph`, `left@Symbols`; document steps: `step/<n>`, `fold/<n>`, `hide/<n>`,
+  `whole/<n>`, `del/<n>`, `ctx-a/<n>`, `ctx-b/<n>`; paths list: `paths/<n>`, `outline/<n>`;
+  xrefs rows: `xto/<i>`, `xfrom/<i>`, `xref/<i>`). Rects come from the previous frame, so
+  `wait 1` after anything that changes the layout. `dump` prints the selection, scroll
   offsets, the tooltip and peek, the graph camera and every node's and node button's
   rectangle to stderr as `DUMP` lines, so a script can measure what a gesture did (grep
   `^DUMP`). Coordinates are window pixels; the window opens maximised. Write script files

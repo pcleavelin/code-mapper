@@ -705,6 +705,10 @@ pub trait App {
     fn script(&mut self, _line: &str) -> bool {
         true
     }
+    /// The centre of the element a script names, from last frame's rectangles.
+    fn locate(&mut self, _name: &str) -> Option<(i32, i32)> {
+        None
+    }
 }
 
 /// A test script from `CODEMAP_SCRIPT=<file>`: one command per line, fed to the app as if the
@@ -780,6 +784,19 @@ impl<A: App> Runner<A> {
                     sc.lines.splice(at..at, [format!("mouse {} {}", w[1], w[2]), format!("down {rest}"), "wait 1".into(), "up".into(), "wait 1".into()]);
                     if w[0] == "dblclick" {
                         sc.lines.insert(at + 1, "twice".into());
+                    }
+                }
+                "click-id" | "hover-id" | "dblclick-id" => {
+                    // the element by name, then the plain form of the same gesture
+                    let Some(name) = w.get(1) else { continue };
+                    match self.app.locate(name) {
+                        Some((x, y)) => {
+                            let verb = &w[0][..w[0].len() - 3];
+                            let line = format!("{verb} {x} {y} {}", w[2.min(w.len())..].join(" "));
+                            let at = sc.pc;
+                            sc.lines.insert(at, line);
+                        }
+                        None => eprintln!("script: no element '{name}' last frame"),
                     }
                 }
                 "twice" => self.input.clicks[0] = 2,
