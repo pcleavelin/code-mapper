@@ -171,6 +171,13 @@ impl Map {
         Map::from_bytes(&out.stdout)
     }
 
+    /// The lines of `path` in revision `rev`, with tabs expanded as the index expands them so
+    /// slice hashes compare. None when there is no jj repo or the file is not in `rev`.
+    pub fn file_from_vcs(root: &Path, rev: &str, path: &str) -> Option<Vec<String>> {
+        let out = std::process::Command::new("jj").args(["file", "show", "-r", rev, path]).current_dir(root).output().ok()?;
+        out.status.success().then(|| String::from_utf8_lossy(&out.stdout).replace('\t', "    ").lines().map(str::to_owned).collect())
+    }
+
     pub fn from_bytes(data: &[u8]) -> Option<Map> {
         let mut r = Reader { data, off: 0 };
         if r.bytes(4)? != MAGIC {
@@ -491,6 +498,92 @@ pub fn slice_hash(lines: &[String], ls: usize, le: usize) -> u64 {
     h
 }
 
+/// Where lines `[a, b]` of `old` (a step's slice as it was, with a few lines of context around
+/// it) sit within `new` (a candidate symbol's lines as they are): the new range, how many of the
+/// slice's lines survive, and each old line's partner. None when no slice line pairs up.
+///
+/// A patience alignment: lines that occur once on each side, taken in an order both sides agree
+/// on, pair first; pairing then grows outward from them into equal neighbouring lines and recurses
+/// into the gaps between. Growth only runs from a paired line, never in from an open edge, so a
+/// slice's closing brace is not paired with the last line of a longer function. Lines compare
+/// with surrounding whitespace ignored, so re-indented code still pairs.
+///
+/// A changed edge line of the slice takes the range to just inside the nearest paired context
+/// line on that side, or to that edge of `new` when none pairs: nothing before a slice pairing
+/// inside the symbol means the slice began where the symbol begins.
+pub fn follow(old: &[String], a: usize, b: usize, new: &[String]) -> Option<(usize, usize, usize, Vec<Option<usize>>)> {
+    let mut m = vec![None; old.len()];
+    patience(old, new, 0..old.len(), 0..new.len(), (false, false), &mut m);
+    let kept = m[a..=b].iter().flatten().count();
+    if kept == 0 {
+        return None;
+    }
+    let start = m[a].or_else(|| m[..a].iter().rev().find_map(|x| *x).map(|j| j + 1)).unwrap_or(0);
+    let end = m[b].or_else(|| m[b + 1..].iter().find_map(|x| *x).map(|j| j - 1)).unwrap_or(new.len() - 1);
+    Some((start, end, kept, m))
+}
+
+/// Aligns `old[o]` with `new[n]` into `m`. `paired` says whether the line just before and the
+/// line just after the gap are paired, which is what lets equal lines grow from that side.
+fn patience(old: &[String], new: &[String], mut o: std::ops::Range<usize>, mut n: std::ops::Range<usize>, paired: (bool, bool), m: &mut [Option<usize>]) {
+    while paired.0 && o.start < o.end && n.start < n.end && old[o.start].trim() == new[n.start].trim() {
+        m[o.start] = Some(n.start);
+        (o.start, n.start) = (o.start + 1, n.start + 1);
+    }
+    while paired.1 && o.start < o.end && n.start < n.end && old[o.end - 1].trim() == new[n.end - 1].trim() {
+        (o.end, n.end) = (o.end - 1, n.end - 1);
+        m[o.end] = Some(n.end);
+    }
+    // per line text: (count in old, last old index, count in new, last new index)
+    let mut seen: std::collections::HashMap<&str, (u32, usize, u32, usize)> = std::collections::HashMap::new();
+    for i in o.clone() {
+        let e = seen.entry(old[i].trim()).or_default();
+        (e.0, e.1) = (e.0 + 1, i);
+    }
+    for j in n.clone() {
+        let e = seen.entry(new[j].trim()).or_default();
+        (e.2, e.3) = (e.2 + 1, j);
+    }
+    let mut unique: Vec<(usize, usize)> = seen.into_values().filter(|e| e.0 == 1 && e.2 == 1).map(|e| (e.1, e.3)).collect();
+    unique.sort_unstable();
+    let run = increasing(&unique);
+    if run.is_empty() {
+        return;
+    }
+    let (mut po, mut pn, mut before) = (o.start, n.start, paired.0);
+    for (i, j) in run {
+        m[i] = Some(j);
+        patience(old, new, po..i, pn..j, (before, true), m);
+        (po, pn, before) = (i + 1, j + 1, true);
+    }
+    patience(old, new, po..o.end, pn..n.end, (true, paired.1), m);
+}
+
+/// The longest run of `pairs` (sorted by first element) whose second elements also increase.
+fn increasing(pairs: &[(usize, usize)]) -> Vec<(usize, usize)> {
+    let mut tails: Vec<usize> = Vec::new(); // tails[k]: the pair ending the best run of length k + 1
+    let mut prev = vec![usize::MAX; pairs.len()];
+    for (k, &(_, j)) in pairs.iter().enumerate() {
+        let at = tails.partition_point(|&t| pairs[t].1 < j);
+        if at > 0 {
+            prev[k] = tails[at - 1];
+        }
+        if at == tails.len() {
+            tails.push(k);
+        } else {
+            tails[at] = k;
+        }
+    }
+    let mut run = Vec::new();
+    let mut k = tails.last().copied().unwrap_or(usize::MAX);
+    while k != usize::MAX {
+        run.push(pairs[k]);
+        k = prev[k];
+    }
+    run.reverse();
+    run
+}
+
 impl Anchor {
     pub fn new(f: &File, ls: usize, le: usize, author: Author) -> Anchor {
         let mut a = Anchor {
@@ -631,5 +724,19 @@ mod tests {
         assert_eq!(m.paths[pi].anchors.len(), 2);
         assert_eq!(m.paths[pi].anchors[leaf - 1].parent, root);
         assert_eq!(m.tree_order(pi), [(0, 0), (1, 1)]);
+    }
+
+    #[test]
+    fn slices_follow_the_diff() {
+        let lines = |s: &[&str]| s.iter().map(|l| l.to_string()).collect::<Vec<_>>();
+        let old = lines(&["fn a() {", "    let x = 1;", "    let y = 2;", "    x + y", "}", "fn b() {", "    0", "}"]);
+        // b moved above a and re-indented; a gained a line and changed one
+        let new = lines(&["mod m {", "  fn b() {", "      0", "  }", "}", "fn a() {", "    let x = 1;", "    log();", "    let y = 3;", "    x + y", "}"]);
+        let at = |a: usize, b: usize, lo: usize, hi: usize| follow(&old, a, b, &new[lo..=hi]).map(|(s, e, kept, _)| (lo + s, lo + e, kept));
+        assert_eq!(at(5, 7, 1, 3), Some((1, 3, 3))); // b whole: moved and re-indented
+        assert_eq!(at(0, 4, 5, 10), Some((5, 10, 4))); // a whole: 4 of 5 lines survive
+        assert_eq!(at(1, 3, 5, 10), Some((6, 9, 2))); // part of a: the closing brace stays out
+        assert_eq!(at(0, 2, 5, 10), Some((5, 8, 2))); // a changed last line ends before `x + y`
+        assert_eq!(at(2, 2, 5, 10), None); // the changed line alone has nothing to follow
     }
 }

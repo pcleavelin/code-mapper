@@ -72,14 +72,16 @@ Before working on an area:
 
 After changing code, before the commit:
 
-3. `stale` lists every step whose text no longer matches. Re-pin each with `path-pin`.
+3. `stale` lists every step whose text no longer matches. `repin` places what it can
+   and prints each changed step for its note to be reread; `path-pin` places the rest.
    The agent broke it and has the diff; the human never re-pins.
 4. Every new non-trivial symbol goes into a path: `path-add` to an existing one, or
    `path-new <name> <kind>` with a note written for someone who did not see the diff.
    "Trivial" is the agent's judgement; the human audits it through `uncovered`.
 5. `check` must pass. It exits non-zero on any stale step.
 
-After a rebase the same rule applies: the map is stale, run `stale`, re-pin. There is
+After a rebase the same rule applies: the map is stale, run `stale`, then `repin <rev>` from
+the pre-rebase commit, then re-pin the rest. There is
 no merge story and none is needed.
 
 Coverage is observable, not enforced. `uncovered` lists symbols in no path, largest
@@ -247,8 +249,22 @@ rehash. Any failure marks the anchor stale. A stale anchor whose symbol still ex
 keeps its resolved lines so the reader can see where it was. A stale anchor whose file
 or symbol is gone resolves to nothing and must be re-pinned or deleted.
 
-There is no automatic re-anchoring. The agent that changed the code re-pins; `stale` says
-where a step's unchanged text now sits when it merely moved, so that re-pin is one command.
+Nothing re-anchors on load. The agent that changed the code re-pins; `stale` says where a
+step's unchanged text now sits when it merely moved, so that re-pin is one command.
+
+`repin [rev]` does the mechanical part for every stale step at once. It reads the step's
+file from `rev` (default `@-`) through jj, finds the old slice by its hash, and aligns it,
+with three lines of context, against each symbol of the step's name in the working copy.
+The alignment is a patience diff: lines unique to both sides pair first, in the order both
+agree on, and pairs grow into equal neighbours only outward from a pair. Scoping to one
+symbol means a moved function is followed. Pairing on unique lines keeps neighbouring
+functions from interleaving the way a minimal line diff can. The best alignment wins. A step
+is pinned only when at least half its lines survive; otherwise it stays stale with the reason
+printed. Every pinned step whose text changed is printed with its removed and added lines,
+so the note gets reread against them. `repin` never vouches for a note.
+
+Replaying the tool's own audit refactor (152 stale steps) placed 123, all where a hand
+re-pin put them. The other 29 were gone symbols or rewrites.
 
 ## 10. Architecture and the CLI
 

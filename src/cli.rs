@@ -90,6 +90,8 @@ pub enum Command {
     Stale,
     /// exit non-zero if any step is stale
     Check,
+    /// [rev]                            re-pin every stale step by following its text from revision `rev` (default @-); prints each change so its note gets reread
+    Repin { rev: Option<String> },
     /// [filter]                         symbols in no path, largest first
     Uncovered { filter: Option<String> },
     /// covered/total symbols per file
@@ -387,6 +389,33 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
                 p!(out, "ok");
             }
         }
+        Command::Repin { rev } => {
+            let rev = rev.as_deref().unwrap_or("@-");
+            let mut olds: std::collections::HashMap<String, Option<Vec<String>>> = Default::default();
+            let (mut pinned, mut left) = (0, 0);
+            for pi in 0..map.paths.len() {
+                for ai in 0..map.paths[pi].anchors.len() {
+                    let a = &map.paths[pi].anchors[ai];
+                    if !a.stale {
+                        continue;
+                    }
+                    let name = format!("{}[{ai}]", map.paths[pi].name);
+                    let old = olds.entry(a.file.clone()).or_insert_with(|| Map::file_from_vcs(&idx.root, rev, &a.file));
+                    match follow_step(idx, a, old.as_deref(), rev, &name, out) {
+                        Ok((fi, ls, le)) => {
+                            map.pin_anchor(idx, pi, ai, fi, ls, le, author);
+                            pinned += 1;
+                        }
+                        Err(why) => {
+                            p!(out, "{name} left stale: {why}");
+                            left += 1;
+                        }
+                    }
+                }
+            }
+            p!(out, "{pinned} re-pinned, {left} left stale. Reread the note of every step printed with changed lines.");
+            dirty = pinned > 0;
+        }
         Command::Uncovered { filter } => {
             let filter = filter.unwrap_or_default();
             let mut list: Vec<(usize, SymRef)> = Vec::new();
@@ -490,6 +519,60 @@ fn call_warning(out: &mut String, idx: &Index, map: &Map, pi: usize, ai: usize) 
             p!(out, "note: {} does not call {}; in a flow a step goes under the step that calls it (path-move <name> {ai} <under>)", parent.symbol, a.symbol);
         }
     }
+}
+
+/// Where a stale step's text went: its slice is found in `old` (the file in `rev`) by hash, then
+/// aligned with each symbol of the step's name in the index (the whole file for a step with no
+/// symbol), and the best alignment wins, ties going to the one nearest the step's old place.
+/// Prints the old and new range and, when the text changed, the lines that differ. An Err says
+/// why the step needs a hand; fewer than half its lines surviving is one such reason.
+fn follow_step(idx: &Index, a: &Anchor, old: Option<&[String]>, rev: &str, name: &str, out: &mut String) -> Result<(usize, usize, usize), String> {
+    let fi = idx.find_file(&a.file).ok_or("its file is gone")?;
+    let f = &idx.files[fi];
+    let old = old.ok_or_else(|| format!("{} is not in {rev}", a.file))?;
+    let len = (a.off_end - a.off_start) as usize + 1;
+    let a0 = (0..(old.len() + 1).saturating_sub(len))
+        .filter(|&ls| crate::map::slice_hash(old, ls, ls + len - 1) == a.hash)
+        .min_by_key(|&ls| ls.abs_diff(a.line_start))
+        .ok_or_else(|| format!("its text is not in {rev}"))?;
+    // three lines of context each side let a changed edge line end at the nearest line that survived
+    let (w0, w1) = (a0.saturating_sub(3), (a0 + len + 3).min(old.len()));
+    let (window, sa, sb) = (&old[w0..w1], a0 - w0, a0 - w0 + len - 1);
+    let regions: Vec<(usize, usize)> = if a.symbol.is_empty() {
+        vec![(0, f.lines.len().saturating_sub(1))]
+    } else {
+        f.symbols.iter().filter(|s| s.name == a.symbol).map(|s| (s.start, s.end)).collect()
+    };
+    if regions.is_empty() {
+        return Err(format!("no symbol {} in {}", a.symbol, a.file));
+    }
+    let (lo, s, e, kept, m) = regions
+        .iter()
+        .filter_map(|&(lo, hi)| crate::map::follow(window, sa, sb, &f.lines[lo..=hi]).map(|(s, e, kept, m)| (lo, s, e, kept, m)))
+        .max_by_key(|&(lo, s, _, kept, _)| (kept, std::cmp::Reverse((lo + s).abs_diff(a.line_start))))
+        .ok_or("none of its lines survive")?;
+    if kept * 2 < len {
+        return Err(format!("{kept}/{len} lines survive"));
+    }
+    let (ls, le) = (lo + s, lo + e);
+    let same = le + 1 - ls == len && crate::map::slice_hash(&f.lines, ls, le) == a.hash;
+    p!(out, "{name} {}:{}-{} in {rev} -> {}-{}  {kept}/{len} lines kept{}", a.file, a0 + 1, a0 + len, ls + 1, le + 1, if same { ", text unchanged" } else { "" });
+    if !same {
+        // the old slice and the new range side by side: removed lines, then added ones, in order
+        let (mut i, mut j) = (sa, s);
+        while i <= sb || j <= e {
+            if i <= sb && m[i].is_none() {
+                p!(out, "  - {}", window[i]);
+                i += 1;
+            } else if j <= e && (i > sb || m[i].is_some_and(|k| j < k)) {
+                p!(out, "  + {}", f.lines[lo + j]);
+                j += 1;
+            } else {
+                (i, j) = (i + 1, j + 1);
+            }
+        }
+    }
+    Ok((fi, ls, le))
 }
 
 /// Where a stale step's unchanged text now sits in its file, if it moved rather than changed:

@@ -23,9 +23,12 @@ Before working on an area:
 
 After changing code, before the commit:
 
-3. `stale` lists every step whose text no longer matches. Re-pin each with
-   `path-pin <name> <index> <file> <start> <end>`. You broke it and have the diff; the
-   human never re-pins.
+3. `stale` lists every step whose text no longer matches. `repin` follows each one's text
+   from the parent revision and pins what it can place. It prints every step whose text
+   changed with its removed and added lines: reread that step's note against them and fix
+   it with `note-edit`. What it leaves stale (symbol gone, under half the lines survive),
+   re-pin by hand with `path-pin <name> <index> <file> <start> <end>`. You broke it and
+   have the diff; the human never re-pins.
 4. Every new non-trivial symbol goes into a path: `path-add` to an existing one, or
    `path-new <name> <kind> [note]` (kind = flow | layer | type) with a note written for
    someone who did not see the diff. `step-note` says what a step does for that path.
@@ -38,7 +41,8 @@ After changing code, before the commit:
    `note-edit` fixes one clause of a note, `paths <name>` shows one path's step indices. `path <name>` shows the result; check that it reads top-down.
 5. `check` must pass. It exits non-zero on any stale step.
 
-After a rebase the same applies: run `stale`, re-pin.
+After a rebase the same applies: run `stale`, then `repin <rev>` with the change's
+pre-rebase commit (from `jj evolog`), then re-pin the rest.
 
 `uncovered` lists symbols in no path, largest first, so the human can audit what you
 judged trivial. `coverage` prints covered/total per file. `codemap help` prints the
