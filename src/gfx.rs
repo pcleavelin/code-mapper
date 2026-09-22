@@ -742,6 +742,10 @@ struct Runner<A: App> {
     next_redraw: Option<Instant>,
     start: Instant,
     script: Option<Script>,
+    // frames built since the last `dump`, for the script harness's frame-time line
+    frames: u32,
+    frame_max: Duration,
+    frame_over: u32,
 }
 
 impl<A: App> Runner<A> {
@@ -841,6 +845,10 @@ impl<A: App> Runner<A> {
                 }
                 "quit" => return true,
                 _ => {
+                    if line == "dump" {
+                        eprintln!("DUMP frames n={} max={:.1} over16={} t={:.1}", self.frames, self.frame_max.as_secs_f64() * 1000.0, self.frame_over, self.start.elapsed().as_secs_f64() * 1000.0);
+                        (self.frames, self.frame_max, self.frame_over) = (0, Duration::ZERO, 0);
+                    }
                     if !self.app.script(&line) {
                         sc.pc -= 1;
                         return false;
@@ -975,9 +983,14 @@ impl<A: App> ApplicationHandler for Runner<A> {
                 self.input.time = self.start.elapsed().as_secs_f64();
                 let scripted_quit = self.step_script();
                 let gfx = self.gfx.as_mut().unwrap();
+                let t0 = Instant::now();
                 gfx.begin();
                 let out = self.app.frame(gfx, &mut self.input);
                 gfx.render(out.clear);
+                let d = t0.elapsed();
+                self.frames += 1;
+                self.frame_max = self.frame_max.max(d);
+                self.frame_over += (d > Duration::from_millis(16)) as u32;
                 self.input.end_frame();
                 self.pending = false;
                 self.next_redraw = if self.script.is_some() { Some(Instant::now() + Duration::from_millis(8)) } else { out.redraw_after.map(|d| Instant::now() + d) };
@@ -1004,6 +1017,6 @@ impl<A: App> ApplicationHandler for Runner<A> {
 
 pub fn run(title: &str, app: impl App + 'static) {
     let event_loop = EventLoop::new().expect("event loop");
-    let mut runner = Runner { app, title: title.to_owned(), gfx: None, input: Input::default(), mods: Mods::default(), last_click: None, pending: true, next_redraw: None, start: Instant::now(), script: Script::load() };
+    let mut runner = Runner { app, title: title.to_owned(), gfx: None, input: Input::default(), mods: Mods::default(), last_click: None, pending: true, next_redraw: None, start: Instant::now(), script: Script::load(), frames: 0, frame_max: Duration::ZERO, frame_over: 0 };
     event_loop.run_app(&mut runner).expect("run");
 }

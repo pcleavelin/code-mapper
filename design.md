@@ -183,7 +183,11 @@ its language, as well as it can.
 the window, on its own thread. It indexes the files it is sent a batch at a time and
 answers `textDocument/hover` and `textDocument/definition` for the pointer between
 files, so hovering never waits behind a batch. Answers are keyed by file hash and
-position and kept for the session; the CLI starts a server per command and stops it.
+position and kept for the session; the CLI starts a server per command and stops it. Answers
+are merged into the index about once a second rather than as they arrive, since a merge
+re-resolves the map and drops every drawn grid; the re-link that follows, the watch for source
+changes and the rebuild after one each run on their own thread, so no frame waits on the size
+of the repo.
 
 **The cache.** Servers take seconds to warm up. Every result is written to
 `.codemap-cache` at the root, a bespoke binary file, per source file, keyed by the

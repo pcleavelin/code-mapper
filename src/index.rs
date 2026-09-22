@@ -26,6 +26,7 @@ pub struct Call {
     pub qual: Qual,
 }
 
+#[derive(Clone)]
 pub struct Symbol {
     pub name: String,
     pub kind: String,
@@ -833,9 +834,41 @@ impl Index {
 
     /// The innermost symbol of `path` containing `line`.
     pub fn by_line(&self, path: &str, line: usize) -> Option<SymRef> {
-        let file = self.find_file(path)?;
+        self.sym_at(self.find_file(path)?, line)
+    }
+
+    /// The innermost symbol of file `file` spanning `line`.
+    fn sym_at(&self, file: usize, line: usize) -> Option<SymRef> {
         let sym = self.files[file].symbols.iter().enumerate().filter(|(_, s)| s.start <= line && line <= s.end).max_by_key(|(_, s)| s.depth)?.0;
         Some(SymRef { file, sym })
+    }
+
+    /// A copy with the symbol tables and imports but no text, which is all `link` reads:
+    /// small enough to hand to a thread. `take_edges` brings the result back.
+    pub fn symbols_only(&self) -> Index {
+        let files = self
+            .files
+            .iter()
+            .map(|f| File { path: f.path.clone(), lines: Vec::new(), hl: Vec::new(), symbols: f.symbols.clone(), imports: f.imports.clone(), mtime: f.mtime, hash: f.hash, backend: f.backend, pending: f.pending })
+            .collect();
+        Index { root: self.root.clone(), files }
+    }
+
+    /// Copy every symbol's callees and callers from `linked`, a `symbols_only` copy of this
+    /// same index after `link`. Symbol tables must match; a mismatch means the index changed
+    /// under the thread and the copy is stale.
+    pub fn take_edges(&mut self, linked: &Index) -> bool {
+        let same = self.files.len() == linked.files.len() && self.files.iter().zip(&linked.files).all(|(a, b)| a.hash == b.hash && a.backend == b.backend && a.pending == b.pending && a.symbols.len() == b.symbols.len());
+        if !same {
+            return false;
+        }
+        for (f, l) in self.files.iter_mut().zip(&linked.files) {
+            for (s, t) in f.symbols.iter_mut().zip(&l.symbols) {
+                s.callees.clone_from(&t.callees);
+                s.callers.clone_from(&t.callers);
+            }
+        }
+        true
     }
 
     pub fn save_cache(&self) {
@@ -984,12 +1017,6 @@ impl Index {
         out
     }
 
-    /// True if any indexed file's modification time differs from when it was read.
-    /// ponytail: stats every file; new or deleted files are only noticed on a manual reindex.
-    pub fn changed(&self) -> bool {
-        self.files.iter().any(|f| std::fs::metadata(self.root.join(&f.path)).ok().and_then(|m| m.modified().ok()) != f.mtime)
-    }
-
     fn owner_is(&self, r: SymRef, t: &str) -> bool {
         self.sym(r).owner.as_deref() == Some(t)
     }
@@ -1085,6 +1112,10 @@ impl Index {
             }
         }
 
+        // a server names its targets by path and line, once per call site, so the file lookup
+        // is a map rather than `find_file`'s scan over every file
+        let file_of: HashMap<&str, usize> = self.files.iter().enumerate().map(|(i, f)| (f.path.as_str(), i)).collect();
+
         let mut edges = Vec::new();
         for (file, f) in self.files.iter().enumerate() {
             for (sym, s) in f.symbols.iter().enumerate() {
@@ -1095,7 +1126,8 @@ impl Index {
                     }
                 }
                 for (path, line) in &s.targets {
-                    if let Some(to) = self.by_line(path, *line as usize) {
+                    let Some(&tf) = file_of.get(path.as_str()) else { continue };
+                    if let Some(to) = self.sym_at(tf, *line as usize) {
                         edges.push((from, to));
                     }
                 }

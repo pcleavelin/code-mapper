@@ -12,7 +12,7 @@ use crate::ui::{self, Align, Id, Interaction, Key, Kind, Layout, Measure, Style,
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
-use std::sync::mpsc::{Receiver, Sender, TryRecvError, channel};
+use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender, TryRecvError, channel};
 use std::time::{Duration, Instant, SystemTime};
 
 // ---- theme ----
@@ -429,6 +429,28 @@ fn mtime(p: &Path) -> Option<SystemTime> {
     std::fs::metadata(p).ok().and_then(|m| m.modified().ok())
 }
 
+/// The indexed files' modification times, compared against the disk once a second off the main
+/// thread. A change is reported once; the thread then waits for the refreshed list the main
+/// thread sends after the re-index, so it never reports the same edit twice.
+fn watch(root: PathBuf, mut list: Vec<(String, Option<SystemTime>)>, rx: Receiver<Vec<(String, Option<SystemTime>)>>, tx: Sender<()>) {
+    loop {
+        match rx.recv_timeout(Duration::from_secs(1)) {
+            Ok(l) => list = l,
+            Err(RecvTimeoutError::Timeout) => {}
+            Err(RecvTimeoutError::Disconnected) => return,
+        }
+        if list.iter().any(|(p, mt)| mtime(&root.join(p)) != *mt) {
+            if tx.send(()).is_err() {
+                return;
+            }
+            match rx.recv() {
+                Ok(l) => list = l,
+                Err(_) => return,
+            }
+        }
+    }
+}
+
 pub struct App {
     pub idx: Index,
     servers: HashMap<&'static str, (Sender<Req>, Receiver<Msg>)>, // a live server thread per language, by server name
@@ -436,6 +458,10 @@ pub struct App {
     indexing: HashSet<&'static str>,                              // servers with a batch of files in flight
     backend_progress: String,
     restart_backend: bool, // the index changed while a batch ran: send the next when it ends
+    merge_wait: Vec<ServerFile>, // server answers held back until the next merge
+    last_merge: Instant,         // when the last batch of answers went into the index
+    link_rx: Option<Receiver<Index>>, // a link of the index running on a thread
+    relink: bool,                     // the index changed while that link ran: link again when it lands
     hovers: HashMap<Probe, Option<Option<String>>>, // asked (None) or answered (Some: text or nothing)
     hover_want: Option<(Probe, f64)>,               // the position under the pointer and since when
     hover_inflight: bool,                           // a hover request the server has not answered
@@ -453,6 +479,9 @@ pub struct App {
     dirty: bool,
     last_poll: Instant,
     warned_disk: bool,
+    watch_tx: Sender<Vec<(String, Option<SystemTime>)>>, // the file list the watcher thread compares against
+    watch_rx: Receiver<()>,                              // a source file changed
+    reindex_rx: Option<Receiver<Index>>,                 // a rebuild is running on a thread
 
     // the selection
     pub focus: Option<SymRef>,     // the selected symbol
@@ -510,6 +539,11 @@ impl App {
         let mut map = map.unwrap_or_default();
         map.resolve_all(&idx);
         let first_path = if map.paths.is_empty() { None } else { Some(0) };
+        let (watch_tx, list_rx) = channel();
+        let (changed_tx, watch_rx) = channel();
+        let list: Vec<(String, Option<SystemTime>)> = idx.files.iter().map(|f| (f.path.clone(), f.mtime)).collect();
+        let watch_root = idx.root.clone();
+        std::thread::spawn(move || watch(watch_root, list, list_rx, changed_tx));
         let mut app = App {
             idx,
             servers: HashMap::new(),
@@ -517,6 +551,10 @@ impl App {
             indexing: HashSet::new(),
             backend_progress: String::new(),
             restart_backend: false,
+            merge_wait: Vec::new(),
+            last_merge: Instant::now(),
+            link_rx: None,
+            relink: false,
             hovers: HashMap::new(),
             hover_want: None,
             hover_inflight: false,
@@ -534,6 +572,9 @@ impl App {
             dirty: false,
             last_poll: Instant::now(),
             warned_disk: false,
+            watch_tx,
+            watch_rx,
+            reindex_rx: None,
             focus: None,
             sel_path: None,
             sel_anchor: None,
@@ -697,16 +738,24 @@ impl App {
                 }
             }
         }
-        if !files.is_empty() {
+        // Every answer costs a map re-resolve and every drawn grid, so they are merged at most
+        // once a second and once more when the batch ends; the re-link runs on a thread.
+        self.merge_wait.append(&mut files);
+        if !self.merge_wait.is_empty() && (batch_ended || self.last_merge.elapsed() >= Duration::from_secs(1)) {
+            let files = std::mem::take(&mut self.merge_wait);
             self.with_index_change(|app| {
                 for f in files {
                     app.idx.apply(f);
                 }
-                app.idx.link();
             });
+            self.start_link();
+            self.last_merge = Instant::now();
+            if self.status.ends_with(" symbols indexed") {
+                self.status = self.indexed_status();
+            }
         }
         if answered && self.status.ends_with(": starting") {
-            self.status = format!("{} files, {} symbols indexed", self.idx.files.len(), self.idx.files.iter().map(|f| f.symbols.len()).sum::<usize>());
+            self.status = self.indexed_status();
         }
         if batch_ended && self.indexing.is_empty() {
             self.idx.save_cache();
@@ -717,8 +766,12 @@ impl App {
         }
     }
 
-    /// Once a second: pick up a map written by the CLI, and re-index when a source file changed.
+    /// Once a second: pick up a map written by the CLI. Source changes are found by the watcher
+    /// thread, so nothing here stats the tree.
     fn poll_disk(&mut self) {
+        if self.watch_rx.try_recv().is_ok() {
+            self.reindex();
+        }
         if self.last_poll.elapsed() < Duration::from_secs(1) {
             return;
         }
@@ -736,9 +789,6 @@ impl App {
                 self.load_base();
                 self.status = "map reloaded (changed on disk)".into();
             }
-        }
-        if self.idx.changed() {
-            self.reindex();
         }
     }
 
@@ -805,12 +855,77 @@ impl App {
         self.cur_file = cur_file.and_then(|p| self.idx.find_file(&p));
     }
 
-    /// Rebuild the index from disk and the cache, then ask the servers about what changed.
+    /// Rebuild the index from disk and the cache on a thread. The index in use is untouched
+    /// until `poll_reindex` swaps the new one in.
     fn reindex(&mut self) {
-        self.with_index_change(|app| app.idx = index::build(&app.idx.root));
-        self.results.clear();
-        self.status = format!("re-indexed: {} files, {} symbols (source changed)", self.idx.files.len(), self.idx.files.iter().map(|f| f.symbols.len()).sum::<usize>());
+        if self.reindex_rx.is_some() {
+            return;
+        }
+        let root = self.idx.root.clone();
+        let (tx, rx) = channel();
+        std::thread::spawn(move || {
+            let _ = tx.send(index::build(&root));
+        });
+        self.reindex_rx = Some(rx);
+        self.status = "re-indexing (source changed)".into();
+    }
+
+    /// Take the rebuilt index, then ask the servers about what changed and give the watcher
+    /// thread the new modification times so it starts looking again.
+    fn poll_reindex(&mut self) {
+        let idx = match self.reindex_rx.as_ref().map(|rx| rx.try_recv()) {
+            None | Some(Err(TryRecvError::Empty)) => return,
+            Some(Ok(idx)) => Some(idx),
+            Some(Err(TryRecvError::Disconnected)) => None, // the rebuild thread panicked
+        };
+        self.reindex_rx = None;
+        match idx {
+            Some(idx) => {
+                self.with_index_change(|app| app.idx = idx);
+                self.results.clear();
+                self.status = format!("re-indexed: {} files, {} symbols (source changed)", self.idx.files.len(), self.idx.files.iter().map(|f| f.symbols.len()).sum::<usize>());
+            }
+            None => self.status = "re-index failed; the index in use is the old one".into(),
+        }
+        let _ = self.watch_tx.send(self.idx.files.iter().map(|f| (f.path.clone(), f.mtime)).collect());
         self.start_backend();
+    }
+
+    /// Link the index on a thread over a text-free copy, since a link is a pass over every call
+    /// site in the repo. One runs at a time; a change meanwhile queues another.
+    fn start_link(&mut self) {
+        if self.link_rx.is_some() {
+            self.relink = true;
+            return;
+        }
+        let mut snap = self.idx.symbols_only();
+        let (tx, rx) = channel();
+        std::thread::spawn(move || {
+            snap.link();
+            let _ = tx.send(snap);
+        });
+        self.link_rx = Some(rx);
+    }
+
+    /// Take a finished link. A copy whose symbol tables no longer match the index is dropped:
+    /// the change that made it stale queued the link that replaces it.
+    fn poll_link(&mut self) {
+        let done = match self.link_rx.as_ref().map(|rx| rx.try_recv()) {
+            None | Some(Err(TryRecvError::Empty)) => return,
+            Some(Ok(linked)) => Some(linked),
+            Some(Err(TryRecvError::Disconnected)) => None,
+        };
+        self.link_rx = None;
+        if let Some(linked) = done {
+            self.idx.take_edges(&linked);
+        }
+        if std::mem::take(&mut self.relink) {
+            self.start_link();
+        }
+    }
+
+    fn indexed_status(&self) -> String {
+        format!("{} files, {} symbols indexed", self.idx.files.len(), self.idx.files.iter().map(|f| f.symbols.len()).sum::<usize>())
     }
 
     // ---- history ----
@@ -2237,14 +2352,14 @@ impl App {
 
 impl gfx::App for App {
     /// Script commands: `tab <path|graph|listing|diff|results>`, `open <file> [line]`, `scroll <panel> <n>`,
-    /// `idle` (waits until no server request is in flight), `shot <file.png>`, `rect <id> [n]`
+    /// `idle` (waits until no server request, merge, re-index or link is in flight), `shot <file.png>`, `rect <id> [n]`
     /// (last frame's rectangle of an element by its id name), `dump` (state to stderr:
     /// selection, tab, scrolls, tooltip, peek, graph camera, node and button rectangles, the
     /// canvas rectangle).
     fn script(&mut self, line: &str) -> bool {
         let w: Vec<&str> = line.split_whitespace().collect();
         match w[0] {
-            "idle" => return self.asked == 0 && self.indexing.is_empty() && self.base_rx.is_none(),
+            "idle" => return self.asked == 0 && self.indexing.is_empty() && self.base_rx.is_none() && self.reindex_rx.is_none() && self.merge_wait.is_empty() && self.link_rx.is_none(),
             "rect" => {
                 if let Some(name) = w.get(1) {
                     eprintln!("DUMP rect {name} = {:?}", self.ui.interaction_of(Self::named_id(name)).rect);
@@ -2279,6 +2394,7 @@ impl gfx::App for App {
                     }
                 }
                 eprintln!("DUMP tip={:?} peek={:?} status={:?}", self.tip_shown, self.peek, self.status);
+                eprintln!("DUMP backend progress={:?} indexing={:?} unmerged={} reindexing={} linking={}", self.backend_progress, self.indexing, self.merge_wait.len(), self.reindex_rx.is_some(), self.link_rx.is_some());
                 eprintln!("DUMP graph zoom={:.3} pan={:?} canvas={:?} camera={}", self.graph.zoom, self.graph.pan, self.ui.content_of(ui::id("graph-canvas")).map(|(_, r)| r), self.graph.camera_state());
                 eprintln!("DUMP input mouse={:?} down={:?} hot_is_canvas={} active_is_canvas={} drag={:?}", self.ui.input.mouse, self.ui.input.down, self.ui.hot() == Some(ui::id("graph-canvas")), self.ui.active() == Some(ui::id("graph-canvas")), self.graph.drag_state());
                 for (name, r) in self.graph.node_rects(&self.idx) {
@@ -2330,6 +2446,8 @@ impl gfx::App for App {
         }
         self.poll_backend();
         self.poll_base();
+        self.poll_reindex();
+        self.poll_link();
         self.poll_disk();
 
         // keys
@@ -2408,7 +2526,7 @@ impl gfx::App for App {
             self.apply(a);
         }
         self.track_navigation();
-        let busy = !self.indexing.is_empty() || self.asked > 0 || self.base_rx.is_some() || self.shot.is_some();
+        let busy = !self.indexing.is_empty() || self.asked > 0 || self.base_rx.is_some() || self.reindex_rx.is_some() || self.link_rx.is_some() || self.shot.is_some();
         gfx::Frame { redraw_after: Some(if busy { Duration::from_millis(50) } else { Duration::from_millis(1000) }), quit, clear: BG }
     }
 }

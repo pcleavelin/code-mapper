@@ -76,7 +76,7 @@ Never claim a visual or interactive behaviour from reading the code; drive it an
   line, as real input: `wait n`, `mouse x y`, `down`, `up`, `click x y [ctrl|alt|shift]`,
   `dblclick x y`, `drag x0 y0 x1 y1`, `wheel dy [ctrl|shift]`, `key <name> [ctrl] [alt]`,
   `text ...`, `quit`; app commands `tab <name>`, `open <file> [line]`, `scroll <panel> <n>`,
-  `idle` (waits until every server request is answered), `rect <id>` (an element's
+  `idle` (waits until every server request is answered, merged and re-indexed), `rect <id>` (an element's
   rectangle by id name), `click-id <id> [ctrl|alt|shift]`, `dblclick-id <id>`, `hover-id <id>`
   (the same gestures aimed at an element's centre), `shot <file.png>`, `dump`. An id is the
   name passed to `ui::id`, `name/<n>` for `id_n`, `name@<suffix>` for `id_with` (tabs:
@@ -86,6 +86,11 @@ Never claim a visual or interactive behaviour from reading the code; drive it an
   `wait 1` after anything that changes the layout. `dump` prints the selection, scroll
   offsets, the tooltip and peek, the graph camera and every node's and node button's
   rectangle to stderr as `DUMP` lines, so a script can measure what a gesture did (grep
-  `^DUMP`). Coordinates are window pixels; the window opens maximised. Write script files
+  `^DUMP`). It also prints
+  `DUMP frames n=<count> max=<ms> over16=<count> t=<ms since the window opened>`, covering the
+  frames built since the previous `dump`, so a script measures hitches, and
+  `DUMP backend progress=... indexing=... unmerged=<n> reindexing=<bool> linking=<bool>` for how
+  far the language servers have got and what is still running on a thread.
+  Coordinates are window pixels; the window opens maximised. Write script files
   with the Write tool and forward-slash paths: a heredoc mangles backslashes.
 - Crop or scale a PNG with PowerShell's System.Drawing and Read it.
