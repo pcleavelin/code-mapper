@@ -102,7 +102,7 @@ pub struct Graph {
     pub want_look: bool, // centre on the focus once it has a position
     pub hold_look: bool, // the next focus change came from the graph itself: do not move the camera
     want_fit: bool,      // zoom out and pan so the whole tree is on the canvas
-    reveal: Option<(Node, bool)>, // an expansion just opened: pan the least that brings it into view
+    keep: Option<(Node, (i32, i32))>, // a node and its pixel position before the relayout its button caused
     hits: Vec<(Rect, Hit)>,
     drag: Option<Drag>,
 }
@@ -136,9 +136,9 @@ impl Graph {
         self.auto_open = s.auto_open.as_ref().and_then(node);
     }
 
-    /// What the camera still owes the reader, for dumps: a pending fit, look or reveal.
+    /// What the camera still owes the reader, for dumps: a pending fit, look or keep.
     pub fn camera_state(&self) -> String {
-        format!("fit={} look={} reveal={}", self.want_fit, self.want_look, self.reveal.is_some())
+        format!("fit={} look={} keep={}", self.want_fit, self.want_look, self.keep.is_some())
     }
 
     pub fn drag_state(&self) -> String {
@@ -314,15 +314,12 @@ impl Graph {
     }
 
     fn toggle(&mut self, n: Node, callees: bool) {
+        self.keep(n);
         match self.expansions.iter().position(|e| *e == (n, callees)) {
             Some(i) => {
                 self.expansions.remove(i);
-                self.reveal = None;
             }
-            None => {
-                self.expansions.push((n, callees));
-                self.reveal = Some((n, callees));
-            }
+            None => self.expansions.push((n, callees)),
         }
         self.manual.remove(&n);
     }
@@ -333,6 +330,12 @@ impl Graph {
         let rect = self.hits.iter().find(|(_, h)| matches!(h, Hit::Line(m, l) if *m == n && *l == li)).map(|(r, _)| *r)?;
         let col = ((mouse.0 - rect.x) / cell_w.max(1)).max(0) as usize;
         col.checked_sub(gui::GUTTER)
+    }
+
+    /// Keep `n` at its screen position through the relayout its button causes, so the tree
+    /// growing or shrinking around it does not slide it out from under the pointer.
+    fn keep(&mut self, n: Node) {
+        self.keep = self.pos_px.get(&n).map(|p| (n, *p));
     }
 
     /// Keep `n` where it is when its own size is about to change, so the button under the
@@ -537,38 +540,9 @@ impl Graph {
         b.map(|(l, t, r, bo)| (l, t, r - l, bo - t))
     }
 
-    /// The bounding box of some nodes in canvas pixels, as (x, y, w, h).
-    fn bbox(&self, ns: impl Iterator<Item = Node>) -> Option<(i32, i32, i32, i32)> {
-        let mut b: Option<(i32, i32, i32, i32)> = None;
-        for n in ns {
-            let (Some(&(x, y)), Some(&(w, h))) = (self.pos_px.get(&n), self.size_px.get(&n)) else { continue };
-            b = Some(match b {
-                None => (x, y, x + w, y + h),
-                Some((l, t, r, bo)) => (l.min(x), t.min(y), r.max(x + w), bo.max(y + h)),
-            });
-        }
-        b.map(|(l, t, r, bo)| (l, t, r - l, bo - t))
-    }
-
-    /// Pan by the least that puts `(x, y, w, h)` inside the canvas, left and top edges first so
-    /// a box larger than the canvas shows its header and buttons rather than its middle.
-    fn pan_onto(&mut self, canvas: Rect, (x, y, w, h): (i32, i32, i32, i32)) {
-        let fit = |pan: i32, lo: i32, len: i32, span: i32| {
-            let (a, b) = (pan + lo, pan + lo + len);
-            if a < MARGIN || len + MARGIN * 2 > span {
-                pan + MARGIN - a
-            } else if b > span - MARGIN {
-                pan + (span - MARGIN) - b
-            } else {
-                pan
-            }
-        };
-        self.pan.0 = fit(self.pan.0, x, w, canvas.w);
-        self.pan.1 = fit(self.pan.1, y, h, canvas.h);
-    }
-
-    /// The camera moves only on an explicit request: a new focus, the fit button, or an
-    /// expansion that landed outside the canvas.
+    /// The camera moves only on an explicit request: a new focus or the fit button. A node
+    /// whose button changed the tree around it is held at its screen position, so the pan
+    /// follows the relayout and the pointer stays over the button it pressed.
     fn move_camera(&mut self, canvas: Rect, focus_node: Option<Node>) {
         if self.want_look {
             if let Some(f) = focus_node.and_then(|f| self.pos_px.get(&f).map(|p| (*p, self.size_px[&f]))) {
@@ -581,10 +555,9 @@ impl Graph {
             }
             return;
         }
-        if let Some(e) = self.reveal.take() {
-            let revealed: Vec<Node> = self.origin.iter().filter(|(_, o)| **o == e).map(|(n, _)| *n).collect();
-            if let Some(b) = self.bbox(revealed.into_iter()) {
-                self.pan_onto(canvas, b);
+        if let Some((n, (ox, oy))) = self.keep.take() {
+            if let Some(&(x, y)) = self.pos_px.get(&n) {
+                self.pan = (self.pan.0 + ox - x, self.pan.1 + oy - y);
             }
         }
     }
@@ -654,6 +627,7 @@ impl App {
             match hit {
                 Some(Hit::Button(n, b)) => match b {
                     Btn::Less => {
+                        self.graph.keep(n);
                         if !self.graph.collapsed.remove(&n) {
                             self.graph.collapsed.insert(n);
                         }
