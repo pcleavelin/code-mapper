@@ -63,6 +63,8 @@ pub const LANGS: [Lang; 5] = [
     Lang { exts: &["js", "mjs", "cjs", "ts", "tsx"], server: "typescript-language-server", args: &["--stdio"] },
 ];
 
+/// The language of `path`, by extension. Each has a bundled grammar (`language_for`), so a
+/// file with a language has symbols even without its server.
 pub fn lang_for(path: &str) -> Option<&'static Lang> {
     let ext = path.rsplit('.').next().unwrap_or("");
     LANGS.iter().find(|l| l.exts.contains(&ext))
@@ -129,32 +131,19 @@ fn language_for(ext: &str) -> Option<(Language, &'static str)> {
 }
 
 /// Parser plus compiled highlight queries, one per extension, reused across files.
+#[derive(Default)]
 pub struct Parsers {
     parser: Parser,
-    queries: HashMap<&'static str, Option<(Language, Query)>>,
+    queries: HashMap<String, Option<(Language, Query)>>,
 }
 
 impl Parsers {
-    pub fn new() -> Parsers {
-        Parsers { parser: Parser::new(), queries: HashMap::new() }
-    }
-
     /// A free function over the map (not `&mut self`) so the caller can still use `parser`.
-    fn query_for<'a>(queries: &'a mut HashMap<&'static str, Option<(Language, Query)>>, ext: &str) -> Option<&'a (Language, Query)> {
-        let key: &'static str = match ext {
-            "rs" => "rs",
-            "odin" => "odin",
-            "c" | "h" => "c",
-            "py" => "py",
-            "js" | "mjs" | "cjs" => "js",
-            "ts" => "ts",
-            "tsx" => "tsx",
-            _ => return None,
-        };
+    fn query_for<'a>(queries: &'a mut HashMap<String, Option<(Language, Query)>>, ext: &str) -> Option<&'a (Language, Query)> {
         queries
-            .entry(key)
+            .entry(ext.to_owned())
             .or_insert_with(|| {
-                let (lang, q) = language_for(key)?;
+                let (lang, q) = language_for(ext)?;
                 // ponytail: a grammar whose bundled query fails to compile just gets no colours
                 let query = Query::new(&lang, q).ok()?;
                 Some((lang, query))
@@ -179,7 +168,7 @@ pub fn fnv1a(bytes: &[u8]) -> u64 {
 // ponytail: reads the whole tree into memory up front on the main thread; move to a background
 // thread with a progress bar when startup on a big repo becomes annoying.
 pub fn build(root: &Path) -> Index {
-    let mut parsers = Parsers::new();
+    let mut parsers = Parsers::default();
     let mut cache = load_cache(&root.join(CACHE)).unwrap_or_default();
     let mut changed: HashSet<String> = HashSet::new();
     let mut files = Vec::new();
@@ -260,58 +249,22 @@ pub struct ServerFile {
     pub symbols: Vec<Symbol>,
 }
 
+/// LSP SymbolKind names, indexed by kind; 0 is not a kind.
+const KINDS: [&str; 27] = [
+    "symbol", "file", "module", "namespace", "package", "class", "method", "property", "field", "constructor", "enum", "interface", "function", "variable", "constant", "string", "number", "boolean", "array", "object", "key", "null", "enum-member", "struct", "event", "operator", "type",
+];
+
 fn symbol_kind_name(k: u64, name: &str) -> &'static str {
     match k {
-        1 => "file",
-        2 => "module",
-        3 => "namespace",
-        4 => "package",
-        5 => "class",
-        6 => "method",
-        7 => "property",
-        8 => "field",
-        9 => "constructor",
-        10 => "enum",
-        11 => "interface",
-        12 => "function",
-        13 => "variable",
-        14 => "constant",
-        15 => "string",
-        16 => "number",
-        17 => "boolean",
-        18 => "array",
         19 if name.starts_with("impl") => "impl",
-        19 => "object",
-        20 => "key",
-        21 => "null",
-        22 => "enum-member",
-        23 => "struct",
-        24 => "event",
-        25 => "operator",
-        26 => "type",
-        _ => "symbol",
+        _ => KINDS.get(k as usize).copied().unwrap_or("symbol"),
     }
 }
 
-/// `impl<T> Trait for Foo<T>` -> `Foo`; `impl Foo` -> `Foo`.
+/// `impl Trait for Foo<T>` -> `Foo`; `impl Foo` -> `Foo`. Takes a server's kind-19 name,
+/// which carries no generic parameters of the impl itself (see `impl_name`).
 fn impl_type(name: &str) -> String {
-    let t = name.split(" for ").last().unwrap_or(name).trim_start_matches("impl");
-    let t = match t.strip_prefix('<') {
-        Some(rest) => {
-            let mut depth = 1;
-            let end = rest.char_indices().find(|&(_, c)| {
-                depth += match c {
-                    '<' => 1,
-                    '>' => -1,
-                    _ => 0,
-                };
-                depth == 0
-            });
-            end.map(|(i, _)| &rest[i + 1..]).unwrap_or(rest)
-        }
-        None => t,
-    };
-    bare_type(t.trim())
+    bare_type(name.rsplit(" for ").next().unwrap_or(name).trim_start_matches("impl").trim())
 }
 
 /// One DocumentSymbol and, for a container, its direct children. Records where each symbol's
@@ -350,7 +303,7 @@ fn locations(v: &Value, root: &Path, item: impl Fn(&Value) -> (&Value, &Value)) 
         .flatten()
         .filter_map(|l| {
             let (uri, pos) = item(l);
-            Some((lsp::from_uri(uri.as_str()?, root)?, pos["line"].as_u64()? as u32))
+            Some((lsp::relative(&lsp::uri_path(uri.as_str()?)?, root)?, pos["line"].as_u64()? as u32))
         })
         .collect();
     out.sort();
@@ -392,23 +345,6 @@ pub fn index_file(c: &mut lsp::Client, root: &Path, path: &str, hash: u64) -> Se
         s.targets.dedup();
     }
     ServerFile { path: path.to_owned(), hash, symbols }
-}
-
-/// Asks the language's server for symbols, outgoing calls and references of each file, handing
-/// each file over as it completes, then stops it. Err when the server is not on PATH or will
-/// not start.
-pub fn query_server(root: &Path, lang: &Lang, files: &[(String, u64)], mut each: impl FnMut(ServerFile)) -> Result<(), String> {
-    let (mut c, root) = start_server(root, lang)?;
-    for (path, hash) in files {
-        each(index_file(&mut c, &root, path, *hash));
-    }
-    c.shutdown();
-    Ok(())
-}
-
-/// A bundled grammar exists for the file, so it has symbols even without a server.
-pub fn has_grammar(path: &str) -> bool {
-    language_for(path.rsplit('.').next().unwrap_or("")).is_some()
 }
 
 // ---- cache ----------------------------------------------------------------------------
@@ -535,12 +471,7 @@ fn class_of(capture: &str) -> u8 {
 /// Run the grammar's highlight query and bucket the captures per line. First capture wins where
 /// they overlap, which is what tree-sitter highlight queries are written for.
 fn highlight(root: Node, query: &Query, text: &str, lines: &[String]) -> Vec<Vec<Span>> {
-    let mut line_starts: Vec<usize> = vec![0];
-    for (i, b) in text.bytes().enumerate() {
-        if b == b'\n' {
-            line_starts.push(i + 1);
-        }
-    }
+    let line_starts: Vec<usize> = std::iter::once(0).chain(text.match_indices('\n').map(|(i, _)| i + 1)).collect();
     let names = query.capture_names();
     let mut hl: Vec<Vec<Span>> = vec![Vec::new(); lines.len()];
     let mut cursor = QueryCursor::new();
@@ -754,10 +685,7 @@ fn find_calls(node: Node, src: &[u8], out: &mut Vec<Call>) {
                             if let Some(first) = node.named_child(0).filter(|f| f.id() != child.id()) {
                                 if let Ok(t) = first.utf8_text(src) {
                                     if let Some(q) = t.rsplit(['.', ':']).next().filter(|q| !q.is_empty()) {
-                                        call.qual = match q {
-                                            "self" | "Self" | "this" | "super" => Qual::SelfRef,
-                                            q => Qual::Some(bare_type(q)),
-                                        };
+                                        call.qual = qual_of(q);
                                     }
                                 }
                             }
@@ -791,12 +719,17 @@ fn parse_callee(text: &str) -> Option<Call> {
     }
     let qual = match segs.len() {
         0 | 1 => Qual::None,
-        n => match segs[n - 2] {
-            "self" | "Self" | "this" | "super" => Qual::SelfRef,
-            q => Qual::Some(bare_type(q)),
-        },
+        n => qual_of(segs[n - 2]),
     };
     Some(Call { name: name.to_owned(), qual })
+}
+
+/// The qualifier a call names: its own receiver or type, or another type.
+fn qual_of(q: &str) -> Qual {
+    match q {
+        "self" | "Self" | "this" | "super" => Qual::SelfRef,
+        q => Qual::Some(bare_type(q)),
+    }
 }
 
 /// `word` appears on line `li` of `f` as a whole identifier outside comments and strings: a
@@ -857,10 +790,10 @@ impl Index {
     /// Copy every symbol's callees and callers from `linked`, a `symbols_only` copy of this
     /// same index after `link`. Symbol tables must match; a mismatch means the index changed
     /// under the thread and the copy is stale.
-    pub fn take_edges(&mut self, linked: &Index) -> bool {
+    pub fn take_edges(&mut self, linked: &Index) {
         let same = self.files.len() == linked.files.len() && self.files.iter().zip(&linked.files).all(|(a, b)| a.hash == b.hash && a.backend == b.backend && a.pending == b.pending && a.symbols.len() == b.symbols.len());
         if !same {
-            return false;
+            return;
         }
         for (f, l) in self.files.iter_mut().zip(&linked.files) {
             for (s, t) in f.symbols.iter_mut().zip(&l.symbols) {
@@ -868,7 +801,6 @@ impl Index {
                 s.callers.clone_from(&t.callers);
             }
         }
-        true
     }
 
     pub fn save_cache(&self) {
@@ -936,16 +868,15 @@ impl Index {
 
     /// Takes a server's answer for a file, unless the file changed since it was asked. The
     /// caller re-links afterwards.
-    pub fn apply(&mut self, r: ServerFile) -> bool {
-        let Some(fi) = self.find_file(&r.path) else { return false };
+    pub fn apply(&mut self, r: ServerFile) {
+        let Some(fi) = self.find_file(&r.path) else { return };
         let f = &mut self.files[fi];
         if f.hash != r.hash {
-            return false;
+            return;
         }
         f.symbols = r.symbols;
         f.backend = Backend::Server;
         f.pending = false;
-        true
     }
 
     /// Files of a language stop waiting: its server is not available, so tree-sitter's answer
@@ -963,13 +894,14 @@ impl Index {
     pub fn run_backends(&mut self, mut report: impl FnMut(&str)) {
         for (lang, files) in self.pending() {
             let n = files.len();
-            let mut results = Vec::new();
             report(&format!("{}: {n} files to index", lang.server));
-            let run = query_server(&self.root, lang, &files, |r| results.push(r));
-            match run {
-                Ok(()) => results.into_iter().for_each(|r| {
-                    self.apply(r);
-                }),
+            match start_server(&self.root, lang) {
+                Ok((mut c, root)) => {
+                    for (path, hash) in &files {
+                        self.apply(index_file(&mut c, &root, path, *hash));
+                    }
+                    c.shutdown();
+                }
                 Err(e) => {
                     report(&format!("{e}: {n} files keep the tree-sitter resolver"));
                     self.give_up(lang);
@@ -980,7 +912,6 @@ impl Index {
         self.save_cache();
     }
 
-    /// All symbols with this name.
     /// Every symbol called `name`. `Owner::name` narrows to that owner, `file:name` to a file
     /// (its stem or a path suffix), `file:Owner::name` to both; a bare qualifier that is neither
     /// is tried as each.
@@ -1035,7 +966,6 @@ impl Index {
     fn resolve(&self, from: SymRef, call: &Call, by_name: &HashMap<String, Vec<SymRef>>) -> Option<SymRef> {
         // a struct/enum/union is data, not a call target, even where `Foo{...}` parses as a call
         let cands: Vec<SymRef> = by_name.get(&call.name)?.iter().copied().filter(|r| !["struct", "enum", "union"].iter().any(|k| self.sym(*r).kind.contains(k))).collect();
-        let cands = &cands;
         let f = &self.files[from.file];
         let owner = self.sym(from).owner.as_deref();
         let same_file = |r: &&SymRef| r.file == from.file;
@@ -1047,58 +977,34 @@ impl Index {
         };
 
         match &call.qual {
-            Qual::SelfRef => {
-                if let Some(o) = owner {
-                    if let Some(r) = pick(&mut cands.iter().filter(|r| self.owner_is(**r, o))) {
-                        return Some(r);
+            Qual::SelfRef => owner
+                .and_then(|o| pick(&mut cands.iter().filter(|r| self.owner_is(**r, o))))
+                .or_else(|| pick(&mut cands.iter().filter(same_file)))
+                .or_else(|| pick(&mut cands.iter())),
+            Qual::Some(q) => pick(&mut cands.iter().filter(|r| self.owner_is(**r, q)))
+                .or_else(|| pick(&mut cands.iter().filter(|r| self.in_module(**r, q))))
+                .or_else(|| {
+                    if let Some(m) = f.imports.get(q) {
+                        // a known import that matched no file here is an external module (`log.error`)
+                        return pick(&mut cands.iter().filter(|r| self.in_module(**r, m)));
                     }
-                }
-                pick(&mut cands.iter().filter(same_file)).or_else(|| pick(&mut cands.iter()))
-            }
-            Qual::Some(q) => {
-                if let Some(r) = pick(&mut cands.iter().filter(|r| self.owner_is(**r, q))) {
-                    return Some(r);
-                }
-                if let Some(r) = pick(&mut cands.iter().filter(|r| self.in_module(**r, q))) {
-                    return Some(r);
-                }
-                if let Some(m) = f.imports.get(q) {
-                    // a known import that matched no file here is an external module (`log.error`)
-                    return pick(&mut cands.iter().filter(|r| self.in_module(**r, m)));
-                }
-                let lowercase = q.chars().next().is_some_and(|c| c.is_lowercase() || c == '_');
-                if !lowercase {
-                    return None; // `Regex::new`: a type this repo does not define
-                }
-                // a variable receiver: some type's member, the caller's own type first; a
-                // variable never calls a free function
-                if let Some(o) = owner {
-                    if let Some(r) = pick(&mut cands.iter().filter(|r| self.owner_is(**r, o))) {
-                        return Some(r);
+                    let lowercase = q.chars().next().is_some_and(|c| c.is_lowercase() || c == '_');
+                    if !lowercase {
+                        return None; // `Regex::new`: a type this repo does not define
                     }
-                }
-                pick(&mut cands.iter().filter(member))
-            }
-            Qual::None => {
-                if let Some(r) = pick(&mut cands.iter().filter(same_file).filter(free)) {
-                    return Some(r);
-                }
-                if let Some(m) = f.imports.get(&call.name) {
-                    if let Some(r) = pick(&mut cands.iter().filter(|r| self.in_module(**r, m))) {
-                        return Some(r);
-                    }
-                }
-                let dir = f.dir().to_owned();
-                if let Some(r) = pick(&mut cands.iter().filter(free).filter(|r| self.files[r.file].dir() == dir)) {
-                    return Some(r);
-                }
-                // only C reaches other files without naming them (headers); elsewhere an
-                // unqualified name that is not local or imported is a builtin or a std call
-                if f.path.ends_with(".c") || f.path.ends_with(".h") {
-                    return pick(&mut cands.iter().filter(free)).or_else(|| pick(&mut cands.iter()));
-                }
-                None
-            }
+                    // a variable receiver: some type's member, the caller's own type first; a
+                    // variable never calls a free function
+                    owner.and_then(|o| pick(&mut cands.iter().filter(|r| self.owner_is(**r, o)))).or_else(|| pick(&mut cands.iter().filter(member)))
+                }),
+            Qual::None => pick(&mut cands.iter().filter(same_file).filter(free))
+                .or_else(|| f.imports.get(&call.name).and_then(|m| pick(&mut cands.iter().filter(|r| self.in_module(**r, m)))))
+                .or_else(|| pick(&mut cands.iter().filter(free).filter(|r| self.files[r.file].dir() == f.dir())))
+                .or_else(|| {
+                    // only C reaches other files without naming them (headers); elsewhere an
+                    // unqualified name that is not local or imported is a builtin or a std call
+                    let c = f.path.ends_with(".c") || f.path.ends_with(".h");
+                    if c { pick(&mut cands.iter().filter(free)).or_else(|| pick(&mut cands.iter())) } else { None }
+                }),
         }
     }
 
@@ -1188,7 +1094,7 @@ mod tests {
     use super::*;
 
     fn index(files: &[(&str, &str)]) -> Index {
-        let mut p = Parsers::new();
+        let mut p = Parsers::default();
         let files = files.iter().map(|(path, src)| parse_file(&mut p, path.to_string(), src, path.rsplit('.').next().unwrap())).collect();
         let mut idx = Index { root: ".".into(), files };
         idx.link();
@@ -1292,7 +1198,7 @@ mod tests {
     #[test]
     fn highlights_keywords_and_strings() {
         let src = "fn a() { let s = \"hi\"; } // c\n";
-        let mut p = Parsers::new();
+        let mut p = Parsers::default();
         let f = parse_file(&mut p, "x.rs".into(), src, "rs");
         let classes: Vec<u8> = f.hl[0].iter().map(|s| s.2).collect();
         assert!(classes.contains(&HL_KEYWORD), "{classes:?}");

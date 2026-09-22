@@ -74,12 +74,6 @@ pub fn uri_path(uri: &str) -> Option<PathBuf> {
     Some(PathBuf::from(if cfg!(windows) { d.trim_start_matches('/').to_owned() } else { d }))
 }
 
-/// Path relative to `root` (forward slashes) for a `file:` URI, or None when it lies outside.
-/// `root` must be absolute.
-pub fn from_uri(uri: &str, root: &Path) -> Option<String> {
-    relative(&uri_path(uri)?, root)
-}
-
 /// `path` relative to `root` (forward slashes), or None when it lies outside. Both absolute.
 /// Drive letters compare case-insensitively on Windows.
 pub fn relative(path: &Path, root: &Path) -> Option<String> {
@@ -288,9 +282,10 @@ mod tests {
         let root = if cfg!(windows) { Path::new("C:\\Users\\me\\my repo") } else { Path::new("/home/me/my repo") };
         let uri = to_uri(&root.join("src").join("a.rs"));
         assert!(uri.ends_with("/my%20repo/src/a.rs"), "{uri}");
-        assert_eq!(from_uri(&uri, root).as_deref(), Some("src/a.rs"));
-        assert_eq!(from_uri(&uri.to_ascii_lowercase(), root).is_some(), cfg!(windows));
-        assert_eq!(from_uri("file:///elsewhere/x.rs", root), None);
+        let rel = |uri: &str| -> Option<String> { relative(&uri_path(uri)?, root) };
+        assert_eq!(rel(&uri).as_deref(), Some("src/a.rs"));
+        assert_eq!(rel(&uri.to_ascii_lowercase()).is_some(), cfg!(windows));
+        assert_eq!(rel("file:///elsewhere/x.rs"), None);
     }
 
     /// Needs rust-analyzer on PATH: `cargo test -- --ignored`.

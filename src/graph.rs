@@ -49,7 +49,6 @@ struct Metrics {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-#[derive(Debug)]
 enum Btn {
     Less,
     Listing,
@@ -69,7 +68,7 @@ enum Hit {
     Body(Node),
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy)]
 enum Drag {
     Pan,
     Node(Node),
@@ -82,8 +81,7 @@ pub struct Graph {
     pos: HashMap<Node, (i32, i32)>,     // this frame, in cells and rows
     manual: HashMap<Node, (f32, f32)>,  // dragged positions, in cells and rows
     size: HashMap<Node, (i32, i32)>,    // in cells and rows
-    pos_px: HashMap<Node, (i32, i32)>,  // this frame, canvas pixels
-    size_px: HashMap<Node, (i32, i32)>,
+    cell: (i32, i32), // this frame's cell width and row height, in pixels
     range: HashMap<Node, (usize, usize)>, // a node's own lines: the step's slice, or the whole symbol
     context: HashMap<Node, (usize, usize)>, // extra lines shown above and below, asked for with the node's buttons
     view: HashMap<Node, (usize, usize)>, // this frame: range widened by context, clamped to the file
@@ -175,11 +173,16 @@ impl Graph {
     }
 }
 
-fn has_word(f: &index::File, li: usize, word: &str) -> bool {
-    index::call_site(f, li, word)
-}
-
 impl Graph {
+    /// `n`'s rectangle in canvas pixels, offset by `o`; None when `n` is not in this frame's tree.
+    fn rect_px(&self, n: Node, o: (i32, i32)) -> Option<Rect> {
+        if !self.col.contains_key(&n) {
+            return None;
+        }
+        let ((x, y), (w, h), (cw, rh)) = (self.pos[&n], self.size[&n], self.cell);
+        Some(Rect::new(o.0 + x * cw, o.1 + y * rh, w * cw, h * rh))
+    }
+
     fn focus_node(&self, focus: Option<SymRef>, focus_step: Option<usize>) -> Option<Node> {
         let f = focus?;
         let stepped = (f, focus_step);
@@ -208,7 +211,7 @@ impl Graph {
     fn call_line(&self, idx: &Index, n: Node, word: &str) -> Option<usize> {
         let (lo, hi) = self.range[&n];
         let f = &idx.files[n.0.file];
-        (lo..=hi.min(f.lines.len().saturating_sub(1))).find(|&li| has_word(f, li, word))
+        (lo..=hi.min(f.lines.len().saturating_sub(1))).find(|&li| index::call_site(f, li, word))
     }
 
     /// What `n` calls: the symbol's callees, narrowed to the ones its lines name when the node
@@ -335,7 +338,7 @@ impl Graph {
     /// Keep `n` at its screen position through the relayout its button causes, so the tree
     /// growing or shrinking around it does not slide it out from under the pointer.
     fn keep(&mut self, n: Node) {
-        self.keep = self.pos_px.get(&n).map(|p| (n, *p));
+        self.keep = self.rect_px(n, (0, 0)).map(|r| (n, (r.x, r.y)));
     }
 
     /// Keep `n` where it is when its own size is about to change, so the button under the
@@ -460,20 +463,19 @@ impl Graph {
 
         // block heights, bottom-up
         let mut height: HashMap<Node, i32> = HashMap::new();
-        let gap_y = GAP_Y;
-        fn measure(g: &Graph, gap_y: i32, r: Node, right: &HashMap<Node, Vec<Node>>, left: &HashMap<Node, Vec<Node>>, height: &mut HashMap<Node, i32>, seen: &mut HashSet<Node>) -> i32 {
+        fn measure(g: &Graph, r: Node, right: &HashMap<Node, Vec<Node>>, left: &HashMap<Node, Vec<Node>>, height: &mut HashMap<Node, i32>, seen: &mut HashSet<Node>) -> i32 {
             if !seen.insert(r) {
                 return 0;
             }
-            let mut stack = |kids: Option<&Vec<Node>>, height: &mut HashMap<Node, i32>, seen: &mut HashSet<Node>| -> i32 {
+            let stack = |kids: Option<&Vec<Node>>, height: &mut HashMap<Node, i32>, seen: &mut HashSet<Node>| -> i32 {
                 let mut h = 0;
                 for &k in kids.into_iter().flatten() {
-                    let kh = measure(g, gap_y, k, right, left, height, seen);
+                    let kh = measure(g, k, right, left, height, seen);
                     if kh > 0 {
-                        h += kh + gap_y;
+                        h += kh + GAP_Y;
                     }
                 }
-                (h - gap_y).max(0)
+                (h - GAP_Y).max(0)
             };
             let rh = stack(right.get(&r), height, seen);
             let lh = stack(left.get(&r), height, seen);
@@ -483,10 +485,10 @@ impl Graph {
         }
         let mut seen = HashSet::new();
         for &r in &roots {
-            measure(self, gap_y, r, &right, &left, &mut height, &mut seen);
+            measure(self, r, &right, &left, &mut height, &mut seen);
         }
         // place, top-down
-        fn place(g: &mut Graph, gap_y: i32, r: Node, top: i32, col_x: &BTreeMap<i32, i32>, right: &HashMap<Node, Vec<Node>>, left: &HashMap<Node, Vec<Node>>, height: &HashMap<Node, i32>, done: &mut HashSet<Node>) {
+        fn place(g: &mut Graph, r: Node, top: i32, col_x: &BTreeMap<i32, i32>, right: &HashMap<Node, Vec<Node>>, left: &HashMap<Node, Vec<Node>>, height: &HashMap<Node, i32>, done: &mut HashSet<Node>) {
             if !done.insert(r) {
                 return;
             }
@@ -495,11 +497,11 @@ impl Graph {
             g.pos.insert(r, (col_x[&g.col[&r]], top + (block - own) / 2));
             for kids in [right.get(&r), left.get(&r)] {
                 let kids: Vec<Node> = kids.into_iter().flatten().copied().filter(|k| height.contains_key(k) && !done.contains(k)).collect();
-                let stack_h: i32 = kids.iter().map(|k| height[k] + gap_y).sum::<i32>() - gap_y;
+                let stack_h: i32 = kids.iter().map(|k| height[k] + GAP_Y).sum::<i32>() - GAP_Y;
                 let mut cur = top + (block - stack_h.max(0)) / 2;
                 for k in kids {
-                    place(g, gap_y, k, cur, col_x, right, left, height, done);
-                    cur += height[&k] + gap_y;
+                    place(g, k, cur, col_x, right, left, height, done);
+                    cur += height[&k] + GAP_Y;
                 }
             }
         }
@@ -509,8 +511,8 @@ impl Graph {
             if done.contains(&r) {
                 continue;
             }
-            place(self, gap_y, r, cur, &col_x, &right, &left, &height, &mut done);
-            cur += height[&r] + gap_y * 2;
+            place(self, r, cur, &col_x, &right, &left, &height, &mut done);
+            cur += height[&r] + GAP_Y * 2;
         }
         // different subtrees can still meet in one column; push the later one down
         for ns in cols.values_mut() {
@@ -518,7 +520,7 @@ impl Graph {
             let mut prev_bottom = i32::MIN / 2;
             for &n in ns.iter() {
                 let h = self.size[&n].1;
-                let y = self.pos[&n].1.max(prev_bottom + gap_y);
+                let y = self.pos[&n].1.max(prev_bottom + GAP_Y);
                 self.pos.get_mut(&n).unwrap().1 = y;
                 prev_bottom = y + h;
             }
@@ -545,8 +547,7 @@ impl Graph {
     /// follows the relayout and the pointer stays over the button it pressed.
     fn move_camera(&mut self, canvas: Rect, focus_node: Option<Node>) {
         if self.want_look {
-            if let Some(f) = focus_node.and_then(|f| self.pos_px.get(&f).map(|p| (*p, self.size_px[&f]))) {
-                let ((x, y), (w, h)) = f;
+            if let Some(Rect { x, y, w, h }) = focus_node.and_then(|f| self.rect_px(f, (0, 0))) {
                 // a node taller than the canvas is aligned to its top: its header and buttons
                 // are what the reader came for
                 let y = if h + MARGIN * 2 > canvas.h { MARGIN - y } else { canvas.h / 2 - y - h / 2 };
@@ -556,7 +557,7 @@ impl Graph {
             return;
         }
         if let Some((n, (ox, oy))) = self.keep.take() {
-            if let Some(&(x, y)) = self.pos_px.get(&n) {
+            if let Some(Rect { x, y, .. }) = self.rect_px(n, (0, 0)) {
                 self.pan = (self.pan.0 + ox - x, self.pan.1 + oy - y);
             }
         }
@@ -567,7 +568,7 @@ impl Graph {
 struct Scene {
     px: u32,
     m: Metrics,
-    edges: Vec<([(f32, f32); 4], Color, f32, bool)>, // curve, colour, width, arrow head
+    edges: Vec<([(f32, f32); 4], Color, f32)>, // curve, colour, width; each ends in an arrow head
     nodes: Vec<SceneNode>,
 }
 
@@ -728,15 +729,7 @@ impl App {
         let (cell_w, row_h) = gfx.cell(px);
         let z = self.graph.zoom;
         let m = Metrics { cell_w, row_h, pad: cell_w / 2 };
-        // cells and rows to pixels
-        self.graph.pos_px.clear();
-        self.graph.size_px.clear();
-        for &n in &self.graph.nodes.clone() {
-            let (x, y) = self.graph.pos[&n];
-            let (w, h) = self.graph.size[&n];
-            self.graph.pos_px.insert(n, (x * cell_w, y * row_h));
-            self.graph.size_px.insert(n, (w * cell_w, h * row_h));
-        }
+        self.graph.cell = (cell_w, row_h);
         let focus_node = self.graph.focus_node(self.focus, self.sel_anchor);
         if canvas_known {
             self.graph.move_camera(canvas, focus_node);
@@ -764,10 +757,8 @@ impl App {
 
         // the scene
         let scene = self.build_scene(canvas, focus_node, px, m);
-        let hovered_canvas = it.hovered;
-        let _ = hovered_canvas;
         self.ui.leaf(
-            Kind::Custom(Box::new(move |gfx: &mut Gfx, r: Rect| draw_scene(gfx, r, &scene))),
+            Kind::Custom(Box::new(move |gfx: &mut Gfx, _: Rect| draw_scene(gfx, &scene))),
             Layout::col().grow(),
             Style::bg(gui::BG),
             Some(canvas_id),
@@ -780,7 +771,7 @@ impl App {
     }
 
     fn build_scene(&mut self, canvas: Rect, focus_node: Option<Node>, px: u32, m: Metrics) -> Scene {
-        let (ox, oy) = (canvas.x + self.graph.pan.0, canvas.y + self.graph.pan.1);
+        let o = (canvas.x + self.graph.pan.0, canvas.y + self.graph.pan.1);
         let mouse = self.ui.input.mouse;
         let mut hits = Vec::new();
         let mut nodes = Vec::new();
@@ -788,9 +779,7 @@ impl App {
         // nodes
         for i in 0..self.graph.nodes.len() {
             let n = self.graph.nodes[i];
-            let (x, y) = self.graph.pos_px[&n];
-            let (w, h) = self.graph.size_px[&n];
-            let rect = Rect::new(ox + x, oy + y, w, h);
+            let rect = self.graph.rect_px(n, o).unwrap();
             let (lo, hi) = self.graph.view[&n];
             let (shown, total) = self.graph.lines_shown(n);
             let code = self.grid(n.0.file, lo, lo + shown - 1);
@@ -837,13 +826,9 @@ impl App {
             nodes.push(SceneNode { rect, fill, border, border_w, header, buttons, note, code_top, code, lo, tinted, slice, more: (shown < total).then_some(total - shown) });
         }
         // edges: where an edge leaves a node is level with the call line when it is shown
-        let rect_of = |g: &Graph, n: Node| {
-            let (x, y) = g.pos_px[&n];
-            let (w, h) = g.size_px[&n];
-            Rect::new(ox + x, oy + y, w, h)
-        };
-        let edge_out = |g: &Graph, n: Node, word: &str| -> (f32, f32) {
-            let r = rect_of(g, n);
+        let g = &self.graph;
+        let edge_out = |n: Node, word: &str| -> (f32, f32) {
+            let r = g.rect_px(n, o).unwrap();
             let (lo, _) = g.view[&n];
             let (shown, _) = g.lines_shown(n);
             match g.call_line(&self.idx, n, word) {
@@ -851,47 +836,45 @@ impl App {
                 _ => (r.right() as f32, (r.y + m.pad + m.row_h / 2) as f32),
             }
         };
+        // a curve leaving p0 and entering p1 horizontally, bowing out rightwards for `dir` 1.0
+        // and leftwards for -1.0
+        let curve = |p0: (f32, f32), p1: (f32, f32), dir: f32| {
+            let dx = ((p1.0 - p0.0).abs() * 0.5).max((GAP_X * m.cell_w) as f32 * 0.8) * dir;
+            [p0, (p0.0 + dx, p0.1), (p1.0 - dx, p1.1), p1]
+        };
         let mut edges = Vec::new();
         let hy = (m.pad + m.row_h / 2) as f32;
-        for &a in &self.graph.nodes {
-            for bs in self.graph.callees_of(&self.idx, a) {
-                let Some(&b) = self.graph.by_sym.get(&bs) else { continue };
-                if a.0 == bs || self.graph.step_parent.get(&b) == Some(&a) {
+        for &a in &g.nodes {
+            for bs in g.callees_of(&self.idx, a) {
+                let Some(&b) = g.by_sym.get(&bs) else { continue };
+                if a.0 == bs || g.step_parent.get(&b) == Some(&a) {
                     continue;
                 }
-                let (ra, rb) = (rect_of(&self.graph, a), rect_of(&self.graph, b));
+                let (ra, rb) = (g.rect_px(a, o).unwrap(), g.rect_px(b, o).unwrap());
                 if rb.x >= ra.right() {
-                    let p0 = edge_out(&self.graph, a, &self.idx.sym(bs).name);
-                    let p1 = (rb.x as f32, rb.y as f32 + hy);
-                    let dx = ((p1.0 - p0.0).abs() * 0.5).max((GAP_X * m.cell_w) as f32 * 0.8);
-                    edges.push(([p0, (p0.0 + dx, p0.1), (p1.0 - dx, p1.1), p1], WEAK, 1.5, true));
+                    let p0 = edge_out(a, &self.idx.sym(bs).name);
+                    edges.push((curve(p0, (rb.x as f32, rb.y as f32 + hy), 1.0), WEAK, 1.5));
                 } else {
                     let p0 = (ra.x as f32, ra.y as f32 + hy);
-                    let p1 = (rb.right() as f32, rb.y as f32 + hy);
-                    let dx = ((p0.0 - p1.0).abs() * 0.5).max((GAP_X * m.cell_w) as f32 * 0.8);
-                    edges.push(([p0, (p0.0 - dx, p0.1), (p1.0 + dx, p1.1), p1], ORANGE, 1.5, true));
+                    edges.push((curve(p0, (rb.right() as f32, rb.y as f32 + hy), -1.0), ORANGE, 1.5));
                 }
             }
         }
-        for (&child, &parent) in &self.graph.step_parent {
-            let rb = rect_of(&self.graph, child);
-            let p0 = edge_out(&self.graph, parent, &self.idx.sym(child.0).name);
-            let p1 = (rb.x as f32, rb.y as f32 + hy);
-            let dx = ((p1.0 - p0.0).abs() * 0.5).max((GAP_X * m.cell_w) as f32 * 0.8);
-            edges.push(([p0, (p0.0 + dx, p0.1), (p1.0 - dx, p1.1), p1], step_color, 3.0, true));
+        for (&child, &parent) in &g.step_parent {
+            let rb = g.rect_px(child, o).unwrap();
+            let p0 = edge_out(parent, &self.idx.sym(child.0).name);
+            edges.push((curve(p0, (rb.x as f32, rb.y as f32 + hy), 1.0), step_color, 3.0));
         }
         self.graph.hits = hits.into_iter().map(|(r, h)| (r.intersect(&canvas), h)).collect();
         Scene { px, m, edges, nodes }
     }
 }
 
-fn draw_scene(gfx: &mut Gfx, _r: Rect, scene: &Scene) {
+fn draw_scene(gfx: &mut Gfx, scene: &Scene) {
     let m = scene.m;
-    for (p, color, w, arrow) in &scene.edges {
+    for (p, color, w) in &scene.edges {
         gfx.curve(*p, *w, *color);
-        if *arrow {
-            gfx.circle(p[3].0, p[3].1, 3.5, *color);
-        }
+        gfx.circle(p[3].0, p[3].1, 3.5, *color);
     }
     for n in &scene.nodes {
         gfx.rect(n.rect, n.fill);
@@ -952,7 +935,7 @@ impl App {
         match tip {
             Tip::Sym(r) if r.file < self.idx.files.len() => {
                 let s = self.idx.sym(r);
-                let (name, place, start, end, s_end) = (s.name.clone(), format!("{} {}:{}-{}", s.kind, self.idx.files[r.file].path, s.start + 1, s.end + 1), s.start, s.end, s.end);
+                let (name, place, start, end) = (s.name.clone(), format!("{} {}:{}-{}", s.kind, self.idx.files[r.file].path, s.start + 1, s.end + 1), s.start, s.end);
                 self.tip_shown = Some(name.clone());
                 let f = &self.idx.files[r.file];
                 let last = end.min(f.lines.len().saturating_sub(1)).min(start + 23);
@@ -961,10 +944,9 @@ impl App {
                 self.ui.open(Kind::None, Layout::col().floating(x, y).pad(6).gap(2), Style::bg(PANEL).border(ui::BORDER_ALL, BORDER), None);
                 self.label(&name, TEXT);
                 self.label(&place, WEAK);
-                let end = end.min(self.idx.files[r.file].lines.len().saturating_sub(1)).min(start + 23);
-                self.code_block(r.file, start, end, ui::id("tip-code"), false, &|_| None, &|_| None);
-                if end < s_end {
-                    self.label(&format!("      … {} more lines", s_end - end), WEAK);
+                self.code_block(r.file, start, last, ui::id("tip-code"), false, &|_| None, &|_| None);
+                if last < end {
+                    self.label(&format!("      … {} more lines", end - last), WEAK);
                 }
                 self.label("alt-click: pin in the peek panel   ctrl-click or double-click: go there", WEAK);
                 self.ui.close();

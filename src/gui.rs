@@ -12,7 +12,7 @@ use crate::ui::{self, Align, Id, Interaction, Key, Kind, Layout, Measure, Style,
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
-use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender, TryRecvError, channel};
+use std::sync::mpsc::{Receiver, Sender, TryRecvError, channel};
 use std::time::{Duration, Instant, SystemTime};
 
 // ---- theme ----
@@ -110,6 +110,19 @@ pub enum Tab {
     Results,
 }
 
+impl Tab {
+    /// The tab a script or CODEMAP_SHOT_TAB names; any other name is the path document.
+    fn from_name(name: &str) -> Tab {
+        match name {
+            "graph" => Tab::Graph,
+            "listing" => Tab::Listing,
+            "diff" => Tab::Diff,
+            "results" => Tab::Results,
+            _ => Tab::Path,
+        }
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum LeftTab {
     Paths,
@@ -138,12 +151,13 @@ impl Field {
         for (k, m) in &input.keys {
             match k {
                 Key::Enter => {
-                    let line = if keep_on_enter { self.text.clone() } else { std::mem::take(&mut self.text) };
-                    if keep_on_enter {
+                    let line = if keep_on_enter {
                         self.selected = !self.text.is_empty(); // the next entry replaces this one
+                        self.text.clone()
                     } else {
                         self.cursor = 0;
-                    }
+                        std::mem::take(&mut self.text)
+                    };
                     self.hist_at = None;
                     if !line.trim().is_empty() {
                         self.history.push(line.clone());
@@ -257,13 +271,14 @@ struct Probe {
 }
 
 /// A definition the server found: the file relative to the root when it is inside, the
-/// absolute path either way, the 0-based line, and the text around it read from disk
-/// (starting at `first`) for when the file is not indexed.
+/// absolute path either way, the 0-based line, and the lines around it drawn from the file
+/// on disk (starting at line `first`) for a peek when the file is not indexed.
 struct Def {
     rel: Option<String>,
     abs: PathBuf,
     line: usize,
-    file: index::File, // the whole target file parsed with its grammar, for a peek outside the repo
+    first: usize,
+    grid: Glyphs,
 }
 
 /// What the language-server thread sends back.
@@ -283,24 +298,17 @@ enum Intent {
     Peek,
 }
 
-/// What a definition lookup landed on.
-enum Found {
-    Sym(SymRef),
-    Line(usize, usize), // (file, line): a definition inside a symbol, or in a file with none
-    Outside(PathBuf, usize, index::File), // path, line, the parsed file
-}
-
 /// What the tooltip under the pointer shows.
 pub enum Tip {
     Sym(SymRef),
     Text(String),
 }
 
-/// What the peek panel shows.
+/// What the peek panel shows, and what a definition lookup landed on.
 #[derive(Clone)]
 pub enum Peek {
     Sym(SymRef),
-    Line(usize, usize),
+    Line(usize, usize), // (file, line): a definition inside a symbol, or in a file with none
     Outside(PathBuf, usize, usize, Rc<Glyphs>), // path, line, first line of the grid, the grid
 }
 
@@ -354,10 +362,13 @@ fn serve(root: PathBuf, lang: &'static index::Lang, rx: Receiver<Req>, tx: Sende
             }
             Some(Req::Def(p)) => {
                 let d = c.definition(&abs.join(&p.path), p.line, p.col).map(|(path, line, _)| {
+                    let line = line as usize;
                     let text = std::fs::read_to_string(&path).unwrap_or_default().replace('\t', "    ");
                     let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_owned();
-                    let file = index::parse_file(&mut index::Parsers::new(), path.to_string_lossy().replace('\\', "/"), &text, &ext);
-                    Def { rel: lsp::relative(&path, &abs), abs: path, line: line as usize, file }
+                    let file = index::parse_file(&mut index::Parsers::default(), path.to_string_lossy().replace('\\', "/"), &text, &ext);
+                    let first = line.saturating_sub(6);
+                    let grid = if file.lines.is_empty() { Glyphs::new(0, 0) } else { build_grid(&file, first, (line + 24).min(file.lines.len() - 1)) };
+                    Def { rel: lsp::relative(&path, &abs), abs: path, line, first, grid }
                 });
                 let _ = tx.send(Msg::Def(p, d));
             }
@@ -401,8 +412,7 @@ impl Loc {
 /// What a click asked for; applied after the frame is built.
 pub enum Action {
     Focus(SymRef),
-    SelectPath(usize),
-    ShowPath(usize),
+    OpenPath(usize, Tab), // select the path unless it is the one being read, and show it in the tab
     SelectStep(usize, usize, bool), // (path, step, clicked inside the document)
     ToggleStep(usize, usize),       // show the whole symbol / just the slice in the document
     ToggleCode(usize, usize),       // hide / show a step's code
@@ -430,24 +440,44 @@ fn mtime(p: &Path) -> Option<SystemTime> {
 }
 
 /// The indexed files' modification times, compared against the disk once a second off the main
-/// thread. A change is reported once; the thread then waits for the refreshed list the main
-/// thread sends after the re-index, so it never reports the same edit twice.
-fn watch(root: PathBuf, mut list: Vec<(String, Option<SystemTime>)>, rx: Receiver<Vec<(String, Option<SystemTime>)>>, tx: Sender<()>) {
-    loop {
-        match rx.recv_timeout(Duration::from_secs(1)) {
-            Ok(l) => list = l,
-            Err(RecvTimeoutError::Timeout) => {}
-            Err(RecvTimeoutError::Disconnected) => return,
+/// thread. Each list the main thread sends is watched until a file differs from it, which is
+/// reported once; the thread then waits for the refreshed list the main thread sends after the
+/// re-index, so it never reports the same edit twice.
+fn watch(root: PathBuf, rx: Receiver<Vec<(String, Option<SystemTime>)>>, tx: Sender<()>) {
+    while let Ok(list) = rx.recv() {
+        while list.iter().all(|(p, mt)| mtime(&root.join(p)) == *mt) {
+            std::thread::sleep(Duration::from_secs(1));
         }
-        if list.iter().any(|(p, mt)| mtime(&root.join(p)) != *mt) {
-            if tx.send(()).is_err() {
-                return;
-            }
-            match rx.recv() {
-                Ok(l) => list = l,
-                Err(_) => return,
-            }
+        if tx.send(()).is_err() {
+            return;
         }
+    }
+}
+
+/// Run `f` on its own thread; its result arrives on the returned channel.
+fn bg<T: Send + 'static>(f: impl FnOnce() -> T + Send + 'static) -> Receiver<T> {
+    let (tx, rx) = channel();
+    std::thread::spawn(move || {
+        let _ = tx.send(f());
+    });
+    rx
+}
+
+/// A thread's result: None while it runs, Some(None) when it died without one, Some(Some(value))
+/// when it answered. The receiver is dropped once either lands.
+fn landed<T>(rx: &mut Option<Receiver<T>>) -> Option<Option<T>> {
+    let got = match rx.as_ref()?.try_recv() {
+        Err(TryRecvError::Empty) => return None,
+        r => r.ok(),
+    };
+    *rx = None;
+    Some(got)
+}
+
+/// Add `k` to `set`, or remove it when it is there.
+fn toggle<T: Eq + std::hash::Hash>(set: &mut HashSet<T>, k: T) {
+    if !set.remove(&k) {
+        set.insert(k);
     }
 }
 
@@ -515,11 +545,7 @@ pub struct App {
     pub tooltip: Option<(Tip, (i32, i32))>, // what to show at the pointer this frame
     pub tip_shown: Option<String>,         // the first line of last frame's tooltip, for dumps
 
-    search: Field,
-    new_path: Field,
-    cmd: Field,
-    sym_filter: Field,
-    goto_line: Field,
+    fields: [Field; 5],           // the text fields, indexed by `Which`
     results: Vec<(usize, usize)>, // (file, line)
     output: String,
     status: String,
@@ -532,18 +558,16 @@ impl App {
         let idx = index::build(root);
         let map_path = root.join(".codemap");
         let map = Map::load(&map_path);
-        let mut status = format!("{} files, {} symbols indexed", idx.files.len(), idx.files.iter().map(|f| f.symbols.len()).sum::<usize>());
-        if map.is_none() && map_path.exists() {
-            status = ".codemap is unreadable or an old format: starting from an empty map, saving overwrites it".into();
-        }
+        let unreadable = map.is_none() && map_path.exists();
         let mut map = map.unwrap_or_default();
         map.resolve_all(&idx);
         let first_path = if map.paths.is_empty() { None } else { Some(0) };
         let (watch_tx, list_rx) = channel();
         let (changed_tx, watch_rx) = channel();
-        let list: Vec<(String, Option<SystemTime>)> = idx.files.iter().map(|f| (f.path.clone(), f.mtime)).collect();
-        let watch_root = idx.root.clone();
-        std::thread::spawn(move || watch(watch_root, list, list_rx, changed_tx));
+        std::thread::spawn({
+            let root = idx.root.clone();
+            move || watch(root, list_rx, changed_tx)
+        });
         let mut app = App {
             idx,
             servers: HashMap::new(),
@@ -603,17 +627,15 @@ impl App {
             graph: crate::graph::Graph::new(),
             tooltip: None,
             tip_shown: None,
-            search: Field::default(),
-            new_path: Field::default(),
-            cmd: Field::default(),
-            sym_filter: Field::default(),
-            goto_line: Field::default(),
+            fields: Default::default(),
             results: Vec::new(),
             output: "type 'help' for commands; roots and promote live here\n".into(),
-            status,
+            status: String::new(),
             shot: std::env::var_os("CODEMAP_SHOT").map(|p| (PathBuf::from(p), 0)),
             shot_next: None,
         };
+        app.status = if unreadable { ".codemap is unreadable or an old format: starting from an empty map, saving overwrites it".into() } else { app.indexed_status() };
+        app.watch_files();
         if let Some(pi) = first_path {
             app.select_path(pi);
         }
@@ -627,11 +649,7 @@ impl App {
     /// Ask jj for the parent revision's map on a thread; `poll_base` picks it up.
     fn load_base(&mut self) {
         let root = self.idx.root.clone();
-        let (tx, rx) = channel();
-        std::thread::spawn(move || {
-            let _ = tx.send(Map::base_from_vcs(&root));
-        });
-        self.base_rx = Some(rx);
+        self.base_rx = Some(bg(move || Map::base_from_vcs(&root)));
     }
 
     fn poll_base(&mut self) {
@@ -725,10 +743,10 @@ impl App {
                             Some(d) => {
                                 let found = match d.rel.as_deref().and_then(|r| self.idx.find_file(r)) {
                                     Some(fi) => match self.idx.by_line(&self.idx.files[fi].path, d.line).filter(|r| self.idx.sym(*r).start == d.line) {
-                                        Some(r) => Found::Sym(r),
-                                        None => Found::Line(fi, d.line),
+                                        Some(r) => Peek::Sym(r),
+                                        None => Peek::Line(fi, d.line),
                                     },
-                                    None => Found::Outside(d.abs, d.line, d.file),
+                                    None => Peek::Outside(d.abs, d.line, d.first, Rc::new(d.grid)),
                                 };
                                 self.land(found, intent);
                             }
@@ -767,10 +785,14 @@ impl App {
     }
 
     /// Once a second: pick up a map written by the CLI. Source changes are found by the watcher
-    /// thread, so nothing here stats the tree.
+    /// thread, so nothing here stats the tree; one it reports starts a rebuild of the index from
+    /// disk and the cache on a thread, and the index in use is untouched until `poll_reindex`
+    /// swaps the new one in.
     fn poll_disk(&mut self) {
         if self.watch_rx.try_recv().is_ok() {
-            self.reindex();
+            let root = self.idx.root.clone();
+            self.reindex_rx = Some(bg(move || index::build(&root)));
+            self.status = "re-indexing (source changed)".into();
         }
         if self.last_poll.elapsed() < Duration::from_secs(1) {
             return;
@@ -820,11 +842,16 @@ impl App {
             .enumerate()
             .filter_map(|(old, (name, n))| self.map.paths.iter().position(|p| p.name == *name && p.anchors.len() == *n).map(|new| (old, new)))
             .collect();
-        let keep = |set: &mut HashSet<(usize, usize)>| *set = set.iter().filter_map(|&(pi, ai)| kept.get(&pi).map(|&p| (p, ai))).collect();
-        keep(&mut self.expanded_steps);
-        keep(&mut self.collapsed);
-        keep(&mut self.folded);
-        self.context = self.context.iter().filter_map(|(&(pi, ai), &v)| kept.get(&pi).map(|&p| ((p, ai), v))).collect();
+        self.remap_steps(|(pi, ai)| kept.get(&pi).map(|&p| (p, ai)));
+    }
+
+    /// Carry the whole-symbol, code, fold and context records over to new (path, step) keys:
+    /// `f` gives a record's new key, or None when the record goes.
+    fn remap_steps(&mut self, f: impl Fn((usize, usize)) -> Option<(usize, usize)>) {
+        for set in [&mut self.expanded_steps, &mut self.collapsed, &mut self.folded] {
+            *set = set.drain().filter_map(&f).collect();
+        }
+        self.context = self.context.drain().filter_map(|(k, v)| f(k).map(|k| (k, v))).collect();
     }
 
     /// Run `change` on the index and carry the selection, the listing and the map's anchors
@@ -855,39 +882,24 @@ impl App {
         self.cur_file = cur_file.and_then(|p| self.idx.find_file(&p));
     }
 
-    /// Rebuild the index from disk and the cache on a thread. The index in use is untouched
-    /// until `poll_reindex` swaps the new one in.
-    fn reindex(&mut self) {
-        if self.reindex_rx.is_some() {
-            return;
-        }
-        let root = self.idx.root.clone();
-        let (tx, rx) = channel();
-        std::thread::spawn(move || {
-            let _ = tx.send(index::build(&root));
-        });
-        self.reindex_rx = Some(rx);
-        self.status = "re-indexing (source changed)".into();
+    /// Give the watcher thread the indexed files' modification times so it starts looking.
+    fn watch_files(&self) {
+        let _ = self.watch_tx.send(self.idx.files.iter().map(|f| (f.path.clone(), f.mtime)).collect());
     }
 
     /// Take the rebuilt index, then ask the servers about what changed and give the watcher
     /// thread the new modification times so it starts looking again.
     fn poll_reindex(&mut self) {
-        let idx = match self.reindex_rx.as_ref().map(|rx| rx.try_recv()) {
-            None | Some(Err(TryRecvError::Empty)) => return,
-            Some(Ok(idx)) => Some(idx),
-            Some(Err(TryRecvError::Disconnected)) => None, // the rebuild thread panicked
-        };
-        self.reindex_rx = None;
+        let Some(idx) = landed(&mut self.reindex_rx) else { return };
         match idx {
             Some(idx) => {
                 self.with_index_change(|app| app.idx = idx);
                 self.results.clear();
-                self.status = format!("re-indexed: {} files, {} symbols (source changed)", self.idx.files.len(), self.idx.files.iter().map(|f| f.symbols.len()).sum::<usize>());
+                self.status = format!("re-indexed: {} (source changed)", self.indexed_status());
             }
-            None => self.status = "re-index failed; the index in use is the old one".into(),
+            None => self.status = "re-index failed; the index in use is the old one".into(), // the rebuild thread panicked
         }
-        let _ = self.watch_tx.send(self.idx.files.iter().map(|f| (f.path.clone(), f.mtime)).collect());
+        self.watch_files();
         self.start_backend();
     }
 
@@ -899,23 +911,16 @@ impl App {
             return;
         }
         let mut snap = self.idx.symbols_only();
-        let (tx, rx) = channel();
-        std::thread::spawn(move || {
+        self.link_rx = Some(bg(move || {
             snap.link();
-            let _ = tx.send(snap);
-        });
-        self.link_rx = Some(rx);
+            snap
+        }));
     }
 
     /// Take a finished link. A copy whose symbol tables no longer match the index is dropped:
     /// the change that made it stale queued the link that replaces it.
     fn poll_link(&mut self) {
-        let done = match self.link_rx.as_ref().map(|rx| rx.try_recv()) {
-            None | Some(Err(TryRecvError::Empty)) => return,
-            Some(Ok(linked)) => Some(linked),
-            Some(Err(TryRecvError::Disconnected)) => None,
-        };
-        self.link_rx = None;
+        let Some(done) = landed(&mut self.link_rx) else { return };
         if let Some(linked) = done {
             self.idx.take_edges(&linked);
         }
@@ -926,6 +931,12 @@ impl App {
 
     fn indexed_status(&self) -> String {
         format!("{} files, {} symbols indexed", self.idx.files.len(), self.idx.files.iter().map(|f| f.symbols.len()).sum::<usize>())
+    }
+
+    /// Work in flight: a server request or batch of files, or the parent map, a re-index or a
+    /// link on a thread.
+    fn working(&self) -> bool {
+        self.asked > 0 || !self.indexing.is_empty() || self.base_rx.is_some() || self.reindex_rx.is_some() || self.link_rx.is_some()
     }
 
     // ---- history ----
@@ -989,10 +1000,7 @@ impl App {
     /// context sets and in the history.
     fn step_removed(&mut self, pi: usize, ai: usize) {
         let shift = |a: usize| if a == ai { None } else if a > ai { Some(a - 1) } else { Some(a) };
-        for set in [&mut self.expanded_steps, &mut self.collapsed, &mut self.folded] {
-            *set = set.drain().filter_map(|(p, a)| if p == pi { shift(a).map(|a| (p, a)) } else { Some((p, a)) }).collect();
-        }
-        self.context = self.context.drain().filter_map(|((p, a), v)| if p == pi { shift(a).map(|a| ((p, a), v)) } else { Some(((p, a), v)) }).collect();
+        self.remap_steps(|(p, a)| if p == pi { shift(a).map(|a| (p, a)) } else { Some((p, a)) });
         for loc in self.history.iter_mut().chain(self.forward.iter_mut()).chain(self.last_loc.iter_mut()) {
             if loc.path == Some(pi) {
                 loc.step = loc.step.and_then(shift);
@@ -1003,10 +1011,7 @@ impl App {
     /// The same after path `pi` was removed: its records go, later paths move down one.
     fn path_removed(&mut self, pi: usize) {
         let shift = |p: usize| if p == pi { None } else if p > pi { Some(p - 1) } else { Some(p) };
-        for set in [&mut self.expanded_steps, &mut self.collapsed, &mut self.folded] {
-            *set = set.drain().filter_map(|(p, a)| shift(p).map(|p| (p, a))).collect();
-        }
-        self.context = self.context.drain().filter_map(|((p, a), v)| shift(p).map(|p| ((p, a), v))).collect();
+        self.remap_steps(|(p, a)| shift(p).map(|p| (p, a)));
         self.history.retain(|l| l.path != Some(pi));
         self.forward.retain(|l| l.path != Some(pi));
         for loc in self.history.iter_mut().chain(self.forward.iter_mut()).chain(self.last_loc.iter_mut()) {
@@ -1141,7 +1146,7 @@ impl App {
         let f = &self.idx.files[fi];
         match index::lang_for(&f.path).filter(|l| !self.no_server.contains(l.server)) {
             Some(lang) => Ok((lang, Probe { path: f.path.clone(), hash: f.hash, line: li as u32, col: utf16_col(&f.lines[li], col) })),
-            None => Err(index::has_grammar(&f.path)),
+            None => Err(index::lang_for(&f.path).is_some()),
         }
     }
 
@@ -1195,7 +1200,7 @@ impl App {
                 }
             }
             Err(true) => match self.symbol_at(fi, li, col) {
-                Some(r) => self.land(Found::Sym(r), intent),
+                Some(r) => self.land(Peek::Sym(r), intent),
                 None => self.status = format!("no definition of '{word}' in this repo"),
             },
             Err(false) => {}
@@ -1203,24 +1208,22 @@ impl App {
     }
 
     /// Go to, or pin, what a definition lookup found.
-    fn land(&mut self, found: Found, intent: Intent) {
+    /// A definition outside the repo is pinned whatever the intent, since only the peek shows it.
+    fn land(&mut self, found: Peek, intent: Intent) {
         match (intent, found) {
-            (Intent::Jump, Found::Sym(r)) => {
+            (Intent::Jump, Peek::Sym(r)) => {
                 self.select_symbol(r);
                 let on_step = self.sel_anchor.is_some() && self.tab == Tab::Path;
                 if self.tab != Tab::Graph && !on_step {
                     self.tab = Tab::Listing;
                 }
             }
-            (Intent::Jump, Found::Line(fi, li)) => self.open_line(fi, li),
-            (Intent::Peek, Found::Sym(r)) => self.peek = Some(Peek::Sym(r)),
-            (Intent::Peek, Found::Line(fi, li)) => self.peek = Some(Peek::Line(fi, li)),
-            (_, Found::Outside(p, li, file)) => {
-                self.status = format!("defined outside the repo: {}:{}", p.display(), li + 1);
-                let first = li.saturating_sub(6);
-                let last = (li + 24).min(file.lines.len().saturating_sub(1));
-                let grid = if file.lines.is_empty() { Glyphs::new(0, 0) } else { build_grid(&file, first, last) };
-                self.peek = Some(Peek::Outside(p, li, first, Rc::new(grid)));
+            (Intent::Jump, Peek::Line(fi, li)) => self.open_line(fi, li),
+            (_, found) => {
+                if let Peek::Outside(p, li, _, _) = &found {
+                    self.status = format!("defined outside the repo: {}:{}", p.display(), li + 1);
+                }
+                self.peek = Some(found);
             }
         }
     }
@@ -1280,26 +1283,25 @@ impl App {
     }
 
     fn run_search(&mut self) {
-        let re = match regex::Regex::new(&self.search.text) {
+        let re = match regex::Regex::new(&self.fields[Which::Search as usize].text) {
             Ok(re) => re,
             Err(e) => {
                 self.status = format!("bad regex: {}", e.to_string().lines().last().unwrap_or("").trim());
                 return;
             }
         };
-        self.results.clear();
         // ponytail: single-threaded scan of the in-memory index; rayon it when it takes >100ms.
-        'outer: for (fi, f) in self.idx.files.iter().enumerate() {
-            for (li, line) in f.lines.iter().enumerate() {
-                if re.is_match(line) {
-                    self.results.push((fi, li));
-                    if self.results.len() >= 5000 {
-                        break 'outer;
-                    }
-                }
-            }
-        }
-        self.status = format!("{} hits for /{}/", self.results.len(), self.search.text);
+        self.results = self
+            .idx
+            .files
+            .iter()
+            .enumerate()
+            .flat_map(|(fi, f)| f.lines.iter().enumerate().map(move |(li, line)| (fi, li, line)))
+            .filter(|(_, _, line)| re.is_match(line))
+            .map(|(fi, li, _)| (fi, li))
+            .take(5000)
+            .collect();
+        self.status = format!("{} hits for /{}/", self.results.len(), self.fields[Which::Search as usize].text);
         self.tab = Tab::Results;
     }
 
@@ -1336,34 +1338,16 @@ impl App {
     fn apply(&mut self, a: Action) {
         match a {
             Action::Focus(r) => self.go_to_symbol(r),
-            Action::SelectPath(pi) => {
+            Action::OpenPath(pi, tab) => {
                 if self.sel_path != Some(pi) {
                     self.select_path(pi);
                 }
-                self.tab = Tab::Path;
-            }
-            Action::ShowPath(pi) => {
-                if self.sel_path != Some(pi) {
-                    self.select_path(pi);
-                }
-                self.tab = Tab::Graph;
+                self.tab = tab;
             }
             Action::SelectStep(pi, ai, in_doc) => self.select_step(pi, ai, in_doc),
-            Action::ToggleStep(pi, ai) => {
-                if !self.expanded_steps.remove(&(pi, ai)) {
-                    self.expanded_steps.insert((pi, ai));
-                }
-            }
-            Action::ToggleCode(pi, ai) => {
-                if !self.collapsed.remove(&(pi, ai)) {
-                    self.collapsed.insert((pi, ai));
-                }
-            }
-            Action::ToggleFold(pi, ai) => {
-                if !self.folded.remove(&(pi, ai)) {
-                    self.folded.insert((pi, ai));
-                }
-            }
+            Action::ToggleStep(pi, ai) => toggle(&mut self.expanded_steps, (pi, ai)),
+            Action::ToggleCode(pi, ai) => toggle(&mut self.collapsed, (pi, ai)),
+            Action::ToggleFold(pi, ai) => toggle(&mut self.folded, (pi, ai)),
             Action::CollapseAll(pi, hide) => {
                 self.collapsed.retain(|&(p, _)| p != pi);
                 if hide {
@@ -1419,11 +1403,7 @@ impl App {
                 };
             }
             Action::ClosePeek => self.peek = None,
-            Action::ToggleDir(d) => {
-                if !self.dir_toggled.remove(&d) {
-                    self.dir_toggled.insert(d);
-                }
-            }
+            Action::ToggleDir(d) => toggle(&mut self.dir_toggled, d),
             Action::Tab(t) => self.tab = t,
             Action::Back => self.back(),
             Action::Forward => self.forward(),
@@ -1445,15 +1425,15 @@ impl App {
     }
 
     pub fn small_button(&mut self, s: &str, id: Id) -> Interaction {
-        let it = self.ui.interaction_of(id);
-        self.ui.leaf(text(s, self.px, if it.hovered { TEXT } else { WEAK }), Layout::row().pad(2), Style::bg(if it.hovered { HOVER } else { FIELD }).border(ui::BORDER_ALL, BORDER), Some(id))
+        self.small_button_w(s, 0, id)
     }
 
     /// A small button `cols` cells wide whatever its label, so a label that changes on click
-    /// does not move the buttons beside it.
+    /// does not move the buttons beside it; 0 fits the label.
     pub fn small_button_w(&mut self, s: &str, cols: usize, id: Id) -> Interaction {
         let it = self.ui.interaction_of(id);
-        self.ui.leaf(text(s, self.px, if it.hovered { TEXT } else { WEAK }), Layout::row().pad(2).w(cols as i32 * self.cell.0 + 4), Style::bg(if it.hovered { HOVER } else { FIELD }).border(ui::BORDER_ALL, BORDER), Some(id))
+        let layout = if cols > 0 { Layout::row().pad(2).w(cols as i32 * self.cell.0 + 4) } else { Layout::row().pad(2) };
+        self.ui.leaf(text(s, self.px, if it.hovered { TEXT } else { WEAK }), layout, Style::bg(if it.hovered { HOVER } else { FIELD }).border(ui::BORDER_ALL, BORDER), Some(id))
     }
 
     /// A navigation button three cells wide, dimmed when it has nowhere to go.
@@ -1477,36 +1457,24 @@ impl App {
 
     /// A text field; clicking it takes the keyboard. The text is clipped to the box and
     /// scrolled so the caret stays in view.
-    fn field(&mut self, which: Which, hint: &str, width: i32) -> Interaction {
+    fn field(&mut self, which: Which, hint: &str, width: i32) {
         let id = ui::id_with(ui::id("field"), hint);
-        let cw = self.cell.0;
-        let f = self.field_mut(which);
+        let f = &self.fields[which as usize];
         let focused = f.focused;
         let caret = f.cursor as i32 + 1;
         let r = f.runs(hint);
-        let x = (caret * cw - (width - 6)).max(0);
+        let x = (caret * self.cell.0 - (width - 6)).max(0);
         let it = self.ui.open(Kind::None, Layout::row().w(width).pad(3).scroll(x, 0), Style::bg(FIELD).border(ui::BORDER_ALL, if focused { ACCENT } else { BORDER }), Some(id));
         self.ui.leaf(runs(r, self.px), Layout::row(), Style::default(), None);
         self.ui.close();
         if it.clicked {
             self.take_focus(which);
         }
-        it
-    }
-
-    fn field_mut(&mut self, which: Which) -> &mut Field {
-        match which {
-            Which::Search => &mut self.search,
-            Which::NewPath => &mut self.new_path,
-            Which::Cmd => &mut self.cmd,
-            Which::SymFilter => &mut self.sym_filter,
-            Which::GotoLine => &mut self.goto_line,
-        }
     }
 
     fn take_focus(&mut self, which: Which) {
-        for w in [Which::Search, Which::NewPath, Which::Cmd, Which::SymFilter, Which::GotoLine] {
-            self.field_mut(w).focused = w == which;
+        for (i, f) in self.fields.iter_mut().enumerate() {
+            f.focused = i == which as usize;
         }
     }
 
@@ -1517,6 +1485,23 @@ impl App {
         let off = self.ui.scroll_by_wheel(id, &mut off);
         self.scrolls.insert(id, off);
         self.ui.open(Kind::None, layout.scroll(0, off), style, Some(id))
+    }
+
+    /// A virtual list of `n` rows `row_h` high in the scrolling column `id`, whose rectangle is
+    /// `rect`: the first row in view and how many fit (`guess` before the column has a size).
+    /// Only those rows are built. This emits the spacer standing for the rows above; the caller
+    /// ends the list with a `spacer` for the rows below.
+    fn rows_window(&mut self, id: Id, rect: Option<Rect>, n: usize, row_h: i32, guess: usize) -> (usize, usize) {
+        let off = self.scrolls.get(&id).copied().unwrap_or(0);
+        let visible = rect.map_or(guess, |r| (r.h / row_h + 2) as usize);
+        let first = ((off / row_h).max(0) as usize).min(n);
+        self.spacer(first as i32 * row_h);
+        (first, visible)
+    }
+
+    /// Empty space `h` pixels high.
+    fn spacer(&mut self, h: i32) {
+        self.ui.leaf(Kind::None, Layout::row().h(h), Style::default(), None);
     }
 
     /// The drawn form of lines `lo..=hi` of a file, built once per (file text, range) and
@@ -1654,26 +1639,21 @@ impl App {
             self.scrolls.insert(id, i32::MAX);
         }
         let it = self.scroll_open(id, Layout::col().grow().pad(4), Style::default());
-        // only the visible window of log lines is built
         let row_h = self.cell.1;
-        let off = self.scrolls.get(&id).copied().unwrap_or(0);
-        let lines: Vec<&str> = self.output.lines().collect();
-        let visible = it.rect.map_or(20, |r| r.h / row_h + 2) as usize;
-        let first = ((off / row_h).max(0) as usize).min(lines.len());
-        self.ui.leaf(Kind::None, Layout::row().h(first as i32 * row_h), Style::default(), None);
-        for line in lines.iter().skip(first).take(visible) {
+        let n = self.output.lines().count();
+        let (first, visible) = self.rows_window(id, it.rect, n, row_h, 20);
+        for line in self.output.lines().skip(first).take(visible) {
             self.ui.leaf(text(line, px, TEXT), Layout::row(), Style::default(), None);
         }
-        let rest = lines.len().saturating_sub(first + visible) as i32 * row_h;
-        self.ui.leaf(Kind::None, Layout::row().h(rest), Style::default(), None);
+        self.spacer(n.saturating_sub(first + visible) as i32 * row_h);
         self.ui.close();
-        let focus = self.cmd.focused;
+        let focus = self.fields[Which::Cmd as usize].focused;
         let it = self.ui.open(Kind::None, Layout::row().grow_x().pad(4).gap(4).cross(Align::Center), Style::bg(if focus { PANEL } else { FIELD }).border(BORDER_TOP, BORDER), Some(ui::id("cmd")));
         if it.clicked {
             self.take_focus(Which::Cmd);
         }
         self.ui.leaf(text(">", px, WEAK), Layout::row(), Style::default(), None);
-        let r = self.cmd.runs("");
+        let r = self.fields[Which::Cmd as usize].runs("");
         self.ui.leaf(runs(r, px), Layout::row().grow_x(), Style::default(), None);
         self.ui.close();
         self.ui.close();
@@ -1716,7 +1696,7 @@ impl App {
             let rest = format!(" [{kind}]{tag}  {n} steps");
             let it = self.row(vec![(format!("{mark}{}{rest}", trunc(&name, cols.saturating_sub(mark.len() + rest.chars().count()))), color)], ui::id_n(base, pi), selected);
             if it.clicked {
-                self.actions.push(Action::SelectPath(pi));
+                self.actions.push(Action::OpenPath(pi, Tab::Path));
             }
             if !selected {
                 continue;
@@ -1773,7 +1753,7 @@ impl App {
         self.label("+ = in a path", WEAK);
         self.field(Which::SymFilter, "filter", 16 * self.cell.0);
         self.ui.close();
-        let filter = self.sym_filter.text.to_lowercase();
+        let filter = self.fields[Which::SymFilter as usize].text.to_lowercase();
         let rows: Vec<SymRef> = self
             .idx
             .files
@@ -1784,13 +1764,9 @@ impl App {
             .collect();
         let id = ui::id("symbols");
         let it = self.scroll_open(id, Layout::col().grow().pad(4), Style::default());
-        // virtual rows: only the visible window is built
         let row_h = self.cell.1 + 4;
-        let off = self.scrolls.get(&id).copied().unwrap_or(0);
-        let visible = it.rect.map_or(40, |r| r.h / row_h + 2) as usize;
         let cols = it.rect.map_or(60, |r| ((r.w - 8 - ui::SCROLLBAR_W) / self.cell.0.max(1)).max(30)) as usize;
-        let first = (off / row_h).max(0) as usize;
-        self.ui.leaf(Kind::None, Layout::row().h(first as i32 * row_h), Style::default(), None);
+        let (first, visible) = self.rows_window(id, it.rect, rows.len(), row_h, 40);
         for &r in rows.iter().skip(first).take(visible) {
             let s = self.idx.sym(r);
             let covered = if self.map.covers(&self.idx.files[r.file].path, s.start, s.end) { "+" } else { " " };
@@ -1803,8 +1779,7 @@ impl App {
                 self.actions.push(Action::Focus(r));
             }
         }
-        let rest = rows.len().saturating_sub(first + visible) as i32 * row_h;
-        self.ui.leaf(Kind::None, Layout::row().h(rest), Style::default(), None);
+        self.spacer(rows.len().saturating_sub(first + visible) as i32 * row_h);
         self.ui.close();
     }
 
@@ -1848,8 +1823,7 @@ impl App {
                 self.actions.push(Action::ToggleDir(prefix.clone()));
             }
             if open {
-                let sub: Vec<usize> = files[i..j].to_vec();
-                self.files_tree(&sub, depth + 1, cov);
+                self.files_tree(&files[i..j], depth + 1, cov);
             }
             i = j;
         }
@@ -1900,7 +1874,7 @@ impl App {
                 }
                 Err((first, mark, grid)) => {
                     let px = self.px;
-                    let (cw, rh) = self.cell;
+                    let rh = self.cell.1;
                     let g = grid.clone();
                     let draw = move |gfx: &mut Gfx, r: Rect| {
                         if mark >= first && mark < first + g.h {
@@ -1908,7 +1882,6 @@ impl App {
                         }
                         gfx.glyphs(r.x, r.y, px, &g);
                     };
-                    let _ = cw;
                     self.ui.leaf(Kind::Custom(Box::new(draw)), Layout::row().grow_x().h(grid.h as i32 * rh), Style::default(), Some(ui::id("peekout")));
                 }
             }
@@ -1933,18 +1906,13 @@ impl App {
         self.ui.close();
         self.scroll_open(ui::id("xrefs"), Layout::col().grow().pad(4), Style::default());
         let dimmed = if pending { dim(WEAK, 120) } else { TEXT };
-        self.label(&format!("Xrefs to ({})", callers.len()), WEAK);
-        for (i, r) in callers.iter().enumerate() {
-            let it = self.row(vec![(cli::describe(&self.idx, *r), dimmed)], ui::id_n(ui::id("xto"), i), false);
-            if it.clicked && !pending {
-                self.actions.push(Action::Focus(*r));
-            }
-        }
-        self.label(&format!("Xrefs from ({})", callees.len()), WEAK);
-        for (i, r) in callees.iter().enumerate() {
-            let it = self.row(vec![(cli::describe(&self.idx, *r), dimmed)], ui::id_n(ui::id("xfrom"), i), false);
-            if it.clicked && !pending {
-                self.actions.push(Action::Focus(*r));
+        for (title, list, name) in [("Xrefs to", &callers, "xto"), ("Xrefs from", &callees, "xfrom")] {
+            self.label(&format!("{title} ({})", list.len()), WEAK);
+            for (i, r) in list.iter().enumerate() {
+                let it = self.row(vec![(cli::describe(&self.idx, *r), dimmed)], ui::id_n(ui::id(name), i), false);
+                if it.clicked && !pending {
+                    self.actions.push(Action::Focus(*r));
+                }
             }
         }
         let shown = refs.iter().filter(|(p, _)| self.idx.find_file(p).is_some()).count();
@@ -2015,7 +1983,7 @@ impl App {
         }
         self.ui.leaf(Kind::None, Layout::row().grow_x(), Style::default(), None);
         if self.small_button("graph", ui::id("doc-graph")).clicked {
-            self.actions.push(Action::ShowPath(pi));
+            self.actions.push(Action::OpenPath(pi, Tab::Graph));
         }
         if self.small_button("hide all code", ui::id("doc-collapse")).clicked {
             self.actions.push(Action::CollapseAll(pi, true));
@@ -2152,24 +2120,14 @@ impl App {
                 let marked = (lo, hi) != (ls, le);
                 self.ui.open(Kind::None, Layout::col().grow_x(), Style { bg: None, border: if selected { BORDER_LEFT } else { 0 }, border_color: ACCENT }, None);
                 if lo > 0 {
-                    self.ui.open(Kind::None, Layout::row().grow_x(), Style::default(), None);
-                    self.ui.leaf(Kind::None, Layout::row().w(indent + 4), Style::default(), None);
-                    if self.small_button(&format!("▲ {CONTEXT_LINES} lines above"), ui::id_n(ui::id("ctx-a"), ai)).clicked {
-                        self.actions.push(Action::Context(pi, ai, -1));
-                    }
-                    self.ui.close();
+                    self.ctx_button(pi, ai, -1, indent);
                 }
                 self.ui.open(Kind::None, Layout::row().grow_x(), Style::default(), None);
                 self.ui.leaf(Kind::None, Layout::row().w(indent + 4), Style::default(), None);
                 self.code_block(fi, lo, hi, ui::id_n(ui::id("doccode"), ai), true, &|li| (marked && li >= ls && li <= le).then_some(dim(SELECTED, 120)), &|_| None);
                 self.ui.close();
                 if hi < last {
-                    self.ui.open(Kind::None, Layout::row().grow_x(), Style::default(), None);
-                    self.ui.leaf(Kind::None, Layout::row().w(indent + 4), Style::default(), None);
-                    if self.small_button(&format!("▼ {CONTEXT_LINES} lines below"), ui::id_n(ui::id("ctx-b"), ai)).clicked {
-                        self.actions.push(Action::Context(pi, ai, 1));
-                    }
-                    self.ui.close();
+                    self.ctx_button(pi, ai, 1, indent);
                 }
                 self.ui.close();
             }
@@ -2184,6 +2142,17 @@ impl App {
                 let s = format!("- {} {}{}", a.file, a.symbol, if a.note.is_empty() { String::new() } else { format!("  -- {}", a.note) });
                 self.label(&s, WEAK);
             }
+        }
+        self.ui.close();
+    }
+
+    /// The row above (`dir` -1) or below (1) a step's code whose button shows more lines there.
+    fn ctx_button(&mut self, pi: usize, ai: usize, dir: i8, indent: i32) {
+        let (label, name) = if dir < 0 { (format!("▲ {CONTEXT_LINES} lines above"), "ctx-a") } else { (format!("▼ {CONTEXT_LINES} lines below"), "ctx-b") };
+        self.ui.open(Kind::None, Layout::row().grow_x(), Style::default(), None);
+        self.ui.leaf(Kind::None, Layout::row().w(indent + 4), Style::default(), None);
+        if self.small_button(&label, ui::id_n(ui::id(name), ai)).clicked {
+            self.actions.push(Action::Context(pi, ai, dir));
         }
         self.ui.close();
     }
@@ -2209,12 +2178,9 @@ impl App {
         self.field(Which::GotoLine, "", 8 * self.cell.0);
         self.ui.close();
         let it = self.scroll_open(id, Layout::col().grow().pad(4), Style::bg(FIELD));
-        let off = self.scrolls.get(&id).copied().unwrap_or(0);
-        let visible = it.rect.map_or(60, |r| r.h / row_h + 2) as usize;
-        let first = (off / row_h).max(0) as usize;
         let (lo, hi) = self.sel.map(|(a, b)| (a.min(b), a.max(b))).unwrap_or((usize::MAX, usize::MAX));
         let anchors: Vec<(usize, usize, bool)> = self.sel_path.map(|pi| self.map.paths[pi].anchors.iter().filter(|a| a.file == self.idx.files[fi].path).map(|a| (a.line_start, a.line_end, a.stale)).collect()).unwrap_or_default();
-        self.ui.leaf(Kind::None, Layout::row().h(first as i32 * row_h), Style::default(), None);
+        let (first, visible) = self.rows_window(id, it.rect, n, row_h, 60);
         let last = (first + visible).min(n).saturating_sub(1);
         if n > 0 && first <= last {
             let bar = |li: usize| anchors.iter().find(|&&(s, e, _)| li >= s && li <= e).map(|&(_, _, stale)| if stale { RED } else { GREEN });
@@ -2226,23 +2192,19 @@ impl App {
                 }
             }
         }
-        let rest = n.saturating_sub(first + visible) as i32 * row_h + row_h; // a row of slack so the last line clears the edge
-        self.ui.leaf(Kind::None, Layout::row().h(rest), Style::default(), None);
+        self.spacer(n.saturating_sub(first + visible) as i32 * row_h + row_h); // a row of slack so the last line clears the edge
         self.ui.close();
     }
 
     fn results_view(&mut self) {
         if self.results.is_empty() {
-            self.label(if self.search.text.is_empty() { "type a regex in the search box and press enter" } else { "no hits" }, WEAK);
+            self.label(if self.fields[Which::Search as usize].text.is_empty() { "type a regex in the search box and press enter" } else { "no hits" }, WEAK);
             return;
         }
         let id = ui::id("results");
         let row_h = self.cell.1 + 4;
         let it = self.scroll_open(id, Layout::col().grow().pad(4), Style::default());
-        let off = self.scrolls.get(&id).copied().unwrap_or(0);
-        let visible = it.rect.map_or(60, |r| r.h / row_h + 2) as usize;
-        let first = (off / row_h).max(0) as usize;
-        self.ui.leaf(Kind::None, Layout::row().h(first as i32 * row_h), Style::default(), None);
+        let (first, visible) = self.rows_window(id, it.rect, self.results.len(), row_h, 60);
         let rows: Vec<(usize, usize)> = self.results.iter().copied().skip(first).take(visible).collect();
         for (k, (fi, li)) in rows.into_iter().enumerate() {
             let f = &self.idx.files[fi];
@@ -2252,8 +2214,7 @@ impl App {
                 self.actions.push(Action::GoTo(fi, li));
             }
         }
-        let rest = self.results.len().saturating_sub(first + visible) as i32 * row_h;
-        self.ui.leaf(Kind::None, Layout::row().h(rest), Style::default(), None);
+        self.spacer(self.results.len().saturating_sub(first + visible) as i32 * row_h);
         self.ui.close();
     }
 
@@ -2304,7 +2265,7 @@ impl App {
             let it = self.row(vec![(format!("{mark} {}   ", d.name), color), (summary, WEAK)], ui::id_n(ui::id("diffrow"), k), false);
             if it.clicked {
                 match pi {
-                    Some(pi) => self.actions.push(Action::SelectPath(pi)),
+                    Some(pi) => self.actions.push(Action::OpenPath(pi, Tab::Path)),
                     None => self.status = format!("'{}' exists only in the parent revision; its {} steps are listed under the path it was removed from", d.name, d.removed.len()),
                 }
             }
@@ -2327,6 +2288,7 @@ impl App {
 
 }
 
+/// A text field, as its index in `App::fields`.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Which {
     Search,
@@ -2359,21 +2321,13 @@ impl gfx::App for App {
     fn script(&mut self, line: &str) -> bool {
         let w: Vec<&str> = line.split_whitespace().collect();
         match w[0] {
-            "idle" => return self.asked == 0 && self.indexing.is_empty() && self.base_rx.is_none() && self.reindex_rx.is_none() && self.merge_wait.is_empty() && self.link_rx.is_none(),
+            "idle" => return !self.working() && self.merge_wait.is_empty(),
             "rect" => {
                 if let Some(name) = w.get(1) {
                     eprintln!("DUMP rect {name} = {:?}", self.ui.interaction_of(Self::named_id(name)).rect);
                 }
             }
-            "tab" => {
-                self.tab = match w.get(1).copied() {
-                    Some("graph") => Tab::Graph,
-                    Some("listing") => Tab::Listing,
-                    Some("diff") => Tab::Diff,
-                    Some("results") => Tab::Results,
-                    _ => Tab::Path,
-                }
-            }
+            "tab" => self.tab = Tab::from_name(w.get(1).copied().unwrap_or("")),
             "scroll" => {
                 if let (Some(name), Some(n)) = (w.get(1), w.get(2).and_then(|v| v.parse::<i32>().ok())) {
                     self.scrolls.insert(ui::id(name), n);
@@ -2427,12 +2381,7 @@ impl gfx::App for App {
                 }
             }
             if *frame == 3 {
-                self.tab = match std::env::var("CODEMAP_SHOT_TAB").as_deref() {
-                    Ok("graph") => Tab::Graph,
-                    Ok("listing") => Tab::Listing,
-                    Ok("diff") => Tab::Diff,
-                    _ => Tab::Path,
-                };
+                self.tab = Tab::from_name(std::env::var("CODEMAP_SHOT_TAB").as_deref().unwrap_or(""));
             }
             if *frame == 20 {
                 gfx.shot = Some(path.clone());
@@ -2461,17 +2410,17 @@ impl gfx::App for App {
         if input.key_with(Key::Right, false, true) || input.key_with(Key::Right, true, false) || input.forward {
             self.forward();
         }
-        if let Some(line) = self.cmd.handle(input, false) {
+        if let Some(line) = self.fields[Which::Cmd as usize].handle(input, false) {
             self.run_cmd(line);
         }
-        if self.search.handle(input, true).is_some() {
+        if self.fields[Which::Search as usize].handle(input, true).is_some() {
             self.run_search();
         }
-        if let Some(name) = self.new_path.handle(input, false) {
+        if let Some(name) = self.fields[Which::NewPath as usize].handle(input, false) {
             self.create_path(name.trim().to_owned());
         }
         // with no field focused, up and down walk the path
-        if ![&self.search, &self.new_path, &self.cmd, &self.sym_filter, &self.goto_line].iter().any(|f| f.focused) {
+        if !self.fields.iter().any(|f| f.focused) {
             if input.key_with(Key::Down, false, false) {
                 self.step_by(1);
             }
@@ -2479,8 +2428,8 @@ impl gfx::App for App {
                 self.step_by(-1);
             }
         }
-        self.sym_filter.handle(input, true);
-        if let Some(l) = self.goto_line.handle(input, true) {
+        self.fields[Which::SymFilter as usize].handle(input, true);
+        if let Some(l) = self.fields[Which::GotoLine as usize].handle(input, true) {
             match (l.trim().parse::<usize>(), self.cur_file) {
                 (Ok(line), Some(fi)) => {
                     let n = self.idx.files[fi].lines.len().max(1);
@@ -2526,7 +2475,7 @@ impl gfx::App for App {
             self.apply(a);
         }
         self.track_navigation();
-        let busy = !self.indexing.is_empty() || self.asked > 0 || self.base_rx.is_some() || self.reindex_rx.is_some() || self.link_rx.is_some() || self.shot.is_some();
-        gfx::Frame { redraw_after: Some(if busy { Duration::from_millis(50) } else { Duration::from_millis(1000) }), quit, clear: BG }
+        let busy = self.working() || self.shot.is_some();
+        gfx::Frame { redraw_after: Duration::from_millis(if busy { 50 } else { 1000 }), quit, clear: BG }
     }
 }

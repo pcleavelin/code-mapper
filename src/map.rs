@@ -228,8 +228,7 @@ impl Map {
     /// recorded.
     pub fn pin_anchor(&mut self, idx: &Index, pi: usize, ai: usize, fi: usize, ls: usize, le: usize, author: Author) {
         let old = &self.paths[pi].anchors[ai];
-        let mut a = Anchor::new(&idx.files[fi], ls, le);
-        a.author = author;
+        let mut a = Anchor::new(&idx.files[fi], ls, le, author);
         a.note = old.note.clone();
         a.parent = old.parent;
         self.paths[pi].anchors[ai] = a;
@@ -241,19 +240,13 @@ impl Map {
         self.paths.iter().flat_map(|p| &p.anchors).any(|a| !a.stale && a.file == file && a.line_start <= end && start <= a.line_end)
     }
 
-    /// Append a step under `parent`; -1, or an index the path does not have, makes a root. The
-    /// CLI rejects an out-of-range parent before calling this. Returns the new index.
+    /// Append a step under `parent`: -1 for a root, else an index the path has, which every
+    /// caller checks before calling this. Returns the new index.
     pub fn add_anchor(&mut self, idx: &Index, pi: usize, fi: usize, ls: usize, le: usize, author: Author, parent: i32) -> usize {
-        let mut a = Anchor::new(&idx.files[fi], ls, le);
-        a.author = author;
-        a.parent = if parent >= 0 && (parent as usize) < self.paths[pi].anchors.len() { parent } else { -1 };
+        let mut a = Anchor::new(&idx.files[fi], ls, le, author);
+        a.parent = parent;
         self.paths[pi].anchors.push(a);
         self.paths[pi].anchors.len() - 1
-    }
-
-    /// Index of the step pinned to whole symbol `si` of `file`, if the path already has one.
-    pub fn step_for(&self, pi: usize, file: &str, si: usize) -> Option<usize> {
-        self.paths[pi].anchors.iter().position(|a| a.file == file && a.sym == Some(si) && a.off_start == 0)
     }
 
     pub fn rename(&mut self, pi: usize, new: &str) -> Result<(), String> {
@@ -399,7 +392,8 @@ impl Map {
             let s = idx.sym(r);
             let file = &idx.files[r.file].path;
             let parent = if d == 0 { -1 } else { stack.get(d - 1).copied().unwrap_or(-1) };
-            let ai = match self.step_for(pi, file, r.sym) {
+            // a symbol the path already pins whole keeps its step
+            let ai = match self.paths[pi].anchors.iter().position(|a| a.file == *file && a.sym == Some(r.sym) && a.off_start == 0) {
                 Some(ai) => ai,
                 None => self.add_anchor(idx, pi, r.file, s.start, s.end, author, parent),
             };
@@ -460,10 +454,9 @@ impl Map {
     }
 }
 
-/// `fs::write` that retries when the OS refuses the file for a moment (Windows reports
-/// error 1224 or 32 while another process, or a scanner, has it mapped or open).
 /// Write `data` whole: to a temporary file beside `path`, then renamed over it, so a reader
-/// or a second writer never sees a half-written file. Sharing violations are retried.
+/// or a second writer never sees a half-written file. Retries while Windows refuses the file
+/// for a moment (errors 1224, 32 and 5, while another process or a scanner has it open).
 pub fn write_retry(path: &Path, data: &[u8]) -> std::io::Result<()> {
     static N: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
     let tmp = path.with_extension(format!("tmp{}-{}", std::process::id(), N.fetch_add(1, std::sync::atomic::Ordering::Relaxed)));
@@ -499,14 +492,14 @@ pub fn slice_hash(lines: &[String], ls: usize, le: usize) -> u64 {
 }
 
 impl Anchor {
-    pub fn new(f: &File, ls: usize, le: usize) -> Anchor {
+    pub fn new(f: &File, ls: usize, le: usize, author: Author) -> Anchor {
         let mut a = Anchor {
             file: f.path.clone(),
             symbol: String::new(),
             off_start: ls as i32,
             off_end: le as i32,
             hash: slice_hash(&f.lines, ls, le),
-            author: Author::Human,
+            author,
             note: String::new(),
             parent: -1,
             line_start: ls,

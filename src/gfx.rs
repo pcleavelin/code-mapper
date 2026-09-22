@@ -6,6 +6,7 @@
 use crate::ui::{Input, Key, Measure, Mods};
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::task::{Context, Poll, Waker};
 use std::time::{Duration, Instant};
 use winit::application::ApplicationHandler;
 use winit::event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent};
@@ -206,12 +207,34 @@ fn bytes_of<T: Copy>(v: &[T]) -> &[u8] {
     unsafe { std::slice::from_raw_parts(v.as_ptr() as *const u8, std::mem::size_of_val(v)) }
 }
 
+/// Run a future to completion on this thread. wgpu's adapter and device requests are ready
+/// on the first poll on native backends, so polling in a loop with no waker is enough.
+fn block_on<F: Future>(f: F) -> F::Output {
+    let mut f = std::pin::pin!(f);
+    let mut cx = Context::from_waker(Waker::noop());
+    loop {
+        if let Poll::Ready(v) = f.as_mut().poll(&mut cx) {
+            return v;
+        }
+    }
+}
+
+/// Make `buf` hold at least `len` bytes, keeping it when it already does. A new buffer is a
+/// power of two of at least 64 KiB, so it is replaced rarely.
+fn fit_buffer(device: &wgpu::Device, buf: &mut Option<(wgpu::Buffer, usize)>, len: usize, label: &str, usage: wgpu::BufferUsages) {
+    if buf.as_ref().is_none_or(|(_, cap)| *cap < len) {
+        let cap = len.max(1 << 16).next_power_of_two();
+        let b = device.create_buffer(&wgpu::BufferDescriptor { label: Some(label), size: cap as u64, usage: usage | wgpu::BufferUsages::COPY_DST, mapped_at_creation: false });
+        *buf = Some((b, cap));
+    }
+}
+
 impl Gfx {
     fn new(window: Arc<Window>) -> Gfx {
         let instance = wgpu::Instance::default();
         let surface = instance.create_surface(window.clone()).expect("surface");
-        let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions { compatible_surface: Some(&surface), ..Default::default() })).expect("no GPU adapter");
-        let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor::default())).expect("device");
+        let adapter = block_on(instance.request_adapter(&wgpu::RequestAdapterOptions { compatible_surface: Some(&surface), ..Default::default() })).expect("no GPU adapter");
+        let (device, queue) = block_on(adapter.request_device(&wgpu::DeviceDescriptor::default())).expect("device");
         let size = window.inner_size();
         let mut config = surface.get_default_config(&adapter, size.width.max(1), size.height.max(1)).expect("surface config");
         let caps = surface.get_capabilities(&adapter);
@@ -377,14 +400,11 @@ impl Gfx {
         Some(g)
     }
 
-    /// Twice the atlas, every glyph rasterised again on demand.
+    /// Twice the atlas, every glyph rasterised again on demand. Full at the cap, it starts over
+    /// at the same size rather than stop drawing text.
     fn grow_atlas(&mut self) {
         let size = (self.atlas.size * 2).min(8192);
-        if size == self.atlas.size {
-            self.atlas = Atlas::new(size); // full at the cap: start over rather than stop drawing text
-        } else {
-            self.atlas = Atlas::new(size);
-        }
+        self.atlas = Atlas::new(size);
         self.texture = Self::make_texture(&self.device, size);
         self.bind_group = Self::make_bind_group(&self.device, &self.bind_layout, &self.uniforms, &self.texture, &self.sampler);
     }
@@ -426,17 +446,23 @@ impl Gfx {
         }
     }
 
-    fn quad(&mut self, x0: f32, y0: f32, x1: f32, y1: f32, uv: [f32; 4], color: Color) {
-        let n = self.verts.len() as u32;
-        self.verts.push(Vertex { pos: [x0, y0], uv: [uv[0], uv[1]], color });
-        self.verts.push(Vertex { pos: [x1, y0], uv: [uv[2], uv[1]], color });
-        self.verts.push(Vertex { pos: [x1, y1], uv: [uv[2], uv[3]], color });
-        self.verts.push(Vertex { pos: [x0, y1], uv: [uv[0], uv[3]], color });
-        self.idx.extend_from_slice(&[n, n + 1, n + 2, n, n + 2, n + 3]);
+    /// Extend the current command over every index pushed so far.
+    fn extend_cmd(&mut self) {
         if self.cmds.is_empty() {
             self.cut();
         }
         self.cmds.last_mut().unwrap().end = self.idx.len() as u32;
+    }
+
+    /// Four corners clockwise from the one at uv (u0, v0), textured with `uv` = [u0, v0, u1, v1].
+    fn quad(&mut self, p: [[f32; 2]; 4], uv: [f32; 4], color: Color) {
+        let n = self.verts.len() as u32;
+        self.verts.push(Vertex { pos: p[0], uv: [uv[0], uv[1]], color });
+        self.verts.push(Vertex { pos: p[1], uv: [uv[2], uv[1]], color });
+        self.verts.push(Vertex { pos: p[2], uv: [uv[2], uv[3]], color });
+        self.verts.push(Vertex { pos: p[3], uv: [uv[0], uv[3]], color });
+        self.idx.extend_from_slice(&[n, n + 1, n + 2, n, n + 2, n + 3]);
+        self.extend_cmd();
     }
 
     fn white(&self) -> [f32; 4] {
@@ -449,7 +475,8 @@ impl Gfx {
             return;
         }
         let uv = self.white();
-        self.quad(r.x as f32, r.y as f32, r.right() as f32, r.bottom() as f32, uv, color);
+        let (x0, y0, x1, y1) = (r.x as f32, r.y as f32, r.right() as f32, r.bottom() as f32);
+        self.quad([[x0, y0], [x1, y0], [x1, y1], [x0, y1]], uv, color);
     }
 
     pub fn rect_outline(&mut self, r: Rect, width: i32, color: Color) {
@@ -468,16 +495,7 @@ impl Gfx {
         }
         let (nx, ny) = (-dy / len * width / 2.0, dx / len * width / 2.0);
         let uv = self.white();
-        let n = self.verts.len() as u32;
-        self.verts.push(Vertex { pos: [x0 + nx, y0 + ny], uv: [uv[0], uv[1]], color });
-        self.verts.push(Vertex { pos: [x1 + nx, y1 + ny], uv: [uv[2], uv[1]], color });
-        self.verts.push(Vertex { pos: [x1 - nx, y1 - ny], uv: [uv[2], uv[3]], color });
-        self.verts.push(Vertex { pos: [x0 - nx, y0 - ny], uv: [uv[0], uv[3]], color });
-        self.idx.extend_from_slice(&[n, n + 1, n + 2, n, n + 2, n + 3]);
-        if self.cmds.is_empty() {
-            self.cut();
-        }
-        self.cmds.last_mut().unwrap().end = self.idx.len() as u32;
+        self.quad([[x0 + nx, y0 + ny], [x1 + nx, y1 + ny], [x1 - nx, y1 - ny], [x0 - nx, y0 - ny]], uv, color);
     }
 
     /// A cubic bezier as a polyline.
@@ -505,19 +523,17 @@ impl Gfx {
         for i in 0..n {
             self.idx.extend_from_slice(&[base, base + 1 + i, base + 1 + (i + 1) % n]);
         }
-        if self.cmds.is_empty() {
-            self.cut();
-        }
-        self.cmds.last_mut().unwrap().end = self.idx.len() as u32;
+        self.extend_cmd();
     }
 
     /// One character from the atlas at a pen position on a baseline.
     fn put(&mut self, px: u32, c: char, pen: i32, baseline: i32, color: Color) {
         if let Some(g) = self.glyph(px, c) {
             let s = self.atlas.size as f32;
-            let (gx, gy) = ((pen + g.dx) as f32, (baseline + g.dy) as f32);
+            let (x0, y0) = ((pen + g.dx) as f32, (baseline + g.dy) as f32);
+            let (x1, y1) = (x0 + g.w as f32, y0 + g.h as f32);
             let uv = [g.u as f32 / s, g.v as f32 / s, (g.u + g.w) as f32 / s, (g.v + g.h) as f32 / s];
-            self.quad(gx, gy, gx + g.w as f32, gy + g.h as f32, uv, color);
+            self.quad([[x0, y0], [x1, y0], [x1, y1], [x0, y1]], uv, color);
         }
     }
 
@@ -589,17 +605,9 @@ impl Gfx {
         self.queue.write_buffer(&self.uniforms, 0, bytes_of(&screen));
         // vertex and index buffers grow to fit and are reused
         let vbytes = bytes_of(&self.verts);
-        if self.vbuf.as_ref().is_none_or(|(_, cap)| *cap < vbytes.len()) {
-            let cap = vbytes.len().max(1 << 16).next_power_of_two();
-            let b = self.device.create_buffer(&wgpu::BufferDescriptor { label: Some("verts"), size: cap as u64, usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST, mapped_at_creation: false });
-            self.vbuf = Some((b, cap));
-        }
+        fit_buffer(&self.device, &mut self.vbuf, vbytes.len(), "verts", wgpu::BufferUsages::VERTEX);
         let ibytes = bytes_of(&self.idx);
-        if self.ibuf.as_ref().is_none_or(|(_, cap)| *cap < ibytes.len()) {
-            let cap = ibytes.len().max(1 << 16).next_power_of_two();
-            let b = self.device.create_buffer(&wgpu::BufferDescriptor { label: Some("idx"), size: cap as u64, usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST, mapped_at_creation: false });
-            self.ibuf = Some((b, cap));
-        }
+        fit_buffer(&self.device, &mut self.ibuf, ibytes.len(), "idx", wgpu::BufferUsages::INDEX);
         if !vbytes.is_empty() {
             self.queue.write_buffer(&self.vbuf.as_ref().unwrap().0, 0, vbytes);
             self.queue.write_buffer(&self.ibuf.as_ref().unwrap().0, 0, ibytes);
@@ -671,14 +679,19 @@ impl Gfx {
         }
         drop(data);
         buf.unmap();
-        match image::RgbaImage::from_raw(w, h, px).map(|i| i.save(path)) {
-            Some(Ok(())) => eprintln!("screenshot: {}", path.display()),
-            other => eprintln!("screenshot failed: {other:?}"),
+        let write = || -> Result<(), Box<dyn std::error::Error>> {
+            let mut enc = png::Encoder::new(std::io::BufWriter::new(std::fs::File::create(path)?), w, h);
+            enc.set_color(png::ColorType::Rgba);
+            enc.set_depth(png::BitDepth::Eight);
+            let mut out = enc.write_header()?;
+            out.write_image_data(&px)?;
+            out.finish()?;
+            Ok(())
+        };
+        match write() {
+            Ok(()) => eprintln!("screenshot: {}", path.display()),
+            Err(e) => eprintln!("screenshot failed: {e}"),
         }
-    }
-
-    pub fn set_title(&self, t: &str) {
-        self.window.set_title(t);
     }
 }
 
@@ -693,7 +706,7 @@ impl Measure for Gfx {
 
 /// What a frame asks of the loop.
 pub struct Frame {
-    pub redraw_after: Option<Duration>,
+    pub redraw_after: Duration,
     pub quit: bool,
     pub clear: Color,
 }
@@ -702,13 +715,9 @@ pub trait App {
     fn frame(&mut self, gfx: &mut Gfx, input: &mut Input) -> Frame;
     /// A line of a test script the loop did not understand: the app's own commands. False
     /// means the line is not done yet and is run again next frame.
-    fn script(&mut self, _line: &str) -> bool {
-        true
-    }
+    fn script(&mut self, line: &str) -> bool;
     /// The centre of the element a script names, from last frame's rectangles.
-    fn locate(&mut self, _name: &str) -> Option<(i32, i32)> {
-        None
-    }
+    fn locate(&mut self, name: &str) -> Option<(i32, i32)>;
 }
 
 /// A test script from `CODEMAP_SCRIPT=<file>`: one command per line, fed to the app as if the
@@ -739,7 +748,7 @@ struct Runner<A: App> {
     mods: Mods,
     last_click: Option<(Instant, u8, (i32, i32))>,
     pending: bool, // input arrived since the last frame
-    next_redraw: Option<Instant>,
+    next_redraw: Instant,
     start: Instant,
     script: Option<Script>,
     // frames built since the last `dump`, for the script harness's frame-time line
@@ -779,7 +788,6 @@ impl<A: App> Runner<A> {
                 }
                 "up" => {
                     self.input.down[0] = false;
-                    self.input.released[0] = true;
                     return false;
                 }
                 "click" | "dblclick" => {
@@ -871,7 +879,6 @@ impl<A: App> ApplicationHandler for Runner<A> {
         let window = Arc::new(event_loop.create_window(attrs).expect("window"));
         let gfx = Gfx::new(window);
         self.input.size = gfx.size;
-        self.input.scale = gfx.scale;
         self.gfx = Some(gfx);
     }
 
@@ -886,7 +893,6 @@ impl<A: App> ApplicationHandler for Runner<A> {
             }
             WindowEvent::ScaleFactorChanged { scale_factor, .. } => {
                 gfx.scale = scale_factor as f32;
-                self.input.scale = gfx.scale;
                 self.pending = true;
             }
             WindowEvent::ModifiersChanged(m) => {
@@ -933,10 +939,7 @@ impl<A: App> ApplicationHandler for Runner<A> {
                         self.input.clicks[b] = if double { 2 } else { 1 };
                         self.last_click = if double { None } else { Some((now, b as u8, self.input.mouse)) };
                     }
-                    ElementState::Released => {
-                        self.input.down[b] = false;
-                        self.input.released[b] = true;
-                    }
+                    ElementState::Released => self.input.down[b] = false,
                 }
                 self.pending = true;
             }
@@ -956,15 +959,12 @@ impl<A: App> ApplicationHandler for Runner<A> {
                         WKey::Named(NamedKey::Escape) => Some(Key::Escape),
                         WKey::Named(NamedKey::Backspace) => Some(Key::Backspace),
                         WKey::Named(NamedKey::Delete) => Some(Key::Delete),
-                        WKey::Named(NamedKey::Tab) => Some(Key::Tab),
                         WKey::Named(NamedKey::ArrowLeft) => Some(Key::Left),
                         WKey::Named(NamedKey::ArrowRight) => Some(Key::Right),
                         WKey::Named(NamedKey::ArrowUp) => Some(Key::Up),
                         WKey::Named(NamedKey::ArrowDown) => Some(Key::Down),
                         WKey::Named(NamedKey::Home) => Some(Key::Home),
                         WKey::Named(NamedKey::End) => Some(Key::End),
-                        WKey::Named(NamedKey::PageUp) => Some(Key::PageUp),
-                        WKey::Named(NamedKey::PageDown) => Some(Key::PageDown),
                         WKey::Character(s) => s.chars().next().map(Key::Char),
                         _ => None,
                     };
@@ -993,7 +993,7 @@ impl<A: App> ApplicationHandler for Runner<A> {
                 self.frame_over += (d > Duration::from_millis(16)) as u32;
                 self.input.end_frame();
                 self.pending = false;
-                self.next_redraw = if self.script.is_some() { Some(Instant::now() + Duration::from_millis(8)) } else { out.redraw_after.map(|d| Instant::now() + d) };
+                self.next_redraw = Instant::now() + if self.script.is_some() { Duration::from_millis(8) } else { out.redraw_after };
                 if out.quit || scripted_quit {
                     event_loop.exit();
                 }
@@ -1004,19 +1004,16 @@ impl<A: App> ApplicationHandler for Runner<A> {
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
         let Some(gfx) = self.gfx.as_ref() else { return };
-        let due = self.next_redraw.is_some_and(|t| Instant::now() >= t);
+        let due = Instant::now() >= self.next_redraw;
         if self.pending || due {
             gfx.window.request_redraw();
         }
-        event_loop.set_control_flow(match self.next_redraw {
-            Some(t) => ControlFlow::WaitUntil(t),
-            None => ControlFlow::Wait,
-        });
+        event_loop.set_control_flow(ControlFlow::WaitUntil(self.next_redraw));
     }
 }
 
 pub fn run(title: &str, app: impl App + 'static) {
     let event_loop = EventLoop::new().expect("event loop");
-    let mut runner = Runner { app, title: title.to_owned(), gfx: None, input: Input::default(), mods: Mods::default(), last_click: None, pending: true, next_redraw: None, start: Instant::now(), script: Script::load(), frames: 0, frame_max: Duration::ZERO, frame_over: 0 };
+    let mut runner = Runner { app, title: title.to_owned(), gfx: None, input: Input::default(), mods: Mods::default(), last_click: None, pending: true, next_redraw: Instant::now(), start: Instant::now(), script: Script::load(), frames: 0, frame_max: Duration::ZERO, frame_over: 0 };
     event_loop.run_app(&mut runner).expect("run");
 }

@@ -268,13 +268,18 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
             dirty = true;
         }
         Command::StepNote { name, index, note } => {
-            let pi = find_path(map, &name)?;
-            map.paths[pi].anchors.get_mut(index).ok_or("no such step")?.note = note;
+            let pi = find_step(map, &name, index)?;
+            map.paths[pi].anchors[index].note = note;
             dirty = true;
         }
         Command::NoteEdit { name, index, old, new } => {
-            let pi = find_path(map, &name)?;
-            let note = if index < 0 { &mut map.paths[pi].note } else { &mut map.paths[pi].anchors.get_mut(index as usize).ok_or("no such step")?.note };
+            let note = if index < 0 {
+                let pi = find_path(map, &name)?;
+                &mut map.paths[pi].note
+            } else {
+                let pi = find_step(map, &name, index as usize)?;
+                &mut map.paths[pi].anchors[index as usize].note
+            };
             if !note.contains(&old) {
                 return Err(format!("the note does not contain '{old}'"));
             }
@@ -322,29 +327,19 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
             dirty = true;
         }
         Command::PathSwap { name, a, b } => {
-            let pi = find_path(map, &name)?;
-            let n = map.paths[pi].anchors.len();
-            if a >= n || b >= n {
-                return Err("no such step".into());
-            }
+            let pi = find_step(map, &name, a.max(b))?;
             map.swap_anchors(pi, a, b);
             dirty = true;
         }
         Command::PathMove { name, index, under } => {
-            let pi = find_path(map, &name)?;
-            if index >= map.paths[pi].anchors.len() {
-                return Err("no such step".into());
-            }
+            let pi = find_step(map, &name, index)?;
             map.reparent(pi, index, under as i32)?;
             p!(out, "step [{index}] now under [{under}]");
             call_warning(out, idx, map, pi, index);
             dirty = true;
         }
         Command::PathPin { name, index, file, start, end } => {
-            let pi = find_path(map, &name)?;
-            if index >= map.paths[pi].anchors.len() {
-                return Err("no such step".into());
-            }
+            let pi = find_step(map, &name, index)?;
             let fi = find_file(idx, &file)?;
             let (start, end) = check_range(&idx.files[fi], start as i64, end as i64)?;
             map.pin_anchor(idx, pi, index, fi, start, end, author);
@@ -415,16 +410,15 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
                     Change::Same => continue,
                     Change::Added => {
                         p!(out, "+ {} ({} steps)", d.name, d.steps.len());
+                        continue;
                     }
                     Change::Removed => {
                         p!(out, "- {} ({} steps)", d.name, d.removed.len());
+                        continue;
                     }
                     Change::Changed => {
                         p!(out, "~ {}{}", d.name, if d.note_changed { "  (note or kind changed)" } else { "" });
                     }
-                }
-                if d.change == Change::Added || d.change == Change::Removed {
-                    continue;
                 }
                 let pi = find_path(map, &d.name)?;
                 for (i, c) in d.steps.iter().enumerate() {
@@ -579,4 +573,13 @@ pub fn unique_name(idx: &Index, r: SymRef) -> String {
 
 fn find_path(map: &Map, name: &str) -> Result<usize, String> {
     map.find(name).ok_or(format!("no such path: {name}"))
+}
+
+/// The path named `name`, provided it has a step `i`.
+fn find_step(map: &Map, name: &str, i: usize) -> Result<usize, String> {
+    let pi = find_path(map, name)?;
+    if i >= map.paths[pi].anchors.len() {
+        return Err("no such step".into());
+    }
+    Ok(pi)
 }

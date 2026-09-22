@@ -44,15 +44,12 @@ pub enum Key {
     Escape,
     Backspace,
     Delete,
-    Tab,
     Left,
     Right,
     Up,
     Down,
     Home,
     End,
-    PageUp,
-    PageDown,
     Char(char),
 }
 
@@ -62,14 +59,12 @@ pub struct Input {
     pub mouse: (i32, i32),
     pub down: [bool; 3], // left, right, middle
     pub pressed: [bool; 3],
-    pub released: [bool; 3],
     pub clicks: [u8; 3], // 1 single, 2 double, on the press
     pub wheel: (f32, f32),
     pub keys: Vec<(Key, Mods)>,
     pub text: String,
     pub mods: Mods,
     pub size: (i32, i32),
-    pub scale: f32,
     pub time: f64,
     pub back: bool,
     pub forward: bool,
@@ -78,17 +73,12 @@ pub struct Input {
 impl Input {
     pub fn end_frame(&mut self) {
         self.pressed = [false; 3];
-        self.released = [false; 3];
         self.clicks = [0; 3];
         self.wheel = (0.0, 0.0);
         self.keys.clear();
         self.text.clear();
         self.back = false;
         self.forward = false;
-    }
-
-    pub fn key(&self, k: Key) -> bool {
-        self.keys.iter().any(|(kk, _)| *kk == k)
     }
 
     pub fn key_with(&self, k: Key, ctrl: bool, alt: bool) -> bool {
@@ -135,15 +125,13 @@ pub enum Dir {
 pub enum Align {
     Start,
     Center,
-    End,
 }
 
 #[derive(Clone, Copy, Debug)]
 pub struct Layout {
     pub dir: Dir,
     pub size: [Size; 2],
-    pub floating: Option<(i32, i32)>, // absolute position, out of the parent's flow
-    pub layer: u8,                    // 1 draws over everything on 0
+    pub floating: Option<(i32, i32)>, // absolute position, out of the parent's flow, drawn over everything else
     pub pad: i32,
     pub gap: i32,
     pub cross: Align, // how children sit across the direction
@@ -153,7 +141,7 @@ pub struct Layout {
 
 impl Layout {
     pub fn row() -> Layout {
-        Layout { dir: Dir::Row, size: [Size::Fit, Size::Fit], floating: None, layer: 0, pad: 0, gap: 0, cross: Align::Start, clip: false, scroll: (0, 0) }
+        Layout { dir: Dir::Row, size: [Size::Fit, Size::Fit], floating: None, pad: 0, gap: 0, cross: Align::Start, clip: false, scroll: (0, 0) }
     }
     pub fn col() -> Layout {
         Layout { dir: Dir::Col, ..Layout::row() }
@@ -193,10 +181,6 @@ impl Layout {
         self.cross = a;
         self
     }
-    pub fn clip(mut self) -> Layout {
-        self.clip = true;
-        self
-    }
     pub fn scroll(mut self, x: i32, y: i32) -> Layout {
         self.scroll = (x, y);
         self.clip = true;
@@ -204,7 +188,6 @@ impl Layout {
     }
     pub fn floating(mut self, x: i32, y: i32) -> Layout {
         self.floating = Some((x, y));
-        self.layer = 1;
         self
     }
 }
@@ -270,7 +253,6 @@ pub struct Interaction {
     pub hovered: bool,
     pub clicked: bool,
     pub double_clicked: bool,
-    pub right_clicked: bool,
     pub down: bool,             // the mouse went down on it and is still down
     pub drag: Option<(i32, i32)>, // movement this frame while down on it
     pub wheel: (f32, f32),
@@ -322,10 +304,8 @@ impl Ui {
         if input.pressed[0] {
             self.active = self.hot;
         }
-        if !input.down[0] {
-            if !input.pressed[0] {
-                self.active = None;
-            }
+        if !input.down[0] && !input.pressed[0] {
+            self.active = None;
         }
     }
 
@@ -339,17 +319,12 @@ impl Ui {
 
     /// What an element with `id` would learn if opened now.
     pub fn interaction_of(&self, id: Id) -> Interaction {
-        self.interaction(id)
-    }
-
-    fn interaction(&self, id: Id) -> Interaction {
         let hovered = self.hot == Some(id);
         let i = &self.input;
         Interaction {
             hovered,
             clicked: hovered && i.pressed[0],
             double_clicked: hovered && i.clicks[0] == 2,
-            right_clicked: hovered && i.pressed[1],
             down: self.active == Some(id) && i.down[0],
             drag: if self.active == Some(id) && i.down[0] && !i.pressed[0] { Some((i.mouse.0 - self.last_mouse.0, i.mouse.1 - self.last_mouse.1)) } else { None },
             wheel: if hovered { i.wheel } else { (0.0, 0.0) },
@@ -373,7 +348,7 @@ impl Ui {
         }
         self.els.push(e);
         self.open = Some(i);
-        id.map(|id| self.interaction(id)).unwrap_or_default()
+        id.map(|id| self.interaction_of(id)).unwrap_or_default()
     }
 
     pub fn close(&mut self) {
@@ -389,12 +364,12 @@ impl Ui {
         r
     }
 
-    /// Last frame's content extent of the element with `id`, for scroll clamping.
     /// A scrollbar thumb is being dragged.
     pub fn dragging(&self) -> bool {
         self.scroll_drag.is_some()
     }
 
+    /// Last frame's content extent of the element with `id`, for scroll clamping.
     pub fn content_of(&self, id: Id) -> Option<([i32; 2], Rect)> {
         self.prev.get(&id).map(|(r, _, c)| (*c, *r))
     }
@@ -437,18 +412,17 @@ impl Ui {
 
     // ---- layout ----
 
+    /// The children that sit in the element's flow; floating ones are placed on their own.
     fn children(&self, i: usize) -> Vec<usize> {
         let mut out = Vec::new();
         let mut c = self.els[i].first;
         while let Some(j) = c {
-            out.push(j);
+            if self.els[j].layout.floating.is_none() {
+                out.push(j);
+            }
             c = self.els[j].next;
         }
         out
-    }
-
-    fn in_flow(&self, i: usize) -> bool {
-        self.els[i].layout.floating.is_none()
     }
 
     /// Wrap one run of text to `cols` columns at spaces, breaking words longer than a line.
@@ -498,7 +472,7 @@ impl Ui {
         for axis in 0..2 {
             // fit, bottom-up
             for i in (0..n).rev() {
-                let kids: Vec<usize> = self.children(i).into_iter().filter(|&k| self.in_flow(k)).collect();
+                let kids = self.children(i);
                 let e = &self.els[i];
                 let along = (e.layout.dir == Dir::Row) == (axis == 0);
                 let pad2 = e.layout.pad * 2;
@@ -533,7 +507,7 @@ impl Ui {
                         self.els[i].size[axis] = win[axis];
                     }
                 }
-                let kids: Vec<usize> = self.children(i).into_iter().filter(|&k| self.in_flow(k)).collect();
+                let kids = self.children(i);
                 if kids.is_empty() {
                     continue;
                 }
@@ -590,43 +564,28 @@ impl Ui {
             e.pos = pos;
             e.rect = Rect::new(pos[0], pos[1], e.size[0], e.size[1]);
             e.clip = clip;
-            // lay the children out inside
-            let kids: Vec<usize> = self.children(i).into_iter().filter(|&k| self.in_flow(k)).collect();
+            // lay the children out inside: along axis `a`, across axis `b`
+            let kids = self.children(i);
             let e = &self.els[i];
-            let (dir, pad, gap, cross, scroll) = (e.layout.dir, e.layout.pad, e.layout.gap, e.layout.cross, e.layout.scroll);
-            let (ex, ey, ew, eh) = (e.rect.x, e.rect.y, e.size[0], e.size[1]);
+            let (pad, gap, cross, size) = (e.layout.pad, e.layout.gap, e.layout.cross, e.size);
+            let a = (e.layout.dir == Dir::Col) as usize;
+            let b = 1 - a;
+            let origin = [e.rect.x + pad - e.layout.scroll.0, e.rect.y + pad - e.layout.scroll.1];
             let mut cursor = 0;
             for &k in &kids {
                 let ks = self.els[k].size;
-                let (cx, cy) = match dir {
-                    Dir::Row => {
-                        let off = match cross {
-                            Align::Start => 0,
-                            Align::Center => (eh - pad * 2 - ks[1]) / 2,
-                            Align::End => eh - pad * 2 - ks[1],
-                        };
-                        let p = (ex + pad + cursor - scroll.0, ey + pad + off - scroll.1);
-                        cursor += ks[0] + gap;
-                        p
-                    }
-                    Dir::Col => {
-                        let off = match cross {
-                            Align::Start => 0,
-                            Align::Center => (ew - pad * 2 - ks[0]) / 2,
-                            Align::End => ew - pad * 2 - ks[0],
-                        };
-                        let p = (ex + pad + off - scroll.0, ey + pad + cursor - scroll.1);
-                        cursor += ks[1] + gap;
-                        p
-                    }
+                let mut p = origin;
+                p[a] += cursor;
+                p[b] += match cross {
+                    Align::Start => 0,
+                    Align::Center => (size[b] - pad * 2 - ks[b]) / 2,
                 };
-                self.els[k].pos = [cx, cy];
+                cursor += ks[a] + gap;
+                self.els[k].pos = p;
             }
-            let extent = (cursor - gap).max(0) + pad * 2;
-            self.els[i].content = match dir {
-                Dir::Row => [extent, eh],
-                Dir::Col => [ew, extent],
-            };
+            let mut content = size;
+            content[a] = (cursor - gap).max(0) + pad * 2;
+            self.els[i].content = content;
         }
         // remember for next frame's hit tests
         self.prev.clear();
@@ -641,16 +600,12 @@ impl Ui {
     /// Draw every element in order, layer 1 after layer 0.
     pub fn draw(&mut self, gfx: &mut Gfx, text_color: Color) {
         let els = std::mem::take(&mut self.els);
-        let mut layers: Vec<(u8, Element)> = els.into_iter().map(|e| (e.layout.layer, e)).collect();
-        // floating layers inherit from their parent chain: a child of a layer-1 popup is layer 1
-        let parents: Vec<Option<usize>> = layers.iter().map(|(_, e)| e.parent).collect();
+        // floating elements are layer 1, and so is everything inside them; parents come before
+        // their children, so one forward pass carries a layer down the whole subtree
+        let mut layers: Vec<(u8, Element)> = els.into_iter().map(|e| (e.layout.floating.is_some() as u8, e)).collect();
         for i in 0..layers.len() {
-            let mut p = parents[i];
-            while let Some(pi) = p {
-                if layers[pi].0 > layers[i].0 {
-                    layers[i].0 = layers[pi].0;
-                }
-                p = parents[pi];
+            if let Some(p) = layers[i].1.parent {
+                layers[i].0 = layers[i].0.max(layers[p].0);
             }
         }
         for layer in 0..2u8 {
@@ -687,17 +642,15 @@ impl Ui {
                     }
                 }
                 let (b, c) = (e.style.border, e.style.border_color);
-                if b & BORDER_LEFT != 0 {
-                    gfx.rect(Rect::new(r.x, r.y, 1, r.h), c);
-                }
-                if b & BORDER_RIGHT != 0 {
-                    gfx.rect(Rect::new(r.right() - 1, r.y, 1, r.h), c);
-                }
-                if b & BORDER_TOP != 0 {
-                    gfx.rect(Rect::new(r.x, r.y, r.w, 1), c);
-                }
-                if b & BORDER_BOTTOM != 0 {
-                    gfx.rect(Rect::new(r.x, r.bottom() - 1, r.w, 1), c);
+                for (side, edge) in [
+                    (BORDER_LEFT, Rect::new(r.x, r.y, 1, r.h)),
+                    (BORDER_RIGHT, Rect::new(r.right() - 1, r.y, 1, r.h)),
+                    (BORDER_TOP, Rect::new(r.x, r.y, r.w, 1)),
+                    (BORDER_BOTTOM, Rect::new(r.x, r.bottom() - 1, r.w, 1)),
+                ] {
+                    if b & side != 0 {
+                        gfx.rect(edge, c);
+                    }
                 }
                 gfx.pop_clip();
             }

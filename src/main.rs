@@ -13,13 +13,9 @@ use std::path::{Path, PathBuf};
 fn cli_main(root: &Path, args: &[String]) -> i32 {
     let cmd = match cli::parse(args) {
         Ok(cmd) => cmd,
-        Err(e) if e.use_stderr() => {
-            eprint!("{e}");
-            return 2;
-        }
         Err(e) => {
-            print!("{e}");
-            return 0;
+            let _ = e.print();
+            return e.exit_code();
         }
     };
     let mut idx = index::build(root);
