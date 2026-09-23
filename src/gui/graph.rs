@@ -6,7 +6,7 @@
 //! custom element; clicks are resolved against the rectangles the last frame recorded.
 
 use crate::gfx::{Color, Gfx, Glyphs, Rect};
-use crate::gui::{self, Action, App, Tip, ACCENT, BORDER, CONTEXT_LINES, FIELD, GREEN, HOVER, ORANGE, PANEL, RED, SELECTED, TEXT, WEAK};
+use super::{dim, Action, App, ACCENT, BG, BORDER, CONTEXT_LINES, FIELD, GREEN, GUTTER, HOVER, ORANGE, PANEL, RED, SELECTED, TEXT, WEAK};
 use crate::index::{self, Index, SymRef};
 use crate::map::Map;
 use crate::ui::{self, Kind, Layout, Measure, Style};
@@ -332,7 +332,7 @@ impl Graph {
     fn code_col(&self, cell_w: i32, n: Node, li: usize, mouse: (i32, i32)) -> Option<usize> {
         let rect = self.hits.iter().find(|(_, h)| matches!(h, Hit::Line(m, l) if *m == n && *l == li)).map(|(r, _)| *r)?;
         let col = ((mouse.0 - rect.x) / cell_w.max(1)).max(0) as usize;
-        col.checked_sub(gui::GUTTER)
+        col.checked_sub(GUTTER)
     }
 
     /// Keep `n` at its screen position through the relayout its button causes, so the tree
@@ -760,7 +760,7 @@ impl App {
         self.ui.leaf(
             Kind::Custom(Box::new(move |gfx: &mut Gfx, _: Rect| draw_scene(gfx, &scene))),
             Layout::col().grow(),
-            Style::bg(gui::BG),
+            Style::bg(BG),
             Some(canvas_id),
         );
     }
@@ -898,10 +898,10 @@ fn draw_scene(gfx: &mut Gfx, scene: &Scene) {
             let li = n.lo + k;
             let ly = n.code_top + k as i32 * m.row_h;
             if n.slice.is_some_and(|(a, b)| li >= a && li <= b) {
-                gfx.rect(Rect::new(n.rect.x + m.pad, ly, n.rect.w - m.pad * 2, m.row_h), gui::dim(SELECTED, 120));
+                gfx.rect(Rect::new(n.rect.x + m.pad, ly, n.rect.w - m.pad * 2, m.row_h), dim(SELECTED, 120));
             }
             if n.tinted.contains(&li) {
-                gfx.rect(Rect::new(n.rect.x + m.pad, ly, n.rect.w - m.pad * 2, m.row_h), gui::dim(GREEN, 46));
+                gfx.rect(Rect::new(n.rect.x + m.pad, ly, n.rect.w - m.pad * 2, m.row_h), dim(GREEN, 46));
             }
         }
         gfx.glyphs(n.rect.x + m.pad, n.code_top, scene.px, &n.code);
@@ -909,66 +909,5 @@ fn draw_scene(gfx: &mut Gfx, scene: &Scene) {
             gfx.text(n.rect.x + m.pad, n.code_top + n.code.h as i32 * m.row_h, scene.px, &format!("      … {more} more lines"), WEAK);
         }
         gfx.pop_clip();
-    }
-}
-
-impl App {
-    /// The floating tooltip under the pointer, drawn over everything: what the language's
-    /// server says about the identifier, or the definition of the symbol of that name.
-    pub fn tooltip_element(&mut self) {
-        self.tip_shown = None;
-        let Some((tip, (mx, my))) = self.tooltip.take() else { return };
-        if self.ui.input.down[0] {
-            return;
-        }
-        let px = self.px;
-        let (w, h) = (self.ui.size.0, self.ui.size.1);
-        let (cw, rh) = self.cell;
-        let max_cols = ((w - 40) / cw.max(1)).max(20) as usize;
-        // the box goes beside the pointer, flipping above or to the left when it would not fit
-        let place_at = |cols: i32, rows: i32| {
-            let (tw, th) = (cols * cw + 12, rows * (rh + 2) + 12);
-            let x = if mx + 16 + tw <= w { mx + 16 } else { (mx - 16 - tw).max(0) };
-            let y = if my + 16 + th <= h { my + 16 } else { (my - 16 - th).max(0) };
-            (x, y)
-        };
-        match tip {
-            Tip::Sym(r) if r.file < self.idx.files.len() => {
-                let s = self.idx.sym(r);
-                let (name, place, start, end) = (s.name.clone(), format!("{} {}:{}-{}", s.kind, self.idx.files[r.file].path, s.start + 1, s.end + 1), s.start, s.end);
-                self.tip_shown = Some(name.clone());
-                let f = &self.idx.files[r.file];
-                let last = end.min(f.lines.len().saturating_sub(1)).min(start + 23);
-                let widest = (start..=last).map(|li| f.lines[li].chars().count() + gui::GUTTER).max().unwrap_or(0).max(place.len()).max(70) as i32;
-                let (x, y) = place_at(widest, (last - start) as i32 + 5);
-                self.ui.open(Kind::None, Layout::col().floating(x, y).pad(6).gap(2), Style::bg(PANEL).border(ui::BORDER_ALL, BORDER), None);
-                self.label(&name, TEXT);
-                self.label(&place, WEAK);
-                self.code_block(r.file, start, last, ui::id("tip-code"), false, &|_| None, &|_| None);
-                if last < end {
-                    self.label(&format!("      … {} more lines", end - last), WEAK);
-                }
-                self.label("alt-click: pin in the peek panel   ctrl-click or double-click: go there", WEAK);
-                self.ui.close();
-            }
-            Tip::Text(t) => {
-                self.tip_shown = t.lines().next().map(str::to_owned);
-                let lines: Vec<&str> = t.lines().collect();
-                let widest = lines.iter().take(24).map(|l| l.chars().count()).max().unwrap_or(0).min(max_cols).max(84) as i32;
-                let (x, y) = place_at(widest, lines.len().min(24) as i32 + 2);
-                self.ui.open(Kind::None, Layout::col().floating(x, y).pad(6).gap(2), Style::bg(PANEL).border(ui::BORDER_ALL, BORDER), None);
-                for l in lines.iter().take(24) {
-                    let l: String = l.chars().take(max_cols).collect();
-                    let weak = l.starts_with("---");
-                    self.ui.leaf(Kind::Text(ui::Text { runs: vec![(if weak { "─".repeat(20) } else { l }, if weak { WEAK } else { TEXT })], px, wrap: false }), Layout::row(), Style::default(), None);
-                }
-                if lines.len() > 24 {
-                    self.label(&format!("… {} more lines", lines.len() - 24), WEAK);
-                }
-                self.label("alt-click: pin the definition in the peek panel   ctrl-click or double-click: go to it", WEAK);
-                self.ui.close();
-            }
-            _ => {}
-        }
     }
 }
