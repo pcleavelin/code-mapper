@@ -6,6 +6,7 @@ mod index;
 mod lsp;
 mod map;
 mod ui;
+mod window;
 
 use map::{Author, Map};
 use std::path::{Path, PathBuf};
@@ -65,5 +66,5 @@ fn main() {
         std::process::exit(cli_main(&root, &args[1..]));
     }
     let title = format!("codemap - {}", root.display());
-    gfx::run(&title, gui::App::new(&root));
+    window::run(&title, gui::App::new(&root));
 }

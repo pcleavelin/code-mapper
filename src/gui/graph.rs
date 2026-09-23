@@ -76,33 +76,37 @@ enum Drag {
 
 #[derive(Default)]
 pub struct Graph {
+    // The tree: rebuilt every frame from the selection and the reader's state below, and read
+    // as last frame's by the next frame's input.
     nodes: Vec<Node>,
     col: HashMap<Node, i32>,
-    pos: HashMap<Node, (i32, i32)>,     // this frame, in cells and rows
-    manual: HashMap<Node, (f32, f32)>,  // dragged positions, in cells and rows
-    size: HashMap<Node, (i32, i32)>,    // in cells and rows
-    cell: (i32, i32), // this frame's cell width and row height, in pixels
+    pos: HashMap<Node, (i32, i32)>,       // in cells and rows
+    size: HashMap<Node, (i32, i32)>,      // in cells and rows
+    cell: (i32, i32),                     // the cell width and row height, in pixels
     range: HashMap<Node, (usize, usize)>, // a node's own lines: the step's slice, or the whole symbol
-    context: HashMap<Node, (usize, usize)>, // extra lines shown above and below, asked for with the node's buttons
-    view: HashMap<Node, (usize, usize)>, // this frame: range widened by context, clamped to the file
+    view: HashMap<Node, (usize, usize)>,  // range widened by context, clamped to the file
     by_sym: HashMap<SymRef, Node>,
     path_id: Option<usize>,
     step: HashMap<Node, (usize, usize, String)>, // step node -> (pre-order position, anchor index, hierarchical number)
     step_parent: HashMap<Node, Node>,
     origin: HashMap<Node, (Node, bool)>, // expansion node -> (the node that revealed it, via callees?)
+    code_top: HashMap<Node, i32>,        // y of each node's first code row
+    has_note: HashSet<Node>,             // step nodes with a note row
+    hits: Vec<(Rect, Hit)>,              // what the mouse can land on, in window pixels
+
+    // The reader's: what they opened, cut, widened and dragged, and the camera.
     expansions: Vec<(Node, bool)>,
-    auto_open: Option<Node>,  // the off-path root whose callers and callees were opened for it
-    collapsed: HashSet<Node>, // nodes cut to a preview
-    code_top: HashMap<Node, i32>, // y of each node's first code row, this frame
-    has_note: HashSet<Node>,      // step nodes with a note row
+    auto_open: Option<Node>,                // the off-path root whose callers and callees were opened for it
+    collapsed: HashSet<Node>,               // nodes cut to a preview
+    context: HashMap<Node, (usize, usize)>, // extra lines shown above and below, asked for with the node's buttons
+    manual: HashMap<Node, (f32, f32)>,      // dragged positions, in cells and rows
+    drag: Option<Drag>,
     pub pan: (i32, i32),
     pub zoom: f32,
     pub want_look: bool, // centre on the focus once it has a position
     pub hold_look: bool, // the next focus change came from the graph itself: do not move the camera
     want_fit: bool,      // zoom out and pan so the whole tree is on the canvas
     keep: Option<(Node, (i32, i32))>, // a node and its pixel position before the relayout its button caused
-    hits: Vec<(Rect, Hit)>,
-    drag: Option<Drag>,
 }
 
 impl Graph {

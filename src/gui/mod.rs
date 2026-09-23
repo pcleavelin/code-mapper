@@ -13,7 +13,8 @@ mod widgets;
 mod work;
 
 use crate::cli;
-use crate::gfx::{self, Color, Gfx, Glyphs, Rect};
+use crate::gfx::{Color, Gfx, Glyphs, Rect};
+use crate::window;
 use crate::index::{self, Index, ServerFile, SymRef};
 use crate::lsp;
 use crate::map::{Author, Change, Kind as PathKind, Map, PathDiff, StepChange};
@@ -387,7 +388,7 @@ impl App {
     }
 }
 
-impl gfx::App for App {
+impl window::App for App {
     /// Script commands: `tab <path|graph|listing|diff|results>`, `open <file> [line]`, `scroll <panel> <n>`,
     /// `idle` (waits until no server request, merge, re-index or link is in flight), `shot <file.png>`, `rect <id> [n]`
     /// (last frame's rectangle of an element by its id name), `dump` (state to stderr:
@@ -442,7 +443,7 @@ impl gfx::App for App {
         self.ui.interaction_of(Self::named_id(name)).rect.map(|r| (r.x + r.w / 2, r.y + r.h / 2))
     }
 
-    fn frame(&mut self, gfx: &mut Gfx, input: &mut ui::Input) -> gfx::Frame {
+    fn frame(&mut self, gfx: &mut Gfx, input: &mut ui::Input) -> window::Frame {
         self.px = (14.0 * gfx.scale).round().max(8.0) as u32;
         self.cell = gfx.cell(self.px);
         let mut quit = false;
@@ -551,6 +552,6 @@ impl gfx::App for App {
         }
         self.track_navigation();
         let busy = self.working() || self.shot.is_some();
-        gfx::Frame { redraw_after: Duration::from_millis(if busy { 50 } else { 1000 }), quit, clear: BG }
+        window::Frame { redraw_after: Duration::from_millis(if busy { 50 } else { 1000 }), quit, clear: BG }
     }
 }
