@@ -1,4 +1,5 @@
 mod cli;
+mod codec;
 mod gfx;
 mod graph;
 mod gui;

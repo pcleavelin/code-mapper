@@ -1,4 +1,5 @@
-use crate::index::{File, Index, Reader, SymRef, w_str};
+use crate::codec::{Reader, fnv1a, w_str, write_retry};
+use crate::index::{File, Index, SymRef};
 use std::path::Path;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -458,41 +459,11 @@ impl Map {
     }
 }
 
-/// Write `data` whole: to a temporary file beside `path`, then renamed over it, so a reader
-/// or a second writer never sees a half-written file. Retries while Windows refuses the file
-/// for a moment (errors 1224, 32 and 5, while another process or a scanner has it open).
-pub fn write_retry(path: &Path, data: &[u8]) -> std::io::Result<()> {
-    static N: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
-    let tmp = path.with_extension(format!("tmp{}-{}", std::process::id(), N.fetch_add(1, std::sync::atomic::Ordering::Relaxed)));
-    let mut last = None;
-    for _ in 0..6 {
-        match std::fs::write(&tmp, data).and_then(|()| std::fs::rename(&tmp, path)) {
-            Ok(()) => return Ok(()),
-            Err(e) if matches!(e.raw_os_error(), Some(1224) | Some(32) | Some(5)) => {
-                std::thread::sleep(std::time::Duration::from_millis(40));
-                last = Some(e);
-            }
-            Err(e) => {
-                let _ = std::fs::remove_file(&tmp);
-                return Err(e);
-            }
-        }
-    }
-    let _ = std::fs::remove_file(&tmp);
-    Err(last.unwrap())
-}
 
 // ---- anchoring --------------------------------------------------------------------
 
 pub fn slice_hash(lines: &[String], ls: usize, le: usize) -> u64 {
-    let mut h: u64 = 0xcbf29ce484222325;
-    for line in &lines[ls..=le] {
-        for b in line.bytes().chain(std::iter::once(b'\n')) {
-            h ^= b as u64;
-            h = h.wrapping_mul(0x100000001b3);
-        }
-    }
-    h
+    fnv1a(lines[ls..=le].iter().flat_map(|l| l.bytes().chain(std::iter::once(b'\n'))))
 }
 
 /// Where lines `[a, b]` of `old` (a step's slice as it was, with a few lines of context around
