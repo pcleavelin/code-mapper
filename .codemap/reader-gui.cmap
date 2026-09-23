@@ -11,9 +11,9 @@ parent 50ozko
 author ai
 file src/gui/panels.rs
 symbol xrefs_panel
-lines 0 102
-hash 7d833d4b1f8e689d
-note The xrefs panel, docked right by default: the pinned peek on top when there is one, then the focused symbol's callers, callees and references, each row clickable. It is the only panel that says a file is still waiting for its language server, by dimming the rows.
+lines 0 116
+hash 3de5216c04a81f78
+note The xrefs panel, docked right by default: the pinned peek on top when there is one, then the focused symbol's callers, callees and references, each row clickable. References are asked of the server the first time a symbol is shown, and the heading says so while the answer is out. It is the only panel that says a file is still waiting for its language server, by dimming the rows.
 
 step 25fyn8
 order 14

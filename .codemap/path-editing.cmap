@@ -10,7 +10,7 @@ order 3
 author ai
 file src/cli.rs
 symbol exec
-lines 170 174
+lines 204 208
 hash 062a1203273ede6e
 note path-note: replace the path note. The note is the part written for someone who did not see the code, so it is set separately from creation and usually rewritten once the steps exist.
 
@@ -29,7 +29,7 @@ order 0
 author ai
 file src/cli.rs
 symbol exec
-lines 138 147
+lines 172 181
 hash 4e3401dec97eb390
 note path-new: create the path, set its note and its group if they were given. Creating an existing name is a no-op on the path and only replaces what was given, so a script can be re-run.
 
@@ -58,7 +58,7 @@ order 10
 author ai
 file src/cli.rs
 symbol exec
-lines 274 284
+lines 317 327
 hash 54f5ee04900d52ec
 note path-rm: with an index it deletes one step, without one it deletes the whole path, which Map::remove_path refuses while another path links to it. There is no undo anywhere in this tool.
 
@@ -87,9 +87,9 @@ order 5
 author ai
 file src/cli.rs
 symbol exec
-lines 219 252
-hash 378344bec924096b
-note path-add, the command that does the real work. The trailing numbers decide what was meant: none or one is a whole symbol, two or three is a line range, and the last number is the parent when it is there. Default parent is the last step added, so consecutive adds build a chain and an explicit index starts a branch.
+lines 253 293
+hash ef8cfc7442e7c8c5
+note path-add, the command that does the real work. The parent step's file is indexed first, for the does-not-call note. The trailing numbers decide what was meant: none or one is a whole symbol, two or three is a line range, and the last number is the parent when it is there. Default parent is the last step added, so consecutive adds build a chain and an explicit index starts a branch.
 
 step uophoa
 order 1
@@ -116,7 +116,7 @@ order 4
 author ai
 file src/cli.rs
 symbol exec
-lines 175 179
+lines 209 213
 hash b46a9e6933198236
 note step-note: replace one step's note. The index is the one shown in square brackets by paths, and a bad one is an error rather than a silent no-op.
 

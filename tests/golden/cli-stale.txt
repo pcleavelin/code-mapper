@@ -1,19 +1,7 @@
 $ codemap check
 ok
-! clangd: 2 files to index
-! clangd not on PATH: 2 files keep the tree-sitter resolver
-! rust-analyzer: 3 files to index
-! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
-! pyright-langserver: 2 files to index
-! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
 # two lines above impl Store: its steps move but stay current
 $ codemap stale
-! clangd: 2 files to index
-! clangd not on PATH: 2 files keep the tree-sitter resolver
-! rust-analyzer: 3 files to index
-! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
-! pyright-langserver: 2 files to index
-! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
 $ codemap paths startup
 startup [flow] (ai) (7 steps): What running the program does: fill the store, then report its total area.
   [0] src/main.rs:7-11 main (ai)  -- Entry: builds the store and hands it to the two phases.
@@ -23,29 +11,11 @@ startup [flow] (ai) (7 steps): What running the program does: fill the store, th
     [4] src/main.rs:18-22 report (ai)
       [5] src/store.rs:23-27 total_area (ai)  -- The sum over every shape's own area.
       [6] src/main.rs:24-26 log_line (ai)
-! clangd: 2 files to index
-! clangd not on PATH: 2 files keep the tree-sitter resolver
-! rust-analyzer: 3 files to index
-! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
-! pyright-langserver: 2 files to index
-! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
 # check's body changes: its step goes stale
 $ codemap stale
 startup[3] src/store.rs:31-33 check
-! clangd: 2 files to index
-! clangd not on PATH: 2 files keep the tree-sitter resolver
-! rust-analyzer: 3 files to index
-! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
-! pyright-langserver: 2 files to index
-! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
 $ codemap check
 startup[3] src/store.rs:31-33 check
-! clangd: 2 files to index
-! clangd not on PATH: 2 files keep the tree-sitter resolver
-! rust-analyzer: 3 files to index
-! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
-! pyright-langserver: 2 files to index
-! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
 ! 1 stale steps
 [exit 2]
 $ codemap path startup
@@ -100,62 +70,26 @@ What running the program does: fill the store, then report its total area.
    24 fn log_line(msg: &str) {
    25     eprintln!("{msg}");
    26 }
-! clangd: 2 files to index
-! clangd not on PATH: 2 files keep the tree-sitter resolver
-! rust-analyzer: 3 files to index
-! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
-! pyright-langserver: 2 files to index
-! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
 $ codemap uncovered check
 src/store.rs:31-33 function_item check (3 lines)
-! clangd: 2 files to index
-! clangd not on PATH: 2 files keep the tree-sitter resolver
-! rust-analyzer: 3 files to index
-! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
-! pyright-langserver: 2 files to index
-! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
 # a line inside the slice changes, and the absolute-lines step's lines move
 $ codemap stale
 startup[3] src/store.rs:31-33 check
 startup[5] src/store.rs:23-27 total_area
-! clangd: 2 files to index
-! clangd not on PATH: 2 files keep the tree-sitter resolver
-! rust-analyzer: 3 files to index
-! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
-! pyright-langserver: 2 files to index
-! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
 # fill is renamed: the symbol is gone
 $ codemap stale
 startup[0] src/main.rs:7-11 main
 startup[1] src/main.rs (symbol gone) fill
 startup[3] src/store.rs:31-33 check
 startup[5] src/store.rs:23-27 total_area
-! clangd: 2 files to index
-! clangd not on PATH: 2 files keep the tree-sitter resolver
-! rust-analyzer: 3 files to index
-! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
-! pyright-langserver: 2 files to index
-! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
 # the text of report moves down unchanged in its file: stale lists where it went
 $ codemap path-add startup src/main.rs 18 19 -1
 step [7] added under [-1]
-! clangd: 2 files to index
-! clangd not on PATH: 2 files keep the tree-sitter resolver
-! rust-analyzer: 3 files to index
-! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
-! pyright-langserver: 2 files to index
-! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
 $ codemap stale
 startup[0] src/main.rs:7-11 main
 startup[1] src/main.rs (symbol gone) fill
 startup[3] src/store.rs:31-33 check
 startup[5] src/store.rs:23-27 total_area
-! clangd: 2 files to index
-! clangd not on PATH: 2 files keep the tree-sitter resolver
-! rust-analyzer: 3 files to index
-! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
-! pyright-langserver: 2 files to index
-! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
 # helpers.py is deleted: its file is gone
 $ codemap stale
 startup[0] src/main.rs:7-11 main
@@ -163,78 +97,24 @@ startup[1] src/main.rs (symbol gone) fill
 startup[3] src/store.rs:31-33 check
 startup[5] src/store.rs:23-27 total_area
 stats[1] tools/helpers.py (file gone) mean
-! clangd: 2 files to index
-! clangd not on PATH: 2 files keep the tree-sitter resolver
-! rust-analyzer: 3 files to index
-! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
-! pyright-langserver: 1 files to index
-! pyright-langserver not on PATH: 1 files keep the tree-sitter resolver
 $ codemap paths stats
 stats [flow] (ai) (2 steps)
   [0] tools/stats.py:5-7 spread (ai)
     [1] ! tools/helpers.py (file gone) mean (ai)
-! clangd: 2 files to index
-! clangd not on PATH: 2 files keep the tree-sitter resolver
-! rust-analyzer: 3 files to index
-! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
-! pyright-langserver: 1 files to index
-! pyright-langserver not on PATH: 1 files keep the tree-sitter resolver
 # re-pin what can be re-pinned by hand, delete the rest
 $ codemap path-pin startup 3 src/store.rs 31 33
 step [3] pinned to src/store.rs:31-33
-! clangd: 2 files to index
-! clangd not on PATH: 2 files keep the tree-sitter resolver
-! rust-analyzer: 3 files to index
-! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
-! pyright-langserver: 1 files to index
-! pyright-langserver not on PATH: 1 files keep the tree-sitter resolver
 $ codemap path-pin startup 1 src/main.rs 13 16
 step [1] pinned to src/main.rs:13-16
-! clangd: 2 files to index
-! clangd not on PATH: 2 files keep the tree-sitter resolver
-! rust-analyzer: 3 files to index
-! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
-! pyright-langserver: 1 files to index
-! pyright-langserver not on PATH: 1 files keep the tree-sitter resolver
 $ codemap path-pin startup 5 src/store.rs 23 27
 step [5] pinned to src/store.rs:23-27
-! clangd: 2 files to index
-! clangd not on PATH: 2 files keep the tree-sitter resolver
-! rust-analyzer: 3 files to index
-! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
-! pyright-langserver: 1 files to index
-! pyright-langserver not on PATH: 1 files keep the tree-sitter resolver
 $ codemap path-pin startup 7 src/main.rs 19 20
 step [7] pinned to src/main.rs:19-20
-! clangd: 2 files to index
-! clangd not on PATH: 2 files keep the tree-sitter resolver
-! rust-analyzer: 3 files to index
-! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
-! pyright-langserver: 1 files to index
-! pyright-langserver not on PATH: 1 files keep the tree-sitter resolver
 $ codemap path-rm stats 1
-! clangd: 2 files to index
-! clangd not on PATH: 2 files keep the tree-sitter resolver
-! rust-analyzer: 3 files to index
-! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
-! pyright-langserver: 1 files to index
-! pyright-langserver not on PATH: 1 files keep the tree-sitter resolver
 $ codemap stale
 startup[0] src/main.rs:7-11 main
-! clangd: 2 files to index
-! clangd not on PATH: 2 files keep the tree-sitter resolver
-! rust-analyzer: 3 files to index
-! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
-! pyright-langserver: 1 files to index
-! pyright-langserver not on PATH: 1 files keep the tree-sitter resolver
 $ codemap check
 startup[0] src/main.rs:7-11 main
-! clangd: 2 files to index
-! clangd not on PATH: 2 files keep the tree-sitter resolver
-! rust-analyzer: 3 files to index
-! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
-! pyright-langserver: 1 files to index
-! pyright-langserver not on PATH: 1 files keep the tree-sitter resolver
 ! 1 stale steps
 [exit 2]
 $ codemap path startup
@@ -295,9 +175,3 @@ What running the program does: fill the store, then report its total area.
 == 2 [7] src/main.rs:19-20 report (ai)
    19 fn report(store: &Store) {
    20     let total = store.total_area();
-! clangd: 2 files to index
-! clangd not on PATH: 2 files keep the tree-sitter resolver
-! rust-analyzer: 3 files to index
-! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
-! pyright-langserver: 1 files to index
-! pyright-langserver not on PATH: 1 files keep the tree-sitter resolver

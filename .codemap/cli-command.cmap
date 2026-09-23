@@ -11,9 +11,9 @@ parent gejk1d
 author ai
 file src/main.rs
 symbol cli_main
-lines 0 45
-hash deda76b48a51274f
-note Parse before indexing so a usage error costs nothing. Then build the index and run every pending language server to completion, so the answer is from the server whenever one is on PATH. Help goes to stdout with exit 0, usage errors to stderr with exit 2. A map that does not read stops the command with exit 2, before anything could save over it. A mutating command saves the map. A command error prints what it produced so far and exits 2; check relies on this. Output goes through emit so a closed pipe does not panic.
+lines 0 47
+hash 8cf436c7bd69753e
+note Parse before indexing so a usage error costs nothing. Then build the index from the cache and tree-sitter, and hand exec a Servers, which starts a language server only when the command needs one. Help goes to stdout with exit 0, usage errors to stderr with exit 2. A map that does not read stops the command with exit 2, before anything could save over it. A mutating command saves the map. A command error prints what it produced so far and exits 2; check relies on this. Output goes through emit so a closed pipe does not panic.
 
 step 9zzcig
 order 2
@@ -41,8 +41,8 @@ parent 7ad6e4
 author ai
 file src/cli.rs
 symbol exec
-lines 0 409
-hash 6f53f6de52d86f95
+lines 0 453
+hash 3616ff4a5dcfe693
 note Runs one command. Ok(true) means the map changed and the caller saves. Err is the user-facing message; check returns one to force a non-zero exit.
 
 step dtk6tf
@@ -60,8 +60,8 @@ parent 9zzcig
 author ai
 file src/cli.rs
 symbol Command
-lines 0 100
-hash 6e01285758b734e9
+lines 0 102
+hash 7df9d790f71f8deb
 note The command set. Variant names kebab-case into subcommand names. Each variant's doc comment is its one-line help, written as signature then description so 'help' reads as a signature table. Kind goes through parse_kind so map.rs does not depend on clap.
 
 step gejk1d
@@ -89,9 +89,9 @@ parent 7ad6e4
 author ai
 file src/cli.rs
 symbol exec
-lines 258 264
-hash 2334c20e4268e08c
-note path-move: reparent a step, refusing a cycle, then the same does-not-call note path-add prints so a flow stays a call tree.
+lines 299 307
+hash 33cfba89e47fc6c5
+note path-move: index the new parent's file, reparent the step, refusing a cycle, then the same does-not-call note path-add prints so a flow stays a call tree.
 
 step uvx2pv
 order 5
@@ -99,8 +99,8 @@ author ai
 file src/gui/mod.rs
 symbol run_cmd
 lines 0 28
-hash 6c3fcc34e274e93d
-note The GUI's side of the same parse then exec. Reached from the frame function when the command field returns a line, not from the panel that draws it. A parse error, help included, is printed into the log verbatim; a mutating command marks the map dirty instead of saving, and the log is scrolled to the bottom.
+hash f891ed0a85729635
+note The GUI's side of the same parse then exec. Reached from the frame function when the command field returns a line, not from the panel that draws it. exec gets no servers here: the GUI's own threads index. A parse error, help included, is printed into the log verbatim; a mutating command marks the map dirty instead of saving, and the log is scrolled to the bottom.
 
 step y08nbq
 order 9

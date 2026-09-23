@@ -52,8 +52,8 @@ author ai
 file src/map.rs
 symbol save
 lines 0 18
-hash c289066298108a57
-note Writes each path's file only when its text changed and removes the files of paths that are gone, so an unchanged map saves to identical bytes and a one-path edit rewrites one file. No locking: the CLI and the GUI both save, and the last writer wins.
+hash 91c437d8dd7b1e89
+note Writes the paths this process changed and removes the files of the ones it removed or renamed, judged against the text it read or last wrote, so a path it only read is left alone on disk. Processes changing different paths keep each other's work; on one path the last writer wins. An unchanged map saves nothing.
 
 step atbu0l
 order 13
@@ -81,15 +81,15 @@ parent kzkkga
 author ai
 file src/map.rs
 symbol load
-lines 0 19
-hash 521ee4e565cafe20
-note Every .cmap file in name order, each holding exactly one path under its own name. A directory that does not exist is an empty map; a .codemap that is a file is the old single-file format, and every read error, conflicts included, is an Err naming the file and line.
+lines 0 22
+hash 0b72b8a79a5feb7c
+note Every .cmap file in name order, each file's text kept for save to compare against, each holding exactly one path under its own name. A directory that does not exist is an empty map; a .codemap that is a file is the old single-file format, and every read error, conflicts included, is an Err naming the file and line.
 
 step jn6vqv
 order 0
 author ai
 file src/map.rs
-lines 153 187
+lines 156 190
 hash 16ed1980ef63c486
 note The layout, written out as a comment because there is no schema anywhere else, with the directory name, the version line and the conflict markers that stop a read.
 
@@ -98,9 +98,9 @@ order 1
 author ai
 file src/map.rs
 symbol Map
-lines 0 2
-hash fd23a283b8161d52
-note The whole manual layer in one struct: a list of paths. It comes back from disk in file name order, which is the order paths and the Paths tab follow.
+lines 0 3
+hash f796e3fe09bd31a1
+note The whole manual layer: a list of paths, and the text of each path's file as this process last read or wrote it, which is how save tells what changed. It comes back from disk in file name order, which is the order paths and the Paths tab follow.
 
 step lt96h2
 order 14

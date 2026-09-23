@@ -40,9 +40,9 @@ order 0
 author ai
 file src/cli.rs
 symbol exec
-lines 285 289
-hash d9f12a7b0eee6bd8
-note The command: resolve the symbol to exactly one, promote it, report how many steps the path now has.
+lines 328 333
+hash 3a73dba93be12fa2
+note The command: index the files the call tree reaches, resolve the symbol to exactly one, promote it, report how many steps the path now has.
 
 step i8jlm4
 order 5

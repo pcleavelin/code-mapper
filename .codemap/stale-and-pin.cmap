@@ -40,7 +40,7 @@ order 3
 author ai
 file src/cli.rs
 symbol exec
-lines 265 273
+lines 308 316
 hash 8e19f44d608872a4
 note path-pin: bounds-check the new range, then replace the anchor in place.
 
@@ -99,7 +99,7 @@ order 6
 author ai
 file src/cli.rs
 symbol exec
-lines 323 350
+lines 367 394
 hash 4031754fbc3cfa3a
 note repin: every stale step in turn, its file read once from the revision (default: the parent revision, @- in jj or HEAD in git) and kept for the steps after it. A step that follows is pinned through pin_anchor like path-pin; one that does not stays stale with the reason printed. The output is the review: each re-pinned step with changed text prints its removed and added lines, and its note has to be reread against them.
 
@@ -118,6 +118,6 @@ order 1
 author ai
 file src/cli.rs
 symbol exec
-lines 290 322
+lines 334 366
 hash b2910b26be5222fa
 note stale and check share the listing; check turns a non-empty list into an Err so the process exits 2. Each stale step gets a hint: a ready-made path-pin when its text merely moved, or every symbol of the same name anywhere when the symbol is gone from its file. A link to a path the map does not have is listed after them and fails check the same way.

@@ -140,7 +140,9 @@ impl Client {
                 "workspace": {"configuration": true},
                 "experimental": {"serverStatusNotification": true}
             },
-            "initializationOptions": {"checkOnSave": false}
+            // rust-analyzer computes what it is asked when it is asked instead of priming every
+            // crate first, so a large workspace is ready once it is loaded
+            "initializationOptions": {"checkOnSave": false, "cachePriming": {"enable": false}}
         });
         c.request("initialize", params).ok()?;
         c.notify("initialized", json!({}));
@@ -176,6 +178,40 @@ impl Client {
             }
             self.handle(msg);
         }
+    }
+
+    /// Sends every request with up to `WINDOW` in flight, so the server answers them on its
+    /// own threads, and returns the answers in the order asked. A request the server does not
+    /// answer within two minutes of the one before it is an Err, and so is every one after.
+    pub fn request_all(&mut self, reqs: Vec<(&str, Value)>) -> Vec<Result<Value, String>> {
+        const WINDOW: usize = 64;
+        let n = reqs.len();
+        let first = self.next_id + 1;
+        let mut out: Vec<Option<Result<Value, String>>> = (0..n).map(|_| None).collect();
+        let mut reqs = reqs.into_iter();
+        let (mut sent, mut got) = (0, 0);
+        while got < n {
+            while sent < n && sent - got < WINDOW {
+                let (method, params) = reqs.next().unwrap();
+                self.next_id += 1;
+                let id = self.next_id;
+                self.send(json!({"jsonrpc": "2.0", "id": id, "method": method, "params": params}));
+                sent += 1;
+            }
+            let Ok(mut msg) = self.rx.recv_timeout(Duration::from_secs(120)) else { break };
+            if msg.get("method").is_none() {
+                if let Some(i) = msg["id"].as_u64().and_then(|id| id.checked_sub(first)).map(|i| i as usize).filter(|&i| i < n && out[i].is_none()) {
+                    out[i] = Some(match msg.get("error") {
+                        Some(e) => Err(e["message"].as_str().unwrap_or("error").to_owned()),
+                        None => Ok(msg["result"].take()),
+                    });
+                    got += 1;
+                    continue;
+                }
+            }
+            self.handle(msg);
+        }
+        out.into_iter().map(|r| r.unwrap_or_else(|| Err("server went away".into()))).collect()
     }
 
     /// Notifications and server-to-client requests.

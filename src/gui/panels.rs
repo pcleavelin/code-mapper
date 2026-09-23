@@ -358,6 +358,20 @@ impl App {
         let (name, place) = (s.name.clone(), format!("{} {}:{}-{}", s.kind, self.idx.files[cur.file].path, s.start + 1, s.end + 1));
         let pending = self.idx.files[cur.file].pending;
         let (callers, callees, refs) = (s.callers.clone(), s.callees.clone(), s.refs.clone());
+        // references are asked of the server for the symbol on show, once per text of its file
+        let f = &self.idx.files[cur.file];
+        let (line, col) = index::name_position(&self.idx, cur);
+        let probe = Probe { path: f.path.clone(), hash: f.hash, line, col };
+        let asking = f.backend == index::Backend::Server && refs.is_empty();
+        if asking && !self.lookup.refs_asked.contains(&probe) {
+            if let Some(lang) = index::lang_for(&probe.path) {
+                if let Some(tx) = self.server(lang) {
+                    let _ = tx.send(Req::Refs(probe.clone()));
+                    self.lookup.asked += 1;
+                    self.lookup.refs_asked.insert(probe);
+                }
+            }
+        }
         self.ui.open(Kind::None, Layout::col().grow_x().pad(4), Style::default(), None);
         self.label(&name, TEXT);
         self.label(&place, WEAK);
@@ -378,7 +392,7 @@ impl App {
             }
         }
         let shown = refs.iter().filter(|(p, _)| self.idx.find_file(p).is_some()).count();
-        self.label(&format!("References ({shown})"), WEAK);
+        self.label(&if asking && self.lookup.asked > 0 { "References (asking the server)".to_owned() } else { format!("References ({shown})") }, WEAK);
         for (i, (path, line)) in refs.iter().enumerate() {
             if let Some(fi) = self.idx.find_file(path) {
                 let t = self.idx.files[fi].lines.get(*line as usize).map(|l| l.trim()).unwrap_or("").to_owned();

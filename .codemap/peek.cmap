@@ -21,9 +21,9 @@ parent nq4lui
 author ai
 file src/gui/work.rs
 symbol serve
-lines 0 56
-hash d14f87febff3936e
-note The thread: one Client for the language, a queue of files to index, and hover and definition requests answered between files so the pointer never waits behind a batch. Definitions are resolved against the root here, and the lines around the target read from disk, parsed and drawn into a grid on this thread, which the peek shows when the file is outside the repo.
+lines 0 66
+hash b1e1c27280eafe1f
+note The thread: one Client for the language, a queue of files to index, and hover, definition and reference requests answered between batches so the pointer never waits behind a batch. Definitions are resolved against the root here, and the lines around the target read from disk, parsed and drawn into a grid on this thread, which the peek shows when the file is outside the repo.
 
 step 3fy396
 order 12
@@ -120,9 +120,9 @@ parent 174e9e
 author ai
 file src/gui/work.rs
 symbol poll_backend
-lines 29 54
-hash 868dfffb19b30b85
-note Where the answers land: a hover is cached under its Probe; a definition is acted on only when it is the one still awaited, resolved to a symbol, a line inside one, or a place outside the repo.
+lines 29 61
+hash 958f8fb8105ff0e9
+note Where the answers land: a hover is cached under its Probe; references land on the symbol they were asked for when its file still has the text they were asked about; a definition is acted on only when it is the one still awaited, resolved to a symbol, a line inside one, or a place outside the repo.
 
 step v678nk
 order 14
@@ -158,6 +158,6 @@ parent dqmrwj
 author ai
 file src/gui/peek.rs
 symbol Lookup
-lines 0 6
-hash a20993e2d651ce72
-note The requests to the servers: every hover asked, with its answer once it came, the position under the pointer and since when, whether a hover is in flight, how many requests are unanswered, and the definition whose answer is awaited with what to do with it.
+lines 0 7
+hash bf3891f3601f9afb
+note The requests to the servers: every hover asked, with its answer once it came, the position under the pointer and since when, whether a hover is in flight, how many requests are unanswered, the definition whose answer is awaited with what to do with it, and the symbols whose references were asked for.

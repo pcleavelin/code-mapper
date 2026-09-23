@@ -38,6 +38,6 @@ step ywvq6u
 order 2
 author ai
 file src/map.rs
-lines 153 182
+lines 156 185
 hash 430b6233ac38671d
 note The file layout: the kind is one line, kind flow, layer or type. One version; any other is rejected and the map regenerated, never migrated.

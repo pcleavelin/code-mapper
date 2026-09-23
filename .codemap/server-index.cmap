@@ -3,7 +3,17 @@ path server-index
 kind flow
 author ai
 group index
-note How symbols and xrefs come from a language server. build walks the root and takes every file whose text hash matches the cache; the rest are parsed with tree-sitter and, if the language has a server, marked pending. index_file then asks the language's server per pending file for document symbols, outgoing calls per symbol and references per symbol, and each file's answer is applied as it completes. The CLI runs this to completion before answering; the GUI runs it on a thread and greys out what is still pending.
+note How symbols and xrefs come from a language server. build walks the root and takes every file whose text hash matches the cache; the rest are parsed with tree-sitter and, if the language has a server, marked pending. index_files then asks the server for a batch of pending files' symbols and every symbol's outgoing calls, each stage sent whole with many requests in flight, and each file's answer is applied. References and incoming calls are never asked while indexing: each is a search of the whole workspace, so they are asked for one symbol when a command or the GUI wants them. The CLI indexes only the files a command touches, through Servers; the GUI indexes every pending file on a thread and greys out what is still pending.
+
+step 0rjjy3
+order 30
+parent wn8zbh
+author ai
+file src/index/server.rs
+symbol name_position
+lines 0 5
+hash 09a69dfd8511ef94
+note Where a server wants to be pointed for a symbol: its first line, which is the line of its name, and the UTF-16 column of the name there.
 
 step 0xtjb7
 order 11
@@ -14,6 +24,24 @@ symbol locations
 lines 0 13
 hash 4649131014fc35a4
 note Turns a Location array into (file, line) pairs, dropping everything outside the root - which is how std and dependency hits are kept out of the index without asking the server to exclude them.
+
+step 0y6z15
+order 26
+author ai
+file src/index/server.rs
+symbol incoming_calls
+lines 0 5
+hash efb13ec5c2aa433d
+note callers asks this: the incoming calls of one symbol, which a server finds across the whole workspace, indexed or not.
+
+step 1cplvb
+order 25
+author ai
+file src/index/server.rs
+symbol Servers
+lines 0 4
+hash 356db81e5620a18d
+note The CLI's servers, one per language, started when a command first needs one.
 
 step 23z3m9
 order 5
@@ -31,9 +59,9 @@ parent ymvuc4
 author ai
 file src/gui/work.rs
 symbol Req
-lines 0 4
-hash edd0190b08aa8c80
-note What the GUI sends the thread: a batch of files, or a position to hover or define.
+lines 0 5
+hash 202c0afbbb68f5d2
+note What the GUI sends the thread: a batch of files, or a position to hover, define, or find references to.
 
 step 4eup18
 order 13
@@ -53,6 +81,16 @@ symbol start_backend
 lines 0 16
 hash 3bf59a66c6c43b08
 note The GUI's driver: every pending language's files go as one batch to that language's live server thread; a batch while one runs is remembered and sent when it ends. A language whose server cannot start gives up its files to the tree-sitter answer.
+
+step adehfw
+order 31
+parent orf66y
+author ai
+file src/index/server.rs
+symbol references
+lines 0 3
+hash 97cfe8ce71ff01ef
+note Points the request at the symbol's name.
 
 step dq7ze6
 order 9
@@ -100,9 +138,9 @@ parent 89epu3
 author ai
 file src/gui/work.rs
 symbol Msg
-lines 0 7
-hash 79a6f344ec272484
-note What a server thread sends back: a finished file, a progress line, a language that failed, the end of a batch, and hover and definition answers for the peek.
+lines 0 8
+hash 8fc3b995d2e3a867
+note What a server thread sends back: finished files, a progress line, a language that failed, the end of a batch, hover and definition answers for the peek, and the references asked for the symbol in the xrefs panel.
 
 step l6davw
 order 21
@@ -119,10 +157,10 @@ order 2
 parent wfyovg
 author ai
 file src/index/server.rs
-symbol run_backends
-lines 4 15
-hash 88b73072e81c5477
-note The one-shot use of a server: start it, index every pending file and apply each answer in turn, then stop it. A server that will not start is reported and its files given up to the tree-sitter answer.
+symbol client
+lines 0 9
+hash 3f82511b72df9a37
+note A language's server, started the first time a command needs it and kept until the command ends, when Servers drops and shuts them down. One that will not start is reported once and remembered.
 
 step opvazu
 order 15
@@ -132,7 +170,16 @@ file src/index/server.rs
 symbol start_server
 lines 0 6
 hash 8a8522b412b3bc11
-note Spawn and wait_ready, shared by the CLI's one-shot run in run_backends and the GUI's live thread. The absolute root it returns is what the server's URIs are compared against.
+note Spawn and wait_ready, shared by the CLI's Servers and the GUI's live thread. The absolute root it returns is what the server's URIs are compared against.
+
+step orf66y
+order 28
+author ai
+file src/index/server.rs
+symbol references
+lines 0 5
+hash abe0f966ca7df87d
+note refs asks this: every reference to one symbol.
 
 step p1e65r
 order 22
@@ -167,8 +214,8 @@ order 8
 author ai
 file src/gui/work.rs
 symbol poll_backend
-lines 0 81
-hash 50688643686296c8
+lines 0 88
+hash 97aef6bc29156394
 note Drains every server's channel each frame, but merges at most once a second and once more when the batch ends, since a merge re-resolves the map and drops every drawn grid. A merge applies the answers and starts a link on a thread; the status line's symbol count follows each merge. A batch's end saves the cache and runs the next batch if a rebuild asked for one meanwhile.
 
 step v9k2x1
@@ -180,6 +227,16 @@ symbol impl_type
 lines 0 2
 hash 54dc8f772f188dfe
 note An impl block's name arrives as its whole header text; this reduces it to the type it is about, which becomes the owner of every method inside and therefore what a qualified call binds to.
+
+step vut1b3
+order 29
+parent adehfw
+author ai
+file src/index/server.rs
+symbol references_at
+lines 0 4
+hash 5a83270162ce1305
+note The references request itself, shared with the GUI's thread, which asks it for the focused symbol.
 
 step vwg30v
 order 20
@@ -195,10 +252,20 @@ step wfyovg
 order 6
 author ai
 file src/index/server.rs
-symbol run_backends
-lines 0 19
-hash fee28db26f240618
-note The CLI's synchronous driver: every pending language in turn, then link and save the cache. A missing server is reported once and its files keep the tree-sitter answer.
+symbol index
+lines 0 27
+hash 9f4b1424b3b88d7a
+note The CLI's driver: the pending files among the ones a command touches, grouped by language, asked 32 at a time of a server started once for the command, then one link and one cache save. A language whose server will not start gives its files up to the tree-sitter answer.
+
+step wn8zbh
+order 27
+parent 0y6z15
+author ai
+file src/index/server.rs
+symbol incoming_calls
+lines 0 9
+hash d3dc3cfcad6601fc
+note The call-hierarchy item at the symbol's name, then its incoming calls, each as the (file, line) of the caller's name, which by_line turns into the calling symbol.
 
 step wpda6d
 order 12
@@ -224,10 +291,10 @@ order 16
 parent mz27bi
 author ai
 file src/index/server.rs
-symbol index_file
-lines 0 22
-hash 34aff221b15e04c2
-note The three requests per file against a running server: symbols, then call hierarchy and references per symbol.
+symbol index_files
+lines 0 43
+hash 0bce0c7890ee30b9
+note Three stages against a running server, each sent whole through request_all: the batch's document symbols, a call-hierarchy item for every symbol, the outgoing calls of every item. The answers come back in the order asked and are matched to their file and symbol by position.
 
 step ymvuc4
 order 18
@@ -235,9 +302,9 @@ parent ywt3nh
 author ai
 file src/gui/work.rs
 symbol serve
-lines 0 56
-hash d14f87febff3936e
-note A batch is queued and worked file by file; progress and each finished file go back through the channel, Done when the queue empties. Hover and definition requests are taken before the next file.
+lines 0 66
+hash b1e1c27280eafe1f
+note A batch is queued and worked eight files at a time through index_files; progress and each finished file go back through the channel, Done when the queue empties. Hover, definition and reference requests are taken between batches, so the pointer waits behind eight files at most.
 
 step ywt3nh
 order 17

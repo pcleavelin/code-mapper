@@ -69,7 +69,7 @@ order 2
 author ai
 file src/cli.rs
 symbol exec
-lines 367 396
+lines 411 440
 hash 702662ac5b4ad45b
 note The text form: one line per changed path, then its changed steps indented with +, ~ or -.
 
@@ -90,7 +90,7 @@ author ai
 file src/map.rs
 symbol base_from_vcs
 lines 0 7
-hash 980e6d5e4d5c1064
+hash 627f4c936fd4ff3b
 link vcs
 note The map at the parent revision, read through Vcs in one call and parsed like the files on disk. Err says why there is none (no repo, no committed map, or one that does not read), and the Diff tab shows it.
 

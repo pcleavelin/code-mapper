@@ -20,7 +20,7 @@ order 1
 author ai
 file src/cli.rs
 symbol exec
-lines 351 366
+lines 395 410
 hash 32fe5d795bebc25c
 note uncovered: every symbol at any depth that no step covers, sorted by line count descending. Filter is a substring of the name or the file.
 
@@ -29,6 +29,6 @@ order 2
 author ai
 file src/cli.rs
 symbol exec
-lines 397 406
+lines 441 450
 hash 0605510cde5a7640
 note coverage: per-file counts for files that have symbols, then a total.

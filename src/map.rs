@@ -110,9 +110,12 @@ pub fn normal_group(g: &str) -> String {
     g.split('/').map(str::trim).filter(|s| !s.is_empty()).collect::<Vec<_>>().join("/")
 }
 
+/// `disk` is the text of each path's file as this process last read or wrote it, which is
+/// how a save tells the paths it changed from the ones it only read.
 #[derive(Default)]
 pub struct Map {
     pub paths: Vec<PathDef>,
+    disk: std::collections::HashMap<String, String>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -420,7 +423,10 @@ impl Map {
             let origin = f.display().to_string().replace('\\', "/");
             let mut ps = parse(&text, &origin)?;
             match (ps.pop(), ps.is_empty()) {
-                (Some(p), true) if f.file_stem().is_some_and(|s| s == p.name.as_str()) => m.paths.push(p),
+                (Some(p), true) if f.file_stem().is_some_and(|s| s == p.name.as_str()) => {
+                    m.disk.insert(p.name.clone(), text);
+                    m.paths.push(p);
+                }
                 (Some(p), true) => return Err(format!("{origin}: holds the path '{}', which belongs in {}.cmap", p.name, p.name)),
                 _ => return Err(format!("{origin}: a map file holds exactly one path")),
             }
@@ -428,25 +434,27 @@ impl Map {
         Ok(m)
     }
 
-    /// Write every path to its file in `dir` and remove the files of paths the map no longer
-    /// has. A file whose text is already what it would be is not written.
-    pub fn save(&self, dir: &Path) -> std::io::Result<()> {
+    /// Write the paths this process changed and remove the files of the ones it removed or
+    /// renamed, against what it read or last wrote. A path it only read is left alone on disk,
+    /// so two processes that change different paths never undo each other's work; two that
+    /// change the same path leave the last one's.
+    pub fn save(&mut self, dir: &Path) -> std::io::Result<()> {
         std::fs::create_dir_all(dir)?;
-        let mut keep = std::collections::HashSet::new();
+        let mut now = std::collections::HashMap::new();
         for p in &self.paths {
-            let file = dir.join(format!("{}.cmap", p.name));
             let text = p.to_text();
-            if std::fs::read_to_string(&file).ok().as_deref() != Some(text.as_str()) {
-                write_retry(&file, text.as_bytes())?;
+            if self.disk.get(&p.name) != Some(&text) {
+                write_retry(&dir.join(format!("{}.cmap", p.name)), text.as_bytes())?;
             }
-            keep.insert(file);
+            now.insert(p.name.clone(), text);
         }
-        for e in std::fs::read_dir(dir)?.flatten() {
-            let f = e.path();
-            if f.extension().is_some_and(|x| x == "cmap") && !keep.contains(&f) {
+        for gone in self.disk.keys().filter(|name| !now.contains_key(*name)) {
+            let f = dir.join(format!("{gone}.cmap"));
+            if f.exists() {
                 std::fs::remove_file(&f)?;
             }
         }
+        self.disk = now;
         Ok(())
     }
 
@@ -456,7 +464,7 @@ impl Map {
         let vcs = Vcs::detect(root).ok_or("not in a jj or git repo")?;
         let text = vcs.show_dir(root, vcs.parent(), MAP_DIR).ok_or_else(|| format!("no {MAP_DIR} in {} ({})", vcs.parent(), vcs.name()))?;
         let paths = parse(&String::from_utf8_lossy(&text), &format!("{MAP_DIR} at {}", vcs.parent()))?;
-        let mut m = Map { paths };
+        let mut m = Map { paths, ..Default::default() };
         m.paths.sort_by(|a, b| a.name.cmp(&b.name));
         Ok(m)
     }
@@ -1114,6 +1122,45 @@ mod tests {
         assert!(m.rename_group("flow", "x").is_err());
         assert_eq!(m.rename_group("work", ""), Ok(3));
         assert_eq!(group(&m, "c"), "flows");
+    }
+
+    #[test]
+    fn saves_of_two_processes_keep_each_others_paths() {
+        let idx = one_file();
+        let dir = std::env::temp_dir().join("codemap_test_two_writers");
+        let _ = std::fs::remove_dir_all(&dir);
+        let mut m = Map::default();
+        for name in ["one", "two"] {
+            let pi = m.add_path(name, Kind::Flow, Author::Ai).unwrap();
+            m.add_anchor(&idx, pi, 0, 0, 2, Author::Ai, None);
+        }
+        m.save(&dir).unwrap();
+
+        // two processes read the same map, then each changes a different path
+        let (mut a, mut b) = (Map::load(&dir).unwrap(), Map::load(&dir).unwrap());
+        let pi = a.find("one").unwrap();
+        a.paths[pi].note = "from a".into();
+        a.add_path("three", Kind::Layer, Author::Ai).unwrap();
+        a.save(&dir).unwrap();
+        let pi = b.find("two").unwrap();
+        b.paths[pi].note = "from b".into();
+        b.save(&dir).unwrap();
+
+        let m = Map::load(&dir).unwrap();
+        let note = |name: &str| m.paths[m.find(name).unwrap()].note.clone();
+        assert_eq!((note("one"), note("two")), ("from a".to_owned(), "from b".to_owned()));
+        assert!(m.find("three").is_some());
+
+        // a removal and a rename remove the files they leave behind, and nothing else
+        let mut m = m;
+        let pi = m.find("three").unwrap();
+        m.remove_path(pi).unwrap();
+        let pi = m.find("two").unwrap();
+        m.rename(pi, "deux").unwrap();
+        m.save(&dir).unwrap();
+        let mut names: Vec<String> = std::fs::read_dir(&dir).unwrap().flatten().map(|e| e.file_name().to_string_lossy().into_owned()).collect();
+        names.sort();
+        assert_eq!(names, ["deux.cmap", "one.cmap"]);
     }
 
     #[test]

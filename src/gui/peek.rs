@@ -18,6 +18,7 @@ pub(super) struct Lookup {
     pub(super) inflight: bool,                                  // a hover request the server has not answered
     pub(super) asked: usize,                                    // hover and definition requests not yet answered
     pub(super) want_def: Option<(Probe, Intent)>,               // the definition lookup whose answer is awaited
+    pub(super) refs_asked: HashSet<Probe>,                      // symbols whose references the server was asked for
 }
 
 /// What the tooltip under the pointer shows.

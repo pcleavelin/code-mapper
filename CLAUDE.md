@@ -53,8 +53,8 @@ there, and `check` refuses to read the map until no conflict is left.
 
 `uncovered` lists symbols in no path, largest first, so the human can audit what you
 judged trivial. `coverage` prints covered/total per file. `codemap help` prints the
-full command list. Do not run CLI mutations while the GUI has unsaved changes (last
-writer wins).
+full command list. A save writes only the paths its command changed, so sessions working
+on different paths at once keep each other's work; on one path the last writer wins.
 
 ## Constraints
 
@@ -70,9 +70,11 @@ writer wins).
 ## Indexing
 
 Xrefs come from the language's server when it is on PATH (`rust-analyzer` for this repo),
-otherwise from a tree-sitter resolver. Results live in `.codemap-cache`, never committed;
-a cold run waits for the server, a warm one answers from the cache. Delete the cache to
-force a full re-query.
+otherwise from a tree-sitter resolver. Results live in `.codemap-cache`, never committed.
+Nothing indexes the whole repo up front: a command asks the server for the files it
+touches, and `index <path>` asks for everything under a path, e.g. the crate you are about
+to map. `callers` and `refs` ask the server about the one symbol. Delete the cache to force
+a full re-query.
 
 ## Build
 

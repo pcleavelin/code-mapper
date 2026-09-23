@@ -101,6 +101,15 @@ lines 0 18
 hash 8153a0a09e1087ab
 note Progress begin/end counting, the quiescent flag, and null answers to the server's own requests so it never blocks on us.
 
+step j58uho
+order 19
+author ai
+file src/lsp.rs
+symbol request_all
+lines 0 29
+hash af1ddaffc83ff94f
+note Many requests with up to 64 in flight, answers returned in the order asked by matching ids; notifications and server requests that arrive meanwhile are handled as request does. This is what lets rust-analyzer answer on its own threads instead of one request at a time.
+
 step k7abu8
 order 7
 parent iughfk
@@ -154,9 +163,9 @@ order 0
 author ai
 file src/lsp.rs
 symbol start
-lines 0 36
-hash e6aac83ab2a2e244
-note Spawn, reader thread, initialize handshake. Declares hierarchical symbols, call hierarchy, progress and rust-analyzer's server-status notification.
+lines 0 38
+hash f7daa1346a2d8359
+note Spawn, reader thread, initialize handshake. Declares hierarchical symbols, call hierarchy, progress and rust-analyzer's server-status notification, and turns off rust-analyzer's cache priming, so a large workspace is ready once loaded and each answer is computed when asked.
 
 step usbs7l
 order 1

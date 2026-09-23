@@ -21,7 +21,6 @@ fn cli_main(root: &Path, args: &[String]) -> i32 {
         }
     };
     let mut idx = index::build(root);
-    idx.run_backends(|m| eprintln!("{m}"));
     let map_path = root.join(map::MAP_DIR);
     // a map that does not read stops every command, so no save can write over what is there
     let mut map = match Map::load(&map_path) {
@@ -37,7 +36,10 @@ fn cli_main(root: &Path, args: &[String]) -> i32 {
     let emit = |s: &str| {
         let _ = std::io::Write::write_all(&mut std::io::stdout(), s.as_bytes());
     };
-    match cli::exec(&idx, &mut map, cmd, Author::Ai, &mut out) {
+    let mut servers = index::Servers::new(root, |m| eprintln!("{m}"));
+    let done = cli::exec(&mut idx, &mut map, cmd, Author::Ai, Some(&mut servers), &mut out);
+    drop(servers);
+    match done {
         Ok(dirty) => {
             // the map is saved before the command's output is shown, so a line that says a
             // step was added is never printed for a change that did not reach the disk

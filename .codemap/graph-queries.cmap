@@ -5,6 +5,24 @@ author ai
 group index
 note Moving along the call graph: the queries the agent navigates with, and the commands that print them. Everything here is derived from the callee and caller lists link built, so it is only as good as the backend that produced them. Roots are strictly 'calls something, called by nothing'. Call trees are pre-order, depth-limited, and visit each symbol at most once, which is what makes promote produce a tree rather than an explosion.
 
+step 0647og
+order 11
+author ai
+file src/cli.rs
+symbol exec
+lines 103 113
+hash c4a354ba226fe13d
+note index: every pending file under a path asked for at once, how a session readies a crate before mapping it. The GUI refuses it, since it indexes everything in the background.
+
+step 0rubme
+order 10
+author ai
+file src/cli.rs
+symbol need
+lines 0 8
+hash b0f5d167d1b78cb6
+note The one way a command asks for files: only the pending ones go to Servers, and the map's anchors are resolved again after, since a server's answer replaces a file's symbols and their indices.
+
 step 5xix2r
 order 0
 author ai
@@ -14,15 +32,24 @@ lines 0 11
 hash abe17654ebe5c01a
 note Entry points: a symbol with callees and no callers. Sorted by how much each one calls, so the first few are the real entry points of the program and the tail is dead or test-only code.
 
+step 7p5233
+order 8
+author ai
+file src/cli.rs
+symbol exec
+lines 58 67
+hash d0e87466bc491f19
+note callees: the symbols' files are indexed first, since a file's calls are known only once its server answered, then every symbol of that name is printed with its callees.
+
 step 8yeqtb
 order 4
 parent d764ep
 author ai
 file src/cli.rs
 symbol exec
-lines 81 87
-hash 8e8825b36740e4a1
-note The tree command: indentation is the depth the walk returned.
+lines 114 121
+hash 8fa39fe546ab7223
+note The tree command: need_tree indexes the files the tree reaches first, then the walk prints with its depth as indentation.
 
 step d764ep
 order 2
@@ -33,13 +60,22 @@ lines 0 5
 hash f7eaab48fba5decf
 note Pre-order, depth-limited walk from one symbol, each symbol at most once. This is the shape a promoted path takes and the shape the tree command prints.
 
+step el9g3f
+order 9
+author ai
+file src/cli.rs
+symbol need_tree
+lines 0 10
+hash ccc850de739d2915
+note One depth of the call tree at a time: the files the tree reaches and that still wait for a server are indexed, which can reveal deeper callees, until nothing new is reached. tree and promote share it.
+
 step jeuyyl
 order 1
 parent 5xix2r
 author ai
 file src/cli.rs
 symbol exec
-lines 88 92
+lines 122 126
 hash 2afdbc7c9237e967
 note The roots command, and the same list the GUI focuses on at startup.
 
@@ -68,15 +104,15 @@ order 5
 author ai
 file src/cli.rs
 symbol exec
-lines 58 66
-hash e117dde89a539ad9
-note callers and callees share one arm; the only difference is which of the two lists is printed. Both take every symbol of that name, so an unqualified ambiguous name shows all of them rather than erroring.
+lines 68 84
+hash de9237b1cb7ef21e
+note callers: with a server, its incoming calls for the symbol, which cover files nothing has indexed; without one (the GUI's command line), the callers link derived. Every symbol of that name is answered, so an unqualified ambiguous name shows all of them.
 
 step vhx9tz
 order 7
 author ai
 file src/cli.rs
 symbol exec
-lines 67 80
-hash b4534e5c69e37858
-note refs is the odd one out: references come from a language server only, so this arm says which server is missing when the file was resolved by tree-sitter instead.
+lines 85 102
+hash b6fea613833e5675
+note refs: asked of the language's server for the one symbol; the GUI's command line, which has no servers, prints what the xrefs panel already asked for, and a file with no server says which one is missing.

@@ -1,7 +1,8 @@
-//! The server backend: a file's symbols, outgoing calls and references asked of the language's
-//! server, and the bookkeeping of which files still wait for one.
+//! The server backend: files' symbols and outgoing calls asked of the language's server a batch
+//! at a time, one symbol's callers and references asked when they are wanted, and the
+//! bookkeeping of which files still wait for a server.
 
-use super::{Backend, Index, Lang, Symbol, lang_for, treesitter::bare_type};
+use super::{Backend, Index, Lang, SymRef, Symbol, lang_for, treesitter::bare_type};
 use crate::lsp;
 use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
@@ -87,29 +88,171 @@ pub fn start_server(root: &Path, lang: &Lang) -> Result<(lsp::Client, PathBuf), 
     Ok((c, root))
 }
 
-/// One file's symbols, outgoing calls and references from a running server.
-pub fn index_file(c: &mut lsp::Client, root: &Path, path: &str, hash: u64) -> ServerFile {
-    let doc = json!({"uri": lsp::to_uri(&root.join(path))});
-    let syms = c.request("textDocument/documentSymbol", json!({"textDocument": doc})).unwrap_or(Value::Null);
-    let mut symbols = Vec::new();
-    let mut sel = Vec::new();
-    for s in syms.as_array().into_iter().flatten() {
-        push_symbol(s, 0, None, &mut symbols, &mut sel);
-    }
-    for (s, (line, ch)) in symbols.iter_mut().zip(&sel) {
-        let at = json!({"textDocument": doc, "position": {"line": line, "character": ch}});
-        for item in c.request("textDocument/prepareCallHierarchy", at.clone()).unwrap_or(Value::Null).as_array().into_iter().flatten() {
-            let calls = c.request("callHierarchy/outgoingCalls", json!({"item": item})).unwrap_or(Value::Null);
-            s.targets.extend(locations(&calls, root, |call| (&call["to"]["uri"], &call["to"]["selectionRange"]["start"])));
+/// Symbols and outgoing calls for a batch of files from a running server. Each stage (the
+/// files' symbols, every symbol's call-hierarchy item, every item's outgoing calls) is sent
+/// whole, so the server works on many requests at once.
+pub fn index_files(c: &mut lsp::Client, root: &Path, files: &[(String, u64)]) -> Vec<ServerFile> {
+    let docs: Vec<Value> = files.iter().map(|(p, _)| json!({"uri": lsp::to_uri(&root.join(p))})).collect();
+    let answers = c.request_all(docs.iter().map(|d| ("textDocument/documentSymbol", json!({"textDocument": d}))).collect());
+    let mut per_file: Vec<(Vec<Symbol>, Vec<(u64, u64)>)> = Vec::new();
+    for a in answers {
+        let (mut symbols, mut sel) = (Vec::new(), Vec::new());
+        for s in a.unwrap_or(Value::Null).as_array().into_iter().flatten() {
+            push_symbol(s, 0, None, &mut symbols, &mut sel);
         }
-        let mut at = at;
-        at["context"] = json!({"includeDeclaration": false});
-        let refs = c.request("textDocument/references", at).unwrap_or(Value::Null);
-        s.refs = locations(&refs, root, |l| (&l["uri"], &l["range"]["start"]));
-        s.targets.sort();
-        s.targets.dedup();
+        per_file.push((symbols, sel));
     }
-    ServerFile { path: path.to_owned(), hash, symbols }
+    // (file, symbol) of every request in the next two stages, in the order sent
+    let mut who = Vec::new();
+    let mut reqs = Vec::new();
+    for (fi, (_, sel)) in per_file.iter().enumerate() {
+        for (si, (line, ch)) in sel.iter().enumerate() {
+            who.push((fi, si));
+            reqs.push(("textDocument/prepareCallHierarchy", json!({"textDocument": docs[fi], "position": {"line": line, "character": ch}})));
+        }
+    }
+    let items = c.request_all(reqs);
+    let (mut owner, mut reqs) = (Vec::new(), Vec::new());
+    for (w, item) in who.into_iter().zip(items) {
+        for it in item.unwrap_or(Value::Null).as_array().into_iter().flatten() {
+            owner.push(w);
+            reqs.push(("callHierarchy/outgoingCalls", json!({"item": it})));
+        }
+    }
+    for ((fi, si), calls) in owner.into_iter().zip(c.request_all(reqs)) {
+        let calls = calls.unwrap_or(Value::Null);
+        per_file[fi].0[si].targets.extend(locations(&calls, root, |call| (&call["to"]["uri"], &call["to"]["selectionRange"]["start"])));
+    }
+    files
+        .iter()
+        .zip(per_file)
+        .map(|((path, hash), (mut symbols, _))| {
+            for s in &mut symbols {
+                s.targets.sort();
+                s.targets.dedup();
+            }
+            ServerFile { path: path.clone(), hash: *hash, symbols }
+        })
+        .collect()
+}
+
+/// Where a symbol's name sits, as a server counts it: the symbol's first line, which is the
+/// line of its name, and the UTF-16 column of the name on it (0 when the name is not there
+/// as written, as with an impl block).
+pub fn name_position(idx: &Index, r: SymRef) -> (u32, u32) {
+    let (f, s) = (&idx.files[r.file], idx.sym(r));
+    let line = f.lines.get(s.start).map_or("", String::as_str);
+    let col = line.find(&s.name).map_or(0, |b| line[..b].encode_utf16().count());
+    (s.start as u32, col as u32)
+}
+
+/// Every reference to `r`, as (file, line) inside the root, from a running server.
+pub fn references(c: &mut lsp::Client, root: &Path, idx: &Index, r: SymRef) -> Vec<(String, u32)> {
+    let (line, col) = name_position(idx, r);
+    references_at(c, root, &idx.files[r.file].path, line, col)
+}
+
+/// Every reference to the name at (`line`, `col`) of `path`, as (file, line) inside the root.
+pub fn references_at(c: &mut lsp::Client, root: &Path, path: &str, line: u32, col: u32) -> Vec<(String, u32)> {
+    let at = json!({"textDocument": {"uri": lsp::to_uri(&root.join(path))}, "position": {"line": line, "character": col}, "context": {"includeDeclaration": false}});
+    let refs = c.request("textDocument/references", at).unwrap_or(Value::Null);
+    locations(&refs, root, |l| (&l["uri"], &l["range"]["start"]))
+}
+
+/// Every place that calls `r`, as the (file, line) of the caller's name inside the root, from
+/// a running server.
+pub fn incoming_calls(c: &mut lsp::Client, root: &Path, idx: &Index, r: SymRef) -> Vec<(String, u32)> {
+    let (line, col) = name_position(idx, r);
+    let at = json!({"textDocument": {"uri": lsp::to_uri(&root.join(&idx.files[r.file].path))}, "position": {"line": line, "character": col}});
+    let items = c.request("textDocument/prepareCallHierarchy", at).unwrap_or(Value::Null);
+    let reqs: Vec<(&str, Value)> = items.as_array().into_iter().flatten().map(|it| ("callHierarchy/incomingCalls", json!({"item": it}))).collect();
+    let mut out: Vec<(String, u32)> = c.request_all(reqs).into_iter().flat_map(|calls| locations(&calls.unwrap_or(Value::Null), root, |call| (&call["from"]["uri"], &call["from"]["selectionRange"]["start"]))).collect();
+    out.sort();
+    out.dedup();
+    out
+}
+
+/// The CLI's servers: each language's started the first time a command needs it and kept
+/// for the rest of the command, so a command that asks several things starts it once.
+pub struct Servers {
+    root: PathBuf,
+    live: std::collections::HashMap<&'static str, Option<(lsp::Client, PathBuf)>>,
+    report: Box<dyn FnMut(&str)>,
+}
+
+impl Servers {
+    pub fn new(root: &Path, report: impl FnMut(&str) + 'static) -> Servers {
+        Servers { root: root.to_owned(), live: Default::default(), report: Box::new(report) }
+    }
+
+    /// The running server for `lang`, started now if it is not yet. None when it is not on
+    /// PATH or will not start, which is reported once.
+    fn client(&mut self, lang: &'static Lang) -> Option<&mut (lsp::Client, PathBuf)> {
+        if !self.live.contains_key(lang.server) {
+            let started = start_server(&self.root, lang);
+            if let Err(e) = &started {
+                (self.report)(&format!("{e}: its files keep the tree-sitter resolver"));
+            }
+            self.live.insert(lang.server, started.ok());
+        }
+        self.live.get_mut(lang.server).and_then(Option::as_mut)
+    }
+
+    /// Asks the servers for the files among `paths` that still wait for one, then re-links and
+    /// saves the cache when anything was answered. Files of a language with no server keep the
+    /// tree-sitter answer.
+    pub fn index(&mut self, idx: &mut Index, paths: &[String]) {
+        let want: std::collections::HashSet<&str> = paths.iter().map(String::as_str).collect();
+        let mut answered = false;
+        for (lang, files) in idx.pending() {
+            let files: Vec<(String, u64)> = files.into_iter().filter(|(p, _)| want.contains(p.as_str())).collect();
+            if files.is_empty() {
+                continue;
+            }
+            (self.report)(&format!("{}: {} files to index", lang.server, files.len()));
+            let Some((c, root)) = self.client(lang) else {
+                idx.give_up(lang);
+                continue;
+            };
+            let root = root.clone();
+            let mut done = Vec::new();
+            for chunk in files.chunks(32) {
+                done.extend(index_files(c, &root, chunk));
+            }
+            for f in done {
+                idx.apply(f);
+                answered = true;
+            }
+        }
+        if answered {
+            idx.link();
+            idx.save_cache();
+        }
+    }
+
+    /// Where `r` is called from, asked of its language's server; None when there is none.
+    pub fn incoming_calls(&mut self, idx: &Index, r: SymRef) -> Option<Vec<(String, u32)>> {
+        let lang = lang_for(&idx.files[r.file].path)?;
+        let (c, root) = self.client(lang)?;
+        let root = root.clone();
+        Some(incoming_calls(c, &root, idx, r))
+    }
+
+    /// Every reference to `r`, asked of its language's server; None when there is none.
+    pub fn references(&mut self, idx: &Index, r: SymRef) -> Option<Vec<(String, u32)>> {
+        let lang = lang_for(&idx.files[r.file].path)?;
+        let (c, root) = self.client(lang)?;
+        let root = root.clone();
+        Some(references(c, &root, idx, r))
+    }
+}
+
+impl Drop for Servers {
+    fn drop(&mut self) {
+        for (c, _) in self.live.drain().filter_map(|(_, v)| v) {
+            c.shutdown();
+        }
+    }
 }
 
 impl Index {
@@ -147,28 +290,5 @@ impl Index {
                 f.pending = false;
             }
         }
-    }
-
-    /// Runs every pending language's server to completion on this thread, reporting progress
-    /// and failures as one-line messages, then re-links and saves the cache.
-    pub fn run_backends(&mut self, mut report: impl FnMut(&str)) {
-        for (lang, files) in self.pending() {
-            let n = files.len();
-            report(&format!("{}: {n} files to index", lang.server));
-            match start_server(&self.root, lang) {
-                Ok((mut c, root)) => {
-                    for (path, hash) in &files {
-                        self.apply(index_file(&mut c, &root, path, *hash));
-                    }
-                    c.shutdown();
-                }
-                Err(e) => {
-                    report(&format!("{e}: {n} files keep the tree-sitter resolver"));
-                    self.give_up(lang);
-                }
-            }
-        }
-        self.link();
-        self.save_cache();
     }
 }

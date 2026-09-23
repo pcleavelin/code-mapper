@@ -9,6 +9,7 @@ pub(super) enum Req {
     Index(Vec<(String, u64)>),
     Hover(Probe),
     Def(Probe),
+    Refs(Probe), // the position of a symbol's name
 }
 
 /// A position asked about: the file's path and text hash, so an answer for text that has
@@ -40,11 +41,12 @@ pub(super) enum Msg {
     Done(&'static index::Lang),
     Hover(Probe, Option<String>),
     Def(Probe, Option<Def>),
+    Refs(Probe, Vec<(String, u32)>),
 }
 
 /// A language's server, alive on its own thread for the life of the window. It indexes the
-/// files it is sent a batch at a time and answers hover and definition requests between
-/// files, so the pointer never waits behind a batch.
+/// files it is sent a few at a time and answers hover, definition and reference requests
+/// between them, so the pointer never waits behind a batch.
 pub(super) fn serve(root: PathBuf, lang: &'static index::Lang, rx: Receiver<Req>, tx: Sender<Msg>) {
     let (mut c, abs) = match index::start_server(&root, lang) {
         Ok(x) => x,
@@ -89,12 +91,22 @@ pub(super) fn serve(root: PathBuf, lang: &'static index::Lang, rx: Receiver<Req>
                 });
                 let _ = tx.send(Msg::Def(p, d));
             }
+            Some(Req::Refs(p)) => {
+                let refs = index::references_at(&mut c, &abs, &p.path, p.line, p.col);
+                let _ = tx.send(Msg::Refs(p, refs));
+            }
             None => {
-                let Some((path, hash)) = queue.pop_front() else { continue };
-                let f = index::index_file(&mut c, &abs, &path, hash);
-                done += 1;
-                let _ = tx.send(Msg::Progress(format!("{}: {done}/{n}", lang.server)));
-                let _ = tx.send(Msg::File(f));
+                // a few files at a time: enough to keep the server busy, few enough that a
+                // hover waits behind one batch at most
+                let batch: Vec<(String, u64)> = (0..8).map_while(|_| queue.pop_front()).collect();
+                if batch.is_empty() {
+                    continue;
+                }
+                for f in index::index_files(&mut c, &abs, &batch) {
+                    done += 1;
+                    let _ = tx.send(Msg::Progress(format!("{}: {done}/{n}", lang.server)));
+                    let _ = tx.send(Msg::File(f));
+                }
                 if queue.is_empty() {
                     let _ = tx.send(Msg::Done(lang));
                 }
@@ -281,6 +293,13 @@ impl App {
                     self.lookup.asked = self.lookup.asked.saturating_sub(1);
                     self.lookup.inflight = false;
                     self.lookup.hovers.insert(p, Some(t));
+                }
+                Msg::Refs(p, refs) => {
+                    self.lookup.asked = self.lookup.asked.saturating_sub(1);
+                    let at = self.idx.find_file(&p.path).filter(|&fi| self.idx.files[fi].hash == p.hash);
+                    if let Some(s) = at.and_then(|fi| self.idx.files[fi].symbols.iter_mut().find(|s| s.start == p.line as usize)) {
+                        s.refs = refs;
+                    }
                 }
                 Msg::Def(p, d) => {
                     self.lookup.asked = self.lookup.asked.saturating_sub(1);

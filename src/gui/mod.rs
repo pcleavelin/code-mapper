@@ -230,7 +230,7 @@ impl App {
                 return;
             }
         };
-        match cli::exec(&self.idx, &mut self.map, cmd, Author::Human, &mut self.output) {
+        match cli::exec(&mut self.idx, &mut self.map, cmd, Author::Human, None, &mut self.output) {
             Ok(true) => {
                 self.file.dirty = true;
                 self.output.push_str("(map changed, ctrl+s to save)\n");

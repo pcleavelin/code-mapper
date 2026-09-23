@@ -81,7 +81,7 @@ author ai
 file src/index/mod.rs
 symbol Symbol
 lines 0 12
-hash 9357b8d60a9c3357
+hash 4c88ac23448841dd
 note A declaration. start/end are inclusive 0-based rows and are what anchors are measured against, so both backends deliberately start a symbol at the line its name is on. depth is 0 or 1 (a member of an impl, mod, trait or class body), owner is the type it belongs to. calls and targets are the two backends' raw xref material; callees and callers are what link derives from them.
 
 step iq9eyk

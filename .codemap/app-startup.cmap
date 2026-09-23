@@ -150,6 +150,6 @@ parent pucdnk
 author ai
 file src/map.rs
 symbol load
-lines 0 19
-hash 521ee4e565cafe20
+lines 0 22
+hash 0b72b8a79a5feb7c
 note The map. One that does not read is reported in the status bar and the app starts with no paths, and saving is refused until the map on disk reads, since a save would rewrite the files that did not read.

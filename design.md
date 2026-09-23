@@ -194,16 +194,22 @@ neither has symbols only if its grammar is bundled, and no xrefs.
 
 **What the server provides.** `textDocument/documentSymbol` for symbols, filtered to
 top level plus one level of nesting so the shape matches section 4 and anchors are
-unaffected. `callHierarchy/outgoingCalls` per symbol for xrefs.
-`textDocument/references` for references to a symbol: what a `type` path means by
-"what touches this struct". A tree-sitter resolver provides the same three things for
-its language, as well as it can.
+unaffected. `callHierarchy/outgoingCalls` per symbol for xrefs; callers are those
+inverted. Each stage (a batch of files' symbols, every symbol's call-hierarchy item, every
+item's outgoing calls) is sent whole, with up to 64 requests in flight, so the server
+works on them on its own threads. `textDocument/references` and
+`callHierarchy/incomingCalls` are asked for one symbol when they are wanted (`refs`,
+`callers`, the focused symbol in the GUI) and never while indexing: each is a search of
+the whole workspace, and asking it for every symbol costs the number of symbols times the
+occurrences of their names. rust-analyzer starts with cache priming off, so it is ready
+once the workspace is loaded and computes what it is asked when it is asked. A tree-sitter
+resolver provides symbols and calls for its language, as well as it can.
 
 **The live session.** The GUI keeps one server per language running for the life of
 the window, on its own thread. It indexes the files it is sent a batch at a time and
 answers `textDocument/hover` and `textDocument/definition` for the pointer between
 files, so hovering never waits behind a batch. Answers are keyed by file hash and
-position and kept for the session; the CLI starts a server per command and stops it. Answers
+position and kept for the session. Answers
 are merged into the index about once a second rather than as they arrive, since a merge
 re-resolves the map and drops every drawn grid; the re-link that follows, the watch for source
 changes and the rebuild after one each run on their own thread, so no frame waits on the size
@@ -214,8 +220,15 @@ of the repo.
 file's content hash. It is derived from the backend and never committed; it exists so
 the app opens at once and only files that changed are re-queried. The GUI opens on the
 cache and greys out what the cache cannot answer until the server has answered;
-progress is shown. The CLI answers from the cache when the files involved are current,
-otherwise waits for the server.
+progress is shown.
+
+**The CLI indexes what a command touches.** No command indexes the repo up front. One that
+needs a file's calls (`callees`, `tree`, `promote`, and `path-add` and `path-move` for the
+does-not-call note) asks the server for just those files, one depth of a call tree at a
+time, and caches the answers; `callers` and `refs` ask about the one symbol; everything else
+answers from the cache and tree-sitter without starting a server. A server is started at
+most once per command. `index [filter]` asks for every file under a path at once, which is
+how a session readies the crate it is about to map.
 
 Syntax highlighting is tree-sitter for every language regardless of backend, run once
 per file and cached the same way.
@@ -402,8 +415,10 @@ lists the steps that link to the path it prints.
 `== (top level)`) wherever the group changes; `groups` prints the group tree with counts;
 `path-new --group` places a new path directly.
 
-Concurrency: the GUI holds the map in memory and saves whole; the CLI loads, mutates,
-saves whole. Last writer wins. Do not run the CLI while the GUI has unsaved changes.
+Concurrency: the GUI holds the map in memory; the CLI loads, mutates and saves. A save
+writes only the paths its process changed and removes only the ones it removed, against
+what it read, so processes that change different paths (agents mapping different areas at
+once, or the CLI beside the GUI) keep each other's work. On one path the last writer wins.
 
 ## 11. Roadmap
 

@@ -50,8 +50,8 @@ parent 174dll
 author ai
 file src/map.rs
 symbol load
-lines 0 19
-hash 521ee4e565cafe20
+lines 0 22
+hash 0b72b8a79a5feb7c
 note What a reload reads. reload_map puts it in place of the window's map, resolves every anchor against the current index and keeps what of the reading position the new map supports, and the Diff tab's base is read again. An Err leaves the window's map as it was and marks the disk broken, so a save cannot write over files that did not read.
 
 step cqad1j

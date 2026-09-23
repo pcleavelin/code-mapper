@@ -8,7 +8,7 @@ mod link;
 mod server;
 mod treesitter;
 
-pub use server::{ServerFile, index_file, start_server};
+pub use server::{ServerFile, Servers, index_files, name_position, references_at, start_server};
 pub use treesitter::{Parsers, parse_file};
 
 use cache::{CACHE, load_cache};
@@ -48,7 +48,7 @@ pub struct Symbol {
     pub owner: Option<String>,       // the type / class a member belongs to (impl Foo -> "Foo")
     pub calls: Vec<Call>,            // tree-sitter backend: raw call sites, resolved by name in `link`
     pub targets: Vec<(String, u32)>, // server backend: (file, line) of each callee's definition, resolved in `link`
-    pub refs: Vec<(String, u32)>,    // server backend: (file, line) of every reference to this symbol
+    pub refs: Vec<(String, u32)>,    // (file, line) of every reference, once the GUI has asked the server for them
     pub callees: Vec<SymRef>,
     pub callers: Vec<SymRef>,
 }

@@ -1,7 +1,7 @@
 //! Text commands over the same index + map the GUI uses. Runs from the shell (the AI's way in)
 //! and from the GUI's output panel. Output is plain lines, grep-style, written to a String.
 
-use crate::index::{Backend, File, Index, SymRef};
+use crate::index::{Backend, File, Index, Servers, SymRef};
 use crate::map::{Anchor, Author, Change, Kind, Map, Row, StepChange};
 use clap::{CommandFactory, Parser};
 use std::fmt::Write;
@@ -29,8 +29,10 @@ pub enum Command {
     Callers { symbol: String },
     /// <symbol>                         what it calls (xrefs from)
     Callees { symbol: String },
-    /// <symbol>                         every reference to it, file:line: text (needs the language's server)
+    /// <symbol>                         every reference to it, file:line: text (asks the language's server)
     Refs { symbol: String },
+    /// [filter]                         ask the language servers now for every file whose path contains filter (commands otherwise ask for the files they touch)
+    Index { filter: Option<String> },
     /// <symbol> [depth]                 call tree from a symbol (default depth 4)
     Tree {
         symbol: String,
@@ -134,10 +136,46 @@ macro_rules! p {
     ($out:expr, $($t:tt)*) => { let _ = writeln!($out, $($t)*); };
 }
 
-/// Runs one command. Returns whether the map was mutated (caller saves).
-pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut String) -> Result<bool, String> {
+/// Asks `servers` for the files among `files` that wait for a server, then resolves the map's
+/// anchors again, since a server's answer replaces the file's symbols and their indices.
+fn need(servers: &mut Option<&mut Servers>, idx: &mut Index, map: &mut Map, files: Vec<String>) {
+    let Some(s) = servers.as_deref_mut() else { return };
+    let files: Vec<String> = files.into_iter().filter(|p| idx.find_file(p).is_some_and(|fi| idx.files[fi].pending)).collect();
+    if files.is_empty() {
+        return;
+    }
+    s.index(idx, &files);
+    map.resolve_all(idx);
+}
+
+/// Indexes the files the call trees of the symbols named `name` reach within `depth`, one
+/// depth of the tree at a time, since a file's callees are known only once it is indexed.
+fn need_tree(servers: &mut Option<&mut Servers>, idx: &mut Index, map: &mut Map, name: &str, depth: usize) -> Result<(), String> {
+    let mut asked = std::collections::HashSet::new();
+    loop {
+        let reached: Vec<String> = find_symbols(idx, name)?.into_iter().flat_map(|r| idx.call_tree(r, depth)).map(|(n, _)| idx.files[n.file].path.clone()).filter(|p| idx.find_file(p).is_some_and(|fi| idx.files[fi].pending) && !asked.contains(p)).collect();
+        if reached.is_empty() || servers.is_none() {
+            return Ok(());
+        }
+        asked.extend(reached.iter().cloned());
+        need(servers, idx, map, reached);
+    }
+}
+
+/// The files of the step `under` points at in path `name`, for a command that says whether
+/// that step calls the one placed under it.
+fn parent_file(map: &Map, name: &str, under: i64) -> Vec<String> {
+    let step = map.find(name).and_then(|pi| usize::try_from(under).ok().and_then(|u| map.paths[pi].anchors.get(u)));
+    step.map(|a| vec![a.file.clone()]).unwrap_or_default()
+}
+
+/// Runs one command. Returns whether the map was mutated (caller saves). With `servers`, a
+/// command that needs a file's calls asks the language's server for that file first, and
+/// callers and refs ask it about the one symbol; without them (the GUI, which indexes in the
+/// background) every command answers from the index as it is.
+pub fn exec(idx: &mut Index, map: &mut Map, cmd: Command, author: Author, mut servers: Option<&mut Servers>, out: &mut String) -> Result<bool, String> {
     let mut dirty = false;
-    let (callers, check) = (matches!(cmd, Command::Callers { .. }), matches!(cmd, Command::Check));
+    let check = matches!(cmd, Command::Check);
     match cmd {
         Command::Files { filter } => {
             let filter = filter.unwrap_or_default();
@@ -193,30 +231,64 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
                 }
             }
         }
-        Command::Callers { symbol } | Command::Callees { symbol } => {
+        Command::Callees { symbol } => {
+            let files = find_symbols(idx, &symbol)?.into_iter().map(|r| idx.files[r.file].path.clone()).collect();
+            need(&mut servers, idx, map, files);
             for r in find_symbols(idx, &symbol)? {
-                let s = idx.sym(r);
                 p!(out, "{}", describe(idx, r));
-                for &t in if callers { &s.callers } else { &s.callees } {
+                for &t in &idx.sym(r).callees {
+                    p!(out, "  {}", describe(idx, t));
+                }
+            }
+        }
+        Command::Callers { symbol } => {
+            for r in find_symbols(idx, &symbol)? {
+                p!(out, "{}", describe(idx, r));
+                // the server's answer covers files it has not indexed; the index's only its own
+                let from: Vec<SymRef> = match servers.as_deref_mut().and_then(|s| s.incoming_calls(idx, r)) {
+                    Some(calls) => {
+                        let mut v: Vec<SymRef> = calls.iter().filter_map(|(p, l)| idx.by_line(p, *l as usize)).collect();
+                        v.dedup();
+                        v
+                    }
+                    None => idx.sym(r).callers.clone(),
+                };
+                for t in from {
                     p!(out, "  {}", describe(idx, t));
                 }
             }
         }
         Command::Refs { symbol } => {
             for r in find_symbols(idx, &symbol)? {
-                let s = idx.sym(r);
                 p!(out, "{}", describe(idx, r));
-                if idx.files[r.file].backend != Backend::Server {
-                    let server = crate::index::lang_for(&idx.files[r.file].path).map_or("no server for this language", |l| l.server);
-                    p!(out, "  (references need {server})");
-                }
-                for (path, line) in &s.refs {
+                let refs = match servers.as_deref_mut().and_then(|s| s.references(idx, r)) {
+                    Some(refs) => refs,
+                    None if idx.files[r.file].backend == Backend::Server && servers.is_none() => idx.sym(r).refs.clone(),
+                    None => {
+                        let server = crate::index::lang_for(&idx.files[r.file].path).map_or("no server for this language", |l| l.server);
+                        p!(out, "  (references need {server})");
+                        Vec::new()
+                    }
+                };
+                for (path, line) in &refs {
                     let text = idx.find_file(path).and_then(|fi| idx.files[fi].lines.get(*line as usize)).map(|l| l.trim()).unwrap_or("");
                     p!(out, "  {path}:{}: {text}", line + 1);
                 }
             }
         }
+        Command::Index { filter } => {
+            if servers.is_none() {
+                return Err("the GUI asks the servers for every file in the background".into());
+            }
+            let filter = filter.unwrap_or_default();
+            let files: Vec<String> = idx.files.iter().filter(|f| f.pending && f.path.contains(&filter)).map(|f| f.path.clone()).collect();
+            let n = files.len();
+            need(&mut servers, idx, map, files);
+            let left = idx.files.iter().filter(|f| f.pending).count();
+            p!(out, "{n} files asked for; {left} files in the repo still wait for a server");
+        }
         Command::Tree { symbol, depth } => {
+            need_tree(&mut servers, idx, map, &symbol, depth)?;
             for r in find_symbols(idx, &symbol)? {
                 for (node, d) in idx.call_tree(r, depth) {
                     p!(out, "{}{}", "  ".repeat(d), describe(idx, node));
@@ -355,6 +427,13 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
             dirty = true;
         }
         Command::PathAdd { name, target, nums } => {
+            let under = match nums[..] {
+                [] | [_, _] => map.find(&name).map_or(-1, |pi| map.paths[pi].anchors.len() as i64 - 1),
+                [u] | [_, _, u] => u,
+                _ => -1,
+            };
+            let files = parent_file(map, &name, under);
+            need(&mut servers, idx, map, files);
             let pi = find_path(map, &name)?;
             let last = map.paths[pi].anchors.len() as i64 - 1;
             let (lines, under) = match nums[..] {
@@ -394,6 +473,8 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
             dirty = true;
         }
         Command::PathMove { name, index, under } => {
+            let files = parent_file(map, &name, under);
+            need(&mut servers, idx, map, files);
             let pi = find_step(map, &name, index)?;
             map.reparent(pi, index, usize::try_from(under).ok())?;
             p!(out, "step [{index}] now under [{under}]");
@@ -421,6 +502,7 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
             dirty = true;
         }
         Command::Promote { symbol, depth, name } => {
+            need_tree(&mut servers, idx, map, &symbol, depth)?;
             let pi = map.promote(idx, find_symbol(idx, &symbol)?, depth, name.as_deref(), author)?;
             p!(out, "path '{}' now has {} steps", map.paths[pi].name, map.paths[pi].anchors.len());
             dirty = true;

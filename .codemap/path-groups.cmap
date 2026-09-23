@@ -60,7 +60,7 @@ order 7
 author ai
 file src/cli.rs
 symbol exec
-lines 158 164
+lines 192 198
 hash 10c7be7fad6fa0de
 note groups: the group rows of rows() alone, indented by depth.
 
@@ -69,7 +69,7 @@ order 0
 author ai
 file src/cli.rs
 symbol exec
-lines 148 157
+lines 182 191
 hash 8ab36039df19c5eb
 note path-group: moves one path; an empty group puts it back at the top level.
 
@@ -78,7 +78,7 @@ order 6
 author ai
 file src/cli.rs
 symbol exec
-lines 93 124
+lines 127 158
 hash c0b850c79f8b47d7
 note paths: the path rows of rows(), with a == line naming the group wherever it changes, (top level) included, so a flat listing still says where each path sits.
 
@@ -87,6 +87,6 @@ order 3
 author ai
 file src/cli.rs
 symbol exec
-lines 165 169
+lines 199 203
 hash 117764014a7a096f
 note group-rename: moves every path of the group and of the groups inside it.
