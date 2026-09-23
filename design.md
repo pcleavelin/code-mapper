@@ -271,15 +271,34 @@ re-pin put them. The other 29 were gone symbols or rewrites.
 
 ```
 src/
-  index.rs   walk, per-language backends, cache, derived queries  (auto layer)
-  lsp.rs     a minimal language-server client: JSON-RPC over stdio, used by index.rs
-  map.rs     paths, anchors, binary format, staleness             (manual layer)
-  cli.rs     text commands over index + map                       (agent interface, and the GUI's output panel)
-  gfx.rs     the window (winit) and the GPU (wgpu): one pipeline, one glyph atlas, clipping
-  ui.rs      the element tree: open/close, Exact/Fit/Grow, layout passes, one-frame-late input
-  gui.rs     the app: selection, panels, actions                   (human interface)
-  graph.rs   the Graph tab: node tree, layout, scene, hit testing
-  main.rs    entry: CLI or GUI
+  index/          the auto layer
+    mod.rs        files, symbols, the walk, the queries (find, roots, call trees)
+    treesitter.rs symbols, call sites, imports and highlight spans from the syntax tree
+    server.rs     the same from a language server, and which files still wait for one
+    link.rs       call sites and server targets resolved into callees and callers
+    cache.rs      .codemap-cache
+  lsp.rs          a minimal language-server client: JSON-RPC over stdio, used by index/server.rs
+  map.rs          paths, anchors, binary format, staleness, diff, following moved text (manual layer)
+  codec.rs        what both binary files share: little-endian encoding, FNV-1a, the atomic write
+  cli.rs          text commands over index + map  (agent interface, and the GUI's output panel)
+  ui.rs           the element tree: open/close, Exact/Fit/Grow, layout passes, one-frame-late input
+  gfx.rs          the GPU (wgpu): one pipeline, one glyph atlas, clipping
+  window.rs       the window (winit), the event loop, and the test-script runner
+  gui/            the app (human interface)
+    mod.rs        App, the action queue, the frame, the script hooks
+    work.rs       server threads, the source watcher, the rebuild, link and parent-map jobs
+    nav.rs        the selection and the history
+    peek.rs       hover, go-to-definition, the peek and the tooltip
+    widgets.rs    theme, text field, buttons, rows, scrolling columns, the code block
+    panels.rs     top bar, status bar, output panel, left panel, xrefs
+    document.rs   the path document and each step's view state
+    views.rs      listing, search results, map diff
+    graph.rs      the Graph tab: node tree, layout, scene, hit testing
+  main.rs         entry: CLI or GUI
+tests/
+  cli.rs          every command against a generated fixture repo, against golden transcripts
+  gui.rs          scripted GUI scenarios, the state after each step against golden files
+  parity.rs       an old build against this one: transcripts, dumps and screenshots byte for byte
 ```
 
 The UI is its own library, in the shape of odin_editor's `ui`: every frame the app opens
@@ -294,7 +313,7 @@ and numbers, never against the code alone.
 
 `index` and `map` know nothing about the UI. `cli` and `gui` are two front ends over
 the same two structs. Any operation that mutates the map lives on `Map` so both call
-the same code. `cli::run` writes to a `String` so the output panel and stdout share one
+the same code. `cli::exec` writes to a `String` so the output panel and stdout share one
 code path.
 
 `codemap <root>` opens the GUI. `codemap <root> <command> [args]` runs one command,

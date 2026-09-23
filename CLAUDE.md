@@ -70,6 +70,18 @@ force a full re-query.
 `cargo build`, `cargo test`. The GUI is winit + wgpu + fontdue with the tool's own element
 tree (`src/ui.rs`); there is no UI framework underneath.
 
+`cargo test` includes `tests/cli.rs` (every command against a generated fixture, golden
+transcripts) and `tests/gui.rs` (scripted scenarios in real windows, one at a time). A change
+that means to alter output reblesses with `CODEMAP_BLESS=1` and the golden diff is part of the
+commit. A change that means not to (a refactor) proves it against the build before it:
+
+```
+CODEMAP_BASE_BIN=<old codemap.exe> CODEMAP_PARITY_REV=<old rev> cargo test --release --test parity -- --ignored
+```
+
+compares every transcript, GUI dump and screenshot byte for byte; `CODEMAP_PARITY_ONLY=<name>`
+narrows it to one scenario.
+
 ## Testing the GUI without a hand on the mouse
 
 Never claim a visual or interactive behaviour from reading the code; drive it and look.
