@@ -82,6 +82,14 @@ $ codemap diff
 ! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
 ! pyright-langserver: 2 files to index
 ! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-add fresh extra -1
+step [1] extra added under [-1]
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
 # source edits after the commit: repin follows each stale step from @-
 $ codemap stale
 startup[1] src/main.rs:13-16 fill
@@ -90,8 +98,10 @@ startup[4] src/main.rs:17-21 report
 startup[5] src/store.rs:21-25 total_area
 startup[6] src/main.rs (symbol gone) log_line
   same name at src/shapes.rs:32-34   path-pin startup 6 src/shapes.rs 32 34
+startup[7] src/shapes.rs (symbol gone) describe
 stats[1] tools/helpers.py (file gone) mean
 fresh[0] tools/helpers.py (file gone) mean
+fresh[1] tools/stats.py (symbol gone) extra
 ! clangd: 2 files to index
 ! clangd not on PATH: 2 files keep the tree-sitter resolver
 ! rust-analyzer: 3 files to index
@@ -109,9 +119,11 @@ startup[4] src/main.rs:18-22 in @- -> 17-22  5/5 lines kept
 startup[5] src/store.rs:21-25 in @- -> 21-26  5/5 lines kept
   +         let extra = 0.0;
 startup[6] src/main.rs:24-26 in @- -> src/shapes.rs:32-34  3/3 lines kept, text unchanged
+startup[7] left stale: no symbol describe in src/shapes.rs
 stats[1] left stale: its file is gone
 fresh[0] left stale: its file is gone
-4 re-pinned, 3 left stale. Reread the note of every step printed with changed lines.
+fresh[1] left stale: its text is not in @-
+4 re-pinned, 5 left stale. Reread the note of every step printed with changed lines.
 ! clangd: 2 files to index
 ! clangd not on PATH: 2 files keep the tree-sitter resolver
 ! rust-analyzer: 3 files to index
@@ -120,8 +132,10 @@ fresh[0] left stale: its file is gone
 ! pyright-langserver not on PATH: 1 files keep the tree-sitter resolver
 $ codemap stale
 startup[3] src/store.rs:32-34 check
+startup[7] src/shapes.rs (symbol gone) describe
 stats[1] tools/helpers.py (file gone) mean
 fresh[0] tools/helpers.py (file gone) mean
+fresh[1] tools/stats.py (symbol gone) extra
 ! clangd: 2 files to index
 ! clangd not on PATH: 2 files keep the tree-sitter resolver
 ! rust-analyzer: 3 files to index
@@ -130,9 +144,11 @@ fresh[0] tools/helpers.py (file gone) mean
 ! pyright-langserver not on PATH: 1 files keep the tree-sitter resolver
 $ codemap repin @--
 startup[3] left stale: src/store.rs is not in @--
+startup[7] left stale: src/shapes.rs is not in @--
 stats[1] left stale: its file is gone
 fresh[0] left stale: its file is gone
-0 re-pinned, 3 left stale. Reread the note of every step printed with changed lines.
+fresh[1] left stale: tools/stats.py is not in @--
+0 re-pinned, 5 left stale. Reread the note of every step printed with changed lines.
 ! clangd: 2 files to index
 ! clangd not on PATH: 2 files keep the tree-sitter resolver
 ! rust-analyzer: 3 files to index
@@ -141,9 +157,11 @@ fresh[0] left stale: its file is gone
 ! pyright-langserver not on PATH: 1 files keep the tree-sitter resolver
 $ codemap repin nonsense-rev
 startup[3] left stale: src/store.rs is not in nonsense-rev
+startup[7] left stale: src/shapes.rs is not in nonsense-rev
 stats[1] left stale: its file is gone
 fresh[0] left stale: its file is gone
-0 re-pinned, 3 left stale. Reread the note of every step printed with changed lines.
+fresh[1] left stale: tools/stats.py is not in nonsense-rev
+0 re-pinned, 5 left stale. Reread the note of every step printed with changed lines.
 ! clangd: 2 files to index
 ! clangd not on PATH: 2 files keep the tree-sitter resolver
 ! rust-analyzer: 3 files to index
@@ -206,10 +224,8 @@ What running the program does: fill the store, then report its total area.
 
 -- back in top level --
 
-== 2 [7] src/shapes.rs:37-39 describe (ai)
-   37 pub fn describe(s: &dyn Shape) -> String {
-   38     format!("{} of area {:.2}", s.name(), s.area())
-   39 }
+== 2 [7] STALE src/shapes.rs (symbol gone) describe (ai)
+    1 pub trait Shape {
 ! clangd: 2 files to index
 ! clangd not on PATH: 2 files keep the tree-sitter resolver
 ! rust-analyzer: 3 files to index

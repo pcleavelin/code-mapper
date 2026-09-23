@@ -529,9 +529,9 @@ fn call_warning(out: &mut String, idx: &Index, map: &Map, pi: usize, ai: usize) 
 /// Where a stale step's text went: its slice is found in `old` (the file in `rev`) by hash, then
 /// aligned with each symbol of the step's name in its file, or in every file when the file or
 /// the symbol is gone from it (the whole file for a step with no symbol), and the best alignment
-/// wins, ties going to its own file and then to the one nearest the step's old place. Prints the
-/// old and new range and, when the text changed, the lines that differ. An Err says why the step
-/// needs a hand; fewer than half its lines surviving is one such reason.
+/// wins, ties going to the one nearest the step's old place. Prints the old and new range, with
+/// the new file when it moved, and when the text changed, the lines that differ. An Err says
+/// why the step needs a hand; fewer than half its lines surviving is one such reason.
 fn follow_step(idx: &Index, a: &Anchor, old: Option<&[String]>, rev: &str, name: &str, out: &mut String) -> Result<(usize, usize, usize), String> {
     let here = idx.find_file(&a.file);
     let named = |fi: usize| idx.files[fi].symbols.iter().filter(|s| s.name == a.symbol).map(move |s| (fi, s.start, s.end));
@@ -543,8 +543,8 @@ fn follow_step(idx: &Index, a: &Anchor, old: Option<&[String]>, rev: &str, name:
             None => (0..idx.files.len()).flat_map(named).collect(),
         },
     };
-    if regions.is_empty() {
-        return Err(if here.is_none() { "its file is gone".into() } else { format!("no symbol {} in {}", a.symbol, a.file) });
+    if here.is_none() && regions.is_empty() {
+        return Err("its file is gone".into());
     }
     let old = old.ok_or_else(|| format!("{} is not in {rev}", a.file))?;
     let len = (a.off_end - a.off_start) as usize + 1;
@@ -555,10 +555,13 @@ fn follow_step(idx: &Index, a: &Anchor, old: Option<&[String]>, rev: &str, name:
     // three lines of context each side let a changed edge line end at the nearest line that survived
     let (w0, w1) = (a0.saturating_sub(3), (a0 + len + 3).min(old.len()));
     let (window, sa, sb) = (&old[w0..w1], a0 - w0, a0 - w0 + len - 1);
+    if regions.is_empty() {
+        return Err(format!("no symbol {} in {}", a.symbol, a.file));
+    }
     let (fi, lo, s, e, kept, m) = regions
         .iter()
         .filter_map(|&(fi, lo, hi)| crate::map::follow(window, sa, sb, &idx.files[fi].lines[lo..=hi]).map(|(s, e, kept, m)| (fi, lo, s, e, kept, m)))
-        .max_by_key(|&(fi, lo, s, _, kept, _)| (kept, Some(fi) == here, std::cmp::Reverse((lo + s).abs_diff(a.line_start))))
+        .max_by_key(|&(_, lo, s, _, kept, _)| (kept, std::cmp::Reverse((lo + s).abs_diff(a.line_start))))
         .ok_or("none of its lines survive")?;
     if kept * 2 < len {
         return Err(format!("{kept}/{len} lines survive"));

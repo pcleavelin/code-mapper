@@ -174,6 +174,12 @@ fn vcs(bin: &Path) -> String {
     t.run(&["path-pin", "c-lib", "0", "c/lib.c", "8", "9"]);
     t.run(&["path-note", "stats", "Changed."]);
     t.run(&["diff"]);
+    edit_file(&root, "tools/stats.py", "def main():", "def extra():
+    return 1
+
+
+def main():");
+    t.run(&["path-add", "fresh", "extra", "-1"]);
     t.note("source edits after the commit: repin follows each stale step from @-");
     edit_file(&root, "src/store.rs", "    fn check(&self) {", "    fn unrelated(&self) {}\n\n    fn check(&self) {");
     edit_file(&root, "src/store.rs", "< 1000", "< 2000");
@@ -190,6 +196,10 @@ fn vcs(bin: &Path) -> String {
 }
 
 /// Nothing calls this.");
+    edit_file(&root, "src/shapes.rs", "pub fn describe(s: &dyn Shape) -> String {
+    format!(", "pub fn describe_shape(s: &dyn Shape) -> String {
+    format!(\"shape: \" + ");
+    edit_file(&root, "tools/stats.py", "def extra():", "def extra_renamed():");
     t.run(&["stale"]);
     t.run(&["repin"]);
     t.run(&["stale"]);
