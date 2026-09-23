@@ -47,7 +47,9 @@ After changing code, before the commit:
 5. `check` must pass. It exits non-zero on any stale step or any link to a missing path.
 
 After a rebase the same applies: run `stale`, then `repin <rev>` with the change's
-pre-rebase commit (from `jj evolog`), then re-pin the rest.
+pre-rebase commit (from `jj evolog`, or `git reflog` in a git repo), then re-pin the rest.
+After a merge, a conflict in the map sits in `.codemap/<path>.cmap` like any other; resolve it
+there, and `check` refuses to read the map until no conflict is left.
 
 `uncovered` lists symbols in no path, largest first, so the human can audit what you
 judged trivial. `coverage` prints covered/total per file. `codemap help` prints the
@@ -56,7 +58,9 @@ writer wins).
 
 ## Constraints
 
-- No JSON anywhere on disk. The map is a bespoke binary file, see design.md section 8.
+- No JSON anywhere on disk. The map is `.codemap/`, one bespoke text file per path, see
+  design.md section 8. It is written so it merges: keep one field per line and nothing that
+  counts or renumbers.
   Layout changes are free: no migration code, old maps are regenerated.
 - Humans edit only through the GUI. The CLI is the AI's interface and the GUI's
   command line runs the same code.

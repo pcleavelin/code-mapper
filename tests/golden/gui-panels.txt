@@ -1,19 +1,19 @@
-DUMP tab=Path path=Some(0) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
+DUMP tab=Path path=Some(2) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
-DUMP tab=Path path=Some(0) step=Some(5) focus=Some("total_area") file=Some("src/store.rs") sel=Some((20, 24))
+DUMP tab=Path path=Some(2) step=Some(5) focus=Some("total_area") file=Some("src/store.rs") sel=Some((20, 24))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
-DUMP tab=Path path=Some(0) step=Some(5) focus=Some("total_area") file=Some("src/store.rs") sel=Some((20, 24))
+DUMP tab=Path path=Some(2) step=Some(5) focus=Some("total_area") file=Some("src/store.rs") sel=Some((20, 24))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
-DUMP tab=Listing path=Some(0) step=Some(5) focus=Some("total_area") file=Some("src/store.rs") sel=Some((0, 0))
+DUMP tab=Listing path=Some(2) step=Some(5) focus=Some("total_area") file=Some("src/store.rs") sel=Some((0, 0))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
@@ -59,6 +59,15 @@ DUMP tip=None peek=None status="saved"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 $ codemap paths
+c-lib [layer] (ai) (1 steps): The C library's surface.
+  [0] c/lib.c:7-13 int sum_squares(int n) (ai)
+fresh [layer] (0 steps)
+handmade [flow] (1 steps)
+  [0] src/store.rs:13-13 add
+shapes [type] (ai) (3 steps): The Shape trait and the two shapes that implement it.
+  [0] src/shapes.rs:1-4 Shape (ai)
+    [1] src/shapes.rs:14-21 impl Shape for Circle (ai)
+    [2] src/shapes.rs:23-30 impl Shape for Square (ai)
 startup [flow] (ai) (7 steps): What running the program does: fill the store, then report its total area.
   [0] src/main.rs:7-11 main (ai)  -- Entry: builds the store and hands it to the two phases.
     [1] src/main.rs:13-16 fill (ai)  -- Adds one shape of each kind.
@@ -67,15 +76,6 @@ startup [flow] (ai) (7 steps): What running the program does: fill the store, th
     [4] src/main.rs:18-22 report (ai)
       [5] src/store.rs:21-25 total_area (ai)  -- The sum over every shape's own area.
       [6] src/main.rs:24-26 log_line (ai)
-shapes [type] (ai) (3 steps): The Shape trait and the two shapes that implement it.
-  [0] src/shapes.rs:1-4 Shape (ai)
-    [1] src/shapes.rs:14-21 impl Shape for Circle (ai)
-    [2] src/shapes.rs:23-30 impl Shape for Square (ai)
 stats [flow] (ai) (2 steps)
   [0] tools/stats.py:5-7 spread (ai)
     [1] tools/helpers.py:1-2 mean (ai)
-c-lib [layer] (ai) (1 steps): The C library's surface.
-  [0] c/lib.c:7-13 int sum_squares(int n) (ai)
-fresh [layer] (0 steps)
-handmade [flow] (1 steps)
-  [0] src/store.rs:13-13 add

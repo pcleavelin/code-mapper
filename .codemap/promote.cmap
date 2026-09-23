@@ -1,0 +1,75 @@
+codemap 8
+path promote
+kind flow
+author ai
+group cli
+note The scaffolding command, and the reason building a flow is not tedious. promote turns a symbol's call tree into a path shaped like it: one step per symbol, each under the step it is called from, named after the root symbol. The result is a draft, not an answer: the agent then deletes the steps that do not belong to the workflow, re-parents anything the resolver placed wrong, and writes the notes. Running it again on the same path adds only the symbols the path does not already have, so a path can be deepened after a change.
+
+step 6881s1
+order 4
+parent mkum0c
+author ai
+file src/map.rs
+symbol add_anchor
+lines 0 8
+hash 24707bc01c5194d6
+note Each step is anchored to the whole symbol; narrowing one to a slice is a later path-pin.
+
+step 712z8g
+order 2
+parent ia62kn
+author ai
+file src/index/mod.rs
+symbol call_tree
+lines 0 5
+hash f7eaab48fba5decf
+note Where the shape comes from. Default depth is 1: a shallow scaffold the agent deepens on purpose is cheaper to fix than a deep one it has to prune.
+
+step e9sag5
+order 6
+parent ia62kn
+author ai
+file src/map.rs
+symbol name_from
+lines 0 4
+hash 88cfc21416795ccf
+note A path named after its symbol takes the symbol's name with every character a file name cannot hold turned into '-'.
+
+step ggmy6f
+order 0
+author ai
+file src/cli.rs
+symbol exec
+lines 285 289
+hash d9f12a7b0eee6bd8
+note The command: resolve the symbol to exactly one, promote it, report how many steps the path now has.
+
+step i8jlm4
+order 5
+parent 6881s1
+author ai
+file src/map.rs
+symbol new
+lines 0 26
+hash dfec5162360ff8f5
+note Anchoring relative to the symbol itself, so a promoted step stays valid while everything around it moves.
+
+step ia62kn
+order 1
+parent ggmy6f
+author ai
+file src/map.rs
+symbol promote
+lines 0 16
+hash b2d91e751dc08562
+note Walks the call tree in pre-order and keeps a stack of the step index at each depth, so the step created at depth d becomes the parent of everything at depth d+1. The path is created as a flow, since a call tree is a workflow by construction.
+
+step mkum0c
+order 3
+parent ia62kn
+author ai
+file src/map.rs
+symbol promote
+lines 7 11
+hash 0741a1668b37098d
+note Re-promoting reuses the step a symbol already has instead of adding a second one, which also means notes already written survive.

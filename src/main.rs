@@ -6,6 +6,7 @@ mod index;
 mod lsp;
 mod map;
 mod ui;
+mod vcs;
 mod window;
 
 use map::{Author, Map};
@@ -21,12 +22,15 @@ fn cli_main(root: &Path, args: &[String]) -> i32 {
     };
     let mut idx = index::build(root);
     idx.run_backends(|m| eprintln!("{m}"));
-    let map_path = root.join(".codemap");
-    let map = Map::load(&map_path);
-    if map.is_none() && map_path.exists() {
-        eprintln!("{}: unreadable or an old format, starting from an empty map", map_path.display());
-    }
-    let mut map = map.unwrap_or_default();
+    let map_path = root.join(map::MAP_DIR);
+    // a map that does not read stops every command, so no save can write over what is there
+    let mut map = match Map::load(&map_path) {
+        Ok(m) => m,
+        Err(e) => {
+            eprintln!("{e}");
+            return 2;
+        }
+    };
     map.resolve_all(&idx);
     let mut out = String::new();
     // A closed pipe (`| head`) is not an error worth a panic.

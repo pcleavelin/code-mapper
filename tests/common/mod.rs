@@ -1,6 +1,6 @@
-//! The fixture repo and the runners the integration tests share. Every run gets a PATH holding
-//! only the directory jj lives in, so no language server is found and every file is indexed by
-//! tree-sitter: output is the same on every machine and every run.
+//! The fixture repo and the runners the integration tests share. Every run gets a PATH that
+//! finds jj and git and no language server, so every file is indexed by tree-sitter: output is
+//! the same on every machine and every run.
 
 #![allow(dead_code)]
 
@@ -193,20 +193,41 @@ pub fn bin() -> PathBuf {
     PathBuf::from(env!("CARGO_BIN_EXE_codemap"))
 }
 
-/// The directory jj runs from, alone: a PATH that finds jj and no language server.
-// ponytail: assumes jj's directory holds no language server; a temp dir with a link to jj
-// would lift that if a machine needs it.
-fn tool_path() -> String {
+/// Where `tool` is on this process's PATH.
+fn find_tool(tool: &str) -> Option<PathBuf> {
     let path = std::env::var_os("PATH").unwrap_or_default();
-    let exe = if cfg!(windows) { "jj.exe" } else { "jj" };
-    std::env::split_paths(&path)
-        .find(|d| d.join(exe).is_file())
-        .map(|d| d.to_string_lossy().into_owned())
-        .unwrap_or_default()
+    let exe = if cfg!(windows) { format!("{tool}.exe") } else { tool.to_owned() };
+    std::env::split_paths(&path).map(|d| d.join(&exe)).find(|f| f.is_file())
+}
+
+/// A PATH that finds jj and git and no language server. On Unix it is one directory of links
+/// to the two, since git's own directory can hold a server (`/usr/bin/clangd` on macOS); on
+/// Windows it is their directories, since a link to git.exe does not run there.
+fn tool_path() -> String {
+    let tools: Vec<PathBuf> = ["jj", "git"].iter().filter_map(|t| find_tool(t)).collect();
+    if cfg!(windows) {
+        let dirs = tools.iter().filter_map(|t| t.parent().map(Path::to_path_buf));
+        return std::env::join_paths(dirs).map(|p| p.to_string_lossy().into_owned()).unwrap_or_default();
+    }
+    let dir = std::env::temp_dir().join("codemap-tests").join("tools");
+    std::fs::create_dir_all(&dir).unwrap();
+    for t in &tools {
+        let link = dir.join(t.file_name().unwrap());
+        if std::fs::read_link(&link).ok().as_ref() != Some(t) {
+            let _ = std::fs::remove_file(&link);
+            #[cfg(unix)]
+            let _ = std::os::unix::fs::symlink(t, &link); // a test running beside this one may have made it
+        }
+    }
+    dir.to_string_lossy().into_owned()
 }
 
 pub fn has_jj() -> bool {
-    !tool_path().is_empty()
+    find_tool("jj").is_some()
+}
+
+pub fn has_git() -> bool {
+    find_tool("git").is_some()
 }
 
 /// A scratch directory for `name` at a fixed place, so two binaries run in turn see the same
@@ -240,6 +261,29 @@ pub fn codemap(bin: &Path, root: &Path, args: &[&str]) -> (String, String, i32) 
         s.replace(&root.display().to_string(), "<root>").replace(&root.display().to_string().replace('\\', "/"), "<root>")
     };
     (norm(&out.stdout), norm(&out.stderr), out.status.code().unwrap_or(-1))
+}
+
+/// A git repo at the fixture root with the current state committed as HEAD.
+pub fn git_commit(root: &Path, message: &str) {
+    if !root.join(".git").exists() {
+        git(root, &["init", "-q"]);
+    }
+    git(root, &["add", "-A"]);
+    git(root, &["commit", "-q", "-m", message]);
+}
+
+pub fn git(root: &Path, args: &[&str]) -> String {
+    let out = Command::new("git")
+        .args(["-c", "user.name=test", "-c", "user.email=test@example.com", "-c", "commit.gpgsign=false", "-c", "init.defaultBranch=main"])
+        .args(args)
+        .current_dir(root)
+        .env("PATH", tool_path())
+        .env("GIT_CONFIG_GLOBAL", if cfg!(windows) { "NUL" } else { "/dev/null" })
+        .env("GIT_CONFIG_NOSYSTEM", "1")
+        .output()
+        .expect("run git");
+    assert!(out.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&out.stderr));
+    String::from_utf8_lossy(&out.stdout).into_owned()
 }
 
 /// A jj repo at the fixture root with the current state committed as the parent revision.

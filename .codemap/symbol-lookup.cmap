@@ -1,0 +1,35 @@
+codemap 8
+path symbol-lookup
+kind layer
+author ai
+group index
+note How a name on the command line becomes a symbol. Plain names match every symbol of that name across files; Owner::name narrows to an impl owner or a file stem, path/file.rs:name to a file. Commands that read (callers, callees, tree) take every match; commands that write a step (path-add, promote) demand exactly one and list the candidates otherwise.
+
+step kybyb1
+order 0
+parent r89s9h
+author ai
+file src/index/mod.rs
+symbol find_symbols
+lines 0 31
+hash 85568a1b9810ff5b
+note The qualifier splits on :: first, then on a single colon. A bare qualifier is tried as an owner and as a file (stem or path suffix); file:Owner::name pins both, which is what makes every symbol addressable when a free function and a method share a name in one file.
+
+step l7lnjn
+order 2
+parent r89s9h
+author ai
+file src/cli.rs
+symbol find_symbols
+lines 0 3
+hash 4eb288e524592912
+note The reading commands stop here: every match is an answer, and an empty result is the error.
+
+step r89s9h
+order 1
+author ai
+file src/cli.rs
+symbol find_symbol
+lines 0 7
+hash 9f81202e18c613f8
+note The single-match guard. The error lists each candidate under the shortest qualified name that selects it alone, checked by running the lookup, so nothing it offers is itself ambiguous.

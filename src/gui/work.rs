@@ -156,7 +156,7 @@ pub(super) struct Work {
     pub(super) watch_tx: Sender<Vec<(String, Option<SystemTime>)>>, // the file list the watcher thread compares against
     pub(super) watch_rx: Receiver<()>,                              // a source file changed
     pub(super) reindex_rx: Option<Receiver<Index>>,                 // a rebuild is running on a thread
-    pub(super) base_rx: Option<Receiver<Option<Map>>>,              // jj is being asked for the parent revision's map
+    pub(super) base_rx: Option<Receiver<Result<Map, String>>>,              // jj is being asked for the parent revision's map
 }
 
 impl Work {
@@ -187,7 +187,8 @@ impl Work {
 /// The map on disk against the one in memory.
 pub(super) struct MapFile {
     pub(super) path: PathBuf,
-    pub(super) mtime: Option<SystemTime>, // when it was last read or written by this window
+    pub(super) stamp: Option<(SystemTime, usize)>, // the files' newest change and count when this window last read or wrote them
+    pub(super) broken: bool,              // the map on disk does not read, so it is not saved over
     pub(super) dirty: bool,               // edits not saved
     pub(super) last_poll: Instant,        // when the disk was last looked at
     pub(super) warned: bool,              // the status said it changed under unsaved edits
@@ -202,7 +203,10 @@ impl App {
 
     pub(super) fn poll_base(&mut self) {
         if let Some(base) = self.work.base_rx.as_ref().and_then(|rx| rx.try_recv().ok()) {
-            self.base = base;
+            (self.base, self.base_why) = match base {
+                Ok(m) => (Some(m), String::new()),
+                Err(e) => (None, e),
+            };
             self.work.base_rx = None;
         }
     }
@@ -341,16 +345,21 @@ impl App {
             return;
         }
         self.file.last_poll = Instant::now();
-        let mt = mtime(&self.file.path);
-        if mt != self.file.mtime {
+        let mt = crate::map::stamp(&self.file.path);
+        if mt != self.file.stamp {
             if self.file.dirty {
                 if !self.file.warned {
                     self.status = "map changed on disk while you have unsaved changes: save overwrites it, or use the command line to reload".into();
                     self.file.warned = true;
                 }
             } else {
-                self.reload_map();
-                self.file.mtime = mt;
+                self.file.stamp = mt;
+                if let Err(e) = self.reload_map() {
+                    self.file.broken = true;
+                    self.status = format!("{e}; the map in memory is kept and cannot be saved until the one on disk reads");
+                    return;
+                }
+                self.file.broken = false;
                 self.load_base();
                 self.status = "map reloaded (changed on disk)".into();
             }
@@ -361,14 +370,14 @@ impl App {
     /// supports: the path by name, the step when the step at that index is still the same lines
     /// of the same symbol, and a path's fold, collapse and context sets when its step count is
     /// unchanged. Paths are matched by name, so adding one does not shift another's state.
-    pub(super) fn reload_map(&mut self) {
+    pub(super) fn reload_map(&mut self) -> Result<(), String> {
         let was: Vec<(String, usize)> = self.map.paths.iter().map(|p| (p.name.clone(), p.anchors.len())).collect();
         let path_name = self.sel_path.map(|pi| self.map.paths[pi].name.clone());
         let step = self.sel_anchor.zip(self.sel_path).map(|(ai, pi)| {
             let a = &self.map.paths[pi].anchors[ai];
             (ai, a.file.clone(), a.symbol.clone(), a.off_start, a.off_end)
         });
-        self.map = Map::load(&self.file.path).unwrap_or_default();
+        self.map = Map::load(&self.file.path)?;
         self.map.resolve_all(&self.idx);
         self.sel_path = path_name.and_then(|name| self.map.paths.iter().position(|p| p.name == name));
         self.sel_anchor = match (self.sel_path, step) {
@@ -386,6 +395,7 @@ impl App {
             .filter_map(|(old, (name, n))| self.map.paths.iter().position(|p| p.name == *name && p.anchors.len() == *n).map(|new| (old, new)))
             .collect();
         self.remap_steps(|(pi, ai)| kept.get(&pi).map(|&p| (p, ai)));
+        Ok(())
     }
 
     /// Run `change` on the index and carry the selection, the listing and the map's anchors

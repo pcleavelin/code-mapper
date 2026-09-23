@@ -1,0 +1,150 @@
+codemap 8
+path panel-dock
+kind flow
+author ai
+group gui
+note How the panels around the centre are placed, resized and moved. Three panels (Paths/Symbols/Files, Xrefs, Output) each sit on one edge of the window - left, right or bottom - in an order along that edge and at a size across it. The layout is one list of places, read every frame: the frame asks for every size first, clamped so the centre stays usable, then draws each edge's panels in list order with a splitter on the centre side. Dragging a splitter puts the panel's inner edge under the pointer; pressing a panel's header and dragging shows a band where it would land and moves it there on release. Nothing is saved: a launch starts from the default layout.
+
+step 0tkusi
+order 3
+parent ps5c7a
+author ai
+file src/gui/dock.rs
+symbol Edge
+lines 0 4
+hash aa78012cbc7dea04
+note Where a panel can go. There is no top edge: the top bar is there.
+
+step 11msjx
+order 10
+author ai
+file src/gui/dock.rs
+symbol docked
+lines 0 24
+hash 6f9b5dc573006f50
+note Called three times by the frame: left before the centre, right after it, bottom after the row. Each panel is a clipped box holding its splitter on the centre side and the panel's own function, which fills the box and opens its header through grip. Xrefs is told its width and height, since its header and peek fit themselves to the panel.
+
+step 3ya2ip
+order 14
+author ai
+file src/gui/dock.rs
+symbol drag_band
+lines 0 5
+hash 3c86db7102fe7ef9
+note Called by the frame after the tree is closed, so the band it opens floats above every panel: while an armed header is held, a translucent band over the place drop_target says the panel would take.
+
+step 442hh3
+order 8
+author ai
+file src/gui/dock.rs
+symbol sizes
+lines 0 14
+hash 546759fd7c04a719
+note Called after dock_input, before any panel is drawn. Each axis in turn: side panels share the window width with a 20-column centre, bottom panels share the height with 12 rows of top bar, centre and status bar. Each panel gets what it asks for, clamped to a floor and to what is left after the floors of the panels after it. The stored size is never touched here, so a panel squeezed by a small window, or by a wide neighbour, grows back when there is room again.
+
+step bbcdqv
+order 5
+parent c243u8
+author ai
+file src/gui/dock.rs
+symbol default
+lines 0 3
+hash 2cc0ee403f2d08e4
+note The layout a launch starts with, the one the fixed panels had: Paths on the left, Xrefs on the right, Output at the bottom, all at default sizes.
+
+step c243u8
+order 0
+author ai
+file src/gui/dock.rs
+symbol Dock
+lines 0 4
+hash 2dc6b7f360830634
+note The whole layout: the places, the header being held if any, and the cursor the frame asks the window for, reset to the default at the start of every frame and set by whatever the pointer is over.
+
+step hy57r7
+order 12
+parent pcy3d8
+author ai
+file src/gui/dock.rs
+symbol drop_target
+lines 0 24
+hash 462909f26df46a07
+note Decided on last frame's rectangles. Outside the body there is no target, so letting go over the top bar, the status bar or off the window cancels the move. Over the bottom panels or the bottom quarter of the row above them the edge is the bottom; otherwise the half the pointer is in picks left or right. The position is how many of that edge's other panels have their centre before the pointer, so dropping between two panels lands between them. The band is the size the panel will have there: its own when it stays on the same axis, the default otherwise.
+
+step ki2jvf
+order 13
+parent pcy3d8
+author ai
+file src/gui/dock.rs
+symbol move_to
+lines 0 9
+hash 2ccb2a36f781f1a4
+note Removes the place and inserts it before the at-th panel of the new edge, or at the end of the list. A panel changing between a side and the bottom loses its size, which measured the other axis; a panel moving between left and right keeps its width.
+
+step ncti9o
+order 4
+parent c243u8
+author ai
+file src/gui/dock.rs
+symbol Grab
+lines 0 4
+hash af09c60f4ff14a5d
+note A header pressed and not yet released. It turns into a move only after the pointer travels 8 px, so a click on a header moves nothing.
+
+step ohucpm
+order 11
+author ai
+file src/gui/dock.rs
+symbol grip
+lines 0 13
+hash 9711398ee9d10eb5
+note Called by each panel's function to open its header row: the tab row for Paths, a title for Xrefs and Output. A press on the row itself starts a Grab; a press on a button inside it goes to the button, since the smallest element under the pointer takes the press.
+
+step pcy3d8
+order 6
+author ai
+file src/gui/dock.rs
+symbol dock_input
+lines 0 27
+hash d4ed4d0e4d3b3f9a
+note Called by the frame right after the element tree begins, before any size is read, so a drag shows in the frame it happens and a click after a drop is hit-tested against the new layout. A held splitter puts its panel's inner edge under the pointer, from last frame's rectangle of the panel, so the edge follows the pointer with no drift from summing per-frame deltas. A held header arms once the pointer has travelled; released, it moves the panel if it was armed and the pointer is over a target, and otherwise just lets go.
+
+step ps5c7a
+order 1
+parent c243u8
+author ai
+file src/gui/dock.rs
+symbol Place
+lines 0 4
+hash f4c7dc3f8ff98ff8
+note One panel's dock: its edge and its size across that edge. The list's order is the order along each edge, left to right and top to bottom; only same-edge neighbours' relative order means anything. A size of None follows the window, the way the fixed layout did.
+
+step pydeuk
+order 7
+parent 442hh3
+author ai
+file src/gui/dock.rs
+symbol default_size
+lines 0 5
+hash 0a83dcdb9ec136a6
+note The size a panel has until it is dragged: at a side the old fixed widths (44 columns for Paths, 40 otherwise, at most a quarter of the window), at the bottom a sixth of the window height, at least six rows.
+
+step r4ihf3
+order 2
+parent ps5c7a
+author ai
+file src/gui/dock.rs
+symbol Panel
+lines 0 4
+hash 25bc5a17e585d72f
+note The three dockable panels. The name is what element ids and dumps call them: panel@nav, grip@xrefs, split@output.
+
+step ziukmm
+order 9
+parent 11msjx
+author ai
+file src/gui/dock.rs
+symbol splitter
+lines 0 15
+hash 90a769034f5d041f
+note The bar between a panel and the centre. It is several pixels wide so it is easy to catch, but only the line beside the panel shows; the rest is the centre's colour. Hovered or held it turns accent-coloured and asks for a resize cursor, except while another drag holds the mouse. The resizing itself is dock_input's.

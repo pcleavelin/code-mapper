@@ -1,0 +1,53 @@
+codemap 8
+path selection
+kind flow
+author ai
+group gui
+note One selection for the whole app: a symbol, with a step behind it when it was reached through a path. Every view reads the same three fields - the focused symbol, the path being read and the selected step - and none keeps a copy: the graph derives its whole node set from them every frame, and the document and outline read them directly, so the three cannot disagree. Two entry points: select_step for anything path-shaped, select_symbol for anything else; select_symbol turns into select_step when the symbol is a whole-symbol step of the path being read, so an xref click onto a step lands on the step.
+
+step 0gu816
+order 2
+author ai
+file src/gui/nav.rs
+symbol select_symbol
+lines 0 10
+hash ec3983baec471a40
+note The symbol entry point: the Symbols tab, xrefs, jumps, off-path graph nodes. Clears the step, unless the symbol is a whole-symbol step of the path being read, in which case that step is selected instead.
+
+step ascpfh
+order 0
+author ai
+file src/gui/nav.rs
+symbol select_step
+lines 0 36
+hash 5784b2fcadca70b2
+note The step entry point. Sets the path and step, focuses the step's symbol and selects its lines, asks the document to scroll the header to the top unless the click was inside it, and leaves a Listing, Results or Diff tab for the Path tab.
+
+step epz6w8
+order 4
+parent ascpfh
+author ai
+file src/gui/graph.rs
+symbol rebuild
+lines 0 89
+hash 484d0c16623e3e4f
+note The graph reads the same two fields and keeps nothing of its own: every frame it derives its node set from the selected path and the focused symbol, so it cannot disagree with the document or the outline. The path is drawn whenever one is selected, step or no step: selecting a symbol off the path adds it as another root beside the path rather than replacing it.
+
+step gjewkp
+order 1
+parent ascpfh
+author ai
+file src/gui/nav.rs
+symbol focus
+lines 0 10
+hash 34d6270b286e8114
+note Listing position, line selection and the selected symbol; the tab is left alone. Asks the graph to centre on the symbol, unless the graph itself made the selection and set hold_look, because a click that starts a drag must not move the camera.
+
+step n6l1xb
+order 3
+author ai
+file src/gui/nav.rs
+symbol select_path
+lines 0 6
+hash 31a23afc22a8d319
+note Opening a path selects its first step, so the outline, document and graph all have something to show at once.

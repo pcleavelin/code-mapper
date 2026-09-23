@@ -1,0 +1,188 @@
+codemap 8
+path lsp-client
+kind layer
+author ai
+group index
+note A minimal language-server client: JSON-RPC over the spawned server's stdio, and nothing more of the protocol than this tool needs. Requests are synchronous - a reader thread queues every incoming message and request() blocks for the matching id, servicing notifications and the server's own requests as they go by, which is what keeps a chatty server from deadlocking. The client is used by the index's server backend (index/server.rs) for exactly three things: document symbols, outgoing calls and references. Everything about it is shaped by one fact: a server takes seconds to become useful, so wait_ready exists and the answers are cached.
+
+step 0o0uib
+order 17
+parent xwfud3
+author ai
+file src/lsp.rs
+symbol at
+lines 0 2
+hash 9ae960243cb61ccf
+note The parameters every position request shares: the document URI and a 0-based line and UTF-16 column.
+
+step 3bn4hl
+order 18
+author ai
+file src/lsp.rs
+symbol definition
+lines 0 5
+hash 83d0fc3a07128168
+note Position request: where the thing at a line and column is defined, first location only.
+
+step 6iovly
+order 5
+parent usbs7l
+author ai
+file src/lsp.rs
+symbol send
+lines 0 4
+hash 698cdec411653b55
+note The write side of the same framing. Every outgoing message goes through here.
+
+step 7mq2wh
+order 3
+author ai
+file src/lsp.rs
+symbol wait_ready
+lines 0 19
+hash a6f5443667a4ebfa
+note Query too early and the server answers empty. Ready means the server said so, or every progress it began has ended and nothing new arrived for half a second; a silent server counts as ready after three seconds.
+
+step 8h8eat
+order 11
+parent urk25j
+author ai
+file src/lsp.rs
+symbol Client
+lines 0 8
+hash 956b234b78cdc79e
+note The client state: the child process, the queue the reader thread fills, and the three things wait_ready watches - how many progress tokens are open, when the last one moved, and rust-analyzer's own quiescent flag.
+
+step b1v4eb
+order 12
+author ai
+file src/lsp.rs
+symbol shutdown
+lines 0 4
+hash 794364a94930762a
+note A polite shutdown, so the server writes its caches instead of being killed.
+
+step g63niv
+order 9
+parent qwrnwl
+author ai
+file src/lsp.rs
+symbol percent_decode
+lines 0 16
+hash 0a589ef4997d57bb
+note The reverse of to_uri's escaping: the servers answer with escaped URIs, so decoding is needed before anything can be compared to a path.
+
+step h4trcd
+order 13
+parent b1v4eb
+author ai
+file src/lsp.rs
+symbol drop
+lines 0 2
+hash bc8c4e59f0c87052
+note The impolite one, for every path that does not reach shutdown. A language server left running would keep indexing the repo forever.
+
+step iq3ejv
+order 15
+author ai
+file src/lsp.rs
+symbol relative
+lines 0 6
+hash 5888c27336c5ef27
+note Absolute path under the root to a root-relative forward-slash path, or None outside it. Server URIs come back as file:///c%3A/... on Windows; uri_path decodes one to a path, and this case-insensitive prefix check against the root gives the repo-relative path every other part of the tool uses.
+
+step iughfk
+order 2
+parent usbs7l
+author ai
+file src/lsp.rs
+symbol handle
+lines 0 18
+hash 8153a0a09e1087ab
+note Progress begin/end counting, the quiescent flag, and null answers to the server's own requests so it never blocks on us.
+
+step k7abu8
+order 7
+parent iughfk
+author ai
+file src/lsp.rs
+symbol reply
+lines 0 2
+hash 5247b2ebec784873
+note Answering a request the server made of us. The answers are deliberately null: we implement none of what a server might ask for, and a server that never gets an answer stalls.
+
+step ncjyks
+order 8
+parent urk25j
+author ai
+file src/lsp.rs
+symbol to_uri
+lines 0 10
+hash f96f1537d55db136
+note Paths go out as file: URIs with everything non-alphanumeric percent-escaped, which is what makes a repo path containing spaces work.
+
+step qwrnwl
+order 14
+author ai
+file src/lsp.rs
+symbol uri_path
+lines 0 3
+hash 16fea0aa2af19d51
+note URI to absolute path; definition targets outside the repo need the path itself, not one relative to the root.
+
+step s8zh4t
+order 6
+parent urk25j
+author ai
+file src/lsp.rs
+symbol notify
+lines 0 2
+hash 0c90f848db862090
+note A message with no id: no answer expected, nothing to wait for. Used for 'initialized' and 'exit'.
+
+step umi6fd
+order 10
+author ai
+file src/lsp.rs
+symbol find_on_path
+lines 0 15
+hash 81c28420124305d1
+note Whether the language has a server at all. On Windows it also walks PATHEXT, because several of these servers install as .cmd shims and a bare name would not be found.
+
+step urk25j
+order 0
+author ai
+file src/lsp.rs
+symbol start
+lines 0 36
+hash e6aac83ab2a2e244
+note Spawn, reader thread, initialize handshake. Declares hierarchical symbols, call hierarchy, progress and rust-analyzer's server-status notification.
+
+step usbs7l
+order 1
+parent urk25j
+author ai
+file src/lsp.rs
+symbol request
+lines 0 14
+hash 28b70f310aa209fb
+note Waits for the matching id; everything else goes through handle.
+
+step xwfud3
+order 16
+author ai
+file src/lsp.rs
+symbol hover
+lines 0 19
+hash a87e4ecdef9d942f
+note Position request: what the server knows about the thing at a line and column, as plain lines.
+
+step ygnj7n
+order 4
+parent urk25j
+author ai
+file src/lsp.rs
+symbol read_message
+lines 0 21
+hash 50d17b60956f150c
+note The framing: Content-Length headers, a blank line, then that many bytes of JSON. Returning None ends the reader thread, which is how a server that died is noticed.

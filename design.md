@@ -50,7 +50,7 @@ Deferred items and their triggers are in section 11.
 | **Group** | Where a path sits in the paths list: a name, with `/` nesting one group in another (`flows/http`). One group per path, or none. A group exists while a path is in it. Groups order the list and change nothing else. |
 | **Kind** | `flow`: a workflow, what happens when X. `layer`: an abstraction boundary, the functions that form its surface. `type`: a data structure and what mutates it. A module is a layer whose root is the file. Kinds are a tag: listed and filterable, no rendering difference. |
 | **Coverage** | A symbol is covered if any step's anchor overlaps its line range. Derived, never stored. |
-| **Map** | All paths for one root. One file, `.codemap`, at the root, committed with the code. |
+| **Map** | All paths for one root. A directory, `.codemap/`, at the root, one text file per path, committed with the code. |
 | **Auto layer** | Everything derived from source: files, symbols, xrefs, roots, call trees, coverage. Cached on disk for startup speed, never committed. |
 | **Manual layer** | The map. Written by the agent through the CLI, occasionally by the human through the GUI. The only thing persisted. |
 
@@ -85,8 +85,11 @@ After changing code, before the commit:
 5. `check` must pass. It exits non-zero on any stale step or any link to a missing path.
 
 After a rebase the same rule applies: the map is stale, run `stale`, then `repin <rev>` from
-the pre-rebase commit, then re-pin the rest. There is
-no merge story and none is needed.
+the pre-rebase commit, then re-pin the rest.
+
+Merging a branch merges its map with the rest of the code (section 8). A conflict is
+confined to the field both sides changed; resolve it in the file like any other conflict,
+then run `check`, which refuses to read a map with a conflict left in it.
 
 Coverage is observable, not enforced. `uncovered` lists symbols in no path, largest
 first, so what remains after a session is either pre-existing or something the agent
@@ -162,7 +165,7 @@ Editing in the GUI is limited to what a reader needs: delete a step or a path, a
 a selection from the listing when hand-authoring. `roots` and `promote`
 are CLI commands and run from the output panel.
 
-If `.codemap` changed on disk and there are no unsaved edits, it reloads. If any
+If a file in `.codemap/` changed on disk and there are no unsaved edits, it reloads. If any
 indexed source file changed, it re-indexes and carries the graph over by
 (file, symbol) identity. New or deleted files need a restart.
 
@@ -225,31 +228,56 @@ are never persisted.
 
 ## 8. Map file format
 
-`.codemap` at the root. Little-endian. Strings are `u32 len` + UTF-8 bytes. Hand-rolled
-reader and writer, no serialization dependency, no JSON anywhere on disk.
+`.codemap/` at the root: one text file per path, `<name>.cmap`, committed with the code.
+Hand-rolled reader and writer, no serialization dependency, no JSON anywhere on disk. The
+layout exists so that the map merges: two branches that change different paths never touch
+the same file, and two that change one path touch different lines unless they edit the same
+field of the same step.
 
 ```
-"CMAP"  u32 version
-u32 npaths
-  str name
-  u8  kind          0 = flow, 1 = layer, 2 = type
-  str note
-  u8  author        0 = human (GUI), 1 = AI (CLI)
-  str group         "" = none, / between nested groups
-  u32 nsteps
-    str file        relative path, forward slashes
-    str symbol      enclosing symbol name, "" = absolute lines
-    i32 off_start   line offset from symbol start (or absolute line)
-    i32 off_end     inclusive
-    u64 hash        FNV-1a of the anchored lines joined with \n
-    u8  author
-    str note
-    i32 parent      index of the parent step in this list, -1 = root
-    str link        name of the path this step links to, "" = none
+codemap 8
+path <name>
+kind flow | layer | type
+author ai | human        human = GUI, ai = CLI
+group <group>            optional; / between nested groups
+note <text>              optional
+
+step <id>
+order <n>                the step's place in the step list
+parent <id>              optional; a root has none
+author ai | human
+file <path>              relative, forward slashes
+symbol <name>            optional; none = absolute lines
+lines <start> <end>      offsets from the symbol's first line, or absolute; inclusive
+hash <16 hex digits>     FNV-1a of the anchored lines joined with \n
+link <path name>         optional
+note <text>              optional
 ```
 
-Steps are stored in list order; tree order is derived (roots in list order, children
-in list order, pre-order). Removing a step moves its children up to its parent.
+One field per line, `key value`; the value runs to the end of the line, with `\\`, `\n` and
+`\r` escaping a backslash, a newline and a carriage return. A blank line ends each block.
+Empty optional fields are left out, and nothing in the file is a count.
+
+A step's id is six base36 digits, a hash of what the step pins when it is created, and it
+never changes: a step names its parent by id, so adding or removing a step changes no other
+step's lines. `order` is set once, one past the highest in the path, and only
+`path-swap` changes it; the step list is the steps sorted by order, ties by id. Steps are
+written in id order, so the steps two branches add to one path land at unrelated places in
+the file and merge without a conflict, and two branches that add the same step add the same
+lines. Paths come back in file name order. The CLI's step indices are places in the step
+list, shown for addressing and never stored.
+
+A path name is also a file name: letters, digits, `.`, `_` and `-`, not starting with a dot,
+and never the name of another path in other letter case. A name `promote` takes from a symbol
+has every other character turned into `-`.
+
+Saving writes each path's file only when its text changed, and removes the files of paths
+that are gone; an unchanged map saves to identical bytes. A file with a merge conflict in it,
+or any file that does not read, stops every command with `file:line` and the reason, and the
+GUI does not save over it, since a save would rewrite what did not read.
+
+Tree order is derived (roots in list order, children in list order, pre-order). Removing a
+step moves its children up to its parent.
 
 The tool is in development: the layout changes whenever it needs to, the reader
 rejects any version it does not write, and an old map is regenerated rather than
@@ -270,7 +298,8 @@ Nothing re-anchors on load. The agent that changed the code re-pins; `stale` say
 step's unchanged text now sits when it merely moved, so that re-pin is one command.
 
 `repin [rev]` does the mechanical part for every stale step at once. It reads the step's
-file from `rev` (default `@-`) through jj, finds the old slice by its hash, and aligns it,
+file from `rev` (default: the parent revision) through jj or git, finds the old slice by its
+hash, and aligns it,
 with three lines of context, against each symbol of the step's name in its file, or in every
 file once the file or the symbol is gone from it, so code moved between files is followed.
 The alignment is a patience diff: lines unique to both sides pair first, in the order both
@@ -295,8 +324,9 @@ src/
     link.rs       call sites and server targets resolved into callees and callers
     cache.rs      .codemap-cache
   lsp.rs          a minimal language-server client: JSON-RPC over stdio, used by index/server.rs
-  map.rs          paths, anchors, binary format, staleness, diff, following moved text (manual layer)
-  codec.rs        what both binary files share: little-endian encoding, FNV-1a, the atomic write
+  map.rs          paths, anchors, the map's text files, staleness, diff, following moved text (manual layer)
+  vcs.rs          jj or git: the parent revision, a file or the map directory at a revision
+  codec.rs        the cache's little-endian encoding, FNV-1a, the atomic write
   cli.rs          text commands over index + map  (agent interface, and the GUI's output panel)
   ui.rs           the element tree: open/close, Exact/Fit/Grow, layout passes, one-frame-late input
   gfx.rs          the GPU (wgpu): one pipeline, one glyph atlas, clipping
@@ -402,7 +432,7 @@ graph-side authoring buttons removed. Done when: the M1 test passes in the GUI
 without a terminal.
 
 **M4 — map diff in the GUI.** The working map against the map at the parent revision
-(`jj file show -r @- .codemap`; the GUI shells out, no VCS library). Done when: the
+(`@-` in jj, `HEAD` in git; the GUI shells out, no VCS library). Done when: the
 owner reviews an agent session's map changes without reading `path` output.
 
 **M5 — prompts in the code.** The owner leaves a marker comment in a source file where
@@ -446,8 +476,14 @@ Deferred, with the trigger that would pull each in:
   processes through queues would otherwise be copied into every path that reaches it.
 - Promote default depth is 1; the agent asks for more.
 - Roots are strictly "no callers". One root per process.
-- The map file stays binary. Reviewing map changes is a GUI feature (M3), not a format
-  property.
+- The map is text, one file per path, because it has to merge once more than one person
+  maps a repo. Reviewing map changes is still a GUI feature (M4); the text makes them
+  readable in a jj or git diff too.
+- The VCS is jj when a `.jj` directory is at or above the root, else git. The parent
+  revision is `@-` in jj and `HEAD` in git; both are reached through their command line.
+- Groups are a field in the path's file, not directories: moving a path to another group
+  is then a one-line change that merges with anything else, where a file move on one branch
+  conflicts with an edit on another.
 - Coverage is observable, never a `check` failure.
 - Indexing is per language: the language server when present, a resolver written for
   that language otherwise. No language-agnostic resolver.

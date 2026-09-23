@@ -1,0 +1,110 @@
+codemap 8
+path path-links
+kind flow
+author ai
+group map
+note How a step names another path that documents what its lines call, so shared code and work handed to another process are mapped once and read in place. The link is a field of the step, set by step-link and checked by set_link: the target must exist and cannot be the step's own path. Renaming a path rewrites every link to it, a path that something links to cannot be removed, and check fails on a link to a missing path. path --expand and the document show the linked path inline under the step.
+
+step 39fnt5
+order 10
+author ai
+file src/gui/document.rs
+symbol doc_steps
+lines 77 93
+hash a7b7da8dcc0cf923
+link reader-gui
+note The GUI side: the link controls on a step header, and below them the inline expansion.
+
+step 4ehl92
+order 9
+author ai
+file src/map.rs
+symbol dangling_links
+lines 0 2
+hash b9804d9d67f779c9
+note Links to a missing path. Only a map edited outside these commands has any; stale and check list them.
+
+step 4lquiv
+order 6
+author ai
+file src/cli.rs
+symbol exec
+lines 210 218
+hash 9f68e28c136c9518
+note path-rename: counts the links first so the output says how many now point at the new name.
+
+step 5i63u0
+order 3
+author ai
+file src/cli.rs
+symbol exec
+lines 125 137
+hash 809abec4d1911e13
+note path: the header lists the steps that link here; the steps print through print_steps, which expands links with --expand.
+
+step 7pnsug
+order 5
+parent 5i63u0
+author ai
+file src/cli.rs
+symbol print_steps
+lines 0 28
+hash a55b5048bf8bc125
+note Recursive: a linked path prints under the step one level deeper, numbered after it (1.2 › 1), and ends with an end-of line. chain holds the paths printed around this one, so a cycle prints an expanded-above line once.
+
+step 8j5bux
+order 7
+parent 4lquiv
+author ai
+file src/map.rs
+symbol rename
+lines 0 7
+hash adcfe8a91aaaaee4
+note Renames the path and every link to it in one pass, so no rename leaves a link dangling.
+
+step bnpar9
+order 8
+author ai
+file src/map.rs
+symbol remove_path
+lines 0 6
+hash 665b04fb7f994f56
+note Shared by path-rm and the GUI delete button: refuses while another path links here and names those steps.
+
+step cnqxg6
+order 4
+parent 5i63u0
+author ai
+file src/map.rs
+symbol links_to
+lines 0 2
+hash c0ffae73ff3664a8
+note Backlinks, in map order. The document header and path-rm use it too.
+
+step he08im
+order 2
+author ai
+file src/cli.rs
+symbol exec
+lines 186 194
+hash 0276f03430f48fd2
+note step-unlink: refuses a step that has no link, so a typo in the index says so.
+
+step kl5svv
+order 0
+author ai
+file src/cli.rs
+symbol exec
+lines 180 185
+hash b72aff6228ee2c76
+note step-link: the step must exist, then set_link decides.
+
+step uj55ph
+order 1
+parent kl5svv
+author ai
+file src/map.rs
+symbol set_link
+lines 0 11
+hash 528bda36ff63f1b5
+note The one place a link is set or cleared; an empty target clears it.

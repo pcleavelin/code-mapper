@@ -1,0 +1,97 @@
+$ codemap diff
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+! not in a jj or git repo
+[exit 2]
+# the map and the source are committed as HEAD of a git repo
+$ codemap diff
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap step-note startup 0 "A new entry note."
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-add startup describe -1
+step [7] describe added under [-1]
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-rm shapes
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap step-link stats 0 startup
+step [0] links to 'startup'
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-group c-lib native
+'c-lib' is in native
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap diff
+~ c-lib  (note, kind or group changed)
+~ startup
+    ~ [0] src/main.rs:7-11 main  note edited
+    + [7] src/shapes.rs:33-35 describe  new
+~ stats
+    ~ [0] tools/stats.py:5-7 spread  link changed
+- shapes (3 steps)
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+# source edits after the commit: repin follows each stale step from HEAD
+$ codemap stale
+startup[5] src/store.rs:21-25 total_area
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap repin
+startup[5] src/store.rs:21-25 in HEAD -> 21-25  4/5 lines kept
+  -         let mut sum = 0.0;
+  +         let mut sum = 0.0_f64;
+1 re-pinned, 0 left stale. Reread the note of every step printed with changed lines.
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap check
+ok
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver

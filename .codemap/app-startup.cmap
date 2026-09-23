@@ -1,0 +1,155 @@
+codemap 8
+path app-startup
+kind flow
+author ai
+group gui
+note What happens when codemap is opened as a GUI. One process, one root, everything in memory: the tree is walked and every file parsed or taken from the cache before the window appears, the map is loaded and every anchor resolved against that index, the first path is opened so no view is empty, and two background threads are started - one asking the language servers about whatever the cache could not answer, one asking jj or git for the parent revision's map. Nothing here waits on a server, which is the point of the cache. The App is then handed to the renderer, which creates the window and owns the loop; there is no separate initialisation inside the first frame.
+
+step 2j9b9b
+order 13
+parent pucdnk
+author ai
+file src/gui/work.rs
+symbol new
+lines 0 20
+hash b600c57c6bb10d53
+note Starts the watcher thread, idle until it is handed the file list, and nothing else: servers start on first use and the jobs when there is something to do.
+
+step 3mtm5n
+order 7
+parent pucdnk
+author ai
+file src/map.rs
+symbol resolve_all
+lines 0 6
+hash 1a4ef7f2b6456525
+note Every anchor is resolved against the index that was just built. This is where stale steps get their red colour and where coverage becomes answerable.
+
+step 3y1r9w
+order 10
+parent pucdnk
+author ai
+file src/gui/work.rs
+symbol start_backend
+lines 0 16
+hash 3bf59a66c6c43b08
+note The server thread starts here and the window does not wait for it: pending files are drawn dimmed until their answers arrive.
+
+step 5nd6jr
+order 0
+author ai
+file src/main.rs
+symbol main
+lines 0 12
+hash 0314fda5b468af04
+note The branch: a help flag prints clap's help, a root with more arguments runs one command in text mode, a bare root builds the App and gives it to window::run. App::new therefore runs before any window exists, on the calling thread.
+
+step 786j69
+order 8
+parent pucdnk
+author ai
+file src/gui/work.rs
+symbol mtime
+lines 0 2
+hash fa3f0e3008fc40ce
+note The map file's modification time is remembered so the once-a-second disk poll can tell an external write from its own.
+
+step 7ah903
+order 12
+parent 5nd6jr
+author ai
+file src/window.rs
+symbol run
+lines 0 4
+hash 4ead5735c3fc8de6
+note The handover: the event loop is created and owns the App from here. The window itself is not made until the loop resumes, which is the first thing gfx-loop does. Closing the window just exits the loop, so unsaved map edits are lost; the save button and ctrl+s are the only way out for them.
+
+step fwdacy
+order 9
+parent pucdnk
+author ai
+file src/gui/nav.rs
+symbol select_path
+lines 0 6
+hash 31a23afc22a8d319
+note The first path is opened and its first step selected, so the window lands on a document rather than on an empty frame.
+
+step jg0upl
+order 14
+parent lhmt8w
+author ai
+file src/gui/work.rs
+symbol Work
+lines 0 14
+hash 3f0e36a97849ccdc
+note The threads the window keeps busy and what the frame knows of each: a server per language with its batch and progress, the answers waiting for the next merge, and the link, rebuild, watcher and parent-map channels. working() is true while any of it is in flight.
+
+step lhmt8w
+order 2
+parent pucdnk
+author ai
+file src/gui/mod.rs
+symbol App
+lines 0 48
+hash e04d4fcc5ad54eee
+note Everything the GUI knows, in one struct: the index and the map, the background work (Work), the server lookups (Lookup), the map on disk (MapFile), the reader's selection and History, the step views, the panel state, the fields and the graph. There is no model layer under it - a panel is a method that takes &mut self, draws, and queues Actions.
+
+step mlmsu7
+order 11
+parent pucdnk
+author ai
+file src/gui/work.rs
+symbol load_base
+lines 0 3
+hash 9dc59da9b57db34e
+note jj or git is asked for the parent revision's map on another thread, for the Diff tab. Shelling out to a VCS is slow and entirely optional, so nothing blocks on it.
+
+step pucdnk
+order 1
+parent 5nd6jr
+author ai
+file src/gui/mod.rs
+symbol new
+lines 0 64
+hash b5d0d9fcb53bf8c4
+note Builds the whole application state before the first frame. The order matters: index first, then the map resolved against it, then the first path selected so the document, outline, listing, xrefs and graph all have something in them, then the two background threads.
+
+step t4wzoi
+order 5
+parent v49gqc
+author ai
+file src/index/cache.rs
+symbol save_cache
+lines 0 48
+hash f7b6b1b7712a95b8
+note Written back only when something was parsed or a cached file disappeared, so opening an unchanged repo does not rewrite it.
+
+step uzot4i
+order 4
+parent v49gqc
+author ai
+file src/index/cache.rs
+symbol load_cache
+lines 0 37
+hash ed49ce0a82a316e8
+note The cache read, before the walk begins. Entries come back without their text; the walk fills that in from disk and drops whatever no longer hashes the same.
+
+step v49gqc
+order 3
+parent pucdnk
+author ai
+file src/index/mod.rs
+symbol build
+lines 0 54
+hash dfe30521be00791d
+note The walk. It blocks the startup, which is why the cache exists: a file whose text hash matches its cache entry is taken whole and never parsed.
+
+step yzu1mn
+order 6
+parent pucdnk
+author ai
+file src/map.rs
+symbol load
+lines 0 19
+hash 521ee4e565cafe20
+note The map. One that does not read is reported in the status bar and the app starts with no paths, and saving is refused until the map on disk reads, since a save would rewrite the files that did not read.

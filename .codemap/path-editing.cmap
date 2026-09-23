@@ -1,0 +1,141 @@
+codemap 8
+path path-editing
+kind flow
+author ai
+group cli
+note How the agent builds a path from the command line. Every one of these commands loads the map, mutates it, saves it whole and exits, and every one of them records author = AI so the owner can see what a session wrote. The shape of a flow is the agent's responsibility: path-add takes an explicit parent and warns when a step lands under something that does not call it, which is the one guard rail against a flow that does not read like a call tree.
+
+step 1029p2
+order 3
+author ai
+file src/cli.rs
+symbol exec
+lines 170 174
+hash 062a1203273ede6e
+note path-note: replace the path note. The note is the part written for someone who did not see the code, so it is set separately from creation and usually rewritten once the steps exist.
+
+step 51ob7o
+order 9
+parent sf7kmc
+author ai
+file src/cli.rs
+symbol call_warning
+lines 0 15
+hash 1590a8372021ad7f
+note The guard rail: in a flow, a step belongs under the step that calls it, so a placement the call graph does not support prints a note with the path-move command that fixes it. Only flows are checked; layers and types are groupings, not call trees.
+
+step 59ckov
+order 0
+author ai
+file src/cli.rs
+symbol exec
+lines 138 147
+hash 4e3401dec97eb390
+note path-new: create the path, set its note and its group if they were given. Creating an existing name is a no-op on the path and only replaces what was given, so a script can be re-run.
+
+step d4y66f
+order 12
+parent w73udm
+author ai
+file src/cli.rs
+symbol find_step
+lines 0 6
+hash ec2d5de9acf2a32e
+note The lookup every command that takes a step index goes through: the path by name, then an error when the index is past its last step, so step-note, note-edit, path-swap, path-move and path-pin all reject a bad index the same way.
+
+step f76nu0
+order 13
+parent wezg24
+author ai
+file src/map.rs
+symbol free_name
+lines 0 7
+hash d122b83a0f3314eb
+note The name check for path-new and path-rename: a valid file name, and not another path's name in other letter case, since the two files would be one on a case-insensitive file system.
+
+step i8rnlb
+order 10
+author ai
+file src/cli.rs
+symbol exec
+lines 274 284
+hash 54f5ee04900d52ec
+note path-rm: with an index it deletes one step, without one it deletes the whole path, which Map::remove_path refuses while another path links to it. There is no undo anywhere in this tool.
+
+step ig13b9
+order 7
+parent sf7kmc
+author ai
+file src/cli.rs
+symbol check_range
+lines 0 5
+hash 4d186dea990e90f9
+note The line-range form: user ranges are 1-based inclusive, and this is the one place they become the 0-based rows everything else uses.
+
+step n0e9yx
+order 6
+parent sf7kmc
+author ai
+file src/cli.rs
+symbol find_symbol
+lines 0 7
+hash 9f81202e18c613f8
+note The symbol form demands exactly one match and lists the candidates otherwise, because writing a step into the map is not something to guess at.
+
+step sf7kmc
+order 5
+author ai
+file src/cli.rs
+symbol exec
+lines 219 252
+hash 378344bec924096b
+note path-add, the command that does the real work. The trailing numbers decide what was meant: none or one is a whole symbol, two or three is a line range, and the last number is the parent when it is there. Default parent is the last step added, so consecutive adds build a chain and an explicit index starts a branch.
+
+step uophoa
+order 1
+parent 59ckov
+author ai
+file src/cli.rs
+symbol find_path
+lines 0 2
+hash 589dea042842fb3f
+note Everything else here needs an existing path; this is the lookup, and the error names the path so a typo is obvious.
+
+step w2em3v
+order 11
+parent i8rnlb
+author ai
+file src/map.rs
+symbol remove_anchor
+lines 0 11
+hash 6be07168074c0be6
+note Deleting a step keeps the tree connected by moving its children up, and shifts every index above it.
+
+step w73udm
+order 4
+author ai
+file src/cli.rs
+symbol exec
+lines 175 179
+hash b46a9e6933198236
+note step-note: replace one step's note. The index is the one shown in square brackets by paths, and a bad one is an error rather than a silent no-op.
+
+step wezg24
+order 2
+parent 59ckov
+author ai
+file src/map.rs
+symbol add_path
+lines 0 7
+hash 12650e95f1330532
+note The only constructor of a path, so kind and author exist from birth.
+
+step yrqc53
+order 8
+parent sf7kmc
+author ai
+file src/map.rs
+symbol add_anchor
+lines 0 8
+hash 24707bc01c5194d6
+note The step itself, anchored relative to whatever symbol contains the slice.

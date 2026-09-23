@@ -1,9 +1,9 @@
 //! CLI scenarios: each runs commands against a fresh fixture and returns the transcript.
 
-use super::{Transcript, fixture, has_jj, jj, jj_commit};
+use super::{Transcript, fixture, git_commit, has_git, has_jj, jj, jj_commit};
 use std::path::Path;
 
-pub const SCENARIOS: &[(&str, fn(&Path) -> String)] = &[("cli-read", read), ("cli-edit", edit), ("cli-stale", stale), ("cli-vcs", vcs)];
+pub const SCENARIOS: &[(&str, fn(&Path) -> String)] = &[("cli-read", read), ("cli-edit", edit), ("cli-stale", stale), ("cli-vcs", vcs), ("cli-git", git_vcs), ("cli-merge", merge)];
 
 fn edit_file(root: &Path, path: &str, from: &str, to: &str) {
     let p = root.join(path);
@@ -234,5 +234,80 @@ def main():");
     t.run(&["repin", "nonsense-rev"]);
     t.run(&["path", "startup"]);
     let _ = jj(&root, &["log", "-r", "@", "--no-graph", "-T", "description"]);
+    t.out
+}
+
+fn git_vcs(bin: &Path) -> String {
+    if !has_git() {
+        return "git not on PATH\n".into();
+    }
+    let root = fixture("cli-git", bin, true);
+    let mut t = Transcript { bin, root: root.clone(), out: String::new() };
+    t.run(&["diff"]);
+    t.note("the map and the source are committed as HEAD of a git repo");
+    git_commit(&root, "base");
+    t.run(&["diff"]);
+    t.run(&["step-note", "startup", "0", "A new entry note."]);
+    t.run(&["path-add", "startup", "describe", "-1"]);
+    t.run(&["path-rm", "shapes"]);
+    t.run(&["step-link", "stats", "0", "startup"]);
+    t.run(&["path-group", "c-lib", "native"]);
+    t.run(&["diff"]);
+    t.note("source edits after the commit: repin follows each stale step from HEAD");
+    edit_file(&root, "src/store.rs", "    fn check(&self) {", "    fn unrelated(&self) {}\n\n    fn check(&self) {");
+    edit_file(&root, "src/store.rs", "let mut sum = 0.0;", "let mut sum = 0.0_f64;");
+    t.run(&["stale"]);
+    t.run(&["repin"]);
+    t.run(&["check"]);
+    t.out
+}
+
+/// The last change jj committed, by change id.
+fn committed(root: &Path) -> String {
+    jj(root, &["log", "-r", "@-", "--no-graph", "-T", "change_id"])
+}
+
+fn merge(bin: &Path) -> String {
+    if !has_jj() {
+        return "jj not on PATH\n".into();
+    }
+    let root = fixture("cli-merge", bin, true);
+    let mut t = Transcript { bin, root: root.clone(), out: String::new() };
+    jj_commit(&root, "base");
+    let base = committed(&root);
+    t.note("side one edits a note of startup and adds a step to it");
+    t.run(&["step-note", "startup", "0", "Side one's entry note."]);
+    t.run(&["path-add", "startup", "describe", "-1"]);
+    jj(&root, &["commit", "-m", "one"]);
+    let one = committed(&root);
+    jj(&root, &["new", &base]);
+    t.note("side two edits another note of startup, adds a step to shapes and a new path");
+    t.run(&["step-note", "startup", "5", "Side two's sum note."]);
+    t.run(&["path-add", "shapes", "describe", "0"]);
+    t.run(&["path-new", "fresh", "layer", "From side two."]);
+    jj(&root, &["commit", "-m", "two"]);
+    let two = committed(&root);
+    t.note("the merge of the two has every change and no conflict");
+    jj(&root, &["new", &one, &two]);
+    t.run(&["check"]);
+    t.run(&["paths", "startup"]);
+    t.run(&["paths", "shapes"]);
+    t.run(&["paths", "fresh"]);
+    t.note("a third side also adds a step to startup: merged with side one, the two new steps sit apart in the file and merge");
+    jj(&root, &["new", &base]);
+    t.run(&["path-add", "startup", "mean", "-1"]);
+    jj(&root, &["commit", "-m", "three"]);
+    let three = committed(&root);
+    jj(&root, &["new", &one, &three]);
+    t.run(&["check"]);
+    t.run(&["paths"]);
+    t.note("a fourth side edits the note side one edited: that line conflicts, and nothing reads the map until it is resolved");
+    jj(&root, &["new", &base]);
+    t.run(&["step-note", "startup", "0", "Side four's entry note."]);
+    jj(&root, &["commit", "-m", "four"]);
+    let four = committed(&root);
+    jj(&root, &["new", &one, &four]);
+    t.run(&["check"]);
+    t.run(&["path-note", "startup", "Written over a conflict."]);
     t.out
 }

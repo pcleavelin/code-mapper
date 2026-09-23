@@ -1,0 +1,92 @@
+codemap 8
+path highlighting
+kind flow
+author ai
+group index
+note Where syntax colours come from and where they are painted. tree-sitter does the colouring for every language regardless of which backend supplied the symbols: the grammar's own highlight query runs once per file during the parse, and its captures are bucketed into per-line byte spans with a small class byte. The spans are cached with the rest of the file, so nothing re-parses to draw. The second half of the path is the drawing side, shared by the path document, the listing and the graph nodes.
+
+step acayn1
+order 8
+parent ymeigk
+author ai
+file src/gfx.rs
+symbol Glyphs
+lines 0 4
+hash 5471c4826de3e949
+note The drawn form of a block of text: a row-major grid of (character, colour), NUL past a line's end.
+
+step diqs80
+order 4
+parent mzy6zv
+author ai
+file src/gui/widgets.rs
+symbol hl_color
+lines 0 11
+hash 450c3c5f70a9143b
+note Class byte to colour. The palette lives here and nowhere else.
+
+step jc79gh
+order 2
+author ai
+file src/gui/widgets.rs
+symbol code_block
+lines 0 55
+hash dd5ad37fceed403b
+note The one code element in the GUI: a block of lines drawn from a cached grid by a custom element, with the hover, jump and peek gestures resolved to (line, column) from the pointer. Per-row backgrounds and bars come from two closures, so the listing's selection and anchor bars and the document's slice highlight all share it.
+
+step k0lp9q
+order 0
+author ai
+file src/index/treesitter.rs
+symbol highlight
+lines 0 38
+hash 08cab73d49ecb388
+note Runs the grammar's bundled highlight query over the parsed tree and splits every capture into per-line spans. Captures can nest and overlap, so spans are sorted and the first one wins, which is the convention those queries are written to.
+
+step mzy6zv
+order 3
+parent jc79gh
+author ai
+file src/gui/widgets.rs
+symbol build_grid
+lines 0 21
+hash 59762d43cf871834
+note The line's cached spans become one colour per character in a grid: the line number in the gutter, then the text. Built once per (file text, range); every view of those lines shares the grid and drawing it allocates nothing.
+
+step oy9py2
+order 1
+parent k0lp9q
+author ai
+file src/index/treesitter.rs
+symbol class_of
+lines 0 12
+hash 74161f863db49081
+note Collapses the grammar's capture names (dozens, and different per language) into the eight classes the renderer knows. Anything unrecognised is plain and is not stored at all.
+
+step s9wyjd
+order 6
+parent jc79gh
+author ai
+file src/gui/widgets.rs
+symbol grid
+lines 0 11
+hash 06577bf23b0fa6e0
+note The cache: (file, text hash, first line, last line) to a shared grid, dropped whole on an index change or past 512 entries.
+
+step uj81kd
+order 5
+author ai
+file src/index/mod.rs
+lines 84 94
+hash 18e4db0908b568e1
+note The vocabulary: a span is a byte range in one line plus a class, and there are eight classes. Storing a class byte rather than a colour is what lets the cache outlive a theme change, and keeps the whole highlight table for a large file small.
+
+step ymeigk
+order 7
+parent jc79gh
+author ai
+file src/gfx.rs
+symbol glyphs
+lines 0 24
+hash a09cecd03492b486
+note Draws a grid: one atlas quad per non-blank cell, rows outside the clip skipped, nothing allocated.

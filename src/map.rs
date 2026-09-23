@@ -1,5 +1,6 @@
-use crate::codec::{Reader, fnv1a, w_str, write_retry};
+use crate::codec::{fnv1a, write_retry};
 use crate::index::{File, Index, SymRef};
+use crate::vcs::Vcs;
 use std::path::Path;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -15,10 +16,17 @@ impl Author {
             Author::Ai => " (ai)",
         }
     }
-    fn from_u8(b: u8) -> Option<Author> {
-        match b {
-            0 => Some(Author::Human),
-            1 => Some(Author::Ai),
+    /// The word the map file writes.
+    pub fn name(self) -> &'static str {
+        match self {
+            Author::Human => "human",
+            Author::Ai => "ai",
+        }
+    }
+    pub fn parse(s: &str) -> Option<Author> {
+        match s {
+            "human" => Some(Author::Human),
+            "ai" => Some(Author::Ai),
             _ => None,
         }
     }
@@ -48,18 +56,19 @@ impl Kind {
             _ => None,
         }
     }
-    fn from_u8(b: u8) -> Option<Kind> {
-        Self::parse(Self::NAMES.get(b as usize)?)
-    }
 }
 
 /// Pins a slice of lines. Offsets are relative to the start of the enclosing symbol so the anchor
 /// survives edits elsewhere in the file. `symbol == ""` means absolute lines. `hash` detects when
 /// the anchored text itself changed (-> stale). `parent` makes a path a tree: the step this one
-/// is reached from, None for a root (-1 on disk). `link` names another path that documents
-/// what the step's lines call, `""` for none.
+/// is reached from, None for a root; on disk it is the parent's `id`, which stays the same for
+/// the life of the step. `link` names another path that documents what the step's lines call,
+/// `""` for none. `order` places the step in the step list, which orders siblings the code
+/// does not: it is set once, one past the highest in the path, and only a swap changes it.
 #[derive(Clone)]
 pub struct Anchor {
+    pub id: String,
+    pub order: u32,
     pub file: String,
     pub symbol: String,
     pub off_start: i32,
@@ -142,104 +151,321 @@ pub struct PathDiff {
     pub removed: Vec<Anchor>,       // base steps no longer present (unresolved)
 }
 
-// ---- binary file format ----------------------------------------------------------
-// "CMAP" u32 version
-// u32 npaths { str name, u8 kind, str note, u8 author, str group, u32 nanchors {
-//     str file, str symbol, i32 off_start, i32 off_end, u64 hash, u8 author, str note, i32 parent,
-//     str link } }
-// str = u32 len + utf8 bytes. All little-endian. Any other version is rejected: an old map is
-// regenerated, never migrated.
+// ---- file format -------------------------------------------------------------------
+// `.codemap/` at the root holds one text file per path, `<name>.cmap`, so two branches that
+// change different paths never touch the same file, and two that change one path merge line
+// by line. One field per line, `key value`, the value running to the end of the line with
+// `\` escaping a backslash, a newline (`\n`) and a carriage return (`\r`). A blank line ends
+// the path's block and each step's. Optional fields are left out when empty; nothing counts
+// anything. A step names its parent by id and holds its place in the step list in `order`, so
+// adding a step changes no other. Steps are written in id order, and ids are random, so steps
+// that two branches add to one path land apart in the file and merge without a conflict.
+//
+//   codemap 8
+//   path <name>
+//   kind flow | layer | type
+//   author ai | human
+//   group <group>          optional
+//   note <text>            optional
+//
+//   step <id>
+//   order <n>              the place in the step list; ties go by id
+//   parent <id>            optional: a root has none
+//   author ai | human
+//   file <path>
+//   symbol <name>          optional: none means absolute lines
+//   lines <start> <end>    from the symbol's first line, or absolute
+//   hash <16 hex digits>
+//   link <path name>       optional
+//   note <text>            optional
+//
+// Any other version is rejected: an old map is regenerated, never migrated.
 
-const MAGIC: &[u8; 4] = b"CMAP";
-const VERSION: u32 = 7;
+pub const MAP_DIR: &str = ".codemap";
+const VERSION: &str = "codemap 8";
 
-impl Map {
-    pub fn save(&self, path: &Path) -> std::io::Result<()> {
-        let mut b = Vec::with_capacity(4096);
-        b.extend_from_slice(MAGIC);
-        b.extend_from_slice(&VERSION.to_le_bytes());
-        b.extend_from_slice(&(self.paths.len() as u32).to_le_bytes());
-        for p in &self.paths {
-            w_str(&mut b, &p.name);
-            b.push(p.kind as u8);
-            w_str(&mut b, &p.note);
-            b.push(p.author as u8);
-            w_str(&mut b, &p.group);
-            b.extend_from_slice(&(p.anchors.len() as u32).to_le_bytes());
-            for a in &p.anchors {
-                w_str(&mut b, &a.file);
-                w_str(&mut b, &a.symbol);
-                b.extend_from_slice(&a.off_start.to_le_bytes());
-                b.extend_from_slice(&a.off_end.to_le_bytes());
-                b.extend_from_slice(&a.hash.to_le_bytes());
-                b.push(a.author as u8);
-                w_str(&mut b, &a.note);
-                b.extend_from_slice(&a.parent.map_or(-1, |p| p as i32).to_le_bytes());
-                w_str(&mut b, &a.link);
+/// Lines jj and git write into a file with a conflict in it.
+const CONFLICT_MARKS: [&str; 5] = ["<<<<<<<", "=======", ">>>>>>>", "%%%%%%%", "+++++++"];
+
+fn escape(s: &str) -> String {
+    s.replace('\\', "\\\\").replace('\n', "\\n").replace('\r', "\\r")
+}
+
+fn unescape(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut chars = s.chars();
+    while let Some(c) = chars.next() {
+        match (c, c == '\\') {
+            (_, true) => match chars.next() {
+                Some('n') => out.push('\n'),
+                Some('r') => out.push('\r'),
+                Some(c) => out.push(c),
+                None => out.push('\\'),
+            },
+            (c, false) => out.push(c),
+        }
+    }
+    out
+}
+
+/// A path name as the map stores it: it is also the file name, so letters, digits, `.`, `_`
+/// and `-` only, not starting with a dot.
+pub fn check_name(name: &str) -> Result<(), String> {
+    if name.is_empty() || name.starts_with('.') || !name.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-')) {
+        return Err(format!("'{name}' cannot name a path: use letters, digits, '.', '_' and '-', not starting with '.'"));
+    }
+    Ok(())
+}
+
+/// `name` with every character a path name cannot hold turned into `-`, for names taken from
+/// symbols.
+pub fn name_from(name: &str) -> String {
+    let s: String = name.chars().map(|c| if c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-') { c } else { '-' }).collect();
+    let s = s.trim_matches(|c| c == '-' || c == '.');
+    if s.is_empty() { "path".into() } else { s.to_owned() }
+}
+
+/// A new step id: six base36 digits of a hash of `seed`, which says what the step is, and a
+/// counter that moves past ids the path already holds. The digits spread new steps across the
+/// file, and two branches that add the same step add the same id.
+fn fresh_id(seed: &str, taken: &[Anchor]) -> String {
+    (0u32..)
+        .map(|n| {
+            let mut h = fnv1a(seed.bytes().chain(n.to_le_bytes()));
+            (0..6)
+                .map(|_| {
+                    let d = (h % 36) as u32;
+                    h /= 36;
+                    char::from_digit(d, 36).unwrap_or('0')
+                })
+                .collect::<String>()
+        })
+        .find(|id| !taken.iter().any(|a| &a.id == id))
+        .unwrap_or_default()
+}
+
+impl PathDef {
+    /// The path's file, written the same way every time so saving an unchanged path changes
+    /// no byte.
+    pub fn to_text(&self) -> String {
+        let mut t = String::new();
+        let mut field = |k: &str, v: &str| {
+            t.push_str(k);
+            t.push(' ');
+            t.push_str(&escape(v));
+            t.push('\n');
+        };
+        field("codemap", "8");
+        field("path", &self.name);
+        field("kind", self.kind.name());
+        field("author", self.author.name());
+        if !self.group.is_empty() {
+            field("group", &self.group);
+        }
+        if !self.note.is_empty() {
+            field("note", &self.note);
+        }
+        let mut by_id: Vec<&Anchor> = self.anchors.iter().collect();
+        by_id.sort_by(|a, b| a.id.cmp(&b.id));
+        for a in by_id {
+            t.push('\n');
+            let mut field = |k: &str, v: &str| {
+                t.push_str(k);
+                t.push(' ');
+                t.push_str(&escape(v));
+                t.push('\n');
+            };
+            field("step", &a.id);
+            field("order", &a.order.to_string());
+            if let Some(p) = a.parent.and_then(|p| self.anchors.get(p)) {
+                field("parent", &p.id);
+            }
+            field("author", a.author.name());
+            field("file", &a.file);
+            if !a.symbol.is_empty() {
+                field("symbol", &a.symbol);
+            }
+            field("lines", &format!("{} {}", a.off_start, a.off_end));
+            field("hash", &format!("{:016x}", a.hash));
+            if !a.link.is_empty() {
+                field("link", &a.link);
+            }
+            if !a.note.is_empty() {
+                field("note", &a.note);
             }
         }
-        write_retry(path, &b)
+        t
     }
+}
 
-    pub fn load(path: &Path) -> Option<Map> {
-        Map::from_bytes(&std::fs::read(path).ok()?)
-    }
-
-    /// The map as committed in the parent revision, by shelling out to jj. None when there is
-    /// no jj repo, no committed map, or it cannot be read.
-    pub fn base_from_vcs(root: &Path) -> Option<Map> {
-        let out = std::process::Command::new("jj").args(["file", "show", "-r", "@-", ".codemap"]).current_dir(root).output().ok()?;
-        if !out.status.success() {
-            return None;
+/// Every path in `text`: one path's file, or several files read one after another (what jj
+/// and git print for a directory at a revision). An error names `origin` and the line.
+pub fn parse(text: &str, origin: &str) -> Result<Vec<PathDef>, String> {
+    let mut paths: Vec<PathDef> = Vec::new();
+    let mut parents: Vec<Vec<Option<(String, usize)>>> = Vec::new(); // per path, per step: (parent id, line)
+    let mut in_step = false;
+    for (i, line) in text.lines().enumerate() {
+        let at = |msg: &str| format!("{origin}:{}: {msg}", i + 1);
+        if CONFLICT_MARKS.iter().any(|m| line.starts_with(m)) {
+            return Err(at("an unresolved merge conflict"));
         }
-        Map::from_bytes(&out.stdout)
+        if line.is_empty() {
+            continue;
+        }
+        let (key, raw) = line.split_once(' ').unwrap_or((line, ""));
+        let value = unescape(raw);
+        if key == "codemap" {
+            if line != VERSION {
+                return Err(at(&format!("'{line}' is not '{VERSION}'; regenerate this map")));
+            }
+            paths.push(PathDef { name: String::new(), kind: Kind::Flow, note: String::new(), author: Author::Ai, group: String::new(), anchors: Vec::new() });
+            parents.push(Vec::new());
+            in_step = false;
+            continue;
+        }
+        let Some(p) = paths.last_mut() else { return Err(at(&format!("expected '{VERSION}' first"))) };
+        let author = |v: &str| Author::parse(v).ok_or_else(|| at(&format!("unknown author '{v}'")));
+        if key == "step" {
+            if p.anchors.iter().any(|a| a.id == value) {
+                return Err(at(&format!("a second step {value}")));
+            }
+            let mut a = Anchor { id: value, order: 0, file: String::new(), symbol: String::new(), off_start: 0, off_end: 0, hash: 0, author: Author::Ai, note: String::new(), parent: None, link: String::new(), line_start: 0, line_end: 0, stale: true, sym: None };
+            a.author = p.author;
+            p.anchors.push(a);
+            parents.last_mut().unwrap().push(None);
+            in_step = true;
+            continue;
+        }
+        if !in_step {
+            match key {
+                "path" => {
+                    check_name(&value).map_err(|e| at(&e))?;
+                    p.name = value;
+                }
+                "kind" => p.kind = Kind::parse(&value).ok_or_else(|| at(&format!("unknown kind '{value}'")))?,
+                "author" => p.author = author(&value)?,
+                "group" => p.group = normal_group(&value),
+                "note" => p.note = value,
+                _ => return Err(at(&format!("unknown field '{key}' of a path"))),
+            }
+            continue;
+        }
+        let a = p.anchors.last_mut().unwrap();
+        match key {
+            "parent" => *parents.last_mut().unwrap().last_mut().unwrap() = Some((value, i + 1)),
+            "order" => a.order = value.parse().map_err(|_| at("order takes a number"))?,
+            "author" => a.author = author(&value)?,
+            "file" => a.file = value,
+            "symbol" => a.symbol = value,
+            "lines" => {
+                let n: Vec<i32> = value.split(' ').filter_map(|v| v.parse().ok()).collect();
+                let [s, e] = n[..] else { return Err(at("lines takes two numbers")) };
+                (a.off_start, a.off_end) = (s, e);
+            }
+            "hash" => a.hash = u64::from_str_radix(&value, 16).map_err(|_| at("hash takes 16 hex digits"))?,
+            "link" => a.link = value,
+            "note" => a.note = value,
+            _ => return Err(at(&format!("unknown field '{key}' of a step"))),
+        }
+    }
+    for (p, ps) in paths.iter_mut().zip(parents) {
+        if p.name.is_empty() {
+            return Err(format!("{origin}: a path with no 'path' line"));
+        }
+        // the step list in order, each step's parent id travelling with it
+        let mut steps: Vec<(Anchor, Option<(String, usize)>)> = std::mem::take(&mut p.anchors).into_iter().zip(ps).collect();
+        steps.sort_by(|(a, _), (b, _)| (a.order, &a.id).cmp(&(b.order, &b.id)));
+        let ps: Vec<Option<(String, usize)>>;
+        (p.anchors, ps) = steps.into_iter().unzip();
+        for (ai, parent) in ps.iter().enumerate() {
+            if let Some((id, line)) = parent {
+                let pi = p.anchors.iter().position(|a| &a.id == id).ok_or_else(|| format!("{origin}:{line}: step {} has parent {id}, which is not a step of '{}'", p.anchors[ai].id, p.name))?;
+                p.anchors[ai].parent = Some(pi);
+            }
+        }
+    }
+    Ok(paths)
+}
+
+/// The newest change time of the map's files and how many there are: what the GUI polls to
+/// know the map changed on disk.
+pub fn stamp(dir: &Path) -> Option<(std::time::SystemTime, usize)> {
+    let mut newest = std::fs::metadata(dir).ok()?.modified().ok()?;
+    let mut n = 0;
+    for e in std::fs::read_dir(dir).ok()?.flatten() {
+        if e.path().extension().is_some_and(|x| x == "cmap") {
+            n += 1;
+            if let Ok(t) = e.metadata().and_then(|m| m.modified()) {
+                newest = newest.max(t);
+            }
+        }
+    }
+    Some((newest, n))
+}
+
+impl Map {
+    /// The map in `dir`, or an empty one when there is no such directory. Paths come in file
+    /// name order. Every file that does not read is an error, and so is a map in the old
+    /// single-file format.
+    pub fn load(dir: &Path) -> Result<Map, String> {
+        if dir.is_file() {
+            return Err(format!("{} is a map in the old single-file format; regenerate it", dir.display()));
+        }
+        let Ok(entries) = std::fs::read_dir(dir) else { return Ok(Map::default()) };
+        let mut files: Vec<std::path::PathBuf> = entries.flatten().map(|e| e.path()).filter(|p| p.extension().is_some_and(|x| x == "cmap")).collect();
+        files.sort();
+        let mut m = Map::default();
+        for f in files {
+            let text = std::fs::read_to_string(&f).map_err(|e| format!("{}: {e}", f.display()))?;
+            let origin = f.display().to_string().replace('\\', "/");
+            let mut ps = parse(&text, &origin)?;
+            match (ps.pop(), ps.is_empty()) {
+                (Some(p), true) if f.file_stem().is_some_and(|s| s == p.name.as_str()) => m.paths.push(p),
+                (Some(p), true) => return Err(format!("{origin}: holds the path '{}', which belongs in {}.cmap", p.name, p.name)),
+                _ => return Err(format!("{origin}: a map file holds exactly one path")),
+            }
+        }
+        Ok(m)
+    }
+
+    /// Write every path to its file in `dir` and remove the files of paths the map no longer
+    /// has. A file whose text is already what it would be is not written.
+    pub fn save(&self, dir: &Path) -> std::io::Result<()> {
+        std::fs::create_dir_all(dir)?;
+        let mut keep = std::collections::HashSet::new();
+        for p in &self.paths {
+            let file = dir.join(format!("{}.cmap", p.name));
+            let text = p.to_text();
+            if std::fs::read_to_string(&file).ok().as_deref() != Some(text.as_str()) {
+                write_retry(&file, text.as_bytes())?;
+            }
+            keep.insert(file);
+        }
+        for e in std::fs::read_dir(dir)?.flatten() {
+            let f = e.path();
+            if f.extension().is_some_and(|x| x == "cmap") && !keep.contains(&f) {
+                std::fs::remove_file(&f)?;
+            }
+        }
+        Ok(())
+    }
+
+    /// The map as committed in the parent revision. Err says why there is none: no repo, no
+    /// committed map, or a map that does not read.
+    pub fn base_from_vcs(root: &Path) -> Result<Map, String> {
+        let vcs = Vcs::detect(root).ok_or("not in a jj or git repo")?;
+        let text = vcs.show_dir(root, vcs.parent(), MAP_DIR).ok_or_else(|| format!("no {MAP_DIR} in {} ({})", vcs.parent(), vcs.name()))?;
+        let paths = parse(&String::from_utf8_lossy(&text), &format!("{MAP_DIR} at {}", vcs.parent()))?;
+        let mut m = Map { paths };
+        m.paths.sort_by(|a, b| a.name.cmp(&b.name));
+        Ok(m)
     }
 
     /// The lines of `path` in revision `rev`, with tabs expanded as the index expands them so
-    /// slice hashes compare. None when there is no jj repo or the file is not in `rev`.
+    /// slice hashes compare. None when there is no repo or the file is not in `rev`.
     pub fn file_from_vcs(root: &Path, rev: &str, path: &str) -> Option<Vec<String>> {
-        let out = std::process::Command::new("jj").args(["file", "show", "-r", rev, path]).current_dir(root).output().ok()?;
-        out.status.success().then(|| String::from_utf8_lossy(&out.stdout).replace('\t', "    ").lines().map(str::to_owned).collect())
-    }
-
-    pub fn from_bytes(data: &[u8]) -> Option<Map> {
-        let mut r = Reader { data, off: 0 };
-        if r.bytes(4)? != MAGIC {
-            return None;
-        }
-        if r.u32()? != VERSION {
-            return None;
-        }
-        let mut m = Map::default();
-        for _ in 0..r.u32()? {
-            let mut p = PathDef {
-                name: r.str()?,
-                kind: Kind::from_u8(r.u8()?)?,
-                note: r.str()?,
-                author: Author::from_u8(r.u8()?)?,
-                group: r.str()?,
-                anchors: Vec::new(),
-            };
-            for _ in 0..r.u32()? {
-                p.anchors.push(Anchor {
-                    file: r.str()?,
-                    symbol: r.str()?,
-                    off_start: r.i32()?,
-                    off_end: r.i32()?,
-                    hash: r.u64()?,
-                    author: Author::from_u8(r.u8()?)?,
-                    note: r.str()?,
-                    parent: usize::try_from(r.i32()?).ok(),
-                    link: r.str()?,
-                    line_start: 0,
-                    line_end: 0,
-                    stale: true,
-                    sym: None,
-                });
-            }
-            m.paths.push(p);
-        }
-        Some(m)
+        let out = Vcs::detect(root)?.show(root, rev, path)?;
+        Some(String::from_utf8_lossy(&out).replace('\t', "    ").lines().map(str::to_owned).collect())
     }
 
     // ---- mutations shared by the GUI and the CLI ----
@@ -248,13 +474,26 @@ impl Map {
         self.paths.iter().position(|p| p.name == name)
     }
 
-    /// Returns the existing path of that name, or creates it.
-    pub fn add_path(&mut self, name: &str, kind: Kind, author: Author) -> usize {
-        if let Some(pi) = self.find(name) {
-            return pi;
+    /// A name a new or renamed path can take: one `check_name` accepts, and not the name of
+    /// another path in other letter case, since the two files would be one on a
+    /// case-insensitive file system.
+    fn free_name(&self, name: &str, pi: Option<usize>) -> Result<(), String> {
+        check_name(name)?;
+        match self.paths.iter().position(|p| p.name.eq_ignore_ascii_case(name)) {
+            Some(other) if Some(other) != pi && self.paths[other].name == name => Err(format!("a path named '{name}' already exists")),
+            Some(other) if Some(other) != pi => Err(format!("'{name}' differs from the path '{}' only in letter case", self.paths[other].name)),
+            _ => Ok(()),
         }
+    }
+
+    /// Returns the existing path of that name, or creates it.
+    pub fn add_path(&mut self, name: &str, kind: Kind, author: Author) -> Result<usize, String> {
+        if let Some(pi) = self.find(name) {
+            return Ok(pi);
+        }
+        self.free_name(name, None)?;
         self.paths.push(PathDef { name: name.to_owned(), kind, note: String::new(), author, group: String::new(), anchors: Vec::new() });
-        self.paths.len() - 1
+        Ok(self.paths.len() - 1)
     }
 
     /// Put path `pi` in `group`, or at the top level with `""`.
@@ -312,6 +551,8 @@ impl Map {
     pub fn pin_anchor(&mut self, idx: &Index, pi: usize, ai: usize, fi: usize, ls: usize, le: usize, author: Author) {
         let old = &self.paths[pi].anchors[ai];
         let mut a = Anchor::new(&idx.files[fi], ls, le, author);
+        a.id = old.id.clone();
+        a.order = old.order;
         a.note = old.note.clone();
         a.parent = old.parent;
         a.link = old.link.clone();
@@ -362,6 +603,9 @@ impl Map {
     /// caller checks before calling this. Returns the new index.
     pub fn add_anchor(&mut self, idx: &Index, pi: usize, fi: usize, ls: usize, le: usize, author: Author, parent: Option<usize>) -> usize {
         let mut a = Anchor::new(&idx.files[fi], ls, le, author);
+        let parent_id = parent.and_then(|p| self.paths[pi].anchors.get(p)).map_or("", |p| p.id.as_str());
+        a.id = fresh_id(&format!("{}\n{}\n{}\n{}\n{}\n{parent_id}", self.paths[pi].name, a.file, a.symbol, a.off_start, a.off_end), &self.paths[pi].anchors);
+        a.order = self.paths[pi].anchors.iter().map(|x| x.order + 1).max().unwrap_or(0);
         a.parent = parent;
         self.paths[pi].anchors.push(a);
         self.paths[pi].anchors.len() - 1
@@ -369,9 +613,7 @@ impl Map {
 
     /// Rename a path, and every link to it with it.
     pub fn rename(&mut self, pi: usize, new: &str) -> Result<(), String> {
-        if self.find(new).is_some_and(|other| other != pi) {
-            return Err(format!("a path named '{new}' already exists"));
-        }
+        self.free_name(new, Some(pi))?;
         let old = std::mem::replace(&mut self.paths[pi].name, new.to_owned());
         for a in self.paths.iter_mut().flat_map(|p| &mut p.anchors).filter(|a| a.link == old) {
             a.link = new.to_owned();
@@ -408,6 +650,9 @@ impl Map {
     pub fn swap_anchors(&mut self, pi: usize, a: usize, b: usize) {
         let p = &mut self.paths[pi];
         p.anchors.swap(a, b);
+        // the places stay where they were, so the two steps trade them
+        let (oa, ob) = (p.anchors[b].order, p.anchors[a].order);
+        (p.anchors[a].order, p.anchors[b].order) = (oa, ob);
         for x in &mut p.anchors {
             x.parent = x.parent.map(|q| if q == a { b } else if q == b { a } else { q });
         }
@@ -504,8 +749,8 @@ impl Map {
     /// A path named `name` (default: after `root`) shaped like the root's call tree: one step per
     /// symbol, each under the step it is called from. Re-promoting adds only symbols the path
     /// lacks.
-    pub fn promote(&mut self, idx: &Index, root: SymRef, depth: usize, name: Option<&str>, author: Author) -> usize {
-        let pi = self.add_path(name.unwrap_or(&idx.sym(root).name.clone()), Kind::Flow, author);
+    pub fn promote(&mut self, idx: &Index, root: SymRef, depth: usize, name: Option<&str>, author: Author) -> Result<usize, String> {
+        let pi = self.add_path(&name.map_or_else(|| name_from(&idx.sym(root).name), str::to_owned), Kind::Flow, author)?;
         let mut stack: Vec<usize> = Vec::new(); // step index at each depth
         for (r, d) in idx.call_tree(root, depth) {
             let s = idx.sym(r);
@@ -519,12 +764,12 @@ impl Map {
             stack.truncate(d);
             stack.push(ai);
         }
-        pi
+        Ok(pi)
     }
 
     /// This map against `base`: every path in either, in this map's order then the removed
-    /// ones. Steps match by (file, symbol); with no symbol, by start line or by note. A match
-    /// with different lines or text is re-pinned, one with a different note is edited.
+    /// ones. Steps match by id. A match with different lines or text is re-pinned, one with a
+    /// different note is edited, one with a different link is relinked.
     pub fn diff(&self, base: &Map) -> Vec<PathDiff> {
         let mut out = Vec::new();
         for p in &self.paths {
@@ -533,18 +778,16 @@ impl Map {
                 continue;
             };
             let mut used = vec![false; b.anchors.len()];
-            let same_place = |a: &Anchor, x: &Anchor| a.file == x.file && a.symbol == x.symbol && (!a.symbol.is_empty() || a.off_start == x.off_start || (!a.note.is_empty() && a.note == x.note));
             let steps: Vec<Option<StepChange>> = p
                 .anchors
                 .iter()
                 .map(|a| {
-                    let exact = b.anchors.iter().enumerate().position(|(i, x)| !used[i] && same_place(a, x) && (x.off_start, x.off_end, x.hash) == (a.off_start, a.off_end, a.hash));
-                    let Some(bi) = exact.or_else(|| b.anchors.iter().enumerate().position(|(i, x)| !used[i] && same_place(a, x))) else {
+                    let Some(bi) = b.anchors.iter().position(|x| x.id == a.id) else {
                         return Some(StepChange::Added);
                     };
                     used[bi] = true;
                     let x = &b.anchors[bi];
-                    if exact.is_none() {
+                    if (x.file.as_str(), x.symbol.as_str(), x.off_start, x.off_end, x.hash) != (a.file.as_str(), a.symbol.as_str(), a.off_start, a.off_end, a.hash) {
                         Some(StepChange::Repinned)
                     } else if x.note != a.note {
                         Some(StepChange::NoteEdited)
@@ -671,6 +914,8 @@ fn increasing(pairs: &[(usize, usize)]) -> Vec<(usize, usize)> {
 impl Anchor {
     pub fn new(f: &File, ls: usize, le: usize, author: Author) -> Anchor {
         let mut a = Anchor {
+            id: String::new(),
+            order: 0,
             file: f.path.clone(),
             symbol: String::new(),
             off_start: ls as i32,
@@ -753,13 +998,14 @@ mod tests {
     fn round_trip_and_stale() {
         let idx = one_file();
         let mut m = Map::default();
-        let pi = m.add_path("p", Kind::Type, Author::Ai);
+        let pi = m.add_path("p", Kind::Type, Author::Ai).unwrap();
         m.add_anchor(&idx, pi, 0, 4, 4, Author::Ai, None);
         m.paths[0].anchors[0].note = "the middle".into();
         assert_eq!(m.paths[0].anchors[0].symbol, "b");
         assert_eq!(m.paths[0].anchors[0].off_start, 1);
 
-        let tmp = std::env::temp_dir().join("codemap_test.cmap");
+        let tmp = std::env::temp_dir().join("codemap_test_round_trip");
+        let _ = std::fs::remove_dir_all(&tmp);
         m.save(&tmp).unwrap();
         let mut loaded = Map::load(&tmp).unwrap();
         assert_eq!(loaded.paths[0].author, Author::Ai);
@@ -795,7 +1041,7 @@ mod tests {
     fn tree_edits_keep_parents() {
         let idx = one_file();
         let mut m = Map::default();
-        let pi = m.add_path("t", Kind::Flow, Author::Human);
+        let pi = m.add_path("t", Kind::Flow, Author::Human).unwrap();
         let root = m.add_anchor(&idx, pi, 0, 0, 2, Author::Human, None); // a
         let mid = m.add_anchor(&idx, pi, 0, 3, 5, Author::Human, Some(root)); // b under a
         let leaf = m.add_anchor(&idx, pi, 0, 1, 1, Author::Human, Some(mid)); // line in a, under b
@@ -815,8 +1061,8 @@ mod tests {
     fn links_follow_renames_and_hold_removal() {
         let idx = one_file();
         let mut m = Map::default();
-        let flow = m.add_path("flow", Kind::Flow, Author::Ai);
-        let shared = m.add_path("shared", Kind::Layer, Author::Ai);
+        let flow = m.add_path("flow", Kind::Flow, Author::Ai).unwrap();
+        let shared = m.add_path("shared", Kind::Layer, Author::Ai).unwrap();
         m.add_anchor(&idx, flow, 0, 0, 2, Author::Ai, None);
         m.add_anchor(&idx, shared, 0, 3, 5, Author::Ai, None);
         assert!(m.set_link(flow, 0, "nope").is_err());
@@ -824,7 +1070,8 @@ mod tests {
         m.set_link(flow, 0, "shared").unwrap();
         assert_eq!(m.links_to("shared"), [(flow, 0)]);
 
-        let tmp = std::env::temp_dir().join("codemap_test_links.cmap");
+        let tmp = std::env::temp_dir().join("codemap_test_links");
+        let _ = std::fs::remove_dir_all(&tmp);
         m.save(&tmp).unwrap();
         let mut m = Map::load(&tmp).unwrap();
         assert_eq!(m.paths[flow].anchors[0].link, "shared");
@@ -845,7 +1092,7 @@ mod tests {
     fn groups_nest_and_rename() {
         let mut m = Map::default();
         for (name, group) in [("top", ""), ("a", "flows/http"), ("b", "areas"), ("c", "flows"), ("d", " /flows//http/ ")] {
-            let pi = m.add_path(name, Kind::Flow, Author::Ai);
+            let pi = m.add_path(name, Kind::Flow, Author::Ai).unwrap();
             m.set_group(pi, group);
         }
         assert_eq!(m.paths[4].group, "flows/http");
@@ -853,17 +1100,20 @@ mod tests {
         let p = |pi, depth| Row::Path { pi, depth };
         assert_eq!(m.rows(), [g("areas", 0, 1), p(2, 1), g("flows", 0, 3), g("flows/http", 1, 2), p(1, 2), p(4, 2), p(3, 1), p(0, 0)]);
 
-        let tmp = std::env::temp_dir().join("codemap_test_groups.cmap");
+        let tmp = std::env::temp_dir().join("codemap_test_groups");
+        let _ = std::fs::remove_dir_all(&tmp);
         m.save(&tmp).unwrap();
         let mut m = Map::load(&tmp).unwrap();
-        assert_eq!(m.paths[1].group, "flows/http");
+        // a map reads back in file name order
+        let group = |m: &Map, name: &str| m.paths[m.find(name).unwrap()].group.clone();
+        assert_eq!(group(&m, "a"), "flows/http");
 
         assert_eq!(m.rename_group("flows", "work/flows"), Ok(3));
-        assert_eq!(m.paths[1].group, "work/flows/http");
-        assert_eq!(m.paths[3].group, "work/flows");
+        assert_eq!(group(&m, "a"), "work/flows/http");
+        assert_eq!(group(&m, "c"), "work/flows");
         assert!(m.rename_group("flow", "x").is_err());
         assert_eq!(m.rename_group("work", ""), Ok(3));
-        assert_eq!(m.paths[3].group, "flows");
+        assert_eq!(group(&m, "c"), "flows");
     }
 
     #[test]

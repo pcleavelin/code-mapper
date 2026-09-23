@@ -1,0 +1,34 @@
+codemap 8
+path search
+kind flow
+author ai
+group gui
+note Grep, in the GUI. The search box runs a Rust regex over the lines already in memory - there is no file I/O and no index of its own - and drops the hits into the Results tab, capped at five thousand so a pattern like a single dot cannot freeze the window. The tab itself is drawn by the frame like any other, virtualised so only the visible hits become elements, and clicking one opens that line in the listing. The same regex engine backs the CLI's grep and notes commands.
+
+step 6tz50w
+order 1
+author ai
+file src/gui/views.rs
+symbol results_view
+lines 0 20
+hash d7c591189a131fe6
+note The Results tab: a hint when there is nothing to show, else one virtualised row per hit, file:line then the trimmed line, a click opens the listing there.
+
+step o1sh41
+order 2
+parent 6tz50w
+author ai
+file src/gui/nav.rs
+symbol open_line
+lines 0 5
+hash 1c379bc5c685935a
+note Opening a hit: the click pushes a GoTo action, and applying it selects that line in the listing, asks the listing to scroll to it and switches tabs. The only way from a search result into the code.
+
+step x7ce18
+order 0
+author ai
+file src/gui/mod.rs
+symbol run_search
+lines 0 21
+hash 999fa55e4e577971
+note The search: the regex is compiled before the previous results are dropped, so a typo keeps the last hit list and only reports; the scan is over the lines already in memory.

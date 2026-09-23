@@ -55,7 +55,8 @@ fn reload_hook(bin: &Path, root: &Path, line: &str) {
     }
 }
 
-const SETTLE: &str = "idle\nclick-id save\nwait 2\n";
+// the scripts read startup, which is third in the paths list: c-lib, shapes, startup, stats
+const SETTLE: &str = "idle\nclick-id save\nclick-id paths/2\nwait 2\n";
 
 pub const SCENARIOS: &[Scenario] = &[
     Scenario {
@@ -381,7 +382,7 @@ click-id doc-delete
 wait 3
 dump
 shot {shots}/path-deleted.png
-click-id paths/0
+click-id paths/1
 wait 3
 dump
 key s ctrl
@@ -400,12 +401,12 @@ click-id tab@Diff
 wait 3
 dump
 shot {shots}/diff.png
-click-id diffrow/0
+click-id diffrow/2
 wait 3
 dump
 click-id tab@Diff
 wait 2
-click-id diffrow/3
+click-id diffrow/0
 wait 3
 dump
 shot {shots}/changed-path.png

@@ -88,6 +88,7 @@ pub struct App {
     output_bottom: u8,                                     // frames left in which the log is pinned to its end
     pub map: Map,
     base: Option<Map>, // the map at the parent revision, for the diff
+    base_why: String,  // why there is no base map, when there is none
     file: MapFile,     // the map on disk against the one in memory
 
     // the selection
@@ -130,10 +131,11 @@ pub struct App {
 impl App {
     pub fn new(root: &Path) -> App {
         let idx = index::build(root);
-        let map_path = root.join(".codemap");
-        let map = Map::load(&map_path);
-        let unreadable = map.is_none() && map_path.exists();
-        let mut map = map.unwrap_or_default();
+        let map_path = root.join(crate::map::MAP_DIR);
+        let (mut map, unreadable) = match Map::load(&map_path) {
+            Ok(m) => (m, None),
+            Err(e) => (Map::default(), Some(e)),
+        };
         map.resolve_all(&idx);
         let first_path = if map.paths.is_empty() { None } else { Some(0) };
         let mut app = App {
@@ -146,7 +148,8 @@ impl App {
             output_bottom: 0,
             map,
             base: None,
-            file: MapFile { mtime: mtime(&map_path), path: map_path, dirty: false, last_poll: Instant::now(), warned: false },
+            base_why: String::new(),
+            file: MapFile { stamp: crate::map::stamp(&map_path), broken: unreadable.is_some(), path: map_path, dirty: false, last_poll: Instant::now(), warned: false },
             focus: None,
             sel_path: None,
             sel_anchor: None,
@@ -179,7 +182,10 @@ impl App {
             shot: std::env::var_os("CODEMAP_SHOT").map(|p| (PathBuf::from(p), 0)),
             shot_next: None,
         };
-        app.status = if unreadable { ".codemap is unreadable or an old format: starting from an empty map, saving overwrites it".into() } else { app.indexed_status() };
+        app.status = match unreadable {
+            Some(e) => format!("{e}; the map is not shown and cannot be saved until it reads"),
+            None => app.indexed_status(),
+        };
         app.watch_files();
         if let Some(pi) = first_path {
             app.select_path(pi);
@@ -190,11 +196,17 @@ impl App {
     }
 
     fn save(&mut self) {
+        // saving writes every path and removes the files of the rest, so a map that did not
+        // read from disk is never saved over it
+        if self.file.broken {
+            self.status = "not saved: the map on disk does not read; fix it and it reloads".into();
+            return;
+        }
         match self.map.save(&self.file.path) {
             Ok(()) => {
                 self.file.dirty = false;
                 self.file.warned = false;
-                self.file.mtime = mtime(&self.file.path);
+                self.file.stamp = crate::map::stamp(&self.file.path);
                 self.status = "saved".into();
             }
             Err(e) => self.status = format!("save FAILED: {e}"),
@@ -259,7 +271,13 @@ impl App {
         if name.is_empty() {
             return;
         }
-        self.sel_path = Some(self.map.add_path(&name, PathKind::Flow, Author::Human));
+        match self.map.add_path(&name, PathKind::Flow, Author::Human) {
+            Ok(pi) => self.sel_path = Some(pi),
+            Err(e) => {
+                self.status = e;
+                return;
+            }
+        }
         self.sel_anchor = None;
         self.tab = Tab::Path;
         self.status = format!("path '{name}' created (unsaved)");

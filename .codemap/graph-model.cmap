@@ -1,0 +1,185 @@
+codemap 8
+path graph-model
+kind type
+author ai
+group gui/graph
+note The graph canvas is derived, never accumulated. What is on screen is always a base plus an ordered list of expansions: the base is the selected path's steps as a tree, plus the focused symbol as its own root when no step shows it, and each expansion is 'the callers of X' or 'the callees of X' in the order the reader opened them. rebuild runs every frame and starts from empty, so closing an expansion also removes whatever was only reachable through it - there is no orphan cleanup because nothing is ever added incrementally. The only state that survives a rebuild is what the reader chose: the expansion list, which nodes are cut to a preview, how much context each shows, and any node they dragged. That state is keyed by symbol index, which a re-index invalidates, so save and restore carry it across one by symbol name.
+
+step 1fwzx4
+order 0
+author ai
+file src/gui/graph.rs
+symbol Graph
+lines 0 32
+hash a1d5c23c3de34775
+note The fields split two ways, and the struct says which is which. The tree - nodes, their columns, positions, sizes, line ranges, step numbers, parents and origins, and the hit rectangles - is rebuilt every frame from the selection and is read as last frame's by the next frame's input. The reader's part survives frames: the expansions opened, the nodes cut to a preview or widened with context, the positions dragged (manual, which freezes the layout until the node set changes) and the camera.
+
+step 1qriwj
+order 7
+parent 1fwzx4
+author ai
+file src/gui/graph.rs
+symbol toggle
+lines 0 9
+hash 0e96c6610980840c
+note Opening and closing an expansion is the same operation on the list; the next rebuild does the rest. It also drops the dragged position of this node, whose size is about to change, and remembers the opening so the camera can bring what it revealed into view. Every other node stays where the reader put it.
+
+step 5mmllx
+order 1
+parent 1fwzx4
+author ai
+file src/gui/graph.rs
+symbol Node
+lines 0 0
+hash 586937b14e4dd794
+note A node is a symbol plus the step it stands for, so two slice steps of one symbol are two nodes each showing its own lines; by_sym picks the one edges and expansions land on.
+
+step 9e9x8x
+order 8
+parent 1fwzx4
+author ai
+file src/gui/graph.rs
+symbol lines_shown
+lines 0 4
+hash 8e92159828ea453d
+note A node shows all of its lines unless the reader cut it to a preview; the pair is (shown, total), which is also what the 'more'/'less' button reads.
+
+step bwbobp
+order 11
+parent 1fwzx4
+author ai
+file src/gui/graph.rs
+symbol new
+lines 0 2
+hash 81edc97284aaf81f
+note Everything defaults except the zoom, which starts at 1:1.
+
+step dckpmw
+order 10
+parent 1fwzx4
+author ai
+file src/gui/graph.rs
+symbol focus_node
+lines 0 4
+hash f8f05ec7492cfd56
+note The node the selection sits on: the selected step's node when there is one, else whatever node shows the selected symbol. The camera and the accent border both ask this.
+
+step dqdb3u
+order 14
+parent 1fwzx4
+author ai
+file src/gui/graph.rs
+symbol save
+lines 0 9
+hash 0e3eb031a612bfe7
+note A re-index renumbers a file's symbols, so every node key in the state above it goes dead. This writes the reader's state out keyed by (file path, symbol name) instead, which survives one.
+
+step e0f0cd
+order 15
+parent 1fwzx4
+author ai
+file src/gui/graph.rs
+symbol restore
+lines 0 7
+hash e75209deaa816324
+note Reads it back onto the new index, dropping whatever no longer has a symbol. The camera is not part of it: a re-index is not a navigation and must not move the view.
+
+step i7dtw6
+order 13
+parent yxmrlu
+author ai
+file src/gui/graph.rs
+symbol header_cols
+lines 0 5
+hash 72abba7600f107bd
+note Cells the header needs: its text plus every button's label with its padding and gap.
+
+step jxppts
+order 5
+parent l461m7
+author ai
+file src/gui/graph.rs
+symbol call_line
+lines 0 4
+hash 0b992c6e7fa10e69
+note The first line of a node that names an identifier: where the call sits, found textually because neither backend records call-site lines. It decides where an edge leaves a node, which lines are tinted, and the order siblings are stacked in.
+
+step l461m7
+order 4
+parent wu5v06
+author ai
+file src/gui/graph.rs
+symbol callees_of
+lines 0 6
+hash 2c9b44185aed34b0
+note What a node calls: the symbol's callees, narrowed to the ones its own lines name when the node is only a slice of the symbol. Feeds the expansion, the edge loop and the callees button count.
+
+step nsg5x2
+order 17
+parent 1fwzx4
+author ai
+file src/gui/graph.rs
+symbol rect_px
+lines 0 6
+hash 5457b2690e04ab16
+note A node's rectangle in pixels: its cell position and size times this frame's cell, offset by the canvas origin. None for a node not in this frame's tree. The painter, the edge routing and the camera all ask it rather than keep a pixel copy of the layout.
+
+step paasv9
+order 6
+parent jxppts
+author ai
+file src/index/mod.rs
+symbol call_site
+lines 0 9
+hash 751305e03cb2279a
+note A whole-identifier match on a line, outside comments and strings by the highlight spans. The one definition of 'this line names that symbol', shared by the graph's call lines and the map's sibling order.
+
+step qac7fm
+order 16
+parent dqdb3u
+author ai
+file src/gui/graph.rs
+symbol Saved
+lines 0 6
+hash 666c36d5594d05c3
+note Exactly what a re-index may not destroy, in a form that does not mention a symbol index: the expansion list, the previewed nodes, the per-node context and the dragged positions, each keyed by (file path, symbol name) and the step it belongs to.
+
+step ssh3rn
+order 3
+parent wu5v06
+author ai
+file src/gui/graph.rs
+symbol add
+lines 0 10
+hash 1f3973f50c181782
+note Adds a node in a column, ignoring a symbol that is already placed. First placement wins the column, which is what stops an expansion from dragging a path step out of its depth.
+
+step vz67qx
+order 12
+parent yxmrlu
+author ai
+file src/gui/graph.rs
+symbol header
+lines 0 47
+hash 70b28c1a741a77e7
+note The header runs and the button list, built once here for both measuring and drawing: step number, name, off-path tag, file:lines; then more/less, context above, below and none (never while collapsed), listing, and the two expansions. An expansion that is open says 'hide N' and closes on a click; a closed one is offered only when it would actually reveal something, so a button whose targets are all on the canvas already is not drawn at all rather than doing nothing when pressed.
+
+step wu5v06
+order 2
+parent 1fwzx4
+author ai
+file src/gui/graph.rs
+symbol rebuild
+lines 0 89
+hash 484d0c16623e3e4f
+note The derivation, run every frame: clear, then one node per step of the selected path at its depth in the tree (its slice as the line range, its note kept for the header; a step with no symbol of its own takes the symbol its first line sits in, and a step that gets no node at all hands its children to its parent so the tree keeps its shape), then the focused symbol as its own root when no step already shows it, with its callers and its callees opened once so an off-path jump lands in a neighbourhood rather than on a lone box, then the expansions in the order they were opened. A dragged position is kept only while its node still exists.
+
+step yxmrlu
+order 9
+parent 1fwzx4
+author ai
+file src/gui/graph.rs
+symbol node_size
+lines 0 9
+hash 060197af3e2db81a
+note A node's size in cells and rows: the longest shown line plus the gutter, within limits, but never narrower than its header text and buttons, so the buttons always sit inside the node whatever the preview shows.

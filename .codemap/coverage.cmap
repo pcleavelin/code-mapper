@@ -1,0 +1,34 @@
+codemap 8
+path coverage
+kind flow
+author ai
+group map
+note How the human audits what the agent mapped. A symbol is covered when a current step overlaps its line range. uncovered lists the rest largest first, so what is left after a session is either pre-existing or something the agent judged trivial, and size says which. coverage prints covered/total per file. Derived every time, never stored, and never a check failure.
+
+step gib7y2
+order 0
+parent nb45f6
+author ai
+file src/map.rs
+symbol covers
+lines 0 2
+hash df7b347490a82362
+note The one definition of covered. Stale steps do not count: their text no longer matches the code, and check fails on them anyway.
+
+step nb45f6
+order 1
+author ai
+file src/cli.rs
+symbol exec
+lines 351 366
+hash 32fe5d795bebc25c
+note uncovered: every symbol at any depth that no step covers, sorted by line count descending. Filter is a substring of the name or the file.
+
+step w7dp4m
+order 2
+author ai
+file src/cli.rs
+symbol exec
+lines 397 406
+hash 0605510cde5a7640
+note coverage: per-file counts for files that have symbols, then a total.

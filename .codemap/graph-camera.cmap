@@ -1,0 +1,44 @@
+codemap 8
+path graph-camera
+kind flow
+author ai
+group gui/graph
+note When the graph's camera moves, and why it otherwise does not. Pan and zoom are two plain fields on the graph: dragging the background and the wheel write them directly, and nothing else is allowed to, so a rebuild, an edit or a re-index never slides the view out from under the reader. Two things ask for a move: a new focus (centre it, or align its top when it is taller than the canvas) and the fit button (the largest font at which the whole tree fits, then pan to its top-left). A node button that changes the tree's shape (callees, callers, less) instead keeps its node still: the pan follows the relayout so the button stays under the pointer and the new nodes appear beside it. The layout is in cells and rows, which no zoom changes, so fit settles both zoom and pan in one frame instead of converging over several.
+
+step 729kbs
+order 1
+parent gknv1n
+author ai
+file src/gui/graph.rs
+symbol bbox_cells
+lines 0 10
+hash abf85dc6907ce47b
+note The tree's bounding box in cells and rows. No zoom changes it, which is what lets fit pick a font size and a pan in the same frame instead of guessing, re-laying out and guessing again.
+
+step gknv1n
+order 0
+author ai
+file src/gui/graph.rs
+symbol graph_tab
+lines 118 142
+hash 952b6ca16f584001
+note The frame's two camera hooks, side by side. The fit runs here rather than inside the graph because it needs the font metrics: the layout is already done in cells, so it walks the font size down until the tree's cell box fits the canvas, sets the zoom to exactly that size over the UI size (so graph_px reproduces it), and pans to the tree's top-left. Everything else the camera does is move_camera, called once this frame's cell size is recorded, so rect_px can give it pixel rectangles.
+
+step v0z9ng
+order 3
+author ai
+file src/gui/graph.rs
+symbol keep
+lines 0 2
+hash 4e7e3b15651f450f
+note The anchor a node button sets before its tree changes shape: the node and its pixel position that frame. After the relayout the pan moves by the node's displacement, so expanding or hiding its callees or callers, or collapsing it, leaves it and the button under the pointer exactly where they were; the new nodes appear beside it and the reader pans if they run off the canvas.
+
+step x2p02r
+order 2
+parent gknv1n
+author ai
+file src/gui/graph.rs
+symbol move_camera
+lines 0 16
+hash cb393837db5eae01
+note The one place a camera move is honoured, in priority order: a pending look at the focus, then a kept node. A node taller than the canvas is aligned to its top, because its header and its buttons are what the reader came for; centring it put them off screen. Nothing here runs unless a flag asked for it, so a rebuild or a re-index leaves pan and zoom alone.

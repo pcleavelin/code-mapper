@@ -1,0 +1,52 @@
+codemap 8
+path vcs
+kind layer
+author ai
+group map
+note How the tool reaches version control: jj when a .jj directory is at or above the root, else git when a .git is, so a repo colocated with git is jj's. Only through the command line, never a library. Two questions are asked of it: the map at the parent revision, for diff, and one source file at a revision, for repin. The parent is @- in jj and HEAD in git.
+
+step 0fod9k
+order 1
+author ai
+file src/vcs.rs
+symbol parent
+lines 0 5
+hash ca27e5ce4d0cf492
+note The default revision for diff and repin.
+
+step c9zpo1
+order 3
+author ai
+file src/vcs.rs
+symbol show_dir
+lines 0 15
+hash e78d68d47a6c24cd
+note The map directory at a revision in one call: a glob for jj, ls-tree then one git show of every file for git. The files come out one after another, which parse reads as one text.
+
+step m3kg1y
+order 0
+author ai
+file src/vcs.rs
+symbol detect
+lines 0 11
+hash dc78e4f8cd4c154e
+note Walks up from the root; .jj wins over .git, and a .git that is a file (a worktree) counts.
+
+step o7vsr0
+order 4
+parent rw4bei
+author ai
+file src/vcs.rs
+symbol run
+lines 0 3
+hash aeb1d8392564430e
+note The one place a program runs: its output when it succeeds, None otherwise.
+
+step rw4bei
+order 2
+author ai
+file src/vcs.rs
+symbol show
+lines 0 5
+hash 232e53f9a40858f6
+note One file at a revision: jj file show, or git show rev:./path, which resolves from the root even when the root is a subdirectory of the repo.

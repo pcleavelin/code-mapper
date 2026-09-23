@@ -1,0 +1,144 @@
+codemap 8
+path live-reload
+kind flow
+author ai
+group gui
+note Keeping the open window honest about what is on disk without ever stalling a frame. A watcher thread owns the indexed files' modification times and compares them against the disk once a second, so the main thread never stats the tree; it sends one message when something moved and then waits for the refreshed list. The frame itself only checks the map's files through map::stamp: a map written by the CLI is reloaded silently when there is nothing unsaved, and with unsaved edits it refuses and says so once, because saving would overwrite it. A map on disk that does not read, a merge conflict in it for instance, keeps the one in memory and stops saves until it reads. A changed source file starts a rebuild on another thread; the index in use is untouched until the new one arrives, and taking it kills every symbol index in the app - so the focused symbol, the pinned peek, the current file and everything the reader opened in the graph are carried across by (file path, symbol name) identity and the map's anchors are re-resolved. Neither kind of reload is a navigation: the selection is kept where the new map still supports it and the graph's camera does not move. Files that were created or deleted are not noticed; that needs a restart.
+
+step 174dll
+order 0
+author ai
+file src/gui/work.rs
+symbol poll_disk
+lines 0 29
+hash 7c74856f7b8911ec
+note The once-a-second check, run from the top of every frame. It stats the map's files through map::stamp and takes whatever the watcher thread has to say about the source; nothing here walks the tree. The map half is the one with a conflict story: an external write with unsaved edits is reported once and then left alone. A clean reload hands the map to reload_map, which decides how much of the reading position the new map can still support.
+
+step 25ohn2
+order 11
+parent n12e84
+author ai
+file src/gui/work.rs
+symbol watch_files
+lines 0 2
+hash 0e6765f33713d30f
+note Sends the watcher thread the indexed files' modification times, which is what starts it comparing against the disk. App::new sends the first list this way and every re-index sends the refreshed one.
+
+step 29faay
+order 1
+parent 174dll
+author ai
+file src/gui/work.rs
+symbol mtime
+lines 0 2
+hash fa3f0e3008fc40ce
+note Modification time is the whole change detection for the source files the watcher holds. The map's is map::stamp, which the app records after its own save, so writing the map does not look like somebody else writing it.
+
+step 5z86qr
+order 13
+parent 174dll
+author ai
+file src/gui/work.rs
+symbol MapFile
+lines 0 7
+hash 9496757815f33afe
+note The map on disk against the one in memory: its directory, the stamp this window last read or wrote, whether the disk copy failed to read (which stops saves), whether there are unsaved edits, and whether the status already warned that the disk changed under them.
+
+step 83o6v1
+order 2
+parent 174dll
+author ai
+file src/map.rs
+symbol load
+lines 0 19
+hash 521ee4e565cafe20
+note What a reload reads. reload_map puts it in place of the window's map, resolves every anchor against the current index and keeps what of the reading position the new map supports, and the Diff tab's base is read again. An Err leaves the window's map as it was and marks the disk broken, so a save cannot write over files that did not read.
+
+step cqad1j
+order 7
+parent n12e84
+author ai
+file src/gui/work.rs
+symbol with_index_change
+lines 0 24
+hash d7502bb0da9dacca
+note The carry-over. Symbol indices do not survive a rebuild, so the focused symbol, the pinned peek and the current file are saved as (file, symbol name) keys first and looked up again after, and the map's anchors are re-resolved. Anything whose symbol is gone is simply dropped. The graph needs nothing here: it derives its nodes from the selection every frame.
+
+step eo1fox
+order 10
+parent gra0bb
+author ai
+file src/index/mod.rs
+symbol build
+lines 0 54
+hash dfe30521be00791d
+note The same walk the app started with, this time on the rebuild thread. Unchanged files come straight from the cache, so re-indexing after one edit costs one parse; the window keeps drawing from the old index while it runs.
+
+step gra0bb
+order 4
+parent 174dll
+author ai
+file src/gui/work.rs
+symbol poll_disk
+lines 1 5
+hash 5ee359b28376f0ed
+note A change the watcher reported starts the rebuild on a thread and returns; the index in use is untouched, so the frame that noticed the edit costs nothing. Only one rebuild is ever in flight, because the watcher waits for the refreshed list before it reports again.
+
+step gxalt4
+order 12
+parent n12e84
+author ai
+file src/gui/work.rs
+symbol start_backend
+lines 0 16
+hash 3bf59a66c6c43b08
+note Whatever changed is pending again; if a server thread is still running, the request is remembered and started when it finishes.
+
+step h58ssq
+order 5
+parent gra0bb
+author ai
+file src/gui/work.rs
+symbol bg
+lines 0 6
+hash e332ebe2e24356fb
+note Runs a closure on its own thread and hands back the receiver its result arrives on. The rebuild, the parent revision's map and the link thread all start this way, and landed is how the frame picks each one up.
+
+step jc13qi
+order 3
+parent 174dll
+author ai
+file src/gui/work.rs
+symbol watch
+lines 0 9
+hash 398c88ae82f0c55a
+note The source half, on its own thread: it is handed the (path, modification time) list of every index the main thread builds and compares it against the disk once a second, so a 500-file tree is stat'ed off the main thread. It reports a change once and then blocks until the refreshed list arrives, which is how one edit does not become a message every second while the rebuild runs. Files that appeared or disappeared are invisible to it.
+
+step n12e84
+order 9
+author ai
+file src/gui/work.rs
+symbol poll_reindex
+lines 0 12
+hash e83d02ac981092f7
+note Run from the top of every frame like poll_disk: when the rebuild thread has an index, this is the frame that swaps it in. The whole cost of a re-index lands here - the carry-over, the re-resolve and the re-render - and it is one frame, not the whole rebuild. Search results are dropped because their file and line indices no longer mean anything, the watcher gets the new modification times so it starts looking again, and whatever changed is sent to the servers.
+
+step smd4uj
+order 8
+parent 174dll
+author ai
+file src/gui/work.rs
+symbol reload_map
+lines 0 26
+hash 366e47cbfc9e844f
+note The reload keeps as much of the reading position as the new map still supports: the path by name, the selected step when the anchor at that index still names the same file, symbol and offsets, and a path's step views when its step count is unchanged. Paths are matched by name throughout, so a path added or removed by the agent does not shift another path's state onto the wrong rows.
+
+step yy35zu
+order 6
+parent n12e84
+author ai
+file src/gui/work.rs
+symbol landed
+lines 0 7
+hash f9318a0e6eac3269
+note Checks a background thread's receiver without blocking: None while it runs, Some(None) when the thread died without an answer, Some(Some(value)) when it answered. Either landing drops the receiver, which is what marks the work as no longer in flight.

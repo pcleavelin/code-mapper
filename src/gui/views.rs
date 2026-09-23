@@ -73,13 +73,14 @@ impl App {
     pub(super) fn diff_view(&mut self) {
         self.ui.open(Kind::None, Layout::row().grow_x().pad(4).gap(8).cross(Align::Center), Style::default(), None);
         self.label("Changes against the parent revision", TEXT);
-        self.label("jj file show -r @- .codemap", WEAK);
+        self.label("@- in jj, HEAD in git", WEAK);
         if self.small_button("refresh", ui::id("diff-refresh")).clicked {
             self.load_base();
         }
         self.ui.close();
         if self.base.is_none() {
-            self.label(if self.work.base_rx.is_some() { "asking jj..." } else { "no map in the parent revision: this needs a jj repo with a committed .codemap" }, WEAK);
+            let why = if self.work.base_rx.is_some() { "reading the parent revision..." } else { self.base_why.as_str() };
+            self.label(&format!("no map to compare with: {why}"), WEAK);
             return;
         }
         let diffs = self.diffs();

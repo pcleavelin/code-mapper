@@ -1,0 +1,123 @@
+codemap 8
+path stale-and-pin
+kind flow
+author ai
+group map
+note What happens when code under a step changes. Every anchor is re-resolved on load; a hash mismatch or a missing file or symbol marks it stale. stale and check list those; path-pin re-anchors one to fresh lines and keeps its note and place in the tree. The agent that changed the code re-pins: repin follows each stale step's text from the parent revision and pins what it can place, printing every change for the agent to check against the note; the rest stays stale for path-pin.
+
+step 0n4iwz
+order 8
+parent skdd6b
+author ai
+file src/cli.rs
+symbol follow_step
+lines 0 55
+hash 878f1971cf6bd6dc
+note Finds the old slice by hash (the match nearest the step's last place when the text repeats), cuts it out with three lines of context, and aligns it with every symbol of the step's name in its file, or in every file once the file or the symbol is gone from it, so a function moved to another file is followed there, keeping the alignment that keeps the most lines. Refuses when no symbol of that name is left anywhere or under half the lines survive: those need someone to read the code.
+
+step 0pm2op
+order 4
+parent c3yqy7
+author ai
+file src/map.rs
+symbol pin_anchor
+lines 0 9
+hash ac225700c41105ae
+note A fresh Anchor from the new lines, with the old note, parent and link carried over and the pinning author recorded.
+
+step 9b60sn
+order 9
+parent 0n4iwz
+author ai
+file src/map.rs
+symbol follow
+lines 0 10
+hash 2a172af8fe05d711
+note Aligns the old window with one candidate symbol and turns the pairs into a range. A changed edge line ends just inside the nearest surviving context line, or at the symbol's edge when none survives on that side.
+
+step c3yqy7
+order 3
+author ai
+file src/cli.rs
+symbol exec
+lines 265 273
+hash 8e19f44d608872a4
+note path-pin: bounds-check the new range, then replace the anchor in place.
+
+step dbn9ln
+order 10
+parent 9b60sn
+author ai
+file src/map.rs
+symbol patience
+lines 0 32
+hash a11af255ddb53ae3
+note Pairs lines unique to both sides first, then grows pairs into equal neighbours and recurses into the gaps. Growth starts only from a pair, so an open edge never pairs a slice's closing brace with the end of a longer function.
+
+step l2t4jm
+order 11
+parent dbn9ln
+author ai
+file src/map.rs
+symbol increasing
+lines 0 22
+hash bea43dfd21803274
+note Longest increasing run over the unique pairs, the order both versions agree on; a function that moved keeps its own lines paired with each other.
+
+step n09j25
+order 0
+author ai
+file src/map.rs
+symbol resolve
+lines 0 33
+hash 7c5a4b1785ff1f8c
+note Stale until proven current. Several symbols in one file can share a name; the one whose text still hashes right wins, so a step on StepChange::tag no longer lands on Author::tag. A resolved but changed slice keeps its lines so the reader sees where it was; a gone file or symbol leaves the previous lines untouched.
+
+step pm9a32
+order 5
+parent c3yqy7
+author ai
+file src/cli.rs
+symbol check_range
+lines 0 5
+hash 4d186dea990e90f9
+note User ranges are 1-based inclusive; this is the one place they become 0-based.
+
+step q7x1gq
+order 7
+parent skdd6b
+author ai
+file src/map.rs
+symbol file_from_vcs
+lines 0 3
+hash 9c6bf11e138b5725
+link vcs
+note The file as the revision has it, from jj or git through Vcs::show, tabs expanded the way the index expands them, so the step's stored hash finds its old slice.
+
+step skdd6b
+order 6
+author ai
+file src/cli.rs
+symbol exec
+lines 323 350
+hash 4031754fbc3cfa3a
+note repin: every stale step in turn, its file read once from the revision (default: the parent revision, @- in jj or HEAD in git) and kept for the steps after it. A step that follows is pinned through pin_anchor like path-pin; one that does not stays stale with the reason printed. The output is the review: each re-pinned step with changed text prints its removed and added lines, and its note has to be reread against them.
+
+step vd0i1v
+order 2
+parent xvk3t5
+author ai
+file src/cli.rs
+symbol where_is
+lines 0 6
+hash 7e4e9e2ab835a06c
+note Prints file:start-end for a resolved anchor, or says whether the file or the symbol is what went missing.
+
+step xvk3t5
+order 1
+author ai
+file src/cli.rs
+symbol exec
+lines 290 322
+hash b2910b26be5222fa
+note stale and check share the listing; check turns a non-empty list into an Err so the process exits 2. Each stale step gets a hint: a ready-made path-pin when its text merely moved, or every symbol of the same name anywhere when the symbol is gone from its file. A link to a path the map does not have is listed after them and fails check the same way.

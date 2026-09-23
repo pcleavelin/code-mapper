@@ -1,0 +1,153 @@
+# side one edits a note of startup and adds a step to it
+$ codemap step-note startup 0 "Side one's entry note."
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-add startup describe -1
+step [7] describe added under [-1]
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+# side two edits another note of startup, adds a step to shapes and a new path
+$ codemap step-note startup 5 "Side two's sum note."
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-add shapes describe 0
+step [3] describe added under [0]
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-new fresh layer "From side two."
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+# the merge of the two has every change and no conflict
+$ codemap check
+ok
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap paths startup
+startup [flow] (ai) (8 steps): What running the program does: fill the store, then report its total area.
+  [0] src/main.rs:7-11 main (ai)  -- Side one's entry note.
+    [1] src/main.rs:13-16 fill (ai)  -- Adds one shape of each kind.
+      [2] src/store.rs:12-15 add (ai)
+        [3] src/store.rs:29-31 check (ai)  -- Guards the size after every add.
+    [4] src/main.rs:18-22 report (ai)
+      [5] src/store.rs:21-25 total_area (ai)  -- Side two's sum note.
+      [6] src/main.rs:24-26 log_line (ai)
+  [7] src/shapes.rs:33-35 describe (ai)
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap paths shapes
+shapes [type] (ai) (4 steps): The Shape trait and the two shapes that implement it.
+  [0] src/shapes.rs:1-4 Shape (ai)
+    [1] src/shapes.rs:14-21 impl Shape for Circle (ai)
+    [2] src/shapes.rs:23-30 impl Shape for Square (ai)
+    [3] src/shapes.rs:33-35 describe (ai)
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap paths fresh
+fresh [layer] (ai) (0 steps): From side two.
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+# a third side also adds a step to startup: merged with side one, the two new steps sit apart in the file and merge
+$ codemap path-add startup mean -1
+step [7] mean added under [-1]
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap check
+ok
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap paths
+c-lib [layer] (ai) (1 steps): The C library's surface.
+  [0] c/lib.c:7-13 int sum_squares(int n) (ai)
+shapes [type] (ai) (3 steps): The Shape trait and the two shapes that implement it.
+  [0] src/shapes.rs:1-4 Shape (ai)
+    [1] src/shapes.rs:14-21 impl Shape for Circle (ai)
+    [2] src/shapes.rs:23-30 impl Shape for Square (ai)
+startup [flow] (ai) (9 steps): What running the program does: fill the store, then report its total area.
+  [0] src/main.rs:7-11 main (ai)  -- Side one's entry note.
+    [1] src/main.rs:13-16 fill (ai)  -- Adds one shape of each kind.
+      [2] src/store.rs:12-15 add (ai)
+        [3] src/store.rs:29-31 check (ai)  -- Guards the size after every add.
+    [4] src/main.rs:18-22 report (ai)
+      [5] src/store.rs:21-25 total_area (ai)  -- The sum over every shape's own area.
+      [6] src/main.rs:24-26 log_line (ai)
+  [7] src/shapes.rs:33-35 describe (ai)
+  [8] tools/helpers.py:1-2 mean (ai)
+stats [flow] (ai) (2 steps)
+  [0] tools/stats.py:5-7 spread (ai)
+    [1] tools/helpers.py:1-2 mean (ai)
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+# a fourth side edits the note side one edited: that line conflicts, and nothing reads the map until it is resolved
+$ codemap step-note startup 0 "Side four's entry note."
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap check
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+! <root>/.codemap/startup.cmap:22: an unresolved merge conflict
+[exit 2]
+$ codemap path-note startup "Written over a conflict."
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+! <root>/.codemap/startup.cmap:22: an unresolved merge conflict
+[exit 2]

@@ -27,3 +27,13 @@ fn stale() {
 fn vcs() {
     scenario("cli-vcs");
 }
+
+#[test]
+fn git() {
+    scenario("cli-git");
+}
+
+#[test]
+fn merge() {
+    scenario("cli-merge");
+}

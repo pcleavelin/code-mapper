@@ -1,0 +1,82 @@
+codemap 8
+path graph-queries
+kind layer
+author ai
+group index
+note Moving along the call graph: the queries the agent navigates with, and the commands that print them. Everything here is derived from the callee and caller lists link built, so it is only as good as the backend that produced them. Roots are strictly 'calls something, called by nothing'. Call trees are pre-order, depth-limited, and visit each symbol at most once, which is what makes promote produce a tree rather than an explosion.
+
+step 5xix2r
+order 0
+author ai
+file src/index/mod.rs
+symbol roots
+lines 0 11
+hash abe17654ebe5c01a
+note Entry points: a symbol with callees and no callers. Sorted by how much each one calls, so the first few are the real entry points of the program and the tail is dead or test-only code.
+
+step 8yeqtb
+order 4
+parent d764ep
+author ai
+file src/cli.rs
+symbol exec
+lines 81 87
+hash 8e8825b36740e4a1
+note The tree command: indentation is the depth the walk returned.
+
+step d764ep
+order 2
+author ai
+file src/index/mod.rs
+symbol call_tree
+lines 0 5
+hash f7eaab48fba5decf
+note Pre-order, depth-limited walk from one symbol, each symbol at most once. This is the shape a promoted path takes and the shape the tree command prints.
+
+step jeuyyl
+order 1
+parent 5xix2r
+author ai
+file src/cli.rs
+symbol exec
+lines 88 92
+hash 2afdbc7c9237e967
+note The roots command, and the same list the GUI focuses on at startup.
+
+step m2d5xw
+order 6
+parent sry152
+author ai
+file src/cli.rs
+symbol describe
+lines 0 3
+hash 016c7a46d91999b6
+note The one line format every symbol is printed in: name, then file:start-end, so output pastes back into show or path-add.
+
+step nql372
+order 3
+parent d764ep
+author ai
+file src/index/mod.rs
+symbol walk
+lines 0 10
+hash 7a0371317ccb0ff4
+note The recursion. The seen set is what stops a cycle and also what makes a shared callee appear under its first caller only.
+
+step sry152
+order 5
+author ai
+file src/cli.rs
+symbol exec
+lines 58 66
+hash e117dde89a539ad9
+note callers and callees share one arm; the only difference is which of the two lists is printed. Both take every symbol of that name, so an unqualified ambiguous name shows all of them rather than erroring.
+
+step vhx9tz
+order 7
+author ai
+file src/cli.rs
+symbol exec
+lines 67 80
+hash b4534e5c69e37858
+note refs is the odd one out: references come from a language server only, so this arm says which server is missing when the file was resolved by tree-sitter instead.

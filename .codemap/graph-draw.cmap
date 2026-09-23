@@ -1,0 +1,185 @@
+codemap 8
+path graph-draw
+kind flow
+author ai
+group gui/graph
+note Drawing one frame of the graph canvas. The whole canvas is a single element with a custom draw function, so there is no element per node and no hit testing from the element tree: the scene is built in window pixels, the rectangles it produced are kept, and next frame's clicks are resolved against them. Pan and zoom are the app's own two fields rather than a transform - the node font size is the UI size times the zoom, rounded to a whole pixel, so text is rasterised at the size it is drawn and never scaled. Edges are painted before nodes so nodes sit on top: grey curves for calls, thick green ones for the steps of a path, and a short orange one for a callee that sits left of its caller instead of a wire across the canvas.
+
+step 01hcuw
+order 17
+parent qoartp
+author ai
+file src/gui/graph.rs
+symbol pin
+lines 0 4
+hash 5bd82df2fc1898d5
+note Freezes a node where it is because the button just pressed is about to change its size. Without it the context buttons re-centre the node in its block and the header walks out from under the pointer, so a second press misses.
+
+step 0vlh88
+order 10
+parent 2a4qq2
+author ai
+file src/gui/graph.rs
+symbol Scene
+lines 0 5
+hash 47012b050ec75214
+note The whole frame of the canvas as plain data: font size, metrics, curves and nodes. It is moved into the draw closure, so nothing the painter touches can still be borrowed from the app.
+
+step 2a4qq2
+order 7
+parent 4yhd4f
+author ai
+file src/gui/graph.rs
+symbol build_scene
+lines 0 97
+hash 88e64716d11d6b5a
+note Turns the node set and its positions into a flat list of rectangles, text runs and curves in window pixels, and records the hit rectangles for next frame. It is the only part that knows about the pan and the zoom; the draw function that follows just paints what it is given.
+
+step 2mnh2a
+order 6
+parent 4yhd4f
+author ai
+file src/gui/graph.rs
+symbol graph_tab
+lines 144 162
+hash d434ab23bafbae75
+note The toolbar: the gestures spelled out, '1:1' which resets the zoom and re-centres, 'auto layout' which drops every dragged position, 'fit' which zooms out until the whole tree is on the canvas, the legend for the edge colours when a path is being read, and the zoom percentage. There is no authoring control on the graph by design.
+
+step 4yhd4f
+order 0
+author ai
+file src/gui/graph.rs
+symbol graph_tab
+lines 0 172
+hash d595c2da62e735fa
+note The tab, in order: input against last frame's rectangles, then the tree rebuilt, measured and laid out, then the toolbar, then the scene handed to one custom element. Nothing is drawn until that element is drawn, so the whole tab is one draw call's worth of work.
+
+step 5ho1e1
+order 14
+parent 4yhd4f
+author ai
+file src/gui/graph.rs
+symbol graph_px
+lines 0 2
+hash 207149fcf238acce
+note The node font: the UI size times the zoom, rounded to a whole pixel and floored, so every zoom level is a real font size in the atlas rather than a scaled bitmap.
+
+step 7dr3sk
+order 13
+parent 4yhd4f
+author ai
+file src/gui/graph.rs
+symbol draw_scene
+lines 0 40
+hash 6dbe7eb20415cdad
+note The painter, called from inside the custom element. Curves and a dot for the arrow head, then per node: fill, outline, a clip to the node, header, buttons, note, the tint behind a calling line, the code, and the 'more lines' footer.
+
+step ah9cdx
+order 5
+parent 4yhd4f
+author ai
+file src/gui/graph.rs
+symbol graph_tab
+lines 107 142
+hash 515a557fe48e1815
+note Rebuild, measure every node, lay them out, apply the dragged positions, then let the camera have its say once the canvas has a size (see the graph-camera flow). This is the whole of what the graph keeps between frames being turned back into positions.
+
+step k4pc6a
+order 15
+parent pi32um
+author ai
+file src/gui/widgets.rs
+symbol build_grid
+lines 0 21
+hash 59762d43cf871834
+note Node code is the same grid the document and the listing draw, taken from the shared cache, so a node reads like the document and costs nothing per frame.
+
+step lky9fy
+order 4
+parent qoartp
+author ai
+file src/gui/graph.rs
+symbol Drag
+lines 0 3
+hash f5ba7e24d52a19a2
+note A drag is either the canvas or one node, decided on the press and held until the button comes up.
+
+step o9xtrk
+order 12
+parent pi32um
+author ai
+file src/gui/graph.rs
+symbol Btn
+lines 0 8
+hash bef830800aca7997
+note The buttons a node header can carry: preview, listing, expansions, and context above, below and none.
+
+step ox9aid
+order 9
+parent 2a4qq2
+author ai
+file src/gui/graph.rs
+symbol build_scene
+lines 55 94
+hash 5471a78f32c60ec1
+note The edges. A call edge leaves level with the line that makes the call when that line is on screen, and from the header otherwise; a callee drawn to the left of its caller gets a short orange curve back instead of a wire across the canvas. Path edges are drawn last, thicker and green, parent step to child step, and carry no label - the node's number is the label.
+
+step pi32um
+order 8
+parent 2a4qq2
+author ai
+file src/gui/graph.rs
+symbol build_scene
+lines 6 54
+hash 05f8ae9f0f78597c
+note One node: the border says what it is (red when the step is stale, accent when focused, green on the path, plain off it), the header runs and buttons from header, then one hit rectangle per shown line. A line is tinted when an edge leaves it: it names any node on the canvas the symbol calls, or one of its child steps, however either was revealed, so an off-path caller shows the line that calls the node it hangs off.
+
+step qoartp
+order 2
+parent 4yhd4f
+author ai
+file src/gui/graph.rs
+symbol graph_tab
+lines 31 97
+hash a20cb5ed956ad1c0
+note Clicks and drags against last frame's hit rectangles: buttons act, a header click selects the step (holding the camera) and starts a node drag, a press on code or body starts a node drag without selecting, the background pans. Drag deltas are converted to cells and rows.
+
+step rgjxnq
+order 11
+parent pi32um
+author ai
+file src/gui/graph.rs
+symbol SceneNode
+lines 0 14
+hash 8c004729e759ff95
+note One node, already resolved to pixels and colours: no symbol, no index, no map. The tinted set is the lines that call the nodes hanging off this one.
+
+step rxt16g
+order 1
+parent 4yhd4f
+author ai
+file src/gui/graph.rs
+symbol graph_tab
+lines 8 30
+hash be4debed298ff7c1
+note The camera: ctrl+wheel zooms and keeps the cell under the mouse still, computed from the old and new cell sizes rather than the zoom factor; the wheel pans three rows per notch and shift+wheel does the same sideways.
+
+step sj6fsf
+order 3
+parent qoartp
+author ai
+file src/gui/graph.rs
+symbol Hit
+lines 0 5
+hash 637bad4d9b1d189d
+note The four things the mouse can land on in a node. Kept per frame with its rectangle in window pixels, which is what makes the custom element clickable at all.
+
+step tf24q4
+order 16
+parent qoartp
+author ai
+file src/gui/graph.rs
+symbol code_col
+lines 0 4
+hash 1b026e881e5b2a55
+note The file column under the pointer for hover, ctrl-click and alt-click. A node's code is the same grid the document draws, gutter included, so the gutter width is the document's constant and a click on the gutter answers None rather than column zero.

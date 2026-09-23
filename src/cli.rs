@@ -106,13 +106,13 @@ pub enum Command {
     Stale,
     /// exit non-zero if any step is stale
     Check,
-    /// [rev]                            re-pin every stale step by following its text from revision `rev` (default @-); prints each change so its note gets reread
+    /// [rev]                            re-pin every stale step by following its text from revision `rev` (default: the parent, @- in jj, HEAD in git); prints each change so its note gets reread
     Repin { rev: Option<String> },
     /// [filter]                         symbols in no path, largest first
     Uncovered { filter: Option<String> },
     /// covered/total symbols per file
     Coverage,
-    /// the map against the parent revision's (jj file show -r @- .codemap)
+    /// the map against the parent revision's (@- in jj, HEAD in git)
     Diff,
 }
 
@@ -274,7 +274,7 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
             print_steps(out, idx, map, pi, 0, "", &mut vec![pi], expand);
         }
         Command::PathNew { name, kind, note, group } => {
-            let pi = map.add_path(&name, kind, author);
+            let pi = map.add_path(&name, kind, author)?;
             if let Some(note) = note {
                 map.paths[pi].note = note;
             }
@@ -421,7 +421,7 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
             dirty = true;
         }
         Command::Promote { symbol, depth, name } => {
-            let pi = map.promote(idx, find_symbol(idx, &symbol)?, depth, name.as_deref(), author);
+            let pi = map.promote(idx, find_symbol(idx, &symbol)?, depth, name.as_deref(), author)?;
             p!(out, "path '{}' now has {} steps", map.paths[pi].name, map.paths[pi].anchors.len());
             dirty = true;
         }
@@ -459,7 +459,8 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
             }
         }
         Command::Repin { rev } => {
-            let rev = rev.as_deref().unwrap_or("@-");
+            let vcs = crate::vcs::Vcs::detect(&idx.root).ok_or("not in a jj or git repo")?;
+            let rev = rev.as_deref().unwrap_or(vcs.parent());
             let mut olds: std::collections::HashMap<String, Option<Vec<String>>> = Default::default();
             let (mut pinned, mut left) = (0, 0);
             for pi in 0..map.paths.len() {
@@ -502,7 +503,7 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
             }
         }
         Command::Diff => {
-            let base = Map::base_from_vcs(&idx.root).ok_or("no map in the parent revision (needs a jj repo with a committed .codemap)")?;
+            let base = Map::base_from_vcs(&idx.root)?;
             for d in map.diff(&base) {
                 match d.change {
                     Change::Same => continue,

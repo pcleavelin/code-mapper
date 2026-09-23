@@ -1,0 +1,95 @@
+codemap 8
+path path-tree
+kind type
+author ai
+group map
+note A path is a tree, stored flat. Every step carries the index of the step it hangs under (None for a root; on disk, the parent's id) and nothing else; the tree shape is derived on demand, in pre-order, roots in list order and children in list order. That is what makes a flow readable top-down, and it is also why editing is cheap: appending a step is a push, deleting one moves its children up to its parent, and re-parenting is a single field plus a cycle check. Step indices are positions in the flat list and are what every command takes; they are never stored.
+
+step 1xywrf
+order 5
+parent qhqkj9
+author ai
+file src/map.rs
+symbol reparent
+lines 0 11
+hash 92a3ae63609e23b1
+note Moving a subtree. Walking up from the proposed parent is the cycle check; a step cannot end up under itself or its own descendants.
+
+step 2q106i
+order 4
+parent d43fmw
+author ai
+file src/map.rs
+symbol promote
+lines 7 11
+hash 0741a1668b37098d
+note Is this symbol already a step of this path? The check that makes re-promoting add only what is missing instead of duplicating the tree.
+
+step 7gczkl
+order 1
+parent qhqkj9
+author ai
+file src/map.rs
+symbol tree_order_by
+lines 0 28
+hash c88acd713ecd32e4
+note The walk: roots in list order, then each step's children sorted by the caller's key with list order breaking ties. The views pass the line of the parent's slice that names the child, so siblings read in the order the code calls them; the plain tree_order passes a constant.
+
+step d43fmw
+order 3
+parent qhqkj9
+author ai
+file src/map.rs
+symbol add_anchor
+lines 0 8
+hash 24707bc01c5194d6
+note Appending a step. The parent is stored as given, None for a root; every caller checks that an index exists in the path before calling this, so nothing here bounds-checks it.
+
+step d4h5zq
+order 8
+parent 7gczkl
+author ai
+file src/map.rs
+symbol numbered
+lines 0 23
+hash ba6597975f0a3426
+note The same walk with the hierarchical numbers attached: (step, depth, '1.2.3') in reading order. The outline, the document, the breadcrumb and the graph nodes all number steps through this one function, so a step carries the same number wherever it is shown.
+
+step peom6j
+order 6
+parent qhqkj9
+author ai
+file src/map.rs
+symbol remove_anchor
+lines 0 11
+hash 6be07168074c0be6
+note Deleting a step. Its children are re-pointed at its parent so the tree stays connected, and every index above it shifts down by one, which is why a deletion invalidates indices you were about to use.
+
+step qhqkj9
+order 0
+author ai
+file src/map.rs
+symbol PathDef
+lines 0 7
+hash 04985aecaec52efb
+note anchors is the flat list; a step's index in it is its identity for the whole session and for every command. Nothing renumbers except a deletion, which shifts everything after it.
+
+step wbms9u
+order 2
+parent 7gczkl
+author ai
+file src/map.rs
+symbol parent_name
+lines 0 6
+hash b8e836b71dd68f76
+note The name of the step above this one, which is what the '-- back in X --' marker in a path document is made of. It is what lets a reader come back up a deep flow without counting indentation.
+
+step yu7ue7
+order 7
+parent qhqkj9
+author ai
+file src/map.rs
+symbol find
+lines 0 2
+hash 3ba838097b27f605
+note Paths are addressed by name everywhere; this is the lookup. Names are never changed by any command, which is why a path with the wrong name has to be rebuilt rather than renamed.

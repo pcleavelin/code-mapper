@@ -1,0 +1,62 @@
+codemap 8
+path cli-read-commands
+kind layer
+author ai
+group cli
+note The read-only half of the CLI: the commands that answer questions about the source rather than the map. files, symbols, show and grep all walk the in-memory index directly, and every one of them prints one item per line in a file:line shape so the output can be pasted back into another command or parsed like grep output. These four are what the agent falls back to when no path covers the code it needs.
+
+step 0dsrz5
+order 0
+author ai
+file src/cli.rs
+symbol exec
+lines 4 9
+hash c8f98484bdfd6123
+note files: every indexed file with its line and symbol count. A file with 0 symbols is one whose language has no grammar here, or is not code at all; it is still greppable and viewable.
+
+step 9mg3jn
+order 2
+author ai
+file src/cli.rs
+symbol exec
+lines 29 34
+hash 5fec91b06ed690fc
+note show: numbered lines, the escape hatch for code no path covers. Start and end default to the whole file and are clamped rather than rejected.
+
+step patfe1
+order 3
+parent 9mg3jn
+author ai
+file src/cli.rs
+symbol print_lines
+lines 0 4
+hash 49e6730f4f8d9338
+note The numbered-line printer, shared with the path command so a step's code and a raw show look the same.
+
+step wdd0ll
+order 1
+author ai
+file src/cli.rs
+symbol exec
+lines 10 28
+hash 3225ebb7ccfb726d
+note symbols: one row per symbol with kind, 1-based line range and its callee/caller counts. Depth-1 members are indented two spaces, which is the only hint of nesting in the output. The filter is a substring of either the name or the path.
+
+step wh8ip2
+order 4
+parent 9mg3jn
+author ai
+file src/cli.rs
+symbol find_file
+lines 0 5
+hash 3f257bd64cce0832
+note File lookup for a user-typed path: backslashes are normalised and a suffix match is accepted, so src\\index\\mod.rs and index/mod.rs both find the file.
+
+step z40dra
+order 5
+author ai
+file src/cli.rs
+symbol exec
+lines 35 44
+hash 850cadb6a07c0573
+note grep: a Rust regex over the in-memory lines of every file, no threading and no ignore rules beyond the ones the walk already applied.

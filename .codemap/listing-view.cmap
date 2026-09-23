@@ -1,0 +1,84 @@
+codemap 8
+path listing-view
+kind flow
+author ai
+group gui
+note The file viewer, and the one place a human can author a step. Only the rows on screen become elements - a spacer stands in for everything above and below - which is what makes a four-thousand-line file scroll at the same cost as a short one. Each row is numbered, syntax coloured, and carries a coloured bar on the left where a step of the selected path is anchored, green when current and red when stale. Clicking selects a line and shift-clicking extends the selection, which the top bar's 'pin selection' then turns into a step; double-clicking or ctrl-clicking an identifier jumps to its definition instead, and alt-clicking pins it in the peek panel.
+
+step 1cxlr5
+order 7
+parent tx8rkt
+author ai
+file src/gui/widgets.rs
+symbol spacer
+lines 0 2
+hash 4ba67eccacc4870a
+note An empty element of a given height: the stand-in for rows that are not built, so the scroll extent is the whole list's.
+
+step 2h2qhv
+order 2
+parent azzv57
+author ai
+file src/gui/views.rs
+symbol listing
+lines 23 35
+hash 96b097a38fe3fe3d
+note The rows. rows_window turns the scroll offset into the first visible line and emits the spacer for the lines above; then one code block of the visible lines plus two, then a spacer for the rest plus a row of slack, so the scrollbar sees the whole file while only what shows is drawn. A plain click on a line selects it, shift extends.
+
+step azzv57
+order 0
+author ai
+file src/gui/views.rs
+symbol listing
+lines 0 37
+hash fafb57ea41fe70c2
+note The whole viewer: the file name and the gestures, a go-to-line box, then the scrolling column of rows. With no current file it says so and draws nothing else.
+
+step ghy5uj
+order 6
+parent 2h2qhv
+author ai
+file src/gui/widgets.rs
+symbol code_block
+lines 0 55
+hash dd5ad37fceed403b
+note The one code element in the GUI: a block of lines drawn from a cached grid by a custom element, with the hover, jump and peek gestures resolved to (line, column) from the pointer. Per-row backgrounds and bars come from two closures, so the listing's selection and anchor bars and the document's slice highlight all share it.
+
+step mlu0tc
+order 5
+author ai
+file src/gui/mod.rs
+symbol add_selection
+lines 0 14
+hash 3b2f7adc815b15ec
+note 'pin selection' in the top bar, the human's authoring gesture: the selected lines become a step of the selected path, under the selected step, authored Human. Pinning again puts the next step under the one just made, so a chain is built by clicking down the file.
+
+step rmvq1d
+order 4
+parent ghy5uj
+author ai
+file src/gui/peek.rs
+symbol probe
+lines 0 31
+hash 88271a75d1c4b91c
+note The identifier under the pointer, asked of the language's live server; the tooltip and the jump both start here.
+
+step tx8rkt
+order 3
+parent 2h2qhv
+author ai
+file src/gui/widgets.rs
+symbol rows_window
+lines 0 6
+hash 2dd8783427bcc74a
+note The virtual-list arithmetic every long list in the GUI shares: from the column's scroll offset and last frame's height, the first row in view and how many fit (a guess before the column has a size). It emits the spacer for the rows above; the caller builds only the visible rows and ends with a spacer for the rows below.
+
+step yfetc7
+order 1
+parent azzv57
+author ai
+file src/gui/views.rs
+symbol listing
+lines 8 11
+hash d201c08ef19ba38c
+note A pending scroll: anything that focused a symbol or opened a hit left a line here, and it becomes a scroll offset three rows above that line, clamped to the file. The viewport height comes from what the column measured last frame.

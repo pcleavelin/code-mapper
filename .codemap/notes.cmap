@@ -1,0 +1,15 @@
+codemap 8
+path notes
+kind flow
+author ai
+group cli
+note How later sessions find what earlier ones wrote. Path notes and step notes are the map's text; notes greps them the way grep greps source.
+
+step 09mgxo
+order 0
+author ai
+file src/cli.rs
+symbol exec
+lines 45 57
+hash 54680248269195f8
+note Each matching line of a note prints once, with the path name, and for step notes the step index and file:line, so the output parses like grep.

@@ -1,0 +1,95 @@
+codemap 8
+path call-resolution
+kind flow
+author ai
+group index
+note How a call site becomes an edge in the call graph. The two backends give two different things: tree-sitter gives raw (name, qualifier) strings, a language server gives the (file, line) of the callee's definition. link turns both into callee/caller lists, rebuilding every edge from scratch each time. Server targets are exact; tree-sitter targets go through resolve, a qualifier-aware but type-free heuristic whose rules are the ones written on resolve itself. This is why the map's xrefs are trustworthy with rust-analyzer on PATH and approximate without it.
+
+step 6tlqg1
+order 8
+parent izqvt5
+author ai
+file src/index/mod.rs
+symbol sym_at
+lines 0 3
+hash 7b721b775fe232a7
+note The innermost symbol spanning a line of a file already found by slot: what by_line does after its path lookup, and what link does for every server target once its path-to-slot map has found the file.
+
+step an8w7x
+order 2
+parent c5y7oe
+author ai
+file src/index/link.rs
+symbol owner_is
+lines 0 2
+hash a6de5cf06de6e374
+note Does this candidate belong to that type? The test behind 'self.m' and 'T::m'.
+
+step c5y7oe
+order 1
+parent dsyzch
+author ai
+file src/index/link.rs
+symbol resolve
+lines 0 43
+hash 057892614486729d
+note The tree-sitter half: no type information, so the qualifier decides. self/Self bind to the caller's own owner; an uppercase qualifier is a type's member, else a module (file stem or directory), else something the file imported; a lowercase qualifier is a variable, so it picks a member and never a free function; an unqualified name prefers the same file, then an import, then the same directory. Structs and enums are filtered out first because Foo{..} parses as a call in several grammars.
+
+step ck99zr
+order 3
+parent c5y7oe
+author ai
+file src/index/link.rs
+symbol in_module
+lines 0 3
+hash bd29de14c96db8a7
+note Does this candidate live in that module? A module is a file stem or its directory, which is what makes Odin packages and Rust 'mod' files both work without language-specific rules.
+
+step dsyzch
+order 0
+author ai
+file src/index/link.rs
+symbol link
+lines 0 42
+hash eea2a6bbca6ad995
+note Rebuilds every edge in the index from scratch, so the GUI runs it on a thread over a text-free copy and the CLI once after all servers answered. Server targets resolve by (file, line) through a path-to-slot map; tree-sitter calls go through resolve. Its cost is call sites times same-named candidates, which is what makes a repo full of 'new' slow to link.
+
+step izqvt5
+order 6
+parent dsyzch
+author ai
+file src/index/mod.rs
+symbol by_line
+lines 0 2
+hash bd5d8d4d4d6d3032
+note The server half of an edge is a (file, line), so the target is the innermost symbol covering that line. Nothing is guessed. link does this lookup inline off a path-to-slot map it builds once, because a target is named once per call site and find_file's scan would be a pass over every file each time; this is the same rule, and what the rest of the tool calls.
+
+step jpi2m9
+order 4
+parent ck99zr
+author ai
+file src/index/mod.rs
+symbol stem
+lines 0 3
+hash 5eeba30c30fe98bf
+note The file's own module name.
+
+step kewcsl
+order 5
+parent c5y7oe
+author ai
+file src/index/mod.rs
+symbol dir
+lines 0 5
+hash 564f1ce32b15bbfd
+note The file's package directory, the other half of what counts as a module.
+
+step q0495h
+order 7
+parent izqvt5
+author ai
+file src/index/mod.rs
+symbol find_file
+lines 0 2
+hash 0013a2948dceefd5
+note Targets name files by repo-relative path; this is the lookup everywhere except inside link, and it fails silently for a location outside the index.

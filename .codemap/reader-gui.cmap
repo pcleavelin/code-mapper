@@ -1,0 +1,335 @@
+codemap 8
+path reader-gui
+kind flow
+author ai
+group gui
+note The human's surface as one frame. There is no retained widget tree and no model layer: every frame the frame function polls the background work, feeds the frame's keys to whichever field has focus, then opens and closes elements for the whole window - top bar, left panel, the centre tab, the xrefs panel, the output panel, the status bar - and hands the tree to the layout and the renderer. A panel never mutates the app while it draws; a click pushes an Action and apply runs the queue once the tree is built, which is what lets a panel hold the whole App borrowed. Editing is limited to what a reader needs - deleting a step or a path, pinning a selection from the listing, creating an empty path - and everything else is typed into the output panel as a CLI command.
+
+step 0ewdra
+order 11
+parent 50ozko
+author ai
+file src/gui/panels.rs
+symbol xrefs_panel
+lines 0 102
+hash 7d833d4b1f8e689d
+note The xrefs panel, docked right by default: the pinned peek on top when there is one, then the focused symbol's callers, callees and references, each row clickable. It is the only panel that says a file is still waiting for its language server, by dimming the rows.
+
+step 25fyn8
+order 14
+parent 50ozko
+author ai
+file src/gui/peek.rs
+symbol tooltip_element
+lines 0 55
+hash 64112941e0d5fdc5
+note Built after every panel and before the layout, so the floating definition a code row asked for this frame is drawn over everything.
+
+step 37g7kf
+order 25
+parent 50ozko
+author ai
+file src/gui/work.rs
+symbol working
+lines 0 2
+hash 16dbc2773d7265c6
+note Whether anything is still in flight: a server request or batch of files, the parent map, a re-index or a link on a thread. The frame asks for a redraw in 50ms while this holds and in a second otherwise, and a script's idle waits on it.
+
+step 3gg0k8
+order 19
+parent myq0zo
+author ai
+file src/gui/panels.rs
+symbol LeftTab
+lines 0 4
+hash 4fe1c52b89eab471
+note The app's script commands: switch tab, set a scroll offset, screenshot the next frame, and dump the selection, scrolls, camera, hit-test state and node rectangles, so a script measures what a gesture did.
+
+step 4uwoav
+order 22
+parent jdewtv
+author ai
+file src/gui/document.rs
+symbol doc_steps
+lines 105 124
+hash cd2ea73d271d025f
+note Context buttons: ten more lines of the file above or below the code each press, kept per (path, step) and cleared by 'no context' in the header. The slice is highlighted whenever what shows is not exactly the slice, the same rule the whole-symbol toggle uses.
+
+step 50ozko
+order 0
+author ai
+file src/gui/mod.rs
+symbol frame
+lines 0 114
+hash 9768ad13b5a2e9c2
+note The frame, in order: the font size for this scale factor, the screenshot aid, the three polls, the keys, then the element tree, then layout, draw, the action queue and the history snapshot. It asks the loop to come back in 50ms while a thread is running and in a second otherwise, so an idle window costs one frame per second.
+
+step 5aljhx
+order 3
+parent 50ozko
+author ai
+file src/gui/panels.rs
+symbol top_bar
+lines 0 29
+hash fb0bb56a3aa187bd
+note The top bar: search box, back and forward, the five centre tabs, then right-aligned the new-path box, 'pin selection' and 'save', which shows a star while the map is dirty. Every button here only pushes an Action.
+
+step 62vg11
+order 5
+parent myq0zo
+author ai
+file src/gui/panels.rs
+symbol paths_window
+lines 0 99
+hash 915a7d5767abc075
+note Paths: the groups from Map::rows as folders with their path counts, red when a path under them is stale, then one row per path with kind, author tag, step count and its diff mark, red when it has stale steps. A group never clicked is open while it holds the path being read; a click records it open or closed in groups_open. The selected path expands into the outline underneath - one row per step, indented by depth, carrying the hierarchical number, the link as an arrow and a hidden count on a folded subtree. The row highlighted is the step the document currently has at the top, which is how the outline follows scrolling.
+
+step 7jhifk
+order 20
+parent pj8e6h
+author ai
+file src/gui/widgets.rs
+symbol trunc
+lines 0 2
+hash aa019ed26615dbfe
+note Cuts a name or a kind to a column width with an ellipsis, so the symbol table stays a table when a name is long.
+
+step 8b2kbr
+order 1
+parent 50ozko
+author ai
+file src/gui/mod.rs
+symbol frame
+lines 4 22
+hash 65e1c0d485173c3b
+note The development aid: with CODEMAP_SHOT set, the tab named by CODEMAP_SHOT_TAB is selected on frame 3, the renderer is asked for a PNG on frame 20 once the layout has settled, and the app quits. It is how a rendering claim is checked against pixels rather than asserted.
+
+step a4si22
+order 2
+parent 50ozko
+author ai
+file src/gui/mod.rs
+symbol frame
+lines 32 77
+hash 59fb885d544850e4
+note Everything that happens before a single element exists: the frame time, the four chords (ctrl+s, alt or ctrl with left and right for back and forward), every field fed the frame's keys with enter running the command, the search, a new path or a line jump, and up and down walking the path when no field has the keyboard.
+
+step cj7z2z
+order 17
+parent sn1cn1
+author ai
+file src/gui/mod.rs
+symbol create_path
+lines 0 15
+hash 962976f595a60234
+note The new-path box: enter creates an empty flow with the typed name, authored by the human, selects it and says so in the status line, so 'pin selection' lands in it.
+
+step d5you8
+order 9
+parent 50ozko
+author ai
+file src/gui/document.rs
+symbol path_document
+lines 0 127
+hash b04c16848cae8e37
+note The document, the reader's landing view: the path header with its group, the note, the steps that link here, and a sticky breadcrumb of the topmost visible step's ancestors, then the steps from doc_steps. Which step is topmost and where a pending scroll lands both come from last frame's rectangles, looked up by the ids of the path's own steps.
+
+step gy5tg5
+order 23
+parent vc7u1p
+author ai
+file src/gui/mod.rs
+symbol named_id
+lines 0 8
+hash 4cdb8fa4afb49c9d
+note How a script names an element: the id name, name/n for an id_n, name@suffix for an id_with, the same spelling rect, click-id and hover-id take.
+
+step ipx0f8
+order 31
+parent jdewtv
+author ai
+file src/gui/document.rs
+symbol doc_steps
+lines 77 93
+hash a7b7da8dcc0cf923
+note The link controls: the name opens the linked path, the toggle flips StepView.expanded, a link to a path already open further up says so instead, and one to a missing path shows red.
+
+step j7n739
+order 16
+parent sn1cn1
+author ai
+file src/gui/mod.rs
+symbol Action
+lines 0 25
+hash dfa84ee6d4101e65
+note What a click can ask for. Navigation, selection, the per-step view toggles, opening a group, the two deletions, tab switches and the three commands the top bar offers. Adding a gesture means adding a variant here and an arm in apply, not threading a callback through the panels.
+
+step jdewtv
+order 30
+parent d5you8
+author ai
+file src/gui/document.rs
+symbol doc_steps
+lines 0 138
+hash e9c7d6cd5be0b9ab
+note The steps of one path in tree order, each a header with the hierarchical number and the fold, hide-code, whole-symbol, link and delete controls, then the note and the anchored lines. The same function draws a linked path inline: occ tells its element ids apart, the numbers carry the linking step's number as a prefix, and chain stops a path from opening inside itself.
+
+step jjshc9
+order 13
+parent 50ozko
+author ai
+file src/gui/panels.rs
+symbol status_bar
+lines 0 11
+hash 8e55fd77011cc47c
+note The last row: the map's path, the current status message, and the server thread's progress while one is running.
+
+step mti9ps
+order 32
+parent jdewtv
+author ai
+file src/gui/document.rs
+symbol doc_steps
+lines 129 136
+hash 513de2d2fc17a370
+note The inline expansion: the linked path's steps drawn by doc_steps itself, one level deeper, under a fresh occ, while the step's own subtree is not folded.
+
+step myq0zo
+order 4
+parent 50ozko
+author ai
+file src/gui/panels.rs
+symbol left_panel
+lines 0 15
+hash dde7d9d0401ce86d
+note The Paths, Symbols and Files panel, docked left by default: its own row of tabs, then whichever of the three windows is selected. Its place and size are the dock's; the tab row is its header, so pressing beside the tabs and dragging moves the panel.
+
+step norvea
+order 10
+parent d5you8
+author ai
+file src/gui/widgets.rs
+symbol code_block
+lines 0 55
+hash dd5ad37fceed403b
+note One block of code as one element, shared with the listing, the peek panel and the tooltip; the document passes the slice highlight as the row background.
+
+step o4p6no
+order 18
+parent 50ozko
+author ai
+file src/gui/mod.rs
+symbol Tab
+lines 0 6
+hash 6db62cd67a995526
+note The five centre tabs. The frame matches on this to decide which of the five view functions to call; nothing else about a tab is stored.
+
+step omwlcn
+order 8
+parent x3sfq6
+author ai
+file src/gui/panels.rs
+symbol files_tree
+lines 0 31
+hash 8747282d7e6cf812
+note The directory tree, derived rather than stored: the file list is sorted by path, so a run of entries sharing the next component is a directory and recursing one component deeper draws it. Top-level directories are open by default and the toggled set flips that, so no state is needed for the common case.
+
+step pj8e6h
+order 6
+parent myq0zo
+author ai
+file src/gui/panels.rs
+symbol symbols_window
+lines 0 33
+hash 0918635e47cf2666
+note Symbols: a filter box over every symbol in the index, one row each with a '+' when a path covers it. Only the rows on screen become elements, with a spacer above and below standing in for the rest, so the table is the same cost at ten symbols or ten thousand.
+
+step qnrb07
+order 12
+parent 50ozko
+author ai
+file src/gui/panels.rs
+symbol output_panel
+lines 0 32
+hash 55d31a0fad1a6112
+note The output panel, docked at the bottom by default: the command log and the input line that runs exactly the CLI's commands. See cli-command for what happens to a line.
+
+step rdm4l3
+order 26
+parent sn1cn1
+author ai
+file src/gui/mod.rs
+symbol add_selection
+lines 0 14
+hash 3b2f7adc815b15ec
+note 'pin selection': the listing's selected lines become a step of the selected path, under the selected step. The new step becomes the selected one, so pinning repeatedly builds a chain rather than a fan.
+
+step sn1cn1
+order 15
+parent 50ozko
+author ai
+file src/gui/mod.rs
+symbol apply
+lines 0 94
+hash 4fa9e20a996242e4
+note The action queue, drained once the tree is built. This is the only place the app mutates itself during a frame, so a panel can hold &mut self while it draws and still cause a selection change.
+
+step svoo3m
+order 29
+parent d5you8
+author ai
+file src/gui/document.rs
+symbol StepView
+lines 0 6
+hash bc8cec9f70a4ccb0
+note How one step shows: whole symbol or slice, code hidden, subtree folded, the context lines asked for, and whether the path it links to shows inline. One map from (path, step) to this, missing meaning the default, so removing or renumbering steps remaps one collection and a toggle is a field flip. A linked path shown inline uses the views of its own steps.
+
+step ujbodh
+order 27
+parent 4uwoav
+author ai
+file src/gui/document.rs
+symbol ctx_button
+lines 0 8
+hash e3dd4e196e3c24d5
+note The row above (dir -1) or below (1) a step's code, indented with the step, whose small button queues a Context action for ten more lines on that side.
+
+step vc7u1p
+order 21
+parent 50ozko
+author ai
+file src/gui/mod.rs
+symbol script
+lines 0 44
+hash b2c470494c1e4202
+note The script commands the loop hands down: the tab, a file and line in the listing, a panel's scroll offset, idle (which waits until no server request, merge or rebuild is outstanding), a screenshot, one element's rectangle by id name, and dump - the selection, the scroll offsets, the tooltip and peek, how far the servers have got, the graph camera and every node and node button rectangle, all to stderr as DUMP lines a script can grep.
+
+step x3sfq6
+order 7
+parent myq0zo
+author ai
+file src/gui/panels.rs
+symbol files_window
+lines 0 9
+hash 86c949388e3ec9b6
+note Files: covered/total per file, computed here for every file and handed to the tree builder.
+
+step z4xk3q
+order 28
+parent vc7u1p
+author ai
+file src/gui/mod.rs
+symbol locate
+lines 0 2
+hash 653dcda66995fc4d
+note The centre of a named element from last frame's rectangle, which the loop turns a click-id or hover-id line into a plain click or mouse move at.
+
+step zub7v0
+order 24
+parent vc7u1p
+author ai
+file src/gui/mod.rs
+symbol from_name
+lines 0 8
+hash afae30a809da6d08
+note A tab by its lower-case name, any other name meaning the path document. The script's tab command and CODEMAP_SHOT_TAB both go through it, so the two accept the same names.

@@ -1,0 +1,115 @@
+codemap 8
+path map-diff
+kind flow
+author ai
+group map
+note How the owner reviews an agent session's map changes without reading path output. The map at the parent revision comes from jj or git (Vcs, a shell-out, no VCS library); the working map is diffed against it by path name and step id. The CLI prints it as diff; the GUI shows it as the Diff tab, as marks in the Paths list, and as tags on the steps of a document.
+
+step 0dhho3
+order 5
+parent ss8t8s
+author ai
+file src/map.rs
+symbol PathDiff
+lines 0 6
+hash 1dbaa7a1341f6250
+note One path's difference: whether the path itself is new, gone or changed, whether its note, kind or group moved, a per-step verdict, and the base steps that no longer exist.
+
+step 53qktx
+order 9
+parent c08ljl
+author ai
+file src/gui/work.rs
+symbol poll_base
+lines 0 8
+hash 42ed93ed5cb7662a
+note Picks up the parent revision's map once the thread has it, or the reason there is none, which the Diff tab shows. Until then the tab says it is reading.
+
+step 6xac32
+order 3
+author ai
+file src/gui/views.rs
+symbol diff_view
+lines 0 66
+hash f301027d5faf6631
+note The Diff tab: every added, removed or changed path with a one-line summary, and under a changed one the per-step verdicts. Click a row to read that path's document. 'refresh' reads the parent revision again, which also happens on start and whenever the map reloads from disk; with no base map the tab says why.
+
+step c08ljl
+order 4
+parent 6xac32
+author ai
+file src/gui/work.rs
+symbol load_base
+lines 0 3
+hash 9dc59da9b57db34e
+note The parent revision is read on a thread so opening the app never waits on jj or git; poll_base takes the answer.
+
+step iiwefr
+order 7
+parent 0dhho3
+author ai
+file src/map.rs
+symbol StepChange
+lines 0 5
+hash eeb4b314aa5800fd
+note The four a step can get. There is no 'removed' here because a removed step has no working-map step to hang a verdict on; those are listed separately.
+
+step ksesi4
+order 6
+parent 0dhho3
+author ai
+file src/map.rs
+symbol Change
+lines 0 5
+hash 3c67c53c7d982e1b
+note The four verdicts a path can get. Same is the common case and is never printed.
+
+step m6t8co
+order 2
+author ai
+file src/cli.rs
+symbol exec
+lines 367 396
+hash 702662ac5b4ad45b
+note The text form: one line per changed path, then its changed steps indented with +, ~ or -.
+
+step nwxiya
+order 10
+parent 6xac32
+author ai
+file src/gui/views.rs
+symbol diffs
+lines 0 2
+hash f7a64764b23b4277
+note The diff is recomputed wherever it is shown rather than cached: it is cheap, and caching it would need invalidating on every note keystroke.
+
+step ovgsad
+order 0
+parent m6t8co
+author ai
+file src/map.rs
+symbol base_from_vcs
+lines 0 7
+hash 980e6d5e4d5c1064
+link vcs
+note The map at the parent revision, read through Vcs in one call and parsed like the files on disk. Err says why there is none (no repo, no committed map, or one that does not read), and the Diff tab shows it.
+
+step ss8t8s
+order 1
+parent m6t8co
+author ai
+file src/map.rs
+symbol diff
+lines 0 37
+hash 04e1c0a8b195128d
+note Path by name, step by id. A step whose file, symbol, lines or hash moved is re-pinned, one with only a different note is note edited, one with only a different link is link changed; an id on one side only is new here or removed there. A change of the path note, kind or group marks the path changed too.
+
+step vfghsy
+order 8
+parent iiwefr
+author ai
+file src/map.rs
+symbol tag
+lines 0 7
+hash 25070477f936172e
+note The words shown next to a step in the document and the Diff tab.

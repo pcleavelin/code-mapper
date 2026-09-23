@@ -1,0 +1,93 @@
+codemap 8
+path index-cache
+kind type
+author ai
+group index
+note The .codemap-cache file: every indexed file's symbols, calls, targets, references, imports and highlight spans, keyed by the file's text hash. Derived from the backends and never committed. It exists so a launch does not wait on a server or a parse; anything it cannot answer is re-derived.
+
+step 29a3aw
+order 0
+author ai
+file src/index/cache.rs
+lines 0 11
+hash 19ca98f362ff9d64
+note The layout. One version, rejected wholesale otherwise.
+
+step 7n74ir
+order 2
+parent 29a3aw
+author ai
+file src/index/cache.rs
+symbol load_cache
+lines 0 37
+hash ed49ce0a82a316e8
+note Files by path with empty lines; build fills the text from disk and drops entries whose hash no longer matches.
+
+step kb14yk
+order 3
+parent 7n74ir
+author ai
+file src/codec.rs
+symbol Reader
+lines 0 3
+hash 2a5babbd29b59158
+note The cursor the cache and the map file are both read with: a byte slice and an offset, nothing more.
+
+step m9mkut
+order 8
+author ai
+file src/codec.rs
+symbol write_retry
+lines 0 19
+hash fe830c975769481d
+note Every file the tool writes, the map and the cache alike, goes through here: the bytes land in a temporary file beside the target and are renamed over it, so a reader, or the second of two threads saving at once, never sees a half-written file. A sharing violation from an editor or scanner holding the file is retried a few times.
+
+step nre0yw
+order 7
+parent r71nrd
+author ai
+file src/index/cache.rs
+symbol w_locs
+lines 0 6
+hash 38b17fdba47f4273
+note A list of (file, line) locations: how a server's call targets and references are stored.
+
+step o47bng
+order 6
+parent r71nrd
+author ai
+file src/codec.rs
+symbol w_u32
+lines 0 2
+hash 28de3835e5c681da
+note Little-endian u32, the only integer width the format needs beyond the hashes.
+
+step r71nrd
+order 1
+parent 29a3aw
+author ai
+file src/index/cache.rs
+symbol save_cache
+lines 0 48
+hash f7b6b1b7712a95b8
+note Written whole after a build that parsed anything and after every server run.
+
+step t4sexp
+order 5
+parent r71nrd
+author ai
+file src/codec.rs
+symbol w_str
+lines 0 3
+hash f72e8bfa62bddd40
+note Length-prefixed UTF-8, the only string encoding anywhere in this tool's files.
+
+step yk7ds8
+order 4
+parent kb14yk
+author ai
+file src/codec.rs
+symbol impl Reader<'_>
+lines 0 19
+hash 8806cc96545fe01c
+note Every primitive is an Option, so a truncated or foreign file fails at the first bad read and the whole cache is thrown away rather than half-trusted. map.rs reads its own format with this same reader.

@@ -1,0 +1,153 @@
+codemap 8
+path map-file
+kind type
+author ai
+group map
+note The map itself: the only thing this tool persists. A directory, .codemap, at the root, committed with the code, with one text file per path holding its kind, group, note, author and steps. The format is hand-rolled, one field per line, no serialization dependency and no JSON. It exists to merge: two branches that change different paths touch different files, and two that change one path touch different lines unless they edit the same field of the same step. A file written by another version is refused outright and the map regenerated.
+
+step 2vhi6m
+order 5
+parent 42292h
+author ai
+file src/map.rs
+symbol impl Author
+lines 8 20
+hash cf480eb4721076d8
+note The words the file writes, ai and human; parse is the only way back, so an unknown word fails the read.
+
+step 42292h
+order 3
+parent uivdyq
+author ai
+file src/map.rs
+symbol Author
+lines 0 3
+hash fd26555a30321180
+note Who wrote a path or a step. Every CLI mutation records Ai, every GUI edit Human, and that is the whole of the review story: the owner can see what an agent added.
+
+step 53oc0t
+order 7
+parent 9g28fx
+author ai
+file src/map.rs
+symbol to_text
+lines 0 48
+hash c311c0778bb8f41b
+note One path as its file: the path's fields, then each step in id order. Ids are random-looking, so the steps two branches add to one path land at unrelated places and merge. Empty optional fields are left out.
+
+step 8egzhr
+order 4
+parent 42292h
+author ai
+file src/map.rs
+symbol tag
+lines 0 5
+hash b96cf13eafbe3f57
+note Rendered as the ' (ai)' suffix in every listing. Human authorship is deliberately unmarked.
+
+step 9g28fx
+order 6
+parent kzkkga
+author ai
+file src/map.rs
+symbol save
+lines 0 18
+hash c289066298108a57
+note Writes each path's file only when its text changed and removes the files of paths that are gone, so an unchanged map saves to identical bytes and a one-path edit rewrites one file. No locking: the CLI and the GUI both save, and the last writer wins.
+
+step atbu0l
+order 13
+parent tmbi85
+author ai
+file src/map.rs
+symbol check_name
+lines 0 5
+hash 7740a63c5186978a
+note A path name is a file name: letters, digits, '.', '_' and '-', not starting with a dot.
+
+step d8rk5e
+order 8
+parent 53oc0t
+author ai
+file src/map.rs
+symbol escape
+lines 0 2
+hash d1123af89605178f
+note A value runs to the end of its line, so the three characters that would break a line are escaped.
+
+step ha8wzu
+order 10
+parent kzkkga
+author ai
+file src/map.rs
+symbol load
+lines 0 19
+hash 521ee4e565cafe20
+note Every .cmap file in name order, each holding exactly one path under its own name. A directory that does not exist is an empty map; a .codemap that is a file is the old single-file format, and every read error, conflicts included, is an Err naming the file and line.
+
+step jn6vqv
+order 0
+author ai
+file src/map.rs
+lines 153 187
+hash 16ed1980ef63c486
+note The layout, written out as a comment because there is no schema anywhere else, with the directory name, the version line and the conflict markers that stop a read.
+
+step kzkkga
+order 1
+author ai
+file src/map.rs
+symbol Map
+lines 0 2
+hash fd23a283b8161d52
+note The whole manual layer in one struct: a list of paths. It comes back from disk in file name order, which is the order paths and the Paths tab follow.
+
+step lt96h2
+order 14
+parent kzkkga
+author ai
+file src/map.rs
+symbol stamp
+lines 0 12
+hash 81530d72d6302229
+note The newest change time of the map's files and how many there are: what the GUI polls, since a directory's own time does not change when a file in it is rewritten.
+
+step mks9vm
+order 9
+parent 9g28fx
+author ai
+file src/gui/mod.rs
+symbol save
+lines 0 16
+hash 8354618b9820c296
+note The GUI's save: refused while the map on disk does not read, since the save would rewrite what did not read. Otherwise clears the dirty flag and records the files' stamp so the disk poller does not read its own write back as an external change.
+
+step n8ip2o
+order 12
+parent tmbi85
+author ai
+file src/map.rs
+symbol unescape
+lines 0 15
+hash be67765df5433aba
+note The inverse of escape.
+
+step tmbi85
+order 11
+parent ha8wzu
+author ai
+file src/map.rs
+symbol parse
+lines 0 85
+hash bb7f4a6209e3f1e7
+note The reader, shared by the files on disk and the text jj or git hands back for a revision, which is several files one after another. Each codemap line starts a path. Steps are sorted by order, ties by id, and parent ids turned into indices; a parent that is not a step of the path fails the read. Steps come back stale; resolving them against the index clears it.
+
+step uivdyq
+order 2
+parent kzkkga
+author ai
+file src/map.rs
+symbol PathDef
+lines 0 7
+hash 04985aecaec52efb
+note One path: a name (the key everywhere and the file name; renaming it renames every link to it), a kind tag, the path note, who wrote it, the group it sits in, and the steps as a flat vector. The tree lives in each step's parent index, not in this structure.

@@ -1,0 +1,92 @@
+codemap 8
+path path-groups
+kind flow
+author ai
+group map
+note How paths are placed in groups so the paths list is a tree instead of one flat list. A group is a field of the path, normalised by normal_group, with / nesting one group in another; a group exists while a path is in it. Map::rows orders the list once for both front ends: at each level the groups sorted by name, then the paths of that level in map order.
+
+step 0u8wp3
+order 1
+parent gzhf7a
+author ai
+file src/map.rs
+symbol set_group
+lines 0 2
+hash afd3a27e07ac0adb
+note The one place a group is set, always through normal_group.
+
+step 2d3h84
+order 2
+parent 0u8wp3
+author ai
+file src/map.rs
+symbol normal_group
+lines 0 2
+hash 108b720bd3a30208
+note Trims each part and drops empty ones, so " /flows//http/ " and "flows/http" are the same group.
+
+step 77jjzt
+order 4
+parent zwkmx2
+author ai
+file src/map.rs
+symbol rename_group
+lines 0 16
+hash dd60d3485507d6a1
+note Matches the group and its descendants by whole parts, so renaming flow leaves flows alone; renaming to "" lifts them one level.
+
+step bthmeg
+order 8
+author ai
+file src/gui/panels.rs
+symbol paths_window
+lines 0 99
+hash 915a7d5767abc075
+link reader-gui
+note The Paths tab walks the same rows(), skipping everything under a closed group.
+
+step cqowwi
+order 5
+parent p8bthl
+author ai
+file src/map.rs
+symbol rows
+lines 0 21
+hash b2f0189c956fe6c8
+note The list order. Group rows carry the number of paths under them at any depth; path rows carry their depth for indenting.
+
+step gxaocm
+order 7
+author ai
+file src/cli.rs
+symbol exec
+lines 158 164
+hash 10c7be7fad6fa0de
+note groups: the group rows of rows() alone, indented by depth.
+
+step gzhf7a
+order 0
+author ai
+file src/cli.rs
+symbol exec
+lines 148 157
+hash 8ab36039df19c5eb
+note path-group: moves one path; an empty group puts it back at the top level.
+
+step p8bthl
+order 6
+author ai
+file src/cli.rs
+symbol exec
+lines 93 124
+hash c0b850c79f8b47d7
+note paths: the path rows of rows(), with a == line naming the group wherever it changes, (top level) included, so a flat listing still says where each path sits.
+
+step zwkmx2
+order 3
+author ai
+file src/cli.rs
+symbol exec
+lines 165 169
+hash 117764014a7a096f
+note group-rename: moves every path of the group and of the groups inside it.

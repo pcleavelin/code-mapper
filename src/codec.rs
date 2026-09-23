@@ -1,6 +1,6 @@
-//! The ground the two binary files share: little-endian writing and reading of the few shapes
-//! both use, the hash their contents are keyed by, and a write that never leaves a file half
-//! written.
+//! Little-endian writing and reading for the index cache, the hash that file text and anchored
+//! slices are keyed by, and a write that never leaves a file half written, which the cache and
+//! the map's files both use.
 
 use std::path::Path;
 
@@ -39,9 +39,6 @@ impl Reader<'_> {
     }
     pub fn u32(&mut self) -> Option<u32> {
         Some(u32::from_le_bytes(self.bytes(4)?.try_into().ok()?))
-    }
-    pub fn i32(&mut self) -> Option<i32> {
-        Some(i32::from_le_bytes(self.bytes(4)?.try_into().ok()?))
     }
     pub fn u64(&mut self) -> Option<u64> {
         Some(u64::from_le_bytes(self.bytes(8)?.try_into().ok()?))

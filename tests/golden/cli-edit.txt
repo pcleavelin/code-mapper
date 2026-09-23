@@ -513,6 +513,8 @@ startup [flow] (ai) (7 steps): What running the program does: fill the store, th
       [5] src/store.rs:21-25 total_area (ai)  -- The sum over every shape's own area.
       [6] src/main.rs:24-26 log_line (ai)
 == (top level)
+c-lib [layer] (ai) (1 steps): The C library's surface.
+  [0] c/lib.c:7-13 int sum_squares(int n) (ai)
 shapes [type] (ai) (3 steps): The Shape trait and the two shapes that implement it.
   [0] src/shapes.rs:1-4 Shape (ai)
     [1] src/shapes.rs:14-21 impl Shape for Circle (ai)
@@ -520,8 +522,6 @@ shapes [type] (ai) (3 steps): The Shape trait and the two shapes that implement 
 stats [flow] (ai) (2 steps)
   [0] tools/stats.py:5-7 spread (ai)
     [1] tools/helpers.py:1-2 mean (ai)
-c-lib [layer] (ai) (1 steps): The C library's surface.
-  [0] c/lib.c:7-13 int sum_squares(int n) (ai)
 ! clangd: 2 files to index
 ! clangd not on PATH: 2 files keep the tree-sitter resolver
 ! rust-analyzer: 3 files to index
@@ -767,21 +767,9 @@ $ codemap path-rm nope
 ! no such path: nope
 [exit 2]
 $ codemap paths
-startup [flow] (ai) (7 steps): What running the program does: fill the store, then report its total area.
-  [0] src/main.rs:7-11 main (ai)  -- Entry: builds the store and hands it to the two phases.
-    [1] src/main.rs:13-16 fill (ai)  -- Adds one shape of each kind.
-      [2] src/store.rs:12-15 add (ai)
-        [3] src/store.rs:29-31 check (ai)  -- Guards the size after every add.
-    [4] src/main.rs:18-22 report (ai)
-      [5] src/store.rs:21-25 total_area (ai)  -- The sum over every shape's own area.
-      [6] src/main.rs:24-26 log_line (ai)
-shapes [type] (ai) (3 steps): The Shape trait and the two shapes that implement it.
-  [0] src/shapes.rs:1-4 Shape (ai)
-    [1] src/shapes.rs:14-21 impl Shape for Circle (ai)
-    [2] src/shapes.rs:23-30 impl Shape for Square (ai)
-stats [flow] (ai) (2 steps)
-  [0] tools/stats.py:5-7 spread (ai)
-    [1] tools/helpers.py:1-2 mean (ai)
+adding [flow] (ai) (2 steps)
+  [0] src/store.rs:12-15 add (ai)
+    [1] src/store.rs:29-31 check (ai)
 c-lib [layer] (ai) (1 steps): The C library's surface.
   [0] c/lib.c:7-13 int sum_squares(int n) (ai)
 main [flow] (ai) (7 steps)
@@ -792,9 +780,21 @@ main [flow] (ai) (7 steps)
       [4] src/main.rs:24-26 log_line (ai)
       [5] src/store.rs:21-27 total_area (ai)
     [6] src/store.rs:8-10 new (ai)
-adding [flow] (ai) (2 steps)
-  [0] src/store.rs:12-15 add (ai)
-    [1] src/store.rs:29-31 check (ai)
+shapes [type] (ai) (3 steps): The Shape trait and the two shapes that implement it.
+  [0] src/shapes.rs:1-4 Shape (ai)
+    [1] src/shapes.rs:14-21 impl Shape for Circle (ai)
+    [2] src/shapes.rs:23-30 impl Shape for Square (ai)
+startup [flow] (ai) (7 steps): What running the program does: fill the store, then report its total area.
+  [0] src/main.rs:7-11 main (ai)  -- Entry: builds the store and hands it to the two phases.
+    [1] src/main.rs:13-16 fill (ai)  -- Adds one shape of each kind.
+      [2] src/store.rs:12-15 add (ai)
+        [3] src/store.rs:29-31 check (ai)  -- Guards the size after every add.
+    [4] src/main.rs:18-22 report (ai)
+      [5] src/store.rs:21-25 total_area (ai)  -- The sum over every shape's own area.
+      [6] src/main.rs:24-26 log_line (ai)
+stats [flow] (ai) (2 steps)
+  [0] tools/stats.py:5-7 spread (ai)
+    [1] tools/helpers.py:1-2 mean (ai)
 ! clangd: 2 files to index
 ! clangd not on PATH: 2 files keep the tree-sitter resolver
 ! rust-analyzer: 3 files to index

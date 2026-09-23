@@ -1,0 +1,43 @@
+codemap 8
+path path-kind
+kind type
+author ai
+group map
+note A path's kind: flow, layer or type. A tag only; it is listed and filterable and changes no rendering. Stored as one byte in the map file.
+
+step 2um3w4
+order 3
+parent ywvq6u
+author ai
+file src/map.rs
+symbol add_path
+lines 0 7
+hash 12650e95f1330532
+note The only constructor of a path, so every path has a kind from birth. The GUI creates flows.
+
+step up13ub
+order 1
+parent x1wksz
+author ai
+file src/map.rs
+symbol impl Kind
+lines 0 13
+hash ae04c5ff72e3b1dd
+note name and parse are the only string forms; the CLI and the file format both go through them.
+
+step x1wksz
+order 0
+author ai
+file src/map.rs
+symbol Kind
+lines 0 7
+hash 79b841549eb2e3f4
+note The three kinds and their byte values.
+
+step ywvq6u
+order 2
+author ai
+file src/map.rs
+lines 153 182
+hash 430b6233ac38671d
+note The file layout: the kind is one line, kind flow, layer or type. One version; any other is rejected and the map regenerated, never migrated.

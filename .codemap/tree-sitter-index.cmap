@@ -1,0 +1,125 @@
+codemap 8
+path tree-sitter-index
+kind flow
+author ai
+group index
+note How a file becomes symbols and calls when no language server answers for it. parse_file runs the language's tree-sitter grammar once over the text; a walk of the syntax tree picks out top-level declarations plus one level into impl/mod/trait/class bodies, notes what each import statement brings into scope, and records every call site as a bare (name, qualifier) pair. Nothing is resolved here: the call sites are strings, and link turns them into edges afterwards (see call-resolution). This backend runs for every file that is not cached, and is the final answer for a language whose server is missing or does not exist. Syntax colouring happens in the same parse; that half is the highlighting path.
+
+step 0c73gq
+order 0
+author ai
+file src/index/treesitter.rs
+symbol parse_file
+lines 0 15
+hash 3ea0bfe97f9f9328
+note The whole backend in one function: lines, an empty highlight table, then one parse. Everything else here hangs off that single syntax tree. The File it returns is tagged Backend::TreeSitter, which is what marks it as still worth asking a server about.
+
+step 3mmijc
+order 11
+parent adt563
+author ai
+file src/index/treesitter.rs
+symbol qual_of
+lines 0 5
+hash 3d46e27965725e4e
+note The qualifier a call names, shared by find_calls and parse_callee: self, Self, this and super mean the caller's own owner (Qual::SelfRef); anything else is reduced to a bare type name.
+
+step 5g8ut6
+order 5
+parent a41e5v
+author ai
+file src/index/treesitter.rs
+symbol find_calls
+lines 0 27
+hash 0145aa9d488816e5
+note Recursively collects the call sites inside one declaration. Anything whose node kind contains 'call' counts; the callee expression is its 'function' field. The extra work here is recovering a qualifier the grammar hid: some languages parse pkg.proc(x) as member(pkg, call(proc, x)), so the qualifier is the sibling before the call, not part of it.
+
+step 7arqxd
+order 9
+parent kuh7fw
+author ai
+file src/index/treesitter.rs
+symbol Parsers
+lines 0 3
+hash 9648311e581e13e6
+note One parser and a lazily built map of compiled highlight queries, kept across every file of a run so a grammar is loaded once. It starts empty through Default: a query is compiled the first time a file of that extension shows up.
+
+step 93f8t9
+order 8
+parent 0c73gq
+author ai
+file src/codec.rs
+symbol fnv1a
+lines 0 7
+hash 8d5478bd35c04a36
+note The file's content hash, the key everything derived from this file is cached under. Computed on the tab-expanded text, so what is hashed is what is displayed.
+
+step a41e5v
+order 3
+parent 0c73gq
+author ai
+file src/index/treesitter.rs
+symbol collect
+lines 0 75
+hash 0c976fd294677e88
+note The walk that produces symbols. Named children of the root become symbols; imports are diverted to record_import; comments, package clauses, attributes and bodyless 'mod foo;' are skipped. Containers (impl, mod, trait, class) recurse exactly one level so methods appear with their owner type, which is what gives depth 1 symbols and what a qualified call later binds against.
+
+step adt563
+order 6
+parent 5g8ut6
+author ai
+file src/index/treesitter.rs
+symbol parse_callee
+lines 0 23
+hash 2ff9c2dc722f4143
+note Turns the callee's source text into a Call. Generics and argument lists are stripped, then the last dotted or scoped segment is the name and the one before it the qualifier, with self/Self/this/super folded into Qual::SelfRef. This is the whole of what the tree-sitter backend knows about a call.
+
+step jnnl3s
+order 4
+parent a41e5v
+author ai
+file src/index/treesitter.rs
+symbol record_import
+lines 0 48
+hash 09f1ed70b20d7bcc
+note Every import statement in the file, reduced to a map of name-or-alias to module stem. Deliberately string work rather than per-language parsing: it only has to be good enough for resolve to send an unqualified or aliased call to the right file.
+
+step k1m1hq
+order 2
+parent kuh7fw
+author ai
+file src/index/treesitter.rs
+symbol language_for
+lines 0 11
+hash f81bbed9e22e62a7
+note The extension-to-grammar table: the only place a bundled tree-sitter grammar is named. A language missing from here parses to nothing, so its files are listed and greppable but have no symbols.
+
+step kuh7fw
+order 1
+parent 0c73gq
+author ai
+file src/index/treesitter.rs
+symbol query_for
+lines 0 10
+hash d69c363d010aad45
+note Grammars and their compiled highlight queries are expensive, so they are built once per extension and kept in the Parsers map. It takes the map rather than &mut self so the caller can keep using the parser at the same time.
+
+step mngdal
+order 7
+parent adt563
+author ai
+file src/index/treesitter.rs
+symbol bare_type
+lines 0 3
+hash 0d2a00199110f818
+note Normalises a qualifier or an impl target to a plain type name, so 'Foo<T>', '&mut Foo' and 'crate::a::Foo' all resolve against the same owner.
+
+step rgxgg1
+order 10
+parent a41e5v
+author ai
+file src/index/treesitter.rs
+symbol impl_name
+lines 0 11
+hash 7846e5a2ffb0b4b9
+note An impl block has no name in the grammar, so its name is built from the trait and type fields to read exactly as rust-analyzer reports it - 'impl Trait for Type<T>', without the block's own generic parameters. The two backends have to agree letter for letter or a step anchored to an impl under one of them is stale under the other, which is what happened to every generic impl on a cold cache.

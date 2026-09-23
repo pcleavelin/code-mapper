@@ -1,0 +1,113 @@
+codemap 8
+path cli-command
+kind flow
+author ai
+group cli
+note How one command line becomes a Command and runs. The process arguments after the root and the GUI output panel's input line both go through cli::parse, which is clap over the Command enum, so help and argument errors read the same in both. exec runs the parsed command against the index and map and says whether the map changed; the CLI saves and exits, the GUI marks the map dirty and leaves saving to ctrl+s. The two front ends share everything but the argument splitting, which the shell does for the CLI.
+
+step 7ad6e4
+order 1
+parent gejk1d
+author ai
+file src/main.rs
+symbol cli_main
+lines 0 45
+hash deda76b48a51274f
+note Parse before indexing so a usage error costs nothing. Then build the index and run every pending language server to completion, so the answer is from the server whenever one is on PATH. Help goes to stdout with exit 0, usage errors to stderr with exit 2. A map that does not read stops the command with exit 2, before anything could save over it. A mutating command saves the map. A command error prints what it produced so far and exits 2; check relies on this. Output goes through emit so a closed pipe does not panic.
+
+step 9zzcig
+order 2
+parent 7ad6e4
+author ai
+file src/cli.rs
+symbol parse
+lines 0 2
+hash 05b5d969df6d0423
+note Prepends the program name clap expects. The Err is clap's rendered text: the help for 'help', or the usage error.
+
+step bl6ahe
+order 8
+parent uvx2pv
+author ai
+file src/cli.rs
+symbol tokenize
+lines 0 19
+hash ae83d581ad4da49a
+note The GUI's argument splitting: whitespace, with double quotes holding a note together. The shell does this for the CLI, so this is the one thing the two front ends do not share.
+
+step ckc2c3
+order 4
+parent 7ad6e4
+author ai
+file src/cli.rs
+symbol exec
+lines 0 409
+hash 6f53f6de52d86f95
+note Runs one command. Ok(true) means the map changed and the caller saves. Err is the user-facing message; check returns one to force a non-zero exit.
+
+step dtk6tf
+order 7
+author ai
+file src/gui/panels.rs
+symbol output_panel
+lines 0 32
+hash 55d31a0fad1a6112
+note The GUI's command line. A panel docked at the bottom by default: the log scrolls in the upper part, virtualised to the visible rows, and is pinned to its end for two frames after a command so the newest output shows; the input row sits under it and takes the keyboard when clicked. 'clear' empties the log.
+
+step gadnht
+order 3
+parent 9zzcig
+author ai
+file src/cli.rs
+symbol Command
+lines 0 100
+hash 6e01285758b734e9
+note The command set. Variant names kebab-case into subcommand names. Each variant's doc comment is its one-line help, written as signature then description so 'help' reads as a signature table. Kind goes through parse_kind so map.rs does not depend on clap.
+
+step gejk1d
+order 0
+author ai
+file src/main.rs
+symbol main
+lines 0 12
+hash 0314fda5b468af04
+note Entry. 'help' or no root at all prints clap's help. A root with more arguments runs one command and exits; a bare root titles the window and hands the App to window::run, which owns the loop from there.
+
+step hupfep
+order 10
+parent gadnht
+author ai
+file src/cli.rs
+symbol parse_kind
+lines 0 2
+hash 72035fba12b51482
+note kind is parsed by clap through this, which keeps map.rs free of any clap dependency.
+
+step sde1gg
+order 6
+parent 7ad6e4
+author ai
+file src/cli.rs
+symbol exec
+lines 258 264
+hash 2334c20e4268e08c
+note path-move: reparent a step, refusing a cycle, then the same does-not-call note path-add prints so a flow stays a call tree.
+
+step uvx2pv
+order 5
+author ai
+file src/gui/mod.rs
+symbol run_cmd
+lines 0 28
+hash 6c3fcc34e274e93d
+note The GUI's side of the same parse then exec. Reached from the frame function when the command field returns a line, not from the panel that draws it. A parse error, help included, is printed into the log verbatim; a mutating command marks the map dirty instead of saving, and the log is scrolled to the bottom.
+
+step y08nbq
+order 9
+parent gejk1d
+author ai
+file src/cli.rs
+symbol help
+lines 0 2
+hash e31220697c0ecdaa
+note 'codemap help' short-circuits before a root is even chosen, so help works in a directory that is not a repo.

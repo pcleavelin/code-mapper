@@ -1,0 +1,84 @@
+codemap 8
+path graph-layout
+kind flow
+author ai
+group gui/graph
+note Where every node on the canvas ends up. The layout is a forest of compact subtrees, recomputed from scratch every frame until the reader drags a node. Horizontally a node's column is its depth in the path tree, or one hop out from whatever expansion revealed it, and the columns are placed outward from column 0 so the root of the path never moves. Vertically each node owns a block as tall as itself or as the stack of its children's blocks, whichever is more, and centres in it; sibling blocks never interleave, so a wide subtree only pushes its own siblings around. A final sweep separates the rare collisions between different subtrees that land in the same column.
+
+step 11m7he
+order 3
+parent 85mf2y
+author ai
+file src/gui/graph.rs
+symbol layout
+lines 38 63
+hash e68e02876542025c
+note Pass 1, bottom-up: a node's block is its own height or the stacked heights of its children's blocks, whichever is taller, with left and right children measured independently. The seen set stops a cycle in the call graph from recursing forever.
+
+step 4ksm9y
+order 6
+parent 85mf2y
+author ai
+file src/gui/graph.rs
+symbol Metrics
+lines 0 4
+hash fb3f22735529aa30
+note The node font's cell at the current zoom and the pixel padding inside a node. Layout happens in cells and rows; this turns it into pixels, so zooming scales positions by the factor the text really grew by, not by the nominal zoom.
+
+step 7esxz3
+order 2
+parent 85mf2y
+author ai
+file src/gui/graph.rs
+symbol layout
+lines 19 36
+hash 742fe5db94a5f7a2
+note The forest the vertical passes walk: a path step hangs off its parent step on the right, an expanded node off the node that revealed it, left for callers and right for callees. Each parent's right children are sorted by the line of its code that names them, so siblings sit in call order and the step order breaks ties.
+
+step 85mf2y
+order 0
+author ai
+file src/gui/graph.rs
+symbol layout
+lines 0 102
+hash 244b3fef0f53bb93
+note One function, five passes, all of it in cells and rows. It reads the sizes measured just before it and writes one position per node.
+
+step kasgsj
+order 1
+parent 85mf2y
+author ai
+file src/gui/graph.rs
+symbol layout
+lines 4 18
+hash 57f54001a5492346
+note Pass x: group the nodes by column, give each column the width of its widest node, then walk outward from column 0 in both directions so the path's root keeps its place when an expansion opens to the left.
+
+step l634za
+order 4
+parent 85mf2y
+author ai
+file src/gui/graph.rs
+symbol layout
+lines 64 90
+hash ea8f7ce337f6298f
+note Pass 2, top-down: a node is centred vertically in its block and its children are stacked beside it, centred on the same block. Roots are stacked in step order with a double gap between them.
+
+step sfz63q
+order 7
+author ai
+file src/gui/graph.rs
+symbol graph_tab
+lines 138 138
+hash bdd3b49a573433cf
+note The frame's cell size in pixels is recorded once per frame, after the layout and the dragged positions; rect_px turns a node's cells and rows into a pixel rectangle with it whenever the painter or the camera asks.
+
+step xkn1l0
+order 5
+parent 85mf2y
+author ai
+file src/gui/graph.rs
+symbol layout
+lines 91 101
+hash ea7d7af2e9bd09c8
+note Pass 3: two different subtrees can still meet in one column - a caller's own callees come back to the focus column, for instance. Sort that column by y and push each node below the previous one.

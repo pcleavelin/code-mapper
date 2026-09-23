@@ -33,10 +33,10 @@ Commands:
   promote       <symbol> [depth] [name]          create a path shaped like a symbol's call tree (default depth 1, named after the symbol)
   stale         every step whose text no longer matches, or whose file or symbol is gone
   check         exit non-zero if any step is stale
-  repin         [rev]                            re-pin every stale step by following its text from revision `rev` (default @-); prints each change so its note gets reread
+  repin         [rev]                            re-pin every stale step by following its text from revision `rev` (default: the parent, @- in jj, HEAD in git); prints each change so its note gets reread
   uncovered     [filter]                         symbols in no path, largest first
   coverage      covered/total symbols per file
-  diff          the map against the parent revision's (jj file show -r @- .codemap)
+  diff          the map against the parent revision's (@- in jj, HEAD in git)
   help          Print this message or the help of the given subcommand(s)
 $ codemap files
 README.md (3 lines, 0 symbols)
@@ -338,6 +338,12 @@ $ codemap notes [
 ! error: unclosed character class
 [exit 2]
 $ codemap paths
+c-lib [layer] (ai) (1 steps): The C library's surface.
+  [0] c/lib.c:7-13 int sum_squares(int n) (ai)
+shapes [type] (ai) (3 steps): The Shape trait and the two shapes that implement it.
+  [0] src/shapes.rs:1-4 Shape (ai)
+    [1] src/shapes.rs:14-21 impl Shape for Circle (ai)
+    [2] src/shapes.rs:23-30 impl Shape for Square (ai)
 startup [flow] (ai) (7 steps): What running the program does: fill the store, then report its total area.
   [0] src/main.rs:7-11 main (ai)  -- Entry: builds the store and hands it to the two phases.
     [1] src/main.rs:13-16 fill (ai)  -- Adds one shape of each kind.
@@ -346,15 +352,9 @@ startup [flow] (ai) (7 steps): What running the program does: fill the store, th
     [4] src/main.rs:18-22 report (ai)
       [5] src/store.rs:21-25 total_area (ai)  -- The sum over every shape's own area.
       [6] src/main.rs:24-26 log_line (ai)
-shapes [type] (ai) (3 steps): The Shape trait and the two shapes that implement it.
-  [0] src/shapes.rs:1-4 Shape (ai)
-    [1] src/shapes.rs:14-21 impl Shape for Circle (ai)
-    [2] src/shapes.rs:23-30 impl Shape for Square (ai)
 stats [flow] (ai) (2 steps)
   [0] tools/stats.py:5-7 spread (ai)
     [1] tools/helpers.py:1-2 mean (ai)
-c-lib [layer] (ai) (1 steps): The C library's surface.
-  [0] c/lib.c:7-13 int sum_squares(int n) (ai)
 ! clangd: 2 files to index
 ! clangd not on PATH: 2 files keep the tree-sitter resolver
 ! rust-analyzer: 3 files to index

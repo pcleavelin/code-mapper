@@ -1,0 +1,250 @@
+codemap 8
+path server-index
+kind flow
+author ai
+group index
+note How symbols and xrefs come from a language server. build walks the root and takes every file whose text hash matches the cache; the rest are parsed with tree-sitter and, if the language has a server, marked pending. index_file then asks the language's server per pending file for document symbols, outgoing calls per symbol and references per symbol, and each file's answer is applied as it completes. The CLI runs this to completion before answering; the GUI runs it on a thread and greys out what is still pending.
+
+step 0xtjb7
+order 11
+parent mz27bi
+author ai
+file src/index/server.rs
+symbol locations
+lines 0 13
+hash 4649131014fc35a4
+note Turns a Location array into (file, line) pairs, dropping everything outside the root - which is how std and dependency hits are kept out of the index without asking the server to exclude them.
+
+step 23z3m9
+order 5
+parent wfyovg
+author ai
+file src/index/link.rs
+symbol link
+lines 0 42
+hash eea2a6bbca6ad995
+note Server targets resolve by (file, line) to the innermost symbol there; tree-sitter calls resolve by name. Callers are the inverse of callees. Rebuilt from scratch each time.
+
+step 2dbn8q
+order 19
+parent ymvuc4
+author ai
+file src/gui/work.rs
+symbol Req
+lines 0 4
+hash edd0190b08aa8c80
+note What the GUI sends the thread: a batch of files, or a position to hover or define.
+
+step 4eup18
+order 13
+parent wfyovg
+author ai
+file src/index/server.rs
+symbol give_up
+lines 0 6
+hash 5b55a12cdcb09564
+note When the server is not there at all. Its files stop being pending and keep the tree-sitter answer; the message is printed once, not once per file.
+
+step 89epu3
+order 7
+author ai
+file src/gui/work.rs
+symbol start_backend
+lines 0 16
+hash 3bf59a66c6c43b08
+note The GUI's driver: every pending language's files go as one batch to that language's live server thread; a batch while one runs is remembered and sent when it ends. A language whose server cannot start gives up its files to the tree-sitter answer.
+
+step dq7ze6
+order 9
+parent gximva
+author ai
+file src/index/server.rs
+symbol symbol_kind_name
+lines 0 5
+hash 599711d59f8141cc
+note LSP SymbolKind is a number; this turns it, through the KINDS table, into the same kind strings the tree-sitter backend produces, so the two backends' symbols are indistinguishable downstream. Kind 19 is where rust-analyzer reports an impl block.
+
+step gximva
+order 3
+parent mz27bi
+author ai
+file src/index/server.rs
+symbol push_symbol
+lines 0 24
+hash 8bd8cf74112b9e31
+note DocumentSymbol to Symbol. One level of nesting into modules, classes, traits and impls, like the tree-sitter resolver. The symbol starts on the line of its name so both backends agree on the start that anchors are relative to.
+
+step h22r5f
+order 4
+parent wfyovg
+author ai
+file src/index/server.rs
+symbol apply
+lines 0 9
+hash 32dfc0eaa9468252
+note Takes an answer only when the file still has the text it was asked about.
+
+step iend19
+order 24
+parent dq7ze6
+author ai
+file src/index/server.rs
+symbol KINDS
+lines 0 2
+hash 6cd5f771e49d6fa2
+note The LSP SymbolKind names in protocol order, so a kind number indexes straight into it; 0 is not a kind and anything past the end reads as 'symbol'.
+
+step kgcc66
+order 14
+parent 89epu3
+author ai
+file src/gui/work.rs
+symbol Msg
+lines 0 7
+hash 79a6f344ec272484
+note What a server thread sends back: a finished file, a progress line, a language that failed, the end of a batch, and hover and definition answers for the peek.
+
+step l6davw
+order 21
+parent vwg30v
+author ai
+file src/index/link.rs
+symbol symbols_only
+lines 0 7
+hash c42d05e8756e89c2
+note The copy the link thread gets: paths, hashes, symbols and imports, no lines and no highlights, which is everything link and resolve read.
+
+step mz27bi
+order 2
+parent wfyovg
+author ai
+file src/index/server.rs
+symbol run_backends
+lines 4 15
+hash 88b73072e81c5477
+note The one-shot use of a server: start it, index every pending file and apply each answer in turn, then stop it. A server that will not start is reported and its files given up to the tree-sitter answer.
+
+step opvazu
+order 15
+parent mz27bi
+author ai
+file src/index/server.rs
+symbol start_server
+lines 0 6
+hash 8a8522b412b3bc11
+note Spawn and wait_ready, shared by the CLI's one-shot run in run_backends and the GUI's live thread. The absolute root it returns is what the server's URIs are compared against.
+
+step p1e65r
+order 22
+author ai
+file src/gui/work.rs
+symbol poll_link
+lines 0 8
+hash 14338db79602063c
+note Run from the top of every frame: takes the linked copy when the thread is done and copies its edges into the live index, or drops it when the index changed meanwhile, in which case the queued link replaces it. A thread that died just ends the link.
+
+step q81upm
+order 23
+parent p1e65r
+author ai
+file src/index/link.rs
+symbol take_edges
+lines 0 11
+hash 20f76e1c1e13efef
+note Edges come back by position, so the copy is accepted only when every file still has the same hash, backend, pending flag and symbol count; anything else means a merge or a rebuild changed the tables under the thread and the edges would land on the wrong symbols.
+
+step tostpl
+order 0
+author ai
+file src/index/mod.rs
+symbol build
+lines 0 54
+hash dfe30521be00791d
+note The walk and the cache check. A cache hit skips parsing entirely. A cached server answer points at lines in other files, so it is asked again when any of those files changed.
+
+step tw86wt
+order 8
+author ai
+file src/gui/work.rs
+symbol poll_backend
+lines 0 81
+hash 50688643686296c8
+note Drains every server's channel each frame, but merges at most once a second and once more when the batch ends, since a merge re-resolves the map and drops every drawn grid. A merge applies the answers and starts a link on a thread; the status line's symbol count follows each merge. A batch's end saves the cache and runs the next batch if a rebuild asked for one meanwhile.
+
+step v9k2x1
+order 10
+parent gximva
+author ai
+file src/index/server.rs
+symbol impl_type
+lines 0 2
+hash 54dc8f772f188dfe
+note An impl block's name arrives as its whole header text; this reduces it to the type it is about, which becomes the owner of every method inside and therefore what a qualified call binds to.
+
+step vwg30v
+order 20
+parent tw86wt
+author ai
+file src/gui/work.rs
+symbol start_link
+lines 0 10
+hash a4e5c5038b51cf73
+note A merge does not link. A text-free copy of the index goes to a thread that links it, since a link is a pass over every call site and can take half a second on a repo with many same-named symbols. One link runs at a time; a change that lands meanwhile queues one more.
+
+step wfyovg
+order 6
+author ai
+file src/index/server.rs
+symbol run_backends
+lines 0 19
+hash fee28db26f240618
+note The CLI's synchronous driver: every pending language in turn, then link and save the cache. A missing server is reported once and its files keep the tree-sitter answer.
+
+step wpda6d
+order 12
+author ai
+file src/index/server.rs
+symbol ServerFile
+lines 0 4
+hash 9c8f0ee0797b0aab
+note What comes back per file: the symbols plus the text hash they were asked about, so an answer for text that has since changed can be recognised and dropped.
+
+step y4bkg8
+order 1
+parent wfyovg
+author ai
+file src/index/server.rs
+symbol pending
+lines 0 10
+hash 0ed631df469984d7
+note Pending files grouped by language, with the hash each answer must match.
+
+step ybptin
+order 16
+parent mz27bi
+author ai
+file src/index/server.rs
+symbol index_file
+lines 0 22
+hash 34aff221b15e04c2
+note The three requests per file against a running server: symbols, then call hierarchy and references per symbol.
+
+step ymvuc4
+order 18
+parent ywt3nh
+author ai
+file src/gui/work.rs
+symbol serve
+lines 0 56
+hash d14f87febff3936e
+note A batch is queued and worked file by file; progress and each finished file go back through the channel, Done when the queue empties. Hover and definition requests are taken before the next file.
+
+step ywt3nh
+order 17
+parent 89epu3
+author ai
+file src/gui/work.rs
+symbol server
+lines 0 13
+hash 96aedc8d2d35334a
+note One thread per language for the session; indexing batches go to the same server that answers hover and definition.
