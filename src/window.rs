@@ -10,13 +10,14 @@ use winit::application::ApplicationHandler;
 use winit::event::{ElementState, MouseButton, MouseScrollDelta, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::keyboard::{Key as WKey, NamedKey};
-use winit::window::{Window, WindowId};
+use winit::window::{CursorIcon, Window, WindowId};
 
 /// What a frame asks of the loop.
 pub struct Frame {
     pub redraw_after: Duration,
     pub quit: bool,
     pub clear: Color,
+    pub cursor: CursorIcon,
 }
 
 pub trait App {
@@ -58,6 +59,7 @@ struct Runner<A: App> {
     pending: bool, // input arrived since the last frame
     next_redraw: Instant,
     start: Instant,
+    cursor: CursorIcon,
     script: Option<Script>,
     // frames built since the last `dump`, for the script harness's frame-time line
     frames: u32,
@@ -295,6 +297,10 @@ impl<A: App> ApplicationHandler for Runner<A> {
                 gfx.begin();
                 let out = self.app.frame(gfx, &mut self.input);
                 gfx.render(out.clear);
+                if out.cursor != self.cursor {
+                    self.cursor = out.cursor;
+                    gfx.window.set_cursor(out.cursor);
+                }
                 let d = t0.elapsed();
                 self.frames += 1;
                 self.frame_max = self.frame_max.max(d);
@@ -322,6 +328,6 @@ impl<A: App> ApplicationHandler for Runner<A> {
 
 pub fn run(title: &str, app: impl App + 'static) {
     let event_loop = EventLoop::new().expect("event loop");
-    let mut runner = Runner { app, title: title.to_owned(), gfx: None, input: Input::default(), mods: Mods::default(), last_click: None, pending: true, next_redraw: Instant::now(), start: Instant::now(), script: Script::load(), frames: 0, frame_max: Duration::ZERO, frame_over: 0 };
+    let mut runner = Runner { app, title: title.to_owned(), gfx: None, input: Input::default(), mods: Mods::default(), last_click: None, pending: true, next_redraw: Instant::now(), start: Instant::now(), cursor: CursorIcon::Default, script: Script::load(), frames: 0, frame_max: Duration::ZERO, frame_over: 0 };
     event_loop.run_app(&mut runner).expect("run");
 }

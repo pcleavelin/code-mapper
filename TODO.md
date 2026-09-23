@@ -61,18 +61,16 @@ Left open after the UX review of 2026-09-21 and the fixes that followed it.
 
 1. No clipboard: ctrl and alt drop text input, nothing pastes into a field or copies out
    of a code view.
-2. Panels are fixed: the output panel is a sixth of the window, the side panels a
-   quarter; none can be dragged. Panel resizing is a planned feature.
-3. The 0.3 zoom floor is not reachable: `graph_px` floors the node font at 6 px, so on a
+2. The 0.3 zoom floor is not reachable: `graph_px` floors the node font at 6 px, so on a
    14 px UI the real floor is about 0.43 and `fit` cannot show a very tall tree
    (`legacy-v1`, 5400 px); it lands at the floor, top-left aligned. Readable text and a
    whole-tree overview conflict; an overview mode without text is the way out.
-4. Bodyless `mod foo;` declarations differ between backends: tree-sitter skips them so
+3. Bodyless `mod foo;` declarations differ between backends: tree-sitter skips them so
    `.map()` does not link to `mod map;`, rust-analyzer reports them; on a tree-sitter
    index `module-tree` has two "symbol gone" steps.
-5. Hover requests have no cancellation: a request in flight for a word the pointer has
+4. Hover requests have no cancellation: a request in flight for a word the pointer has
    left is still answered before the one it rests on; one in flight at a time bounds it.
-6. With several language servers missing, the status line says whichever failure arrived
+5. With several language servers missing, the status line says whichever failure arrived
    last: the server threads fail at once and are drained in HashMap order. Name every
    missing server in one line, in a fixed order.
 
@@ -82,4 +80,4 @@ Left open after the UX review of 2026-09-21 and the fixes that followed it.
    clicks are pixel offsets from a dumped rectangle. Offsets in cells, or a script command
    that aims at a line and column of a code block, would make them portable.
 2. The GUI scripts settle with `idle` and a save before their first dump only to hide GUI
-   item 6; drop the save once the status line is deterministic.
+   item 5; drop the save once the status line is deterministic.

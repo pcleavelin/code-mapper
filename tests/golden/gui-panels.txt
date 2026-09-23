@@ -1,48 +1,60 @@
 DUMP tab=Path path=Some(0) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(0) step=Some(5) focus=Some("total_area") file=Some("src/store.rs") sel=Some((20, 24))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(0) step=Some(5) focus=Some("total_area") file=Some("src/store.rs") sel=Some((20, 24))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Listing path=Some(0) step=Some(5) focus=Some("total_area") file=Some("src/store.rs") sel=Some((0, 0))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(1) step=Some(0) focus=Some("Shape") file=Some("src/shapes.rs") sel=Some((0, 3))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Results path=Some(1) step=Some(0) focus=Some("Shape") file=Some("src/shapes.rs") sel=Some((0, 3))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="9 hits for /self\\.\\w+/"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Listing path=Some(1) step=Some(0) focus=Some("Shape") file=Some("src/store.rs") sel=Some((12, 12))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="9 hits for /self\\.\\w+/"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Listing path=Some(1) step=Some(0) focus=Some("Shape") file=Some("src/store.rs") sel=Some((12, 12))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="9 hits for /self\\.\\w+/"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Listing path=Some(1) step=Some(0) focus=Some("Shape") file=Some("src/store.rs") sel=Some((12, 12))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="error: unrecognized subcommand 'bogus'"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(5) step=None focus=Some("Shape") file=Some("src/store.rs") sel=Some((12, 12))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="path 'handmade' created (unsaved)"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Listing path=Some(5) step=Some(0) focus=Some("Shape") file=Some("src/store.rs") sel=Some((12, 12))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="step [0] added to 'handmade' under [-1]"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Listing path=Some(5) step=Some(0) focus=Some("Shape") file=Some("src/store.rs") sel=Some((12, 12))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000

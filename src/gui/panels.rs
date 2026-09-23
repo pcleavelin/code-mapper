@@ -1,5 +1,5 @@
-//! The fixed panels around the centre: top bar, status bar, output panel, the left panel's
-//! Paths, Symbols and Files tabs, and the xrefs panel on the right.
+//! The bars and panels around the centre: top bar, status bar, and the docked panels' contents
+//! (the output panel, the Paths, Symbols and Files tabs, the xrefs panel); `dock` places them.
 
 use super::*;
 
@@ -55,10 +55,13 @@ impl App {
         self.ui.close();
     }
 
-    pub(super) fn output_panel(&mut self, h: i32) {
+    pub(super) fn output_panel(&mut self) {
         let px = self.px;
         let id = ui::id("output");
-        self.ui.open(Kind::None, Layout::col().grow_x().h(h), Style::bg(FIELD).border(BORDER_TOP, BORDER), None);
+        self.ui.open(Kind::None, Layout::col().grow(), Style::bg(FIELD), None);
+        self.grip(Panel::Output);
+        self.label("Output", WEAK);
+        self.ui.close();
         // a command's output exists only after this frame's layout, so the pin to the end is
         // asked for two frames running: the second one lands on the new content
         if self.output_bottom > 0 {
@@ -86,9 +89,9 @@ impl App {
         self.ui.close();
     }
 
-    pub(super) fn left_panel(&mut self, w: i32) {
-        self.ui.open(Kind::None, Layout::col().w(w).grow_y(), Style::bg(PANEL).border(BORDER_RIGHT, BORDER), None);
-        self.ui.open(Kind::None, Layout::row().grow_x().pad(4).gap(4), Style::default(), None);
+    pub(super) fn left_panel(&mut self) {
+        self.ui.open(Kind::None, Layout::col().grow(), Style::bg(PANEL), None);
+        self.grip(Panel::Nav);
         for (t, name) in [(LeftTab::Paths, "Paths"), (LeftTab::Symbols, "Symbols"), (LeftTab::Files, "Files")] {
             if self.button(name, ui::id_with(ui::id("left"), name), self.left == t).clicked {
                 self.left = t;
@@ -256,8 +259,11 @@ impl App {
         }
     }
 
-    pub(super) fn xrefs_panel(&mut self, w: i32) {
-        self.ui.open(Kind::None, Layout::col().w(w).grow_y(), Style::bg(PANEL).border(BORDER_LEFT, BORDER), None);
+    pub(super) fn xrefs_panel(&mut self, (w, panel_h): (i32, i32)) {
+        self.ui.open(Kind::None, Layout::col().grow(), Style::bg(PANEL), None);
+        self.grip(Panel::Xrefs);
+        self.label("Xrefs", WEAK);
+        self.ui.close();
         // the peek: a symbol's definition, a line inside one, or text from a file outside the repo
         let peek = match self.peek.clone() {
             Some(Peek::Sym(r)) if r.file < self.idx.files.len() && r.sym < self.idx.files[r.file].symbols.len() => {
@@ -293,7 +299,7 @@ impl App {
                 Ok((fi, start, end, _)) => end.min(&self.idx.files[*fi].lines.len().saturating_sub(1)).saturating_sub(*start) + 1,
                 Err((_, _, grid)) => grid.h,
             };
-            let h = (rows as i32 * self.cell.1 + 8).min((self.ui.size.1 / 3).max(100));
+            let h = (rows as i32 * self.cell.1 + 8).min((self.ui.size.1 / 3).max(100)).min(panel_h / 2);
             self.scroll_open(ui::id("peek"), Layout::col().grow_x().h(h).pad(4), Style::bg(FIELD));
             match body {
                 Ok((fi, start, end, mark)) => {

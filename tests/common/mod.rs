@@ -349,7 +349,7 @@ pub fn gui(bin: &Path, root: &Path, name: &str, script: &str, hook: &mut dyn FnM
 pub fn gui_state(stderr: &str) -> String {
     let mut out = String::new();
     for l in stderr.lines() {
-        let keep = if l.starts_with("DUMP tab=") || l.starts_with("DUMP tip=") || l.starts_with("DUMP backend") || l.starts_with("script:") {
+        let keep = if l.starts_with("DUMP tab=") || l.starts_with("DUMP dock") || l.starts_with("DUMP tip=") || l.starts_with("DUMP backend") || l.starts_with("script:") {
             Some(l.to_owned())
         } else if l.starts_with("DUMP node ") || l.starts_with("DUMP button ") {
             Some(l.split(" rect=").next().unwrap_or(l).to_owned())

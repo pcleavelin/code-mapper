@@ -1,20 +1,25 @@
 DUMP tab=Path path=Some(0) step=None focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="deleted step 1.2.2 log_line (src/main.rs) from 'startup'; unsaved"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(0) step=None focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="deleted step 1 main (src/main.rs) from 'startup'; unsaved"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=None step=None focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="deleted path 'startup' (5 steps); unsaved"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(0) step=Some(0) focus=Some("Shape") file=Some("src/shapes.rs") sel=Some((0, 3))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="deleted path 'startup' (5 steps); unsaved"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(0) step=Some(0) focus=Some("Shape") file=Some("src/shapes.rs") sel=Some((0, 3))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000

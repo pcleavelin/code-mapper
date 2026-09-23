@@ -54,3 +54,8 @@ fn diff() {
 fn reload() {
     scenario("gui-reload");
 }
+
+#[test]
+fn dock() {
+    scenario("gui-dock");
+}

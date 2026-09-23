@@ -3,6 +3,7 @@
 //! functions that open and close elements each frame, and every click becomes an `Action`
 //! applied once the frame is built.
 
+mod dock;
 mod document;
 mod graph;
 mod nav;
@@ -24,7 +25,7 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::mpsc::{Receiver, Sender, TryRecvError, channel};
 use std::time::{Duration, Instant, SystemTime};
-use self::{document::*, nav::*, panels::*, peek::*, widgets::*, work::*};
+use self::{dock::*, document::*, nav::*, panels::*, peek::*, widgets::*, work::*};
 
 /// The tab of the centre panel.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -108,6 +109,7 @@ pub struct App {
     pub cell: (i32, i32),
     pub tab: Tab,
     left: LeftTab,
+    dock: Dock,
     pub scrolls: HashMap<Id, i32>,
     pub actions: Vec<Action>,
     pub graph: graph::Graph,
@@ -160,6 +162,7 @@ impl App {
             cell: (8, 16),
             tab: Tab::Path,
             left: LeftTab::Paths,
+            dock: Dock::default(),
             scrolls: HashMap::new(),
             actions: Vec::new(),
             graph: graph::Graph::new(),
@@ -392,7 +395,7 @@ impl window::App for App {
     /// Script commands: `tab <path|graph|listing|diff|results>`, `open <file> [line]`, `scroll <panel> <n>`,
     /// `idle` (waits until no server request, merge, re-index or link is in flight), `shot <file.png>`, `rect <id> [n]`
     /// (last frame's rectangle of an element by its id name), `dump` (state to stderr:
-    /// selection, tab, scrolls, tooltip, peek, graph camera, node and button rectangles, the
+    /// selection, tab, scrolls, docked panels, tooltip, peek, graph camera, node and button rectangles, the
     /// canvas rectangle).
     fn script(&mut self, line: &str) -> bool {
         let w: Vec<&str> = line.split_whitespace().collect();
@@ -423,6 +426,7 @@ impl window::App for App {
                         eprintln!("DUMP scroll {name} off={} rect={:?} content={:?}", self.scrolls.get(&id).copied().unwrap_or(0), r, c);
                     }
                 }
+                eprintln!("DUMP dock {}", self.dock.describe());
                 eprintln!("DUMP tip={:?} peek={:?} status={:?}", self.tip_shown, self.peek, self.status);
                 eprintln!("DUMP backend progress={:?} indexing={:?} unmerged={} reindexing={} linking={}", self.work.progress, self.work.indexing, self.work.merge_wait.len(), self.work.reindex_rx.is_some(), self.work.link_rx.is_some());
                 eprintln!("DUMP graph zoom={:.3} pan={:?} canvas={:?} camera={}", self.graph.zoom, self.graph.pan, self.ui.content_of(ui::id("graph-canvas")).map(|(_, r)| r), self.graph.camera_state());
@@ -523,11 +527,14 @@ impl window::App for App {
 
         // the frame
         self.ui.begin(input);
+        self.dock.cursor = Default::default();
+        self.dock_input();
         self.ui.open(Kind::None, Layout::col().grow(), Style::bg(BG), None);
         self.top_bar();
-        self.ui.open(Kind::None, Layout::row().grow(), Style::default(), None);
-        let (lw, rw) = ((44 * self.cell.0).min(self.ui.size.0 / 4), (40 * self.cell.0).min(self.ui.size.0 / 4));
-        self.left_panel(lw);
+        self.ui.open(Kind::None, Layout::col().grow(), Style::default(), Some(ui::id("body")));
+        self.ui.open(Kind::None, Layout::row().grow(), Style::default(), Some(ui::id("dock-row")));
+        let sizes = self.dock.sizes(self.ui.size, self.cell);
+        self.docked(Edge::Left, &sizes);
         self.ui.open(Kind::None, Layout::col().grow(), Style::default(), None);
         match self.tab {
             Tab::Path => self.path_document(),
@@ -537,12 +544,13 @@ impl window::App for App {
             Tab::Results => self.results_view(),
         }
         self.ui.close();
-        self.xrefs_panel(rw);
+        self.docked(Edge::Right, &sizes);
         self.ui.close();
-        let out_h = (self.ui.size.1 / 6).max(6 * self.cell.1);
-        self.output_panel(out_h);
+        self.docked(Edge::Bottom, &sizes);
+        self.ui.close();
         self.status_bar();
         self.ui.close();
+        self.drag_band();
         self.tooltip_element();
         self.ui.end(gfx);
         self.ui.draw(gfx, TEXT);
@@ -552,6 +560,6 @@ impl window::App for App {
         }
         self.track_navigation();
         let busy = self.working() || self.shot.is_some();
-        window::Frame { redraw_after: Duration::from_millis(if busy { 50 } else { 1000 }), quit, clear: BG }
+        window::Frame { redraw_after: Duration::from_millis(if busy { 50 } else { 1000 }), quit, clear: BG, cursor: self.dock.cursor }
     }
 }

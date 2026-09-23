@@ -1,48 +1,60 @@
 DUMP tab=Listing path=Some(0) step=Some(0) focus=Some("main") file=Some("src/store.rs") sel=Some((12, 12))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Listing path=Some(0) step=Some(0) focus=Some("main") file=Some("src/store.rs") sel=Some((0, 2))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Listing path=Some(0) step=Some(7) focus=Some("main") file=Some("src/store.rs") sel=Some((0, 2))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="step [7] added to 'startup' under [0]"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Listing path=Some(0) step=Some(7) focus=Some("main") file=Some("src/store.rs") sel=Some((29, 29))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="step [7] added to 'startup' under [0]"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Listing path=Some(0) step=Some(7) focus=Some("main") file=Some("src/store.rs") sel=Some((31, 31))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="line 999 is outside 1-32; went to the nearest"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Listing path=Some(0) step=Some(7) focus=Some("main") file=Some("src/store.rs") sel=Some((31, 31))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="'abc' is not a line number"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Listing path=Some(0) step=Some(7) focus=Some("main") file=Some("src/store.rs") sel=Some((31, 31))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=Some("Shape") peek=None status="'abc' is not a line number"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Listing path=Some(0) step=None focus=Some("Shape") file=Some("src/shapes.rs") sel=Some((0, 3))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="'abc' is not a line number"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Listing path=Some(0) step=Some(7) focus=Some("Shape") file=Some("src/store.rs") sel=Some((31, 31))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="'abc' is not a line number"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Listing path=Some(0) step=None focus=Some("Shape") file=Some("src/shapes.rs") sel=Some((0, 3))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="'abc' is not a line number"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Listing path=Some(0) step=Some(7) focus=Some("Shape") file=Some("src/store.rs") sel=Some((31, 31))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="'abc' is not a line number"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Listing path=Some(0) step=None focus=Some("Shape") file=Some("src/shapes.rs") sel=Some((0, 3))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="'abc' is not a line number"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000

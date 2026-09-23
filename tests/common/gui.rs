@@ -443,6 +443,62 @@ shot {shots}/map-reloaded.png
 quit
 ",
     },
+    Scenario {
+        name: "gui-dock",
+        setup: mapped,
+        hook: no_hook,
+        after: &[],
+        script: "SETTLE
+dump
+hover-id split@nav
+wait 1
+down
+wait 1
+mouse 600 500
+wait 1
+up
+wait 2
+dump
+shot {shots}/resized.png
+hover-id grip@xrefs
+wait 1
+down
+wait 1
+mouse 300 400
+wait 2
+shot {shots}/moving.png
+up
+wait 2
+dump
+hover-id grip@output
+wait 1
+down
+wait 1
+mouse 1700 300
+wait 2
+up
+wait 2
+dump
+shot {shots}/moved.png
+hover-id grip@nav
+wait 1
+down
+wait 1
+up
+wait 2
+dump
+hover-id grip@nav
+wait 1
+down
+wait 1
+mouse 1200 10
+wait 2
+up
+wait 2
+dump
+quit
+",
+    },
 ];
 
 /// Plays a scenario with `bin`: its stderr, and the output of its `after` commands. The

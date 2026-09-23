@@ -104,6 +104,11 @@ never disagree.
 | Right | **Xrefs** for the selected symbol. |
 | Bottom | **Output**: runs the same commands as the CLI. |
 
+That is the default layout. Dragging a panel's header onto the left, right or bottom of the
+window docks it there, before or after the panels already on that edge, and letting go anywhere else cancels;
+the splitter on a panel's centre side resizes it. The layout is not saved: every launch starts from the
+default.
+
 **The document.** A sticky breadcrumb of the topmost visible step's ancestors, name and
 file per crumb, each clickable. Then the steps in tree order: a header with the
 hierarchical number, symbol, file:lines and tags; the note as text (editing notes is the
@@ -291,6 +296,7 @@ src/
     peek.rs       hover, go-to-definition, the peek and the tooltip
     widgets.rs    theme, text field, buttons, rows, scrolling columns, the code block
     panels.rs     top bar, status bar, output panel, left panel, xrefs
+    dock.rs       which edge each panel is docked to, its size, the splitters and header drags
     document.rs   the path document and each step's view state
     views.rs      listing, search results, map diff
     graph.rs      the Graph tab: node tree, layout, scene, hit testing
@@ -395,7 +401,7 @@ Deferred, with the trigger that would pull each in:
 | Step-level review state | a long path gets one re-pinned step and rereading it all is a cost |
 | Kind-specific rendering | a list of 50 mixed-kind paths is unreadable |
 | Documentation panel for the focused symbol | per language: doc comments first, then external docs |
-| Dockable / detachable windows | the fixed layout gets in the way of a real session |
+| Detachable windows, a saved layout | docking within one window is not enough for a real session |
 | Multi-threaded grep | a search takes more than 100 ms |
 | Watch for new / deleted files | restarting for new files annoys |
 | Undo | a mis-click deletes something that took effort to build |
