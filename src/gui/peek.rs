@@ -10,6 +10,16 @@ pub(super) enum Intent {
     Peek,
 }
 
+/// Hover and definition requests to the servers and their answers.
+#[derive(Default)]
+pub(super) struct Lookup {
+    pub(super) hovers: HashMap<Probe, Option<Option<String>>>, // asked (None) or answered (Some: text or nothing)
+    pub(super) want: Option<(Probe, f64)>,                     // the position under the pointer and since when
+    pub(super) inflight: bool,                                  // a hover request the server has not answered
+    pub(super) asked: usize,                                    // hover and definition requests not yet answered
+    pub(super) want_def: Option<(Probe, Intent)>,               // the definition lookup whose answer is awaited
+}
+
 /// What the tooltip under the pointer shows.
 pub enum Tip {
     Sym(SymRef),
@@ -57,7 +67,7 @@ impl App {
     /// looked up in the index instead; Err(false) when nothing answers for it.
     pub(super) fn probe_for(&self, fi: usize, li: usize, col: usize) -> Result<(&'static index::Lang, Probe), bool> {
         let f = &self.idx.files[fi];
-        match index::lang_for(&f.path).filter(|l| !self.no_server.contains(l.server)) {
+        match index::lang_for(&f.path).filter(|l| !self.work.no_server.contains(l.server)) {
             Some(lang) => Ok((lang, Probe { path: f.path.clone(), hash: f.hash, line: li as u32, col: utf16_col(&f.lines[li], col) })),
             None => Err(index::lang_for(&f.path).is_some()),
         }
@@ -70,26 +80,26 @@ impl App {
     pub fn probe(&mut self, fi: usize, li: usize, col: usize) -> Option<Tip> {
         let (start, _) = self.word_at(fi, li, col)?;
         match self.probe_for(fi, li, start) {
-            Ok((lang, p)) => match self.hovers.get(&p) {
+            Ok((lang, p)) => match self.lookup.hovers.get(&p) {
                 Some(Some(t)) => t.clone().map(Tip::Text),
                 Some(None) => None,
                 None => {
-                    let since = match &self.hover_want {
+                    let since = match &self.lookup.want {
                         Some((w, t)) if *w == p => *t,
                         _ => {
-                            self.hover_want = Some((p.clone(), self.now));
+                            self.lookup.want = Some((p.clone(), self.now));
                             self.now
                         }
                     };
-                    if self.now - since >= 0.15 && !self.hover_inflight {
-                        if self.hovers.len() > 500 {
-                            self.hovers.clear();
+                    if self.now - since >= 0.15 && !self.lookup.inflight {
+                        if self.lookup.hovers.len() > 500 {
+                            self.lookup.hovers.clear();
                         }
-                        self.hovers.insert(p.clone(), None);
+                        self.lookup.hovers.insert(p.clone(), None);
                         if let Some(tx) = self.server(lang) {
                             let _ = tx.send(Req::Hover(p));
-                            self.asked += 1;
-                            self.hover_inflight = true;
+                            self.lookup.asked += 1;
+                            self.lookup.inflight = true;
                         }
                     }
                     None
@@ -108,8 +118,8 @@ impl App {
             Ok((lang, p)) => {
                 if let Some(tx) = self.server(lang) {
                     let _ = tx.send(Req::Def(p.clone()));
-                    self.asked += 1;
-                    self.want_def = Some((p, intent));
+                    self.lookup.asked += 1;
+                    self.lookup.want_def = Some((p, intent));
                 }
             }
             Err(true) => match self.symbol_at(fi, li, col) {

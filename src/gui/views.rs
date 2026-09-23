@@ -79,7 +79,7 @@ impl App {
         }
         self.ui.close();
         if self.base.is_none() {
-            self.label(if self.base_rx.is_some() { "asking jj..." } else { "no map in the parent revision: this needs a jj repo with a committed .codemap" }, WEAK);
+            self.label(if self.work.base_rx.is_some() { "asking jj..." } else { "no map in the parent revision: this needs a jj repo with a committed .codemap" }, WEAK);
             return;
         }
         let diffs = self.diffs();

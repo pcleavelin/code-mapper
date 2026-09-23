@@ -76,35 +76,15 @@ pub enum Action {
 
 pub struct App {
     pub idx: Index,
-    servers: HashMap<&'static str, (Sender<Req>, Receiver<Msg>)>, // a live server thread per language, by server name
-    no_server: HashSet<&'static str>,                             // servers that failed to start: not tried again
-    indexing: HashSet<&'static str>,                              // servers with a batch of files in flight
-    backend_progress: String,
-    restart_backend: bool, // the index changed while a batch ran: send the next when it ends
-    merge_wait: Vec<ServerFile>, // server answers held back until the next merge
-    last_merge: Instant,         // when the last batch of answers went into the index
-    link_rx: Option<Receiver<Index>>, // a link of the index running on a thread
-    relink: bool,                     // the index changed while that link ran: link again when it lands
-    hovers: HashMap<Probe, Option<Option<String>>>, // asked (None) or answered (Some: text or nothing)
-    hover_want: Option<(Probe, f64)>,               // the position under the pointer and since when
-    hover_inflight: bool,                           // a hover request the server has not answered
-    now: f64,                                       // the frame's time, seconds since the window opened
+    work: Work,     // the server threads, the watcher and the jobs running off the frame
+    lookup: Lookup, // hover and definition requests to the servers
+    now: f64,       // the frame's time, seconds since the window opened
     grids: HashMap<(usize, u64, usize, usize), Rc<Glyphs>>, // (file, text hash, first line, last line) -> its drawn form
     hscroll: HashMap<Id, i32>,                             // horizontal offset of each code block, in pixels
     output_bottom: u8,                                     // frames left in which the log is pinned to its end
-    asked: usize,                                    // hover and definition requests not yet answered
-    want_def: Option<(Probe, Intent)>,               // the definition lookup whose answer is awaited
     pub map: Map,
-    base: Option<Map>,                       // the map at the parent revision, for the diff
-    base_rx: Option<Receiver<Option<Map>>>, // jj is being asked for it
-    map_path: PathBuf,
-    map_mtime: Option<SystemTime>,
-    dirty: bool,
-    last_poll: Instant,
-    warned_disk: bool,
-    watch_tx: Sender<Vec<(String, Option<SystemTime>)>>, // the file list the watcher thread compares against
-    watch_rx: Receiver<()>,                              // a source file changed
-    reindex_rx: Option<Receiver<Index>>,                 // a rebuild is running on a thread
+    base: Option<Map>, // the map at the parent revision, for the diff
+    file: MapFile,     // the map on disk against the one in memory
 
     // the selection
     pub focus: Option<SymRef>,     // the selected symbol
@@ -120,9 +100,7 @@ pub struct App {
     steps: HashMap<(usize, usize), StepView>, // (path, step) -> how the step shows, when not the default
     dir_toggled: HashSet<String>,            // directories in the Files tab whose default open state is flipped
     peek: Option<Peek>,                      // a definition pinned in the right panel
-    history: Vec<Loc>,
-    forward: Vec<Loc>,
-    last_loc: Option<Loc>,
+    history: History,
 
     pub ui: Ui,
     pub px: u32, // the UI font size in pixels
@@ -152,43 +130,17 @@ impl App {
         let mut map = map.unwrap_or_default();
         map.resolve_all(&idx);
         let first_path = if map.paths.is_empty() { None } else { Some(0) };
-        let (watch_tx, list_rx) = channel();
-        let (changed_tx, watch_rx) = channel();
-        std::thread::spawn({
-            let root = idx.root.clone();
-            move || watch(root, list_rx, changed_tx)
-        });
         let mut app = App {
+            work: Work::new(&idx.root),
             idx,
-            servers: HashMap::new(),
-            no_server: HashSet::new(),
-            indexing: HashSet::new(),
-            backend_progress: String::new(),
-            restart_backend: false,
-            merge_wait: Vec::new(),
-            last_merge: Instant::now(),
-            link_rx: None,
-            relink: false,
-            hovers: HashMap::new(),
-            hover_want: None,
-            hover_inflight: false,
+            lookup: Lookup::default(),
             now: 0.0,
             grids: HashMap::new(),
             hscroll: HashMap::new(),
             output_bottom: 0,
-            asked: 0,
-            want_def: None,
             map,
             base: None,
-            base_rx: None,
-            map_mtime: mtime(&map_path),
-            map_path,
-            dirty: false,
-            last_poll: Instant::now(),
-            warned_disk: false,
-            watch_tx,
-            watch_rx,
-            reindex_rx: None,
+            file: MapFile { mtime: mtime(&map_path), path: map_path, dirty: false, last_poll: Instant::now(), warned: false },
             focus: None,
             sel_path: None,
             sel_anchor: None,
@@ -201,9 +153,7 @@ impl App {
             steps: HashMap::new(),
             dir_toggled: HashSet::new(),
             peek: None,
-            history: Vec::new(),
-            forward: Vec::new(),
-            last_loc: None,
+            history: History::default(),
             ui: Ui::default(),
             px: 14,
             cell: (8, 16),
@@ -232,11 +182,11 @@ impl App {
     }
 
     fn save(&mut self) {
-        match self.map.save(&self.map_path) {
+        match self.map.save(&self.file.path) {
             Ok(()) => {
-                self.dirty = false;
-                self.warned_disk = false;
-                self.map_mtime = mtime(&self.map_path);
+                self.file.dirty = false;
+                self.file.warned = false;
+                self.file.mtime = mtime(&self.file.path);
                 self.status = "saved".into();
             }
             Err(e) => self.status = format!("save FAILED: {e}"),
@@ -262,7 +212,7 @@ impl App {
         };
         match cli::exec(&self.idx, &mut self.map, cmd, Author::Human, &mut self.output) {
             Ok(true) => {
-                self.dirty = true;
+                self.file.dirty = true;
                 self.output.push_str("(map changed, ctrl+s to save)\n");
             }
             Ok(false) => {}
@@ -305,7 +255,7 @@ impl App {
         self.sel_anchor = None;
         self.tab = Tab::Path;
         self.status = format!("path '{name}' created (unsaved)");
-        self.dirty = true;
+        self.file.dirty = true;
     }
 
     /// Pin the listing's selected lines as a step of the selected path, under the selected
@@ -322,7 +272,7 @@ impl App {
         let parent = self.sel_anchor.filter(|&ai| ai < self.map.paths[pi].anchors.len());
         let ai = self.map.add_anchor(&self.idx, pi, fi, a.min(b), a.max(b), Author::Human, parent);
         self.sel_anchor = Some(ai);
-        self.dirty = true;
+        self.file.dirty = true;
         self.status = format!("step [{ai}] added to '{}' under [{}]", self.map.paths[pi].name, cli::step_number(parent));
     }
 
@@ -371,7 +321,7 @@ impl App {
                 self.map.remove_anchor(pi, ai);
                 self.sel_anchor = None;
                 self.step_removed(pi, ai);
-                self.dirty = true;
+                self.file.dirty = true;
             }
             Action::DeletePath(pi) => {
                 let p = self.map.paths.remove(pi);
@@ -379,7 +329,7 @@ impl App {
                 self.sel_path = None;
                 self.sel_anchor = None;
                 self.path_removed(pi);
-                self.dirty = true;
+                self.file.dirty = true;
             }
             Action::GoTo(fi, line) => self.open_line(fi, line),
             Action::Jump(fi, line, col) => self.probe_def(fi, line, col, Intent::Jump),
@@ -446,7 +396,7 @@ impl gfx::App for App {
     fn script(&mut self, line: &str) -> bool {
         let w: Vec<&str> = line.split_whitespace().collect();
         match w[0] {
-            "idle" => return !self.working() && self.merge_wait.is_empty(),
+            "idle" => return !self.working() && self.work.merge_wait.is_empty(),
             "rect" => {
                 if let Some(name) = w.get(1) {
                     eprintln!("DUMP rect {name} = {:?}", self.ui.interaction_of(Self::named_id(name)).rect);
@@ -473,7 +423,7 @@ impl gfx::App for App {
                     }
                 }
                 eprintln!("DUMP tip={:?} peek={:?} status={:?}", self.tip_shown, self.peek, self.status);
-                eprintln!("DUMP backend progress={:?} indexing={:?} unmerged={} reindexing={} linking={}", self.backend_progress, self.indexing, self.merge_wait.len(), self.reindex_rx.is_some(), self.link_rx.is_some());
+                eprintln!("DUMP backend progress={:?} indexing={:?} unmerged={} reindexing={} linking={}", self.work.progress, self.work.indexing, self.work.merge_wait.len(), self.work.reindex_rx.is_some(), self.work.link_rx.is_some());
                 eprintln!("DUMP graph zoom={:.3} pan={:?} canvas={:?} camera={}", self.graph.zoom, self.graph.pan, self.ui.content_of(ui::id("graph-canvas")).map(|(_, r)| r), self.graph.camera_state());
                 eprintln!("DUMP input mouse={:?} down={:?} hot_is_canvas={} active_is_canvas={} drag={:?}", self.ui.input.mouse, self.ui.input.down, self.ui.hot() == Some(ui::id("graph-canvas")), self.ui.active() == Some(ui::id("graph-canvas")), self.graph.drag_state());
                 for (name, r) in self.graph.node_rects(&self.idx) {

@@ -15,7 +15,7 @@ impl App {
         self.ui.open(Kind::None, Layout::row().grow_x().pad(4).gap(6).cross(Align::Center), Style::bg(PANEL).border(BORDER_BOTTOM, BORDER), None);
         self.label("search", WEAK);
         self.field(Which::Search, "regex", 24 * self.cell.0);
-        let (has_back, has_forward) = (!self.history.is_empty(), !self.forward.is_empty());
+        let (has_back, has_forward) = (!self.history.back.is_empty(), !self.history.forward.is_empty());
         if self.nav_button("<", ui::id("back"), has_back).clicked {
             self.actions.push(Action::Back);
         }
@@ -35,7 +35,7 @@ impl App {
         if self.button("pin selection", ui::id("pin"), false).clicked {
             self.actions.push(Action::PinSelection);
         }
-        let save = if self.dirty { "save *" } else { "save" };
+        let save = if self.file.dirty { "save *" } else { "save" };
         if self.button(save, ui::id("save"), false).clicked {
             self.actions.push(Action::Save);
         }
@@ -44,12 +44,12 @@ impl App {
 
     pub(super) fn status_bar(&mut self) {
         self.ui.open(Kind::None, Layout::row().grow_x().pad(4).gap(12).cross(Align::Center), Style::bg(PANEL).border(BORDER_TOP, BORDER), None);
-        let p = self.map_path.display().to_string().replace('\\', "/");
+        let p = self.file.path.display().to_string().replace('\\', "/");
         self.label(&p, WEAK);
         let s: String = self.status.lines().map(str::trim).filter(|l| !l.is_empty()).collect::<Vec<_>>().join(" ");
         self.label(&s, TEXT);
-        if !self.backend_progress.is_empty() {
-            let b = self.backend_progress.clone();
+        if !self.work.progress.is_empty() {
+            let b = self.work.progress.clone();
             self.label(&b, WEAK);
         }
         self.ui.close();

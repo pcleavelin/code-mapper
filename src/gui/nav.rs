@@ -3,6 +3,14 @@
 
 use super::*;
 
+/// The places the reader moved through, for back and forward.
+#[derive(Default)]
+pub(super) struct History {
+    pub(super) back: Vec<Loc>,
+    pub(super) forward: Vec<Loc>,
+    pub(super) last: Option<Loc>, // where the reader was at the end of the last frame
+}
+
 /// A place in the centre panel, kept so the reader can go back and forward.
 #[derive(Clone, PartialEq)]
 pub(super) struct Loc {
@@ -30,27 +38,27 @@ impl App {
     /// the forward stack is dropped.
     pub(super) fn track_navigation(&mut self) {
         let now = self.here();
-        if let Some(prev) = self.last_loc.take() {
+        if let Some(prev) = self.history.last.take() {
             if !prev.same_place(&now) {
-                self.history.push(prev);
-                self.forward.clear();
-                if self.history.len() > 200 {
-                    self.history.remove(0);
+                self.history.back.push(prev);
+                self.history.forward.clear();
+                if self.history.back.len() > 200 {
+                    self.history.back.remove(0);
                 }
             }
         }
-        self.last_loc = Some(now);
+        self.history.last = Some(now);
     }
 
     pub(super) fn back(&mut self) {
-        let Some(loc) = self.history.pop() else { return };
-        self.forward.push(self.here());
+        let Some(loc) = self.history.back.pop() else { return };
+        self.history.forward.push(self.here());
         self.go(loc);
     }
 
     pub(super) fn forward(&mut self) {
-        let Some(loc) = self.forward.pop() else { return };
-        self.history.push(self.here());
+        let Some(loc) = self.history.forward.pop() else { return };
+        self.history.back.push(self.here());
         self.go(loc);
     }
 
@@ -73,7 +81,7 @@ impl App {
             self.scroll_to = Some(a);
         }
         self.tab = loc.tab;
-        self.last_loc = Some(self.here());
+        self.history.last = Some(self.here());
     }
 
     /// Every per-step record of path `pi` after its step `ai` was removed: the step's own
@@ -82,7 +90,7 @@ impl App {
     pub(super) fn step_removed(&mut self, pi: usize, ai: usize) {
         let shift = |a: usize| if a == ai { None } else if a > ai { Some(a - 1) } else { Some(a) };
         self.remap_steps(|(p, a)| if p == pi { shift(a).map(|a| (p, a)) } else { Some((p, a)) });
-        for loc in self.history.iter_mut().chain(self.forward.iter_mut()).chain(self.last_loc.iter_mut()) {
+        for loc in self.history.back.iter_mut().chain(self.history.forward.iter_mut()).chain(self.history.last.iter_mut()) {
             if loc.path == Some(pi) {
                 loc.step = loc.step.and_then(shift);
             }
@@ -93,9 +101,9 @@ impl App {
     pub(super) fn path_removed(&mut self, pi: usize) {
         let shift = |p: usize| if p == pi { None } else if p > pi { Some(p - 1) } else { Some(p) };
         self.remap_steps(|(p, a)| shift(p).map(|p| (p, a)));
-        self.history.retain(|l| l.path != Some(pi));
-        self.forward.retain(|l| l.path != Some(pi));
-        for loc in self.history.iter_mut().chain(self.forward.iter_mut()).chain(self.last_loc.iter_mut()) {
+        self.history.back.retain(|l| l.path != Some(pi));
+        self.history.forward.retain(|l| l.path != Some(pi));
+        for loc in self.history.back.iter_mut().chain(self.history.forward.iter_mut()).chain(self.history.last.iter_mut()) {
             loc.path = loc.path.and_then(shift);
         }
         self.top_step = None;
