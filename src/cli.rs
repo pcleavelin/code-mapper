@@ -308,13 +308,13 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
             if under < -1 || under >= n {
                 return Err(format!("no step [{under}] to go under: the path has {n} steps (-1 = root)"));
             }
-            let under = under as i32;
+            let under = usize::try_from(under).ok();
             match lines {
                 Some((start, end)) => {
                     let fi = find_file(idx, &target)?;
                     let (start, end) = check_range(&idx.files[fi], start, end)?;
                     let ai = map.add_anchor(idx, pi, fi, start, end, author, under);
-                    p!(out, "step [{ai}] added under [{}]", map.paths[pi].anchors[ai].parent);
+                    p!(out, "step [{ai}] added under [{}]", step_number(map.paths[pi].anchors[ai].parent));
                     absolute_warning(out, &map.paths[pi].anchors[ai]);
                     call_warning(out, idx, map, pi, ai);
                 }
@@ -322,7 +322,7 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
                     let r = find_symbol(idx, &target)?;
                     let s = idx.sym(r);
                     let ai = map.add_anchor(idx, pi, r.file, s.start, s.end, author, under);
-                    p!(out, "step [{ai}] {} added under [{}]", s.name, map.paths[pi].anchors[ai].parent);
+                    p!(out, "step [{ai}] {} added under [{}]", s.name, step_number(map.paths[pi].anchors[ai].parent));
                     call_warning(out, idx, map, pi, ai);
                 }
             }
@@ -335,7 +335,7 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
         }
         Command::PathMove { name, index, under } => {
             let pi = find_step(map, &name, index)?;
-            map.reparent(pi, index, under as i32)?;
+            map.reparent(pi, index, usize::try_from(under).ok())?;
             p!(out, "step [{index}] now under [{under}]");
             call_warning(out, idx, map, pi, index);
             dirty = true;
@@ -498,6 +498,11 @@ pub fn tokenize(line: &str) -> Vec<String> {
     out
 }
 
+/// A step index the way the commands write one: -1 is the root.
+pub fn step_number(p: Option<usize>) -> i64 {
+    p.map_or(-1, |p| p as i64)
+}
+
 pub fn describe(idx: &Index, r: SymRef) -> String {
     let s = idx.sym(r);
     format!("{} {}:{}-{}", s.name, idx.files[r.file].path, s.start + 1, s.end + 1)
@@ -510,7 +515,7 @@ fn call_warning(out: &mut String, idx: &Index, map: &Map, pi: usize, ai: usize) 
         return;
     }
     let a = &path.anchors[ai];
-    let Some(parent) = usize::try_from(a.parent).ok().and_then(|p| path.anchors.get(p)) else { return };
+    let Some(parent) = a.parent.and_then(|p| path.anchors.get(p)) else { return };
     let sym_of = |x: &Anchor| Some(SymRef { file: idx.find_file(&x.file)?, sym: x.sym? });
     let callable = |k: &str| ["function", "method", "macro", "constructor", "proc"].iter().any(|w| k.contains(w));
     if let (Some(p), Some(c)) = (sym_of(parent), sym_of(a)) {

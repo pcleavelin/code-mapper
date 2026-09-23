@@ -55,7 +55,7 @@ impl Kind {
 /// Pins a slice of lines. Offsets are relative to the start of the enclosing symbol so the anchor
 /// survives edits elsewhere in the file. `symbol == ""` means absolute lines. `hash` detects when
 /// the anchored text itself changed (-> stale). `parent` makes a path a tree: the step this one
-/// is reached from, or -1 for a root.
+/// is reached from, None for a root (-1 on disk).
 #[derive(Clone)]
 pub struct Anchor {
     pub file: String,
@@ -65,7 +65,7 @@ pub struct Anchor {
     pub hash: u64,
     pub author: Author,
     pub note: String,
-    pub parent: i32,
+    pub parent: Option<usize>,
 
     // resolved per session, not stored
     pub line_start: usize,
@@ -151,7 +151,7 @@ impl Map {
                 b.extend_from_slice(&a.hash.to_le_bytes());
                 b.push(a.author as u8);
                 w_str(&mut b, &a.note);
-                b.extend_from_slice(&a.parent.to_le_bytes());
+                b.extend_from_slice(&a.parent.map_or(-1, |p| p as i32).to_le_bytes());
             }
         }
         write_retry(path, &b)
@@ -204,7 +204,7 @@ impl Map {
                     hash: r.u64()?,
                     author: Author::from_u8(r.u8()?)?,
                     note: r.str()?,
-                    parent: r.i32()?,
+                    parent: usize::try_from(r.i32()?).ok(),
                     line_start: 0,
                     line_end: 0,
                     stale: true,
@@ -247,9 +247,9 @@ impl Map {
         self.paths.iter().flat_map(|p| &p.anchors).any(|a| !a.stale && a.file == file && a.line_start <= end && start <= a.line_end)
     }
 
-    /// Append a step under `parent`: -1 for a root, else an index the path has, which every
+    /// Append a step under `parent`: None for a root, else an index the path has, which every
     /// caller checks before calling this. Returns the new index.
-    pub fn add_anchor(&mut self, idx: &Index, pi: usize, fi: usize, ls: usize, le: usize, author: Author, parent: i32) -> usize {
+    pub fn add_anchor(&mut self, idx: &Index, pi: usize, fi: usize, ls: usize, le: usize, author: Author, parent: Option<usize>) -> usize {
         let mut a = Anchor::new(&idx.files[fi], ls, le, author);
         a.parent = parent;
         self.paths[pi].anchors.push(a);
@@ -264,16 +264,16 @@ impl Map {
         Ok(())
     }
 
-    /// Put step `ai` under `parent` (-1 = root). Refuses a parent that is the step itself or
+    /// Put step `ai` under `parent` (None = root). Refuses a parent that is the step itself or
     /// one of its descendants.
-    pub fn reparent(&mut self, pi: usize, ai: usize, parent: i32) -> Result<(), String> {
+    pub fn reparent(&mut self, pi: usize, ai: usize, parent: Option<usize>) -> Result<(), String> {
         let anchors = &self.paths[pi].anchors;
         let mut p = parent;
-        while p >= 0 {
-            if p as usize == ai {
+        while let Some(q) = p {
+            if q == ai {
                 return Err("a step cannot go under itself or its own descendants".into());
             }
-            p = anchors.get(p as usize).ok_or("no such parent step")?.parent;
+            p = anchors.get(q).ok_or("no such parent step")?.parent;
         }
         self.paths[pi].anchors[ai].parent = parent;
         Ok(())
@@ -281,7 +281,7 @@ impl Map {
 
     /// Name of the step `ai` is under, for a reader coming back up the tree.
     pub fn parent_name(&self, pi: usize, ai: usize) -> String {
-        match usize::try_from(self.paths[pi].anchors[ai].parent).ok().and_then(|p| self.paths[pi].anchors.get(p)) {
+        match self.paths[pi].anchors[ai].parent.and_then(|p| self.paths[pi].anchors.get(p)) {
             Some(a) if !a.symbol.is_empty() => a.symbol.clone(),
             Some(a) => format!("{}:{}", a.file, a.line_start + 1),
             None => "top level".into(),
@@ -293,23 +293,21 @@ impl Map {
     pub fn swap_anchors(&mut self, pi: usize, a: usize, b: usize) {
         let p = &mut self.paths[pi];
         p.anchors.swap(a, b);
-        let (a, b) = (a as i32, b as i32);
         for x in &mut p.anchors {
-            x.parent = if x.parent == a { b } else if x.parent == b { a } else { x.parent };
+            x.parent = x.parent.map(|q| if q == a { b } else if q == b { a } else { q });
         }
     }
 
     /// Remove a step; its children move up to its parent so the tree stays connected.
     pub fn remove_anchor(&mut self, pi: usize, ai: usize) {
         let p = &mut self.paths[pi];
-        let up = p.anchors[ai].parent;
-        let up = if up > ai as i32 { up - 1 } else { up }; // the parent's index after the removal shifts everything above `ai`
+        let up = p.anchors[ai].parent.map(|u| if u > ai { u - 1 } else { u }); // the parent's index after the removal shifts everything above `ai`
         p.anchors.remove(ai);
         for a in &mut p.anchors {
-            if a.parent == ai as i32 {
-                a.parent = up;
-            } else if a.parent > ai as i32 {
-                a.parent -= 1;
+            match a.parent {
+                Some(q) if q == ai => a.parent = up,
+                Some(q) if q > ai => a.parent = Some(q - 1),
+                _ => {}
             }
         }
     }
@@ -334,15 +332,14 @@ impl Map {
             }
             seen[i] = true;
             out.push((i, depth));
-            let mut kids: Vec<usize> = (0..anchors.len()).filter(|&j| anchors[j].parent == i as i32).collect();
+            let mut kids: Vec<usize> = (0..anchors.len()).filter(|&j| anchors[j].parent == Some(i)).collect();
             kids.sort_by_key(|&j| (key(i, j), j));
             for j in kids {
                 visit(anchors, j, depth + 1, key, seen, out);
             }
         }
         for i in 0..n {
-            let par = anchors[i].parent;
-            if par < 0 || par as usize >= n || par as usize == i {
+            if anchors[i].parent.is_none_or(|p| p >= n || p == i) {
                 visit(anchors, i, 0, key, &mut seen, &mut out);
             }
         }
@@ -394,18 +391,18 @@ impl Map {
     /// lacks.
     pub fn promote(&mut self, idx: &Index, root: SymRef, depth: usize, name: Option<&str>, author: Author) -> usize {
         let pi = self.add_path(name.unwrap_or(&idx.sym(root).name.clone()), Kind::Flow, author);
-        let mut stack: Vec<i32> = Vec::new(); // step index at each depth
+        let mut stack: Vec<usize> = Vec::new(); // step index at each depth
         for (r, d) in idx.call_tree(root, depth) {
             let s = idx.sym(r);
             let file = &idx.files[r.file].path;
-            let parent = if d == 0 { -1 } else { stack.get(d - 1).copied().unwrap_or(-1) };
+            let parent = if d == 0 { None } else { stack.get(d - 1).copied() };
             // a symbol the path already pins whole keeps its step
             let ai = match self.paths[pi].anchors.iter().position(|a| a.file == *file && a.sym == Some(r.sym) && a.off_start == 0) {
                 Some(ai) => ai,
                 None => self.add_anchor(idx, pi, r.file, s.start, s.end, author, parent),
             };
             stack.truncate(d);
-            stack.push(ai as i32);
+            stack.push(ai);
         }
         pi
     }
@@ -594,7 +591,7 @@ impl Anchor {
             hash: slice_hash(&f.lines, ls, le),
             author,
             note: String::new(),
-            parent: -1,
+            parent: None,
             line_start: ls,
             line_end: le,
             stale: false,
@@ -669,7 +666,7 @@ mod tests {
         let idx = one_file();
         let mut m = Map::default();
         let pi = m.add_path("p", Kind::Type, Author::Ai);
-        m.add_anchor(&idx, pi, 0, 4, 4, Author::Ai, -1);
+        m.add_anchor(&idx, pi, 0, 4, 4, Author::Ai, None);
         m.paths[0].anchors[0].note = "the middle".into();
         assert_eq!(m.paths[0].anchors[0].symbol, "b");
         assert_eq!(m.paths[0].anchors[0].off_start, 1);
@@ -681,7 +678,7 @@ mod tests {
         assert_eq!(loaded.paths[0].kind, Kind::Type);
         assert_eq!(loaded.paths[0].anchors[0].author, Author::Ai);
         assert_eq!(loaded.paths[0].anchors[0].note, "the middle");
-        assert_eq!(loaded.paths[0].anchors[0].parent, -1);
+        assert_eq!(loaded.paths[0].anchors[0].parent, None);
 
         // symbol `b` moved down two lines: anchor follows it and is not stale
         let mut idx = idx;
@@ -711,18 +708,18 @@ mod tests {
         let idx = one_file();
         let mut m = Map::default();
         let pi = m.add_path("t", Kind::Flow, Author::Human);
-        let root = m.add_anchor(&idx, pi, 0, 0, 2, Author::Human, -1) as i32; // a
-        let mid = m.add_anchor(&idx, pi, 0, 3, 5, Author::Human, root) as i32; // b under a
-        let leaf = m.add_anchor(&idx, pi, 0, 1, 1, Author::Human, mid); // line in a, under b
+        let root = m.add_anchor(&idx, pi, 0, 0, 2, Author::Human, None); // a
+        let mid = m.add_anchor(&idx, pi, 0, 3, 5, Author::Human, Some(root)); // b under a
+        let leaf = m.add_anchor(&idx, pi, 0, 1, 1, Author::Human, Some(mid)); // line in a, under b
         assert_eq!(m.tree_order(pi), [(0, 0), (1, 1), (2, 2)]);
         let numbers: Vec<String> = m.numbered(&idx, pi).into_iter().map(|(_, _, n)| n).collect();
         assert_eq!(numbers, ["1", "1.1", "1.1.1"]);
         assert_eq!(m.descendants(pi, 0), 2);
         assert_eq!(m.descendants(pi, 2), 0);
 
-        m.remove_anchor(pi, mid as usize); // remove the middle: leaf moves up under the root
+        m.remove_anchor(pi, mid); // remove the middle: leaf moves up under the root
         assert_eq!(m.paths[pi].anchors.len(), 2);
-        assert_eq!(m.paths[pi].anchors[leaf - 1].parent, root);
+        assert_eq!(m.paths[pi].anchors[leaf - 1].parent, Some(root));
         assert_eq!(m.tree_order(pi), [(0, 0), (1, 1)]);
     }
 

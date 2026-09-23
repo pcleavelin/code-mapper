@@ -1067,9 +1067,9 @@ impl App {
         self.sel_anchor = Some(ai);
         // a folded ancestor would hide the step: unfold the way down to it
         let mut up = self.map.paths[pi].anchors[ai].parent;
-        while up >= 0 {
-            self.folded.remove(&(pi, up as usize));
-            up = self.map.paths[pi].anchors[up as usize].parent;
+        while let Some(u) = up {
+            self.folded.remove(&(pi, u));
+            up = self.map.paths[pi].anchors[u].parent;
         }
         let a = &self.map.paths[pi].anchors[ai];
         let (file, sym, ls, le) = (a.file.clone(), a.sym, a.line_start, a.line_end);
@@ -1328,11 +1328,11 @@ impl App {
             self.status = "select a path first".into();
             return;
         };
-        let parent = self.sel_anchor.filter(|&ai| ai < self.map.paths[pi].anchors.len()).map_or(-1, |ai| ai as i32);
+        let parent = self.sel_anchor.filter(|&ai| ai < self.map.paths[pi].anchors.len());
         let ai = self.map.add_anchor(&self.idx, pi, fi, a.min(b), a.max(b), Author::Human, parent);
         self.sel_anchor = Some(ai);
         self.dirty = true;
-        self.status = format!("step [{ai}] added to '{}' under [{parent}]", self.map.paths[pi].name);
+        self.status = format!("step [{ai}] added to '{}' under [{}]", self.map.paths[pi].name, cli::step_number(parent));
     }
 
     fn apply(&mut self, a: Action) {
@@ -2010,7 +2010,7 @@ impl App {
         let mut cur = self.top_step.filter(|&ai| ai < self.map.paths[pi].anchors.len());
         while let Some(ai) = cur {
             chain.push(ai);
-            cur = usize::try_from(self.map.paths[pi].anchors[ai].parent).ok().filter(|&p| p < self.map.paths[pi].anchors.len() && !chain.contains(&p));
+            cur = self.map.paths[pi].anchors[ai].parent.filter(|&p| p < self.map.paths[pi].anchors.len() && !chain.contains(&p));
         }
         if chain.is_empty() {
             self.label(" ", WEAK);

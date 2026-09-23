@@ -241,7 +241,7 @@ impl Graph {
             let mut node_of: HashMap<usize, Node> = HashMap::new();
             for (k, (ai, depth, number)) in map.numbered(idx, pi).into_iter().enumerate() {
                 let a = &anchors[ai];
-                let parent = (a.parent >= 0).then(|| node_of.get(&(a.parent as usize)).copied()).flatten();
+                let parent = a.parent.and_then(|p| node_of.get(&p).copied());
                 let mut skip = || {
                     if let Some(p) = parent {
                         node_of.insert(ai, p);
