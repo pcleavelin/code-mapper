@@ -1,0 +1,427 @@
+$ codemap path-new scratch flow
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-new scratch layer
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-new bad kinda
+! error: invalid value 'kinda' for '<KIND>': expected one of flow, layer, type
+[exit 2]
+$ codemap paths scratch
+scratch [flow] (ai) (0 steps)
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-add scratch src/main.rs:main -1
+step [0] main added under [-1]
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-add scratch fill
+step [1] fill added under [0]
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-add scratch describe 0
+step [2] describe added under [0]
+note: main does not call describe; in a flow a step goes under the step that calls it (path-move <name> 2 <under>)
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-add scratch src/main.rs 1 3
+step [3] added under [2]
+note: lines 1-3 are not inside one symbol; pinned as absolute lines, which go stale with any edit above them
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-add scratch src/store.rs 13 14 9
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+! no step [9] to go under: the path has 4 steps (-1 = root)
+[exit 2]
+$ codemap path-add scratch src/store.rs 30 99
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+! line range out of bounds
+[exit 2]
+$ codemap path-add scratch src/store.rs 13 14 1
+step [4] added under [1]
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-note scratch "A note."
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap step-note scratch 1 fills
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap step-note scratch 9 x
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+! no such step
+[exit 2]
+$ codemap note-edit scratch 1 fills "fills it"
+fills it
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap note-edit scratch -1 "A note" "The note"
+The note.
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap note-edit scratch 1 zzz y
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+! the note does not contain 'zzz'
+[exit 2]
+$ codemap paths scratch
+scratch [flow] (ai) (5 steps): The note.
+  [0] src/main.rs:7-11 main (ai)
+    [1] src/main.rs:13-16 fill (ai)  -- fills it
+      [4] src/store.rs:13-14 add (ai)
+    [2] src/shapes.rs:33-35 describe (ai)
+      [3] src/main.rs:1-3  (ai)
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-move scratch 2 1
+step [2] now under [1]
+note: fill does not call describe; in a flow a step goes under the step that calls it (path-move <name> 2 <under>)
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-move scratch 0 1
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+! a step cannot go under itself or its own descendants
+[exit 2]
+$ codemap path-move scratch 4 -1
+step [4] now under [-1]
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-swap scratch 1 2
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-swap scratch 1 20
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+! no such step
+[exit 2]
+$ codemap paths scratch
+scratch [flow] (ai) (5 steps): The note.
+  [0] src/main.rs:7-11 main (ai)
+    [2] src/main.rs:13-16 fill (ai)  -- fills it
+      [1] src/shapes.rs:33-35 describe (ai)
+        [3] src/main.rs:1-3  (ai)
+  [4] src/store.rs:13-14 add (ai)
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-pin scratch 3 src/main.rs 7 11
+step [3] pinned to src/main.rs:7-11
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-pin scratch 3 src/main.rs 0 5
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+! line range out of bounds
+[exit 2]
+$ codemap path-pin scratch 3 src/main.rs 13 50
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+! line range out of bounds
+[exit 2]
+$ codemap path-rename scratch scratch2
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-rename scratch2 startup
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+! a path named 'startup' already exists
+[exit 2]
+$ codemap path scratch2
+# scratch2 [flow] (ai)
+The note.
+
+== 1 [0] src/main.rs:7-11 main (ai)
+    7 fn main() {
+    8     let mut store = Store::new();
+    9     fill(&mut store);
+   10     report(&store);
+   11 }
+
+==   1.1 [2] src/main.rs:13-16 fill (ai)
+-- fills it
+   13 fn fill(store: &mut Store) {
+   14     store.add(Box::new(Circle { r: 1.0 }));
+   15     store.add(Box::new(Square { side: 2.0 }));
+   16 }
+
+==     1.1.1 [1] src/shapes.rs:33-35 describe (ai)
+   33 pub fn describe(s: &dyn Shape) -> String {
+   34     format!("{} of area {:.2}", s.name(), s.area())
+   35 }
+
+==       1.1.1.1 [3] src/main.rs:7-11 main (ai)
+    7 fn main() {
+    8     let mut store = Store::new();
+    9     fill(&mut store);
+   10     report(&store);
+   11 }
+
+-- back in top level --
+
+== 2 [4] src/store.rs:13-14 add (ai)
+   13         self.items.push(s);
+   14         self.check();
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-rm scratch2 1
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-rm scratch2 9
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+! no such step
+[exit 2]
+$ codemap paths scratch2
+scratch2 [flow] (ai) (4 steps): The note.
+  [0] src/main.rs:7-11 main (ai)
+    [1] src/main.rs:13-16 fill (ai)  -- fills it
+      [2] src/main.rs:7-11 main (ai)
+  [3] src/store.rs:13-14 add (ai)
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap promote src/main.rs:main 2
+path 'main' now has 7 steps
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap paths main
+main [flow] (ai) (7 steps)
+  [0] src/main.rs:7-11 main (ai)
+    [1] src/main.rs:13-16 fill (ai)
+      [2] src/store.rs:12-15 add (ai)
+    [3] src/main.rs:18-22 report (ai)
+      [4] src/main.rs:24-26 log_line (ai)
+      [5] src/store.rs:21-27 total_area (ai)
+    [6] src/store.rs:8-10 new (ai)
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap promote src/main.rs:main 2
+path 'main' now has 7 steps
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap promote Store::add 1 adding
+path 'adding' now has 2 steps
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap paths adding
+adding [flow] (ai) (2 steps)
+  [0] src/store.rs:12-15 add (ai)
+    [1] src/store.rs:29-31 check (ai)
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-rm scratch2
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path-rm nope
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+! no such path: nope
+[exit 2]
+$ codemap paths
+startup [flow] (ai) (7 steps): What running the program does: fill the store, then report its total area.
+  [0] src/main.rs:7-11 main (ai)  -- Entry: builds the store and hands it to the two phases.
+    [1] src/main.rs:13-16 fill (ai)  -- Adds one shape of each kind.
+      [2] src/store.rs:12-15 add (ai)
+        [3] src/store.rs:29-31 check (ai)  -- Guards the size after every add.
+    [4] src/main.rs:18-22 report (ai)
+      [5] src/store.rs:21-25 total_area (ai)  -- The sum over every shape's own area.
+      [6] src/main.rs:24-26 log_line (ai)
+shapes [type] (ai) (3 steps): The Shape trait and the two shapes that implement it.
+  [0] src/shapes.rs:1-4 Shape (ai)
+    [1] src/shapes.rs:14-21 impl Shape for Circle (ai)
+    [2] src/shapes.rs:23-30 impl Shape for Square (ai)
+stats [flow] (ai) (2 steps)
+  [0] tools/stats.py:5-7 spread (ai)
+    [1] tools/helpers.py:1-2 mean (ai)
+c-lib [layer] (ai) (1 steps): The C library's surface.
+  [0] c/lib.c:7-13 int sum_squares(int n) (ai)
+main [flow] (ai) (7 steps)
+  [0] src/main.rs:7-11 main (ai)
+    [1] src/main.rs:13-16 fill (ai)
+      [2] src/store.rs:12-15 add (ai)
+    [3] src/main.rs:18-22 report (ai)
+      [4] src/main.rs:24-26 log_line (ai)
+      [5] src/store.rs:21-27 total_area (ai)
+    [6] src/store.rs:8-10 new (ai)
+adding [flow] (ai) (2 steps)
+  [0] src/store.rs:12-15 add (ai)
+    [1] src/store.rs:29-31 check (ai)
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap coverage
+c/lib.c: 1/3
+c/lib.h: 0/1
+src/main.rs: 4/4
+src/shapes.rs: 9/12
+src/store.rs: 5/7
+tools/helpers.py: 1/1
+tools/stats.py: 1/5
+total: 21/33
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver

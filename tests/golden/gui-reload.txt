@@ -1,0 +1,12 @@
+DUMP tab=Path path=Some(0) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
+DUMP tip=None peek=None status="saved"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Path path=Some(0) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
+DUMP tip=None peek=None status="re-indexed: 8 files, 33 symbols indexed (source changed)"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Path path=Some(0) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
+DUMP tip=None peek=None status="map reloaded (changed on disk)"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000

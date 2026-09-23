@@ -1,0 +1,58 @@
+DUMP tab=Listing path=Some(0) step=Some(0) focus=Some("main") file=Some("src/store.rs") sel=Some((12, 12))
+DUMP tip=None peek=None status="saved"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Listing path=Some(0) step=Some(0) focus=Some("main") file=Some("src/store.rs") sel=Some((0, 2))
+DUMP tip=None peek=None status="saved"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Listing path=Some(0) step=Some(7) focus=Some("main") file=Some("src/store.rs") sel=Some((0, 2))
+DUMP tip=None peek=None status="step [7] added to 'startup' under [0]"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Listing path=Some(0) step=Some(7) focus=Some("main") file=Some("src/store.rs") sel=Some((29, 29))
+DUMP tip=None peek=None status="step [7] added to 'startup' under [0]"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Listing path=Some(0) step=Some(7) focus=Some("main") file=Some("src/store.rs") sel=Some((31, 31))
+DUMP tip=None peek=None status="line 999 is outside 1-32; went to the nearest"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Listing path=Some(0) step=Some(7) focus=Some("main") file=Some("src/store.rs") sel=Some((31, 31))
+DUMP tip=None peek=None status="'abc' is not a line number"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Listing path=Some(0) step=Some(7) focus=Some("main") file=Some("src/store.rs") sel=Some((31, 31))
+DUMP tip=Some("Shape") peek=None status="'abc' is not a line number"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Listing path=Some(0) step=None focus=Some("Shape") file=Some("src/shapes.rs") sel=Some((0, 3))
+DUMP tip=None peek=None status="'abc' is not a line number"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Listing path=Some(0) step=Some(7) focus=Some("Shape") file=Some("src/store.rs") sel=Some((31, 31))
+DUMP tip=None peek=None status="'abc' is not a line number"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Listing path=Some(0) step=None focus=Some("Shape") file=Some("src/shapes.rs") sel=Some((0, 3))
+DUMP tip=None peek=None status="'abc' is not a line number"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Listing path=Some(0) step=Some(7) focus=Some("Shape") file=Some("src/store.rs") sel=Some((31, 31))
+DUMP tip=None peek=None status="'abc' is not a line number"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Listing path=Some(0) step=None focus=Some("Shape") file=Some("src/shapes.rs") sel=Some((0, 3))
+DUMP tip=None peek=None status="'abc' is not a line number"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+$ codemap paths startup
+startup [flow] (ai) (8 steps): What running the program does: fill the store, then report its total area.
+  [0] src/main.rs:7-11 main (ai)  -- Entry: builds the store and hands it to the two phases.
+    [1] src/main.rs:13-16 fill (ai)  -- Adds one shape of each kind.
+      [2] src/store.rs:12-15 add (ai)
+        [3] src/store.rs:29-31 check (ai)  -- Guards the size after every add.
+    [4] src/main.rs:18-22 report (ai)
+      [5] src/store.rs:21-25 total_area (ai)  -- The sum over every shape's own area.
+      [6] src/main.rs:24-26 log_line (ai)
+    [7] src/store.rs:1-3 

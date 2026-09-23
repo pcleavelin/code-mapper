@@ -1,0 +1,608 @@
+$ codemap help
+Usage: codemap <root>                     open the GUI
+       codemap <root> <command> [args]    text mode (same commands work in the GUI output panel)
+
+Commands:
+  files        [filter]                         list indexed files (substring filter)
+  symbols      [filter]                         list symbols: file:start-end kind name (calls/callers)
+  show         <file> [start] [end]             print numbered lines (1-based, inclusive)
+  grep         <regex>                          file:line: text
+  notes        <regex>                          search path notes and step notes
+  callers      <symbol>                         who calls it (xrefs to)
+  callees      <symbol>                         what it calls (xrefs from)
+  refs         <symbol>                         every reference to it, file:line: text (needs the language's server)
+  tree         <symbol> [depth]                 call tree from a symbol (default depth 4)
+  roots        [n]                              entry points: symbols nobody calls (default 30)
+  paths        [name]                           the map: every path (or one) as a tree of steps (! = stale, (ai) = AI-authored)
+  path         <name>                           print a path's note and every step's code, tree order
+  path-new     <name> <kind> [note]             create a path; kind = flow | layer | type (no-op if it exists)
+  path-note    <name> <note>                    set a path's note
+  step-note    <name> <index> <note>            set a note on one step (index as shown by `paths`)
+  note-edit    <name> <index> <old> <new>       replace the first `old` in a note with `new` (index -1 = the path note)
+  path-rename  <name> <new>                     rename a path
+  path-add     <name> <sym|file start end> [under]  add a step under step `under` (default: the last step; -1 = root)
+  path-pin     <name> <index> <file> <start> <end>  re-anchor a step; its note and place in the tree stay
+  path-move    <name> <index> <under>          move a step (with its subtree) under step `under` (-1 = root)
+  path-swap    <name> <a> <b>                  swap two steps' places in the list, which orders siblings when the code does not
+  path-rm      <name> [index]                   delete a step (its children move up) or the whole path
+  promote      <symbol> [depth] [name]          create a path shaped like a symbol's call tree (default depth 1, named after the symbol)
+  stale        every step whose text no longer matches, or whose file or symbol is gone
+  check        exit non-zero if any step is stale
+  repin        [rev]                            re-pin every stale step by following its text from revision `rev` (default @-); prints each change so its note gets reread
+  uncovered    [filter]                         symbols in no path, largest first
+  coverage     covered/total symbols per file
+  diff         the map against the parent revision's (jj file show -r @- .codemap)
+  help         Print this message or the help of the given subcommand(s)
+$ codemap files
+README.md (3 lines, 0 symbols)
+c/lib.c (13 lines, 3 symbols)
+c/lib.h (1 lines, 1 symbols)
+src/main.rs (26 lines, 4 symbols)
+src/shapes.rs (35 lines, 12 symbols)
+src/store.rs (32 lines, 7 symbols)
+tools/helpers.py (2 lines, 1 symbols)
+tools/stats.py (19 lines, 5 symbols)
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap files tools
+tools/helpers.py (2 lines, 1 symbols)
+tools/stats.py (19 lines, 5 symbols)
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap symbols
+c/lib.c:1-1 preproc_include #include "lib.h" (0 calls, 0 callers)
+c/lib.c:3-5 function_definition static int square(int x) (0 calls, 0 callers)
+c/lib.c:7-13 function_definition int sum_squares(int n) (0 calls, 0 callers)
+c/lib.h:1-1 declaration int sum_squares(int n); (0 calls, 0 callers)
+src/main.rs:7-11 function_item main (3 calls, 0 callers)
+src/main.rs:13-16 function_item fill (1 calls, 1 callers)
+src/main.rs:18-22 function_item report (2 calls, 1 callers)
+src/main.rs:24-26 function_item log_line (0 calls, 1 callers)
+src/shapes.rs:1-4 trait_item Shape (0 calls, 0 callers)
+src/shapes.rs:2-2 function_signature_item   area (0 calls, 0 callers)
+src/shapes.rs:3-3 function_signature_item   name (0 calls, 0 callers)
+src/shapes.rs:6-8 struct_item Circle (0 calls, 0 callers)
+src/shapes.rs:10-12 struct_item Square (0 calls, 0 callers)
+src/shapes.rs:14-21 impl_item impl Shape for Circle (0 calls, 0 callers)
+src/shapes.rs:15-17 function_item   area (0 calls, 1 callers)
+src/shapes.rs:18-20 function_item   name (0 calls, 0 callers)
+src/shapes.rs:23-30 impl_item impl Shape for Square (0 calls, 0 callers)
+src/shapes.rs:24-26 function_item   area (0 calls, 0 callers)
+src/shapes.rs:27-29 function_item   name (0 calls, 0 callers)
+src/shapes.rs:33-35 function_item describe (0 calls, 0 callers)
+src/store.rs:3-5 struct_item Store (0 calls, 0 callers)
+src/store.rs:7-32 impl_item impl Store (0 calls, 0 callers)
+src/store.rs:8-10 function_item   new (0 calls, 1 callers)
+src/store.rs:12-15 function_item   add (1 calls, 1 callers)
+src/store.rs:17-19 function_item   len (1 calls, 1 callers)
+src/store.rs:21-27 function_item   total_area (1 calls, 1 callers)
+src/store.rs:29-31 function_item   check (0 calls, 1 callers)
+tools/helpers.py:1-2 function_definition mean (0 calls, 2 callers)
+tools/stats.py:5-7 function_definition spread (1 calls, 1 callers)
+tools/stats.py:10-15 class_definition Summary (0 calls, 0 callers)
+tools/stats.py:11-12 function_definition   __init__ (0 calls, 0 callers)
+tools/stats.py:14-15 function_definition   show (2 calls, 1 callers)
+tools/stats.py:18-19 function_definition main (1 calls, 0 callers)
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap symbols store
+src/store.rs:3-5 struct_item Store (0 calls, 0 callers)
+src/store.rs:7-32 impl_item impl Store (0 calls, 0 callers)
+src/store.rs:8-10 function_item   new (0 calls, 1 callers)
+src/store.rs:12-15 function_item   add (1 calls, 1 callers)
+src/store.rs:17-19 function_item   len (1 calls, 1 callers)
+src/store.rs:21-27 function_item   total_area (1 calls, 1 callers)
+src/store.rs:29-31 function_item   check (0 calls, 1 callers)
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap show src/main.rs 7 11
+    7 fn main() {
+    8     let mut store = Store::new();
+    9     fill(&mut store);
+   10     report(&store);
+   11 }
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap show main.rs 23
+   23 
+   24 fn log_line(msg: &str) {
+   25     eprintln!("{msg}");
+   26 }
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap show nope.rs
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+! no such file: nope.rs
+[exit 2]
+$ codemap grep store\.\w+\(
+src/main.rs:14:     store.add(Box::new(Circle { r: 1.0 }));
+src/main.rs:15:     store.add(Box::new(Square { side: 2.0 }));
+src/main.rs:19:     let total = store.total_area();
+src/main.rs:20:     println!("{} shapes, {total:.2} area", store.len());
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap grep (
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+! regex parse error:
+!     (
+!     ^
+! error: unclosed group
+[exit 2]
+$ codemap callers check
+check src/store.rs:29-31
+  add src/store.rs:12-15
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap callees main
+main src/main.rs:7-11
+  fill src/main.rs:13-16
+  report src/main.rs:18-22
+  new src/store.rs:8-10
+main tools/stats.py:18-19
+  show tools/stats.py:14-15
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap callees area
+area src/shapes.rs:2-2
+area src/shapes.rs:15-17
+area src/shapes.rs:24-26
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap callers Store::len
+len src/store.rs:17-19
+  len src/store.rs:17-19
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap callers store:len
+len src/store.rs:17-19
+  len src/store.rs:17-19
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap callers shapes:Circle::area
+area src/shapes.rs:15-17
+  total_area src/store.rs:21-27
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap callers nothing_here
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+! no such symbol: nothing_here
+[exit 2]
+$ codemap refs total_area
+total_area src/store.rs:21-27
+  (references need rust-analyzer)
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap tree main
+main src/main.rs:7-11
+  fill src/main.rs:13-16
+    add src/store.rs:12-15
+      check src/store.rs:29-31
+  report src/main.rs:18-22
+    log_line src/main.rs:24-26
+    total_area src/store.rs:21-27
+      area src/shapes.rs:15-17
+  new src/store.rs:8-10
+main tools/stats.py:18-19
+  show tools/stats.py:14-15
+    mean tools/helpers.py:1-2
+    spread tools/stats.py:5-7
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap tree main 1
+main src/main.rs:7-11
+  fill src/main.rs:13-16
+  report src/main.rs:18-22
+  new src/store.rs:8-10
+main tools/stats.py:18-19
+  show tools/stats.py:14-15
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap tree main.py
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+! no such symbol: main.py
+[exit 2]
+$ codemap roots
+main src/main.rs:7-11 (3 calls)
+main tools/stats.py:18-19 (1 calls)
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap roots 2
+main src/main.rs:7-11 (3 calls)
+main tools/stats.py:18-19 (1 calls)
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap notes store
+startup: What running the program does: fill the store, then report its total area.
+startup[0] src/main.rs:7: Entry: builds the store and hands it to the two phases.
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap notes ^Entry
+startup[0] src/main.rs:7: Entry: builds the store and hands it to the two phases.
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap notes [
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+! regex parse error:
+!     [
+!     ^
+! error: unclosed character class
+[exit 2]
+$ codemap paths
+startup [flow] (ai) (7 steps): What running the program does: fill the store, then report its total area.
+  [0] src/main.rs:7-11 main (ai)  -- Entry: builds the store and hands it to the two phases.
+    [1] src/main.rs:13-16 fill (ai)  -- Adds one shape of each kind.
+      [2] src/store.rs:12-15 add (ai)
+        [3] src/store.rs:29-31 check (ai)  -- Guards the size after every add.
+    [4] src/main.rs:18-22 report (ai)
+      [5] src/store.rs:21-25 total_area (ai)  -- The sum over every shape's own area.
+      [6] src/main.rs:24-26 log_line (ai)
+shapes [type] (ai) (3 steps): The Shape trait and the two shapes that implement it.
+  [0] src/shapes.rs:1-4 Shape (ai)
+    [1] src/shapes.rs:14-21 impl Shape for Circle (ai)
+    [2] src/shapes.rs:23-30 impl Shape for Square (ai)
+stats [flow] (ai) (2 steps)
+  [0] tools/stats.py:5-7 spread (ai)
+    [1] tools/helpers.py:1-2 mean (ai)
+c-lib [layer] (ai) (1 steps): The C library's surface.
+  [0] c/lib.c:7-13 int sum_squares(int n) (ai)
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap paths startup
+startup [flow] (ai) (7 steps): What running the program does: fill the store, then report its total area.
+  [0] src/main.rs:7-11 main (ai)  -- Entry: builds the store and hands it to the two phases.
+    [1] src/main.rs:13-16 fill (ai)  -- Adds one shape of each kind.
+      [2] src/store.rs:12-15 add (ai)
+        [3] src/store.rs:29-31 check (ai)  -- Guards the size after every add.
+    [4] src/main.rs:18-22 report (ai)
+      [5] src/store.rs:21-25 total_area (ai)  -- The sum over every shape's own area.
+      [6] src/main.rs:24-26 log_line (ai)
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap paths nope
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+! no such path: nope
+[exit 2]
+$ codemap path startup
+# startup [flow] (ai)
+What running the program does: fill the store, then report its total area.
+
+== 1 [0] src/main.rs:7-11 main (ai)
+-- Entry: builds the store and hands it to the two phases.
+    7 fn main() {
+    8     let mut store = Store::new();
+    9     fill(&mut store);
+   10     report(&store);
+   11 }
+
+==   1.1 [1] src/main.rs:13-16 fill (ai)
+-- Adds one shape of each kind.
+   13 fn fill(store: &mut Store) {
+   14     store.add(Box::new(Circle { r: 1.0 }));
+   15     store.add(Box::new(Square { side: 2.0 }));
+   16 }
+
+==     1.1.1 [2] src/store.rs:12-15 add (ai)
+   12     pub fn add(&mut self, s: Box<dyn Shape>) {
+   13         self.items.push(s);
+   14         self.check();
+   15     }
+
+==       1.1.1.1 [3] src/store.rs:29-31 check (ai)
+-- Guards the size after every add.
+   29     fn check(&self) {
+   30         assert!(self.len() < 1000, "too many shapes");
+   31     }
+
+  -- back in main --
+
+==   1.2 [4] src/main.rs:18-22 report (ai)
+   18 fn report(store: &Store) {
+   19     let total = store.total_area();
+   20     println!("{} shapes, {total:.2} area", store.len());
+   21     log_line("done");
+   22 }
+
+==     1.2.1 [5] src/store.rs:21-25 total_area (ai)
+-- The sum over every shape's own area.
+   21     pub fn total_area(&self) -> f64 {
+   22         let mut sum = 0.0;
+   23         for s in &self.items {
+   24             sum += s.area();
+   25         }
+
+==     1.2.2 [6] src/main.rs:24-26 log_line (ai)
+   24 fn log_line(msg: &str) {
+   25     eprintln!("{msg}");
+   26 }
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path shapes
+# shapes [type] (ai)
+The Shape trait and the two shapes that implement it.
+
+== 1 [0] src/shapes.rs:1-4 Shape (ai)
+    1 pub trait Shape {
+    2     fn area(&self) -> f64;
+    3     fn name(&self) -> &str;
+    4 }
+
+==   1.1 [1] src/shapes.rs:14-21 impl Shape for Circle (ai)
+   14 impl Shape for Circle {
+   15     fn area(&self) -> f64 {
+   16         std::f64::consts::PI * self.r * self.r
+   17     }
+   18     fn name(&self) -> &str {
+   19         "circle"
+   20     }
+   21 }
+
+==   1.2 [2] src/shapes.rs:23-30 impl Shape for Square (ai)
+   23 impl Shape for Square {
+   24     fn area(&self) -> f64 {
+   25         self.side * self.side
+   26     }
+   27     fn name(&self) -> &str {
+   28         "square"
+   29     }
+   30 }
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path stats
+# stats [flow] (ai)
+
+== 1 [0] tools/stats.py:5-7 spread (ai)
+    5 def spread(xs):
+    6     m = mean(xs)
+    7     return math.sqrt(sum((x - m) ** 2 for x in xs) / len(xs))
+
+==   1.1 [1] tools/helpers.py:1-2 mean (ai)
+    1 def mean(xs):
+    2     return sum(xs) / len(xs)
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap path c-lib
+# c-lib [layer] (ai)
+The C library's surface.
+
+== 1 [0] c/lib.c:7-13 int sum_squares(int n) (ai)
+    7 int sum_squares(int n) {
+    8     int s = 0;
+    9     for (int i = 0; i < n; i++) {
+   10         s += square(i);
+   11     }
+   12     return s;
+   13 }
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap uncovered
+tools/stats.py:10-15 class_definition Summary (6 lines)
+c/lib.c:3-5 function_definition static int square(int x) (3 lines)
+src/shapes.rs:6-8 struct_item Circle (3 lines)
+src/shapes.rs:10-12 struct_item Square (3 lines)
+src/shapes.rs:33-35 function_item describe (3 lines)
+src/store.rs:3-5 struct_item Store (3 lines)
+src/store.rs:8-10 function_item new (3 lines)
+src/store.rs:17-19 function_item len (3 lines)
+tools/stats.py:11-12 function_definition __init__ (2 lines)
+tools/stats.py:14-15 function_definition show (2 lines)
+tools/stats.py:18-19 function_definition main (2 lines)
+c/lib.c:1-1 preproc_include #include "lib.h" (1 lines)
+c/lib.h:1-1 declaration int sum_squares(int n); (1 lines)
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap uncovered shapes
+src/shapes.rs:6-8 struct_item Circle (3 lines)
+src/shapes.rs:10-12 struct_item Square (3 lines)
+src/shapes.rs:33-35 function_item describe (3 lines)
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap coverage
+c/lib.c: 1/3
+c/lib.h: 0/1
+src/main.rs: 4/4
+src/shapes.rs: 9/12
+src/store.rs: 4/7
+tools/helpers.py: 1/1
+tools/stats.py: 1/5
+total: 20/33
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap stale
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap check
+ok
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap promote area
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+! ambiguous: area; use one of
+!   area src/shapes.rs:2-2                   area src/shapes.rs:2-2
+!   Circle::area                             area src/shapes.rs:15-17
+!   Square::area                             area src/shapes.rs:24-26
+[exit 2]
+$ codemap path-add startup nope
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+! no such symbol: nope
+[exit 2]
+$ codemap bogus-command
+! error: unrecognized subcommand 'bogus-command'
+! 
+! Usage: codemap <root>                     open the GUI
+!        codemap <root> <command> [args]    text mode (same commands work in the GUI output panel)
+! 
+! For more information, try 'help'.
+[exit 2]
+$ codemap tree
+! error: the following required arguments were not provided:
+!   <SYMBOL>
+! 
+! Usage: codemap tree <SYMBOL> [DEPTH]
+[exit 2]
+$ codemap roots many
+! error: invalid value 'many' for '[N]': invalid digit found in string
+[exit 2]

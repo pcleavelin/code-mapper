@@ -1,0 +1,73 @@
+DUMP tab=Path path=Some(0) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
+DUMP tip=None peek=None status="saved"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Path path=Some(0) step=Some(5) focus=Some("total_area") file=Some("src/store.rs") sel=Some((20, 24))
+DUMP tip=None peek=None status="saved"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Path path=Some(0) step=Some(5) focus=Some("total_area") file=Some("src/store.rs") sel=Some((20, 24))
+DUMP tip=None peek=None status="saved"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Path path=Some(0) step=Some(5) focus=Some("total_area") file=Some("src/store.rs") sel=Some((20, 24))
+DUMP tip=None peek=None status="saved"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Path path=Some(0) step=Some(6) focus=Some("log_line") file=Some("src/main.rs") sel=Some((23, 25))
+DUMP tip=None peek=None status="saved"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Path path=Some(0) step=Some(5) focus=Some("total_area") file=Some("src/store.rs") sel=Some((20, 24))
+DUMP tip=None peek=None status="saved"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Path path=Some(0) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
+DUMP tip=None peek=None status="saved"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Path path=Some(0) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
+DUMP tip=None peek=None status="saved"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Path path=Some(0) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
+DUMP tip=None peek=None status="saved"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Path path=Some(0) step=Some(6) focus=Some("log_line") file=Some("src/main.rs") sel=Some((23, 25))
+DUMP tip=None peek=None status="saved"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Graph path=Some(0) step=Some(6) focus=Some("log_line") file=Some("src/main.rs") sel=Some((23, 25))
+DUMP tip=None peek=None status="saved"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP node 1 main
+DUMP node 1.1 fill
+DUMP node 1.1.1 add
+DUMP node 1.1.1.1 check
+DUMP node 1.2 report
+DUMP node 1.2.1 total_area
+DUMP node 1.2.2 log_line
+DUMP button main 'callees > 1'
+DUMP button main 'listing'
+DUMP button main '▼'
+DUMP button main '▲'
+DUMP button fill 'listing'
+DUMP button fill '▼'
+DUMP button fill '▲'
+DUMP button add 'listing'
+DUMP button add '▼'
+DUMP button add '▲'
+DUMP button check 'listing'
+DUMP button check '▼'
+DUMP button check '▲'
+DUMP button report 'listing'
+DUMP button report '▼'
+DUMP button report '▲'
+DUMP button total_area 'callees > 1'
+DUMP button total_area 'listing'
+DUMP button total_area '▼'
+DUMP button total_area '▲'
+DUMP button log_line 'listing'
+DUMP button log_line '▲'

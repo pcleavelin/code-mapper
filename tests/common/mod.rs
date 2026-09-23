@@ -1,0 +1,373 @@
+//! The fixture repo and the runners the integration tests share. Every run gets a PATH holding
+//! only the directory jj lives in, so no language server is found and every file is indexed by
+//! tree-sitter: output is the same on every machine and every run.
+
+#![allow(dead_code)]
+
+pub mod cli;
+pub mod gui;
+
+use std::io::{BufRead, BufReader};
+use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
+use std::time::{Duration, Instant};
+
+pub const FILES: &[(&str, &str)] = &[
+    (
+        "src/main.rs",
+        r#"mod shapes;
+mod store;
+
+use shapes::{Circle, Square};
+use store::Store;
+
+fn main() {
+    let mut store = Store::new();
+    fill(&mut store);
+    report(&store);
+}
+
+fn fill(store: &mut Store) {
+    store.add(Box::new(Circle { r: 1.0 }));
+    store.add(Box::new(Square { side: 2.0 }));
+}
+
+fn report(store: &Store) {
+    let total = store.total_area();
+    println!("{} shapes, {total:.2} area", store.len());
+    log_line("done");
+}
+
+fn log_line(msg: &str) {
+	eprintln!("{msg}");
+}
+"#,
+    ),
+    (
+        "src/shapes.rs",
+        r#"pub trait Shape {
+    fn area(&self) -> f64;
+    fn name(&self) -> &str;
+}
+
+pub struct Circle {
+    pub r: f64,
+}
+
+pub struct Square {
+    pub side: f64,
+}
+
+impl Shape for Circle {
+    fn area(&self) -> f64 {
+        std::f64::consts::PI * self.r * self.r
+    }
+    fn name(&self) -> &str {
+        "circle"
+    }
+}
+
+impl Shape for Square {
+    fn area(&self) -> f64 {
+        self.side * self.side
+    }
+    fn name(&self) -> &str {
+        "square"
+    }
+}
+
+/// Nothing calls this.
+pub fn describe(s: &dyn Shape) -> String {
+    format!("{} of area {:.2}", s.name(), s.area())
+}
+"#,
+    ),
+    (
+        "src/store.rs",
+        r#"use crate::shapes::Shape;
+
+pub struct Store {
+    items: Vec<Box<dyn Shape>>,
+}
+
+impl Store {
+    pub fn new() -> Store {
+        Store { items: Vec::new() }
+    }
+
+    pub fn add(&mut self, s: Box<dyn Shape>) {
+        self.items.push(s);
+        self.check();
+    }
+
+    pub fn len(&self) -> usize {
+        self.items.len()
+    }
+
+    pub fn total_area(&self) -> f64 {
+        let mut sum = 0.0;
+        for s in &self.items {
+            sum += s.area();
+        }
+        sum
+    }
+
+    fn check(&self) {
+        assert!(self.len() < 1000, "too many shapes");
+    }
+}
+"#,
+    ),
+    (
+        "tools/stats.py",
+        r#"import math
+from helpers import mean
+
+
+def spread(xs):
+    m = mean(xs)
+    return math.sqrt(sum((x - m) ** 2 for x in xs) / len(xs))
+
+
+class Summary:
+    def __init__(self, xs):
+        self.xs = xs
+
+    def show(self):
+        print(mean(self.xs), spread(self.xs))
+
+
+def main():
+    Summary([1, 2, 3]).show()
+"#,
+    ),
+    ("tools/helpers.py", "def mean(xs):\n    return sum(xs) / len(xs)\n"),
+    (
+        "c/lib.c",
+        r#"#include "lib.h"
+
+static int square(int x) {
+    return x * x;
+}
+
+int sum_squares(int n) {
+    int s = 0;
+    for (int i = 0; i < n; i++) {
+        s += square(i);
+    }
+    return s;
+}
+"#,
+    ),
+    ("c/lib.h", "int sum_squares(int n);\n"),
+    ("README.md", "# shapes\n\nA store of shapes and the sum of their areas.\n"),
+    (".gitignore", "build/\n"),
+    ("build/generated.rs", "fn ignored() {}\n"),
+    ("data.bin", "\0\x01binary"),
+];
+
+/// The agent's map of the fixture, as the CLI builds it.
+pub const MAP: &[&[&str]] = &[
+    &["path-new", "startup", "flow", "What running the program does: fill the store, then report its total area."],
+    &["path-add", "startup", "src/main.rs:main", "-1"],
+    &["path-add", "startup", "fill"],
+    &["path-add", "startup", "Store::add"],
+    &["path-add", "startup", "check"],
+    &["path-add", "startup", "report", "0"],
+    &["path-add", "startup", "src/store.rs", "21", "25", "4"],
+    &["path-add", "startup", "log_line", "4"],
+    &["step-note", "startup", "0", "Entry: builds the store and hands it to the two phases."],
+    &["step-note", "startup", "1", "Adds one shape of each kind."],
+    &["step-note", "startup", "3", "Guards the size after every add."],
+    &["step-note", "startup", "5", "The sum over every shape's own area."],
+    &["path-new", "shapes", "type", "The Shape trait and the two shapes that implement it."],
+    &["path-add", "shapes", "Shape", "-1"],
+    &["path-add", "shapes", "impl Shape for Circle", "0"],
+    &["path-add", "shapes", "impl Shape for Square", "0"],
+    &["promote", "spread", "1", "stats"],
+    &["path-new", "c-lib", "layer", "The C library's surface."],
+    &["path-add", "c-lib", "c/lib.c", "7", "13", "-1"],
+];
+
+pub fn bin() -> PathBuf {
+    PathBuf::from(env!("CARGO_BIN_EXE_codemap"))
+}
+
+/// The directory jj runs from, alone: a PATH that finds jj and no language server.
+// ponytail: assumes jj's directory holds no language server; a temp dir with a link to jj
+// would lift that if a machine needs it.
+fn tool_path() -> String {
+    let path = std::env::var_os("PATH").unwrap_or_default();
+    let exe = if cfg!(windows) { "jj.exe" } else { "jj" };
+    std::env::split_paths(&path)
+        .find(|d| d.join(exe).is_file())
+        .map(|d| d.to_string_lossy().into_owned())
+        .unwrap_or_default()
+}
+
+pub fn has_jj() -> bool {
+    !tool_path().is_empty()
+}
+
+/// A scratch directory for `name` at a fixed place, so two binaries run in turn see the same
+/// absolute paths.
+pub fn scratch(name: &str) -> PathBuf {
+    std::env::temp_dir().join("codemap-tests").join(name)
+}
+
+/// A fresh fixture for `name`, with the map built when `map` is set.
+pub fn fixture(name: &str, bin: &Path, map: bool) -> PathBuf {
+    let root = scratch(name).join("repo");
+    let _ = std::fs::remove_dir_all(scratch(name));
+    for (path, text) in FILES {
+        let p = root.join(path);
+        std::fs::create_dir_all(p.parent().unwrap()).unwrap();
+        std::fs::write(p, text).unwrap();
+    }
+    if map {
+        for args in MAP {
+            let (_, err, code) = codemap(bin, &root, args);
+            assert_eq!(code, 0, "{args:?}: {err}");
+        }
+    }
+    root
+}
+
+pub fn codemap(bin: &Path, root: &Path, args: &[&str]) -> (String, String, i32) {
+    let out = Command::new(bin).arg(root).args(args).env("PATH", tool_path()).output().expect("run codemap");
+    let norm = |b: &[u8]| {
+        let s = String::from_utf8_lossy(b).replace("\r\n", "\n");
+        s.replace(&root.display().to_string(), "<root>").replace(&root.display().to_string().replace('\\', "/"), "<root>")
+    };
+    (norm(&out.stdout), norm(&out.stderr), out.status.code().unwrap_or(-1))
+}
+
+/// A jj repo at the fixture root with the current state committed as the parent revision.
+pub fn jj_commit(root: &Path, message: &str) {
+    jj(root, &["git", "init"]);
+    jj(root, &["commit", "-m", message]);
+}
+
+pub fn jj(root: &Path, args: &[&str]) -> String {
+    let cfg = root.parent().unwrap().join("jj.toml");
+    std::fs::write(&cfg, "[user]\nname = \"test\"\nemail = \"test@example.com\"\n").unwrap();
+    let out = Command::new("jj").args(args).current_dir(root).env("PATH", tool_path()).env("JJ_CONFIG", &cfg).output().expect("run jj");
+    assert!(out.status.success() || args[0] == "git", "jj {args:?}: {}", String::from_utf8_lossy(&out.stderr));
+    String::from_utf8_lossy(&out.stdout).into_owned()
+}
+
+/// A shell-like record of commands and what they printed, for a golden file.
+pub struct Transcript<'a> {
+    pub bin: &'a Path,
+    pub root: PathBuf,
+    pub out: String,
+}
+
+impl Transcript<'_> {
+    pub fn run(&mut self, args: &[&str]) -> i32 {
+        let shown: Vec<String> = args.iter().map(|a| if a.contains(' ') || a.is_empty() { format!("\"{a}\"") } else { a.to_string() }).collect();
+        self.out.push_str(&format!("$ codemap {}\n", shown.join(" ")));
+        let (out, err, code) = codemap(self.bin, &self.root, args);
+        self.out.push_str(&out);
+        for l in err.lines() {
+            self.out.push_str(&format!("! {l}\n"));
+        }
+        if code != 0 {
+            self.out.push_str(&format!("[exit {code}]\n"));
+        }
+        code
+    }
+
+    pub fn note(&mut self, s: &str) {
+        self.out.push_str(&format!("# {s}\n"));
+    }
+}
+
+/// Compare with `tests/golden/<name>.txt`, or write it when CODEMAP_BLESS is set.
+pub fn golden(name: &str, actual: &str) {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/golden").join(format!("{name}.txt"));
+    if std::env::var_os("CODEMAP_BLESS").is_some() {
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(&path, actual).unwrap();
+        return;
+    }
+    let want = std::fs::read_to_string(&path).unwrap_or_else(|_| panic!("no golden {}; run with CODEMAP_BLESS=1", path.display())).replace("\r\n", "\n");
+    if want != actual {
+        let first = want.lines().zip(actual.lines()).position(|(a, b)| a != b).unwrap_or(want.lines().count().min(actual.lines().count()));
+        panic!(
+            "{name} differs from its golden at line {}:\n  want: {:?}\n  got:  {:?}\n--- got in full ---\n{actual}",
+            first + 1,
+            want.lines().nth(first),
+            actual.lines().nth(first)
+        );
+    }
+}
+
+/// Opens the GUI on `root` and plays `script` (see CLAUDE.md), `{shots}` standing for a
+/// directory the screenshots go to. `hook` sees every stderr line as it arrives, so a test can
+/// change files on disk at a point the script marks. Returns stderr.
+pub fn gui(bin: &Path, root: &Path, name: &str, script: &str, hook: &mut dyn FnMut(&str)) -> String {
+    let dir = root.parent().unwrap();
+    let shots = dir.join("shots");
+    std::fs::create_dir_all(&shots).unwrap();
+    let file = dir.join("script.txt");
+    std::fs::write(&file, script.replace("{shots}", &shots.display().to_string().replace('\\', "/"))).unwrap();
+    let mut child = Command::new(bin).arg(root).env("PATH", tool_path()).env("CODEMAP_SCRIPT", &file).env("JJ_CONFIG", dir.join("jj.toml")).stdout(Stdio::null()).stderr(Stdio::piped()).spawn().expect("run codemap");
+    let (tx, rx) = std::sync::mpsc::channel();
+    let err = child.stderr.take().unwrap();
+    std::thread::spawn(move || {
+        for line in BufReader::new(err).lines().map_while(Result::ok) {
+            if tx.send(line).is_err() {
+                break;
+            }
+        }
+    });
+    let start = Instant::now();
+    let mut out = String::new();
+    loop {
+        match rx.recv_timeout(Duration::from_millis(100)) {
+            Ok(line) => {
+                hook(&line);
+                out.push_str(&line);
+                out.push('\n');
+            }
+            Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
+            Err(_) if start.elapsed() > Duration::from_secs(90) => {
+                let _ = child.kill();
+                panic!("{name}: the GUI did not quit within 90 s\n{out}");
+            }
+            Err(_) => {}
+        }
+    }
+    let status = child.wait().unwrap();
+    assert!(status.success(), "{name}: GUI exited with {status}\n{out}");
+    out.replace(&root.display().to_string(), "<root>").replace(&root.display().to_string().replace('\\', "/"), "<root>")
+}
+
+/// The lines of a GUI run that do not depend on the screen's size: selection, tooltip, peek,
+/// status, backend state, node and button names, and script errors.
+pub fn gui_state(stderr: &str) -> String {
+    let mut out = String::new();
+    for l in stderr.lines() {
+        let keep = if l.starts_with("DUMP tab=") || l.starts_with("DUMP tip=") || l.starts_with("DUMP backend") || l.starts_with("script:") {
+            Some(l.to_owned())
+        } else if l.starts_with("DUMP node ") || l.starts_with("DUMP button ") {
+            Some(l.split(" rect=").next().unwrap_or(l).to_owned())
+        } else if l.starts_with("DUMP graph") {
+            Some(l.split(" pan=").next().unwrap_or(l).to_owned())
+        } else {
+            None
+        };
+        if let Some(k) = keep {
+            out.push_str(&k);
+            out.push('\n');
+        }
+    }
+    out
+}
+
+/// Everything a GUI run printed that two builds of the same behaviour must agree on: all but
+/// frame timings and where screenshots were written.
+pub fn gui_parity(stderr: &str) -> String {
+    stderr.lines().filter(|l| !l.starts_with("DUMP frames") && !l.starts_with("screenshot:")).map(|l| format!("{l}\n")).collect()
+}

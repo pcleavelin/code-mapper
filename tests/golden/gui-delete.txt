@@ -1,0 +1,30 @@
+DUMP tab=Path path=Some(0) step=None focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
+DUMP tip=None peek=None status="deleted step 1.2.2 log_line (src/main.rs) from 'startup'; unsaved"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Path path=Some(0) step=None focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
+DUMP tip=None peek=None status="deleted step 1 main (src/main.rs) from 'startup'; unsaved"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Path path=None step=None focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
+DUMP tip=None peek=None status="deleted path 'startup' (5 steps); unsaved"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Path path=Some(0) step=Some(0) focus=Some("Shape") file=Some("src/shapes.rs") sel=Some((0, 3))
+DUMP tip=None peek=None status="deleted path 'startup' (5 steps); unsaved"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Path path=Some(0) step=Some(0) focus=Some("Shape") file=Some("src/shapes.rs") sel=Some((0, 3))
+DUMP tip=None peek=None status="saved"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+$ codemap paths
+shapes [type] (ai) (3 steps): The Shape trait and the two shapes that implement it.
+  [0] src/shapes.rs:1-4 Shape (ai)
+    [1] src/shapes.rs:14-21 impl Shape for Circle (ai)
+    [2] src/shapes.rs:23-30 impl Shape for Square (ai)
+stats [flow] (ai) (2 steps)
+  [0] tools/stats.py:5-7 spread (ai)
+    [1] tools/helpers.py:1-2 mean (ai)
+c-lib [layer] (ai) (1 steps): The C library's surface.
+  [0] c/lib.c:7-13 int sum_squares(int n) (ai)
