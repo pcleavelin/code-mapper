@@ -91,6 +91,32 @@ fn edit(bin: &Path) -> String {
         &["path-swap", "scratch", "1", "2"],
         &["path-swap", "scratch", "1", "20"],
         &["paths", "scratch"],
+        &["step-link", "scratch", "1", "startup"],
+        &["step-link", "scratch", "1", "nope"],
+        &["step-link", "scratch", "1", "scratch"],
+        &["step-link", "scratch", "9", "startup"],
+        &["step-unlink", "scratch", "2"],
+        &["paths", "scratch"],
+        &["path", "startup"],
+        &["path", "scratch", "--expand"],
+        &["path-rm", "startup"],
+        &["path-rename", "startup", "boot"],
+        &["paths", "scratch"],
+        &["path-rename", "boot", "startup"],
+        &["check"],
+        &["path-group", "scratch", "flows/demo"],
+        &["path-group", "startup", "flows"],
+        &["path-new", "grouped", "layer", "In a group.", "--group", " areas/ "],
+        &["path-group", "nope", "x"],
+        &["groups"],
+        &["paths"],
+        &["path", "grouped"],
+        &["group-rename", "flows", "work/flows"],
+        &["group-rename", "nope", "x"],
+        &["groups"],
+        &["path-group", "startup", ""],
+        &["path-rm", "grouped"],
+        &["groups"],
         &["path-pin", "scratch", "3", "src/main.rs", "7", "11"],
         &["path-pin", "scratch", "3", "src/main.rs", "0", "5"],
         &["path-pin", "scratch", "3", "src/main.rs", "13", "50"],
@@ -173,6 +199,7 @@ fn vcs(bin: &Path) -> String {
     t.run(&["path-add", "fresh", "mean", "-1"]);
     t.run(&["path-pin", "c-lib", "0", "c/lib.c", "8", "9"]);
     t.run(&["path-note", "stats", "Changed."]);
+    t.run(&["step-link", "stats", "0", "startup"]);
     t.run(&["diff"]);
     edit_file(&root, "tools/stats.py", "def main():", "def extra():
     return 1

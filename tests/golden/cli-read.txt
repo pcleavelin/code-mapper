@@ -3,36 +3,41 @@ Usage: codemap <root>                     open the GUI
        codemap <root> <command> [args]    text mode (same commands work in the GUI output panel)
 
 Commands:
-  files        [filter]                         list indexed files (substring filter)
-  symbols      [filter]                         list symbols: file:start-end kind name (calls/callers)
-  show         <file> [start] [end]             print numbered lines (1-based, inclusive)
-  grep         <regex>                          file:line: text
-  notes        <regex>                          search path notes and step notes
-  callers      <symbol>                         who calls it (xrefs to)
-  callees      <symbol>                         what it calls (xrefs from)
-  refs         <symbol>                         every reference to it, file:line: text (needs the language's server)
-  tree         <symbol> [depth]                 call tree from a symbol (default depth 4)
-  roots        [n]                              entry points: symbols nobody calls (default 30)
-  paths        [name]                           the map: every path (or one) as a tree of steps (! = stale, (ai) = AI-authored)
-  path         <name>                           print a path's note and every step's code, tree order
-  path-new     <name> <kind> [note]             create a path; kind = flow | layer | type (no-op if it exists)
-  path-note    <name> <note>                    set a path's note
-  step-note    <name> <index> <note>            set a note on one step (index as shown by `paths`)
-  note-edit    <name> <index> <old> <new>       replace the first `old` in a note with `new` (index -1 = the path note)
-  path-rename  <name> <new>                     rename a path
-  path-add     <name> <sym|file start end> [under]  add a step under step `under` (default: the last step; -1 = root)
-  path-pin     <name> <index> <file> <start> <end>  re-anchor a step; its note and place in the tree stay
-  path-move    <name> <index> <under>          move a step (with its subtree) under step `under` (-1 = root)
-  path-swap    <name> <a> <b>                  swap two steps' places in the list, which orders siblings when the code does not
-  path-rm      <name> [index]                   delete a step (its children move up) or the whole path
-  promote      <symbol> [depth] [name]          create a path shaped like a symbol's call tree (default depth 1, named after the symbol)
-  stale        every step whose text no longer matches, or whose file or symbol is gone
-  check        exit non-zero if any step is stale
-  repin        [rev]                            re-pin every stale step by following its text from revision `rev` (default @-); prints each change so its note gets reread
-  uncovered    [filter]                         symbols in no path, largest first
-  coverage     covered/total symbols per file
-  diff         the map against the parent revision's (jj file show -r @- .codemap)
-  help         Print this message or the help of the given subcommand(s)
+  files         [filter]                         list indexed files (substring filter)
+  symbols       [filter]                         list symbols: file:start-end kind name (calls/callers)
+  show          <file> [start] [end]             print numbered lines (1-based, inclusive)
+  grep          <regex>                          file:line: text
+  notes         <regex>                          search path notes and step notes
+  callers       <symbol>                         who calls it (xrefs to)
+  callees       <symbol>                         what it calls (xrefs from)
+  refs          <symbol>                         every reference to it, file:line: text (needs the language's server)
+  tree          <symbol> [depth]                 call tree from a symbol (default depth 4)
+  roots         [n]                              entry points: symbols nobody calls (default 30)
+  paths         [name]                           the map: every path (or one) as a tree of steps (! = stale, (ai) = AI-authored, → = link)
+  path          <name> [--expand]                print a path's note and every step's code, tree order; --expand prints linked paths inline
+  path-new      <name> <kind> [note] [--group g] create a path; kind = flow | layer | type (no-op if it exists)
+  path-group    <name> <group>                   put a path in a group; / nests groups (flows/http), "" = top level
+  groups        every group with its paths, nested
+  group-rename  <old> <new>                      rename a group and every group inside it
+  path-note     <name> <note>                    set a path's note
+  step-note     <name> <index> <note>            set a note on one step (index as shown by `paths`)
+  step-link     <name> <index> <target>          link a step to the path that documents what its lines call
+  step-unlink   <name> <index>                   remove a step's link
+  note-edit     <name> <index> <old> <new>       replace the first `old` in a note with `new` (index -1 = the path note)
+  path-rename   <name> <new>                     rename a path
+  path-add      <name> <sym|file start end> [under]  add a step under step `under` (default: the last step; -1 = root)
+  path-pin      <name> <index> <file> <start> <end>  re-anchor a step; its note and place in the tree stay
+  path-move     <name> <index> <under>          move a step (with its subtree) under step `under` (-1 = root)
+  path-swap     <name> <a> <b>                  swap two steps' places in the list, which orders siblings when the code does not
+  path-rm       <name> [index]                   delete a step (its children move up) or the whole path
+  promote       <symbol> [depth] [name]          create a path shaped like a symbol's call tree (default depth 1, named after the symbol)
+  stale         every step whose text no longer matches, or whose file or symbol is gone
+  check         exit non-zero if any step is stale
+  repin         [rev]                            re-pin every stale step by following its text from revision `rev` (default @-); prints each change so its note gets reread
+  uncovered     [filter]                         symbols in no path, largest first
+  coverage      covered/total symbols per file
+  diff          the map against the parent revision's (jj file show -r @- .codemap)
+  help          Print this message or the help of the given subcommand(s)
 $ codemap files
 README.md (3 lines, 0 symbols)
 c/lib.c (13 lines, 3 symbols)

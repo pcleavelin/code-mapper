@@ -46,6 +46,8 @@ Deferred items and their triggers are in section 11.
 | **Xref** | Symbol A calls symbol B, or symbol A references symbol B. From the language's backend, section 7. "Xrefs to" = callers, "xrefs from" = callees. |
 | **Anchor** | A pinned slice of lines in one file, stored relative to the enclosing symbol so it follows the symbol when code above it moves. Carries a hash of its text; if the hash no longer matches, the anchor is **stale**. |
 | **Path** | A named tree of anchors (**steps**), with a **kind**, a path note, an author, and a step note per step. The one unit of the mental model. Siblings are shown in the order the parent's code names them. |
+| **Link** | A step can name another path that documents what the step's lines call: the call into shared code, or the write to a queue that another process reads. The step stays anchored at the call site; the linked path is read in place of repeating its steps. A path cannot link to itself. Renaming a path renames every link to it, and a path that something links to cannot be removed. |
+| **Group** | Where a path sits in the paths list: a name, with `/` nesting one group in another (`flows/http`). One group per path, or none. A group exists while a path is in it. Groups order the list and change nothing else. |
 | **Kind** | `flow`: a workflow, what happens when X. `layer`: an abstraction boundary, the functions that form its surface. `type`: a data structure and what mutates it. A module is a layer whose root is the file. Kinds are a tag: listed and filterable, no rendering difference. |
 | **Coverage** | A symbol is covered if any step's anchor overlaps its line range. Derived, never stored. |
 | **Map** | All paths for one root. One file, `.codemap`, at the root, committed with the code. |
@@ -78,7 +80,9 @@ After changing code, before the commit:
 4. Every new non-trivial symbol goes into a path: `path-add` to an existing one, or
    `path-new <name> <kind>` with a note written for someone who did not see the diff.
    "Trivial" is the agent's judgement; the human audits it through `uncovered`.
-5. `check` must pass. It exits non-zero on any stale step.
+   Code that many paths call is mapped once, in its own path, and each step that calls
+   it gets `step-link <name> <index> <target>` instead of a copy of its steps.
+5. `check` must pass. It exits non-zero on any stale step or any link to a missing path.
 
 After a rebase the same rule applies: the map is stale, run `stale`, then `repin <rev>` from
 the pre-rebase commit, then re-pin the rest. There is
@@ -99,7 +103,7 @@ never disagree.
 
 | Panel | Contents |
 |---|---|
-| Left, tabs | **Paths**: every path with kind, author tag and stale count; the selected path expanded into its **outline**, one row per step with hierarchical number (1, 1.2, 1.2.3), symbol and file, a hidden count on folded subtrees. The topmost step visible in the document is highlighted and the outline scrolls to keep it in view. Clicking a row selects the step. **Symbols**: filterable table with kind, file, line, covered. **Files**: a tree of the indexed files with covered/total per file. |
+| Left, tabs | **Paths**: the groups as folders, each with the number of paths under it and red when one of them is stale, then the paths outside any group; every path with kind, author tag and stale count. A group is closed until the path being read is in it, and a click opens or closes it. The selected path expanded into its **outline**, one row per step with hierarchical number (1, 1.2, 1.2.3), symbol and file, a hidden count on folded subtrees. The topmost step visible in the document is highlighted and the outline scrolls to keep it in view. Clicking a row selects the step. **Symbols**: filterable table with kind, file, line, covered. **Files**: a tree of the indexed files with covered/total per file. |
 | Centre, tabs | **Path** document, below. **Diff**: the map against the parent revision's, every added, removed or changed path, click to read. **Graph**: the selection as a left-to-right tree, below. **Listing**: the file viewer with line numbers, anchor bars, and go-to-line. **Results**: grep output. In the document and the listing, double-click or ctrl-click an identifier to jump to its definition. |
 | Right | **Xrefs** for the selected symbol. |
 | Bottom | **Output**: runs the same commands as the CLI. |
@@ -117,7 +121,13 @@ code, fold the subtree (the header shows how many steps are hidden), a whole-sym
 toggle that shows the enclosing symbol with the slice highlighted inside it, and context
 buttons at the top and bottom of the code that show ten more lines of the file each
 press, the way a diff hunk expands; whenever anything beyond the slice shows, the slice
-is highlighted. Path-wide
+is highlighted. A step with a link shows the linked path's name, which opens that path, and
+an expand toggle that shows the linked path's steps inline under the step, indented one
+level and numbered after it (`1.2 › 1`, `1.2 › 1.1`), with their own view toggles. Clicking
+one of those steps opens it in its own path. A link to a path already open further up
+is marked "expanded above" and does not expand again. Under the path note, "linked from"
+lists every step that links to this path, each clickable. The outline shows a link as
+`→ name` after the step. Path-wide
 hide all code, show all, fold all, unfold all. Up and down walk the steps when no field
 has the keyboard. Stale steps are red. The selected step carries an accent
 bar; selecting it from outside the document scrolls its header to the top, selecting it
@@ -225,6 +235,7 @@ u32 npaths
   u8  kind          0 = flow, 1 = layer, 2 = type
   str note
   u8  author        0 = human (GUI), 1 = AI (CLI)
+  str group         "" = none, / between nested groups
   u32 nsteps
     str file        relative path, forward slashes
     str symbol      enclosing symbol name, "" = absolute lines
@@ -234,6 +245,7 @@ u32 npaths
     u8  author
     str note
     i32 parent      index of the parent step in this list, -1 = root
+    str link        name of the path this step links to, "" = none
 ```
 
 Steps are stored in list order; tree order is derived (roots in list order, children
@@ -336,9 +348,11 @@ files [filter]                        symbols [filter]
 show <file> [start] [end]             grep <regex>          notes <regex>
 callers <sym>   callees <sym>         refs <sym>
 tree <sym> [depth]                    roots [n]
-paths [name]    path <name>           promote <sym> [depth] [name]
+paths [name]    path <name> [--expand]                promote <sym> [depth] [name]
 path-new <name> <kind> [note]         path-note <name> <note>       path-rename <name> <new>
 step-note <name> <index> <note>       note-edit <name> <index> <old> <new>
+step-link <name> <index> <target>     step-unlink <name> <index>
+path-group <name> <group>             groups                group-rename <old> <new>
 path-rm <name> [index]
 path-add <name> <sym> [under]         path-add <name> <file> <start> <end> [under]
 path-pin <name> <index> <file> <start> <end>
@@ -349,6 +363,14 @@ diff
 
 `path-add` places the new step under `under`; by default under the last step added, so
 consecutive adds build a chain and an explicit index starts a branch.
+
+`path <name> --expand` prints each linked path inline under the step that links to it, the
+same way the document expands it; `paths` and `path` mark a link as `→ name`, and `path`
+lists the steps that link to the path it prints.
+
+`paths` lists the paths in the same order as the Paths tab, with a `== group` line (or
+`== (top level)`) wherever the group changes; `groups` prints the group tree with counts;
+`path-new --group` places a new path directly.
 
 Concurrency: the GUI holds the map in memory and saves whole; the CLI loads, mutates,
 saves whole. Last writer wins. Do not run the CLI while the GUI has unsaved changes.
@@ -397,6 +419,7 @@ Deferred, with the trigger that would pull each in:
 |---|---|
 | A daemon holding the server sessions for the CLI | cold CLI runs on changed files are the bottleneck of an agent session |
 | Hand-written resolver for a language | a target repo uses it and has no server |
+| Links in the graph: a linked step expands the linked path's tree from its node | reading a journey across processes in the document is not enough |
 | "Intentionally unmapped" marker on symbols | `uncovered` is mostly things already decided not to matter |
 | Step-level review state | a long path gets one re-pinned step and rereading it all is a cost |
 | Kind-specific rendering | a list of 50 mixed-kind paths is unreadable |
@@ -415,6 +438,12 @@ Deferred, with the trigger that would pull each in:
 - No review state on paths. If the human feels unfamiliar with something they know it
   and read it.
 - Author is recorded per path and per step, shown as `(ai)`.
+- Groups are a field of the path, not a prefix of its name, so moving a path between
+  groups leaves its name and every link to it alone.
+- Paths link to each other through a step, not through text in a note, so a link can be
+  checked, renamed with its path, and expanded. Asked for by the owner for mapping
+  pilot-api-rs, where shared code (history, locks, validation) and work handed between
+  processes through queues would otherwise be copied into every path that reaches it.
 - Promote default depth is 1; the agent asks for more.
 - Roots are strictly "no callers". One root per process.
 - The map file stays binary. Reviewing map changes is a GUI feature (M3), not a format

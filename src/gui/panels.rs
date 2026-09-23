@@ -111,7 +111,35 @@ impl App {
         let base = ui::id("paths");
         let it = self.scroll_open(base, Layout::col().grow().pad(4), Style::default());
         let cols = it.rect.map_or(44, |r| ((r.w - 8 - ui::SCROLLBAR_W) / self.cell.0.max(1)).max(20)) as usize;
-        for pi in 0..self.map.paths.len() {
+        // a group opens or closes on a click; one never clicked is open while it holds the
+        // path being read
+        let reading = self.sel_path.and_then(|pi| self.map.paths.get(pi)).map(|p| p.group.clone()).unwrap_or_default();
+        let mut closed_at: Option<usize> = None;
+        for row in self.map.rows() {
+            let depth = match &row {
+                Row::Group { depth, .. } | Row::Path { depth, .. } => *depth,
+            };
+            if closed_at.is_some_and(|d| depth > d) {
+                continue;
+            }
+            closed_at = None;
+            let pad = "  ".repeat(depth);
+            let pi = match row {
+                Row::Group { group, paths, .. } => {
+                    let holds = reading == group || reading.starts_with(&format!("{group}/"));
+                    let open = self.groups_open.get(&group).copied().unwrap_or(holds);
+                    let label = format!("{pad}{} {}/  {paths} paths", if open { "▾" } else { "▸" }, group.rsplit('/').next().unwrap_or(&group));
+                    let stale = self.map.paths.iter().any(|p| (p.group == group || p.group.starts_with(&format!("{group}/"))) && p.anchors.iter().any(|a| a.stale));
+                    if self.row(vec![(label, if stale { RED } else { TEXT })], ui::id_with(ui::id("group"), &group), false).clicked {
+                        self.actions.push(Action::OpenGroup(group.clone(), !open));
+                    }
+                    if !open {
+                        closed_at = Some(depth);
+                    }
+                    continue;
+                }
+                Row::Path { pi, .. } => pi,
+            };
             let (name, kind, tag, n, stale) = {
                 let p = &self.map.paths[pi];
                 (p.name.clone(), p.kind.name(), p.author.tag(), p.anchors.len(), p.anchors.iter().filter(|a| a.stale).count())
@@ -124,7 +152,7 @@ impl App {
             let color = if stale > 0 { RED } else if !mark.is_empty() { GREEN } else { TEXT };
             let selected = self.sel_path == Some(pi);
             let rest = format!(" [{kind}]{tag}  {n} steps");
-            let it = self.row(vec![(format!("{mark}{}{rest}", trunc(&name, cols.saturating_sub(mark.len() + rest.chars().count()))), color)], ui::id_n(base, pi), selected);
+            let it = self.row(vec![(format!("{pad}{mark}{}{rest}", trunc(&name, cols.saturating_sub(pad.len() + mark.len() + rest.chars().count()))), color)], ui::id_n(base, pi), selected);
             if it.clicked {
                 self.actions.push(Action::OpenPath(pi, Tab::Path));
             }
@@ -149,7 +177,8 @@ impl App {
                 let name = if a.symbol.is_empty() { "(lines)" } else { a.symbol.as_str() };
                 let file = a.file.rsplit('/').next().unwrap_or("").to_owned();
                 let stale = a.stale;
-                let line = format!("  {}{number}  {name}{}", "  ".repeat(depth), if hidden > 0 { format!("  +{hidden}") } else { String::new() });
+                let link = if a.link.is_empty() { String::new() } else { format!("  → {}", a.link) };
+                let line = format!("{pad}  {}{number}  {name}{link}{}", "  ".repeat(depth), if hidden > 0 { format!("  +{hidden}") } else { String::new() });
                 let at_top = self.top_step == Some(ai);
                 let marked = if self.sel_anchor == Some(ai) { Some(SELECTED) } else if at_top { Some(dim(SELECTED, 110)) } else { None };
                 let it = self.row_bg(vec![(line, if stale { RED } else if at_top { TEXT } else { WEAK }), (format!("  {file}"), dim(WEAK, 140))], ui::id_n(ui::id("outline"), ai), marked);

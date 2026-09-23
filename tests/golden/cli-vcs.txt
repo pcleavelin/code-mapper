@@ -67,11 +67,20 @@ $ codemap path-note stats Changed.
 ! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
 ! pyright-langserver: 2 files to index
 ! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
+$ codemap step-link stats 0 startup
+step [0] links to 'startup'
+! clangd: 2 files to index
+! clangd not on PATH: 2 files keep the tree-sitter resolver
+! rust-analyzer: 3 files to index
+! rust-analyzer not on PATH: 3 files keep the tree-sitter resolver
+! pyright-langserver: 2 files to index
+! pyright-langserver not on PATH: 2 files keep the tree-sitter resolver
 $ codemap diff
 ~ startup
     ~ [0] src/main.rs:7-11 main  note edited
     + [7] src/shapes.rs:33-35 describe  new
-~ stats  (note or kind changed)
+~ stats  (note, kind or group changed)
+    ~ [0] tools/stats.py:5-7 spread  link changed
 ~ c-lib
     ~ [0] c/lib.c:8-9 int sum_squares(int n)  re-pinned
 + fresh (1 steps)
@@ -171,6 +180,7 @@ fresh[1] left stale: tools/stats.py is not in nonsense-rev
 $ codemap path startup
 # startup [flow] (ai)
 What running the program does: fill the store, then report its total area.
+linked from: stats[0]
 
 == 1 [0] src/main.rs:7-11 main (ai)
 -- A new entry note.

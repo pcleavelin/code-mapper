@@ -30,8 +30,9 @@ After changing code, before the commit:
    re-pin by hand with `path-pin <name> <index> <file> <start> <end>`. You broke it and
    have the diff; the human never re-pins.
 4. Every new non-trivial symbol goes into a path: `path-add` to an existing one, or
-   `path-new <name> <kind> [note]` (kind = flow | layer | type) with a note written for
-   someone who did not see the diff. `step-note` says what a step does for that path.
+   `path-new <name> <kind> [note] [--group g]` (kind = flow | layer | type) with a note
+   written for someone who did not see the diff. Put every new path in the group its
+   neighbours use (`groups` lists them; `path-group` moves one). `step-note` says what a step does for that path.
    Your edits are tagged `(ai)`.
    A flow reads like a book: every function the workflow calls, each step under the
    step that calls it, in call order. Scaffold it with `promote <sym> [depth]`, then trim
@@ -39,7 +40,11 @@ After changing code, before the commit:
    "does not call" note `path-add` prints. `path-move <name> <index> <under>` fixes a
    misplaced step, `path-swap` orders siblings the code does not order (layers, types),
    `note-edit` fixes one clause of a note, `paths <name>` shows one path's step indices. `path <name>` shows the result; check that it reads top-down.
-5. `check` must pass. It exits non-zero on any stale step.
+   Code that several paths call gets its own path, mapped once. In each path that
+   reaches it, the step at the call site links to it with `step-link <name> <index>
+   <target>` instead of repeating its steps; `path <name> --expand` reads the result
+   with every linked path inline.
+5. `check` must pass. It exits non-zero on any stale step or any link to a missing path.
 
 After a rebase the same applies: run `stale`, then `repin <rev>` with the change's
 pre-rebase commit (from `jj evolog`), then re-pin the rest.

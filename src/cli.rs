@@ -2,7 +2,7 @@
 //! and from the GUI's output panel. Output is plain lines, grep-style, written to a String.
 
 use crate::index::{Backend, File, Index, SymRef};
-use crate::map::{Anchor, Author, Change, Kind, Map, StepChange};
+use crate::map::{Anchor, Author, Change, Kind, Map, Row, StepChange};
 use clap::{CommandFactory, Parser};
 use std::fmt::Write;
 
@@ -42,21 +42,37 @@ pub enum Command {
         #[arg(default_value_t = 30)]
         n: usize,
     },
-    /// [name]                           the map: every path (or one) as a tree of steps (! = stale, (ai) = AI-authored)
+    /// [name]                           the map: every path (or one) as a tree of steps (! = stale, (ai) = AI-authored, → = link)
     Paths { name: Option<String> },
-    /// <name>                           print a path's note and every step's code, tree order
-    Path { name: String },
-    /// <name> <kind> [note]             create a path; kind = flow | layer | type (no-op if it exists)
+    /// <name> [--expand]                print a path's note and every step's code, tree order; --expand prints linked paths inline
+    Path {
+        name: String,
+        #[arg(long)]
+        expand: bool,
+    },
+    /// <name> <kind> [note] [--group g] create a path; kind = flow | layer | type (no-op if it exists)
     PathNew {
         name: String,
         #[arg(value_parser = parse_kind)]
         kind: Kind,
         note: Option<String>,
+        #[arg(long)]
+        group: Option<String>,
     },
+    /// <name> <group>                   put a path in a group; / nests groups (flows/http), "" = top level
+    PathGroup { name: String, group: String },
+    /// every group with its paths, nested
+    Groups,
+    /// <old> <new>                      rename a group and every group inside it
+    GroupRename { old: String, new: String },
     /// <name> <note>                    set a path's note
     PathNote { name: String, note: String },
     /// <name> <index> <note>            set a note on one step (index as shown by `paths`)
     StepNote { name: String, index: usize, note: String },
+    /// <name> <index> <target>          link a step to the path that documents what its lines call
+    StepLink { name: String, index: usize, target: String },
+    /// <name> <index>                   remove a step's link
+    StepUnlink { name: String, index: usize },
     /// <name> <index> <old> <new>       replace the first `old` in a note with `new` (index -1 = the path note)
     #[command(allow_negative_numbers = true)]
     NoteEdit { name: String, index: i64, old: String, new: String },
@@ -213,55 +229,80 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
             }
         }
         Command::Paths { name } => {
-            if let Some(n) = &name {
-                find_path(map, n)?;
-            }
-            for (pi, path) in map.paths.iter().enumerate().filter(|(_, p)| name.as_ref().is_none_or(|n| &p.name == n)) {
+            // the one path asked for, or every path in group order, each run of paths of one
+            // group under a line naming it
+            let pis: Vec<usize> = match &name {
+                Some(n) => vec![find_path(map, n)?],
+                None => map.rows().into_iter().filter_map(|row| if let Row::Path { pi, .. } = row { Some(pi) } else { None }).collect(),
+            };
+            let mut group = "";
+            for pi in pis {
+                let path = &map.paths[pi];
+                if name.is_none() && path.group != group {
+                    group = &path.group;
+                    p!(out, "== {}", if group.is_empty() { "(top level)" } else { group });
+                }
                 let note = if path.note.is_empty() { String::new() } else { format!(": {}", path.note) };
                 p!(out, "{} [{}]{} ({} steps){}", path.name, path.kind.name(), path.author.tag(), path.anchors.len(), note);
                 for (i, depth) in map.tree_order(pi) {
                     let a = &path.anchors[i];
                     p!(
                         out,
-                        "  {}[{i}] {}{} {}{}{}",
+                        "  {}[{i}] {}{} {}{}{}{}",
                         "  ".repeat(depth),
                         if a.stale { "! " } else { "" },
                         where_is(idx, a),
                         a.symbol,
                         a.author.tag(),
+                        link_tag(a),
                         if a.note.is_empty() { String::new() } else { format!("  -- {}", a.note) }
                     );
                 }
             }
         }
-        Command::Path { name } => {
+        Command::Path { name, expand } => {
             let pi = find_path(map, &name)?;
             let path = &map.paths[pi];
-            p!(out, "# {} [{}]{}", path.name, path.kind.name(), path.author.tag());
+            p!(out, "# {} [{}]{}{}", path.name, path.kind.name(), path.author.tag(), if path.group.is_empty() { String::new() } else { format!("  in {}", path.group) });
             if !path.note.is_empty() {
                 p!(out, "{}", path.note);
             }
-            let mut prev_depth = 0;
-            for (i, depth, number) in map.numbered(idx, pi) {
-                let a = &path.anchors[i];
-                if depth < prev_depth {
-                    p!(out, "\n{}-- back in {} --", "  ".repeat(depth), map.parent_name(pi, i));
-                }
-                prev_depth = depth;
-                p!(out, "\n== {}{number} [{i}] {}{} {}{}", "  ".repeat(depth), if a.stale { "STALE " } else { "" }, where_is(idx, a), a.symbol, a.author.tag());
-                if !a.note.is_empty() {
-                    p!(out, "-- {}", a.note);
-                }
-                if let Some(fi) = idx.find_file(&a.file) {
-                    print_lines(out, &idx.files[fi], a.line_start, a.line_end);
-                }
+            let from: Vec<String> = map.links_to(&path.name).into_iter().map(|(p, a)| format!("{}[{a}]", map.paths[p].name)).collect();
+            if !from.is_empty() {
+                p!(out, "linked from: {}", from.join(", "));
             }
+            print_steps(out, idx, map, pi, 0, "", &mut vec![pi], expand);
         }
-        Command::PathNew { name, kind, note } => {
+        Command::PathNew { name, kind, note, group } => {
             let pi = map.add_path(&name, kind, author);
             if let Some(note) = note {
                 map.paths[pi].note = note;
             }
+            if let Some(group) = group {
+                map.set_group(pi, &group);
+            }
+            dirty = true;
+        }
+        Command::PathGroup { name, group } => {
+            let pi = find_path(map, &name)?;
+            map.set_group(pi, &group);
+            let place = match map.paths[pi].group.as_str() {
+                "" => "at the top level".to_owned(),
+                g => format!("in {g}"),
+            };
+            p!(out, "'{name}' is {place}");
+            dirty = true;
+        }
+        Command::Groups => {
+            for row in map.rows() {
+                if let Row::Group { group, depth, paths } = row {
+                    p!(out, "{}{} ({paths} paths)", "  ".repeat(depth), group.rsplit('/').next().unwrap_or(&group));
+                }
+            }
+        }
+        Command::GroupRename { old, new } => {
+            let moved = map.rename_group(&old, &new)?;
+            p!(out, "{moved} paths moved");
             dirty = true;
         }
         Command::PathNote { name, note } => {
@@ -272,6 +313,21 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
         Command::StepNote { name, index, note } => {
             let pi = find_step(map, &name, index)?;
             map.paths[pi].anchors[index].note = note;
+            dirty = true;
+        }
+        Command::StepLink { name, index, target } => {
+            let pi = find_step(map, &name, index)?;
+            map.set_link(pi, index, &target)?;
+            p!(out, "step [{index}] links to '{target}'");
+            dirty = true;
+        }
+        Command::StepUnlink { name, index } => {
+            let pi = find_step(map, &name, index)?;
+            if map.paths[pi].anchors[index].link.is_empty() {
+                return Err(format!("step [{index}] has no link"));
+            }
+            map.set_link(pi, index, "")?;
+            p!(out, "step [{index}] unlinked");
             dirty = true;
         }
         Command::NoteEdit { name, index, old, new } => {
@@ -291,7 +347,11 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
         }
         Command::PathRename { name, new } => {
             let pi = find_path(map, &name)?;
+            let links = map.links_to(&name).len();
             map.rename(pi, &new)?;
+            if links > 0 {
+                p!(out, "{links} links now point at '{new}'");
+            }
             dirty = true;
         }
         Command::PathAdd { name, target, nums } => {
@@ -355,7 +415,7 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
                 Some(ai) if ai < map.paths[pi].anchors.len() => map.remove_anchor(pi, ai),
                 Some(_) => return Err("no such step".into()),
                 None => {
-                    map.paths.remove(pi);
+                    map.remove_path(pi)?;
                 }
             }
             dirty = true;
@@ -382,11 +442,20 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
                     }
                 }
             }
+            let dangling = map.dangling_links();
+            for &(pi, ai) in &dangling {
+                let path = &map.paths[pi];
+                p!(out, "{}[{ai}] links to a missing path '{}'   step-link {} {ai} <path> | step-unlink {} {ai}", path.name, path.anchors[ai].link, path.name, path.name);
+            }
             if check {
-                if n > 0 {
-                    return Err(format!("{n} stale steps"));
+                match (n, dangling.len()) {
+                    (0, 0) => {
+                        p!(out, "ok");
+                    }
+                    (n, 0) => return Err(format!("{n} stale steps")),
+                    (0, d) => return Err(format!("{d} broken links")),
+                    (n, d) => return Err(format!("{n} stale steps, {d} broken links")),
                 }
-                p!(out, "ok");
             }
         }
         Command::Repin { rev } => {
@@ -446,7 +515,7 @@ pub fn exec(idx: &Index, map: &mut Map, cmd: Command, author: Author, out: &mut 
                         continue;
                     }
                     Change::Changed => {
-                        p!(out, "~ {}{}", d.name, if d.note_changed { "  (note or kind changed)" } else { "" });
+                        p!(out, "~ {}{}", d.name, if d.note_changed { "  (note, kind or group changed)" } else { "" });
                     }
                 }
                 let pi = find_path(map, &d.name)?;
@@ -496,6 +565,45 @@ pub fn tokenize(line: &str) -> Vec<String> {
         out.push(cur);
     }
     out
+}
+
+/// The steps of path `pi` in tree order, each indented by `base` more levels and numbered
+/// after `prefix`. With `expand`, a linked path prints inline under the step that links to it,
+/// unless it is already open in `chain`, the paths printed around this one.
+#[allow(clippy::too_many_arguments)]
+fn print_steps(out: &mut String, idx: &Index, map: &Map, pi: usize, base: usize, prefix: &str, chain: &mut Vec<usize>, expand: bool) {
+    let path = &map.paths[pi];
+    let label = |i: usize| if base == 0 { format!("[{i}]") } else { format!("[{}[{i}]]", path.name) };
+    let mut prev_depth = 0;
+    for (i, depth, number) in map.numbered(idx, pi) {
+        let a = &path.anchors[i];
+        let indent = "  ".repeat(base + depth);
+        if depth < prev_depth {
+            p!(out, "\n{indent}-- back in {} --", map.parent_name(pi, i));
+        }
+        prev_depth = depth;
+        p!(out, "\n== {indent}{prefix}{number} {} {}{} {}{}{}", label(i), if a.stale { "STALE " } else { "" }, where_is(idx, a), a.symbol, a.author.tag(), link_tag(a));
+        if !a.note.is_empty() {
+            p!(out, "-- {}", a.note);
+        }
+        if let Some(fi) = idx.find_file(&a.file) {
+            print_lines(out, &idx.files[fi], a.line_start, a.line_end);
+        }
+        let Some(target) = map.find(&a.link).filter(|_| expand) else { continue };
+        if chain.contains(&target) {
+            p!(out, "\n{indent}-- {} is expanded above --", a.link);
+            continue;
+        }
+        chain.push(target);
+        print_steps(out, idx, map, target, base + depth + 1, &format!("{prefix}{number} › "), chain, expand);
+        chain.pop();
+        p!(out, "\n{indent}-- end of {} --", a.link);
+    }
+}
+
+/// `  → name` for a step that links to another path, empty otherwise.
+fn link_tag(a: &Anchor) -> String {
+    if a.link.is_empty() { String::new() } else { format!("  → {}", a.link) }
 }
 
 /// A step index the way the commands write one: -1 is the root.

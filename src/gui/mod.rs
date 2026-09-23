@@ -18,7 +18,7 @@ use crate::gfx::{Color, Gfx, Glyphs, Rect};
 use crate::window;
 use crate::index::{self, Index, ServerFile, SymRef};
 use crate::lsp;
-use crate::map::{Author, Change, Kind as PathKind, Map, PathDiff, StepChange};
+use crate::map::{Author, Change, Kind as PathKind, Map, PathDiff, Row, StepChange};
 use crate::ui::{self, Align, Id, Interaction, Key, Kind, Layout, Measure, Style, Text, Ui, BORDER_BOTTOM, BORDER_LEFT, BORDER_RIGHT, BORDER_TOP};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::{Path, PathBuf};
@@ -58,6 +58,7 @@ pub enum Action {
     ToggleWhole(usize, usize),      // show the whole symbol / just the slice in the document
     ToggleCode(usize, usize),       // hide / show a step's code
     ToggleFold(usize, usize),       // hide / show a step's subtree
+    ToggleLink(usize, usize),       // show / hide the path a step links to, inline under it
     CollapseAll(usize, bool), // (path, hide): hide every step's code, or show all and unfold all
     FoldAll(usize, bool),     // (path, fold): fold every step with children, or unfold all
     DeleteStep(usize, usize),
@@ -69,6 +70,7 @@ pub enum Action {
     ClosePeek,
     Context(usize, usize, i8), // (path, step): more lines above (-1), below (1), or back to the slice (0)
     ToggleDir(String),
+    OpenGroup(String, bool), // open (true) or close a group in the Paths tab
     Tab(Tab),
     Back,
     Forward,
@@ -101,6 +103,7 @@ pub struct App {
 
     steps: HashMap<(usize, usize), StepView>, // (path, step) -> how the step shows, when not the default
     dir_toggled: HashSet<String>,            // directories in the Files tab whose default open state is flipped
+    groups_open: HashMap<String, bool>,      // groups in the Paths tab the reader opened or closed
     peek: Option<Peek>,                      // a definition pinned in the right panel
     history: History,
 
@@ -155,6 +158,7 @@ impl App {
             outline_shown: None,
             steps: HashMap::new(),
             dir_toggled: HashSet::new(),
+            groups_open: HashMap::new(),
             peek: None,
             history: History::default(),
             ui: Ui::default(),
@@ -293,6 +297,7 @@ impl App {
             Action::ToggleWhole(pi, ai) => self.steps.entry((pi, ai)).or_default().whole ^= true,
             Action::ToggleCode(pi, ai) => self.steps.entry((pi, ai)).or_default().hidden ^= true,
             Action::ToggleFold(pi, ai) => self.steps.entry((pi, ai)).or_default().folded ^= true,
+            Action::ToggleLink(pi, ai) => self.steps.entry((pi, ai)).or_default().expanded ^= true,
             Action::CollapseAll(pi, hide) => {
                 let n = self.map.paths[pi].anchors.len();
                 for ai in 0..n {
@@ -328,7 +333,13 @@ impl App {
                 self.file.dirty = true;
             }
             Action::DeletePath(pi) => {
-                let p = self.map.paths.remove(pi);
+                let p = match self.map.remove_path(pi) {
+                    Ok(p) => p,
+                    Err(e) => {
+                        self.status = e;
+                        return;
+                    }
+                };
                 self.status = format!("deleted path '{}' ({} steps); unsaved", p.name, p.anchors.len());
                 self.sel_path = None;
                 self.sel_anchor = None;
@@ -357,6 +368,9 @@ impl App {
                 if !self.dir_toggled.remove(&d) {
                     self.dir_toggled.insert(d);
                 }
+            }
+            Action::OpenGroup(g, open) => {
+                self.groups_open.insert(g, open);
             }
             Action::Tab(t) => self.tab = t,
             Action::Back => self.back(),

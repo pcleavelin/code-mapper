@@ -101,13 +101,13 @@ impl App {
                 _ => {
                     let count = |c: StepChange| d.steps.iter().filter(|s| **s == Some(c)).count();
                     let mut parts = Vec::new();
-                    for (n, what) in [(count(StepChange::Added), "new"), (d.removed.len(), "removed"), (count(StepChange::Repinned), "re-pinned"), (count(StepChange::NoteEdited), "note edited")] {
+                    for (n, what) in [(count(StepChange::Added), "new"), (d.removed.len(), "removed"), (count(StepChange::Repinned), "re-pinned"), (count(StepChange::NoteEdited), "note edited"), (count(StepChange::Relinked), "link changed")] {
                         if n > 0 {
                             parts.push(format!("{n} {what}"));
                         }
                     }
                     if d.note_changed {
-                        parts.push("path note or kind changed".into());
+                        parts.push("path note, kind or group changed".into());
                     }
                     parts.join(", ")
                 }

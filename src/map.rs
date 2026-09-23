@@ -56,7 +56,8 @@ impl Kind {
 /// Pins a slice of lines. Offsets are relative to the start of the enclosing symbol so the anchor
 /// survives edits elsewhere in the file. `symbol == ""` means absolute lines. `hash` detects when
 /// the anchored text itself changed (-> stale). `parent` makes a path a tree: the step this one
-/// is reached from, None for a root (-1 on disk).
+/// is reached from, None for a root (-1 on disk). `link` names another path that documents
+/// what the step's lines call, `""` for none.
 #[derive(Clone)]
 pub struct Anchor {
     pub file: String,
@@ -67,6 +68,7 @@ pub struct Anchor {
     pub author: Author,
     pub note: String,
     pub parent: Option<usize>,
+    pub link: String,
 
     // resolved per session, not stored
     pub line_start: usize,
@@ -75,12 +77,28 @@ pub struct Anchor {
     pub sym: Option<usize>, // index of the enclosing symbol in its file, when it was found
 }
 
+/// `group` places the path in the paths list: `/` nests one group in another
+/// (`flows/http`), `""` leaves the path at the top level.
 pub struct PathDef {
     pub name: String,
     pub kind: Kind,
     pub note: String,
     pub author: Author,
+    pub group: String,
     pub anchors: Vec<Anchor>,
+}
+
+/// One row of the paths list in group order: a group with the number of paths under it at
+/// any depth, or a path. `depth` counts the groups around the row.
+#[derive(Debug, PartialEq)]
+pub enum Row {
+    Group { group: String, depth: usize, paths: usize },
+    Path { pi: usize, depth: usize },
+}
+
+/// A group written the one way the map stores it: no empty, leading or trailing parts.
+pub fn normal_group(g: &str) -> String {
+    g.split('/').map(str::trim).filter(|s| !s.is_empty()).collect::<Vec<_>>().join("/")
 }
 
 #[derive(Default)]
@@ -101,6 +119,7 @@ pub enum StepChange {
     Added,
     Repinned,
     NoteEdited,
+    Relinked,
 }
 
 impl StepChange {
@@ -109,6 +128,7 @@ impl StepChange {
             StepChange::Added => "new",
             StepChange::Repinned => "re-pinned",
             StepChange::NoteEdited => "note edited",
+            StepChange::Relinked => "link changed",
         }
     }
 }
@@ -117,20 +137,21 @@ impl StepChange {
 pub struct PathDiff {
     pub name: String,
     pub change: Change,
-    pub note_changed: bool,         // the path note or kind
+    pub note_changed: bool,         // the path note, kind or group
     pub steps: Vec<Option<StepChange>>, // per step of the working path
     pub removed: Vec<Anchor>,       // base steps no longer present (unresolved)
 }
 
 // ---- binary file format ----------------------------------------------------------
 // "CMAP" u32 version
-// u32 npaths { str name, u8 kind, str note, u8 author, u32 nanchors {
-//     str file, str symbol, i32 off_start, i32 off_end, u64 hash, u8 author, str note, i32 parent } }
+// u32 npaths { str name, u8 kind, str note, u8 author, str group, u32 nanchors {
+//     str file, str symbol, i32 off_start, i32 off_end, u64 hash, u8 author, str note, i32 parent,
+//     str link } }
 // str = u32 len + utf8 bytes. All little-endian. Any other version is rejected: an old map is
 // regenerated, never migrated.
 
 const MAGIC: &[u8; 4] = b"CMAP";
-const VERSION: u32 = 5;
+const VERSION: u32 = 7;
 
 impl Map {
     pub fn save(&self, path: &Path) -> std::io::Result<()> {
@@ -143,6 +164,7 @@ impl Map {
             b.push(p.kind as u8);
             w_str(&mut b, &p.note);
             b.push(p.author as u8);
+            w_str(&mut b, &p.group);
             b.extend_from_slice(&(p.anchors.len() as u32).to_le_bytes());
             for a in &p.anchors {
                 w_str(&mut b, &a.file);
@@ -153,6 +175,7 @@ impl Map {
                 b.push(a.author as u8);
                 w_str(&mut b, &a.note);
                 b.extend_from_slice(&a.parent.map_or(-1, |p| p as i32).to_le_bytes());
+                w_str(&mut b, &a.link);
             }
         }
         write_retry(path, &b)
@@ -194,6 +217,7 @@ impl Map {
                 kind: Kind::from_u8(r.u8()?)?,
                 note: r.str()?,
                 author: Author::from_u8(r.u8()?)?,
+                group: r.str()?,
                 anchors: Vec::new(),
             };
             for _ in 0..r.u32()? {
@@ -206,6 +230,7 @@ impl Map {
                     author: Author::from_u8(r.u8()?)?,
                     note: r.str()?,
                     parent: usize::try_from(r.i32()?).ok(),
+                    link: r.str()?,
                     line_start: 0,
                     line_end: 0,
                     stale: true,
@@ -228,18 +253,103 @@ impl Map {
         if let Some(pi) = self.find(name) {
             return pi;
         }
-        self.paths.push(PathDef { name: name.to_owned(), kind, note: String::new(), author, anchors: Vec::new() });
+        self.paths.push(PathDef { name: name.to_owned(), kind, note: String::new(), author, group: String::new(), anchors: Vec::new() });
         self.paths.len() - 1
     }
 
-    /// Re-anchor an existing step to new lines. Note and parent stay; the pinning author is
-    /// recorded.
+    /// Put path `pi` in `group`, or at the top level with `""`.
+    pub fn set_group(&mut self, pi: usize, group: &str) {
+        self.paths[pi].group = normal_group(group);
+    }
+
+    /// Rename group `old` to `new`, with every group nested in it, which moves their paths.
+    /// Returns how many paths moved.
+    pub fn rename_group(&mut self, old: &str, new: &str) -> Result<usize, String> {
+        let (old, new) = (normal_group(old), normal_group(new));
+        if old.is_empty() {
+            return Err("no group given".into());
+        }
+        let mut moved = 0;
+        for p in &mut self.paths {
+            if let Some(rest) = p.group.strip_prefix(&old).filter(|r| r.is_empty() || r.starts_with('/')) {
+                p.group = normal_group(&format!("{new}{rest}"));
+                moved += 1;
+            }
+        }
+        if moved == 0 {
+            return Err(format!("no such group: {old}"));
+        }
+        Ok(moved)
+    }
+
+    /// The paths list in group order. At each level the groups come first, sorted by name,
+    /// then the paths of that level in map order.
+    pub fn rows(&self) -> Vec<Row> {
+        fn level(m: &Map, pis: &[usize], prefix: &str, depth: usize, out: &mut Vec<Row>) {
+            let mut groups: std::collections::BTreeMap<&str, Vec<usize>> = Default::default();
+            let mut here = Vec::new();
+            for &pi in pis {
+                let g = &m.paths[pi].group;
+                match g.strip_prefix(prefix).map(|r| r.trim_start_matches('/')).filter(|r| !r.is_empty()) {
+                    Some(rest) => groups.entry(rest.split('/').next().unwrap_or(rest)).or_default().push(pi),
+                    None => here.push(pi),
+                }
+            }
+            for (name, members) in groups {
+                let group = if prefix.is_empty() { name.to_owned() } else { format!("{prefix}/{name}") };
+                out.push(Row::Group { group: group.clone(), depth, paths: members.len() });
+                level(m, &members, &group, depth + 1, out);
+            }
+            out.extend(here.into_iter().map(|pi| Row::Path { pi, depth }));
+        }
+        let mut out = Vec::new();
+        level(self, &(0..self.paths.len()).collect::<Vec<_>>(), "", 0, &mut out);
+        out
+    }
+
+    /// Re-anchor an existing step to new lines. Note, parent and link stay; the pinning author
+    /// is recorded.
     pub fn pin_anchor(&mut self, idx: &Index, pi: usize, ai: usize, fi: usize, ls: usize, le: usize, author: Author) {
         let old = &self.paths[pi].anchors[ai];
         let mut a = Anchor::new(&idx.files[fi], ls, le, author);
         a.note = old.note.clone();
         a.parent = old.parent;
+        a.link = old.link.clone();
         self.paths[pi].anchors[ai] = a;
+    }
+
+    /// Link step `ai` of path `pi` to the path named `target`, or unlink it with `""`. A path
+    /// cannot link to itself, and the target must exist.
+    pub fn set_link(&mut self, pi: usize, ai: usize, target: &str) -> Result<(), String> {
+        if !target.is_empty() {
+            if self.find(target).is_none() {
+                return Err(format!("no such path: {target}"));
+            }
+            if self.paths[pi].name == target {
+                return Err("a step cannot link to its own path".into());
+            }
+        }
+        self.paths[pi].anchors[ai].link = target.to_owned();
+        Ok(())
+    }
+
+    /// Every step that links to the path named `name`: (path, step), in map order.
+    pub fn links_to(&self, name: &str) -> Vec<(usize, usize)> {
+        self.paths.iter().enumerate().flat_map(|(pi, p)| p.anchors.iter().enumerate().filter(|(_, a)| a.link == name).map(move |(ai, _)| (pi, ai))).collect()
+    }
+
+    /// Every step whose link names a path the map does not have: (path, step).
+    pub fn dangling_links(&self) -> Vec<(usize, usize)> {
+        self.paths.iter().enumerate().flat_map(|(pi, p)| p.anchors.iter().enumerate().filter(|(_, a)| !a.link.is_empty() && self.find(&a.link).is_none()).map(move |(ai, _)| (pi, ai))).collect()
+    }
+
+    /// Remove a path. Refuses while another path's step links to it, and lists those steps.
+    pub fn remove_path(&mut self, pi: usize) -> Result<PathDef, String> {
+        let from: Vec<String> = self.links_to(&self.paths[pi].name).into_iter().filter(|&(p, _)| p != pi).map(|(p, a)| format!("{}[{a}]", self.paths[p].name)).collect();
+        if !from.is_empty() {
+            return Err(format!("'{}' is linked from {}; unlink those steps first", self.paths[pi].name, from.join(", ")));
+        }
+        Ok(self.paths.remove(pi))
     }
 
     /// Whether any current (non-stale) step overlaps lines `[start, end]` of `file`. Coverage is
@@ -257,11 +367,15 @@ impl Map {
         self.paths[pi].anchors.len() - 1
     }
 
+    /// Rename a path, and every link to it with it.
     pub fn rename(&mut self, pi: usize, new: &str) -> Result<(), String> {
         if self.find(new).is_some_and(|other| other != pi) {
             return Err(format!("a path named '{new}' already exists"));
         }
-        self.paths[pi].name = new.to_owned();
+        let old = std::mem::replace(&mut self.paths[pi].name, new.to_owned());
+        for a in self.paths.iter_mut().flat_map(|p| &mut p.anchors).filter(|a| a.link == old) {
+            a.link = new.to_owned();
+        }
         Ok(())
     }
 
@@ -434,13 +548,15 @@ impl Map {
                         Some(StepChange::Repinned)
                     } else if x.note != a.note {
                         Some(StepChange::NoteEdited)
+                    } else if x.link != a.link {
+                        Some(StepChange::Relinked)
                     } else {
                         None
                     }
                 })
                 .collect();
             let removed: Vec<Anchor> = b.anchors.iter().zip(&used).filter(|(_, u)| !**u).map(|(a, _)| a.clone()).collect();
-            let note_changed = p.note != b.note || p.kind != b.kind;
+            let note_changed = p.note != b.note || p.kind != b.kind || p.group != b.group;
             let change = if note_changed || !removed.is_empty() || steps.iter().any(Option::is_some) { Change::Changed } else { Change::Same };
             out.push(PathDiff { name: p.name.clone(), change, note_changed, steps, removed });
         }
@@ -563,6 +679,7 @@ impl Anchor {
             author,
             note: String::new(),
             parent: None,
+            link: String::new(),
             line_start: ls,
             line_end: le,
             stale: false,
@@ -692,6 +809,61 @@ mod tests {
         assert_eq!(m.paths[pi].anchors.len(), 2);
         assert_eq!(m.paths[pi].anchors[leaf - 1].parent, Some(root));
         assert_eq!(m.tree_order(pi), [(0, 0), (1, 1)]);
+    }
+
+    #[test]
+    fn links_follow_renames_and_hold_removal() {
+        let idx = one_file();
+        let mut m = Map::default();
+        let flow = m.add_path("flow", Kind::Flow, Author::Ai);
+        let shared = m.add_path("shared", Kind::Layer, Author::Ai);
+        m.add_anchor(&idx, flow, 0, 0, 2, Author::Ai, None);
+        m.add_anchor(&idx, shared, 0, 3, 5, Author::Ai, None);
+        assert!(m.set_link(flow, 0, "nope").is_err());
+        assert!(m.set_link(flow, 0, "flow").is_err());
+        m.set_link(flow, 0, "shared").unwrap();
+        assert_eq!(m.links_to("shared"), [(flow, 0)]);
+
+        let tmp = std::env::temp_dir().join("codemap_test_links.cmap");
+        m.save(&tmp).unwrap();
+        let mut m = Map::load(&tmp).unwrap();
+        assert_eq!(m.paths[flow].anchors[0].link, "shared");
+
+        m.rename(shared, "common").unwrap();
+        assert_eq!(m.paths[flow].anchors[0].link, "common");
+        assert!(m.remove_path(shared).is_err());
+        m.pin_anchor(&idx, flow, 0, 0, 1, 1, Author::Ai);
+        assert_eq!(m.paths[flow].anchors[0].link, "common");
+
+        m.paths[flow].anchors[0].link = "gone".into();
+        assert_eq!(m.dangling_links(), [(flow, 0)]);
+        m.set_link(flow, 0, "").unwrap();
+        assert!(m.remove_path(shared).is_ok());
+    }
+
+    #[test]
+    fn groups_nest_and_rename() {
+        let mut m = Map::default();
+        for (name, group) in [("top", ""), ("a", "flows/http"), ("b", "areas"), ("c", "flows"), ("d", " /flows//http/ ")] {
+            let pi = m.add_path(name, Kind::Flow, Author::Ai);
+            m.set_group(pi, group);
+        }
+        assert_eq!(m.paths[4].group, "flows/http");
+        let g = |group: &str, depth, paths| Row::Group { group: group.into(), depth, paths };
+        let p = |pi, depth| Row::Path { pi, depth };
+        assert_eq!(m.rows(), [g("areas", 0, 1), p(2, 1), g("flows", 0, 3), g("flows/http", 1, 2), p(1, 2), p(4, 2), p(3, 1), p(0, 0)]);
+
+        let tmp = std::env::temp_dir().join("codemap_test_groups.cmap");
+        m.save(&tmp).unwrap();
+        let mut m = Map::load(&tmp).unwrap();
+        assert_eq!(m.paths[1].group, "flows/http");
+
+        assert_eq!(m.rename_group("flows", "work/flows"), Ok(3));
+        assert_eq!(m.paths[1].group, "work/flows/http");
+        assert_eq!(m.paths[3].group, "work/flows");
+        assert!(m.rename_group("flow", "x").is_err());
+        assert_eq!(m.rename_group("work", ""), Ok(3));
+        assert_eq!(m.paths[3].group, "flows");
     }
 
     #[test]
