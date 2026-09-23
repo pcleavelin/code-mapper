@@ -42,6 +42,18 @@ not ticked. The CLI list is ordered by what cost the agents the most.
 11. **Negative claims and counts are unverifiable from `path` output** ("the only
     handler that names X", "twenty-six methods"); the reviewer found every one it
     checked wrong. Per-path "what falls between the steps" would help.
+12. **`repin` can follow a common name into the wrong file.** Once a step's file, or its
+    symbol within the file, is gone, every same-named symbol in the repo is a candidate,
+    and only "half the lines survive" guards it. A short `fmt` step whose `impl Display`
+    was deleted can land on another type's identical `fmt`. The new file is printed, so
+    the reread catches it; a stricter bar for a cross-file move (all lines kept, or the
+    candidate absent from the parent revision) would stop it.
+13. **`path-move` does not bounds-check `under`**, unlike `path-add`. `-7` is saved as
+    `-1` (a root) and a number past the step count fails with "no such parent step".
+    Give it `path-add`'s check and message.
+14. **`path` prints line 1 of the file as the body of a symbol-gone step** (`STALE
+    src/main.rs (symbol gone) log_line` followed by `1 mod shapes;`). Print nothing, the
+    way the GUI document does.
 
 ## GUI
 
@@ -60,3 +72,14 @@ Left open after the UX review of 2026-09-21 and the fixes that followed it.
    index `module-tree` has two "symbol gone" steps.
 5. Hover requests have no cancellation: a request in flight for a word the pointer has
    left is still answered before the one it rests on; one in flight at a time bounds it.
+6. With several language servers missing, the status line says whichever failure arrived
+   last: the server threads fail at once and are drained in HashMap order. Name every
+   missing server in one line, in a fixed order.
+
+## Tests
+
+1. The GUI goldens assume the owner's display (16 px rows at 100% scale): some script
+   clicks are pixel offsets from a dumped rectangle. Offsets in cells, or a script command
+   that aims at a line and column of a code block, would make them portable.
+2. The GUI scripts settle with `idle` and a save before their first dump only to hide GUI
+   item 6; drop the save once the status line is deterministic.
