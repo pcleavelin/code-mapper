@@ -137,7 +137,7 @@ impl App {
                 }
                 hide_below = None;
                 let a = &self.map.paths[pi].anchors[ai];
-                let hidden = if self.folded.contains(&(pi, ai)) {
+                let hidden = if self.step_view(pi, ai).folded {
                     hide_below = Some(depth);
                     self.map.descendants(pi, ai)
                 } else {

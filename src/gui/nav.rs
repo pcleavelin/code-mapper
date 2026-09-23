@@ -147,7 +147,9 @@ impl App {
         // a folded ancestor would hide the step: unfold the way down to it
         let mut up = self.map.paths[pi].anchors[ai].parent;
         while let Some(u) = up {
-            self.folded.remove(&(pi, u));
+            if let Some(v) = self.steps.get_mut(&(pi, u)) {
+                v.folded = false;
+            }
             up = self.map.paths[pi].anchors[u].parent;
         }
         let a = &self.map.paths[pi].anchors[ai];

@@ -53,7 +53,7 @@ pub enum Action {
     Focus(SymRef),
     OpenPath(usize, Tab), // select the path unless it is the one being read, and show it in the tab
     SelectStep(usize, usize, bool), // (path, step, clicked inside the document)
-    ToggleStep(usize, usize),       // show the whole symbol / just the slice in the document
+    ToggleWhole(usize, usize),      // show the whole symbol / just the slice in the document
     ToggleCode(usize, usize),       // hide / show a step's code
     ToggleFold(usize, usize),       // hide / show a step's subtree
     CollapseAll(usize, bool), // (path, hide): hide every step's code, or show all and unfold all
@@ -72,13 +72,6 @@ pub enum Action {
     Forward,
     Save,
     PinSelection,
-}
-
-/// Add `k` to `set`, or remove it when it is there.
-fn toggle<T: Eq + std::hash::Hash>(set: &mut HashSet<T>, k: T) {
-    if !set.remove(&k) {
-        set.insert(k);
-    }
 }
 
 pub struct App {
@@ -124,10 +117,7 @@ pub struct App {
     top_step: Option<usize>,             // the step whose header is topmost in the document viewport
     outline_shown: Option<usize>,        // the top step the outline last scrolled to keep in view
 
-    expanded_steps: HashSet<(usize, usize)>, // (path, step) showing the whole enclosing symbol
-    context: HashMap<(usize, usize), (usize, usize)>, // (path, step) -> extra lines shown above and below
-    collapsed: HashSet<(usize, usize)>,      // (path, step) with its code hidden
-    folded: HashSet<(usize, usize)>,         // (path, step) with its subtree hidden
+    steps: HashMap<(usize, usize), StepView>, // (path, step) -> how the step shows, when not the default
     dir_toggled: HashSet<String>,            // directories in the Files tab whose default open state is flipped
     peek: Option<Peek>,                      // a definition pinned in the right panel
     history: Vec<Loc>,
@@ -208,10 +198,7 @@ impl App {
             scroll_to_step: None,
             top_step: None,
             outline_shown: None,
-            expanded_steps: HashSet::new(),
-            context: HashMap::new(),
-            collapsed: HashSet::new(),
-            folded: HashSet::new(),
+            steps: HashMap::new(),
             dir_toggled: HashSet::new(),
             peek: None,
             history: Vec::new(),
@@ -349,22 +336,31 @@ impl App {
                 self.tab = tab;
             }
             Action::SelectStep(pi, ai, in_doc) => self.select_step(pi, ai, in_doc),
-            Action::ToggleStep(pi, ai) => toggle(&mut self.expanded_steps, (pi, ai)),
-            Action::ToggleCode(pi, ai) => toggle(&mut self.collapsed, (pi, ai)),
-            Action::ToggleFold(pi, ai) => toggle(&mut self.folded, (pi, ai)),
+            Action::ToggleWhole(pi, ai) => self.steps.entry((pi, ai)).or_default().whole ^= true,
+            Action::ToggleCode(pi, ai) => self.steps.entry((pi, ai)).or_default().hidden ^= true,
+            Action::ToggleFold(pi, ai) => self.steps.entry((pi, ai)).or_default().folded ^= true,
             Action::CollapseAll(pi, hide) => {
-                self.collapsed.retain(|&(p, _)| p != pi);
-                if hide {
-                    self.collapsed.extend((0..self.map.paths[pi].anchors.len()).map(|ai| (pi, ai)));
-                } else {
-                    self.folded.retain(|&(p, _)| p != pi);
+                let n = self.map.paths[pi].anchors.len();
+                for ai in 0..n {
+                    self.steps.entry((pi, ai)).or_default();
+                }
+                for (&(p, ai), v) in &mut self.steps {
+                    if p == pi {
+                        v.hidden = hide && ai < n;
+                        v.folded &= hide;
+                    }
                 }
             }
             Action::FoldAll(pi, fold) => {
-                self.folded.retain(|&(p, _)| p != pi);
-                if fold {
-                    let with_kids: Vec<usize> = (0..self.map.paths[pi].anchors.len()).filter(|&ai| self.map.descendants(pi, ai) > 0).collect();
-                    self.folded.extend(with_kids.into_iter().map(|ai| (pi, ai)));
+                let n = self.map.paths[pi].anchors.len();
+                let with_kids: Vec<bool> = (0..n).map(|ai| fold && self.map.descendants(pi, ai) > 0).collect();
+                for ai in 0..n {
+                    self.steps.entry((pi, ai)).or_default();
+                }
+                for (&(p, ai), v) in &mut self.steps {
+                    if p == pi {
+                        v.folded = with_kids.get(ai).copied().unwrap_or(false);
+                    }
                 }
             }
             // ponytail: no undo
@@ -389,15 +385,11 @@ impl App {
             Action::Jump(fi, line, col) => self.probe_def(fi, line, col, Intent::Jump),
             Action::PeekAt(fi, line, col) => self.probe_def(fi, line, col, Intent::Peek),
             Action::Context(pi, ai, dir) => {
-                if dir == 0 {
-                    self.context.remove(&(pi, ai));
-                } else {
-                    let e = self.context.entry((pi, ai)).or_default();
-                    if dir < 0 {
-                        e.0 += CONTEXT_LINES;
-                    } else {
-                        e.1 += CONTEXT_LINES;
-                    }
+                let c = &mut self.steps.entry((pi, ai)).or_default().context;
+                match dir {
+                    0 => *c = (0, 0),
+                    d if d < 0 => c.0 += CONTEXT_LINES,
+                    _ => c.1 += CONTEXT_LINES,
                 }
             }
             Action::SelectLine(li, extend) => {
@@ -407,7 +399,11 @@ impl App {
                 };
             }
             Action::ClosePeek => self.peek = None,
-            Action::ToggleDir(d) => toggle(&mut self.dir_toggled, d),
+            Action::ToggleDir(d) => {
+                if !self.dir_toggled.remove(&d) {
+                    self.dir_toggled.insert(d);
+                }
+            }
             Action::Tab(t) => self.tab = t,
             Action::Back => self.back(),
             Action::Forward => self.forward(),

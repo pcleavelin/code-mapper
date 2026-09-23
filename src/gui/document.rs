@@ -6,14 +6,25 @@ use super::*;
 /// Lines one press of a context button adds above or below a step's code.
 pub const CONTEXT_LINES: usize = 10;
 
+/// How one step of a path shows in the document. The default is its slice, code shown,
+/// subtree open, no context.
+#[derive(Clone, Copy, Default)]
+pub(super) struct StepView {
+    pub(super) whole: bool,              // the whole enclosing symbol instead of the slice
+    pub(super) hidden: bool,             // the code is hidden
+    pub(super) folded: bool,             // the subtree is hidden
+    pub(super) context: (usize, usize), // extra lines shown above and below
+}
+
 impl App {
-    /// Carry the whole-symbol, code, fold and context records over to new (path, step) keys:
-    /// `f` gives a record's new key, or None when the record goes.
+    pub(super) fn step_view(&self, pi: usize, ai: usize) -> StepView {
+        self.steps.get(&(pi, ai)).copied().unwrap_or_default()
+    }
+
+    /// Carry the step views over to new (path, step) keys: `f` gives a view's new key, or None
+    /// when the view goes.
     pub(super) fn remap_steps(&mut self, f: impl Fn((usize, usize)) -> Option<(usize, usize)>) {
-        for set in [&mut self.expanded_steps, &mut self.collapsed, &mut self.folded] {
-            *set = set.drain().filter_map(&f).collect();
-        }
-        self.context = self.context.drain().filter_map(|(k, v)| f(k).map(|k| (k, v))).collect();
+        self.steps = self.steps.drain().filter_map(|(k, v)| f(k).map(|k| (k, v))).collect();
     }
 
     /// The reader's landing view: the selected path as one document.
@@ -144,9 +155,8 @@ impl App {
                 None => format!("{file}:{}-{}", ls + 1, le + 1),
             };
             let selected = self.sel_anchor == Some(ai);
-            let folded = self.folded.contains(&(pi, ai));
-            let collapsed = self.collapsed.contains(&(pi, ai));
-            let ctx = self.context.get(&(pi, ai)).copied().unwrap_or((0, 0));
+            let view = self.step_view(pi, ai);
+            let (folded, collapsed, ctx) = (view.folded, view.hidden, view.context);
             let kids = self.map.descendants(pi, ai);
             // header row
             self.ui.open(Kind::None, Layout::row().grow_x().gap(6).cross(Align::Center), Style { bg: None, border: if selected { BORDER_LEFT } else { 0 }, border_color: ACCENT }, None);
@@ -178,9 +188,8 @@ impl App {
                 self.actions.push(Action::ToggleCode(pi, ai));
             }
             if !collapsed && sym.is_some_and(|s| s != (ls, le)) {
-                let whole = self.expanded_steps.contains(&(pi, ai));
-                if self.small_button_w(if whole { "slice" } else { "whole symbol" }, 12, ui::id_n(ui::id("whole"), ai)).clicked {
-                    self.actions.push(Action::ToggleStep(pi, ai));
+                if self.small_button_w(if view.whole { "slice" } else { "whole symbol" }, 12, ui::id_n(ui::id("whole"), ai)).clicked {
+                    self.actions.push(Action::ToggleWhole(pi, ai));
                 }
             }
             if ctx != (0, 0) && self.small_button("no context", ui::id_n(ui::id("ctx0"), ai)).clicked {
@@ -199,8 +208,7 @@ impl App {
             // code: the slice, or the whole symbol, plus the context asked for above and below;
             // the slice is highlighted whenever anything else shows
             if let (Some(fi), None, false) = (fi, gone, collapsed) {
-                let whole = self.expanded_steps.contains(&(pi, ai));
-                let (blo, bhi) = if whole { sym.unwrap_or((ls, le)) } else { (ls, le) };
+                let (blo, bhi) = if view.whole { sym.unwrap_or((ls, le)) } else { (ls, le) };
                 let last = self.idx.files[fi].lines.len().saturating_sub(1);
                 let (lo, hi) = (blo.saturating_sub(ctx.0), (bhi + ctx.1).min(last));
                 let marked = (lo, hi) != (ls, le);
