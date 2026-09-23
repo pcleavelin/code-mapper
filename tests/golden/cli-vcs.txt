@@ -88,6 +88,8 @@ startup[1] src/main.rs:13-16 fill
 startup[3] src/store.rs:32-34 check
 startup[4] src/main.rs:17-21 report
 startup[5] src/store.rs:21-25 total_area
+startup[6] src/main.rs (symbol gone) log_line
+  same name at src/shapes.rs:32-34   path-pin startup 6 src/shapes.rs 32 34
 stats[1] tools/helpers.py (file gone) mean
 fresh[0] tools/helpers.py (file gone) mean
 ! clangd: 2 files to index
@@ -106,9 +108,10 @@ startup[4] src/main.rs:18-22 in @- -> 17-22  5/5 lines kept
   +     log_line("really");
 startup[5] src/store.rs:21-25 in @- -> 21-26  5/5 lines kept
   +         let extra = 0.0;
+startup[6] src/main.rs:24-26 in @- -> src/shapes.rs:32-34  3/3 lines kept, text unchanged
 stats[1] left stale: its file is gone
 fresh[0] left stale: its file is gone
-3 re-pinned, 3 left stale. Reread the note of every step printed with changed lines.
+4 re-pinned, 3 left stale. Reread the note of every step printed with changed lines.
 ! clangd: 2 files to index
 ! clangd not on PATH: 2 files keep the tree-sitter resolver
 ! rust-analyzer: 3 files to index
@@ -196,17 +199,17 @@ What running the program does: fill the store, then report its total area.
    25             sum += s.area();
    26         }
 
-==     1.2.2 [6] src/main.rs:24-26 log_line (ai)
-   24 fn log_line(msg: &str) {
-   25     eprintln!("{msg}");
-   26 }
+==     1.2.2 [6] src/shapes.rs:32-34 log_line (ai)
+   32 fn log_line(msg: &str) {
+   33     eprintln!("{msg}");
+   34 }
 
 -- back in top level --
 
-== 2 [7] src/shapes.rs:33-35 describe (ai)
-   33 pub fn describe(s: &dyn Shape) -> String {
-   34     format!("{} of area {:.2}", s.name(), s.area())
-   35 }
+== 2 [7] src/shapes.rs:37-39 describe (ai)
+   37 pub fn describe(s: &dyn Shape) -> String {
+   38     format!("{} of area {:.2}", s.name(), s.area())
+   39 }
 ! clangd: 2 files to index
 ! clangd not on PATH: 2 files keep the tree-sitter resolver
 ! rust-analyzer: 3 files to index

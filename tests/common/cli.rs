@@ -181,6 +181,15 @@ fn vcs(bin: &Path) -> String {
     edit_file(&root, "src/main.rs", "    log_line(\"done\");", "    log_line(\"done\");\n    log_line(\"really\");");
     edit_file(&root, "src/main.rs", "fn fill(store: &mut Store) {\n    store.add(Box::new(Circle { r: 1.0 }));\n    store.add(Box::new(Square { side: 2.0 }));\n}", "fn fill(store: &mut Store) {\n    let _ = store;\n}");
     std::fs::remove_file(root.join("tools/helpers.py")).unwrap();
+    edit_file(&root, "src/main.rs", "fn log_line(msg: &str) {
+	eprintln!(\"{msg}\");
+}
+", "");
+    edit_file(&root, "src/shapes.rs", "/// Nothing calls this.", "fn log_line(msg: &str) {
+	eprintln!(\"{msg}\");
+}
+
+/// Nothing calls this.");
     t.run(&["stale"]);
     t.run(&["repin"]);
     t.run(&["stale"]);

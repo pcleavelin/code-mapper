@@ -254,7 +254,8 @@ step's unchanged text now sits when it merely moved, so that re-pin is one comma
 
 `repin [rev]` does the mechanical part for every stale step at once. It reads the step's
 file from `rev` (default `@-`) through jj, finds the old slice by its hash, and aligns it,
-with three lines of context, against each symbol of the step's name in the working copy.
+with three lines of context, against each symbol of the step's name in its file, or in every
+file once the file or the symbol is gone from it, so code moved between files is followed.
 The alignment is a patience diff: lines unique to both sides pair first, in the order both
 agree on, and pairs grow into equal neighbours only outward from a pair. Scoping to one
 symbol means a moved function is followed. Pairing on unique lines keeps neighbouring
