@@ -1,0 +1,86 @@
+codemap 8
+path feature-path-pin
+kind flow
+author ai
+group features/cli
+note path-pin <name> <index> <file> <start> <end>: re-anchor one step on new lines (1-based, inclusive), keeping its note, its parent, its link and its place in the tree. It is the hand fix for a step that repin could not place: the symbol is gone or fewer than half its lines survive. The pinning author is recorded on the step, so the owner sees who moved it.
+
+step 902nnw
+order 1
+parent ig10qd
+author ai
+file crates/cli/src/exec.rs
+symbol find_step
+lines 0 7
+hash fe848f2c971eee7d
+note The path by name, then the step at that index; a bad index is an error.
+
+step char14
+order 3
+parent ig10qd
+author ai
+file crates/cli/src/convert.rs
+symbol line_range
+lines 0 6
+hash 6e6ad28c3bf3dc4b
+note Rejects a range outside the file and converts the 1-based inclusive numbers to a Span.
+
+step cpfu0g
+order 6
+parent ig10qd
+author ai
+file crates/cli/src/wire.rs
+symbol pinned
+lines 0 2
+hash 7dfc71a2c5baa85c
+note Prints 'step [i] pinned to file:start-end'.
+
+step hc7fmr
+order 2
+parent ig10qd
+author ai
+file crates/cli/src/exec.rs
+symbol find_file
+lines 0 10
+hash 20a2fff303e42ef5
+note An exact relative path, else the first file whose path ends with what was typed.
+
+step ig10qd
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol path_pin
+lines 0 27
+hash 32c95b8de1c8e9b1
+note Finds the step, resolves the file and the line range, pins the step there and prints where it landed, with the absolute-lines warning when the range sits in no symbol.
+
+step ioydvd
+order 4
+parent ig10qd
+author ai
+file crates/domain/src/map.rs
+symbol pin
+lines 0 20
+hash 9fed4ca3065bbbf2
+link stale-and-pin
+note Replaces the step's anchor in place with a fresh one on the new span; id, note, parent, order and link stay; the author becomes the pinning one.
+
+step x0wfdf
+order 5
+parent ioydvd
+author ai
+file crates/domain/src/map.rs
+symbol pin_span
+lines 0 14
+hash eb22d48f99f68183
+note Builds the anchor from the file's current text, relative to the innermost symbol containing the span, and marks it current.
+
+step y0m5ra
+order 7
+parent ig10qd
+author ai
+file crates/cli/src/wire.rs
+symbol absolute_note
+lines 0 8
+hash 469d3d0cdac7177b
+note Warns when the range sits in no symbol: such a step is pinned by absolute line numbers and goes stale on any edit above it.

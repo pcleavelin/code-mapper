@@ -1,0 +1,229 @@
+codemap 8
+path gui-tests
+kind layer
+author ai
+group gui
+note The gui crate's unit tests: the Model and apply exercised with no window, no GPU and no language server, against a four-function source file held in memory. Because views only read the Model and every change goes through apply or nav.rs, the reader's behaviour - selection, walking, history, the per-step toggles, deletions - is tested by calling those directly and reading the Model back. What needs a real window (layout, drawing, gestures) is pinned by the GUI scenarios in the codemap crate's tests (see behaviour-pin).
+
+step 0w1f2d
+order 2
+parent 4n3q0r
+author ai
+file crates/gui/src/tests.rs
+symbol index
+lines 0 20
+hash 794adb5351716af6
+note One file, src/main.rs, of four functions, with no highlights and the tree-sitter backend, in an Index rooted nowhere.
+
+step 34h15h
+order 14
+parent l5and2
+author ai
+file crates/gui/src/tests.rs
+symbol removing_a_step_moves_later_views_up_and_clears_the_selection
+lines 0 13
+hash e1c75567f974c1c3
+note Removing a step shifts the views of the steps after it and clears the selection.
+
+step 4n3q0r
+order 1
+author ai
+file crates/gui/src/tests.rs
+symbol model
+lines 0 21
+hash a66e81abc3833267
+note The fixture: a flow 'startup' over the in-memory file, main at the root with fill (which has add under it) and report as its children, resolved and wrapped in a Model whose store points nowhere.
+
+step 4voyq2
+order 22
+author ai
+file crates/gui/src/text.rs
+symbol tests
+lines 0 16
+hash 16155a8ca0d77db8
+note Clipping keeps short text and marks cut text with an ellipsis, from the right or the left.
+
+step 6eirab
+order 7
+parent 4n3q0r
+author ai
+file crates/gui/src/tests.rs
+symbol opening_a_path_selects_its_first_step_in_tree_order
+lines 0 10
+hash 64d217aa2c618ade
+note select_path lands on the first step in tree order.
+
+step 6j8hrk
+order 6
+parent l5and2
+author ai
+file crates/gui/src/app.rs
+symbol of_model
+lines 0 9
+hash d8b71ec10f4a61fb
+note An App from a ready Model with fresh Services and no screenshot aid, for tests; the Services start only the idle watcher thread.
+
+step 9hxjt5
+order 12
+parent l5and2
+author ai
+file crates/gui/src/tests.rs
+symbol hide_all_hides_every_step_and_show_all_unfolds_none
+lines 0 14
+hash a117e411b37237ea
+note hide all hides every step's code and keeps a fold; show all shows every step's code and leaves nothing folded.
+
+step b6gbpm
+order 21
+author ai
+file crates/gui/src/runtime.rs
+symbol tests
+lines 0 29
+hash c9ed994967187994
+note A Job lands its result once and then reads as idle; a Job whose thread panics lands as Failed.
+
+step cxf9cf
+order 16
+parent l5and2
+author ai
+file crates/gui/src/tests.rs
+symbol a_path_linked_from_elsewhere_is_refused_with_the_linking_steps
+lines 0 41
+hash d4ee75df286dc59a
+note A path that another path links to is not removed, and the status line names the linking step.
+
+step ea3gtj
+order 19
+parent kpixbm
+author ai
+file crates/gui/src/tests.rs
+symbol a_tall_parent_pushes_its_children_down_to_its_middle
+lines 0 7
+hash ac4f02972b99ae3a
+note A parent taller than its children pushes them down to its middle.
+
+step ftd1u1
+order 18
+parent kpixbm
+author ai
+file crates/gui/src/tests.rs
+symbol children_stack_right_of_their_parent_which_sits_centred_beside_them
+lines 0 21
+hash 2fc24fb1193ec6dd
+note Children stack to the right of their parent, which sits centred beside them.
+
+step fyr34g
+order 4
+parent 4n3q0r
+author ai
+file crates/gui/src/tests.rs
+symbol step
+lines 0 14
+hash 5f99b99522e2fba0
+note A step on the fixture file, with an id, an order, an optional parent and a line range.
+
+step gy69kh
+order 8
+parent 4n3q0r
+author ai
+file crates/gui/src/tests.rs
+symbol walking_follows_the_tree_and_stops_at_the_ends
+lines 0 11
+hash 8bd3a7291f0fd38b
+note walk follows tree order and stops at both ends.
+
+step hvkk6w
+order 20
+author ai
+file crates/gui/src/dock.rs
+symbol tests
+lines 0 97
+hash e26e03d47afb0e7e
+note The dock's arithmetic: default sizes from the window and the cell, sizes leaving room for the panels after, a move across edges forgetting the size, a drop on the lower quarter docking at the bottom, and a grab moving only once it leaves its reach.
+
+step k20hss
+order 10
+parent 4n3q0r
+author ai
+file crates/gui/src/tests.rs
+symbol history_keeps_the_last_two_hundred_places
+lines 0 14
+hash 32c283971b9cd080
+note The history keeps two hundred places and drops the oldest.
+
+step kmg2e3
+order 0
+author ai
+file crates/gui/src/tests.rs
+symbol every_control_is_named_by_its_feature
+lines 0 15
+hash b4f436d0d20bb1ff
+note Every Control in ids names an element its feature lists among its triggers in the registry, so a button's script id and the feature it triggers cannot drift apart.
+
+step kpixbm
+order 17
+author ai
+file crates/gui/src/tests.rs
+symbol built
+lines 0 37
+hash 3ae89043eaf26e59
+note A graph Built by hand from a list of node sizes: the first node a step at rank zero, every other its child at rank one, for the layout tests.
+
+step l5and2
+order 5
+author ai
+file crates/gui/src/tests.rs
+symbol app
+lines 0 2
+hash 42953d1e4d8efdd9
+note An App around the fixture model, for tests that go through apply.
+
+step n6986p
+order 13
+parent l5and2
+author ai
+file crates/gui/src/tests.rs
+symbol fold_all_folds_only_steps_with_children
+lines 0 9
+hash fd6c7f662601ce49
+note fold all folds only the steps that have children.
+
+step ps5lmt
+order 11
+parent 4n3q0r
+author ai
+file crates/gui/src/tests.rs
+symbol selecting_a_step_unfolds_its_ancestors
+lines 0 8
+hash c7569da429f37df4
+note Selecting a step unfolds its folded ancestors.
+
+step psr7wo
+order 15
+parent l5and2
+author ai
+file crates/gui/src/tests.rs
+symbol removing_the_path_forgets_it
+lines 0 10
+hash 578024f1a6357d12
+note Removing a path forgets it and its selection.
+
+step r5j43v
+order 3
+parent 0w1f2d
+author ai
+file crates/gui/src/tests.rs
+symbol symbol
+lines 0 9
+hash 56134e1eb7d10c3e
+note A top-level function symbol over a line range.
+
+step uvzrve
+order 9
+parent 4n3q0r
+author ai
+file crates/gui/src/tests.rs
+symbol back_and_forward_return_to_the_places_visited
+lines 0 19
+hash cdc47dfd4c28fc2f
+note back and forward return to the places track_navigation recorded.

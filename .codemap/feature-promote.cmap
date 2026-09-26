@@ -1,0 +1,67 @@
+codemap 8
+path feature-promote
+kind flow
+author ai
+group features/cli
+note promote <symbol> [depth] [name]: create (or extend) a flow shaped like a symbol's call tree, depth levels deep (default 1), named after the symbol unless name is given. It is scaffolding: the tree comes from xrefs, so it carries every helper and, with only the tree-sitter resolver, some false calls; the author trims it with path-rm and path-move and writes the notes. Re-running it on the same path reuses the steps a symbol already has instead of duplicating them.
+
+step 5ygab3
+order 2
+parent to8rtr
+author ai
+file crates/cli/src/exec.rs
+symbol index_files
+lines 0 18
+hash 395c92f598ee9fff
+note Only pending files reach the server, and only when the CLI passed Servers; the map is re-resolved afterwards.
+
+step o0jvdu
+order 4
+parent x1eail
+author ai
+file crates/domain/src/map.rs
+symbol promote
+lines 0 48
+hash 9b371b481fd7afe9
+link promote
+note Creates the path if needed and adds one whole-symbol step per call-tree entry, under the step of its caller.
+
+step s8dw39
+order 3
+parent x1eail
+author ai
+file crates/cli/src/exec.rs
+symbol find_symbol
+lines 0 9
+hash 83bfb633b05da03e
+link symbol-lookup
+note Exactly one symbol or an error listing every candidate.
+
+step to8rtr
+order 1
+parent x1eail
+author ai
+file crates/cli/src/exec.rs
+symbol index_tree
+lines 0 16
+hash 7a09941bfac5cb5a
+note Repeats until the tree stops reaching new pending files: each round asks the language servers for the files found so far, which can reveal further callees in further files.
+
+step x1eail
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol promote
+lines 0 15
+hash dc99fd0a0eaf7edb
+note Indexes the files the call tree reaches, resolves the symbol to exactly one, promotes, and prints the resulting step count.
+
+step x9kkbf
+order 5
+parent x1eail
+author ai
+file crates/cli/src/wire.rs
+symbol promote_report
+lines 0 7
+hash e5c1133ea0bcc0f0
+note Prints 'path <name> now has n steps'.

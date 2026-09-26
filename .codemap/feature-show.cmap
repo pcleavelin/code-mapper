@@ -1,0 +1,45 @@
+codemap 8
+path feature-show
+kind flow
+author ai
+group features/cli
+note show <file> [start] [end]: print a file's lines numbered, 1-based and inclusive. start and end default to the whole file and are clamped to it instead of rejected, so an overshooting range still prints. It is the fallback for code no path covers, and its line format is the one path uses for a step's code.
+
+step e86f51
+order 2
+parent i5tgb2
+author ai
+file crates/cli/src/convert.rs
+symbol visible
+lines 0 16
+hash 8fbe0505b0b42fd8
+note Clamps start to 1 and end to the file's last line and converts to a 0-based Span; missing numbers mean the whole file.
+
+step i5tgb2
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol show
+lines 0 13
+hash bb764e066c0963fd
+note Run::show: find the file, clamp the range to it, print the lines.
+
+step qg33my
+order 1
+parent i5tgb2
+author ai
+file crates/cli/src/exec.rs
+symbol find_file
+lines 0 10
+hash 20a2fff303e42ef5
+note Takes the typed path exactly, else the first indexed file whose path ends with it, so a short suffix is enough.
+
+step thj9lk
+order 3
+parent i5tgb2
+author ai
+file crates/cli/src/wire.rs
+symbol numbered_lines
+lines 0 6
+hash 88a7e246954e7eda
+note Prints each line as a right-aligned 1-based number and the text.

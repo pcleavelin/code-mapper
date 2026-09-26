@@ -1,0 +1,66 @@
+codemap 8
+path feature-move-node
+kind flow
+author ai
+group features/gui
+note Drag a graph node by its title (or its body) to move it; the node stays where it was dropped from then on, while the rest keeps the automatic layout. Pressing on the title also selects the node: its step if it is one, otherwise its symbol, without re-centring the camera. 'auto layout' drops every dragged position.
+
+step 1142i7
+order 1
+parent 149ydv
+author ai
+file crates/gui/src/graph/input.rs
+symbol apply
+lines 45 47
+hash f7f66bcd773e458f
+note Records the node's position in cells; it survives relayouts until auto layout or an expansion on that node clears it.
+
+step 149ydv
+order 0
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_drag
+lines 0 28
+hash 620e1ee0adefe781
+note The handler: while a node is held, each frame's drag delta is converted from pixels to cells at the current zoom and added to the node's position (the dragged one, or its computed one the first time), queued as Place. A held background pans instead.
+
+step lv2myh
+order 2
+parent 149ydv
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_phase
+lines 20 28
+hash adb08f9bef82fca4
+note Trigger: a click (a press) on the canvas goes to graph_click, a drag delta to graph_drag, and releasing the button clears the hold.
+
+step stu7tr
+order 5
+parent 149ydv
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_layout
+lines 8 24
+hash bafb36663076eae8
+link graph-layout
+note The effect in the layout: every dragged position still on the canvas replaces the computed one, rounded to whole cells.
+
+step to7lcq
+order 4
+parent lv2myh
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_click
+lines 52 52
+hash 2579f41bd40a9db5
+note A press on a node's body grabs it without selecting.
+
+step zkb7il
+order 3
+parent lv2myh
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_click
+lines 26 35
+hash 85d668ed55b65115
+note A press on a node's header grabs the node, and defers selecting it: SelectStep for a step of the drawn path, Focus for any other node. HoldLook stops that selection from re-centring the camera on the node being dragged.

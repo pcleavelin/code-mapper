@@ -12,7 +12,7 @@ use domain::{
 };
 
 use crate::parse::{call_order, callee, record_import};
-use crate::{Contents, Parsers, ServerFile, apply, build, link};
+use crate::{Contents, Parsers, ServerFile, ServerNotice, StartError, apply, build, link};
 
 const LEGACY_CACHE: &[u8] = include_bytes!("tests/fixture.cache");
 
@@ -676,6 +676,19 @@ fn server_files_whose_targets_changed_are_pending_again() {
     drop(fs::remove_dir_all(&root));
 }
 
+fn notice_text(notice: &ServerNotice) -> String {
+    match notice {
+        ServerNotice::ToIndex { program, files } => format!("{program}: {files} files to index"),
+        ServerNotice::Unavailable(error) => {
+            let reason = match error {
+                StartError::Missing(program) => format!("{program} not on PATH"),
+                StartError::Failed(program) => format!("{program} would not start"),
+            };
+            format!("{reason}: its files keep the tree-sitter resolver")
+        }
+    }
+}
+
 #[test]
 #[ignore = "needs rust-analyzer on PATH"]
 fn rust_analyzer_indexes_the_files_a_command_touches() {
@@ -689,7 +702,7 @@ fn rust_analyzer_indexes_the_files_a_command_touches() {
     let notices = Rc::new(RefCell::new(Vec::new()));
     let seen = Rc::clone(&notices);
     let mut servers = crate::Servers::new(&Root::new(&root), move |notice| {
-        seen.borrow_mut().push(notice.to_string());
+        seen.borrow_mut().push(notice_text(notice));
     });
     servers.index(&mut index, &[RelativePath::new("src/main.rs")]);
     assert_eq!(

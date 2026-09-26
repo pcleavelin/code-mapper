@@ -1,0 +1,45 @@
+codemap 8
+path feature-more-context
+kind flow
+author ai
+group features/gui
+note Above and below a step's code sit buttons that show ten more lines of the file on that side each press, the way a diff hunk expands; once anything beyond the slice shows, the slice is highlighted and a 'no context' button in the header goes back to the slice alone. The top button disappears at the file's first line and the bottom one at its last. Per step, for the session.
+
+step 27qy6o
+order 1
+parent u5328q
+author ai
+file crates/gui/src/views/document.rs
+symbol context_button
+lines 0 13
+hash c3c3567695b32f62
+note Trigger: CONTEXT_ABOVE and CONTEXT_BELOW, labelled with the line count, queue Context with Above or Below.
+
+step ag37br
+order 3
+parent u5328q
+author ai
+file crates/gui/src/views/document.rs
+symbol step_code
+lines 10 47
+hash a673c5d7435a0ba7
+note The effect on the next frame: the shown range grows by the counts, clamped to the file, and the slice is highlighted when the range differs from it. The above button is drawn only when the range does not start at line one, the below button only when it ends before the last line.
+
+step u5328q
+order 0
+author ai
+file crates/gui/src/action.rs
+symbol apply
+lines 17 26
+hash 28236fcdc5146bb2
+note The handler: the Context arm adds Context::LINES (ten) to the above or below count of the step's view, or resets both to zero.
+
+step ydud8f
+order 2
+parent u5328q
+author ai
+file crates/gui/src/views/document.rs
+symbol step_header
+lines 73 79
+hash c0bdda51e0f2cbfb
+note Trigger: NO_CONTEXT in the header, drawn only while the step has context, queues Context with Reset.

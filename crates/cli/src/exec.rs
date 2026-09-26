@@ -75,14 +75,7 @@ impl Run<'_> {
         match query {
             Query::Files(filter) => self.files(&filter),
             Query::Symbols(filter) => self.symbols(&filter),
-            Query::Show { file, start, end } => {
-                let id = find_file(self.index, &file)?;
-                if let Some(source) = self.index.file(id)
-                    && let Some(span) = LineNumber::visible(source, start, end)
-                {
-                    wire::numbered_lines(self.output, source, span);
-                }
-            }
+            Query::Show { file, start, end } => self.show(&file, start, end)?,
             Query::Grep(regex) => self.grep(&compile(&regex)?),
             Query::Notes(regex) => self.notes(&compile(&regex)?),
             Query::Callees(symbol) => self.callees(&symbol)?,
@@ -90,17 +83,9 @@ impl Run<'_> {
             Query::References(symbol) => self.references(&symbol)?,
             Query::Index(filter) => self.index_pending(&filter)?,
             Query::Tree { symbol, levels } => self.tree(&symbol, levels)?,
-            Query::Roots(count) => {
-                for id in self.index.roots().into_iter().take(count.value()) {
-                    wire::root_row(self.output, self.index, id);
-                }
-            }
+            Query::Roots(count) => self.roots(count),
             Query::Paths(name) => self.paths(name.as_ref())?,
-            Query::Path { name, view } => {
-                let name = find_path(self.map, &name)?;
-                let expanded = (view == LinkView::Expanded).then(|| vec![name.clone()]);
-                self.path(&name, expanded);
-            }
+            Query::Path { name, view } => self.path(&name, view)?,
             Query::Groups => self.groups(),
             Query::Stale => {
                 self.stale();
@@ -122,19 +107,9 @@ impl Run<'_> {
                 group,
             } => self.path_new(&name?, kind, note, group),
             Edit::PathGroup { name, group } => self.path_group(&name, group),
-            Edit::GroupRename { old, new } => {
-                let moved = self.map.rename_group(old.as_ref(), new.as_ref())?;
-                wire::paths_moved(self.output, moved);
-                Ok(Changed)
-            }
-            Edit::PathNote { name, note } => {
-                let name = find_path(self.map, &name)?;
-                Ok(self.map.set_path_note(&name, note)?)
-            }
-            Edit::StepNote { name, step, note } => {
-                let found = find_step(self.map, &name, step)?;
-                Ok(self.map.set_step_note(&found.path, &found.step, note)?)
-            }
+            Edit::GroupRename { old, new } => self.group_rename(old.as_ref(), new.as_ref()),
+            Edit::PathNote { name, note } => self.path_note(&name, note),
+            Edit::StepNote { name, step, note } => self.step_note(&name, step, note),
             Edit::StepLink { name, step, target } => self.step_link(&name, step, &target),
             Edit::StepUnlink { name, step } => self.step_unlink(&name, step),
             Edit::NoteReplace {
@@ -180,6 +155,21 @@ impl Run<'_> {
                 wire::symbol_row(self.output, file, symbol);
             }
         }
+    }
+
+    fn show(
+        &mut self,
+        file: &RelativePath,
+        start: Option<LineNumber>,
+        end: Option<LineNumber>,
+    ) -> Result<(), Failure> {
+        let id = find_file(self.index, file)?;
+        if let Some(source) = self.index.file(id)
+            && let Some(span) = LineNumber::visible(source, start, end)
+        {
+            wire::numbered_lines(self.output, source, span);
+        }
+        Ok(())
     }
 
     fn grep(&mut self, regex: &Regex) {
@@ -331,6 +321,12 @@ impl Run<'_> {
         Ok(())
     }
 
+    fn roots(&mut self, count: Count) {
+        for id in self.index.roots().into_iter().take(count.value()) {
+            wire::root_row(self.output, self.index, id);
+        }
+    }
+
     fn paths(&mut self, name: Option<&TextFragment>) -> Result<(), Failure> {
         let names: Vec<PathName> = match name {
             Some(name) => vec![find_path(self.map, name)?],
@@ -362,12 +358,14 @@ impl Run<'_> {
         Ok(())
     }
 
-    fn path(&mut self, name: &PathName, expanded: Option<Vec<PathName>>) {
-        let Some(path) = self.map.path(name) else {
-            return;
+    fn path(&mut self, name: &TextFragment, view: LinkView) -> Result<(), Failure> {
+        let name = find_path(self.map, name)?;
+        let expanded = (view == LinkView::Expanded).then(|| vec![name.clone()]);
+        let Some(path) = self.map.path(&name) else {
+            return Ok(());
         };
         wire::path_title(self.output, path);
-        let from = places(self.map, self.map.links_to(name));
+        let from = places(self.map, self.map.links_to(&name));
         wire::linked_from(self.output, &from);
         let mut document = Document {
             index: self.index,
@@ -376,6 +374,7 @@ impl Run<'_> {
             expanded,
         };
         document.steps(path, Depth::new(0), &[]);
+        Ok(())
     }
 
     fn groups(&mut self) {
@@ -621,6 +620,31 @@ impl Run<'_> {
         let placed = self.map.path(&name).and_then(Path::group);
         wire::group_place(self.output, &name, placed);
         Ok(Changed)
+    }
+
+    fn group_rename(
+        &mut self,
+        old: Option<&GroupName>,
+        new: Option<&GroupName>,
+    ) -> Result<Changed, Failure> {
+        let moved = self.map.rename_group(old, new)?;
+        wire::paths_moved(self.output, moved);
+        Ok(Changed)
+    }
+
+    fn path_note(&mut self, name: &TextFragment, note: Option<Note>) -> Result<Changed, Failure> {
+        let name = find_path(self.map, name)?;
+        Ok(self.map.set_path_note(&name, note)?)
+    }
+
+    fn step_note(
+        &mut self,
+        name: &TextFragment,
+        step: StepIndex,
+        note: Option<Note>,
+    ) -> Result<Changed, Failure> {
+        let found = find_step(self.map, name, step)?;
+        Ok(self.map.set_step_note(&found.path, &found.step, note)?)
     }
 
     fn step_link(

@@ -1,0 +1,66 @@
+codemap 8
+path feature-walk-steps
+kind flow
+author ai
+group features/gui
+note With no text field holding the keyboard, Down selects the next step of the path being read and Up the previous one, in the document's tree order, scrolling each to the top. Down on the last step and Up on the first stay put. With no step selected, either key selects the first step.
+
+step 17uw33
+order 0
+author ai
+file crates/gui/src/nav.rs
+symbol walk
+lines 0 32
+hash e81a40541b4ddb7c
+note The handler. Finds the selected step's position in tree order, moves one along, clamped to the ends, and selects that step with Scrolling::Scroll. Nothing happens without a path or on a path with no steps.
+
+step df3ka7
+order 3
+parent 17uw33
+author ai
+file crates/gui/src/app.rs
+symbol keys
+lines 16 18
+hash c5dfbb5c9de2a66b
+note Trigger: every frame the keys phase asks keys::walks which arrow chords were pressed and queues one WalkWhenIdle per press.
+
+step hct277
+order 2
+parent 17uw33
+author ai
+file crates/gui/src/nav.rs
+symbol select_step
+lines 0 52
+hash eab2b28be6308818
+link feature-select-step
+note Selecting the neighbour is the same as clicking it in the outline.
+
+step hymyku
+order 4
+parent df3ka7
+author ai
+file crates/gui/src/keys.rs
+symbol walks
+lines 0 10
+hash c6c8d3f1568f6f6c
+note Reads the chords from the registry's WalkSteps triggers, so the keys are the ones the feature declares: plain Down and plain Up.
+
+step sw9x3s
+order 5
+parent 17uw33
+author ai
+file crates/gui/src/action.rs
+symbol apply
+lines 71 75
+hash 547c8bd0901ef4e5
+note The gate: a walk is dropped while any field is focused, so the arrows move the caret or the field's history there instead.
+
+step uiczsm
+order 1
+parent 17uw33
+author ai
+file crates/gui/src/model.rs
+symbol tree_order
+lines 0 13
+hash 030cbed1e9f09c79
+note The document's reading order: the path's tree walked depth first, as slots of the GUI's step list.

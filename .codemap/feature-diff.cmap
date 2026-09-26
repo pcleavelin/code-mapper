@@ -1,0 +1,127 @@
+codemap 8
+path feature-diff
+kind flow
+author ai
+group features/cli
+note diff: the map against the parent revision's map (@- in jj, HEAD in git), so the owner reviews what a session changed in the map without reading path output. Paths are listed as + added, - removed, or ~ changed; a changed path lists its new, re-pinned, note-edited and relinked steps and its removed ones. It needs a repository and a map at the parent revision; either missing is an error.
+
+step 176xed
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol diff
+lines 0 48
+hash 8e8e2c659766d6e0
+note Finds the repository, reads the parent revision's .codemap, parses it into a Map, and prints each path that differs with its step changes.
+
+step 2nymfh
+order 5
+parent 176xed
+author ai
+file crates/domain/src/map.rs
+symbol diff
+lines 0 16
+hash 4fcefacf5afd0de7
+link map-diff
+note Pairs paths by name: added, removed, or compared step by step.
+
+step 34kysf
+order 7
+parent 176xed
+author ai
+file crates/cli/src/wire.rs
+symbol path_removed
+lines 0 2
+hash 163e87ec2b503065
+note '- name (n steps)' for a path this revision removed.
+
+step 3kjv2h
+order 2
+parent 176xed
+author ai
+file crates/io-vcs/src/lib.rs
+symbol parent
+lines 0 5
+hash 774eab9c48f01814
+note The parent revision's spec for this VCS: @- or HEAD.
+
+step 5fkwik
+order 9
+parent 176xed
+author ai
+file crates/cli/src/exec.rs
+symbol find_path
+lines 0 5
+hash 63e1a3b28d250aa6
+note Looks the changed path up in the current map to print its steps by index.
+
+step izolak
+order 8
+parent 176xed
+author ai
+file crates/cli/src/wire.rs
+symbol path_changed
+lines 0 10
+hash 1c6a73439cf80006
+note '~ name', marked when the note, kind or group changed.
+
+step kpps32
+order 10
+parent 176xed
+author ai
+file crates/cli/src/wire.rs
+symbol step_change
+lines 0 24
+hash 7e1b08f9367bedef
+note '+ [i] file:lines symbol  new', or ~ with re-pinned, note edited or link changed.
+
+step paaq9s
+order 11
+parent 176xed
+author ai
+file crates/cli/src/wire.rs
+symbol step_removed
+lines 0 7
+hash 7a6286e7e7f26e11
+note '- file symbol (removed)' for a step the parent had.
+
+step pv6l0r
+order 6
+parent 176xed
+author ai
+file crates/cli/src/wire.rs
+symbol path_added
+lines 0 2
+hash df591709434c0431
+note '+ name (n steps)' for a path the parent does not have.
+
+step u9jnba
+order 4
+parent 176xed
+author ai
+file crates/io-map/src/lib.rs
+symbol base
+lines 0 5
+hash 1f39065ba051126c
+note Parses that text into a Map, with parse errors naming the revision.
+
+step wpasoy
+order 1
+parent 176xed
+author ai
+file crates/io-vcs/src/lib.rs
+symbol detect
+lines 0 21
+hash 6bf6bc46c0a519bc
+note jj when a .jj directory is at or above the root, else git when .git is; neither is an error.
+
+step z047i0
+order 3
+parent 176xed
+author ai
+file crates/io-vcs/src/lib.rs
+symbol map_at
+lines 0 27
+hash f7b02f0b98c73110
+link vcs
+note Every map file at that revision in one call to jj or git, as one text; no map files there is an error.

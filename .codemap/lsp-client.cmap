@@ -3,195 +3,441 @@ path lsp-client
 kind layer
 author ai
 group index
-note A minimal language-server client: JSON-RPC over the spawned server's stdio, and nothing more of the protocol than this tool needs. Requests are synchronous - a reader thread queues every incoming message and request() blocks for the matching id, servicing notifications and the server's own requests as they go by, which is what keeps a chatty server from deadlocking. The client is used by the index's server backend (index/server.rs) for exactly three things: document symbols, outgoing calls and references. Everything about it is shaped by one fact: a server takes seconds to become useful, so wait_ready exists and the answers are cached. Positions are 0-based like LSP's own and columns are UTF-16 units. The test that drives a real server needs rust-analyzer on PATH and runs only with cargo test -- --ignored.
+note A minimal language-server client, the io-lsp crate: JSON-RPC over the spawned server's stdio, and nothing more of the protocol than this tool needs. session.rs is LspSession, the client; wire.rs builds and reads the JSON (Outgoing requests, the framing, the shapes of answers); convert.rs turns answers into domain and answer.rs types, with URIs mapped to root-relative paths. Requests are synchronous - a reader thread queues every incoming message and request blocks for the matching id, servicing notifications and the server's own requests as they go by, which is what keeps a chatty server from deadlocking. The index crate's server.rs uses it for document symbols, outgoing calls, incoming calls and references, and the GUI's server thread for hover, definition and references. Everything about it is shaped by one fact: a server takes seconds to become useful, so wait_ready exists and the answers are cached. Positions are 0-based like LSP's own and columns are UTF-16 units. Only start returns an error; a query whose answer never came or was an error reads as empty or None. The test that drives a real server needs rust-analyzer on PATH and runs only with cargo test -- --ignored.
 
 step 0o0uib
 order 17
 parent xwfud3
 author ai
-file src/lsp.rs
+file crates/io-lsp/src/wire.rs
 symbol at
 lines 0 2
-hash 9ae960243cb61ccf
+hash 547a9b943d5bfefa
 note The parameters every position request shares: the document URI and a 0-based line and UTF-16 column.
+
+step 1qd7oa
+order 39
+parent o7brrl
+author ai
+file crates/io-lsp/src/answer.rs
+symbol Outline
+lines 0 7
+hash e6b696d908b1fb1d
+note A symbol as the server reports it, before the index turns it into a Symbol: name, LSP SymbolKind number, the position of its name, its last line, and its children. A range ending at column 0 (RangeEnd::LineStart) does not include that line.
 
 step 3bn4hl
 order 18
 author ai
-file src/lsp.rs
+file crates/io-lsp/src/session.rs
 symbol definition
-lines 0 19
-hash 52a4a932671923c2
+lines 0 9
+hash 4e8314291080abae
 note Position request: where the thing at a line and column is defined, first location only.
+
+step 4tvs2c
+order 20
+parent urk25j
+author ai
+file crates/io-lsp/src/session.rs
+symbol listen
+lines 0 11
+hash 86e1c7693d83bf7e
+note The reader thread: parses framed messages off the server's stdout into a channel until the stream ends or the session is gone, so a request can wait with a timeout.
 
 step 6iovly
 order 5
+parent kb6t09
+author ai
+file crates/io-lsp/src/session.rs
+symbol send
+lines 0 3
+hash d2963ae933808847
+note The write side of the framing. Every outgoing message goes through here; a write error is ignored, and the answer that never comes shows up as an Err.
+
+step 6qpp9e
+order 24
 parent usbs7l
 author ai
-file src/lsp.rs
-symbol send
-lines 0 4
-hash 698cdec411653b55
-note The write side of the same framing. Every outgoing message goes through here.
+file crates/io-lsp/src/wire.rs
+symbol outcome
+lines 0 9
+hash feb7ce536ad51bf5
+note An answer's result, or its error message as Err. answer_id beside it tells an answer from a request the server made of us, which carries a method.
+
+step 79jsww
+order 41
+author ai
+file crates/io-lsp/src/answer.rs
+symbol impl CallItem
+lines 0 8
+hash d992d47fafa9ba57
+note A call-hierarchy item as the server sent it: opaque JSON, handed back unchanged in the next request.
 
 step 7mq2wh
 order 3
 author ai
-file src/lsp.rs
+file crates/io-lsp/src/session.rs
 symbol wait_ready
-lines 0 20
-hash 240ccdfb4eaa30a0
+lines 0 22
+hash f94cfd17e91e4ed0
 note Query too early and the server answers empty. Ready means the server said so, or every progress it began has ended and nothing new arrived for half a second; a silent server counts as ready after three seconds.
+
+step 7ve8l5
+order 45
+parent xwfud3
+author ai
+file crates/io-lsp/src/wire.rs
+symbol hover_parts
+lines 0 17
+hash 9aff1033a0044ff1
+note The hover's contents as text parts, whichever shape the server chose: a plain string, a MarkupContent or MarkedString object, or an array of strings and objects.
 
 step 8h8eat
 order 11
 parent urk25j
 author ai
-file src/lsp.rs
-symbol Client
-lines 0 8
-hash b00a17ec333256c3
-note The client state: the child process, the queue the reader thread fills, and the three things wait_ready watches - how many progress tokens are open, when the last one moved, and rust-analyzer's own quiescent flag.
+file crates/io-lsp/src/session.rs
+symbol LspSession
+lines 0 9
+hash 3a59c9e3b0ee5940
+note The client state: the child process, its stdin, the queue the reader thread fills, the last request id, the absolute root URIs are resolved against, and the three things wait_ready watches - how many progress tokens are open, when the last one moved, and rust-analyzer's own quiescent flag.
+
+step 8yrhr3
+order 21
+parent urk25j
+author ai
+file crates/io-lsp/src/wire.rs
+symbol initialize
+lines 0 22
+hash 7938a5ef22addbec
+note The initialize request. Declares hierarchical symbols, call hierarchy, references, hover, definition, progress, configuration and rust-analyzer's server-status notification, and turns off rust-analyzer's cache priming and check on save, so a large workspace is ready once loaded and each answer is computed when asked.
+
+step 9j6a18
+order 35
+parent vmzz2o
+author ai
+file crates/io-lsp/src/wire.rs
+symbol locations
+lines 0 13
+hash e4653d0510d3aa38
+note Reads (uri, line) out of an answer array; LocationShape says where: an outgoing call's callee (to), an incoming call's caller (from), both at the name's line, or a reference's range.
+
+step 9penrh
+order 26
+parent xwfud3
+author ai
+file crates/io-lsp/src/answer.rs
+symbol from_parts
+lines 0 16
+hash 9dfff40848ea069b
+note Hover contents (a string, a markup object, or an array of either) joined into plain lines: code-fence lines dropped and runs of blank lines collapsed; None when nothing is left.
+
+step 9zii3n
+order 36
+parent vmzz2o
+author ai
+file crates/io-lsp/src/convert.rs
+symbol locations
+lines 0 13
+hash f5e48cd7f6721981
+note Turns wire locations into (file, line) pairs, dropping everything outside the root - which is how std and dependency hits are kept out of the index without asking the server to exclude them. Sorted and deduplicated.
 
 step b1v4eb
 order 12
 author ai
-file src/lsp.rs
+file crates/io-lsp/src/session.rs
 symbol shutdown
 lines 0 4
-hash 794364a94930762a
+hash 6db1dd98fa51c89c
 note A polite shutdown, so the server writes its caches instead of being killed.
+
+step c2ule9
+order 25
+parent 6iovly
+author ai
+file crates/io-lsp/src/wire.rs
+symbol frame
+lines 0 3
+hash 71eb3b2e9c9c49d2
+note Content-Length header, a blank line, then the JSON body.
+
+step expfh4
+order 42
+parent 3bn4hl
+author ai
+file crates/io-lsp/src/answer.rs
+symbol Definition
+lines 0 5
+hash 6ae7ff4a874c0a23
+note Where a definition is: absolute path, root-relative path when inside the root, line and UTF-16 column.
+
+step ey606y
+order 30
+parent sxws3k
+author ai
+file crates/io-lsp/src/wire.rs
+symbol symbol
+lines 0 23
+hash afc0dcbf7a6b9e27
+note One DocumentSymbol off the wire: name, kind number, where the name starts (the selection range), the range's end line and whether it ends at column 0, and children.
+
+step g3usco
+order 28
+parent 3bn4hl
+author ai
+file crates/io-lsp/src/wire.rs
+symbol definition
+lines 0 16
+hash e6db7ffcb8502f62
+note The first of a Location or LocationLink array, or a single one: its URI and the start of its (target selection) range.
 
 step g63niv
 order 9
 parent qwrnwl
 author ai
-file src/lsp.rs
-symbol percent_decode
-lines 0 17
-hash 180598c257d57a4e
-note The reverse of to_uri's escaping: the servers answer with escaped URIs, so decoding is needed before anything can be compared to a path.
+file crates/io-lsp/src/convert.rs
+symbol decoded
+lines 0 19
+hash 282fe252fafdd237
+note The reverse of Uri::of's escaping: the servers answer with escaped URIs, so decoding is needed before anything can be compared to a path.
 
 step h4trcd
 order 13
 parent b1v4eb
 author ai
-file src/lsp.rs
+file crates/io-lsp/src/session.rs
 symbol drop
 lines 0 2
-hash bc8c4e59f0c87052
-note The impolite one, for every path that does not reach shutdown. A language server left running would keep indexing the repo forever.
+hash d5dec33dbd3da43f
+note The impolite one, for every path that does not reach shutdown: kills the child. A language server left running would keep indexing the repo forever.
+
+step ibmluj
+order 40
+author ai
+file crates/io-lsp/src/answer.rs
+symbol DocumentPosition
+lines 0 4
+hash b0e070342c8928cb
+note What every position request takes: a root-relative file, a 0-based line and a UTF-16 column (Character).
 
 step iq3ejv
 order 15
+parent 9zii3n
 author ai
-file src/lsp.rs
+file crates/io-lsp/src/convert.rs
 symbol relative
 lines 0 10
-hash 3c94d53d2244facf
-note Absolute path under the root to a root-relative forward-slash path, or None outside it. Server URIs come back as file:///c%3A/... on Windows; uri_path decodes one to a path, and this case-insensitive prefix check against the root gives the repo-relative path every other part of the tool uses.
+hash ee6c5cc53af334cd
+note Absolute path under the root to a root-relative forward-slash path, or None outside it. Server URIs come back as file:///c%3A/... on Windows; Uri::path decodes one to a path, and this prefix check against the root, case-insensitive on Windows, gives the repo-relative path every other part of the tool uses.
 
 step iughfk
 order 2
 parent usbs7l
 author ai
-file src/lsp.rs
+file crates/io-lsp/src/session.rs
 symbol handle
-lines 0 18
-hash 8153a0a09e1087ab
+lines 0 21
+hash e0731350c61d51cb
 note Progress begin/end counting, the quiescent flag, and null answers to the server's own requests so it never blocks on us.
 
 step j58uho
 order 19
 author ai
-file src/lsp.rs
+file crates/io-lsp/src/session.rs
 symbol request_all
-lines 0 37
-hash ab764870ce0bddb5
+lines 0 34
+hash cb204dcd1b22b4ef
 note Many requests with up to 64 in flight, answers returned in the order asked by matching ids; a request unanswered two minutes after the previous answer is an Err, and so is every one after it; notifications and server requests that arrive meanwhile are handled as request does. This is what lets rust-analyzer answer on its own threads instead of one request at a time.
 
 step k7abu8
 order 7
 parent iughfk
 author ai
-file src/lsp.rs
+file crates/io-lsp/src/session.rs
 symbol reply
 lines 0 2
-hash 5247b2ebec784873
+hash 7ada1ad8e5c51c84
 note Answering a request the server made of us. The answers are deliberately null: we implement none of what a server might ask for, and a server that never gets an answer stalls.
+
+step k7pht5
+order 33
+author ai
+file crates/io-lsp/src/session.rs
+symbol outgoing_targets
+lines 0 9
+hash 78893256d46feb7a
+note callHierarchy/outgoingCalls for many call items at once through request_all: per item, the (file, line) of each callee's name inside the root. This is where a server-indexed symbol's targets come from.
+
+step kb6t09
+order 22
+parent usbs7l
+author ai
+file crates/io-lsp/src/session.rs
+symbol issue
+lines 0 5
+hash 851c9a25f04ab230
+note Numbers a request with the next id and sends it.
 
 step ncjyks
 order 8
 parent urk25j
 author ai
-file src/lsp.rs
-symbol to_uri
-lines 0 12
-hash 9a3c6058b32464cc
-note Paths go out as file: URIs with everything non-alphanumeric percent-escaped, which is what makes a repo path containing spaces work.
+file crates/io-lsp/src/convert.rs
+symbol of
+lines 0 26
+hash 431c959a3792f6cb
+note Paths go out as file: URIs with everything but unreserved characters, '/' and ':' percent-escaped, which is what makes a repo path containing spaces work.
+
+step o7brrl
+order 31
+parent sxws3k
+author ai
+file crates/io-lsp/src/convert.rs
+symbol outline
+lines 0 18
+hash b13d2446e5061b76
+note WireSymbol to Outline, with typed lines and characters.
+
+step pcac6f
+order 27
+parent 3bn4hl
+author ai
+file crates/io-lsp/src/convert.rs
+symbol definition
+lines 0 8
+hash 01a40dc23ce48f76
+note The target as an absolute path plus, when it is inside the root, the relative one, so the GUI can peek into std or a dependency as well as jump within the repo.
 
 step qwrnwl
 order 14
+parent 9zii3n
 author ai
-file src/lsp.rs
-symbol uri_path
+file crates/io-lsp/src/convert.rs
+symbol path
 lines 0 7
-hash 6aaa87cf655dd7c9
-note URI to absolute path; definition targets outside the repo need the path itself, not one relative to the root.
+hash b2be504428586f3d
+note URI to absolute path, the leading slash dropped on Windows; definition targets outside the repo need the path itself, not one relative to the root.
 
 step s8zh4t
 order 6
 parent urk25j
 author ai
-file src/lsp.rs
+file crates/io-lsp/src/session.rs
 symbol notify
 lines 0 2
-hash 0c90f848db862090
+hash 38389b67d262e743
 note A message with no id: no answer expected, nothing to wait for. Used for 'initialized' and 'exit'.
 
-step umi6fd
-order 10
+step sxws3k
+order 29
 author ai
-file src/lsp.rs
-symbol find_on_path
-lines 0 19
-hash 809a667d29fca275
-note Whether the language has a server at all. On Windows it also walks PATHEXT, because several of these servers install as .cmd shims and a bare name would not be found.
+file crates/io-lsp/src/session.rs
+symbol outlines
+lines 0 14
+hash 6a5f22e412a08a3d
+note textDocument/documentSymbol for many files at once through request_all; per file the hierarchical symbols, empty when unanswered.
+
+step t433x5
+order 32
+author ai
+file crates/io-lsp/src/session.rs
+symbol call_items
+lines 0 20
+hash 7538bdc59fa74e95
+note textDocument/prepareCallHierarchy for many positions at once: per position, the call-hierarchy items there, kept opaque for outgoing_targets.
+
+step tko9f6
+order 43
+parent urk25j
+author ai
+file crates/io-lsp/src/answer.rs
+symbol StartError
+lines 0 3
+hash 0bc06ea69d9abcd0
+note Why a server did not start: Missing (not on PATH) or Failed (would not spawn or initialize). Its Display is the text the CLI and the status line show.
+
+step tunqku
+order 38
+author ai
+file crates/io-lsp/src/session.rs
+symbol incoming_callers
+lines 0 20
+hash 1e7478a8ce248764
+note The call-hierarchy item at a position, then its incoming calls, each as the (file, line) of the caller's name, sorted and deduplicated. The callers command asks this.
 
 step urk25j
 order 0
 author ai
-file src/lsp.rs
+file crates/io-lsp/src/session.rs
 symbol start
-lines 0 51
-hash fbf968941fdbc0b4
-note Spawn, reader thread, initialize handshake. Declares hierarchical symbols, call hierarchy, progress and rust-analyzer's server-status notification, and turns off rust-analyzer's cache priming, so a large workspace is ready once loaded and each answer is computed when asked.
+lines 0 35
+hash c88a11da85daddc5
+link io-process
+note Spawn through io-process (the program and arguments from the domain's Language table, the root as working directory), reader thread, initialize handshake, initialized. A program not on PATH is StartError::Missing; one that will not spawn or answer initialize is Failed.
 
 step usbs7l
 order 1
 parent urk25j
 author ai
-file src/lsp.rs
+file crates/io-lsp/src/session.rs
 symbol request
-lines 0 17
-hash 9343419351034263
-note Waits for the matching id; everything else goes through handle.
+lines 0 13
+hash b50fc8c6adf11f82
+note One request: waits up to two minutes for the matching id; everything else goes through handle. No answer (or a dead server) and an error answer both come back as Err.
+
+step vmzz2o
+order 34
+parent k7pht5
+author ai
+file crates/io-lsp/src/session.rs
+symbol located
+lines 0 5
+hash fbd1d5be597124ca
+note Wire locations to domain Locations against this session's root, an unanswered request reading as none.
+
+step wjp490
+order 44
+author ai
+file crates/io-lsp/src/wire.rs
+symbol Outgoing
+lines 0 3
+hash 720d883805adc085
+note A request or notification before it has an id: method plus params. Every message the client sends is built by one of its constructors.
+
+step xiwank
+order 37
+author ai
+file crates/io-lsp/src/session.rs
+symbol references
+lines 0 7
+hash 61365fb14f15f734
+note textDocument/references for one position, declaration excluded, as (file, line) pairs inside the root. Asked for one symbol at a time and never while indexing, since each is a search of the whole workspace.
 
 step xwfud3
 order 16
 author ai
-file src/lsp.rs
+file crates/io-lsp/src/session.rs
 symbol hover
-lines 0 23
-hash 0f6ab26d2734684d
-note Position request: what the server knows about the thing at a line and column, as plain lines.
+lines 0 9
+hash 1e0dc999cceebd77
+note Position request: what the server knows about the thing at a line and column, as plain text.
 
 step ygnj7n
 order 4
-parent urk25j
+parent 4tvs2c
 author ai
-file src/lsp.rs
+file crates/io-lsp/src/wire.rs
 symbol read_message
 lines 0 21
-hash 50d17b60956f150c
+hash 468d245e169edaf8
 note The framing: Content-Length headers, a blank line, then that many bytes of JSON. Returning None ends the reader thread, which is how a server that died is noticed.
+
+step ykbsfb
+order 23
+parent iughfk
+author ai
+file crates/io-lsp/src/wire.rs
+symbol notice
+lines 0 32
+hash 8dbf2b3f4a3e1a45
+note Sorts an incoming message that is not our answer: progress begin or end, rust-analyzer's quiescent status, a workspace/configuration request (answered with one null per item), any other request, or nothing to act on.

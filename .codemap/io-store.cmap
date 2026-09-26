@@ -1,0 +1,44 @@
+codemap 8
+path io-store
+kind layer
+author ai
+group map
+note The io-store crate: the one place the program writes or removes a file (clippy's disallowed-methods sends every other crate here). A write goes to a temporary file beside the target and is renamed over it, so a reader never sees half a file: the map store, the index cache and screenshots all save through it. On Windows a file another process holds open (an editor, a virus scanner, the indexer) refuses the write or rename for a moment; those error codes are retried a few times with a short pause, anything else fails at once.
+
+step 1keq5w
+order 2
+parent cvz6kn
+author ai
+file crates/io-store/src/lib.rs
+symbol impl SystemCode
+lines 0 18
+hash 486b671298f660b4
+note The Windows error codes that mean another process holds the file for a moment: sharing violation, access denied, and a file locked by a user-mapped section. Only these are retried.
+
+step 545rd1
+order 1
+parent cvz6kn
+author ai
+file crates/io-store/src/lib.rs
+symbol temporary_beside
+lines 0 3
+hash f398a820321b53be
+note A name beside the target, unique per process and per call (process id and a counter), so concurrent writers never share a temporary file and the rename stays on one filesystem.
+
+step 6bvxi8
+order 3
+author ai
+file crates/io-store/src/lib.rs
+symbol remove
+lines 0 2
+hash 24709e1d50a63fd6
+note Removes one file; the map store uses it for the files of paths that were removed or renamed.
+
+step cvz6kn
+order 0
+author ai
+file crates/io-store/src/lib.rs
+symbol write
+lines 0 18
+hash 284c0f1a28d1b9b8
+note Writes the bytes to the temporary file, then renames it over the target. A transient refusal (SystemCode::transient) waits RETRY_PAUSE and tries again, up to ATTEMPTS times; any other error, or the last transient one, removes the temporary file and returns the error.

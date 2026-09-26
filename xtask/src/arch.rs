@@ -20,9 +20,9 @@ pub(crate) enum Guard {
     Tree(Literal),
 }
 
-const EXPECTS: [Allowance; 10] = [
+const EXPECTS: [Allowance; 27] = [
     Allowance {
-        path: Literal::new("tests/common/mod.rs"),
+        path: Literal::new("crates/codemap/tests/common/mod.rs"),
         lint: Literal::new("dead_code"),
     },
     Allowance {
@@ -32,10 +32,6 @@ const EXPECTS: [Allowance; 10] = [
     Allowance {
         path: Literal::new("xtask/src/process.rs"),
         lint: Literal::new("clippy::disallowed_methods"),
-    },
-    Allowance {
-        path: Literal::new("src/gfx.rs"),
-        lint: Literal::new("unsafe_code"),
     },
     Allowance {
         path: Literal::new("crates/io-process/src/lib.rs"),
@@ -61,29 +57,81 @@ const EXPECTS: [Allowance; 10] = [
         path: Literal::new("crates/platform/src/gpu.rs"),
         lint: Literal::new("unsafe_code"),
     },
+    Allowance {
+        path: Literal::new("crates/codemap/tests/cli.rs"),
+        lint: Literal::new("clippy::unwrap_used"),
+    },
+    Allowance {
+        path: Literal::new("crates/codemap/tests/cli.rs"),
+        lint: Literal::new("clippy::expect_used"),
+    },
+    Allowance {
+        path: Literal::new("crates/codemap/tests/cli.rs"),
+        lint: Literal::new("clippy::panic"),
+    },
+    Allowance {
+        path: Literal::new("crates/codemap/tests/cli.rs"),
+        lint: Literal::new("clippy::indexing_slicing"),
+    },
+    Allowance {
+        path: Literal::new("crates/codemap/tests/cli.rs"),
+        lint: Literal::new("clippy::string_slice"),
+    },
+    Allowance {
+        path: Literal::new("crates/codemap/tests/cli.rs"),
+        lint: Literal::new("clippy::disallowed_methods"),
+    },
+    Allowance {
+        path: Literal::new("crates/codemap/tests/gui.rs"),
+        lint: Literal::new("clippy::unwrap_used"),
+    },
+    Allowance {
+        path: Literal::new("crates/codemap/tests/gui.rs"),
+        lint: Literal::new("clippy::expect_used"),
+    },
+    Allowance {
+        path: Literal::new("crates/codemap/tests/gui.rs"),
+        lint: Literal::new("clippy::panic"),
+    },
+    Allowance {
+        path: Literal::new("crates/codemap/tests/gui.rs"),
+        lint: Literal::new("clippy::indexing_slicing"),
+    },
+    Allowance {
+        path: Literal::new("crates/codemap/tests/gui.rs"),
+        lint: Literal::new("clippy::string_slice"),
+    },
+    Allowance {
+        path: Literal::new("crates/codemap/tests/gui.rs"),
+        lint: Literal::new("clippy::disallowed_methods"),
+    },
+    Allowance {
+        path: Literal::new("crates/codemap/tests/parity.rs"),
+        lint: Literal::new("clippy::unwrap_used"),
+    },
+    Allowance {
+        path: Literal::new("crates/codemap/tests/parity.rs"),
+        lint: Literal::new("clippy::expect_used"),
+    },
+    Allowance {
+        path: Literal::new("crates/codemap/tests/parity.rs"),
+        lint: Literal::new("clippy::panic"),
+    },
+    Allowance {
+        path: Literal::new("crates/codemap/tests/parity.rs"),
+        lint: Literal::new("clippy::indexing_slicing"),
+    },
+    Allowance {
+        path: Literal::new("crates/codemap/tests/parity.rs"),
+        lint: Literal::new("clippy::string_slice"),
+    },
+    Allowance {
+        path: Literal::new("crates/codemap/tests/parity.rs"),
+        lint: Literal::new("clippy::disallowed_methods"),
+    },
 ];
 
-const DEPENDENCIES: [Allowed; 18] = [
-    Allowed {
-        package: Literal::new("codemap"),
-        dependencies: &[
-            Literal::new("winit"),
-            Literal::new("wgpu"),
-            Literal::new("fontdue"),
-            Literal::new("clap"),
-            Literal::new("ignore"),
-            Literal::new("regex"),
-            Literal::new("serde_json"),
-            Literal::new("png"),
-            Literal::new("tree-sitter"),
-            Literal::new("tree-sitter-rust"),
-            Literal::new("tree-sitter-odin"),
-            Literal::new("tree-sitter-c"),
-            Literal::new("tree-sitter-python"),
-            Literal::new("tree-sitter-javascript"),
-            Literal::new("tree-sitter-typescript"),
-        ],
-    },
+const DEPENDENCIES: [Allowed; 16] = [
     Allowed {
         package: Literal::new("xtask"),
         dependencies: &[
@@ -201,20 +249,9 @@ const DEPENDENCIES: [Allowed; 18] = [
             Literal::new("gui"),
         ],
     },
-    Allowed {
-        package: Literal::new("codemap-next"),
-        dependencies: &[
-            Literal::new("cli"),
-            Literal::new("gui"),
-            Literal::new("domain"),
-            Literal::new("index"),
-            Literal::new("io-map"),
-        ],
-    },
 ];
 
-pub(crate) const RULEBOOK: [Guard; 10] = [
-    Guard::File(Literal::new("conventions.md")),
+pub(crate) const RULEBOOK: [Guard; 9] = [
     Guard::Tree(Literal::new("xtask/")),
     Guard::File(Literal::new("clippy.toml")),
     Guard::File(Literal::new("rustfmt.toml")),
@@ -226,16 +263,16 @@ pub(crate) const RULEBOOK: [Guard; 10] = [
     Guard::File(Literal::new("CLAUDE.md")),
 ];
 
-const LEGACY_RULES: [Rule; 2] = [Rule::Suppression, Rule::Comment];
-
 const TEST_RULES: [Rule; 3] = [Rule::Suppression, Rule::TestRegistry, Rule::Comment];
 
-const SCENARIO_FILES: [Literal; 2] = [Literal::new("tests/cli.rs"), Literal::new("tests/gui.rs")];
+const SCENARIO_FILES: [Literal; 2] = [
+    Literal::new("crates/codemap/tests/cli.rs"),
+    Literal::new("crates/codemap/tests/gui.rs"),
+];
 
 pub(crate) fn applies(rule: Rule, file: &SourceFile) -> bool {
     match file.zone {
         Zone::Strict => rule != Rule::TestRegistry,
-        Zone::Legacy => LEGACY_RULES.contains(&rule),
         Zone::Test => TEST_RULES.contains(&rule),
     }
 }

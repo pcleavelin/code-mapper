@@ -1,0 +1,130 @@
+codemap 8
+path xtask-source
+kind layer
+author ai
+group tooling
+note Rust sources as tree-sitter syntax trees, for archlint, the API lock and the words report. The walk takes every file under the root the way git sees it (ignore files honoured, hidden files included, .git, .jj, target and the cache skipped), and the Rust files under crates/ and xtask/ are what is linted. A SourceFile is its path, text, tree and zone. The helpers walk the tree without name resolution: everything a rule decides, it decides from syntax and the file's path.
+
+step 0npha0
+order 6
+parent v8sr91
+author ai
+file xtask/src/source.rs
+symbol nodes
+lines 0 21
+hash bfef485e26d9caba
+note Every node of the tree in pre-order: what every check iterates.
+
+step 4kxnyb
+order 9
+parent uus93t
+author ai
+file xtask/src/source.rs
+symbol attributes
+lines 0 12
+hash 291b46a144f9ab3b
+note The attributes before an item, skipping comments between them.
+
+step edyz8t
+order 1
+parent tzq7te
+author ai
+file xtask/src/source.rs
+symbol workspace_files
+lines 0 16
+hash 2084bc9d55cdfa3f
+note Every file of the workspace, sorted; also what the gate stamp hashes.
+
+step fr142w
+order 12
+author ai
+file xtask/src/source.rs
+symbol ancestors
+lines 0 8
+hash d0937e83cd2434b2
+note Every enclosing node, innermost first.
+
+step gnhsnn
+order 11
+author ai
+file xtask/src/source.rs
+symbol descendants
+lines 0 10
+hash fb507a621ad97ec5
+note Every node under a node, in order.
+
+step h229r4
+order 5
+parent w8w517
+author ai
+file xtask/src/source.rs
+symbol Zone
+lines 0 3
+hash a2d449c54d4773f2
+note Strict or test.
+
+step iohnvr
+order 3
+parent v8sr91
+author ai
+file xtask/src/source.rs
+symbol load
+lines 0 4
+hash be088a0eb21799c1
+note Reads a file under the root.
+
+step s1k7ps
+order 10
+author ai
+file xtask/src/source.rs
+symbol public
+lines 0 4
+hash 8f79d94f516052bb
+note Whether an item is pub (pub(crate) is not).
+
+step tzq7te
+order 0
+author ai
+file xtask/src/source.rs
+symbol rust_sources
+lines 0 10
+hash 37651fbe834d7524
+note Every .rs file under crates/ and xtask/.
+
+step uus93t
+order 8
+author ai
+file xtask/src/source.rs
+symbol in_test_code
+lines 0 10
+hash 1769dd65c14ed4bd
+note Whether a node is inside a #[cfg(test)] module or a #[test] function, found from the attributes before each enclosing module or function.
+
+step v8sr91
+order 2
+author ai
+file xtask/src/source.rs
+symbol SourceFile
+lines 0 5
+hash dc2307f65781b1ad
+note A parsed file: path, text, syntax tree, zone.
+
+step w8w517
+order 4
+parent iohnvr
+author ai
+file xtask/src/source.rs
+symbol parse
+lines 0 15
+hash d11a61c882ce46d8
+note Parses with tree-sitter-rust and sets the zone from the path.
+
+step wv2dlp
+order 7
+parent v8sr91
+author ai
+file xtask/src/source.rs
+symbol SourceText
+lines 0 0
+hash 90cdaa9b9863011a
+note The file's text; nodes are read from it by their byte range.

@@ -1,0 +1,36 @@
+codemap 8
+path feature-uncovered
+kind flow
+author ai
+group features/cli
+note uncovered [filter]: every symbol no current step overlaps, largest first, so the owner can audit what a session judged too trivial to map. The filter is a substring of the symbol's name or its file's path. Size is the ordering because a large uncovered symbol is more likely an omission than a small one.
+
+step 6r7994
+order 1
+parent vvnrjt
+author ai
+file crates/domain/src/map.rs
+symbol covers
+lines 0 5
+hash 285b67ff7daf1155
+link coverage
+note Covered means a non-stale step in the same file overlaps the symbol's lines; a stale step covers nothing.
+
+step nwhng3
+order 2
+parent vvnrjt
+author ai
+file crates/cli/src/wire.rs
+symbol uncovered_row
+lines 0 10
+hash c8adf9adcec4b962
+note 'file:start-end kind name (n lines)'.
+
+step vvnrjt
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol uncovered
+lines 0 20
+hash c7b8080a0d2b7354
+note Collects every matching symbol the map does not cover with its line count, sorts by size descending and prints them.

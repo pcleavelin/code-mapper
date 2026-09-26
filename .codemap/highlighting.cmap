@@ -5,88 +5,109 @@ author ai
 group index
 note Where syntax colours come from and where they are painted. tree-sitter does the colouring for every language regardless of which backend supplied the symbols: the grammar's own highlight query runs once per file during the parse, and its captures are bucketed into per-line byte spans with a small class byte. The spans are cached with the rest of the file, so nothing re-parses to draw. The second half of the path is the drawing side, shared by the path document, the listing and the graph nodes.
 
+step 1j2to9
+order 9
+parent jc79gh
+author ai
+file crates/ui/src/canvas.rs
+symbol grid
+lines 0 6
+hash a36f5a4b66abae6e
+note Records the grid as one draw-list command holding a shared reference, so a frame's draw list carries the cached grid instead of copying its cells.
+
 step acayn1
 order 8
 parent ymeigk
 author ai
-file src/gfx.rs
-symbol Glyphs
+file crates/ui/src/text.rs
+symbol Grid
 lines 0 4
-hash 5471c4826de3e949
-note The drawn form of a block of text: a row-major grid of (character, colour), NUL past a line's end. Built when the text or its colours change and drawn every frame without allocating.
+hash 8cbe0c23ef2ecf1b
+note The drawn form of a block of text: a row-major grid of optional (glyph, colour) cells, empty past a line's end. Built when the text or its colours change and drawn every frame without allocating.
+
+step bgkkko
+order 10
+parent uj81kd
+author ai
+file crates/domain/src/index/file.rs
+symbol Highlight
+lines 0 4
+hash 00135d5012bd4b6d
+note One span: a byte range within one line plus its class. A file keeps a sorted, non-overlapping list of them per line.
 
 step diqs80
 order 4
 parent mzy6zv
 author ai
-file src/gui/widgets.rs
-symbol hl_color
+file crates/gui/src/theme.rs
+symbol highlight
 lines 0 11
-hash 450c3c5f70a9143b
-note Class byte to colour. The palette lives here and nowhere else.
+hash bb52390fcaa6e828
+note Class to colour. The palette lives in theme and nowhere else, so the index and the cache store only the class.
 
 step jc79gh
 order 2
 author ai
-file src/gui/widgets.rs
+file crates/gui/src/widgets/code.rs
 symbol code_block
-lines 0 73
-hash 0fd7d1d58264ce86
-note The one code element in the GUI: a block of lines drawn from a cached grid by a custom element, with the hover, jump and peek gestures resolved to (line, column) from the pointer. Per-row backgrounds and bars come from two closures, so the listing's selection and anchor bars and the document's slice highlight all share it.
+lines 0 93
+hash a07e2aa176e811fd
+note The one code element in the GUI: a block of lines drawn from a cached grid by a custom element, with the hover, jump and peek gestures resolved to a (line, column) spot from the pointer. Per-row backgrounds and bars come from the two closures in Marks, so the listing's selection and anchor bars and the document's slice highlight all share it. Its sideways scroll is kept per block in the model.
 
 step k0lp9q
 order 0
 author ai
-file src/index/treesitter.rs
+file crates/index/src/parse.rs
 symbol highlight
-lines 0 40
-hash 225935de1d173cd8
-note Runs the grammar's bundled highlight query over the parsed tree and splits every capture into per-line spans. Captures can nest and overlap, so spans are sorted and the first one wins, which is the convention those queries are written to.
+lines 0 59
+hash 815db36b08c6bde0
+note Runs the grammar's bundled highlight query over the parsed tree and splits every capture into per-line byte spans, a capture over several lines becoming one span per line. Captures can nest and overlap, so each line's spans are sorted by start and a span that starts inside the one before it is dropped: the first one wins, which is the convention those queries are written to.
 
 step mzy6zv
 order 3
-parent jc79gh
+parent s9wyjd
 author ai
-file src/gui/widgets.rs
-symbol build_grid
-lines 0 25
-hash 94ce9697426ba1ea
-note The line's cached spans become one colour per character in a grid: the line number in the gutter, GUTTER columns of number and a space, then the text. Built once per (file text, range); every view of those lines shares the grid and drawing it allocates nothing.
+file crates/gui/src/grid.rs
+symbol build
+lines 0 53
+hash 22fe4a809cbcfb6f
+note The line's highlights become one colour per character in a grid: the line number right-aligned in GUTTER (six) columns of number and a space, then the text. Built once per (file text, range); every view of those lines shares the grid and drawing it allocates nothing.
 
 step oy9py2
 order 1
 parent k0lp9q
 author ai
-file src/index/treesitter.rs
-symbol class_of
-lines 0 13
-hash 457030dfdf5dd2f7
-note Collapses the grammar's capture names (dozens, and different per language) into the eight classes the renderer knows. Anything unrecognised is plain and is not stored at all.
+file crates/index/src/parse.rs
+symbol impl CaptureName<'_>
+lines 0 15
+hash 300ef75763e5f06d
+note Collapses the grammar's capture names (dozens, and different per language) into the eight classes the renderer knows, by the name's first dotted segment. Anything unrecognised is Plain and is not stored at all.
 
 step s9wyjd
 order 6
 parent jc79gh
 author ai
-file src/gui/widgets.rs
-symbol grid
-lines 0 11
-hash 06577bf23b0fa6e0
-note The cache: (file, text hash, first line, last line) to a shared grid, dropped whole on an index change or past 512 entries.
+file crates/gui/src/grid.rs
+symbol impl Grids
+lines 0 24
+hash 4ff14aa97a847d26
+note The cache: (file, text hash, first line, last line) to a shared grid, dropped whole past 512 entries and cleared on every index change.
 
 step uj81kd
 order 5
 author ai
-file src/index/mod.rs
-lines 93 102
-hash c83d99e6f3f146c6
-note The vocabulary: a span is a byte range in one line plus a class, and there are eight classes. Storing a class byte rather than a colour is what lets the cache outlive a theme change, and keeps the whole highlight table for a large file small.
+file crates/domain/src/index/file.rs
+symbol HighlightClass
+lines 0 9
+hash f089930f35c103d9
+note The vocabulary: eight classes. Storing a class rather than a colour is what lets the cache outlive a theme change and keeps the table for a large file small; the cache writes a class as its position in ALL. is_quoted marks the classes (strings, comments) that SourceFile::call_site does not count as code.
 
 step ymeigk
 order 7
-parent jc79gh
+parent 1j2to9
 author ai
-file src/gfx.rs
-symbol glyphs
-lines 0 24
-hash a09cecd03492b486
-note Draws a grid: one atlas quad per non-blank cell, rows outside the clip skipped, nothing allocated.
+file crates/platform/src/renderer.rs
+symbol grid
+lines 0 26
+hash 818a728ce388551a
+note Replays a Grid command from the draw list: one atlas quad per non-blank cell, rows outside the clip skipped, a row ending at its first empty cell, nothing allocated.

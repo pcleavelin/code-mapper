@@ -3,13 +3,42 @@ path notes
 kind flow
 author ai
 group cli
-note How later sessions find what earlier ones wrote. Path notes and step notes are the map's text; notes greps them the way grep greps source.
+note How later sessions find what earlier ones wrote. Path notes and step notes are the map's only prose about the code; notes greps them the way grep greps source, one output line per matching note line.
 
 step 09mgxo
+order 1
+author ai
+file crates/cli/src/exec.rs
+symbol notes
+lines 0 22
+hash e03c25d42f3b307d
+note Every path in map order: each line of its note that the regex matches, then each matching line of each step's note. A multi-line note is matched line by line, so one hit prints one line, not the whole note.
+
+step 85dhkk
+order 3
+parent 09mgxo
+author ai
+file crates/cli/src/wire.rs
+symbol step_note_line
+lines 0 14
+hash 08fe9760017ec26c
+note A step note hit: name[index] as paths numbers it, then file:line of the step's first line and the text, so the output parses like grep and the label pastes into step-note or note-edit.
+
+step q5khhg
 order 0
 author ai
-file src/cli.rs
-symbol exec
-lines 62 80
-hash ab4bbc3a6aa995e4
-note Each matching line of a note prints once, with the path name, and for step notes the step index and file:line, so the output parses like grep.
+file crates/cli/src/exec.rs
+symbol compile
+lines 0 2
+hash 80bda59028bcdcf4
+note The regex is compiled before anything is read; a bad one is Failure::Regex, which wire.rs prints with the regex crate's own message.
+
+step ws1kre
+order 2
+parent 09mgxo
+author ai
+file crates/cli/src/wire.rs
+symbol path_note_line
+lines 0 2
+hash 6dc6e1f777a28bc3
+note A path note hit: the path name, a colon, the line.

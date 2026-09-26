@@ -1,0 +1,157 @@
+codemap 8
+path cli-crate
+kind layer
+author ai
+group cli
+note The cli crate: the command-line boundary both front ends drive. Its surface is small: Invocation::parse turns arguments into a checked command, exec runs it against an Index and a Map and writes its report to an Output, and every failure comes back as a Failure value, never as text. All wording lives in wire.rs (the clap types, every output line, every error message); convert.rs turns clap's plain strings and numbers into domain values; exec.rs does the work through Map and Index methods. The crate never prints and never saves: the binary decides where an Output goes (Channel) and whether to save, the GUI shows it in its output panel. What it guarantees: the CLI and the GUI's command line accept the same commands, with the same help and the same errors, because both go through this one parse and exec.
+
+step 1229g4
+order 0
+author ai
+file crates/cli/src/lib.rs
+symbol Invocation
+lines 0 3
+hash d7a3560a081715bf
+note A parsed command line: the Feature it triggers and the Request exec will run. Only parse builds one, so exec never sees an unchecked argument; the Request stays private, so a front end cannot build or inspect one.
+
+step 1tw4li
+order 7
+author ai
+file crates/cli/src/output.rs
+symbol Output
+lines 0 0
+hash f4936890a62841db
+note The report a command writes: plain lines of text, collected in memory, so the binary can print it after the save and the GUI can append it to its log. The crate never writes to a stream itself.
+
+step 6d56tq
+order 8
+parent 1tw4li
+author ai
+file crates/cli/src/output.rs
+symbol line
+lines 0 3
+hash 4c255db1ef861b53
+note Appends one formatted line; a write into a String cannot fail.
+
+step 9ese5z
+order 2
+author ai
+file crates/cli/src/lib.rs
+symbol ParseFailure
+lines 0 0
+hash d2f96058fe10c05a
+note Why a command line was not accepted, holding clap's error. Help is one of these too: clap reports 'help' through the error path, and channel says it belongs on stdout.
+
+step a6lubs
+order 3
+parent 9ese5z
+author ai
+file crates/cli/src/lib.rs
+symbol text
+lines 0 2
+hash 23c1f22a7ad4eba9
+note clap's rendered text: the help, or the usage error with clap's hint.
+
+step aqapm9
+order 14
+author ai
+file crates/cli/src/lib.rs
+symbol notice
+lines 0 2
+hash e26e62f3425a949a
+note A language server's progress or absence as the one line the CLI prints on stderr, so the GUI and CLI word it the same.
+
+step d4k6f0
+order 1
+parent 1229g4
+author ai
+file crates/cli/src/lib.rs
+symbol feature
+lines 0 2
+hash d75a3b94765a50ba
+note The registry Feature behind the command, for a front end that wants to know what ran.
+
+step dwu6dx
+order 15
+author ai
+file crates/cli/src/lib.rs
+symbol symbol_label
+lines 0 2
+hash 6a670bf7d731dfed
+note name file:start-end, the one way a symbol is printed; the GUI's xrefs panel uses it too.
+
+step fjhiij
+order 13
+parent mv80e6
+author ai
+file crates/cli/src/lib.rs
+symbol map_failure
+lines 0 2
+hash f6e4fe02d9a51a86
+note Turns a MapError into a Failure for the GUI's status line; MapError::LinkedFrom's step ids become name[index] places the user can type.
+
+step h42fij
+order 11
+parent mv80e6
+author ai
+file crates/cli/src/failure.rs
+symbol StepPlace
+lines 0 3
+hash 52f08b6fdfd3731f
+note A step named as path and index, the form a failure prints it in (name[index]).
+
+step ise74j
+order 6
+author ai
+file crates/cli/src/lib.rs
+symbol Channel
+lines 0 3
+hash 5f65c940526f8dab
+note Where a piece of output belongs. The crate only names the channel; the binary writes to it and the GUI puts everything in its log.
+
+step l0qyi7
+order 4
+author ai
+file crates/cli/src/lib.rs
+symbol Argument
+lines 0 0
+hash e8290381a7b33785
+note One command-line argument as the shell or CommandLine produced it.
+
+step lke0bi
+order 12
+parent mv80e6
+author ai
+file crates/cli/src/failure.rs
+symbol Candidate
+lines 0 3
+hash c3daabf4d1794d85
+note One match of an ambiguous symbol: the shortest query that selects it alone, and its name file:start-end label.
+
+step mv80e6
+order 10
+author ai
+file crates/cli/src/failure.rs
+symbol Failure
+lines 0 35
+hash ea78ce7ca792f01c
+note Every way a command can fail, as data: exec returns one and wire.rs's Display words it, so the message text lives in one file and tests can match the variant. Map wraps the domain's MapError; Load, Save and Parse wrap io-map's errors; the rest are the CLI's own refusals (no such path, step, file or symbol, an ambiguous symbol with its candidates, a line range or parent out of bounds, a bad regex, no repository, stale steps for check).
+
+step pmp2cg
+order 9
+parent 1tw4li
+author ai
+file crates/cli/src/output.rs
+symbol write_line
+lines 0 4
+hash cf3f8d5b821b0e24
+note write_line!(output, ...) is the one way wire.rs writes a line, format! syntax into Output::line.
+
+step tfqr9t
+order 5
+author ai
+file crates/cli/src/lib.rs
+symbol CommandLine
+lines 0 0
+hash a33be9b20a32264f
+note A line typed into the GUI's command field; arguments splits it the way a shell would, quotes included.

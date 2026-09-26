@@ -1,0 +1,92 @@
+codemap 8
+path io-source
+kind layer
+author ai
+group index
+note The io-source crate: reading the source tree. walk lists and reads every text file under the root the way design section 7 says (the ignore crate, so .gitignore and hidden directories are respected even outside a git repo; files over 4 MiB or with a NUL byte in their first 1 KiB skipped as binary), and every text it hands out is a Contents, tab-expanded once so display, hashing and columns agree. It also carries each file's modification time, which the GUI's watcher thread polls to notice an edit. It reads and never writes.
+
+step 07qd72
+order 7
+parent w3pgga
+author ai
+file crates/io-source/src/lib.rs
+symbol impl Stamps
+lines 0 14
+hash f1f56343ebb4b7c7
+note changed is the watcher's test: any recorded file whose modification time differs, or that is gone. A file added since the walk is not noticed until the next rebuild.
+
+step 0bb9ws
+order 3
+author ai
+file crates/io-source/src/lib.rs
+symbol Contents
+lines 0 0
+hash 48ff56ad62adef08
+note A file's text with every tab expanded to four spaces. Everything the index knows about a file is derived from this form: its lines (FileText), its hash (FNV-1a over these bytes) and the tree-sitter parse.
+
+step 181qri
+order 2
+parent deih22
+author ai
+file crates/io-source/src/lib.rs
+symbol impl ByteCount
+lines 0 8
+hash 89d79caef37921b1
+note The binary test: bigger than 4 MiB, or a NUL byte in the first 1 KiB.
+
+step 1v44s6
+order 8
+parent w3pgga
+author ai
+file crates/io-source/src/lib.rs
+symbol impl Modified
+lines 0 7
+hash 1822d740905662c4
+note A file's modification time, None when it cannot be read.
+
+step deih22
+order 0
+author ai
+file crates/io-source/src/lib.rs
+symbol walk
+lines 0 28
+hash e54f5deeb7ed51a0
+note Every text file under the root, in walk order, with its path relative to the root, its contents and its modification time. A file that cannot be read is left out without a word.
+
+step duf2s4
+order 4
+parent 0bb9ws
+author ai
+file crates/io-source/src/lib.rs
+symbol impl Contents
+lines 0 20
+hash 694b4bf82cd6ebb3
+note new expands tabs, of_bytes reads raw bytes as lossy UTF-8 first; text splits into the domain's FileText and hash keys the cache.
+
+step w3pgga
+order 6
+author ai
+file crates/io-source/src/lib.rs
+symbol Stamp
+lines 0 3
+hash cdc09748b6049515
+note A walked file's path and modification time, recorded at build so the GUI can tell when the tree changed under it.
+
+step wapjxi
+order 5
+author ai
+file crates/io-source/src/lib.rs
+symbol read_outside
+lines 0 2
+hash ddef957fdd9018b4
+note A file outside the root read the same way (empty when unreadable): what the GUI's peek shows for a definition in std or a dependency.
+
+step z0kx5f
+order 1
+parent deih22
+author ai
+file crates/io-source/src/lib.rs
+symbol SourceRead
+lines 0 4
+hash 626b9a7b7f0879d0
+note One file as the walk read it.

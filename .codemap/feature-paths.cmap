@@ -1,0 +1,77 @@
+codemap 8
+path feature-paths
+kind flow
+author ai
+group features/cli
+note paths [name]: the map as an outline. Without a name, every path in paths-list order, each group announced by a '== group' header line, then the path's row (name, kind, author, step count, note) and its steps in tree order, indented by depth. With a name, only that path and no group header. Each step row carries its index in square brackets, which is the number every step-editing command takes, a leading ! when the step is stale, (ai) for agent-authored steps and an arrow for a link. This is the agent's first command in an area: it shows what is already named before any code is read.
+
+step 3v5t8t
+order 3
+parent 8leao4
+author ai
+file crates/cli/src/wire.rs
+symbol group_header
+lines 0 6
+hash 1f147dfc0eb6c688
+note '== <group>' or '== (top level)' before the first path of each group.
+
+step 8leao4
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol paths
+lines 0 29
+hash 9e129062a9ee6c33
+note Picks the paths to list, then prints a group header whenever the group changes (only in the full listing), the path row, and one row per step in tree order.
+
+step q676v4
+order 5
+parent 8leao4
+author ai
+file crates/domain/src/map/path.rs
+symbol tree_order
+lines 0 2
+hash a9319993b959f3e0
+link path-tree
+note Depth-first order of the steps with each one's depth, the order the outline is printed in.
+
+step sfll1s
+order 1
+parent 8leao4
+author ai
+file crates/cli/src/exec.rs
+symbol find_path
+lines 0 5
+hash 63e1a3b28d250aa6
+note With a name, the path must exist; the error names what was typed.
+
+step uag5h3
+order 4
+parent 8leao4
+author ai
+file crates/cli/src/wire.rs
+symbol path_row
+lines 0 11
+hash 41f351d9e84b379d
+note One line per path: name, [kind], (ai), step count and the path note.
+
+step vfy10q
+order 6
+parent 8leao4
+author ai
+file crates/cli/src/wire.rs
+symbol step_row
+lines 0 19
+hash 6f4ca5d790298cae
+note One line per step: index, stale mark, file:start-end, symbol, author, link arrow and the step note.
+
+step vkhxth
+order 2
+parent 8leao4
+author ai
+file crates/domain/src/map.rs
+symbol rows
+lines 0 5
+hash 1d26d10d5a0a358b
+link path-groups
+note The full listing's order: groups nested and sorted, paths inside them; group rows are skipped here, groups print as headers instead.

@@ -16,6 +16,17 @@ pub use crate::error::{
     Fault, FieldKey, FieldValue, MapLoadError, MapSaveError, Origin, ParseError,
 };
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct MapVersion(&'static str);
+
+impl MapVersion {
+    pub const CURRENT: Self = Self(wire::VERSION);
+
+    pub const fn as_str(self) -> &'static str {
+        self.0
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MapText(String);
 

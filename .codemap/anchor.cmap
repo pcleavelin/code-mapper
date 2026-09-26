@@ -7,58 +7,139 @@ note The unit a step is pinned with. An anchor is a slice of lines in one file, 
 
 step 4n20pa
 order 1
-parent 9o0i08
+parent rw3k8b
 author ai
-file src/map.rs
-symbol new
-lines 0 31
-hash 7909252712c41373
-note Creating an anchor records the author it is given and picks the innermost symbol whose range contains the slice and stores offsets from that symbol's first line. With no containing symbol the offsets are absolute and the anchor is as fragile as a line number, which is why whole-symbol steps are preferred.
+file crates/domain/src/map/step.rs
+symbol at
+lines 0 11
+hash 2df24a0608d7189e
+note Creating an anchor from a span of a SourceFile picks the innermost symbol whose range contains the span and stores offsets from that symbol's first line. With no containing symbol the offsets are absolute and the anchor is as fragile as a line number, which is why whole-symbol steps are preferred. None when the span runs past the file's text.
+
+step 6fd53q
+order 9
+parent qgd8vy
+author ai
+file crates/domain/src/map/step.rs
+symbol resolve
+lines 0 7
+hash d66fe2103412ed7f
+note Stores what Anchor::resolve found. With nothing found the step turns stale and loses its symbol but keeps its previous span, so a step that was on screen stays where the reader saw it.
 
 step 9o0i08
 order 0
+parent gudtxh
 author ai
-file src/map.rs
+file crates/domain/src/map/step.rs
 symbol Anchor
-lines 0 17
-hash efc17902f6b48808
-note The stored half is the id, the order, file, symbol, the two offsets and the hash, plus the note, the author, the parent that makes a path a tree, and the link to another path. The id is set once when the step is made and is how the file names a parent and how diff matches a step; order places it in the step list, ordering siblings the code does not, and is set once to one past the highest in the path, after which only a swap changes it. An empty symbol means the offsets are absolute lines; an empty link means none. line_start, line_end, stale and sym (the index of the resolved symbol in its file's symbol list) are filled in per session by resolve and never written to disk.
+lines 0 6
+hash df5fa4aea8678143
+note What is stored of a pin: the file, the name of the enclosing symbol (none means the offsets are absolute lines), the start and end offsets from that symbol's first line, and the hash of the slice. It is the part of a Step the .cmap file writes as file, symbol, lines and hash, and the part diff compares to call a step re-pinned.
+
+step aastm2
+order 12
+parent rw3k8b
+author ai
+file crates/domain/src/map.rs
+symbol Pinned
+lines 0 3
+hash 46e91be3ad8a06bc
+note The pair pin_span returns: the anchor and its resolution.
+
+step gudtxh
+order 6
+author ai
+file crates/domain/src/map/step.rs
+symbol Step
+lines 0 9
+hash b4a08968ee1fed87
+note A step: the anchor plus what the path hangs on it. The id is set once when the step is made and is how the file names a parent and how diff matches a step; order places it in the step list, ordering siblings the code does not; parent (an id, none for a root) makes the path a tree; then the author, the note and the link to another path. resolution is filled in per session by resolve and never written to disk. Fields change only through the Map's methods.
 
 step lp72jd
 order 5
+parent gudtxh
 author ai
-file src/map.rs
-symbol fresh_id
-lines 0 14
-hash dd09b18117fc6989
-note A step's id: six base36 digits of a hash of what the step pins, its path and its parent, moved past ids the path already holds. The digits spread new steps across the file, and two branches that add the same step add the same id and the same lines.
+file crates/domain/src/map/step.rs
+symbol fresh
+lines 0 20
+hash 55fbe87745c3f9f8
+note A step's id: six base36 digits of an FNV-1a hash of a seed, moved past ids the path already holds by hashing again with a counter. add_step seeds it with the path name, file, symbol, offsets and parent id. The digits spread new steps across the file, and two branches that add the same step add the same id and the same lines.
+
+step mlyhhl
+order 11
+parent o7j2ro
+author ai
+file crates/domain/src/map/step.rs
+symbol impl Default for Resolution
+lines 0 8
+hash 8a8848d69dce5663
+note A step read from disk starts Stale on line 0: stale until resolve proves it current.
 
 step nymh46
 order 3
-parent 9o0i08
+parent 6fd53q
 author ai
-file src/map.rs
+file crates/domain/src/map/step.rs
 symbol resolve
-lines 0 40
-hash ea2962bfa7b9eda7
-note The other direction, run on every load: find the file, find the symbol by name, add the offsets, bounds-check, rehash. Stale until proven current. A slice that resolved but changed keeps its lines so the reader can still see where the step was; a missing file or symbol leaves nothing to show.
+lines 0 43
+hash 3c91deb0e105ad98
+note The other direction, run on every load: find the file in the Index, find every symbol of the stored name, add the offsets, bounds-check, rehash. Several symbols in one file can share a name; the first whose text hashes right wins, else the first whose offsets fit. None when the file is not indexed or no candidate's offsets fit.
+
+step o7j2ro
+order 7
+parent gudtxh
+author ai
+file crates/domain/src/map/step.rs
+symbol Resolution
+lines 0 4
+hash 32ffb89de63b03fe
+note What resolving found this session: the span the anchor lands on, its freshness and the resolved symbol's id. The symbol id is what coverage, promote and the GUI's graph use to tie a step to the index.
 
 step qgd8vy
 order 4
-parent nymh46
+parent gudtxh
 author ai
-file src/map.rs
+file crates/domain/src/map.rs
 symbol resolve_all
 lines 0 6
-hash 1a4ef7f2b6456525
-note Resolving the whole map at once. Called after loading, after a re-index and after a server answer, because symbol line numbers move under the map without the map changing.
+hash 2e52fa18036fc118
+note Resolving the whole map at once. Called after loading (the CLI and the GUI's start), after a re-index and after a server answer, because symbol line numbers move under the map without the map changing.
+
+step rw3k8b
+order 8
+parent 9o0i08
+author ai
+file crates/domain/src/map.rs
+symbol pin_span
+lines 0 14
+hash eb22d48f99f68183
+note Where add_step, pin and promote make an anchor: the Anchor for the span, and a Resolution that is Current from birth with the innermost symbol's id, so a fresh step needs no resolve. NoSuchFile or OutsideFile when the span has nowhere to go.
+
+step ulbmhn
+order 10
+parent o7j2ro
+author ai
+file crates/domain/src/map/step.rs
+symbol Freshness
+lines 0 3
+hash 3a8964a19ad12152
+note Current when the slice's text hashes to the stored hash, Stale otherwise. A stale step is red everywhere, covers nothing, and fails check.
 
 step uy881r
 order 2
 parent 4n20pa
 author ai
-file src/map.rs
-symbol slice_hash
+file crates/domain/src/text.rs
+symbol of_lines
 lines 0 6
-hash fa8dc27f8f3eb9f0
-note The text fingerprint: FNV-1a over the anchored lines joined with newlines. Cheap, not cryptographic, and the only thing that decides whether a step still describes the code it points at.
+hash 5e71b90b38c53773
+note The text fingerprint: FNV-1a over the anchored lines, each followed by a newline. Cheap, not cryptographic, and the only thing that decides whether a step still describes the code it points at. FileText::hash applies it to a span of a file.
+
+step y2ku35
+order 13
+parent lp72jd
+author ai
+file crates/domain/src/map/step.rs
+symbol new
+lines 0 6
+hash 94769c72c3c8801f
+note The check a stored id passes on the way in: exactly six characters, each a digit or a lowercase ASCII letter.

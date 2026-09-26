@@ -26,6 +26,11 @@ This is the order that gets it green in one pass.
       gets its own path; link to it with `step-link`.
    5. A new user-facing function has its `features/` path (see `add-feature`).
    6. `check` must print nothing.
+   7. After a merge, a conflict in the map sits in `.codemap/<path>.cmap` like any other; resolve
+      it in the file (the edit guard allows a file with conflict markers); `check` refuses to
+      read the map until no conflict is left.
+   8. `uncovered <crate dir>` for the crates you touched lists only what you judge trivial;
+      the owner audits that judgement.
 3. `cargo xtask api` if a library crate's public items changed, and include the `api/` diff.
 4. If the change was meant to alter output, rebless: `CODEMAP_BLESS=1 cargo test --release
    --test cli` (and `--test gui` for GUI output), and read the golden diff before committing

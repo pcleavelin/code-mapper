@@ -1,0 +1,92 @@
+codemap 8
+path ui-text
+kind type
+author ai
+group render
+note Text as the tree and the canvas carry it. A Label is an owned string measured in characters, because one monospace font makes a width a character count. A Run is a Label in one colour, and a Text element is a vector of runs at one font size, either on one line or wrapped at words to the element's width (only the first run's text and colour are used when wrapping). A Grid is a block of cells, each a glyph and a colour, built once per view and shared by Rc into the draw list, which is how a whole file of highlighted code is drawn without a text run per token.
+
+step 3s7j3q
+order 8
+parent y0yzxo
+author ai
+file crates/ui/src/text.rs
+symbol row
+lines 0 6
+hash 95de71b12e890761
+note One row's cells, in order, for the renderer to walk.
+
+step 63f6mi
+order 2
+author ai
+file crates/ui/src/text.rs
+symbol Run
+lines 0 3
+hash b733b1434c8b09f7
+note The unit of colour: a syntax-coloured line is a vector of these.
+
+step 7jbn9o
+order 3
+author ai
+file crates/ui/src/text.rs
+symbol Text
+lines 0 4
+hash 8ab6c3301decc48b
+note Text in one font size: coloured runs on one line, or one run wrapped to the element's width. A run is the unit of colour, which is why a syntax-coloured line is a vector of them.
+
+step b506p9
+order 1
+parent wncz7k
+author ai
+file crates/ui/src/text.rs
+symbol columns
+lines 0 2
+hash 5ff5ade025b9e34b
+note Width in cells: the character count, not the byte count.
+
+step cq2jpi
+order 7
+parent y0yzxo
+author ai
+file crates/ui/src/text.rs
+symbol set
+lines 0 9
+hash c51dd03a569c860c
+note Writes one cell, ignoring a position outside the grid.
+
+step kxizx8
+order 4
+parent 7jbn9o
+author ai
+file crates/ui/src/text.rs
+symbol Wrap
+lines 0 3
+hash 7aae30a6ebffcd48
+note None keeps the text on one line and makes it as wide as its characters; Words wraps it to whatever width layout gives it and makes it as tall as its lines.
+
+step wncz7k
+order 0
+author ai
+file crates/ui/src/text.rs
+symbol Label
+lines 0 0
+hash 0792616368e72036
+note An owned string of display text. Its wrap is covered in ui-tree, where the wrap pass calls it.
+
+step y0yzxo
+order 5
+author ai
+file crates/ui/src/text.rs
+symbol Grid
+lines 0 4
+hash 8cbe0c23ef2ecf1b
+note Columns by rows of optional cells in one vector; an absent cell ends its row when drawn, so a short line costs nothing past its end.
+
+step y1roy1
+order 6
+parent y0yzxo
+author ai
+file crates/ui/src/text.rs
+symbol Cell
+lines 0 3
+hash ea181e19a5c6c5c9
+note One glyph in one colour.

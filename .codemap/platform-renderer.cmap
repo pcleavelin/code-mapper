@@ -1,0 +1,534 @@
+codemap 8
+path platform-renderer
+kind layer
+author ai
+group render
+note The GPU side, the platform crate's Renderer: it replays the ui crate's DrawList (see ui-canvas) with one wgpu pipeline that draws everything the app ever draws as textured, coloured triangles out of a single atlas. The atlas holds every glyph at every pixel size in use, rasterised on demand by fontdue from the bundled font, plus a white patch in the corner that solid fills sample - which is why a rectangle, a line, a disc and a run of text are all the same draw call with the same shader. Positions are whole physical pixels and the sampler is nearest, so text is never scaled or sampled between pixels; a different zoom is a different font size, not a transform. Clipping is a scissor rectangle: every Clip command in the list starts a new batch, so a deeply nested tree is still one vertex buffer and a handful of draw calls. The Renderer is also the Measure the tree lays out with, so layout and drawing agree on every cell size. Nothing it does can fail the frame: a lost surface is reconfigured and the frame skipped, a failed screenshot is reported on stderr.
+
+step 0fd3co
+order 16
+parent 0q1h08
+author ai
+file crates/platform/src/renderer.rs
+symbol begin
+lines 0 5
+hash ee49cddb4fca7c41
+note Start of a replay: clear the geometry and batches and reset the clip to the whole window.
+
+step 0q1h08
+order 14
+parent pqukys
+author ai
+file crates/platform/src/renderer.rs
+symbol record
+lines 0 27
+hash 6abb2d091420c486
+note Replays the DrawList into vertices, indices and batches: begin, then one arm per Command. A Clip sets the current clip and cuts a new batch; Fill, Quad and Circle sample the white patch; Text and Grid place glyphs. The list already holds absolute clips and pre-built quads, so nothing here keeps a stack or does geometry beyond placing corners.
+
+step 1tw55c
+order 4
+parent 6my0c1
+author ai
+file crates/platform/src/gpu.rs
+symbol atlas_texture
+lines 0 11
+hash 03bdb8b217db9c4c
+note The atlas texture: one byte per texel, sampled as the red channel. Made again whenever the atlas grows.
+
+step 28wxi1
+order 50
+parent pqukys
+author ai
+file crates/platform/src/present.rs
+symbol read_back
+lines 0 58
+hash ee0c09da005c7cbe
+note The screenshot path: copy the frame to a buffer with rows padded to a multiple of 256 bytes as the API demands, block until the GPU is done, and write a PNG through io-store. It is the only blocking call in the renderer and it only runs when the app asked for a shot; a failure is printed, never raised.
+
+step 2o6q38
+order 47
+parent rfhh3z
+author ai
+file crates/platform/src/renderer.rs
+symbol Indices
+lines 0 0
+hash 2e2050bf4cc7538e
+note The index list, with the two shapes it is ever extended by: a quad's two triangles and a fan's triangles around a centre.
+
+step 3pfwxr
+order 33
+parent ont7tk
+author ai
+file crates/platform/src/renderer.rs
+symbol cell
+lines 0 2
+hash 26200c7bb8eb5d8b
+note The renderer's side of ui's Measure: the font's cell at a size. It is the whole interface between the two, which is why the tree can be laid out in a test with no GPU.
+
+step 5rmfwl
+order 41
+parent hgnmib
+author ai
+file crates/platform/src/font.rs
+symbol BUNDLED
+lines 0 0
+hash 9ad7c3503b4d527e
+note Hack Regular, compiled into the binary, so the tool looks the same everywhere and never searches the system for a font.
+
+step 648zwu
+order 29
+parent kb5kef
+author ai
+file crates/platform/src/gpu.rs
+symbol bytes_of
+lines 0 2
+hash 446707d4d905e816
+note Plain data as bytes for the buffer writes. The one unsafe block in the renderer, and it is what lets the vertex type stay a plain struct with no derive and no dependency.
+
+step 6cx7dp
+order 54
+author ai
+file crates/platform/src/font.rs
+symbol Font
+lines 0 3
+hash cec75b25cdfa2b19
+note The font: the parsed face and the metrics memoised per pixel size.
+
+step 6my0c1
+order 1
+parent ont7tk
+author ai
+file crates/platform/src/renderer.rs
+symbol new
+lines 0 78
+hash 7ab02f646103e6f7
+note One-time setup, run when the window exists: adapter, device, surface, pipeline, sampler, uniforms, atlas and font. The surface is deliberately configured to a non-sRGB format when one is offered, because the colours in the app are already sRGB and a sRGB target would convert them twice; COPY_SRC is added so a frame can be read back as a screenshot. The sampler is nearest in both directions. Every failure is a StartError, which the loop returns instead of panicking.
+
+step 7q87vj
+order 5
+parent 6my0c1
+author ai
+file crates/platform/src/gpu.rs
+symbol bind_group
+lines 0 26
+hash 73a506949ec0bddd
+note Uniforms, atlas view and sampler in one group. Made again with the texture, which is the only reason the layout and the sampler are kept on the renderer.
+
+step 7rsc72
+order 43
+parent gfeljd
+author ai
+file crates/platform/src/atlas.rs
+symbol area
+lines 0 13
+hash fa23a3c553ed7e9f
+note A sprite's texture coordinates, its corners divided by the atlas side.
+
+step 82ju6u
+order 12
+parent mabgun
+author ai
+file crates/platform/src/renderer.rs
+symbol sprite
+lines 0 26
+hash fdced9da7f13b92e
+note A glyph's sprite, rasterised on first use and cached: the font produces coverage, a shelf slot is allocated, the rows are copied in and the atlas is marked for upload. A glyph with no pixels is cached as Blank. When no slot is left, the atlas grows and the glyph is tried again.
+
+step 8e8wzz
+order 42
+parent gfeljd
+author ai
+file crates/platform/src/atlas.rs
+symbol blit
+lines 0 7
+hash 350870f678d0c742
+note Copies a glyph's rows into the atlas bytes at its slot and marks the atlas for upload.
+
+step 8y1r22
+order 3
+parent 6my0c1
+author ai
+file crates/platform/src/gpu.rs
+symbol Vertex
+lines 0 4
+hash 7074c7e68ad82096
+note Position, atlas coordinate and colour, laid out C-style to match the attribute layout the pipeline declares: two float pairs and four colour bytes read as normalised floats, so no conversion happens on the CPU.
+
+step 91wjow
+order 37
+parent 6my0c1
+author ai
+file crates/platform/src/gpu.rs
+symbol block_on
+lines 0 8
+hash db8cae61491aaf09
+note Runs a future to completion on this thread for the adapter and device requests. On native backends they are ready at the first poll, so a loop with a no-op waker is all the executor this needs and no async runtime is pulled in.
+
+step 98shf0
+order 17
+parent n1u4cy
+author ai
+file crates/platform/src/renderer.rs
+symbol Batch
+lines 0 4
+hash 8c018f8c8eb49887
+note One scissor rectangle and the index range start..end drawn under it. The render pass walks these and draws a slice of the one index buffer per batch.
+
+step ai01lp
+order 44
+parent 6cx7dp
+author ai
+file crates/platform/src/font.rs
+symbol rasterize
+lines 0 9
+hash 46ccc1de109b3627
+note One glyph's coverage bitmap at a size, with its size in texels and its offset from pen and baseline.
+
+step d8z3s3
+order 11
+parent fuieq8
+author ai
+file crates/platform/src/font.rs
+symbol Metrics
+lines 0 3
+hash d88972bb1cc3250c
+note The numbers every layout and every draw is expressed in: the cell as an Extent and the ascent.
+
+step dhz0a9
+order 28
+parent pqukys
+author ai
+file crates/platform/src/present.rs
+symbol upload_atlas
+lines 0 21
+hash dfddc63505ada76b
+note Writes the atlas bytes to the texture when a glyph was added since the last upload, and only then.
+
+step esltbr
+order 38
+parent kb5kef
+author ai
+file crates/platform/src/gpu.rs
+symbol fit
+lines 0 20
+hash de42fe56321396aa
+note Makes a vertex or index buffer hold this frame's bytes: kept while it is big enough, otherwise replaced by a power of two of at least 64 KiB, so it is replaced rarely and a steady frame allocates nothing on the GPU.
+
+step fuieq8
+order 10
+parent 6cx7dp
+author ai
+file crates/platform/src/font.rs
+symbol metrics
+lines 0 22
+hash 11ad864a3017619b
+note Cell width (the advance of M), row height (ascent minus descent plus line gap) and ascent at one pixel size, memoised. Everything is rounded to whole pixels here and nowhere else, which is what makes rows and columns tile exactly.
+
+step gcu80b
+order 21
+parent 0q1h08
+author ai
+file crates/platform/src/renderer.rs
+symbol fill
+lines 0 10
+hash 926fd1ecb4a3f445
+note A filled rectangle: its two corners become a quad on the white patch. An empty rectangle or a transparent colour adds nothing.
+
+step gfeljd
+order 7
+parent ont7tk
+author ai
+file crates/platform/src/atlas.rs
+symbol Atlas
+lines 0 6
+hash 5a9b650dd84e9970
+note The atlas: a square side, the coverage bytes in main memory, a shelf allocator's cursor, whether the bytes still need uploading, and every glyph that has been rasterised keyed by (pixel size, glyph). A glyph that rasterises to nothing is remembered as Blank so a space is not rasterised again forever.
+
+step ggdzkj
+order 36
+parent rfhh3z
+author ai
+file crates/platform/src/renderer.rs
+symbol extend_batch
+lines 0 8
+hash ae480109b1280934
+note Moves the current batch's end past every index pushed so far, opening a batch first when there is none. quad and circle both finish through it, so a primitive's geometry always lands under the clip that was current when it was drawn.
+
+step gte9tj
+order 13
+parent 82ju6u
+author ai
+file crates/platform/src/renderer.rs
+symbol grow_atlas
+lines 0 10
+hash a56d7746e039a342
+note A full atlas doubles, up to a cap, and everything is rasterised again on demand rather than being copied - it happens once or twice in a session. At the cap it starts over empty at the same size instead of refusing to draw text. The texture and bind group are made again to match.
+
+step hgnmib
+order 40
+parent 6my0c1
+author ai
+file crates/platform/src/font.rs
+symbol load
+lines 0 7
+hash 06f0c0aa340a851f
+note The font face, parsed from the bundled bytes; a parse failure is a StartError.
+
+step hmokb5
+order 57
+parent gfeljd
+author ai
+file crates/platform/src/atlas.rs
+symbol Entry
+lines 0 3
+hash 08009e63573366a8
+note What the atlas remembers for a (size, glyph): Blank for a glyph with no pixels, or where it was placed.
+
+step i56hs1
+order 53
+parent ont7tk
+author ai
+file crates/platform/src/renderer.rs
+symbol shoot
+lines 0 2
+hash b006fe49eb1a9b81
+note Asks for the next presented frame to be read back and written to this file.
+
+step kb5kef
+order 48
+parent pqukys
+author ai
+file crates/platform/src/present.rs
+symbol upload_geometry
+lines 0 34
+hash 0bbb67f927edbe2e
+note Writes the screen size into the uniform, then the geometry into the vertex and index buffers, growing them first when this frame's bytes do not fit.
+
+step lbhh7l
+order 25
+parent 0q1h08
+author ai
+file crates/platform/src/renderer.rs
+symbol circle
+lines 0 24
+hash 6a8b972e147e9350
+note A twelve-sided fan around the centre, all on the white patch, used for the dot at the end of a graph edge.
+
+step m8d9hc
+order 6
+parent 6my0c1
+author ai
+file crates/platform/src/atlas.rs
+symbol new
+lines 0 17
+hash ef07ba874e596df8
+note A fresh atlas starts with a 4x4 white block in the corner and the shelf cursor past it, so every solid fill has something to sample and the one-texel margin keeps filtering from reaching a neighbouring glyph. It starts marked for upload.
+
+step mabgun
+order 34
+parent wjc7z8
+author ai
+file crates/platform/src/renderer.rs
+symbol put
+lines 0 13
+hash df5c98162abc4eb4
+note One glyph quad from the atlas at a pen and baseline, offset by the sprite's placement; text and grid both go through it.
+
+step mbt7sf
+order 39
+parent 6my0c1
+author ai
+file crates/platform/src/gpu.rs
+symbol new
+lines 0 61
+hash 7c2606ca5f1deb8e
+note The pipeline: the shader, a bind group layout of uniforms, texture and sampler, the vertex layout above, and alpha blending onto the surface format. No depth, no multisampling.
+
+step mdbfne
+order 20
+parent rfhh3z
+author ai
+file crates/platform/src/atlas.rs
+symbol white
+lines 0 6
+hash 8e1dc4df15c47922
+note The texture coordinates of the white patch, a texel inside its edges. Sampling it is how a solid fill comes out of a texture pipeline unchanged.
+
+step merqzi
+order 8
+parent gfeljd
+author ai
+file crates/platform/src/atlas.rs
+symbol Sprite
+lines 0 5
+hash 34a25bf6c30b43de
+note Where a glyph's bitmap sits in the atlas and how it hangs off the pen: the offset is what turns a monospace cell into a correctly placed glyph without measuring anything at draw time - its horizontal part is the bitmap's left edge relative to the pen, its vertical part the bitmap's top relative to the baseline.
+
+step mgthha
+order 58
+parent esltbr
+author ai
+file crates/platform/src/gpu.rs
+symbol GpuBuffer
+lines 0 3
+hash efd223eb2102ac85
+note A GPU buffer and the bytes it can hold, kept on the renderer between frames.
+
+step n1u4cy
+order 19
+parent 0q1h08
+author ai
+file crates/platform/src/renderer.rs
+symbol cut
+lines 0 11
+hash ef5219c7bb44e0d8
+note Starts a new batch at the current clip. A batch is reused only while it holds no indices: after an element's quads land in it, a clip change must open a new one, or later quads would be drawn under the wrong scissor.
+
+step nimce5
+order 30
+parent ont7tk
+author ai
+file crates/platform/src/renderer.rs
+symbol resize
+lines 0 8
+hash 61d86c98dd306d60
+note Reconfigure the surface at the new size. A zero dimension is ignored, which is what a minimised window reports.
+
+step o1urch
+order 2
+parent 6my0c1
+author ai
+file crates/platform/src/gpu.rs
+symbol SHADER
+lines 0 23
+hash c8ac49ed2522faf0
+note The whole shader. The vertex stage maps pixels to clip space against the screen size in the uniform, and the fragment stage multiplies the vertex colour's alpha by the atlas's single red channel - so a glyph is coverage and a solid quad samples the white patch and comes out unchanged.
+
+step ont7tk
+order 0
+author ai
+file crates/platform/src/renderer.rs
+symbol Renderer
+lines 0 22
+hash d040115efb473113
+note The context: the window, surface, device and queue, the pipeline and its bind group, the sampler, uniform buffer and atlas texture, the vertex and index buffers kept between frames, the font and the atlas, and the three vectors a frame is replayed into - vertices, indices and the batches that slice them - with the clip current while replaying. size and scale are the window's; the app calls shoot to have the next frame also written to a PNG. Reused buffers hang off it so a steady frame allocates nothing on the GPU.
+
+step opwule
+order 9
+parent gfeljd
+author ai
+file crates/platform/src/atlas.rs
+symbol allocate
+lines 0 18
+hash 9324af42f45c68e6
+note Shelf allocation: fill a row left to right, start a new row when it does not fit, fail when the atlas is full. Every slot is one texel wider and taller than asked, a margin so filtering never bleeds into a neighbour. No packing, no freeing - a glyph is never evicted, and the whole atlas is thrown away instead when it fills.
+
+step p1lo30
+order 45
+parent ai01lp
+author ai
+file crates/platform/src/font.rs
+symbol Raster
+lines 0 5
+hash fdb4473c566421d6
+note A rasterised glyph before it has a place in the atlas.
+
+step pb8o0k
+order 55
+parent mbt7sf
+author ai
+file crates/platform/src/gpu.rs
+symbol bind_layout
+lines 0 32
+hash 78a5cfd70970dd9f
+note Binding 0 the uniform with the screen size for the vertex stage, 1 the atlas texture and 2 its sampler for the fragment stage.
+
+step pqukys
+order 27
+parent ont7tk
+author ai
+file crates/platform/src/present.rs
+symbol render
+lines 0 23
+hash 3d37249bd2a16f12
+note Present one frame, called by the loop with the app's DrawList and clear colour: replay the list, then take the surface texture (a lost or outdated surface is reconfigured and the frame skipped rather than failing), upload the atlas if it changed and the geometry, encode the one render pass, and submit - through the screenshot path when a shot was asked for - then present.
+
+step q7j9e0
+order 56
+parent gfeljd
+author ai
+file crates/platform/src/atlas.rs
+symbol Texel
+lines 0 0
+hash 89216823fe8e9e05
+note A count of atlas texels, the unit of the atlas's side, slots and bitmaps, kept apart from screen pixels.
+
+step r6lf42
+order 59
+parent lbhh7l
+author ai
+file crates/platform/src/renderer.rs
+symbol fan
+lines 0 9
+hash c34e9f7ed7e22c69
+note A fan's triangles: centre, then each rim point and the next, wrapping round.
+
+step rfhh3z
+order 46
+parent 0q1h08
+author ai
+file crates/platform/src/renderer.rs
+symbol quad
+lines 0 19
+hash 03cfe267e5b06f70
+note Four corners and a texture area become four vertices and six indices, then extend_batch moves the current batch's end past them. Rectangles, line quads and glyphs all end up here.
+
+step sdbwac
+order 35
+parent 0q1h08
+author ai
+file crates/platform/src/renderer.rs
+symbol grid
+lines 0 26
+hash 818a728ce388551a
+note The grid form of text: rows a row height apart, cells a cell wide, whole rows above or below the clip skipped, a row ending at its first absent cell or at the clip's right edge; the drawn form of every code view.
+
+step tjqpfq
+order 51
+parent 28wxi1
+author ai
+file crates/platform/src/present.rs
+symbol from_rows
+lines 0 24
+hash 2269c96a103e93e9
+note Drops each row's padding and swaps the channels when the surface is BGRA, giving opaque RGBA.
+
+step u1ogh2
+order 49
+parent pqukys
+author ai
+file crates/platform/src/present.rs
+symbol encode_pass
+lines 0 47
+hash 3f9fbcb960cd6334
+note The one render pass: clear to the frame's colour, set the pipeline, bind group and both buffers once, then one indexed draw per non-empty batch under its clip cut to the screen.
+
+step wjc7z8
+order 26
+parent 0q1h08
+author ai
+file crates/platform/src/renderer.rs
+symbol text
+lines 0 14
+hash b9ae6ae52d6a80a9
+note A run of text with its top-left at a point, one cell per character from the font's metrics, on a baseline an ascent below the top. Characters entirely left of the clip and spaces are skipped and the run stops at the clip's right edge, which is what makes a very long line cheap to draw.
+
+step z2d3kc
+order 52
+parent 28wxi1
+author ai
+file crates/platform/src/present.rs
+symbol encode
+lines 0 11
+hash adae2a9750b933ab
+note Encodes the RGBA bytes as an 8-bit PNG in memory.

@@ -1,0 +1,98 @@
+codemap 8
+path xtask-text
+kind type
+author ai
+group tooling
+note The values xtask handles, each with its own type, because archlint runs over xtask too and xtask obeys the rules it enforces: no bare string or number in a signature. Most are one-field wrappers with a constructor and as_str; the ones below do more than wrap.
+
+step 0eot75
+order 0
+author ai
+file xtask/src/text.rs
+symbol impl RepoPath
+lines 0 20
+hash d5196cece1766cf1
+note A path relative to the repo root, forward slashes, with the prefix and suffix tests the rules scope themselves with.
+
+step 66ro97
+order 3
+author ai
+file xtask/src/text.rs
+symbol impl Message
+lines 0 28
+hash 632bb83096014a8b
+note Every report, finding list and hook text.
+
+step fv82rj
+order 4
+parent 66ro97
+author ai
+file xtask/src/text.rs
+symbol head
+lines 0 9
+hash 0ca412cc4be5b0d5
+note The first n lines, with a count of what was cut, so a failure stays readable in a hook message.
+
+step hdyqsz
+order 1
+author ai
+file xtask/src/text.rs
+symbol impl Root
+lines 0 26
+hash 416cb0829ab3e865
+note The workspace root: the parent of xtask's own manifest directory, fixed at compile time.
+
+step hsv0tx
+order 5
+author ai
+file xtask/src/text.rs
+symbol impl Literal
+lines 0 12
+hash c93391eb03103705
+note A string written in the source: every constant list in xtask is Literals.
+
+step ih2la3
+order 6
+author ai
+file xtask/src/text.rs
+symbol list
+lines 0 10
+hash 29a47228ab2fc70b
+note The lint names inside an expect attribute's arguments, before its reason.
+
+step o54lzj
+order 2
+parent hdyqsz
+author ai
+file xtask/src/text.rs
+symbol relative
+lines 0 11
+hash 6238825df5ec8d8d
+note A path, absolute or relative, as a RepoPath when it is under the root; a hook's file outside the repo gives none, and no guard applies to it.
+
+step seohj9
+order 7
+author ai
+file xtask/src/text.rs
+symbol impl Program
+lines 0 9
+hash 0d6f9daf4bcdfb53
+note The programs xtask runs: cargo, rustfmt, git, jj.
+
+step vlokdr
+order 9
+author ai
+file xtask/src/text.rs
+symbol impl Count
+lines 0 10
+hash 4e0e6b4b099e89f4
+note A count, for repeats and the words report.
+
+step zlgwij
+order 8
+author ai
+file xtask/src/text.rs
+symbol impl Argument
+lines 0 12
+hash 5368876e4e806070
+note A command-line word.

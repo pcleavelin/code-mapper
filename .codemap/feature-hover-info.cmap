@@ -1,0 +1,116 @@
+codemap 8
+path feature-hover-info
+kind flow
+author ai
+group features/gui
+note Rest the pointer on an identifier in any code view and a tooltip shows what the language's server knows about it: signature, type, docs. The server is asked only after the pointer has stayed on the same spot for a short delay and while no other hover is in flight; answers are cached per position and file version. A language without a server shows the matching symbol's code instead; prose files show nothing. The tooltip hides while the left button is down.
+
+step 35v8s4
+order 6
+parent tu5snd
+author ai
+file crates/gui/src/work.rs
+symbol ask
+lines 0 6
+hash 0fea4c20d4fb673d
+link lsp-client
+note Sends the hover request to the language's server thread.
+
+step f5oqsm
+order 8
+parent z2vf49
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_hover
+lines 0 31
+hash 5893a7d775f13fb2
+note Trigger on graph nodes: the same decision per code line, returning the tip for the graph tab to place or deferring the question.
+
+step ftctmw
+order 10
+parent z2vf49
+author ai
+file crates/gui/src/views/tooltip.rs
+lines 35 55
+hash aedc5c5f19d38b5a
+note The effect: after the views are built, the frame's tip is drawn beside the pointer (flipped to stay in the window), as wrapped text for a server answer or as a code block for a symbol.
+
+step ire4wo
+order 9
+parent z2vf49
+author ai
+file crates/gui/src/work.rs
+symbol poll_backend
+lines 30 30
+hash 7395b9cfbffebbef
+link peek
+note The answer, polled in a later frame, is cached as answered and frees the in-flight slot; the next frame's hover finds it and shows the tip.
+
+step nke99h
+order 3
+parent z2vf49
+author ai
+file crates/gui/src/widgets/code.rs
+symbol push_hover
+lines 0 8
+hash a80623c0c7604288
+note Queues the hover question. When it will really be sent this frame, the overlay counts it and shows the server-starting status, so the status bar is right without waiting a frame.
+
+step o8cqc5
+order 7
+parent z2vf49
+author ai
+file crates/gui/src/widgets/code.rs
+symbol code_block
+lines 74 91
+hash 5201244658bdb3d7
+note Trigger: a pointer over a character of a code block with no click gesture and the left button up is a hover.
+
+step q2izv6
+order 1
+parent z2vf49
+author ai
+file crates/gui/src/peek.rs
+symbol hovering
+lines 0 19
+hash 2a4aab6c505d8d69
+note Decides for the word under the pointer: a cached server answer becomes a text tip (or nothing if the server had none), a question in flight shows nothing yet, an unasked position asks; with only a resolver, the symbol of that name becomes a symbol tip.
+
+step tu5snd
+order 4
+parent nke99h
+author ai
+file crates/gui/src/action.rs
+symbol hover
+lines 0 7
+hash 0bf9df467a50c110
+note Applied after the frame: hover_step keeps the question pending until the pointer has rested on the same probe for the delay and no hover is in flight, then it is sent.
+
+step vea7ge
+order 2
+parent q2izv6
+author ai
+file crates/gui/src/peek.rs
+symbol word_at
+lines 0 26
+hash ff0520c97f5c2a66
+note The identifier under the pointer.
+
+step vy8v5w
+order 5
+parent tu5snd
+author ai
+file crates/gui/src/peek.rs
+symbol hover_step
+lines 0 20
+hash b6fb0ac959903f3a
+note The debounce: the wanted probe and when it was first wanted; a new probe restarts the clock. The cache is cleared when it grows too large.
+
+step z2vf49
+order 0
+author ai
+file crates/gui/src/widgets/code.rs
+symbol hover
+lines 0 11
+hash 62ba0b270113ea55
+note The handler, run while a code block is built: a known tip is shown at the pointer, an unknown position is asked for, anything else shows nothing.

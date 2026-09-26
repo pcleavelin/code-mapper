@@ -1,0 +1,36 @@
+codemap 8
+path feature-browse-files
+kind flow
+author ai
+group features/gui
+note The Files tab shows the indexed files as a tree with covered/total symbols per file and per directory. Top-level directories start open and deeper ones closed; clicking a directory flips it. Clicking a file opens it in the Listing at its first line. Files where no symbol is covered are dimmed.
+
+step 2c068k
+order 2
+parent 2xm1wz
+author ai
+file crates/gui/src/views/left.rs
+symbol files_tree
+lines 0 91
+hash 2e6ce57d899c640c
+note Trigger and effect: files come sorted by path, so a directory is a run of files with the same component at this depth. A FILE_ROW click queues GoTo line one; a DIRECTORY_ROW click queues ToggleDirectory. A directory is open when it is top level XOR flipped, and an open one draws its run one level deeper.
+
+step 2xm1wz
+order 0
+author ai
+file crates/gui/src/nav.rs
+symbol open_line
+lines 0 5
+hash 01ba837e6ef4b139
+link listing-view
+note The handler for a file click: the file becomes current with its first line selected and scrolled to, on the Listing tab.
+
+step joniwc
+order 1
+parent 2xm1wz
+author ai
+file crates/gui/src/action.rs
+symbol apply
+lines 27 31
+hash bdc4245d250a073f
+note The handler for a directory click: the directory's path prefix is added to or removed from the set of flipped directories.

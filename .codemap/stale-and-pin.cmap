@@ -3,121 +3,220 @@ path stale-and-pin
 kind flow
 author ai
 group map
-note What happens when code under a step changes. Every anchor is re-resolved on load; a hash mismatch or a missing file or symbol marks it stale. stale and check list those; path-pin re-anchors one to fresh lines and keeps its note and place in the tree. The agent that changed the code re-pins: repin follows each stale step's text from the parent revision and pins what it can place, printing every change for the agent to check against the note; the rest stays stale for path-pin.
+note What happens when code under a step changes. Every anchor is re-resolved on load; a hash mismatch or a missing file or symbol marks it stale. stale and check list those; path-pin re-anchors one to fresh lines and keeps its note and place in the tree. The agent that changed the code re-pins: repin follows each stale step's text from the parent revision and pins what it can place, printing every change for the agent to check against the note; the rest stays stale for path-pin. The listing and the follow live in cli's exec.rs; the alignment (follow, Alignment) is pure code in domain.
 
 step 0n4iwz
 order 8
 parent skdd6b
 author ai
-file src/cli.rs
-symbol follow_step
+file crates/cli/src/exec.rs
+symbol follow
 lines 0 89
-hash cad5ba01e6562862
-note Finds the old slice by hash (the match nearest the step's last place when the text repeats), cuts it out with three lines of context, and aligns it with every symbol of the step's name in its file, or in every file once the file or the symbol is gone from it, so a function moved to another file is followed there, keeping the alignment that keeps the most lines. Refuses when no symbol of that name is left anywhere or under half the lines survive: those need someone to read the code.
+hash dda079cb90335b6a
+note Finds the old slice by hash (the match nearest the step's last place when the text repeats), cuts it out with three lines of context, and aligns it with every target, keeping the alignment that keeps the most lines, nearest the old place on a tie. Refuses (LeftStale) when no symbol of that name is left anywhere or under half the lines survive: those need someone to read the code. Prints the follow report: old range, new range, moved file, lines kept.
 
 step 0pm2op
-order 4
+order 5
 parent c3yqy7
 author ai
-file src/map.rs
-symbol pin_anchor
-lines 0 18
-hash 8edaf00ed9d4986a
-note A fresh Anchor from the new lines, with the old note, parent and link carried over and the pinning author recorded.
+file crates/domain/src/map.rs
+symbol pin
+lines 0 20
+hash 9fed4ca3065bbbf2
+note A fresh anchor from the new lines through pin_span, with the step's id, order, note, parent and link untouched and the pinning author recorded. The step is current at once.
+
+step 1xnbd8
+order 19
+parent 0pm2op
+author ai
+file crates/domain/src/map/step.rs
+symbol repin
+lines 0 4
+hash bde99f7210177395
+note Swaps the anchor, author and resolution; everything else about the step stays.
+
+step 2ddakn
+order 18
+parent skdd6b
+author ai
+file crates/cli/src/exec.rs
+symbol LeftStale
+lines 0 16
+hash 89524d62cbacec9f
+note Why a step stays stale, printed after it: the file gone with nothing to follow, the file missing at the revision, the stored text not found there, no symbol of the name left, no line kept, or under half kept.
 
 step 9b60sn
-order 9
+order 14
 parent 0n4iwz
 author ai
-file src/map.rs
+file crates/domain/src/map/follow.rs
 symbol follow
-lines 0 19
-hash 658c2b563ef4d507
-note Aligns the old window with one candidate symbol and turns the pairs into a range. The old window is the step's slice as it was with a few lines of context around it, the new side a candidate symbol's current lines; the result is the new range, how many slice lines survive and each old line's partner, or None when no slice line pairs. A changed edge line ends just inside the nearest surviving context line, or at the symbol's edge when none survives on that side.
+lines 0 8
+hash de4dba2205466c5f
+note Aligns the old window with one candidate's lines. The old window is the step's slice as it was with a few lines of context around it, the new side a candidate symbol's current lines; the result is the new range, how many slice lines survive and the Alignment, or None when no slice line pairs.
+
+step a3h3l6
+order 16
+parent 9b60sn
+author ai
+file crates/domain/src/map/follow.rs
+symbol follow
+lines 0 23
+hash 9cbbfac78a24e503
+note The pairs to a range. A changed edge line ends just inside the nearest surviving context line, or at the candidate's edge when none survives on that side.
 
 step c3yqy7
-order 3
+order 13
 author ai
-file src/cli.rs
-symbol exec
-lines 443 461
-hash a834dd9acec2b0c2
-note path-pin: bounds-check the new range, then replace the anchor in place.
+file crates/cli/src/exec.rs
+symbol path_pin
+lines 0 27
+hash 32c95b8de1c8e9b1
+note path-pin: find the file (a path suffix is enough), bounds-check the new range, then Map::pin replaces the anchor in place; prints where it landed and warns when the lines are absolute.
 
 step dbn9ln
 order 10
-parent 9b60sn
+parent mk803w
 author ai
-file src/map.rs
+file crates/domain/src/map/follow.rs
 symbol patience
-lines 0 51
-hash f862f81388b6bb5a
+lines 0 74
+hash 432897abe4ca22cb
 note Pairs lines unique to both sides first, then grows pairs into equal neighbours and recurses into the gaps. Growth starts only from a pair, so an open edge never pairs a slice's closing brace with the end of a longer function; the paired flags say whether the line just before and the line just after a gap are paired. Lines compare with surrounding whitespace trimmed, so re-indented code still pairs.
+
+step i5t8kh
+order 17
+parent 0n4iwz
+author ai
+file crates/cli/src/exec.rs
+symbol changed_lines
+lines 0 32
+hash e829baaff1b51ca9
+note The review lines: walks the old slice and the new range together by the alignment, printing each old line without a partner as - and each new line before the next partner as +.
+
+step j9n64j
+order 12
+parent xvk3t5
+author ai
+file crates/cli/src/exec.rs
+symbol moved_to
+lines 0 8
+hash c79267af13672942
+note The same-text hint: another span of the step's length in its file whose text hashes to the stored hash, so the text only moved and the printed path-pin is the whole fix.
 
 step l2t4jm
 order 11
 parent dbn9ln
 author ai
-file src/map.rs
+file crates/domain/src/map/follow.rs
 symbol increasing
-lines 0 22
-hash c88cb87e31be9c32
-note Longest increasing run over the unique pairs, the order both versions agree on; a function that moved keeps its own lines paired with each other. tails[k] holds the pair ending the best run of length k + 1 and prev links each pair to the one before it in its run.
+lines 0 26
+hash 781b844a36cdfdc2
+note Longest increasing run over the unique pairs, the order both versions agree on; a function that moved keeps its own lines paired with each other. tails[k] holds the pair ending the best run of length k + 1 and previous links each pair to the one before it in its run.
+
+step mk803w
+order 15
+parent 9b60sn
+author ai
+file crates/domain/src/map/follow.rs
+symbol between
+lines 0 4
+hash b6a3c54763814e7d
+note One partner or none per old line, filled by patience over both lists whole, neither edge counted as paired.
 
 step n09j25
 order 0
 author ai
-file src/map.rs
+file crates/domain/src/map/step.rs
 symbol resolve
-lines 0 40
-hash ea2962bfa7b9eda7
+lines 0 43
+hash 3c91deb0e105ad98
 note Stale until proven current. Several symbols in one file can share a name; the one whose text still hashes right wins, else the first whose offsets fit in the file, so a step on StepChange::tag does not land on Author::tag and a re-pin is needed only when the text itself changed. A resolved but changed slice keeps its lines so the reader sees where it was; a gone file or symbol leaves the previous lines untouched.
 
 step pm9a32
-order 5
+order 4
 parent c3yqy7
 author ai
-file src/cli.rs
-symbol check_range
-lines 0 5
-hash 4d186dea990e90f9
-note User ranges are 1-based inclusive; this is the one place they become 0-based.
+file crates/cli/src/convert.rs
+symbol line_range
+lines 0 6
+hash 6e6ad28c3bf3dc4b
+note User ranges are 1-based inclusive; this is the one place they become 0-based, and a range outside the file is None (LineRange).
 
 step q7x1gq
 order 7
 parent skdd6b
 author ai
-file src/map.rs
-symbol file_from_vcs
-lines 0 9
-hash 3f7601a8f1a552db
+file crates/cli/src/exec.rs
+symbol repin
+lines 20 22
+hash 6ae9b8ed89877812
 link vcs
-note The file as the revision has it, from jj or git through Vcs::show, tabs expanded the way the index expands them, so the step's stored hash finds its old slice.
+note The file as the revision has it, from jj or git through Vcs::file_at, as FileText with tabs expanded the way the index expands them, so the step's stored hash finds its old slice. None when the revision does not have the file.
 
 step skdd6b
 order 6
 author ai
-file src/cli.rs
-symbol exec
-lines 556 589
-hash 7cd1f01e3fbbb442
-note repin: every stale step in turn, its file read once from the revision (default: the parent revision, @- in jj or HEAD in git) and kept for the steps after it. A step that follows is pinned through pin_anchor like path-pin; one that does not stays stale with the reason printed. The output is the review: each re-pinned step with changed text prints its removed and added lines, and its note has to be reread against them.
+file crates/cli/src/exec.rs
+symbol repin
+lines 0 50
+hash 0484719fb8e0b32e
+note repin: every stale step in turn, its file read once from the revision (default: the parent revision, @- in jj or HEAD in git) and kept for the steps after it. A step that follows is pinned through Map::pin like path-pin; one that does not stays stale with the reason printed. The output is the review: each re-pinned step with changed text prints its removed and added lines, and its note has to be reread against them. Changed only when something was pinned.
+
+step srs1sk
+order 3
+author ai
+file crates/cli/src/exec.rs
+symbol check
+lines 0 10
+hash c6f84812be2a7a20
+note check: the stale listing, then ok when nothing is stale and no link dangles, else Failure::Stale with both counts, which exits 2.
+
+step td84tn
+order 20
+parent i5t8kh
+author ai
+file crates/domain/src/map/follow.rs
+symbol get
+lines 0 6
+hash 2d895d769cf48c99
+note The new partner of an old line, if it has one.
+
+step un2c35
+order 9
+parent 0n4iwz
+author ai
+file crates/cli/src/exec.rs
+symbol targets
+lines 0 36
+hash 797d81ec0ab8c399
+note The candidates: every symbol of the step's name in its file, or in every file once the file or the symbol is gone from it, so a function moved to another file is followed there. A step with no symbol aligns with its whole file.
 
 step vd0i1v
 order 2
 parent xvk3t5
 author ai
-file src/cli.rs
-symbol where_is
-lines 0 6
-hash 7e4e9e2ab835a06c
-note Prints file:start-end for a resolved anchor, or says whether the file or the symbol is what went missing.
+file crates/cli/src/wire.rs
+symbol place
+lines 0 8
+hash da8d335e32ad517e
+note The place in every stale row: file:start-end for a resolved anchor, or the file with (file gone) or (symbol gone) saying which went missing.
 
 step xvk3t5
 order 1
 author ai
-file src/cli.rs
-symbol exec
-lines 494 555
-hash cfbe3bd8a418ed2e
+file crates/cli/src/exec.rs
+symbol stale
+lines 0 45
+hash dd3a43befd16f19c
 note stale and check share the listing; check turns a non-empty list into an Err so the process exits 2. Each stale step gets a hint: a ready-made path-pin when its text merely moved, or every symbol of the same name anywhere when the symbol is gone from its file. A link to a path the map does not have is listed after them and fails check the same way.
+
+step yq0kh1
+order 21
+parent 9b60sn
+author ai
+file crates/domain/src/map/follow.rs
+symbol Followed
+lines 0 4
+hash a4d908140a310301
+note What a follow returns: the range within the candidate, how many slice lines were kept, and the alignment, for the review lines.

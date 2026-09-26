@@ -1,0 +1,78 @@
+codemap 8
+path index-crate
+kind layer
+author ai
+group index
+note The index crate: building the domain's Index from the source tree. It owns the two backends and the linking: tree-sitter parsing and highlighting (parse.rs), the language-server orchestration over io-lsp (server.rs), call sites resolved into callees and callers (link.rs), and build, which walks through io-source and reuses io-cache. The CLI and the GUI use only this surface; each piece's workflow is its own path, linked from the step that names it.
+
+step 7wpoeq
+order 2
+parent xb4zqc
+author ai
+file crates/index/src/build.rs
+symbol Indexed
+lines 0 3
+hash 1588ecd008995f2e
+note What build returns: the index and each walked file's modification stamp, which the GUI hands its watcher thread.
+
+step 9e9wx0
+order 6
+parent x0l3ja
+author ai
+file crates/index/src/server.rs
+symbol impl FileCount
+lines 0 8
+hash 842a28e063c20d84
+note How many files a server is about to be asked, as ServerNotice::ToIndex reports it.
+
+step eyke0b
+order 4
+parent z0t0gh
+author ai
+file crates/index/src/parse.rs
+symbol Parsers
+lines 0 3
+hash 4c70af6df7718477
+link tree-sitter-index
+note The tree-sitter backend, one per run so each grammar is compiled once.
+
+step vgklpm
+order 3
+parent z0t0gh
+author ai
+file crates/index/src/link.rs
+symbol link
+lines 0 3
+hash 0a3754f861147ee3
+link call-resolution
+note Every edge rebuilt from the symbols' raw calls and targets.
+
+step x0l3ja
+order 5
+parent z0t0gh
+author ai
+file crates/index/src/server.rs
+symbol Servers
+lines 0 4
+hash c9afb18835a8091f
+link server-index
+note The CLI's language servers, one per language for the length of a command.
+
+step xb4zqc
+order 1
+parent z0t0gh
+author ai
+file crates/index/src/build.rs
+symbol build
+lines 0 56
+hash fd54ed04d70d1d30
+link server-index
+note The index from disk: walk, cache, parse, mark pending, link, save.
+
+step z0t0gh
+order 0
+author ai
+file crates/index/src/lib.rs
+lines 5 13
+hash 6edfcc3e18756b4c
+note The whole surface. build and save_cache for the index on disk; link for edges; Parsers for a file outside the walk (the GUI's peek parses a definition's file with it); Servers for the CLI; start_session, index_files, versions and apply for the GUI's server threads; name_position for pointing a server at a symbol. io-source's Contents, Stamps and read_outside and io-lsp's StartError are re-exported for the front ends.

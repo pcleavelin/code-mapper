@@ -10,8 +10,8 @@ use ui::{Count, Label};
 
 use crate::action::{Action, Fold, Hide};
 use crate::app::App;
-use crate::graph::Node;
 use crate::graph::build::{Built, CellSize, Rank, StepInfo};
+use crate::graph::{Button, Node};
 use crate::ids::CONTROLS;
 use crate::keys::Walk;
 use crate::model::{Model, PathSlot, Readable, StepKey, StepSlot, Tab, ViewFlag};
@@ -33,6 +33,24 @@ fn every_control_is_named_by_its_feature() {
                 Trigger::Command(_) | Trigger::Key(_) => false,
             });
         assert!(named, "{control:?} is not a trigger of its feature");
+    }
+}
+
+#[test]
+fn every_graph_button_is_named_by_its_feature() {
+    for button in [
+        Button::Preview,
+        Button::Listing,
+        Button::Callees,
+        Button::Callers,
+        Button::Above,
+        Button::Below,
+        Button::NoContext,
+    ] {
+        let named = button.feature().spec().triggers().iter().any(
+            |trigger| matches!(trigger, Trigger::Click(element) if *element == button.element()),
+        );
+        assert!(named, "{button:?} is not a trigger of its feature");
     }
 }
 

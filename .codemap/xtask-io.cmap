@@ -1,0 +1,101 @@
+codemap 8
+path xtask-io
+kind layer
+author ai
+group tooling
+note Everything xtask does outside itself: starting a program, writing a file, asking the version control system, printing. Each has one function, and the first two are the only places clippy's disallowed methods are expected in xtask (arch.rs EXPECTS), so xtask follows the same one-way rule it enforces on the workspace.
+
+step 13mwvx
+order 5
+parent 4glp17
+author ai
+file xtask/src/vcs.rs
+symbol detect
+lines 0 8
+hash cd2482e76d7dd01e
+note Detects which.
+
+step 2owmqu
+order 2
+parent yn2565
+author ai
+file xtask/src/process.rs
+symbol Outcome
+lines 0 3
+hash c2048d50ed4a6270
+note Success or failure.
+
+step 3ch6pt
+order 9
+author ai
+file xtask/src/terminal.rs
+symbol complain
+lines 0 3
+hash d502d5554b5200c6
+note A line to stderr: a task's failure.
+
+step 4glp17
+order 4
+author ai
+file xtask/src/vcs.rs
+symbol Vcs
+lines 0 3
+hash 045c7a22af6b6de3
+note jj when .jj is in the root, else git when .git is, else none (and the rulebook check passes, having nothing to compare with).
+
+step hbluru
+order 8
+author ai
+file xtask/src/terminal.rs
+symbol say
+lines 0 3
+hash 6fea8735e79efe49
+note A line to stdout: a task's result, or a hook's JSON.
+
+step jcwnlf
+order 0
+author ai
+file xtask/src/process.rs
+symbol run
+lines 0 22
+hash 901c09f89009c790
+note Runs a program in the root and collects its exit and its stdout and stderr as one message; a program that cannot start is a failure with the reason.
+
+step px9r3z
+order 7
+parent 4glp17
+author ai
+file xtask/src/vcs.rs
+symbol parent_text
+lines 0 14
+hash 714fe5526c88b8e4
+note A file's text at the parent revision, @- in jj or HEAD in git.
+
+step q1emsd
+order 6
+parent 4glp17
+author ai
+file xtask/src/vcs.rs
+symbol changed
+lines 0 37
+hash 3c994f0def928002
+note Files the working copy changed against the parent, untracked ones included for git.
+
+step u1bmm3
+order 3
+author ai
+file xtask/src/files.rs
+symbol write
+lines 0 7
+hash 68af8676a4c986a3
+note Writes a file whole, creating its folder.
+
+step yn2565
+order 1
+parent jcwnlf
+author ai
+file xtask/src/process.rs
+symbol Run
+lines 0 3
+hash 32a43843d770c5e8
+note What a run returns.

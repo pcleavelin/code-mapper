@@ -1,0 +1,57 @@
+codemap 8
+path feature-callees
+kind flow
+author ai
+group features/cli
+note callees <symbol>: what a symbol calls. Every symbol matching the name is listed, each followed by its callees indented one level. A symbol's callees are known once its own file is indexed, so the command asks the language server for the matched symbols' files first; without a server the tree-sitter resolver's calls are answered.
+
+step 0pb9ar
+order 1
+parent js4qhi
+author ai
+file crates/cli/src/exec.rs
+symbol find_symbols
+lines 0 6
+hash 51665388bbe86c47
+link symbol-lookup
+note Every symbol the name matches; none is an error naming the symbol.
+
+step iq2dud
+order 3
+parent uhjfrp
+author ai
+file crates/index/src/server.rs
+symbol index
+lines 0 32
+hash 8eccf4a6deda988a
+link server-index
+note The server round trip for those files: symbols and calls replace tree-sitter's, then the xrefs are relinked and the cache saved.
+
+step js4qhi
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol callees
+lines 0 19
+hash 0e5466aea33e6dc8
+note Finds the matches, indexes their files, then looks the matches up again (indexing can move spans) and prints each with its callees.
+
+step uhjfrp
+order 2
+parent js4qhi
+author ai
+file crates/cli/src/exec.rs
+symbol index_files
+lines 0 18
+hash 395c92f598ee9fff
+note Sends the matched files that are still pending to their server, then re-resolves the map.
+
+step zw7p3x
+order 4
+parent js4qhi
+author ai
+file crates/cli/src/wire.rs
+symbol symbol_line
+lines 0 7
+hash 3101ee7e664ec7a8
+note One symbol per line, indented by depth: the match at 0, each callee at 1.

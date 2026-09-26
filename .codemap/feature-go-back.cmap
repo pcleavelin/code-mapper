@@ -1,0 +1,76 @@
+codemap 8
+path feature-go-back
+kind flow
+author ai
+group features/gui
+note The < and > buttons in the top bar, alt+left and alt+right, ctrl+left and ctrl+right, and the mouse's back and forward buttons move back and forward through the places visited, the way a browser does: tab, file, selected lines, focused symbol, path and step. Nothing records a place explicitly; the end of every frame compares where the reader is with where they were. The arrow keys with a modifier are left to a focused text field, where they move the caret.
+
+step 1wvo6m
+order 6
+parent y91rv4
+author ai
+file crates/gui/src/nav.rs
+symbol track_navigation
+lines 0 13
+hash e56492ba685dda58
+note What makes history: at the end of every frame the current place is compared with the last one, and when it differs the last one is pushed onto the back stack and the forward stack is cleared.
+
+step 580y0f
+order 1
+parent y91rv4
+author ai
+file crates/gui/src/nav.rs
+symbol go
+lines 0 22
+hash e8494479d712c6ab
+note Restores a place: the path if it still exists, the step through select_step (scrolled to) when it still exists, otherwise the focused symbol found again by its key; then file, lines with a scroll request, and the tab. It records the restored place as the last one so the frame end does not push it again.
+
+step 7ygu48
+order 2
+parent y91rv4
+author ai
+file crates/gui/src/nav.rs
+symbol forward
+lines 0 7
+hash d330435f581d1796
+note The handler for forward, the mirror of back.
+
+step d1o8nr
+order 3
+parent y91rv4
+author ai
+file crates/gui/src/app.rs
+symbol keys
+lines 7 12
+hash f6c28c0aab2b50c3
+note Trigger from the keyboard and the mouse's side buttons, read in the keys phase before the views are built.
+
+step jfhpjk
+order 5
+parent y91rv4
+author ai
+file crates/gui/src/views/bars.rs
+symbol top_bar
+lines 16 31
+hash e94c280fdd3a8c6d
+note Trigger in the top bar: the BACK and FORWARD nav buttons, disabled when their stack is empty, queue Back or Forward.
+
+step y91rv4
+order 0
+author ai
+file crates/gui/src/nav.rs
+symbol back
+lines 0 7
+hash 62ffaec576a23e5e
+link navigation
+note The handler for back: pops the last place, pushes the current one onto the forward stack and goes there. With nothing behind, nothing happens and the button is drawn disabled.
+
+step ynjc7s
+order 4
+parent d1o8nr
+author ai
+file crates/gui/src/keys.rs
+symbol going
+lines 0 10
+hash 47d5664607ed0c9e
+note Matches the registry's GoBack chords whose key is Left (back) or Right (forward), with any modifier the registry lists, and the mouse's Back or Forward button when the registry lists that gesture.

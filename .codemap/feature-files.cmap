@@ -1,0 +1,25 @@
+codemap 8
+path feature-files
+kind flow
+author ai
+group features/cli
+note files [filter]: every indexed file, one per line with its line and symbol count. The filter is a plain substring of the relative path, not a regex. A file with 0 symbols is text the index holds but no backend parsed into symbols; show and grep still read it.
+
+step ktf7mb
+order 1
+parent r81bjb
+author ai
+file crates/cli/src/wire.rs
+symbol file_row
+lines 0 8
+hash 6991924f6120ea54
+note Prints '<path> (<n> lines, <m> symbols)'.
+
+step r81bjb
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol files
+lines 0 8
+hash 1ab56b80f9e4caa2
+note Walks the index's files in index order and prints each one whose path contains the filter.

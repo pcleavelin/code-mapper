@@ -3,91 +3,132 @@ path index-cache
 kind type
 author ai
 group index
-note The .codemap-cache file: every indexed file's symbols, calls, targets, references, imports and highlight spans, keyed by the file's text hash. Derived from the backends and never committed. It exists so a launch does not wait on a server or a parse; anything it cannot answer is re-derived.
+note The .codemap-cache file: every indexed file's symbols, calls, targets, references, imports and highlight spans, keyed by the file's text hash. Derived from the backends and never committed. It exists so a launch does not wait on a server or a parse; anything it cannot answer is re-derived. It is the io-cache crate: CacheStore is its surface, wire.rs mirrors the bytes (the Cached* structs, Reader, Writer) and convert.rs maps them to and from the domain's SourceFile, so the index model changes without changing the format.
 
 step 29a3aw
 order 0
 author ai
-file src/index/cache.rs
-lines 5 7
-hash 0d8738f575070e11
-note The layout. One version, rejected wholesale otherwise. "CMCH", u32 version, u32 file count, then per file: str path, u64 hash, u8 backend (1 = server), u32 symbol count and per symbol str name, str kind, u32 start, u32 end, u8 depth, str owner (empty = none), u32 call count and per call str name, u8 qual (0 none, 1 self, 2 named) and a str qualifier only when 2, then targets and refs each as a u32 count of (str path, u32 line); then a u32 count of (str name, str module) imports, written sorted so the same index writes the same bytes; then a u32 line count, each line a u32 count of (u32 start, u32 end, u8 class) spans. A str is a u32 length plus UTF-8 bytes; everything is little-endian.
+file crates/io-cache/src/wire.rs
+lines 0 60
+hash 3ba17db72e79b0a7
+note The layout, version 1, rejected wholesale otherwise. "CMCH", u32 version, then a list of files: str path, u64 hash, u8 backend (1 = server, 0 = tree-sitter), a list of symbols (str name, str kind, u32 start, u32 end, u8 depth, str owner with empty meaning none, a list of calls each a str name, a u8 qualifier tag (0 plain, 1 self, 2 named) and a str only when 2, then targets and references each a list of (str path, u32 line)), a list of (str name, str module) imports, which come out sorted because Imports is ordered, so the same index writes the same bytes; then a list of lines, each a list of (u32 start, u32 end, u8 class) highlights, the class being its position in HighlightClass::ALL. A list is a u32 count and its items, a str a u32 length plus UTF-8 bytes; everything is little-endian. The Cached* structs mirror this field for field.
 
 step 7n74ir
 order 2
 parent 29a3aw
 author ai
-file src/index/cache.rs
-symbol load_cache
-lines 0 75
-hash ea9ad01c70e8188c
-note Files by path with empty lines; build fills the text from disk and drops entries whose hash no longer matches.
+file crates/io-cache/src/lib.rs
+symbol load
+lines 0 9
+hash 3d05b94b8be820ee
+note Reads and converts the whole file, or gives None: a missing file, a foreign magic or version, a truncated read or a symbol with an impossible span throws the cache away rather than half-trusting it.
+
+step 8kvngw
+order 11
+parent 7n74ir
+author ai
+file crates/io-cache/src/convert.rs
+symbol source_file
+lines 0 29
+hash 3b6ffa1e0f65a3f8
+note Wire shapes back to a SourceFile: an empty owner means none, backend 1 means Server, a class byte past ALL reads as Plain. The text is empty and readiness Ready; build fills the text from disk and decides what is pending.
+
+step bkktj6
+order 8
+parent r71nrd
+author ai
+file crates/io-cache/src/convert.rs
+symbol cache_file
+lines 0 4
+hash 3660cd23aa3ff03f
+note Index to wire shapes: every file with its symbols, imports and highlights. Text is not stored, since build reads it from disk; depth is clamped to a byte.
+
+step cn9ns5
+order 9
+parent r71nrd
+author ai
+file crates/io-cache/src/wire.rs
+symbol impl Writer
+lines 0 89
+hash 9dd37d88aefea291
+note The writer side of the layout: magic, version, then every file in the same field order the Reader reads it.
 
 step kb14yk
 order 3
 parent 7n74ir
 author ai
-file src/codec.rs
+file crates/io-cache/src/wire.rs
 symbol Reader
 lines 0 3
-hash 2a5babbd29b59158
-note The cursor the cache and the map file are both read with: a byte slice and an offset, nothing more.
+hash 16ae78b8ea10c995
+note The cursor the cache is read with: a byte slice and an offset, nothing more.
 
 step m9mkut
-order 8
+order 10
+parent r71nrd
 author ai
-file src/codec.rs
-symbol write_retry
-lines 0 23
-hash 3a0b4d615c8a0c45
-note Every file the tool writes, the map and the cache alike, goes through here: the bytes land in a temporary file beside the target and are renamed over it, so a reader, or the second of two threads saving at once, never sees a half-written file. A sharing violation from an editor or scanner holding the file is retried a few times: Windows errors 1224, 32 and 5, which another process or a scanner holding the file open causes for a moment.
+file crates/io-store/src/lib.rs
+symbol write
+lines 0 18
+hash 284c0f1a28d1b9b8
+note Every file the tool writes, the map and the cache alike, goes through here: the bytes land in a temporary file beside the target and are renamed over it, so a reader, or the second of two threads saving at once, never sees a half-written file. A transient error is retried up to six times, 40 ms apart: Windows errors 1224, 32 and 5, which an editor or a scanner holding the file open causes for a moment.
 
 step nre0yw
 order 7
-parent r71nrd
+parent cn9ns5
 author ai
-file src/index/cache.rs
-symbol w_locs
-lines 0 6
-hash 38b17fdba47f4273
-note A list of (file, line) locations: how a server's call targets and references are stored.
+file crates/io-cache/src/wire.rs
+symbol list
+lines 0 5
+hash 79deece09767650c
+note Every list is a u32 count followed by its items: symbols, calls, locations, imports and each line's highlights are all written through here.
 
 step o47bng
 order 6
-parent r71nrd
+parent cn9ns5
 author ai
-file src/codec.rs
-symbol w_u32
+file crates/io-cache/src/wire.rs
+symbol number
 lines 0 2
-hash 28de3835e5c681da
-note Little-endian u32, the only integer width the format needs beyond the hashes.
+hash b60132babd1b87f6
+note Little-endian u32, the width of every count, line and offset; only the hash is a u64.
+
+step q1ipl3
+order 12
+parent 7n74ir
+author ai
+file crates/io-cache/src/lib.rs
+symbol impl Cache
+lines 0 12
+hash 26f27984f80971b5
+note What load gives build: cached files by path. build takes out each file it walks, re-parsing any whose hash no longer matches, so what is left afterwards is files gone from disk, and a non-empty rest makes build save.
 
 step r71nrd
 order 1
 parent 29a3aw
 author ai
-file src/index/cache.rs
-symbol save_cache
-lines 0 50
-hash 278ba10ffc1224c4
-note Written whole after a build that parsed anything and after every server run.
+file crates/io-cache/src/lib.rs
+symbol save
+lines 0 4
+hash 10d188a41dd0305a
+note Written whole: convert turns the index into the wire shapes, Writer lays them out, io_store::write puts the bytes on disk. build saves after a walk that parsed anything or dropped a cached file, the CLI after every server run, the GUI when a batch of server answers ends.
 
 step t4sexp
 order 5
-parent r71nrd
+parent cn9ns5
 author ai
-file src/codec.rs
-symbol w_str
+file crates/io-cache/src/wire.rs
+symbol text
 lines 0 3
-hash f72e8bfa62bddd40
-note Length-prefixed UTF-8, the only string encoding anywhere in this tool's files.
+hash 27b076cf162a5df9
+note Length-prefixed UTF-8, the only string encoding in this format.
 
 step yk7ds8
 order 4
 parent kb14yk
 author ai
-file src/codec.rs
-symbol impl Reader<'_>
-lines 0 19
-hash 8806cc96545fe01c
-note Every primitive is an Option, so a truncated or foreign file fails at the first bad read and the whole cache is thrown away rather than half-trusted. map.rs reads its own format with this same reader.
+file crates/io-cache/src/wire.rs
+symbol impl Reader<'bytes>
+lines 0 94
+hash 1c2a963d0cb359aa
+note Every primitive is an Option, so a truncated or foreign file fails at the first bad read.

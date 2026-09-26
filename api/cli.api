@@ -3,7 +3,7 @@ convert::pub struct Under(i64);
 convert::pub struct Count(usize);
 failure::pub struct StepPlace { pub path: PathName, pub index: StepIndex, }
 failure::pub struct Candidate { pub name: Output, pub label: Output, }
-failure::pub enum Failure { Map(MapError), LinkedFrom { path: PathName, steps: Vec<StepPlace>, }, NoSuchPath(TextFragment), NoSuchStep, NoSuchFile(RelativePath), NoSuchSymbol(SymbolName), SymbolClash { query: SymbolName, candidates: Vec<Candidate>, }, LineRange, NoPlaceUnder { under: Under, steps: Count, }, NoLink(StepIndex), Regex(regex::Error), ServersInBackground, NoRepository, NoMapAt { directory: RelativePath, revision: Revision, program: Program, }, Parse(ParseError), Load(MapLoadError), Save(MapSaveError), Stale { steps: Count, links: Count, }, NoWindow, }
+failure::pub enum Failure { Map(MapError), LinkedFrom { path: PathName, steps: Vec<StepPlace>, }, NoSuchPath(TextFragment), NoSuchStep, NoSuchFile(RelativePath), NoSuchSymbol(SymbolName), SymbolClash { query: SymbolName, candidates: Vec<Candidate>, }, LineRange, NoPlaceUnder { under: Under, steps: Count, }, NoLink(StepIndex), Regex(regex::Error), ServersInBackground, NoRepository, NoMapAt { directory: RelativePath, revision: Revision, program: Program, }, Parse(ParseError), Load(MapLoadError), Save(MapSaveError), Stale { steps: Count, links: Count, }, }
 pub struct Argument(String);
 pub fn new(text: &str) -> Self
 pub fn as_str(&self) -> &str
@@ -20,6 +20,7 @@ pub fn parse(arguments: &[Argument]) -> Result<Self, ParseFailure>
 pub fn feature(&self) -> Feature
 pub fn help() -> Output
 pub fn notice(notice: &ServerNotice) -> Output
+pub fn start_error(error: &StartError) -> Output
 pub fn symbol_label(index: &Index, symbol: SymbolId) -> Output
 pub fn map_failure(map: &Map, error: MapError) -> Failure
 pub fn exec( index: &mut Index, map: &mut Map, invocation: Invocation, author: Author, servers: Option<&mut Servers>, output: &mut Output, ) -> Result<Option<Changed>, Failure>

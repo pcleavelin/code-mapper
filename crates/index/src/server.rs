@@ -53,22 +53,6 @@ pub enum ServerNotice {
     Unavailable(StartError),
 }
 
-impl fmt::Display for ServerNotice {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::ToIndex { program, files } => {
-                write!(formatter, "{program}: {files} files to index")
-            }
-            Self::Unavailable(error) => {
-                write!(
-                    formatter,
-                    "{error}: its files keep the tree-sitter resolver"
-                )
-            }
-        }
-    }
-}
-
 pub fn start_session(root: &Root, language: Language) -> Result<LspSession, StartError> {
     let mut session = LspSession::start(language, root.as_path())?;
     session.wait_ready(READY_WAIT);

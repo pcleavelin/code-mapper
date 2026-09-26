@@ -3,161 +3,360 @@ path peek
 kind flow
 author ai
 group gui
-note Looking at a definition without leaving the place you are reading. Hover an identifier in any code view - the document, the listing, the peek panel itself or a graph node - and what the language's server knows about it (signature, type, docs) appears as a floating tooltip; ctrl-click or double-click goes to its definition, alt-click pins the definition at the top of the right panel. The server is asked live, once per position, on a thread that stays for the session, and the answer shows a frame later. A definition inside the repo lands on the symbol, or on the line when it is inside one; one outside the repo is shown as text read from disk. A language with a grammar but no server falls back to the symbol of that name; prose files answer nothing.
+note Looking at a definition without leaving the place you are reading. Hover an identifier in any code view - the document, the listing, the peek panel, the tooltip or a graph node - and what the language's server knows about it (signature, type, docs) appears as a floating tooltip; ctrl-click or double-click goes to its definition, alt-click pins the definition at the top of the xrefs panel. The server is asked live on its language's thread, which stays for the session, and the answer shows a frame or more later. A code view never asks anything itself: it reads what the Model already knows (Queries) and pushes a Hover or Definition action, and apply sends the request. A definition inside the repo lands on the symbol, or on the line when it is inside one; one outside the repo is shown as a grid of its lines, read from disk and drawn on the server thread. A language with a grammar but no server falls back to the symbol of that name; prose files answer nothing.
 
 step 0a4zs3
 order 13
 parent 3fy396
 author ai
-file src/gui/peek.rs
+file crates/gui/src/work.rs
 symbol land
-lines 0 17
-hash 48bcb48902174087
-note What a definition does for each intent, given as the Peek the panel would show: jump selects the symbol or opens the line in the listing, peek pins it; a definition outside the repo is pinned as text either way.
+lines 0 14
+hash 18408dde89f15741
+note What a definition does for each intent, given as the Peek the panel would show: a jump selects the symbol (or opens the line in the listing), a peek pins it; a definition outside the repo is pinned either way and the status line says where it is.
 
 step 174e9e
 order 8
 parent nq4lui
 author ai
-file src/gui/work.rs
+file crates/gui/src/work.rs
 symbol serve
-lines 0 87
-hash cb0440c6116cc359
-note The thread: one Client for the language, a queue of files to index, and hover, definition and reference requests answered between batches so the pointer never waits behind a batch. Definitions are resolved against the root here, and the lines around the target read from disk, parsed and drawn into a grid on this thread, which the peek shows when the file is outside the repo. The answer is a Def: the path relative to the root when the file is inside it, the absolute path either way, the 0-based line, and the grid of six lines above to 24 below, whose first line is Def::first.
+lines 0 61
+hash 33f0218ca952a2e4
+note The thread: one LspSession for the language, a queue of files to index, and hover, definition and reference requests answered between batches of eight files, so the pointer never waits behind a whole batch. Answers go back on a channel as Answer values.
+
+step 18va46
+order 24
+parent s9b6sw
+author ai
+file crates/gui/src/work.rs
+symbol peek_at_line
+lines 0 10
+hash 2e827e1a15306c4e
+note A definition inside the repo is a symbol when a symbol starts on that line, and the line otherwise.
 
 step 3fy396
 order 12
 parent kaqitd
 author ai
-file src/gui/peek.rs
-symbol probe_def
+file crates/gui/src/action.rs
+symbol definition
 lines 0 18
-hash 4399ab4785ef3090
-note Go-to and peek share this: the server is asked for the definition and the intent remembered until poll_backend gets the answer; a grammar-only file answers from the index at once.
+hash d00af4bcb2673b16
+note Go-to and peek share this, run when the Definition action is applied: the word under the pointer decides who answers. A server is sent a Definition request and the intent remembered in Queries until poll_backend has the answer; a grammar-only file answers from the index at once, or says there is no definition of that word in the repo.
+
+step 3p7p2m
+order 18
+parent 8dz15n
+author ai
+file crates/gui/src/widgets/code.rs
+symbol push_hover
+lines 0 8
+hash a80623c0c7604288
+note Pushes the Hover action. When the question will actually be sent this frame, the overlay counts it and shows the server as starting, so the status line and the xrefs heading agree with it in the same frame.
 
 step 4yvy4t
 order 10
-parent 174e9e
+parent q0e5of
 author ai
-file src/lsp.rs
+file crates/io-lsp/src/session.rs
 symbol definition
-lines 0 19
-hash 52a4a932671923c2
-note textDocument/definition, first location only, as an absolute path and position; Location and LocationLink both handled.
+lines 0 9
+hash 4e8314291080abae
+note textDocument/definition, first location only, as a path and position.
+
+step 60skxs
+order 34
+parent 3p7p2m
+author ai
+file crates/gui/src/peek.rs
+symbol asks_now
+lines 0 6
+hash 13eb5bbb32d423db
+note The same rest check as hover_step, read-only, so a view can tell whether the Hover it pushes will be sent this frame.
 
 step 63ps8v
 order 9
 parent 174e9e
 author ai
-file src/lsp.rs
+file crates/io-lsp/src/session.rs
 symbol hover
-lines 0 23
-hash 0f6ab26d2734684d
-note textDocument/hover reduced to plain lines: code fences dropped, blank lines never doubled.
+lines 0 9
+hash 1e0dc999cceebd77
+note textDocument/hover, reduced to plain text.
+
+step 6990ar
+order 26
+parent exiaij
+author ai
+file crates/gui/src/views/tooltip.rs
+symbol symbol_tip
+lines 0 65
+hash aeba593956334422
+note For a symbol: name, kind and place, the first 24 lines of the definition as a code block, a count of the lines left out, and the two gestures.
+
+step 7u4q6u
+order 19
+parent 3p7p2m
+author ai
+file crates/gui/src/action.rs
+symbol hover
+lines 0 7
+hash 0bf9df467a50c110
+note The Hover action applied: the question is sent only once the pointer has rested on the same probe for a moment and no other hover is in flight, so moving across a line does not queue a request per word.
+
+step 8dz15n
+order 16
+parent kaqitd
+author ai
+file crates/gui/src/widgets/code.rs
+symbol hover
+lines 0 11
+hash 62ba0b270113ea55
+note The hover: when the Model already has the answer - the server's text, or the symbol for a grammar-only file - the frame gets a tooltip at the pointer; when nobody has asked, the question is pushed.
+
+step d64bbt
+order 32
+parent uee3m8
+author ai
+file crates/gui/src/work.rs
+symbol references_landed
+lines 0 16
+hash 9dc4175be689e8fa
+note References land on the symbol that starts on the asked line, only when the file still has the text the question was asked about; otherwise the answer is dropped.
 
 step dqmrwj
 order 5
-parent kaqitd
+parent 8dz15n
 author ai
-file src/gui/peek.rs
-symbol probe
-lines 0 31
-hash 88271a75d1c4b91c
-note The tooltip's question. Finds the identifier's first column, asks the file's live server once per (file hash, line, column) and keeps the answer; None until it arrives, a frame or more later. The server is asked only after the pointer has rested on the position for a moment and while no other hover is in flight. Falls back to symbol_at for grammar-only files and to nothing for prose.
+file crates/gui/src/peek.rs
+symbol hovering
+lines 0 19
+hash 2a4aab6c505d8d69
+note The tooltip's question, answered from the Model only. It finds the identifier's first column and asks probing who answers: for a server, the hover cached under that Probe (nothing while the question is out, Ask when never asked); for a grammar-only file, symbol_at; for prose, nothing.
+
+step exiaij
+order 25
+parent vskz44
+author ai
+file crates/gui/src/views/tooltip.rs
+symbol show
+lines 0 15
+hash 11b3a72037bdc492
+note Skipped while the mouse button is down, so dragging does not drag a tooltip along; otherwise sized to what fits in the window.
 
 step fuvvyy
 order 2
-parent jcccr7
+parent dqmrwj
 author ai
-file src/gui/peek.rs
+file crates/gui/src/peek.rs
 symbol word_at
-lines 0 16
-hash 802510a3a498272d
-note Identifier boundaries around a character column.
+lines 0 26
+hash ff0520c97f5c2a66
+note Identifier boundaries (letters, digits, underscore) around a character column, with the word's first column and text.
 
 step jcccr7
 order 6
 parent dqmrwj
 author ai
-file src/gui/peek.rs
-symbol probe_for
-lines 0 19
-hash b4ab5e724e57092b
-note Decides who answers for a file: the language's server (a Probe with the UTF-16 column, since servers count columns in UTF-16 units), the index by name (a grammar with no server), or nobody. The two fallbacks come back as Err(true) for the index and Err(false) for nobody.
+file crates/gui/src/peek.rs
+symbol probing
+lines 0 23
+hash 14276686a2367bde
+note Decides who answers for a file: its language's server (a Probe: the document position and the file's text hash), the index by name (a language whose server failed), or nobody (no language). A Probe is the key of every hover and reference question, so an answer for an older text of the file is never shown.
+
+step k2cbn7
+order 35
+parent uee3m8
+author ai
+file crates/gui/src/peek.rs
+symbol definition_answered
+lines 0 6
+hash fadb8bdc1ddb85c4
+note Every answer lowers the unanswered count; a definition answer yields its intent only when its probe is the one still awaited, so a late answer to an older click does nothing.
 
 step kaqitd
 order 0
 author ai
-file src/gui/widgets.rs
+file crates/gui/src/widgets/code.rs
 symbol code_block
-lines 0 73
-hash 0fd7d1d58264ce86
-note The one entry point for every code view: the line and text column under the pointer come from the block's rectangle and the cell size; hover asks probe, ctrl-click or double-click jumps, alt-click peeks.
+lines 0 93
+hash a07e2aa176e811fd
+note The one entry point for every code view: the line and text column under the pointer come from the block's rectangle and the cell size. The PeekDefinition and JumpToDefinition gestures from the feature registry (alt-click; ctrl-click or double-click) push a Definition action with the intent; with no gesture and no button down, the pointer asks for a hover.
+
+step n2y9nl
+order 33
+parent pce95l
+author ai
+file crates/gui/src/views/xrefs.rs
+symbol Body
+lines 0 12
+hash d0cadf19f6b8aca3
+note What the peek body draws: lines of an indexed file with an optional marked line, or the grid of a file outside the repo.
 
 step nq4lui
 order 7
-parent dqmrwj
+parent vy64jp
 author ai
-file src/gui/work.rs
+file crates/gui/src/work.rs
 symbol server
-lines 0 13
-hash 96aedc8d2d35334a
-note The live server thread for a language, spawned on first use and kept for the session; None once it failed to start, so a hover does not retry it.
+lines 0 19
+hash 3336cce433cc404e
+note The server thread for a language, spawned on first use and kept for the session, and the status line says it is starting; None once it failed to start, so a hover does not retry it.
+
+step nt3g6k
+order 17
+parent jcccr7
+author ai
+file crates/gui/src/peek.rs
+symbol character_at
+lines 0 8
+hash 92cf7fcc3e633af1
+note Servers count columns in UTF-16 units; the character column is converted here.
+
+step pce95l
+order 29
+parent yhnzin
+author ai
+file crates/gui/src/views/xrefs.rs
+symbol peeked
+lines 0 54
+hash 0a150823767af1c7
+note What the pinned Peek shows: a symbol's whole span, 6 lines above to 20 below a line with that line marked, or the outside grid; and what 'go' does (Focus the symbol, GoTo the line, nothing outside).
+
+step pf9u6d
+order 30
+parent yhnzin
+author ai
+file crates/gui/src/views/xrefs.rs
+symbol peek_header
+lines 0 17
+hash a8d702d4944e5908
+note The header truncates the title and file:line to the panel width, the place cut from the front, so the go and x buttons never leave it.
+
+step q0e5of
+order 22
+parent 174e9e
+author ai
+file crates/gui/src/work.rs
+symbol definition_found
+lines 0 27
+hash 8ddb6a2221442756
+note A definition, resolved against the root, with the lines around it read from disk, parsed and drawn into a grid on this thread - six lines above to 24 below - which the peek shows when the file is outside the repo. The answer is a Found: the path relative to the root when the file is inside it, the absolute path either way, the line, and the grid with its first line.
 
 step r4rqv7
 order 1
 parent dqmrwj
 author ai
-file src/gui/peek.rs
+file crates/gui/src/peek.rs
 symbol symbol_at
-lines 0 10
-hash af375dc9da17ae9b
-note The word under the pointer, resolved to a definition: one whose references include this line wins, then one in the same file, then any.
+lines 0 24
+hash 68712ae7ea6ae825
+note The word under the pointer resolved to a definition by name, for files with no server: a symbol whose references include this line wins, then one in the same file, then any.
+
+step rkvah1
+order 20
+parent 7u4q6u
+author ai
+file crates/gui/src/peek.rs
+symbol hover_step
+lines 0 20
+hash b6fb0ac959903f3a
+note The rest check: the probe under the pointer is remembered with the time it arrived; after 150 ms, with no hover in flight, it is marked Asked and the question goes out.
+
+step s9b6sw
+order 23
+parent uee3m8
+author ai
+file crates/gui/src/work.rs
+symbol definition_landed
+lines 0 16
+hash 3b233d0dcc209a88
+note The awaited definition, resolved to a symbol, a line inside an indexed file, or a place outside the repo, then landed with its intent. No answer says no definition was found.
+
+step ssx29b
+order 28
+parent 6990ar
+author ai
+file crates/gui/src/views/tooltip.rs
+symbol place_at
+lines 0 16
+hash ff1cc5338e434994
+note The box sits below and right of the pointer, flipping above or to the left when it would not fit in the window.
 
 step uee3m8
-order 11
-parent 174e9e
+order 3
 author ai
-file src/gui/work.rs
+file crates/gui/src/work.rs
 symbol poll_backend
-lines 31 78
-hash 07766ce4cb8eca19
-note Where the answers land: a hover is cached under its Probe; references land on the symbol they were asked for when its file still has the text they were asked about; a definition is acted on only when it is the one still awaited, resolved to a symbol, a line inside one, or a place outside the repo.
+lines 0 67
+hash 56a1a12ad5d9c5e8
+note Where the answers land, at the top of every frame: a hover is cached under its Probe, references land on the symbol they were asked for when its file still has the text they were asked about, and a definition is acted on only when it is the one still awaited. A server that failed to start drops every question to it and says so in the status line.
 
 step v678nk
 order 14
 parent 0a4zs3
 author ai
-file src/gui/peek.rs
+file crates/gui/src/peek.rs
 symbol Peek
-lines 0 4
-hash 0ef9c8bc5555f25d
-note One type for both ends: what a definition lookup landed on and what the peek panel shows - a symbol, a line in an indexed file, or a place outside the repo with the grid of lines around it that the server thread drew. land takes it and pins it as is. Line holds a file index and a line, for a definition inside a symbol or in a file with no symbols; Outside holds the absolute path, the line, the first line the grid starts at, and the grid.
+lines 0 12
+hash 6f45bb688d5bbbfd
+note One type for both ends: what a definition lookup landed on and what the peek panel shows - a symbol, a line in an indexed file, or a place outside the repo. Line holds a file and a line, for a definition inside a symbol or in a file with no symbols; Outside holds the absolute path, the line, the first line the grid starts at, and the grid the server thread drew, shared so the panel never copies it.
+
+step vq7re1
+order 31
+parent yhnzin
+author ai
+file crates/gui/src/views/xrefs.rs
+symbol peek_body
+lines 0 76
+hash 0d8cc2ddae6bd30f
+note The body: at most half the panel's height and a third of the window's, as a code block for a file in the index or the server's grid drawn directly for a file outside it, the landed line marked.
 
 step vskz44
-order 3
-author ai
-file src/gui/peek.rs
-symbol tooltip_element
-lines 0 120
-hash b0cae58b28640518
-note The tooltip itself: a floating element laid over everything, drawn from what the frame's code rows left in self.tooltip. Name, kind and place, the first lines of the definition, and the two gestures. It is skipped while the mouse button is down so dragging does not drag a tooltip along. The box sits below and right of the pointer, flipping above or to the left when it would not fit in the window.
-
-step yhnzin
 order 4
 author ai
-file src/gui/panels.rs
-symbol xrefs_panel
-lines 6 109
-hash 5c0138561c8277b5
-note The pinned half, at the top of the xrefs panel, at most half its height: the whole definition in scrollable code rows, with 'go' to select it and 'x' to close. It survives scrolling and clicking elsewhere, which is the difference from the tooltip. The header truncates the title and file:line to the panel width so the go and x buttons never leave it.
+file crates/gui/src/views/tooltip.rs
+symbol tooltip
+lines 0 3
+hash f2578848f1b251e5
+note The tooltip itself: a floating element laid over everything, built after every panel from what the frame's code views left in Frame::tooltip. What it showed is pushed as TipShown, for dumps.
+
+step vy64jp
+order 21
+parent 7u4q6u
+author ai
+file crates/gui/src/work.rs
+symbol ask
+lines 0 6
+hash 0fea4c20d4fb673d
+note Sends a request to a language's server thread, starting it if needed; false when the language has no server, so the caller records nothing as asked.
+
+step xmbciz
+order 27
+parent exiaij
+author ai
+file crates/gui/src/views/tooltip.rs
+symbol text_tip
+lines 0 43
+hash 3a51400285e9eb28
+note For a server's text: up to 24 lines, a line starting with --- drawn as a rule, then the two gestures.
+
+step yhnzin
+order 11
+author ai
+file crates/gui/src/views/xrefs.rs
+symbol peek_section
+lines 0 20
+hash 437b0396d1640a5e
+note The pinned half, at the top of the xrefs panel: the whole definition in scrollable code rows, with 'go' to select it and 'x' to close. It survives scrolling and clicking elsewhere, which is the difference from the tooltip.
 
 step yu4jg2
 order 15
 parent dqmrwj
 author ai
-file src/gui/peek.rs
-symbol Lookup
+file crates/gui/src/peek.rs
+symbol Queries
 lines 0 7
-hash 3bf243e5ebecb9a5
-note The requests to the servers: every hover asked, with its answer once it came, the position under the pointer and since when, whether a hover is in flight, how many requests are unanswered, the definition whose answer is awaited with what to do with it, and the symbols whose references were asked for. A hover entry is None while the question is out and Some once answered, holding the text or None when the server had nothing to say.
+hash 596cbd32444c07be
+note The requests to the servers and what came back: every hover asked, as Asked until answered and then the text (or None when the server had nothing to say), capped at 500 entries; the probe under the pointer and since when; whether a hover is in flight; how many requests are unanswered (which keeps the frame busy); the definition awaited and its intent; and the probes whose references were asked for.

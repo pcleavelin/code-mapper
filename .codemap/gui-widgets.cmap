@@ -3,209 +3,396 @@ path gui-widgets
 kind layer
 author ai
 group gui
-note The handful of widgets the GUI is written in. There is no widget library under this: each one is a function on App that opens an element or two with the right colours and returns what the element tree says the mouse did to it. They exist because the same three lines were being written everywhere, not because anything needed abstracting - which is why there are seven of them and why a panel that wants something else just opens elements directly. The theme is a dozen constants in one place, and the only piece with state is the text field, since a caret and a history cannot be derived from anything.
+note The widgets the GUI is written in: methods on Frame in widgets.rs and widgets/code.rs, the text field's state in field.rs, and clipping in text.rs. There is no widget library under this: each widget opens an element or two with the theme's layout and colours, reads what the element tree says the mouse did to that id last frame, and returns the Interaction; the view that called it decides what Action to push. A widget never changes the Model. They exist because the same three lines were being written everywhere, not because anything needed abstracting, so a view that wants something else opens elements through Frame directly. Every clickable widget takes a Target from ids, so its element id is the name a script clicks it by. The only widget with state is the text field, since a caret and a history cannot be derived from anything.
 
 step 0tlkjk
-order 1
+order 2
 author ai
-file src/gui/widgets.rs
-symbol text
-lines 0 6
-hash 138b185a172a8fe5
-note The three ways text becomes an element, grouped here: this one is a single run of one colour on one line, and it is what every label is made of.
+file crates/gui/src/widgets.rs
+symbol text_kind
+lines 0 2
+hash 5b4206159d5bea9d
+note The one way text becomes an element: a list of coloured runs at the frame's font size, wrapped or not. Every text widget below is this with a layout and a style.
 
 step 2havd5
-order 11
+order 13
 author ai
-file src/gui/mod.rs
-symbol App
-lines 41 41
-hash 1a468725c58af1f2
-note The five fields live in one array on the App, indexed by Which: a field is named by its enum, and focus and the 'is any field focused' check walk the array in one loop.
+file crates/gui/src/field.rs
+symbol Fields
+lines 0 7
+hash 6c1c9bff5c80d0c4
+note The five fields, one named member each, reached by Which; focused names the one with the keyboard, at most one, so taking focus is setting it.
 
 step 2yp2r2
-order 4
+order 5
 author ai
-file src/gui/widgets.rs
+file crates/gui/src/widgets.rs
 symbol small_button
 lines 0 2
-hash d658c4ec9eaab899
+hash 3ecefe125dd90536
 note The same in the tighter form used inside rows and headers, with no selected state.
 
 step 454ebz
 order 20
+parent wysgxw
 author ai
-file src/gui/widgets.rs
-symbol row_bg
-lines 0 17
-hash faa3a713fedf8aaf
-note A row with its own mark colour: the outline uses a weaker tint for the step under the top of the document than for the selected step, so the two never merge.
+file crates/gui/src/widgets.rs
+symbol marked_row
+lines 0 19
+hash 23afc7479ac9da41
+note A row with its own mark colour: the outline uses a weaker tint for the step at the top of the document than for the selected step, so the two never merge.
+
+step 5cq4dm
+order 29
+author ai
+file crates/gui/src/widgets.rs
+symbol custom
+lines 0 13
+hash 5649015e5135f30b
+note An element drawn by a closure on the Canvas, at a given width and height: the peek's grid of a file outside the repo.
+
+step 61fj7h
+order 40
+parent tstdq3
+author ai
+file crates/gui/src/field.rs
+symbol Edit
+lines 0 13
+hash b9324a756c396d69
+note The edits a field understands, from keys::edits.
+
+step 65k6cz
+order 35
+parent pk9re7
+author ai
+file crates/gui/src/widgets/code.rs
+symbol hover
+lines 0 11
+hash 62ba0b270113ea55
+note Hover over an identifier: a tooltip at the pointer when the answer is already known (the server's text, or the symbol for a grammar-only file), otherwise the question is pushed.
+
+step 6dfeyu
+order 33
+parent pk9re7
+author ai
+file crates/gui/src/grid.rs
+symbol get
+lines 0 16
+hash 207c0f189d9d999f
+note Drawn grids are cached by (file, text hash, first line, last line), so a code block that did not change is not rebuilt, and a file whose text changed misses on its hash. The cache is dropped whole past 512 entries and on every index change.
+
+step 6wdt9w
+order 24
+parent 2havd5
+author ai
+file crates/gui/src/field.rs
+symbol handle
+lines 0 23
+hash ce9dd1e24140c389
+note Keys go to one field: nothing happens unless it has the keyboard. Its Edits apply in order, then the typed text is inserted at the caret; escape gives the keyboard up. Returns the submitted line, if enter was pressed.
 
 step 7mnsht
-order 6
+order 11
 author ai
-file src/gui/widgets.rs
+file crates/gui/src/widgets.rs
 symbol field
-lines 0 19
-hash 17ed28543179572a
-note A text field: a fixed-width box that clips its text and scrolls it sideways so the caret stays visible; clicking takes the keyboard from the other fields.
+lines 0 36
+hash 3040603c2a55715d
+note A text field: a box of fixed width in cells that clips its text and scrolls it sideways so the caret stays in view, bordered in the accent colour while it has the keyboard. Clicking it takes the keyboard from the other fields. The field only draws: keys reach it through the Type actions the frame pushes, applied before the tree is built.
+
+step 94dj1i
+order 28
+author ai
+file crates/gui/src/widgets.rs
+symbol command_row
+lines 0 27
+hash c76a4d61300f73b6
+note The output panel's input line: a prompt and the command field's runs across the full width, the whole row taking the keyboard when clicked.
+
+step 9dxpzk
+order 23
+parent rcazsr
+author ai
+file crates/gui/src/widgets.rs
+symbol shape
+lines 0 76
+hash 681bc984d8a1f066
+note The one match that turns a Container into its layout, style and fixed id: the paddings, gaps and colours from theme, the accent bar on the left of a selected step row or code column, and the ids body and dock-row that the dock reads rectangles from.
 
 step aidqqn
-order 2
+order 3
 author ai
-file src/gui/widgets.rs
+file crates/gui/src/widgets.rs
 symbol label
-lines 0 7
-hash 6887dfd71312ff71
-note A line of text with a little padding and no interaction. The most-used thing in the file.
+lines 0 8
+hash d4f95b65b299977d
+note A line of text in one colour with a little padding and no interaction; the most-used widget. plain_line is the same without the padding, and title the same at the title font.
+
+step bwqb9z
+order 37
+parent hnzu9x
+author ai
+file crates/gui/src/text.rs
+symbol right
+lines 0 10
+hash 041e3507af985fb8
+note Cuts from the end with an ellipsis, so a name or a kind fits its column and the symbol table stays a table.
+
+step d4axwo
+order 38
+parent tstdq3
+author ai
+file crates/gui/src/field.rs
+symbol recall
+lines 0 20
+hash 5e526c4116dab16f
+note Up and down: the first press recalls the newest line, each further up an older one, down a newer one, and down past the newest clears the field.
 
 step e2sdhm
 order 16
 parent 0tlkjk
 author ai
-file src/gui/widgets.rs
-symbol wrapped
-lines 0 6
-hash 34e295f280a8d824
-note The same, wrapped to whatever width the element ends up with. Path notes and step notes are the only things drawn this way, because they are the only prose in the app.
+file crates/gui/src/widgets.rs
+symbol note
+lines 0 12
+hash e0d486ed1f02cb11
+note Wrapped text, grown to the width the element ends up with, with a path's or a step's padding. Path notes and step notes are the only things drawn this way, because they are the only prose in the app.
+
+step ezv639
+order 36
+parent 65k6cz
+author ai
+file crates/gui/src/widgets/code.rs
+symbol push_hover
+lines 0 8
+hash a80623c0c7604288
+note Asking the server for a hover. When the question will be sent this frame, the overlay counts it and the status line shows the server starting, so both show in the same frame as the hover.
 
 step gjm6fk
 order 0
 author ai
-file src/gui/widgets.rs
-symbol dim
-lines 0 2
-hash 346da288a0c7856c
-note Re-alphas a theme colour for a tint. Above it, in one place, is the whole palette: a dozen constants named by role - panel, field, border, text, weak, accent, green, red, orange, hover, selected - so a colour decision is made once and every panel below just names one.
+file crates/gui/src/theme.rs
+lines 5 25
+hash 6408bff5868596bb
+note The palette, in theme: a dozen colours named by role - background, panel, field, border, text, weak, accent, green, red, orange, hover, selected - and below them the tints made from those by alpha (disabled, selected lines, the slice, the outline's top step, faint, pending, the drop band, the call tint). A colour decision is made once, here, and every view names one.
 
 step hnzu9x
-order 21
+order 22
 author ai
-file src/gui/widgets.rs
-symbol trunc_left
-lines 0 9
-hash 65b2a207258eb194
+file crates/gui/src/text.rs
+symbol left
+lines 0 10
+hash b72ff8088652789b
 note Cuts from the front and keeps the tail: paths are cut this way in the Symbols tab and the peek header, so the file name and line survive.
 
 step jb1qok
 order 12
 parent 2havd5
 author ai
-file src/gui/mod.rs
+file crates/gui/src/field.rs
 symbol Which
 lines 0 6
-hash 0beb72b11528388a
-note The five fields: search, new path, the command line, the symbol filter and go-to-line. A variant's value is its index in App::fields, and Which::name is its element id suffix, so a script names a field as field@<name>.
+hash 0890e3b238942e1f
+note The five fields: search, new path, the command line, the symbol filter and go-to-line. Which::control is the field's Control in ids, whose element name is its script id: field@search, field@new-path, cmd, field@symbols, field@goto-line.
+
+step k73r2l
+order 25
+parent zo7d1b
+author ai
+file crates/gui/src/field.rs
+symbol shown
+lines 0 18
+hash fe9e3c175db7e1f7
+note What the field looks like for its focus: the hint when empty and unfocused, marked when the whole text is marked and it has the keyboard, plain otherwise, split at the caret.
 
 step kn1cnd
 order 17
 parent 0tlkjk
 author ai
-file src/gui/widgets.rs
-symbol runs
-lines 0 6
-hash 8ae832d1bb3e3c0b
-note A prepared list of coloured runs as one element, for anything that is more than one colour on a line: a syntax-coloured code row, a row with a dimmed file name after it, a field with a caret in the middle.
+file crates/gui/src/widgets.rs
+symbol text_runs
+lines 0 8
+hash 5ce94e0a424fe9d1
+note A prepared list of coloured runs as one element, fitted or growing: anything that is more than one colour on a line, such as a field's text with the caret in the middle.
+
+step o7593r
+order 27
+author ai
+file crates/gui/src/widgets.rs
+symbol link_text
+lines 0 17
+hash 66c99ab664a7a0b3
+note Text runs that are clickable but look like text: a step's header and a breadcrumb, with the selected background when chosen.
 
 step pk9re7
-order 15
+order 21
 author ai
-file src/gui/widgets.rs
+file crates/gui/src/widgets/code.rs
 symbol code_block
-lines 0 73
-hash 0fd7d1d58264ce86
-note The one code element in the GUI: a block of lines drawn from a cached grid by a custom element, with the hover, jump and peek gestures resolved to (line, column) from the pointer. Per-row backgrounds and bars come from two closures, so the listing's selection and anchor bars and the document's slice highlight all share it. wide makes the block take the full width rather than the grid's. It returns the interaction and, under the pointer, the line and the text column, the column being None over the gutter. Shift+wheel over a block whose lines are wider than it scrolls it sideways, and while it is scrolled a thin weak bar on its left edge shows that the start of the lines is cut off.
+lines 0 93
+hash a07e2aa176e811fd
+note The one code element in the GUI: a block of lines drawn from a cached grid by a custom element, with the hover, jump and peek gestures resolved to a (line, column) spot from the pointer. Per-row backgrounds and bars come from the two Marks closures, so the listing's selection and anchor bars and the document's slice highlight share it. Width::Wide takes the full width rather than the grid's. It returns the Interaction and the spot under the pointer, whose column is None over the gutter. Shift+wheel over a block whose lines are wider than it scrolls it sideways (kept in the Model's across scrolls, pushed as ScrollAcross), and while it is scrolled a thin weak bar on its left edge shows that the start of the lines is cut off. Which gesture is peek and which is jump comes from keys::code_gesture, that is from the feature registry.
 
 step pwtsq2
 order 18
+parent 2yp2r2
 author ai
-file src/gui/widgets.rs
-symbol small_button_w
-lines 0 13
-hash f19e3ace99038004
-note A small button of fixed width, or fitted to its label when the width is 0, which is what small_button passes: a toggle whose label changes ('hide code' to 'code') keeps its place, so the buttons beside it never slide under a pointer clicking twice.
+file crates/gui/src/widgets.rs
+symbol small_button_sized
+lines 0 25
+hash 5a9da7728b211a18
+note A small button of fixed width in cells, or fitted to its label when there is none, which is what small_button passes: a toggle whose label changes ('hide code' to 'code') keeps its place, so the buttons beside it never slide under a pointer clicking twice.
 
 step qceo1l
 order 19
+parent v1qf6b
 author ai
-file src/gui/widgets.rs
+file crates/gui/src/widgets.rs
 symbol nav_button
+lines 0 26
+hash 7db00acc635312ac
+note Back and forward: three cells wide, greyed out when their stack is empty so the reader sees there is nowhere to go.
+
+step r5th9i
+order 39
+parent 6wdt9w
+author ai
+file crates/gui/src/field.rs
+symbol type_text
+lines 0 9
+hash 517e64a9d412fae1
+note Typed text is inserted at the caret, replacing the whole text first when it is marked.
+
+step r73ytr
+order 32
+parent pk9re7
+author ai
+file crates/gui/src/widgets/code.rs
+symbol spot_at
 lines 0 16
-hash 27ac24d4f4919063
-note Back and forward: three cells wide, dimmed when their stack is empty so the reader sees there is nowhere to go.
+hash c88b4c2f5bf4c3aa
+note The pointer to (line, column): the row from the block's top and the cell height, the column from the left edge plus the sideways scroll, minus the six-column gutter.
+
+step rcazsr
+order 1
+author ai
+file crates/gui/src/widgets.rs
+symbol Container
+lines 0 19
+hash b7ece6cf18660120
+note Every box that holds other elements is one of these: the window, the body, the dock row, the centre, the bars, the toolbars, a panel column, a step row or code column (with its selected mark), a tooltip. A view opens one with Frame::start and closes it with finish; it never spells out a layout or a style.
 
 step rs11uk
-order 13
-author ai
-file src/gui/widgets.rs
-symbol take_focus
-lines 0 4
-hash fd6384e92ae5e6c0
-note Focus is exclusive and is set by clearing everyone else: with five fields that is cheaper than tracking which one had it.
-
-step sycnk6
 order 14
 author ai
-file src/gui/widgets.rs
-symbol scroll_open
-lines 0 6
-hash a215967502c0fff3
-note Opens a scrolling column and remembers its offset by id on the App; the wheel moves it and the caller closes it with ui.close(). The tree clamps the offset against what the column showed last frame, so a panel that shrank cannot stay scrolled past its end.
+file crates/gui/src/widgets.rs
+symbol take_focus
+lines 0 3
+hash e6dbf549639df7cf
+note Taking the keyboard: the overlay records it for the rest of this frame and FocusField sets it on the Model when the queue is applied.
+
+step sycnk6
+order 15
+author ai
+file crates/gui/src/widgets.rs
+symbol scroll_column
+lines 0 32
+hash c0489573512de0c7
+note Opens a scrolling column whose offset lives in the Model's Scrolls by id: the wheel moves it, the result goes back as a Scroll action, and the caller closes the column with finish. The tree clamps the offset against what the column showed last frame, so a panel that shrank cannot stay scrolled past its end. Scroller picks the shape: a panel, the document (wider padding), or a fixed height, which the peek uses.
+
+step t1pqtr
+order 26
+parent 7mnsht
+author ai
+file crates/gui/src/widgets.rs
+symbol focused
+lines 0 7
+hash d37c95ded2f8512e
+note Whether a field has the keyboard this frame: a focus taken earlier in this frame (the overlay) wins over the Model's, so a click shows the caret in the same frame.
 
 step tstdq3
 order 8
 parent ulzrgg
 author ai
-file src/gui/widgets.rs
-symbol handle
-lines 0 93
-hash a314363340775bd3
-note The keys a field understands: editing, home and end, up and down through the history, enter to submit (a field that keeps its text selects it all so the next entry replaces it), ctrl+a to select all, ctrl+u to clear, escape to drop focus. Returns the line when enter was pressed. Left and right with ctrl or alt are left to the app.
+file crates/gui/src/field.rs
+symbol apply
+lines 0 67
+hash ff9e76cd41f36d85
+note The keys a field understands, as Edits from keys::edits: editing, home and end, up and down through the history, enter to submit, ctrl+a to mark all, ctrl+u to clear, escape to drop the keyboard. Enter returns the line; a field that keeps its text (Enter::Keep: search, the symbol filter, go-to-line) marks it all so the next entry replaces it, one that clears (the command line, new path) empties. Left and right with ctrl or alt never become Edits: they are back and forward.
 
 step ug0bcn
 order 9
 parent ulzrgg
 author ai
-file src/gui/widgets.rs
+file crates/gui/src/field.rs
 symbol byte_at
-lines 0 6
-hash 9fc1c6b2ab0d4e91
-note The caret is counted in characters and the text is indexed in bytes; this is the one place the two meet, so a non-ASCII character cannot split a string.
+lines 0 5
+hash ec930755a5b5ce84
+note The caret is counted in characters and the text is indexed in bytes; this is the one place the two meet, so a non-ASCII character cannot be split.
 
 step ulzrgg
 order 7
 parent 7mnsht
 author ai
-file src/gui/widgets.rs
+file crates/gui/src/field.rs
 symbol Field
-lines 0 7
-hash c24659eee4c6258d
-note The one widget with state: the text, the caret in characters, whether it has the keyboard, whether the whole text is selected so the next character typed replaces it, and a submitted-line history. Five of these live on the App and are named by the enum below.
+lines 0 6
+hash 8df2adeb84eb2f11
+note The one widget with state: the text, the caret in characters, whether the whole text is marked so the next character typed replaces it, and the submitted lines with which one of them up and down have recalled. Five of these live in Fields on the Model.
 
 step v1qf6b
-order 3
+order 4
 author ai
-file src/gui/widgets.rs
+file crates/gui/src/widgets.rs
 symbol button
-lines 0 15
-hash ce5c989dadb0f809
-note A framed button with three states. It asks the tree what its id learned before it builds the element, which is how it can colour itself for a hover that happened last frame.
+lines 0 24
+hash 778ef1c02b3c92dc
+note A framed button, selected, hovered or plain. It asks the tree what its id learned last frame before it builds the element, which is how it colours itself for a hover. control is the same button for a Control from ids.
+
+step v3vvt7
+order 30
+author ai
+file crates/gui/src/widgets.rs
+symbol canvas
+lines 0 12
+hash 16484cd111dc435b
+note An element that fills its container and is drawn by a closure on the Canvas: the graph.
+
+step we51in
+order 34
+parent 6dfeyu
+author ai
+file crates/gui/src/grid.rs
+symbol build
+lines 0 53
+hash 22fe4a809cbcfb6f
+note A span of a file as a grid of coloured cells: a five-digit line number in the gutter, then each character in its highlight class's colour from the file's highlight spans, text-coloured where no span covers it.
 
 step wysgxw
-order 5
+order 6
 author ai
-file src/gui/widgets.rs
+file crates/gui/src/widgets.rs
 symbol row
+lines 0 2
+hash 6927a95a29c20605
+note A selectable full-width row of coloured runs with a hover background and a selection background. Every list in the app - paths, outline, symbols, files, xrefs, results, diff - is this one function in a loop.
+
+step z678b0
+order 31
+parent pk9re7
+author ai
+file crates/gui/src/widgets/code.rs
+symbol CodeBlock
 lines 0 7
-hash 5d24e4fbc81da6c1
-note A selectable full-width row: coloured runs, a hover background and a selection background. Every list in the app - paths, outline, symbols, files, xrefs, results, diff - is this one function in a loop.
+hash e35892800a3edadb
+note What a view asks for: a file, the first and last line, the element id, the width, and the marks.
 
 step zo7d1b
 order 10
 parent ulzrgg
 author ai
-file src/gui/widgets.rs
-symbol runs
-lines 0 6
-hash 8ae832d1bb3e3c0b
-note The field as runs: text before the caret, the caret itself when focused, text after. An empty unfocused field shows its hint instead.
+file crates/gui/src/widgets.rs
+symbol field_runs
+lines 0 17
+hash b6272b513a42c1d8
+note The field as runs: the text before the caret, the caret itself when focused, the text after, in the accent colour while the whole text is marked. An empty unfocused field shows its hint instead.

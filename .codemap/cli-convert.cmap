@@ -1,0 +1,260 @@
+codemap 8
+path cli-convert
+kind layer
+author ai
+group cli
+note convert.rs: the cli crate's values and the conversion from clap's Command into them. A Request is a Query (the reading commands), an Edit (the map edits) or a repin, each variant holding domain values (PathName, TextFragment, SymbolName, RelativePath, Note, GroupName) or the crate's own small types for what the user typed as numbers: StepIndex (a position in the step list, as paths shows it), Under (a parent index where -1 is the root), LineNumber (1-based as typed), Levels (a depth), Count. Conversion never fails: a value that does not validate, such as a path name with a bad character, is carried as the MapError it produced and reported by exec, so the refusal wording stays in wire.rs. step_id, step_index and line_range are where the user's indices and 1-based lines meet the domain's StepId and 0-based Span.
+
+step 06py9p
+order 2
+parent brorqo
+author ai
+file crates/cli/src/convert.rs
+symbol Query
+lines 0 30
+hash f57f14fa7e8b93ed
+note The reading commands, each with the arguments it needs as domain values. None of them can change the map.
+
+step 1u3vma
+order 4
+parent ai6efw
+author ai
+file crates/cli/src/convert.rs
+symbol Placement
+lines 0 4
+hash 26379847d28ed50b
+note path-add's target and trailing numbers read: the symbol or file, the line range when two numbers were given, and the parent when one or three were.
+
+step 21hyny
+order 10
+parent 06py9p
+author ai
+file crates/cli/src/convert.rs
+symbol Filter
+lines 0 0
+hash 472c88c3cbdf1e12
+note An optional substring filter as typed; no filter matches everything.
+
+step 2b0zqe
+order 11
+parent 21hyny
+author ai
+file crates/cli/src/convert.rs
+symbol matches
+lines 0 2
+hash 7c8bbb5c8899ede3
+note Plain substring containment, case-sensitive.
+
+step 2kxj59
+order 22
+parent tuhs6h
+author ai
+file crates/cli/src/convert.rs
+symbol line_range
+lines 0 6
+hash 6e6ad28c3bf3dc4b
+note path-add's and path-pin's range: out of the file or backwards is None (Failure::LineRange) rather than clamped, since a step must pin real lines.
+
+step 7hovbj
+order 25
+parent xzu2w0
+author ai
+file crates/cli/src/convert.rs
+symbol depth
+lines 0 2
+hash 8dd2bdee8256119e
+note As the domain's Depth, saturating rather than wrapping on an absurd number.
+
+step 7xndtj
+order 8
+parent x88qf5
+author ai
+file crates/cli/src/convert.rs
+symbol GroupPlacement
+lines 0 3
+hash d881e09c06cf399f
+note Keep leaves the path's group alone; At(None) moves it to the top level.
+
+step 999xiq
+order 18
+author ai
+file crates/cli/src/convert.rs
+symbol Count
+lines 0 0
+hash 136c100d03a147b2
+note A number of things, printed in reports and failures; also the step count path-add defaults its parent from.
+
+step ai6efw
+order 3
+parent brorqo
+author ai
+file crates/cli/src/convert.rs
+symbol Edit
+lines 0 72
+hash ee62179fc46ddc36
+note The map edits. Names of paths to find are TextFragments, looked up by exec, while names to create are Result<PathName, MapError>, so a bad name reaches exec and is reported there like any other refusal.
+
+step ba8nwl
+order 21
+parent tuhs6h
+author ai
+file crates/cli/src/convert.rs
+symbol visible
+lines 0 16
+hash 8fbe0505b0b42fd8
+note show's range: missing ends default to the whole file and every number is clamped into it.
+
+step bd0o5h
+order 5
+parent 1u3vma
+author ai
+file crates/cli/src/convert.rs
+symbol from
+lines 0 19
+hash c6d16e17b4eaf9fb
+note Reads path-add's trailing numbers by count: [under], [start end] or [start end under]; none is a whole symbol under the default parent.
+
+step bj22qf
+order 13
+parent ma3ca0
+author ai
+file crates/cli/src/convert.rs
+symbol step_id
+lines 0 4
+hash 489ec63efb65e873
+note Position to StepId, or None when the path has fewer steps.
+
+step brorqo
+order 0
+author ai
+file crates/cli/src/convert.rs
+symbol Request
+lines 0 4
+hash 05ba9b627a5e46bf
+note What exec runs: a Query, an Edit, or a repin with its optional revision. Private to the crate; only Invocation::parse makes one.
+
+step hc3wgx
+order 16
+parent meki6m
+author ai
+file crates/cli/src/convert.rs
+symbol of
+lines 0 5
+hash b94f6bd9b48eadc2
+note The Under that names a step's parent, -1 when it has none.
+
+step j8a1ds
+order 1
+parent brorqo
+author ai
+file crates/cli/src/convert.rs
+symbol from
+lines 0 42
+hash 6b1511c0cb632a9a
+note One arm per command. Each argument struct converts through its own From, so this match only says which kind of request a command is.
+
+step kuueng
+order 9
+parent 06py9p
+author ai
+file crates/cli/src/convert.rs
+symbol LinkView
+lines 0 3
+hash f46bb02c2af7e3cb
+note path --expand: whether linked paths print inline.
+
+step ma3ca0
+order 12
+author ai
+file crates/cli/src/convert.rs
+symbol StepIndex
+lines 0 0
+hash a49033236bebb9ed
+note A step's position in the path's step list, the number paths prints in square brackets. Positions shift when a step is removed; the map itself refers to steps by StepId.
+
+step meki6m
+order 15
+author ai
+file crates/cli/src/convert.rs
+symbol Under
+lines 0 0
+hash 0ff55045c68013b4
+note A parent as typed: a step index, or -1 for the root.
+
+step qzcsm4
+order 17
+parent meki6m
+author ai
+file crates/cli/src/convert.rs
+symbol fits
+lines 0 5
+hash 462927e594bafc4c
+note Whether the parent exists: -1 or an index below the step count.
+
+step tuhs6h
+order 20
+author ai
+file crates/cli/src/convert.rs
+symbol LineNumber
+lines 0 0
+hash ce4038368821cc43
+note A line number as the user typed it, 1-based and possibly out of range.
+
+step v4bfdn
+order 23
+parent tuhs6h
+author ai
+file crates/cli/src/convert.rs
+symbol line
+lines 0 5
+hash 3fb43697af8ad6b5
+note 1-based to the 0-based Line, None for 0 or less.
+
+step viisa8
+order 14
+parent ma3ca0
+author ai
+file crates/cli/src/convert.rs
+symbol step_index
+lines 0 5
+hash cee0432e53d06aac
+note StepId to position, for printing a step the map named by id.
+
+step x88qf5
+order 7
+parent ai6efw
+author ai
+file crates/cli/src/convert.rs
+symbol from
+lines 0 12
+hash 0c9d2eb6a625e243
+note path-new: the name validated, the note dropped when empty, and the group kept apart from no group at all, so re-running path-new without --group leaves the group as it is.
+
+step xzu2w0
+order 24
+author ai
+file crates/cli/src/convert.rs
+symbol Levels
+lines 0 0
+hash 209e74c1dc5d68d2
+note A depth as typed for tree and promote.
+
+step zglpfp
+order 19
+parent 999xiq
+author ai
+file crates/cli/src/convert.rs
+symbol last
+lines 0 2
+hash 247f88d14f80ae15
+note The last step as a parent, or the root when the path is empty: path-add's default parent.
+
+step zjm9mu
+order 6
+parent 1u3vma
+author ai
+file crates/cli/src/convert.rs
+symbol Lines
+lines 0 3
+hash 0c001bca13ae1a6b
+note A 1-based inclusive line range as typed.

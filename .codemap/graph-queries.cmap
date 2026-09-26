@@ -8,111 +8,101 @@ note Moving along the call graph: the queries the agent navigates with, and the 
 step 0647og
 order 11
 author ai
-file src/cli.rs
-symbol exec
-lines 141 159
-hash 3ad6b5769056132d
-note index: every pending file under a path asked for at once, how a session readies a crate before mapping it. The GUI refuses it, since it indexes everything in the background.
+file crates/cli/src/exec.rs
+symbol index_pending
+lines 0 15
+hash 78aa4bfe0bbf44a1
+note index: every pending file under a path asked for at once, how a session readies a crate before mapping it, then how many files were asked and how many in the repo still wait. The GUI refuses it (Failure::ServersInBackground), since it indexes everything in the background.
 
 step 0rubme
 order 10
 author ai
-file src/cli.rs
-symbol need
-lines 0 13
-hash 6c33c931f46f3d43
-note The one way a command asks for files: only the pending ones go to Servers, and the map's anchors are resolved again after, since a server's answer replaces a file's symbols and their indices.
+file crates/cli/src/exec.rs
+symbol index_files
+lines 0 18
+hash 395c92f598ee9fff
+note The one way a command asks for files: only the pending ones go to Servers::index, and the map's anchors are resolved again after (Map::resolve_all), since a server's answer replaces a file's symbols and their indices. Without servers it does nothing.
 
 step 5xix2r
 order 0
 author ai
-file src/index/mod.rs
+file crates/domain/src/index.rs
 symbol roots
-lines 0 11
-hash abe17654ebe5c01a
+lines 0 12
+hash 6bbff438bd3725e9
 note Entry points: a symbol with callees and no callers. Sorted by how much each one calls, so the first few are the real entry points of the program and the tail is dead or test-only code.
 
 step 7p5233
 order 8
 author ai
-file src/cli.rs
-symbol exec
-lines 81 93
-hash 07e105c736b177f7
+file crates/cli/src/exec.rs
+symbol callees
+lines 0 19
+hash 0e5466aea33e6dc8
 note callees: the symbols' files are indexed first, since a file's calls are known only once its server answered, then every symbol of that name is printed with its callees.
 
 step 8yeqtb
 order 4
 parent d764ep
 author ai
-file src/cli.rs
-symbol exec
-lines 160 167
-hash 8fa39fe546ab7223
-note The tree command: need_tree indexes the files the tree reaches first, then the walk prints with its depth as indentation.
+file crates/cli/src/exec.rs
+symbol tree
+lines 0 8
+hash d69918baef7b771d
+note The tree command: index_tree indexes the files the tree reaches first, then every symbol of that name prints its tree with depth as indentation.
 
 step d764ep
 order 2
 author ai
-file src/index/mod.rs
+file crates/domain/src/index.rs
 symbol call_tree
-lines 0 5
-hash f7eaab48fba5decf
-note Pre-order, depth-limited walk from one symbol, each symbol at most once. This is the shape a promoted path takes and the shape the tree command prints.
+lines 0 22
+hash b81e86551466166b
+note Pre-order, depth-limited walk from one symbol, each symbol at most once, as a list of (symbol, depth) TreeEntry rows. An explicit stack with callees pushed in reverse keeps the code's call order; the seen set is what stops a cycle and also what makes a shared callee appear under its first caller only. This is the shape a promoted path takes (Map::promote walks it) and the shape the tree command prints.
 
 step el9g3f
 order 9
 author ai
-file src/cli.rs
-symbol need_tree
-lines 0 23
-hash 03fe1ecae67feddf
-note One depth of the call tree at a time: the files the tree reaches and that still wait for a server are indexed, which can reveal deeper callees, until nothing new is reached. tree and promote share it.
+file crates/cli/src/exec.rs
+symbol index_tree
+lines 0 16
+hash 7a09941bfac5cb5a
+note One depth of the call tree at a time: the files the tree reaches that still wait for a server are indexed, which can reveal deeper callees, until nothing new is reached. tree and promote share it.
 
 step jeuyyl
 order 1
 parent 5xix2r
 author ai
-file src/cli.rs
-symbol exec
-lines 168 177
-hash 4652d4ec9d26a8eb
-note The roots command, and the same list the GUI focuses on at startup.
+file crates/cli/src/exec.rs
+symbol roots
+lines 0 4
+hash d55a37c7f1d7dbe9
+note The roots command: the first n roots (30 by default), each with how many symbols it calls.
 
 step m2d5xw
 order 6
 parent sry152
 author ai
-file src/cli.rs
-symbol describe
-lines 0 9
-hash a102dd25f2803a24
-note The one line format every symbol is printed in: name, then file:start-end, so output pastes back into show or path-add.
-
-step nql372
-order 3
-parent d764ep
-author ai
-file src/index/mod.rs
-symbol walk
-lines 0 17
-hash 441ca1acd70a4a3e
-note The recursion. The seen set is what stops a cycle and also what makes a shared callee appear under its first caller only.
+file crates/cli/src/wire.rs
+symbol symbol_label
+lines 0 10
+hash e184ce4bafc0e545
+note The one label every symbol is printed with: name, then file:start-end, so output pastes back into show or path-add. symbol_line indents it by depth for callers, callees and tree.
 
 step sry152
 order 5
 author ai
-file src/cli.rs
-symbol exec
-lines 94 115
-hash a6a31dc41294f284
-note callers: with a server, its incoming calls for the symbol, which cover files nothing has indexed; without one (the GUI's command line), the callers link derived. Every symbol of that name is answered, so an unqualified ambiguous name shows all of them.
+file crates/cli/src/exec.rs
+symbol callers
+lines 0 27
+hash a1c0477f03781680
+note callers: with servers (the CLI), the language server's incoming calls for the symbol, which cover files nothing has indexed, each turned into its calling symbol by by_line; without them (the GUI's command line), the callers link derived. Every symbol of that name is answered, so an unqualified ambiguous name shows all of them.
 
 step vhx9tz
 order 7
 author ai
-file src/cli.rs
-symbol exec
-lines 116 140
-hash 4809d4de7d0ded81
-note refs: asked of the language's server for the one symbol; the GUI's command line, which has no servers, prints what the xrefs panel already asked for, and a file with no server says which one is missing.
+file crates/cli/src/exec.rs
+symbol references
+lines 0 36
+hash 8de52f6d31bc0c42
+note refs: asked of the language's server for the one symbol. The GUI's command line, which has no servers, prints what the xrefs panel already asked for when the file was answered by a server; otherwise it says which server is missing.

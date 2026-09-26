@@ -1,0 +1,36 @@
+codemap 8
+path feature-auto-layout
+kind flow
+author ai
+group features/gui
+note The Graph tab's 'auto layout' button drops every position the user set by dragging nodes, so the whole graph goes back to the computed layout. Expansions, context and the camera stay.
+
+step 23x47j
+order 0
+author ai
+file crates/gui/src/graph/input.rs
+symbol apply
+lines 83 83
+hash 0d3bbbf6ff9744c3
+note The handler: clears every dragged (and pinned) node position.
+
+step 4a827x
+order 1
+parent 23x47j
+author ai
+file crates/gui/src/views/center.rs
+symbol graph_tab
+lines 30 35
+hash 6183e39cfa05db4c
+note Trigger: GRAPH_AUTO in the graph toolbar queues Graph(AutoLayout).
+
+step 96zy5y
+order 2
+parent 23x47j
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_layout
+lines 0 26
+hash 457dec97263ffbda
+link graph-layout
+note The effect next frame: with nothing manual to lay over it, the computed placement is what is drawn.

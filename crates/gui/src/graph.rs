@@ -58,6 +58,29 @@ pub(crate) enum Button {
     NoContext,
 }
 
+impl Button {
+    #[cfg(test)]
+    pub(crate) const fn feature(self) -> features::Feature {
+        match self {
+            Self::Preview | Self::Above | Self::Below | Self::NoContext => {
+                features::Feature::NodeContext
+            }
+            Self::Listing => features::Feature::NodeListing,
+            Self::Callees | Self::Callers => features::Feature::ExpandNode,
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) const fn element(self) -> features::Element {
+        match self {
+            Self::Preview => features::Element::new("node-preview"),
+            Self::Listing => features::Element::new("node-listing"),
+            Self::Callees | Self::Callers => features::Element::new("node-button"),
+            Self::Above | Self::Below | Self::NoContext => features::Element::new("node-context"),
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Hit {
     Header(Node),

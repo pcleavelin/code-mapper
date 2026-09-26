@@ -11,7 +11,7 @@ use domain::{
 };
 use features::Feature;
 use index::{ServerNotice, StartError};
-use io_map::{Fault, MapLoadError, MapSaveError, MapStore, Origin, ParseError};
+use io_map::{Fault, MapLoadError, MapSaveError, MapStore, MapVersion, Origin, ParseError};
 
 use crate::convert::{Count, StepIndex, Under};
 use crate::exec::LeftStale;
@@ -19,8 +19,6 @@ use crate::failure::{Candidate, Failure, StepPlace};
 use crate::output::{Output, write_line};
 
 const PROGRAM: &str = "codemap";
-
-const MAP_VERSION: &str = "codemap 8";
 
 const KINDS: [(PathKind, &str); 3] = [
     (PathKind::Flow, "flow"),
@@ -973,15 +971,21 @@ pub(crate) fn step_removed(output: &mut Output, step: &Step) {
     );
 }
 
+pub(crate) fn start_error(error: &StartError) -> Output {
+    Output::of(match error {
+        StartError::Missing(program) => format!("{program} not on PATH"),
+        StartError::Failed(program) => format!("{program} would not start"),
+    })
+}
+
 pub(crate) fn notice(notice: &ServerNotice) -> Output {
     Output::of(match notice {
         ServerNotice::ToIndex { program, files } => format!("{program}: {files} files to index"),
         ServerNotice::Unavailable(error) => {
-            let reason = match error {
-                StartError::Missing(program) => format!("{program} not on PATH"),
-                StartError::Failed(program) => format!("{program} would not start"),
-            };
-            format!("{reason}: its files keep the tree-sitter resolver")
+            format!(
+                "{}: its files keep the tree-sitter resolver",
+                start_error(error).as_str()
+            )
         }
     })
 }
@@ -1059,7 +1063,7 @@ fn origin(origin: &Origin) -> String {
 }
 
 fn fault(fault: &Fault) -> String {
-    let version = MAP_VERSION;
+    let version = MapVersion::CURRENT.as_str();
     match fault {
         Fault::Conflict => "an unresolved merge conflict".to_owned(),
         Fault::Version(line) => format!("'{line}' is not '{version}'; regenerate this map"),
@@ -1142,7 +1146,11 @@ impl fmt::Display for Failure {
                     .iter()
                     .map(|choice| format!("{:<40} {}", choice.name.as_str(), choice.label))
                     .collect();
-                write!(formatter, "ambiguous: {query}; use one of\n  {}", list.join("\n  "))
+                write!(
+                    formatter,
+                    "ambiguous: {query}; use one of\n  {}",
+                    list.join("\n  ")
+                )
             }
             Self::LineRange => formatter.write_str("line range out of bounds"),
             Self::NoPlaceUnder { under, steps } => write!(
@@ -1168,9 +1176,6 @@ impl fmt::Display for Failure {
                 (true, false) => write!(formatter, "{links} broken links"),
                 _ => write!(formatter, "{steps} stale steps, {links} broken links"),
             },
-            Self::NoWindow => formatter.write_str(
-                "codemap-next has no GUI yet: give a command after the root (codemap-next <root> help)",
-            ),
         }
     }
 }

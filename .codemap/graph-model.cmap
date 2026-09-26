@@ -3,183 +3,443 @@ path graph-model
 kind type
 author ai
 group gui/graph
-note The graph canvas is derived, never accumulated. What is on screen is always a base plus an ordered list of expansions: the base is the selected path's steps as a tree, plus the focused symbol as its own root when no step shows it, and each expansion is 'the callers of X' or 'the callees of X' in the order the reader opened them. rebuild runs every frame and starts from empty, so closing an expansion also removes whatever was only reachable through it - there is no orphan cleanup because nothing is ever added incrementally. The only state that survives a rebuild is what the reader chose: the expansion list, which nodes are cut to a preview, how much context each shows, and any node they dragged. That state is keyed by symbol index, which a re-index invalidates, so save and restore carry it across one by symbol name.
+note The graph canvas is derived, never accumulated. What is on screen is always a base plus an ordered list of expansions: the base is the selected path's steps as a tree, plus the focused symbol as its own root when no step shows it, and each expansion is 'the callers of X' or 'the callees of X' in the order the reader opened them. rebuild runs every frame, reads only the Model, and returns a fresh Built, so closing an expansion also removes whatever was only reachable through it - there is no orphan cleanup because nothing is ever added incrementally. The only state that survives a rebuild is what the reader chose, kept on GraphState: the expansion list, which nodes are cut to a preview, how much context each shows, any node they dragged, and the camera. GraphState's fields are private to the graph module and change only through GraphAction values applied by GraphState::apply, which App::apply reaches through Action::Graph - so every change is an action the rest of the GUI can see, queue or replay. The reader's state is keyed by Node, which holds a SymbolId that a re-index invalidates, so save and restore carry it across one by SymbolKey.
+
+step 12pcq1
+order 25
+parent wu5v06
+author ai
+file crates/gui/src/graph/build.rs
+symbol set_views
+lines 0 24
+hash 2b3f5c7480d95c68
+note Every node's view: its range widened by its context, or no context while it is cut to a preview, clamped to the file.
 
 step 1fwzx4
 order 0
 author ai
-file src/gui/graph.rs
-symbol Graph
-lines 0 29
-hash 5b8bdd4eac0c3347
-note The fields split two ways, and the struct says which is which. The tree - nodes, their columns, positions, sizes, line ranges, step numbers, parents and origins, and the hit rectangles - is rebuilt every frame from the selection and is read as last frame's by the next frame's input. The reader's part survives frames: the expansions opened, the nodes cut to a preview or widened with context, the positions dragged (manual, which freezes the layout until the node set changes) and the camera. pos, size and manual are in cells and rows, cell is the cell width and row height in pixels, and hits are in window pixels. range is a node's own lines (the step's slice or the whole symbol) and view is that range widened by context and clamped to the file. step maps a step node to its pre-order position, anchor index and hierarchical number; origin maps an expansion node to the node that revealed it and whether it came through callees; code_top is the y of a node's first code row. auto_open is the off-path root whose callers and callees were opened for it; want_look asks to centre on the focus once it has a position, hold_look says the next focus change came from the graph itself and must not move the camera, want_fit asks for the fit, and keep is a node and its pixel position before the relayout its button caused.
+file crates/gui/src/graph.rs
+symbol GraphState
+lines 0 17
+hash b0a90460b1592a6e
+note The fields split two ways. The reader's part survives frames: expansions opened, auto_open (the off-path root whose callers and callees were opened for it, so closing them afterwards sticks), collapsed (nodes cut to a preview), context (lines widened above and below), manual (dragged positions in fractional cells, which override the layout for as long as the node exists), the drag in progress, pan (pixels) and zoom, and the camera wishes look, hold_look and fit with keep, the node a button asked to hold still. The frame's part is replaced every frame: built (this frame's Built), hits (hit rectangles in window pixels, read by the next frame's input), code_top (the pixel y of each node's first code row) and cell (the frame's cell size in pixels).
 
 step 1qriwj
 order 7
+parent q2lmal
+author ai
+file crates/gui/src/graph/input.rs
+symbol apply
+lines 21 31
+hash 89b72ff234159bfa
+note Opening and closing an expansion is the same operation on the list; the next rebuild does the rest. It keeps the node still for the camera and drops its dragged position, since its size is about to change. Every other node stays where the reader put it.
+
+step 35x0vp
+order 43
 parent 1fwzx4
 author ai
-file src/gui/graph.rs
-symbol toggle
+file crates/gui/src/graph.rs
+symbol camera
+lines 0 2
+hash e6193c999f211ba1
+note The dump's handle on the camera text; drag_text is its twin for the drag.
+
+step 3wyd4q
+order 30
+parent 9e9x8x
+author ai
+file crates/gui/src/graph/build.rs
+symbol shown_span
+lines 0 5
+hash f09c06b7aee7d67e
+note The lines actually shown: the first 'shown' lines of the view, or none for an empty view.
+
+step 4i3igp
+order 11
+parent 1fwzx4
+author ai
+file crates/gui/src/graph.rs
+symbol Around
+lines 0 3
+hash 1876107b57d49d58
+note Extra lines of context shown above and below a node's own range, in steps of Context::LINES.
+
+step 4ldvps
+order 42
+parent 1fwzx4
+author ai
+file crates/gui/src/graph.rs
+symbol impl fmt::Display for DragText
 lines 0 9
-hash 0e96c6610980840c
-note Opening and closing an expansion is the same operation on the list; the next rebuild does the rest. It also drops the dragged position of this node, whose size is about to change, and remembers the opening so the camera can bring what it revealed into view. Every other node stays where the reader put it.
+hash e8e8d016bbbdcfff
+note The drag in progress as text for the GUI dump's input line: none, pan or node.
+
+step 4mu1oa
+order 37
+parent qac7fm
+author ai
+file crates/gui/src/graph.rs
+symbol KeyedNode
+lines 0 3
+hash 386b26d0df90ab69
+note A node by SymbolKey and step slot. SavedExpansion, SavedAround and SavedPlace pair it with the one value each list keeps.
 
 step 5mmllx
 order 1
 parent 1fwzx4
 author ai
-file src/gui/graph.rs
+file crates/gui/src/graph.rs
 symbol Node
-lines 0 0
-hash 586937b14e4dd794
-note A node is a symbol plus the step it stands for, so two slice steps of one symbol are two nodes each showing its own lines; by_sym picks the one edges and expansions land on.
+lines 0 3
+hash f11392d06ae27683
+note A node is a symbol plus the path step it stands for, so two slice steps of one symbol are two nodes each showing its own lines; an off-path node has no step. Built::by_symbol picks the one node per symbol that edges and expansions land on.
 
 step 9e9x8x
-order 8
+order 17
 parent 1fwzx4
 author ai
-file src/gui/graph.rs
-symbol lines_shown
-lines 0 11
-hash 883327c2c98199f5
-note A node shows all of its lines unless the reader cut it to a preview; the pair is (shown, total), which is also what the 'more'/'less' button reads.
+file crates/gui/src/graph/build.rs
+symbol shown
+lines 0 8
+hash 0f4eeed3dc8e3406
+note A node shows all of its view unless the reader cut it to a preview of PREVIEW_LINES; the pair is (shown, total), which is also what the more/less button and the footer read.
+
+step b3gb9p
+order 38
+parent nsg5x2
+author ai
+file crates/gui/src/graph.rs
+symbol rect_at
+lines 0 2
+hash 497d513f565b764f
+note The same with the frame's recorded cell, which is what the camera and keep_node use.
 
 step bwbobp
-order 11
+order 34
 parent 1fwzx4
 author ai
-file src/gui/graph.rs
-symbol new
-lines 0 5
-hash 1e70212e93868c51
-note Everything defaults except the zoom, which starts at 1:1.
+file crates/gui/src/graph.rs
+symbol default
+lines 0 19
+hash 4870ca0a1be41124
+note Everything empty and settled, except the zoom, which starts at 1:1.
+
+step cwymf3
+order 27
+parent q2lmal
+author ai
+file crates/gui/src/graph/input.rs
+symbol GraphAction
+lines 0 26
+hash f460d7db30caec27
+note Every change the graph accepts, as data. The input phase and the toolbar produce them; App::apply routes them here through Action::Graph.
 
 step dckpmw
-order 10
+order 18
 parent 1fwzx4
 author ai
-file src/gui/graph.rs
+file crates/gui/src/graph/build.rs
 symbol focus_node
-lines 0 8
-hash aeaec6d364e4a71a
-note The node the selection sits on: the selected step's node when there is one, else whatever node shows the selected symbol. The camera and the accent border both ask this.
+lines 0 12
+hash a7641beca0b66472
+note The node the selection sits on: the selected step's node when there is one, else the node by_symbol picks for the focused symbol. The camera and the accent border both ask this.
 
 step dqdb3u
-order 14
+order 35
 parent 1fwzx4
 author ai
-file src/gui/graph.rs
+file crates/gui/src/graph.rs
 symbol save
-lines 0 9
-hash 0e3eb031a612bfe7
-note A re-index renumbers a file's symbols, so every node key in the state above it goes dead. This writes the reader's state out keyed by (file path, symbol name) instead, which survives one.
+lines 0 41
+hash a99a9e8b494a6d69
+note A re-index renumbers a file's symbols, so every node key in the reader's state goes dead. This writes that state out keyed by SymbolKey and step slot instead, which survives one; work.rs calls it before a re-index is merged and restore after.
 
 step e0f0cd
-order 15
+order 36
 parent 1fwzx4
 author ai
-file src/gui/graph.rs
+file crates/gui/src/graph.rs
 symbol restore
-lines 0 19
-hash c978abc70c7ed7ac
+lines 0 29
+hash 368651eeb50424bd
 note Reads it back onto the new index, dropping whatever no longer has a symbol. The camera is not part of it: a re-index is not a navigation and must not move the view.
+
+step g6xcxo
+order 40
+parent vz67qx
+author ai
+file crates/gui/src/graph.rs
+symbol has_expansion
+lines 0 2
+hash fbd80b2a6ad52703
+note Whether this exact expansion is in the reader's list, which turns an expansion button into its 'hide' form.
+
+step h5exxt
+order 20
+parent yfsnxc
+author ai
+file crates/gui/src/graph/build.rs
+symbol Origin
+lines 0 3
+hash 245a417698c86d25
+note The node whose expansion revealed this one and which side it came through, which decides whether it hangs to the right (callees) or the left (callers) of that node in the layout.
+
+step h6dviw
+order 24
+parent wu5v06
+author ai
+file crates/gui/src/graph/build.rs
+symbol add_expansions
+lines 0 36
+hash 0ab4ac92382ea7ab
+note Each expansion in order: the node's callees (callees_of) one rank right or its callers one rank left, each added as an off-path node with its origin unless its symbol is already on the canvas. An expansion whose node is not on the canvas this frame does nothing and stays in the list.
 
 step i7dtw6
 order 13
 parent yxmrlu
 author ai
-file src/gui/graph.rs
-symbol header_cols
-lines 0 5
-hash 72abba7600f107bd
+file crates/gui/src/graph/build.rs
+symbol header_cells
+lines 0 9
+hash 7cb92b1f954451ee
 note Cells the header needs: its text plus every button's label with its padding and gap.
+
+step ikex4l
+order 41
+parent 9e9x8x
+author ai
+file crates/gui/src/graph/build.rs
+symbol PREVIEW_LINES
+lines 0 0
+hash 30b5fda15cdb703f
+note How many lines a node cut to a preview keeps, and the length above which it offers the more/less button.
 
 step jxppts
 order 5
 parent l461m7
 author ai
-file src/gui/graph.rs
+file crates/gui/src/graph/build.rs
 symbol call_line
-lines 0 4
-hash 0b992c6e7fa10e69
-note The first line of a node that names an identifier outside comments and strings: where the call sits, found textually because neither backend records call-site lines. It decides where an edge leaves a node, which lines are tinted, and the order siblings are stacked in.
+lines 0 6
+hash f1be7093627e6574
+note The first line of a node's own range that names an identifier outside comments and strings: where the call sits, found textually because no backend records call-site lines. It decides where an edge leaves a node, which lines are tinted, and the order siblings are stacked in.
+
+step kfijkr
+order 15
+parent 1fwzx4
+author ai
+file crates/gui/src/graph/build.rs
+symbol measure
+lines 0 7
+hash 23df4fee161e8056
+note Sizes every node, from App::graph_layout between the rebuild and the layout.
+
+step l3panw
+order 32
+parent vz67qx
+author ai
+file crates/gui/src/graph/build.rs
+symbol Header
+lines 0 3
+hash 8ea689c96d851561
+note The header as coloured runs for the text and the buttons in order, left to right.
 
 step l461m7
 order 4
-parent wu5v06
+parent h6dviw
 author ai
-file src/gui/graph.rs
+file crates/gui/src/graph/build.rs
 symbol callees_of
-lines 0 10
-hash fd3e7ddd5fa31862
-note What a node calls: the symbol's callees, narrowed to the ones its own lines name when the node is only a slice of the symbol. Feeds the expansion, the edge loop and the callees button count.
+lines 0 17
+hash bb803aa10e909e9a
+note What a node calls: the symbol's callees, narrowed to the ones its own lines name (call_line) when the node is only a slice of the symbol. Feeds the expansion, the edges, the tinted lines and the callees button count.
 
-step nsg5x2
-order 17
+step m0w6di
+order 28
+parent q2lmal
+author ai
+file crates/gui/src/graph/input.rs
+symbol Widen
+lines 0 3
+hash 8ebc92e5f1f38500
+note Which side a context button widens.
+
+step m2av0x
+order 31
+parent 9e9x8x
+author ai
+file crates/gui/src/graph/build.rs
+symbol Shown
+lines 0 3
+hash a9bd019011e5dfbb
+note Lines shown and lines in the view.
+
+step mspv6q
+order 19
+parent yfsnxc
+author ai
+file crates/gui/src/graph/build.rs
+symbol StepInfo
+lines 0 4
+hash 6ae9afc3670ae14c
+note A step node's pre-order position in the path (the tiebreak the layout sorts siblings and roots by), its slot, and its hierarchical number for the header.
+
+step mtdt80
+order 39
 parent 1fwzx4
 author ai
-file src/gui/graph.rs
-symbol rect_px
-lines 0 6
-hash 5457b2690e04ab16
-note A node's rectangle in pixels: its cell position and size times this frame's cell, offset by the canvas origin. None for a node not in this frame's tree. The painter, the edge routing and the camera all ask it rather than keep a pixel copy of the layout.
+file crates/gui/src/graph.rs
+symbol impl fmt::Display for CameraText<'_>
+lines 0 10
+hash 534af8a0a036c901
+note The camera wishes as text for the GUI dump line 'graph zoom= pan= canvas= camera=fit= look= keep=', so a script can tell whether a move is pending.
+
+step ndzapu
+order 3
+parent yn4pco
+author ai
+file crates/gui/src/graph/build.rs
+symbol step_symbol
+lines 0 11
+hash 9d8b598ec662de38
+note The symbol a step's node stands for: the resolved symbol when the step names one; for a step that names no symbol, the symbol its first line sits in, else the file's first symbol. A step whose named symbol did not resolve, or whose file has no symbols, gets no node.
+
+step nsg5x2
+order 26
+parent 1fwzx4
+author ai
+file crates/gui/src/graph/build.rs
+symbol rect_at
+lines 0 12
+hash 3e6ae878da31fbe1
+note A node's rectangle in pixels: its cell position and size times a cell size, offset by an origin. None for a node not in this Built. The scene, the edges and the camera all ask it rather than keep a pixel copy of the layout.
+
+step osojvd
+order 8
+parent 1fwzx4
+author ai
+file crates/gui/src/graph.rs
+symbol Expansion
+lines 0 3
+hash e80225b09823e932
+note One opened expansion: a node and a side. The expansion list is ordered, and rebuild replays it in that order.
 
 step paasv9
 order 6
 parent jxppts
 author ai
-file src/index/mod.rs
+file crates/domain/src/index/file.rs
 symbol call_site
-lines 0 14
-hash cb1a658e33b7f2e7
-note A whole-identifier match on a line, outside comments and strings by the highlight spans. The one definition of 'this line names that symbol', shared by the graph's call lines and the map's sibling order.
+lines 0 24
+hash c2ed13a7fedf353c
+note A whole-identifier match on a line, outside strings and comments by the file's highlight spans. The one definition of 'this line names that symbol', shared by the graph's call lines and the map's sibling order.
+
+step q2lmal
+order 29
+parent 1fwzx4
+author ai
+file crates/gui/src/graph/input.rs
+symbol apply
+lines 0 90
+hash f5f060fa52955760
+note The one writer of GraphState: each GraphAction arm changes the fields it names and nothing else. The camera arms (Camera, Pan, Look, Keep, Fitted, OneToOne, WantFit) are in graph-camera; Built, Cell and Drawn store what this frame's phase computed; the rest are the reader's own choices.
 
 step qac7fm
 order 16
 parent dqdb3u
 author ai
-file src/gui/graph.rs
+file crates/gui/src/graph.rs
 symbol Saved
 lines 0 6
-hash 666c36d5594d05c3
-note Exactly what a re-index may not destroy, in a form that does not mention a symbol index: the expansion list, the previewed nodes, the per-node context and the dragged positions, each keyed by (file path, symbol name) and the step it belongs to.
+hash e4eb3ca498b85d73
+note Exactly what a re-index may not destroy, in a form that does not mention a SymbolId: the expansion list, the previewed nodes, the per-node context, the dragged positions and the auto-opened root.
+
+step rxfqyt
+order 33
+parent vz67qx
+author ai
+file crates/gui/src/graph/build.rs
+symbol Labelled
+lines 0 3
+hash 27372895c9856336
+note A button and its label, before the scene gives it a rectangle.
 
 step ssh3rn
-order 3
-parent wu5v06
+order 21
+parent yn4pco
 author ai
-file src/gui/graph.rs
+file crates/gui/src/graph/build.rs
 symbol add
-lines 0 10
-hash 1f3973f50c181782
-note Adds a node in a column, ignoring a symbol that is already placed. First placement wins the column, which is what stops an expansion from dragging a path step out of its depth.
+lines 0 16
+hash cc57497df839d588
+note Adds a node at a rank, ignoring a node that is already placed. First placement wins the rank, which is what stops an expansion from dragging a path step out of its depth. The range is clamped to the file's last line, and by_symbol keeps the first node for the symbol.
 
 step vz67qx
 order 12
 parent yxmrlu
 author ai
-file src/gui/graph.rs
+file crates/gui/src/graph/build.rs
 symbol header
-lines 0 52
-hash fbebd7bf775647d6
-note The header runs and the button list, built once here for both measuring and drawing: step number, name, off-path tag, file:lines; then more/less, context above, below and none (never while collapsed), listing, and the two expansions. An expansion that is open says 'hide N' and closes on a click; a closed one is offered only when it would actually reveal something, so a button whose targets are all on the canvas already is not drawn at all rather than doing nothing when pressed.
+lines 0 71
+hash 75e36b5d52076f50
+note The header runs and the button list, built here for both measuring and drawing: step number, name, off-path tag, file:lines; then more/less when the view is longer than PREVIEW_LINES, context above, below and none (never while cut to a preview, and above or below only when the file has more lines there), listing, and the two expansions. An expansion that is open says 'hide N' and closes on a click; a closed one is offered only when it would reveal something, so a button whose targets are all on the canvas already is not drawn at all rather than doing nothing when pressed.
 
 step wu5v06
+order 14
+parent 1fwzx4
+author ai
+file crates/gui/src/graph/build.rs
+symbol rebuild
+lines 0 15
+hash fe5c910f99dd0976
+note The derivation, run every frame from App::graph_layout: an empty Built for the selected path, then the path's steps, then the focus, then the expansions, then every node's view.
+
+step x18bte
+order 23
+parent wu5v06
+author ai
+file crates/gui/src/graph/build.rs
+symbol add_focus
+lines 0 21
+hash 6605eed3d62d8cf3
+note The focused symbol as its own root at rank 0 when no node shows it yet. Unless this very node was auto-opened before, its callers and its callees are appended to this frame's expansion list and auto_open is set, so an off-path jump lands in a neighbourhood rather than on a lone box; App::graph_layout then records it with an AutoOpen action and rebuilds, which makes the opening part of the reader's list, so closing either side afterwards sticks.
+
+step yfsnxc
 order 2
 parent 1fwzx4
 author ai
-file src/gui/graph.rs
-symbol rebuild
-lines 0 99
-hash a2e3d0c8d20d1975
-note The derivation, run every frame: clear, then one node per step of the selected path at its depth in the tree (its slice as the line range, its note kept for the header; a step with no symbol of its own takes the symbol its first line sits in, else the file's first symbol (a file with no symbols gives no node), and a step that gets no node at all hands its children to its parent so the tree keeps its shape), then the focused symbol as its own root when no step already shows it, with its callers and its callees opened once so an off-path jump lands in a neighbourhood rather than on a lone box (auto_open remembers that root, so closing them afterwards sticks), then the expansions in the order they were opened. A dragged position is kept only while its node still exists. A node cut to a preview shows only its own lines: its context applies once it is opened again.
+file crates/gui/src/graph/build.rs
+symbol Built
+lines 0 14
+hash 43e022aa99e576c5
+note What rebuild derives, rebuilt from nothing every frame and moved into GraphState by a Built action, which also drops dragged positions and context for nodes that no longer exist. nodes is the insertion order; rank is each node's column and doubles as the set of nodes; position and size are in cells, written by the layout and measure; range is a node's own lines (the step's slice or the whole symbol) and view is that range widened by context and clamped to the file; by_symbol is the first node per symbol; path is the selected path's slot when it is in range; step maps a step node to its StepInfo, step_parent to its parent step's node, origin maps an expansion node to what revealed it; has_note marks step nodes with a note, which take one more row; auto_open is set when this rebuild opened the focus's neighbourhood.
+
+step yn4pco
+order 22
+parent wu5v06
+author ai
+file crates/gui/src/graph/build.rs
+symbol add_path_nodes
+lines 0 43
+hash 457ca4b03dfe9f5f
+note One node per step of the path, in numbered order, at its depth in the tree, with the step's slice as its range and its number kept for the header. A step with no node hands its node slot to its parent's node, so its children still attach to the nearest ancestor that has one and the tree keeps its shape.
+
+step yvr48n
+order 10
+parent 1fwzx4
+author ai
+file crates/gui/src/graph.rs
+symbol Side
+lines 0 3
+hash 88a50af0cc25e029
+note Callees or callers: the direction of an expansion, an origin, and which side of its parent a node hangs on.
 
 step yxmrlu
 order 9
-parent 1fwzx4
+parent kfijkr
 author ai
-file src/gui/graph.rs
+file crates/gui/src/graph/build.rs
 symbol node_size
-lines 0 16
-hash 836db79cefe1609b
-note A node's size in cells and rows: the longest shown line plus the gutter, within limits, plus one cell and one row of padding, but never narrower than its header text and buttons, so the buttons always sit inside the node whatever the preview shows.
+lines 0 23
+hash 4e939a6e99381668
+note A node's size in cells and rows: the longest shown line plus the gutter, clamped to GRAPH_LEAST_COLUMNS..GRAPH_MOST_COLUMNS, but never narrower than its header text and buttons, so the buttons always sit inside the node whatever the preview shows; tall enough for the header, the note row when the step has a note, the shown lines and the 'more lines' footer, plus one cell and one row of padding.

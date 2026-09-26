@@ -53,7 +53,6 @@ pub enum Failure {
         steps: Count,
         links: Count,
     },
-    NoWindow,
 }
 
 impl From<MapError> for Failure {

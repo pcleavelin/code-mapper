@@ -1,0 +1,47 @@
+codemap 8
+path feature-show-graph
+kind flow
+author ai
+group features/gui
+note The document toolbar's 'graph' button switches the centre to the Graph tab with the path being read drawn as a left-to-right tree. The same happens from the Graph tab button, which only switches the tab; this button also selects the path first when it is not the one being read, which from the document it always is.
+
+step 1qheqh
+order 3
+parent x7w987
+author ai
+file crates/gui/src/app.rs
+symbol frame
+lines 18 18
+hash 7e8f9f5d2bddf09a
+link graph-draw
+note The effect from the next frame on: with the Graph tab current, each frame runs the graph phase (input, layout, fit, camera, scene) before the views are built, and the centre draws its scene.
+
+step 2arc3y
+order 2
+parent x7w987
+author ai
+file crates/gui/src/views/document.rs
+symbol header_bar
+lines 21 41
+hash a7018ca93efe3529
+note Trigger: SHOW_GRAPH in the document toolbar queues OpenPath with Tab::Graph.
+
+step hbss9m
+order 1
+parent x7w987
+author ai
+file crates/gui/src/nav.rs
+symbol select_path
+lines 0 9
+hash e026ad68c7ae2fbb
+link selection
+note Skipped when the path is the one being read; otherwise selects its first step.
+
+step x7w987
+order 0
+author ai
+file crates/gui/src/nav.rs
+symbol open_path
+lines 0 5
+hash d2834021dae76922
+note The handler: open_path with Tab::Graph. The path is already current, so only the tab changes.

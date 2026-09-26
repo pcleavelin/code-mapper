@@ -1,0 +1,126 @@
+codemap 8
+path feature-path-add
+kind flow
+author ai
+group features/cli
+note path-add <name> <sym|file start end> [under]: add one step to a path. A lone target is a symbol name and the step covers the whole symbol; a file with a start and end (1-based, inclusive) pins that line range. under is the index of the parent step as paths prints it, -1 for a root step; without it the step goes under the last step in the list, so consecutive adds build a chain. The step is recorded with the caller's author (ai from the CLI). In a flow the command also says when the parent does not call the new step, because a flow is meant to read as a call tree and the tool does not enforce that any other way.
+
+step 7efzty
+order 11
+parent cqeuul
+author ai
+file crates/cli/src/wire.rs
+symbol call_note
+lines 0 7
+hash acb29ae8dfefbf51
+note The note names both symbols and the path-move command that fixes the placement.
+
+step 8gzkeg
+order 6
+parent uir8kz
+author ai
+file crates/cli/src/exec.rs
+symbol find_symbol
+lines 0 9
+hash 83bfb633b05da03e
+link symbol-lookup
+note Symbol form: exactly one match or an error listing every candidate, so a step is never placed on a guess.
+
+step 8v22jb
+order 2
+parent itphv0
+author ai
+file crates/cli/src/exec.rs
+symbol index_files
+lines 0 18
+hash 395c92f598ee9fff
+note Only pending files reach the server, and only when the CLI passed Servers; the map is re-resolved afterwards because indexing can move symbol spans.
+
+step b2oyxt
+order 9
+parent uir8kz
+author ai
+file crates/cli/src/wire.rs
+symbol absolute_note
+lines 0 8
+hash 469d3d0cdac7177b
+note Warns when a line range sits in no symbol: such a step is pinned by absolute line numbers and goes stale on any edit above it.
+
+step cqeuul
+order 10
+parent uir8kz
+author ai
+file crates/cli/src/exec.rs
+symbol call_note
+lines 0 31
+hash a55574aa8640a5c3
+note Flows only: when both parent and child resolve to symbols, the child is a function and the parent's callees do not contain it, prints the note.
+
+step geh8gd
+order 4
+parent uir8kz
+author ai
+file crates/cli/src/exec.rs
+symbol find_file
+lines 0 10
+hash 20a2fff303e42ef5
+note Line-range form: an exact relative path, else the first file whose path ends with what was typed.
+
+step itphv0
+order 1
+parent uir8kz
+author ai
+file crates/cli/src/exec.rs
+symbol index_parent
+lines 0 8
+hash 4338e02ed5a9a887
+note Asks the language server for the parent step's file before anything else, so the parent symbol's callees are real xrefs when call_note checks them.
+
+step lr53hp
+order 5
+parent uir8kz
+author ai
+file crates/cli/src/convert.rs
+symbol line_range
+lines 0 6
+hash 6e6ad28c3bf3dc4b
+note Rejects a range outside the file and converts the 1-based inclusive numbers to a Span.
+
+step p17dje
+order 8
+parent uir8kz
+author ai
+file crates/cli/src/wire.rs
+symbol step_added
+lines 0 10
+hash 0ca402d8d7cdc7f7
+note Prints 'step [i] <symbol> added under [p]'; the index is what later commands take.
+
+step uir8kz
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol path_add
+lines 0 52
+hash f105cae3ebcbf165
+note Resolves the parent first (explicit under, or the last step), rejects an under past the end, then turns the target into a file and span: a line range through find_file and line_range, a symbol through find_symbol. After the step is added it prints its index and parent, the absolute-lines warning, and the does-not-call note.
+
+step xxu5o3
+order 3
+parent uir8kz
+author ai
+file crates/cli/src/exec.rs
+symbol find_path
+lines 0 5
+hash 63e1a3b28d250aa6
+note The path must already exist; path-add never creates one.
+
+step zpiimo
+order 7
+parent uir8kz
+author ai
+file crates/domain/src/map.rs
+symbol add_step
+lines 0 38
+hash d53744822dc161fe
+note Pins the span (relative to its enclosing symbol when there is one), derives the step id from a hash of path, file, symbol, lines and parent, and gives it an order one past the highest, so two sessions adding steps produce lines that merge instead of renumbering.

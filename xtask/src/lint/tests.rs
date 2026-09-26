@@ -253,15 +253,15 @@ fn suppressions_are_expectations_with_reasons_on_the_list() {
 
 #[test]
 fn scenario_tests_come_from_their_table() {
-    let by_hand = [("tests/cli.rs", "#[test]\nfn read() {}")];
+    let by_hand = [("crates/codemap/tests/cli.rs", "#[test]\nfn read() {}")];
     assert_eq!(rules_hit(&by_hand), [Rule::TestRegistry]);
     let generated = [(
-        "tests/cli.rs",
+        "crates/codemap/tests/cli.rs",
         "macro_rules! tests { ($($name:ident),*) => { $( #[test] fn $name() {} )* } }",
     )];
     assert_eq!(rules_hit(&generated), []);
     assert_eq!(
-        rules_hit(&[("tests/parity.rs", "#[test]\nfn old() {}")]),
+        rules_hit(&[("crates/codemap/tests/parity.rs", "#[test]\nfn old() {}")]),
         []
     );
 }
@@ -338,18 +338,5 @@ fn aliases_are_newtypes() {
             "struct Line;\nimpl Add for Line { type Output = Self; fn add(self, other: Self) -> Self { self } }"
         ),
         []
-    );
-}
-
-#[test]
-fn legacy_code_is_held_to_its_own_list() {
-    assert_eq!(rules_hit(&[("src/main.rs", "fn get(line: u32) {}")]), []);
-    assert_eq!(
-        rules_hit(&[("src/main.rs", "// line\nfn main() {}")]),
-        [Rule::Comment]
-    );
-    assert_eq!(
-        rules_hit(&[("src/main.rs", "#[allow(dead_code)]\nfn main() {}")]),
-        [Rule::Suppression]
     );
 }

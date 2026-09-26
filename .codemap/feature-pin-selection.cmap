@@ -1,0 +1,56 @@
+codemap 8
+path feature-pin-selection
+kind flow
+author ai
+group features/gui
+note In the Listing, click a line and shift-click another to select lines, then press 'pin selection' in the top bar: the lines become a new step of the path being read, authored by the human, placed under the selected step (or at the top level when none is selected) and anchored to the symbol that contains them. The status bar says where it went. Without a line selection in the Listing, or without a path being read, the status bar says what is missing and nothing changes.
+
+step 5dyo4y
+order 3
+parent zwrtqu
+author ai
+file crates/gui/src/views/bars.rs
+symbol top_bar
+lines 58 60
+hash 15483fa23bb23ae1
+note Trigger: the PIN control in the top bar queues PinSelection.
+
+step 82hexj
+order 1
+parent zwrtqu
+author ai
+file crates/domain/src/map.rs
+symbol add_step
+lines 0 38
+hash d53744822dc161fe
+note The step in the map: the parent must exist, the span is pinned relative to its enclosing symbol, and the step gets a fresh id and the next order.
+
+step au5kh4
+order 4
+parent zwrtqu
+author ai
+file crates/gui/src/views/center.rs
+symbol listing
+lines 85 90
+hash fd19b1328cd15b25
+link feature-select-lines
+note Where the lines come from: clicks in the listing set and extend the line selection.
+
+step c2ft8i
+order 2
+parent zwrtqu
+author ai
+file crates/gui/src/nav.rs
+symbol step_created
+lines 0 2
+hash cead2320a2473df8
+note The new step is the selection.
+
+step zwrtqu
+order 0
+author ai
+file crates/gui/src/action.rs
+symbol pin_selection
+lines 0 51
+hash 4d00052c41179649
+note The handler. Needs the Listing tab, a file and a line selection, then a path; the selected step (if it still exists) becomes the parent. The map adds the step, the new step becomes the selection, the map is marked dirty, and the status names the new step's number and parent.

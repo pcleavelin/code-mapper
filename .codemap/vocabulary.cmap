@@ -1,0 +1,103 @@
+codemap 8
+path vocabulary
+kind type
+author ai
+group tooling
+note vocabulary.txt: the words identifiers may be made of, and the banned synonyms with the word to use instead. It exists so one concept has one name across the code: archlint splits every identifier the code chooses into words and fails on a word that is not listed, or on a synonym with its canonical spelling. An agent may add a word for a new concept; which of two words is canonical is the owner's decision, so the gate fails when a synonym line changes. cargo xtask words lists every unknown or synonym word in strict code with a count and its first place, for sizing a vocabulary change.
+
+step 4jt6xe
+order 3
+parent c48cjh
+author ai
+file xtask/src/vocabulary.rs
+symbol parse
+lines 0 28
+hash 325ec2cf29082524
+note One lowercase word per line, or synonym -> word; anything else is an error naming the line.
+
+step 9j9rbx
+order 1
+parent mbz43k
+author ai
+file xtask/src/vocabulary.rs
+symbol VOCABULARY_FILE
+lines 0 0
+hash 241a168cd7fa9f47
+note vocabulary.txt at the root.
+
+step bzcl9g
+order 8
+author ai
+file xtask/src/text.rs
+symbol split
+lines 0 18
+hash 7d38b8cf722964a5
+note Splits an identifier into lowercase words on underscores and lower-to-upper case changes.
+
+step c48cjh
+order 2
+parent mbz43k
+author ai
+file xtask/src/vocabulary.rs
+symbol load
+lines 0 6
+hash 3476cc5cb8a2968e
+note Reads the file.
+
+step k6hqbq
+order 4
+parent mbz43k
+author ai
+file xtask/src/vocabulary.rs
+symbol verdict
+lines 0 14
+hash f758f67137dd5198
+note Known, Unknown or Synonym for one word: any of its forms listed as a synonym gives the canonical word; any form listed, or all digits, is known.
+
+step mbz43k
+order 0
+author ai
+file xtask/src/vocabulary.rs
+symbol Vocabulary
+lines 0 3
+hash b3d9c3859fd491d4
+note The listed words and the synonym-to-word map.
+
+step pp3diw
+order 6
+parent k6hqbq
+author ai
+file xtask/src/text.rs
+symbol forms
+lines 0 12
+hash f6fbddbb37f65d98
+note A word and its singular guesses (-ies to -y, -es, -s), so plurals of listed words pass without their own lines.
+
+step vmyvqv
+order 5
+parent k6hqbq
+author ai
+file xtask/src/vocabulary.rs
+symbol Verdict
+lines 0 4
+hash 691fc430f7810aef
+note The answer.
+
+step wvvior
+order 9
+author ai
+file xtask/src/words.rs
+symbol unknown
+lines 0 31
+hash 537fa972eb358cd9
+note cargo xtask words: every word in strict code that is not Known, with its count and first place.
+
+step xazy8n
+order 7
+parent mbz43k
+author ai
+file xtask/src/vocabulary.rs
+symbol synonym_lines
+lines 0 6
+hash 72c2791845ae891f
+note The synonym lines alone, which the gate compares with the parent revision.

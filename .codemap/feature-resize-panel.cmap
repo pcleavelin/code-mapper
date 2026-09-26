@@ -1,0 +1,56 @@
+codemap 8
+path feature-resize-panel
+kind flow
+author ai
+group features/gui
+note Drag the splitter on a panel's centre side to resize it; the cursor shows the resize arrows while hovering or dragging. The size is clamped so the centre keeps a minimum and every panel after it on the same edge keeps its own minimum. The size lasts until the panel moves between a side and the bottom, and is not saved.
+
+step 7xbt66
+order 3
+parent lxr34e
+author ai
+file crates/gui/src/views/docked.rs
+symbol splitter
+lines 0 12
+hash d7d8bed9dc8f3a31
+note The splitter itself, on the centre side of each panel, with the resize cursor.
+
+step lxr34e
+order 0
+author ai
+file crates/gui/src/dock.rs
+symbol resize
+lines 0 4
+hash ca1c48a91e9274a9
+link panel-dock
+note The handler: records the panel's wanted size.
+
+step mpcqkl
+order 2
+parent svyvsa
+author ai
+file crates/gui/src/action.rs
+symbol apply
+lines 61 61
+hash ed5d253fc1498d72
+note Resize is applied straight away, before this frame's views are built, so the panel follows the pointer without lag.
+
+step svyvsa
+order 1
+parent lxr34e
+author ai
+file crates/gui/src/views/docked.rs
+symbol dock_input
+lines 4 16
+hash 0c03a5d1b8d5d29a
+note Trigger, read at the start of each frame before the views: for each panel whose SPLIT is held, the size is the distance from the panel's outer edge to the pointer, less half the splitter, and Resize is queued.
+
+step x61i1w
+order 4
+parent lxr34e
+author ai
+file crates/gui/src/dock.rs
+symbol sizes
+lines 0 37
+hash 5ad7f4df64430a11
+note The effect when the layout is built: each wanted size is clamped between the edge's minimum and what is left after keeping a minimum for every later panel on that edge.

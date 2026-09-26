@@ -3,93 +3,122 @@ path call-resolution
 kind flow
 author ai
 group index
-note How a call site becomes an edge in the call graph. The two backends give two different things: tree-sitter gives raw (name, qualifier) strings, a language server gives the (file, line) of the callee's definition. link turns both into callee/caller lists, rebuilding every edge from scratch each time. Server targets are exact; tree-sitter targets go through resolve, a qualifier-aware but type-free heuristic whose rules are the ones written on resolve itself. This is why the map's xrefs are trustworthy with rust-analyzer on PATH and approximate without it.
+note How a call site becomes an edge in the call graph. The two backends give two different things: tree-sitter gives raw (name, qualifier) strings, a language server gives the (file, line) of the callee's definition. link turns both into callee and caller lists, rebuilding every edge from scratch each time. Server targets are exact; tree-sitter targets go through resolve, a qualifier-aware but type-free heuristic whose rules are the ones written on resolve itself. This is why the map's xrefs are trustworthy with rust-analyzer on PATH and approximate without it.
 
 step 6tlqg1
 order 8
-parent izqvt5
+parent tc4910
 author ai
-file src/index/mod.rs
-symbol sym_at
-lines 0 9
-hash a892f4ace6e57e21
-note The innermost symbol spanning a line of a file already found by slot: what by_line does after its path lookup, and what link does for every server target once its path-to-slot map has found the file.
+file crates/domain/src/index.rs
+symbol symbol_at
+lines 0 3
+hash 2bbad3ed4699206c
+note The innermost symbol spanning a line of a file already found: what edges does for every server target once its path table has found the file, and what by_line does after its path lookup.
 
 step an8w7x
 order 2
 parent c5y7oe
 author ai
-file src/index/link.rs
-symbol owner_is
-lines 0 2
-hash a6de5cf06de6e374
-note Does this candidate belong to that type? The test behind 'self.m' and 'T::m'.
+file crates/index/src/link.rs
+symbol impl Resolver<'_>
+lines 9 26
+hash e8e9c786430649d8
+note The four tests resolve filters candidates by: owned_by, the test behind 'self.m' and 'T::m' (the candidate's owner is that type); in_module (the candidate's file is that module); member (it has an owner at all); free (it has none).
 
 step c5y7oe
 order 1
-parent dsyzch
+parent tc4910
 author ai
-file src/index/link.rs
+file crates/index/src/link.rs
 symbol resolve
-lines 0 74
-hash a036427ad82b73b0
-note The tree-sitter half: no type information, so the qualifier decides. self/Self bind to the caller's own owner; an uppercase qualifier is a type's member, else a module (file stem or directory), else something the file imported; a lowercase qualifier is a variable, so it picks a member and never a free function; an unqualified name prefers the same file, then an import, then the same directory. Structs and enums are filtered out first because Foo{..} parses as a call in several grammars. Candidates in the caller's own file win at every stage. An uppercase qualifier that is neither a type, a module nor an import is an external type (Regex::new) and resolves to nothing, and a qualifier naming an import that matches no file here is an external module (log.error) and resolves to nothing too. A variable receiver tries the caller's own type first. Only C falls back to any file for an unqualified name, because headers reach other files without naming them; elsewhere such a name is a builtin or a std call. The heuristic is wrong when two types share a method name and the receiver is a variable; getting that right needs per-language scope and type rules.
+lines 0 98
+hash 89b88beee69a9128
+note The tree-sitter half: no type information, so the qualifier decides. self/Self bind to the caller's own owner; an uppercase qualifier is a type's member, else a module (file stem or directory), else something the file imported; a lowercase qualifier is a variable, so it picks a member and never a free function; an unqualified name prefers the same file, then an import, then the same directory. Structs, enums and unions are filtered out first because Foo{..} parses as a call in several grammars. Candidates in the caller's own file win at every stage. An uppercase qualifier that is neither a type, a module nor an import is an external type (Regex::new) and resolves to nothing, and a qualifier naming an import that matches no file here is an external module (log.error) and resolves to nothing too. A variable receiver tries the caller's own type first. Only C falls back to any file for an unqualified name, because headers reach other files without naming them; elsewhere such a name is a builtin or a std call. The heuristic is wrong when two types share a method name and the receiver is a variable; getting that right needs per-language scope and type rules.
 
 step ck99zr
 order 3
 parent c5y7oe
 author ai
-file src/index/link.rs
-symbol in_module
-lines 0 3
-hash bd29de14c96db8a7
-note Does this candidate live in that module? A module is a file stem or its directory, which is what makes Odin packages and Rust 'mod' files both work without language-specific rules.
+file crates/index/src/link.rs
+symbol impl Word<'_>
+lines 0 23
+hash c5e75aec412ef7bd
+note A qualifier, owner or module as the word it is spelled with. names_module_of is the module test: a module is a file stem or its directory, which is what makes Odin packages and Rust 'mod' files both work without language-specific rules. starts_lowercase is what tells a variable receiver from a type.
 
 step dsyzch
 order 0
 author ai
-file src/index/link.rs
+file crates/index/src/link.rs
 symbol link
-lines 0 50
-hash bde849ff41f3c713
-note Rebuilds every edge in the index from scratch, so the GUI runs it on a thread over a text-free copy and the CLI once after all servers answered. Server targets resolve by (file, line) through a path-to-slot map; tree-sitter calls go through resolve. Its cost is call sites times same-named candidates, which is what makes a repo full of 'new' slow to link.
+lines 0 3
+hash 0a3754f861147ee3
+note Rebuilds every edge in the index from scratch: edges works out the list and connect writes it into the symbols. build runs it once after the walk, the CLI once after the servers a command asked have answered, and the GUI on a thread over a text-free copy (Index::symbols_only). Its cost is call sites times same-named candidates, which is what makes a repo full of 'new' slow to link.
 
 step izqvt5
 order 6
-parent dsyzch
 author ai
-file src/index/mod.rs
+file crates/domain/src/index.rs
 symbol by_line
 lines 0 2
-hash bd5d8d4d4d6d3032
-note The server half of an edge is a (file, line), so the target is the innermost symbol covering that line. Nothing is guessed. link does this lookup inline off a path-to-slot map it builds once, because a target is named once per call site and find_file's scan would be a pass over every file each time; this is the same rule, and what the rest of the tool calls.
+hash 34c5914a9a659a34
+note The server half of an edge is a (file, line), so the target is the innermost symbol covering that line. Nothing is guessed. edges does this lookup off its own path table, because a target is named once per call site and find_file's scan would be a pass over every file each time; by_line is the same rule for the rest of the tool.
 
 step jpi2m9
 order 4
 parent ck99zr
 author ai
-file src/index/mod.rs
+file crates/domain/src/text.rs
 symbol stem
 lines 0 3
-hash 5eeba30c30fe98bf
+hash 2e3ec6c92e1a2f01
 note The file's own module name.
+
+step k82ohm
+order 10
+parent dsyzch
+author ai
+file crates/domain/src/index.rs
+symbol connect
+lines 0 14
+hash 5308bb6afdfc958e
+note Clears every symbol's callee and caller lists and writes each edge into both ends, so callers are exactly the inverse of callees.
 
 step kewcsl
 order 5
-parent c5y7oe
+parent ck99zr
 author ai
-file src/index/mod.rs
-symbol dir
-lines 0 5
-hash 564f1ce32b15bbfd
+file crates/domain/src/text.rs
+symbol directory
+lines 0 3
+hash 90b4bb442c5bbbe2
 note The file's package directory, the other half of what counts as a module.
 
 step q0495h
 order 7
 parent izqvt5
 author ai
-file src/index/mod.rs
+file crates/domain/src/index.rs
 symbol find_file
-lines 0 2
-hash 0013a2948dceefd5
-note Targets name files by repo-relative path; this is the lookup everywhere except inside link, and it fails silently for a location outside the index.
+lines 0 5
+hash c38bf0c6dc4a7360
+note Targets name files by repo-relative path; this is the lookup everywhere except inside edges. It is a scan of the file list, and gives None for a location outside the index.
+
+step tc4910
+order 9
+parent dsyzch
+author ai
+file crates/index/src/link.rs
+symbol edges
+lines 0 37
+hash f8acc6219366c40c
+note Two lookup tables built once per link: every symbol by name, for resolve's candidates, and every file by path, so a server target finds its file without a scan. Then each symbol's tree-sitter calls go through resolve and each server target through symbol_at. The edge list is sorted and deduplicated, so a callee called twice is one edge.
+
+step zyx8al
+order 11
+parent 6tlqg1
+author ai
+file crates/domain/src/index/file.rs
+symbol innermost
+lines 0 6
+hash 40d5e8ce9362c4a4
+note The innermost rule: of the symbols whose span encloses the line, the deepest, so a method wins over the impl block around it.

@@ -1,0 +1,141 @@
+codemap 8
+path cli-exec
+kind layer
+author ai
+group cli
+note exec.rs: where a Request does its work. Run holds what one command may touch (the Index, the Map, the author to record, the language servers when the CLI has them, the Output to write) and has one method per command; each finds what the user named, calls Index and Map methods, and hands values to wire.rs to print. Nothing here formats text or touches a file except through a store it is given (MapStore for diff's parent map, Vcs for repin's old text), and every refusal is a Failure value. The feature-<name> paths follow each command's method; this path holds what the methods share: the lookups that turn typed names into ids, and the one way a command asks the servers for files.
+
+step 1geiq9
+order 5
+author ai
+file crates/cli/src/exec.rs
+symbol find_symbols
+lines 0 6
+hash 51665388bbe86c47
+link symbol-lookup
+note Every symbol a query matches, or Failure::NoSuchSymbol; the reading commands stop here, since every match is an answer.
+
+step 1yyic1
+order 7
+author ai
+file crates/cli/src/exec.rs
+symbol find_file
+lines 0 10
+hash 20a2fff303e42ef5
+note A typed file: exact RelativePath first, then the first indexed file whose path ends with it.
+
+step 3ft269
+order 1
+parent lwzwqw
+author ai
+file crates/cli/src/exec.rs
+symbol run
+lines 0 6
+hash 0e3308ff30da5d0e
+note Query, Edit or repin; Some(Changed) tells the front end to save or mark the map unsaved.
+
+step 42vo3w
+order 4
+parent gnf4jp
+author ai
+file crates/cli/src/exec.rs
+symbol find_step
+lines 0 7
+hash fe848f2c971eee7d
+note Path and position to a StepAddress, or Failure::NoSuchStep past the last step; every command taking a step index goes through it.
+
+step 580okp
+order 9
+author ai
+file crates/cli/src/exec.rs
+symbol map_failure
+lines 0 8
+hash c5ace51071db7c9f
+note MapError to Failure for the GUI; LinkedFrom's StepAddresses become name[index] places.
+
+step 5te0k4
+order 13
+parent ii322y
+author ai
+file crates/cli/src/exec.rs
+symbol LeftStale
+lines 0 16
+hash 89524d62cbacec9f
+note Why repin could not place a step, as data for wire.rs to word.
+
+step 5ysmxu
+order 6
+parent 1geiq9
+author ai
+file crates/cli/src/exec.rs
+symbol find_symbol
+lines 0 9
+hash 83bfb633b05da03e
+note Exactly one match or Failure::SymbolClash with each candidate's shortest selecting name, for the commands that write a symbol into the map.
+
+step 7p7lb4
+order 10
+parent 580okp
+author ai
+file crates/cli/src/exec.rs
+symbol places
+lines 0 13
+hash 4c48075ffc852990
+note StepAddresses to the name[index] form a user types, dropping any that no longer resolve.
+
+step gnf4jp
+order 3
+author ai
+file crates/cli/src/exec.rs
+symbol find_path
+lines 0 5
+hash 63e1a3b28d250aa6
+note A typed path name to the PathName of an existing path, or Failure::NoSuchPath with the text as typed; an invalid name is simply not found.
+
+step hgcj70
+order 2
+parent lwzwqw
+author ai
+file crates/cli/src/exec.rs
+symbol index_files
+lines 0 18
+hash 395c92f598ee9fff
+note The one way a command asks for files: only the files still pending (not yet answered by their language's server) go to Servers, and the map's anchors are resolved again after, since a server's answer replaces a file's symbols. Without servers it does nothing.
+
+step ii322y
+order 12
+author ai
+file crates/cli/src/exec.rs
+symbol Repin
+lines 0 6
+hash 678cefc65d6d920c
+link stale-and-pin
+note One stale step being followed from the revision's text: where it was, which file, and its place for the report.
+
+step ilrhrj
+order 11
+author ai
+file crates/cli/src/exec.rs
+symbol Document
+lines 0 5
+hash dd83b19f87e00529
+link path-links
+note The path command's printer state. expanded is None without --expand; with it, the chain of paths being expanded, so a path already on the chain prints a pointer back instead of looping, and each expanded path ends with an end-of line.
+
+step lwzwqw
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol Run
+lines 0 6
+hash 04bf1d42a5345426
+note One command's reach. servers is None in the GUI's command line, whose own threads index; every method checks it before asking a server, so the same code answers from the index as it stands there.
+
+step xu3fch
+order 8
+author ai
+file crates/cli/src/exec.rs
+symbol compile
+lines 0 2
+hash 80bda59028bcdcf4
+note A regex for grep and notes, or Failure::Regex.

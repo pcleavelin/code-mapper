@@ -1,0 +1,155 @@
+codemap 8
+path ui-geometry
+kind type
+author ai
+group render
+note The units everything in ui and platform is measured in, each its own type so a signature says which it takes. Px is a whole physical pixel (i32) and the unit of all layout: rows and columns tile exactly because nothing in the tree is fractional. Count is a number of cells, rows or items. Point is a position, Extent a size, Rect a pixel rectangle - the one geometry type the tree and the renderer share - and Axis lets the layout passes be written once for both directions. Coordinate and Vector are the float side, used only where geometry really is fractional: line and curve corners, vertices, the wheel delta. Scale is the window's DPI factor and FontSize a whole pixel size, so a zoom is a different font size rather than a transform. Color is four sRGB bytes, handed to the GPU untouched. The conversions between integer and float are written out rather than done with as-casts, and the tests pin them to what the casts produce.
+
+step 3jynfg
+order 6
+author ai
+file crates/ui/src/geometry.rs
+symbol Rect
+lines 0 5
+hash 8b3f7b7f53b3ca68
+note Integer pixel rectangles, the one geometry type the renderer and the element tree share. Everything is whole pixels from here up.
+
+step 410h46
+order 13
+author ai
+file crates/ui/src/geometry.rs
+symbol FontSize
+lines 0 0
+hash 2c52494554d8b499
+note A font size in whole pixels, so every size the app draws at is a real size in the atlas rather than a scaled bitmap.
+
+step 4fpwmp
+order 15
+author ai
+file crates/ui/src/color.rs
+symbol Color
+lines 0 0
+hash 8c643f8b09a1fdac
+note Four sRGB bytes, red, green, blue, alpha. The renderer hands them to the GPU as they are (the surface is not an sRGB format, so they are not converted twice), and a colour with zero alpha is invisible, which lets a draw skip it.
+
+step 7723z5
+order 10
+parent iinw2q
+author ai
+file crates/ui/src/geometry.rs
+symbol truncate_bits
+lines 0 22
+hash 4dcf46834610c404
+note f64 to a whole pixel, truncating toward zero and saturating at the i32 limits, with NaN as zero - again what an as-cast does, built from bits. truncate and truncate_wide are its two entrances.
+
+step a7xl45
+order 12
+author ai
+file crates/ui/src/geometry.rs
+symbol Scale
+lines 0 0
+hash 7a47cd372617a8ff
+note The window's scale factor, taken from winit. A script or screenshot run pins it to ONE so its pixels are the same on every machine.
+
+step dvggd6
+order 2
+author ai
+file crates/ui/src/geometry.rs
+symbol Count
+lines 0 0
+hash 136c100d03a147b2
+note A number of cells, rows or items, kept apart from pixels so the two cannot be added by mistake.
+
+step fq8fvo
+order 7
+parent 3jynfg
+author ai
+file crates/ui/src/geometry.rs
+symbol impl Rect
+lines 0 73
+hash 9fa2460750373aeb
+note Its whole vocabulary: edges, centre, containment for hit tests (right and bottom exclusive), intersection for clips (an empty result rather than a negative size), shrink for insetting a border, and the emptiness test that skips a draw. Nothing here allocates or branches on anything but arithmetic.
+
+step iinw2q
+order 8
+author ai
+file crates/ui/src/geometry.rs
+symbol Coordinate
+lines 0 0
+hash 185cfa9fbfac68dc
+note A float pixel coordinate, for the geometry that is fractional: line and curve corners, circle centres, vertices, wheel deltas. of_px and of_integer lift a pixel exactly.
+
+step is2nke
+order 14
+parent 410h46
+author ai
+file crates/ui/src/geometry.rs
+symbol scaled
+lines 0 5
+hash b7e7ea9a9334bdad
+note A base size times a scale (the DPI factor, or the graph's zoom), rounded and floored at a minimum: how every font size in the app is derived.
+
+step jr0bf8
+order 1
+parent sp6go6
+author ai
+file crates/ui/src/geometry.rs
+symbol impl Px
+lines 0 40
+hash ba942b494d5a98ab
+note Its vocabulary: arithmetic with itself, with an integer and with a Count (a cell width times a column count), wide for i64 intermediate products (a scrollbar's thumb is a product of two heights), of_wide and of_count saturating back instead of wrapping, float for the vertex side, unsigned for the GPU's u32 sizes (negative becomes zero), and ratio for whole cells in a width.
+
+step lgqzhf
+order 3
+author ai
+file crates/ui/src/geometry.rs
+symbol Point
+lines 0 3
+hash 99f85a045aca66f1
+note A pixel position. along and with read and replace one axis, which is how the placing pass walks a cursor along either direction with one piece of code.
+
+step m2lhcx
+order 11
+author ai
+file crates/ui/src/geometry.rs
+symbol Vector
+lines 0 3
+hash d9ba535e483d8b84
+note Two Coordinates: a point in the float world. of_point lifts a pixel Point into it.
+
+step o29ueg
+order 5
+author ai
+file crates/ui/src/geometry.rs
+symbol Axis
+lines 0 3
+hash cd12bc34977f6806
+note Horizontal or vertical. BOTH is the order layout visits them in - widths first, because wrapped text needs its width before its height - and other is the cross axis.
+
+step sp6go6
+order 0
+author ai
+file crates/ui/src/geometry.rs
+symbol Px
+lines 0 0
+hash 8e9451a4adba7bed
+note A whole physical pixel. Every rectangle, size, padding and scroll offset in the tree is one, so rows and columns tile exactly and a hit test is integer arithmetic.
+
+step t1k3u9
+order 9
+parent iinw2q
+author ai
+file crates/ui/src/geometry.rs
+symbol narrow
+lines 0 28
+hash 6a0a507c67e76914
+note f64 to f32 by hand, rounding to nearest-even and saturating to infinity, bit for bit what an as-cast does. It exists because the workspace forbids as-casts; the winit wheel and cursor deltas arrive as f64.
+
+step zw2jlc
+order 4
+author ai
+file crates/ui/src/geometry.rs
+symbol Extent
+lines 0 3
+hash 855557f6f476cb4a
+note A pixel size, with the same along and with, so the fit and grow passes are written once for both axes.

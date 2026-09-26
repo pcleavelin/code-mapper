@@ -1,0 +1,46 @@
+codemap 8
+path feature-coverage
+kind flow
+author ai
+group features/cli
+note coverage: covered/total symbols per file, then the total. Files without symbols are skipped. Coverage is derived from the map and the index on every run, never stored.
+
+step 9yar5s
+order 3
+parent ype3gj
+author ai
+file crates/cli/src/wire.rs
+symbol all_coverage
+lines 0 2
+hash 2fc0ae9ba2c0c5da
+note 'total: covered/total'.
+
+step bctyzy
+order 1
+parent ype3gj
+author ai
+file crates/domain/src/map.rs
+symbol covers
+lines 0 5
+hash 285b67ff7daf1155
+link coverage
+note Covered means a non-stale step in the same file overlaps the symbol's lines.
+
+step wjn5iu
+order 2
+parent ype3gj
+author ai
+file crates/cli/src/wire.rs
+symbol coverage_row
+lines 0 2
+hash aa6c90db92906bc0
+note 'file: covered/total'.
+
+step ype3gj
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol coverage
+lines 0 18
+hash 15875cd94287ef57
+note Per file with symbols, counts those the map covers, prints the row and adds to the totals.

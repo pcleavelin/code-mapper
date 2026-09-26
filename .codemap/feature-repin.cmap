@@ -1,0 +1,149 @@
+codemap 8
+path feature-repin
+kind flow
+author ai
+group features/cli
+note repin [rev]: re-pin every stale step by following its text from revision rev, by default the parent revision (@- in jj, HEAD in git). After a rebase, rev is the change's pre-rebase commit. For each stale step the file is read as rev had it, the step's slice is found there by its stored hash, and the slice with a few lines of context is aligned against every symbol of the step's name, in its own file first and in every file when the symbol left it. A step that keeps at least half its lines is pinned to where they went; the rest stay stale with the reason printed, for path-pin by hand. The output is the review: every re-pinned step whose text changed prints its removed and added lines, and its note has to be reread against them, because a re-pin keeps the note whether or not it still describes the code. The map is saved only when at least one step was re-pinned.
+
+step 372fxc
+order 4
+parent rrhv1h
+author ai
+file crates/io-vcs/src/lib.rs
+symbol file_at
+lines 0 6
+hash 744c2065bfc2cdcc
+link vcs
+note The file as rev has it, through jj file show or git show; a file not in rev leaves the step stale with that reason.
+
+step 4vwi9i
+order 13
+parent rrhv1h
+author ai
+file crates/cli/src/wire.rs
+symbol repin_report
+lines 0 5
+hash 378cc4b5bf2832c7
+note The closing line: how many were re-pinned and how many left stale, with the reminder to reread changed notes.
+
+step 6hgpnc
+order 10
+parent rrhv1h
+author ai
+file crates/domain/src/map.rs
+symbol pin
+lines 0 20
+hash 9fed4ca3065bbbf2
+note Pins the step to the new span; its note, parent, link and order stay, and the pinning author is recorded.
+
+step 7e3xoo
+order 9
+parent ago3m0
+author ai
+file crates/cli/src/exec.rs
+symbol changed_lines
+lines 0 32
+hash e829baaff1b51ca9
+note When the text changed, the removed and added lines of the slice, the part the agent rereads the note against.
+
+step ago3m0
+order 5
+parent rrhv1h
+author ai
+file crates/cli/src/exec.rs
+symbol follow
+lines 0 89
+hash dda079cb90335b6a
+link stale-and-pin
+note One step: locate its old slice in rev's file by hash (the occurrence nearest where it was pinned), cut a window with three lines of context, align it with each candidate symbol and keep the candidate that keeps the most lines. Under half the lines kept is a refusal: that step needs someone to read the code.
+
+step hsvpyu
+order 12
+parent mnhk11
+author ai
+file crates/cli/src/wire.rs
+symbol impl fmt::Display for LeftStale
+lines 0 19
+hash 90aa208827fc07ef
+note The reasons a step stays stale: file gone, file not in rev, text not in rev, no symbol of its name, or too few lines surviving.
+
+step j6w0o3
+order 1
+parent rrhv1h
+author ai
+file crates/io-vcs/src/lib.rs
+symbol detect
+lines 0 21
+hash 6bf6bc46c0a519bc
+link vcs
+note jj when a .jj directory is at or above the root, else git; no repository at all is an error before anything is touched.
+
+step ltg71f
+order 6
+parent ago3m0
+author ai
+file crates/cli/src/exec.rs
+symbol targets
+lines 0 36
+hash 797d81ec0ab8c399
+note The candidates: every symbol with the step's name in its current file, or in every file when none is left there; a step with no symbol aligns against its whole file.
+
+step lxbndz
+order 8
+parent ago3m0
+author ai
+file crates/cli/src/wire.rs
+symbol follow_report
+lines 0 16
+hash 49645b1b37a86d9d
+note One line per followed step: old place in rev, new place (with the new file when it moved), lines kept, and 'text unchanged' when the hash still matches.
+
+step ml8ec5
+order 2
+parent rrhv1h
+author ai
+file crates/io-vcs/src/lib.rs
+symbol parent
+lines 0 5
+hash 774eab9c48f01814
+link vcs
+note The default revision when none was given.
+
+step mnhk11
+order 11
+parent rrhv1h
+author ai
+file crates/cli/src/wire.rs
+symbol left_stale
+lines 0 7
+hash e74b72e4902544f1
+note The line for a step that was not placed.
+
+step mzem7k
+order 7
+parent ago3m0
+author ai
+file crates/domain/src/map/follow.rs
+symbol follow
+lines 0 8
+hash de4dba2205466c5f
+note The line alignment between the old window and one candidate's lines, and the new range it implies.
+
+step okrlz2
+order 3
+parent rrhv1h
+author ai
+file crates/domain/src/map/step.rs
+symbol is_stale
+lines 0 2
+hash 6b88d1e069652057
+note Which steps to work on: the stale flags set when the map loaded.
+
+step rrhv1h
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol repin
+lines 0 50
+hash 0484719fb8e0b32e
+note Finds the repository, lists the stale steps up front, then for each one reads its file at rev once (cached per file for the steps after it), follows it, and either pins it or reports why not. Ends with the counts.

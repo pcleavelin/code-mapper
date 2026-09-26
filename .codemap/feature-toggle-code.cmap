@@ -1,0 +1,45 @@
+codemap 8
+path feature-toggle-code
+kind flow
+author ai
+group features/gui
+note The 'hide code' button on a step header hides that step's code, leaving the header and the note; pressed again ('code') it shows the code. A step whose file or symbol is gone has no code and no button. Per step, for the session.
+
+step 75ejf8
+order 1
+parent vsf97x
+author ai
+file crates/gui/src/model.rs
+symbol toggle
+lines 0 2
+hash 5bb2fa45ec21a492
+note Flips the Hidden bit.
+
+step 76g7xl
+order 2
+parent vsf97x
+author ai
+file crates/gui/src/views/document.rs
+symbol step_header
+lines 44 54
+hash e6f1c558914189fd
+note Trigger: the HIDE_CODE button, labelled by the current state, queues Toggle with ViewFlag::Hidden.
+
+step bdbcnr
+order 3
+parent vsf97x
+author ai
+file crates/gui/src/views/document.rs
+symbol step_code
+lines 0 3
+hash c0f7e2206bbda653
+note The effect on the next frame: step_code draws nothing for a hidden step. The header also drops its whole-symbol button while the code is hidden.
+
+step vsf97x
+order 0
+author ai
+file crates/gui/src/action.rs
+symbol apply
+lines 6 6
+hash 8db399b6fb4b876f
+note The handler: the Toggle arm flips one flag in the step's view.

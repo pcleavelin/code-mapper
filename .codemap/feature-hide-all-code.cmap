@@ -1,0 +1,45 @@
+codemap 8
+path feature-hide-all-code
+kind flow
+author ai
+group features/gui
+note The document toolbar's 'hide all code' hides the code of every step of the path being read, leaving headers and notes; 'show all' shows every step's code again and also unfolds every folded step. Steps shown inline under links keep their own state.
+
+step a0jz5i
+order 2
+parent frf3py
+author ai
+file crates/gui/src/views/document.rs
+symbol header_bar
+lines 21 41
+hash a7018ca93efe3529
+note Trigger: the toolbar is a table of label, control and action; HIDE_ALL queues HideAll with Hide::Hide and SHOW_ALL with Hide::Show.
+
+step cup7s2
+order 3
+parent frf3py
+author ai
+file crates/gui/src/views/document.rs
+symbol step_code
+lines 0 3
+hash c0f7e2206bbda653
+note The effect on the next frame: step_code draws nothing for a hidden step.
+
+step frf3py
+order 0
+author ai
+file crates/gui/src/action.rs
+symbol hide_all
+lines 0 15
+hash 884677a634959444
+note The handler. Creates a view for every step first, so steps never touched before are changed too, then sets Hidden on each (or clears it) and clears Folded when showing.
+
+step u7aio5
+order 1
+parent frf3py
+author ai
+file crates/gui/src/model.rs
+symbol each_of_path
+lines 0 10
+hash 6494a53bb8af2e25
+note Visits every view of this path; views of other paths, including the ones drawn inline under links, are left alone.

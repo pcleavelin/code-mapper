@@ -1,0 +1,25 @@
+codemap 8
+path feature-symbols
+kind flow
+author ai
+group features/cli
+note symbols [filter]: every symbol in the index, one row each, with kind, 1-based line range and its callee and caller counts. The filter is a substring matched against the symbol name or the file path, so a file path lists that file's symbols. Counts come from the index as it stands: a file still pending for its language server shows tree-sitter's xrefs.
+
+step roqkwl
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol symbols
+lines 0 8
+hash 48bb1cf4c47086c5
+note Walks every file and every symbol in it, keeping a symbol when its name or its file's path contains the filter.
+
+step ycyy65
+order 1
+parent roqkwl
+author ai
+file crates/cli/src/wire.rs
+symbol symbol_row
+lines 0 12
+hash 5735b94edc3a3371
+note Prints '<file>:<start>-<end> <kind> <name> (<c> calls, <k> callers)'; a nested member is indented two spaces before its name, the only sign of nesting in the output.

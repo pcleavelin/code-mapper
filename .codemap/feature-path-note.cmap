@@ -1,0 +1,35 @@
+codemap 8
+path feature-path-note
+kind flow
+author ai
+group features/cli
+note path-note <name> <note>: replace a path's note. The path note describes the workflow as a whole for someone who did not see the code; it is usually rewritten once the steps exist.
+
+step 02gu4e
+order 1
+parent 492z40
+author ai
+file crates/cli/src/exec.rs
+symbol find_path
+lines 0 5
+hash 63e1a3b28d250aa6
+note The path must exist; the error names what was typed.
+
+step 492z40
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol path_note
+lines 0 3
+hash 13947d9d7243eb86
+note Run::path_note: find the path, replace its note. Prints nothing.
+
+step byzoaj
+order 2
+parent 492z40
+author ai
+file crates/domain/src/map.rs
+symbol set_path_note
+lines 0 7
+hash 20984fa993afe9dd
+note Replaces the note on the path.

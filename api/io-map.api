@@ -9,6 +9,9 @@ error::pub enum Fault { Conflict, Version(FieldValue), NoVersion, UnknownAuthor(
 error::pub struct ParseError { pub origin: Origin, pub line: Option<Line>, pub fault: Fault, }
 error::pub enum MapLoadError { OldFormat(PathBuf), Unreadable { file: PathBuf, error: io::Error }, Parse(ParseError), OnePathPerFile(PathBuf), Misplaced { file: PathBuf, path: PathName }, }
 error::pub enum MapSaveError { CreateDirectory { directory: PathBuf, error: io::Error, }, Write { file: PathBuf, error: io::Error, }, Remove { file: PathBuf, error: io::Error, }, }
+pub struct MapVersion(&'static str);
+pub const CURRENT: Self = Self(wire::VERSION);
+pub const fn as_str(self) -> &'static str
 pub struct MapText(String);
 pub fn new(text: &str) -> Self
 pub fn as_str(&self) -> &str

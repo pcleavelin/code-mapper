@@ -1,0 +1,76 @@
+codemap 8
+path feature-node-context
+kind flow
+author ai
+group features/gui
+note A graph node's header has ▲ and ▼ buttons that show ten more lines of its file above or below its own lines, the way the document's context buttons do, with the node's own lines highlighted; 'no context' cuts it back to its own lines. A node longer than the preview also has 'more'/'less', which switches between a preview of its first lines and its full text. Widening or narrowing pins the node where it is, so the change does not shuffle the layout.
+
+step 4ok6o9
+order 0
+author ai
+file crates/gui/src/graph/input.rs
+symbol apply
+lines 32 43
+hash 3923723680e2aa71
+note The handler: Widen adds Context::LINES to the node's above or below count, Narrow drops the node's context; both pin the node at its current computed position.
+
+step 79a9oj
+order 5
+parent 4ok6o9
+author ai
+file crates/gui/src/graph/build.rs
+symbol header
+lines 35 51
+hash fdabc089b94b0b49
+note Which of these buttons a node has: more/less only when it is longer than the preview, and the context buttons only while it is not cut to its preview, ▲ unless it starts at the file's first line, ▼ unless it ends at the last, 'no context' while it has any.
+
+step adjf03
+order 4
+parent piucd2
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_click
+lines 12 25
+hash a9762fb126d87ae8
+note Above, Below and NoContext buttons become Widen and Narrow; Preview becomes ToggleCollapsed.
+
+step hfol4v
+order 2
+parent 4ok6o9
+author ai
+file crates/gui/src/graph/input.rs
+symbol apply
+lines 14 20
+hash c57d381711b1483c
+note The more/less button: toggles the node between preview and full text, keeping it under the pointer and returning it to the automatic layout.
+
+step piucd2
+order 3
+parent 4ok6o9
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_phase
+lines 12 22
+hash 855d90a648f8916d
+note Trigger: a click on the canvas goes to graph_click with the hit under the pointer.
+
+step t6s7s4
+order 6
+parent 4ok6o9
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_layout
+lines 0 26
+hash 457dec97263ffbda
+link graph-model
+note The effect the same frame: the rebuilt layout measures each node with its context.
+
+step vvqna0
+order 1
+parent 4ok6o9
+author ai
+file crates/gui/src/graph.rs
+symbol pin
+lines 0 10
+hash ed36e16f5bdf633a
+note Pins the node by recording its current cell position as a dragged one, so its neighbours keep their places while it grows or shrinks.

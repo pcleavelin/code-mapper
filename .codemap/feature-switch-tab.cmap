@@ -1,0 +1,55 @@
+codemap 8
+path feature-switch-tab
+kind flow
+author ai
+group features/gui
+note The tab buttons at the top of the centre switch between Path, Diff, Graph, Listing and Results (Results shows its hit count); the buttons at the top of the left panel switch between Paths, Symbols and Files. Switching changes only what is shown: the selection, the path being read and the file stay. Other features switch the centre tab on their own (opening a line shows the Listing, a search shows Results).
+
+step ifnbpq
+order 0
+author ai
+file crates/gui/src/nav.rs
+symbol set_tab
+lines 0 2
+hash 72985926234db14a
+note The handler for the centre tabs: sets the tab. views::build draws the matching centre view from the next frame.
+
+step qcnnl9
+order 4
+parent ifnbpq
+author ai
+file crates/gui/src/views.rs
+symbol build
+lines 8 14
+hash 16f04985fd1e58da
+note The effect: the centre draws one view per tab.
+
+step qo0af6
+order 1
+parent ifnbpq
+author ai
+file crates/gui/src/nav.rs
+symbol set_left
+lines 0 2
+hash e95ae6a9b5e1660b
+note The handler for the left tabs: sets which list the left panel shows.
+
+step r1500w
+order 3
+parent ifnbpq
+author ai
+file crates/gui/src/views/left.rs
+symbol left_panel
+lines 3 27
+hash 04a838175f4426a1
+note Trigger in the left panel: one LEFT_TAB button per list queues Action::LeftTab and also writes the choice to the frame's overlay, so the rest of this same frame already draws the chosen list instead of lagging one frame behind.
+
+step wtvsai
+order 2
+parent ifnbpq
+author ai
+file crates/gui/src/views/bars.rs
+symbol top_bar
+lines 33 49
+hash 134fe01c5cd4d2e0
+note Trigger in the top bar: one TAB button per centre tab, named by the tab's first word, queues Action::Tab.

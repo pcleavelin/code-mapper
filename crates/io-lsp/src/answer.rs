@@ -118,12 +118,3 @@ pub enum StartError {
     Missing(Program),
     Failed(Program),
 }
-
-impl fmt::Display for StartError {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Missing(program) => write!(formatter, "{program} not on PATH"),
-            Self::Failed(program) => write!(formatter, "{program} would not start"),
-        }
-    }
-}

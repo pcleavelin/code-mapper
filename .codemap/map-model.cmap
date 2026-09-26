@@ -1,0 +1,146 @@
+codemap 8
+path map-model
+kind layer
+author ai
+group map
+note The domain crate's map: Map, Path, Step, Anchor and the names and notes they carry, as pure values with no I/O. Map is the only writer: every edit the CLI or the GUI makes is a Map method addressing a path by PathName and a step by StepId, returning Changed (must be used, so a caller cannot drop the fact that the map needs saving) or a count, or a MapError value that the front ends word. Invariants it keeps: path names are unique, and add_path and rename refuse a name that differs from another only in letter case (a name is a file name, and some filesystems ignore case), a step's parent is a step of its path, no step sits under itself, a link names an existing other path, and a linked-to path is not removed. Constructors that take stored values (Path::new, Step::new, Anchor::new) exist for io-map's reader; everything else is made through Map.
+
+step 20t16w
+order 12
+author ai
+file crates/domain/src/map/step.rs
+symbol new
+lines 0 19
+hash f7d81508cc51067d
+note A step from stored values, as io-map reads it: stale on line 0 until resolve places it.
+
+step 3sz0ia
+order 8
+author ai
+file crates/domain/src/map/name.rs
+symbol from_symbol
+lines 0 18
+hash 5e34039e1557ddd6
+note The name promote gives a path from a symbol: every character not allowed in a path name becomes -, leading and trailing - and . are dropped, and nothing left becomes path. Always a valid PathName.
+
+step 7m6yty
+order 5
+parent skptvw
+author ai
+file crates/domain/src/map.rs
+symbol step_mut
+lines 0 4
+hash cb1051a6a1bae9b8
+note The same for one step of a path: NoSuchStep with its address.
+
+step 9tq2td
+order 1
+author ai
+file crates/domain/src/map/error.rs
+symbol MapError
+lines 0 27
+hash 93bffd204b7bf228
+note Every refusal of the model as data: a bad or taken name (and a case clash), a missing group, path, step, parent, file or symbol, a span outside its file, a link to its own path, removing a linked-to path (with the linking steps), a step under itself, a note lacking the text to replace, and the reader's two: a second step of one id and an unknown parent. No wording here: cli's wire.rs words it for both front ends.
+
+step cbfoyy
+order 3
+parent 9tq2td
+author ai
+file crates/domain/src/map/error.rs
+symbol impl InvalidName
+lines 0 8
+hash f5cbd115f0d7b6a0
+note The rejected text of a name, kept for the message.
+
+step fmy0y7
+order 10
+author ai
+file crates/domain/src/map/name.rs
+symbol impl TextFragment
+lines 0 14
+hash 0b5718b4b50a1d62
+note A piece of text given on the command line: a name to look up, a regex, or the old and new text of note-edit. replace_first replaces its first occurrence in a note, None when the note lacks it.
+
+step jcf8em
+order 2
+parent 9tq2td
+author ai
+file crates/domain/src/map/error.rs
+symbol StepAddress
+lines 0 3
+hash 49d75289abb0aee5
+note A step named the way the model names it, path name and step id; the front ends turn it into an index for display.
+
+step m6uydt
+order 9
+author ai
+file crates/domain/src/map/name.rs
+symbol impl Note
+lines 0 12
+hash 968a32263a3ee140
+note A path or step note. Empty text is no note (None), so an empty note is never written.
+
+step m8z2jz
+order 11
+author ai
+file crates/domain/src/map/name.rs
+symbol impl PathCount
+lines 0 12
+hash 201e04ccbc33f69b
+note A number of paths: rows' group counts and group-rename's result.
+
+step p5o3oa
+order 14
+author ai
+file crates/domain/src/map/path.rs
+symbol empty
+lines 0 9
+hash 072597c024abfaf0
+note A path with no group, note or steps: what add_path pushes.
+
+step pacjj0
+order 0
+author ai
+file crates/domain/src/map.rs
+symbol Changed
+lines 0 0
+hash e51c2531cca4dc50
+note The success value of an edit that changed the map. must_use, so the CLI and GUI cannot lose track of the need to save.
+
+step pq95px
+order 13
+parent 20t16w
+author ai
+file crates/domain/src/map/step.rs
+symbol new
+lines 0 14
+hash a1332e7202fa85b0
+note An anchor from stored values, with no check against any file.
+
+step skptvw
+order 4
+author ai
+file crates/domain/src/map.rs
+symbol path_mut
+lines 0 5
+hash 725fba1d059a72ed
+note The mutable lookup every edit starts from: NoSuchPath when the name is not in the map.
+
+step tgs436
+order 6
+parent 7m6yty
+author ai
+file crates/domain/src/map.rs
+symbol missing_step
+lines 0 5
+hash d7297116b07c7ab5
+note The NoSuchStep error for a path and id.
+
+step th49s9
+order 7
+author ai
+file crates/domain/src/map.rs
+symbol free_name
+lines 0 15
+hash d81b5d6f15ca0bc4
+note Whether a name is free: taken when another path has exactly it, CaseClash when one differs only in letter case; except names the path being renamed, which may keep or recase its own name.

@@ -1,0 +1,46 @@
+codemap 8
+path feature-index
+kind flow
+author ai
+group features/cli
+note index [filter]: ask the language servers now for every pending file whose path contains the filter, e.g. a crate about to be mapped, instead of letting each later command ask for the files it touches. Refused in the GUI, whose own threads index in the background. Reports how many files were asked for and how many in the repo still wait.
+
+step 1mfjaj
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol index_pending
+lines 0 15
+hash 78aa4bfe0bbf44a1
+note Refuses without Servers, collects pending files matching the filter, indexes them, counts what is still pending.
+
+step 6dqb8t
+order 3
+parent 1mfjaj
+author ai
+file crates/cli/src/wire.rs
+symbol index_report
+lines 0 5
+hash 042ced8b053c421c
+note Prints '<n> files asked for; <m> files in the repo still wait for a server'.
+
+step frjkqh
+order 2
+parent x8qsdi
+author ai
+file crates/index/src/server.rs
+symbol index
+lines 0 32
+hash 8eccf4a6deda988a
+link server-index
+note The server round trip for the batch.
+
+step x8qsdi
+order 1
+parent 1mfjaj
+author ai
+file crates/cli/src/exec.rs
+symbol index_files
+lines 0 18
+hash 395c92f598ee9fff
+note Sends the collected files to their servers and re-resolves the map.

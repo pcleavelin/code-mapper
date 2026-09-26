@@ -3,32 +3,32 @@ path search
 kind flow
 author ai
 group gui
-note Grep, in the GUI. The search box runs a Rust regex over the lines already in memory - there is no file I/O and no index of its own - and drops the hits into the Results tab, capped at five thousand so a pattern like a single dot cannot freeze the window. The tab itself is drawn by the frame like any other, virtualised so only the visible hits become elements, and clicking one opens that line in the listing. The same regex engine backs the CLI's grep and notes commands.
+note Grep, in the GUI. Enter in the search box runs a Rust regex over the lines already in memory - there is no file I/O and no index of its own - and puts the hits into the Model, capped at five thousand so a pattern like a single dot cannot freeze the window, then switches to the Results tab. The tab is drawn by the frame like any other, virtualised so only the visible hits become elements, and clicking one opens that line in the listing. A re-index drops the hits, since their file and line numbers belong to the old index. The CLI's grep and notes commands use the same regex engine.
 
 step 6tz50w
 order 1
 author ai
-file src/gui/views.rs
+file crates/gui/src/views/center.rs
 symbol results_view
-lines 0 37
-hash 87a0b8c402345584
-note The Results tab: a hint when there is nothing to show, else one virtualised row per hit, file:line then the trimmed line, a click opens the listing there.
+lines 0 51
+hash 9101ffd1d1541a02
+note The Results tab: a hint when there is nothing to show, else one virtualised row per hit, file:line then the trimmed line; a click pushes GoTo.
 
 step o1sh41
 order 2
 parent 6tz50w
 author ai
-file src/gui/nav.rs
+file crates/gui/src/nav.rs
 symbol open_line
 lines 0 5
-hash 1c379bc5c685935a
-note Opening a hit: the click pushes a GoTo action, and applying it selects that line in the listing, asks the listing to scroll to it and switches tabs. The only way from a search result into the code.
+hash 01ba837e6ef4b139
+note Opening a hit: applying GoTo selects that line in the listing, asks the listing to scroll to it and switches to the Listing tab. The only way from a search result into the code.
 
 step x7ce18
 order 0
 author ai
-file src/gui/mod.rs
-symbol run_search
-lines 0 32
-hash f4891c26e3e8c112
-note The search: the regex is compiled before the previous results are dropped, so a typo keeps the last hit list and only reports; the scan is over the lines already in memory.
+file crates/gui/src/action.rs
+symbol search
+lines 0 36
+hash 0ff0fc93007d74f7
+note The search, run when the search field submits: the regex is compiled before the previous results are dropped, so a typo keeps the last hit list and only reports; the scan is over the lines already in memory, in file order, and the status line gives the count.

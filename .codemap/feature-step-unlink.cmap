@@ -1,0 +1,56 @@
+codemap 8
+path feature-step-unlink
+kind flow
+author ai
+group features/cli
+note step-unlink <name> <index>: remove the link from one step, so the step reads as a plain step again. Unlike step-link with an empty target, it refuses a step that has no link, so a wrong index shows up as an error instead of silently changing nothing.
+
+step 4mzh90
+order 2
+parent ixm7kw
+author ai
+file crates/cli/src/exec.rs
+symbol find_path
+lines 0 5
+hash 63e1a3b28d250aa6
+note The path must exist.
+
+step 9ruwb7
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol step_unlink
+lines 0 13
+hash e5525c425a55b681
+note Finds the step, refuses when it carries no link, clears the link and prints the confirmation.
+
+step bb2wjx
+order 3
+parent 9ruwb7
+author ai
+file crates/domain/src/map.rs
+symbol set_link
+lines 0 17
+hash de19adf8cf3aeff4
+link path-links
+note Called with no target, which clears the link.
+
+step ixm7kw
+order 1
+parent 9ruwb7
+author ai
+file crates/cli/src/exec.rs
+symbol find_step
+lines 0 7
+hash fe848f2c971eee7d
+note The path by name, then the step at that index; a bad index is an error.
+
+step mpu589
+order 4
+parent 9ruwb7
+author ai
+file crates/cli/src/wire.rs
+symbol link_removed
+lines 0 2
+hash 436367a444ea45a0
+note Prints 'step [i] unlinked'.

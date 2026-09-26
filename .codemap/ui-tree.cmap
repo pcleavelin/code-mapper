@@ -3,93 +3,114 @@ path ui-tree
 kind layer
 author ai
 group render
-note The element tree the whole GUI is built from: no widget objects, no retained state, no framework. Every frame the app opens and closes elements; each is nothing, text, or a custom draw function, and each has a size per axis that is exact, fits its content, or grows into what its parent has left. Nothing is positioned while the tree is being built - layout runs once at the end of the frame, five passes over the flat element list, and because a parent is always pushed before its children a forward walk is top-down and a reverse walk bottom-up. Input is answered from the previous frame's rectangles: an element with an id learns whether it is hovered, clicked or dragged one frame late, which is what lets the caller branch on a click in the same statement that creates the element. It knows nothing about codemap and nothing about wgpu; the renderer reaches it as one Measure for text and one Gfx to paint into.
+note The element tree the whole GUI is built from, the ui crate's Ui: no widget objects, no retained state, no framework. Every frame the app opens and closes elements; each is nothing, text, or a custom draw function, and each has a size per axis that is exact, fits its content, or grows into what its parent has left. Nothing is positioned while the tree is being built - layout runs once in end, as recursive passes over the finished tree: each axis gets a fit pass bottom-up and a grow pass top-down, then one pass places everything. Input is answered from the previous frame's rectangles: an element with an id learns whether it is hovered, clicked or dragged one frame late, which is what lets the caller branch on a click in the same statement that creates the element. The crate knows nothing about codemap and nothing about wgpu or winit: fonts reach it as one Measure (cell and row size at a pixel size), and drawing leaves it as a DrawList built through a Canvas (see ui-canvas), which the platform crate's Renderer replays. That boundary is why the whole tree can be built, laid out and drawn in a unit test with a fixed 8x16 cell and no GPU.
 
 step 0imyya
 order 24
 parent 27nlma
 author ai
-file src/ui.rs
-symbol end
-lines 0 147
-hash 685a94b527dbb34b
-note Positions, top-down: an element's rectangle comes from the position its parent gave it, its clip is its parent's clip narrowed by the parent's own rectangle when the parent clips, and then it walks a cursor along its own direction placing its children, applying the cross-axis alignment and subtracting the scroll offset. The extent the cursor reached is stored as the content size, which is what the next frame clamps a scroll against.
+file crates/ui/src/tree.rs
+symbol place
+lines 0 36
+hash bc581329b11aa71d
+note Positions, top-down: an element's rectangle comes from the position its parent gave it, its clip is its parent's clip narrowed by the parent's own rectangle when the parent clips, and then it walks a cursor along its own direction placing its children, applying the cross-axis alignment and subtracting the scroll offset. The extent the cursor reached is stored as the content size, which is what the next frame clamps a scroll against. A floating child is placed at its own absolute position and clipped only by the screen.
 
 step 27nlma
 order 18
 parent ipqjft
 author ai
-file src/ui.rs
+file crates/ui/src/tree.rs
 symbol end
-lines 0 155
-hash e35b5aad3f78f151
-note Layout, once, for the whole frame. Each axis gets a fit pass bottom-up and a grow pass top-down; between the two axes, with widths final and heights not, wrapped text learns how many lines it takes; then one pass places every element and stores the rectangles for next frame's input. Floating elements are left out of every flow calculation and sized against the window instead.
+lines 0 28
+hash 01d39c3aec580a99
+note Layout, once, for the whole frame, with the renderer as the Measure. Each axis gets a fit pass bottom-up and a grow pass top-down; after the horizontal axis, with widths final and heights not, wrapped text learns how many lines it takes; then one pass places every element, and every id's Placement is stored for next frame's input. Floating elements are left out of every flow calculation and sized against the window instead.
+
+step 2f0095
+order 42
+parent b8aeve
+author ai
+file crates/ui/src/id.rs
+symbol from_name
+lines 0 8
+hash 192dbed4ec366a1f
+note Turns a script's element name back into the id: name/n is nth, name@suffix is with, anything else is the plain hash. This is how rect, click-id and hover-id find an element.
 
 step 2ykree
 order 4
 parent xb3aih
 author ai
-file src/ui.rs
+file crates/ui/src/layout.rs
 symbol Layout
 lines 0 9
-hash 621e2f945a3a4908
-note How an element lays its children out: direction, a size per axis, padding, gap, cross-axis alignment, clipping, a scroll offset applied to the children, and a floating absolute position that takes it out of the parent's flow and onto the upper layer.
+hash 9f18a00fc53c91b3
+note How an element lays its children out: direction, a size per axis, padding, gap, cross-axis alignment, a scroll offset applied to the children, and a floating absolute position that takes it out of the parent's flow and onto the upper layer. There is no separate clip flag: an element clips exactly when it scrolls.
 
-step 38mrfs
-order 33
-parent ipqjft
+step 3sljeg
+order 35
+parent kgjw02
 author ai
-file src/ui.rs
-symbol Measure
+file crates/ui/src/tree.rs
+symbol Draw
 lines 0 2
-hash c42fdc557d6b59ea
-note All the tree wants to know about fonts: the cell and row size at one pixel size. The renderer implements it; the tests implement it with a fixed 8x16 cell, which is how the layout is testable with no GPU.
+hash b27347ed507cc57b
+note What a Custom element carries: consumed once, handed the Canvas and the element's rectangle. Any FnOnce closure of that shape is one, so a caller writes the closure inline.
 
 step 5r4iu3
 order 21
 parent 27nlma
 author ai
-file src/ui.rs
-symbol end
-lines 49 83
-hash 76a68372db0c4d41
+file crates/ui/src/tree.rs
+symbol grow
+lines 0 37
+hash f47ad4c17f37ae84
 note Grow, top-down: a root or a floating element grows to the window, then each parent splits whatever it has left after its non-growing children equally among its growing ones along its direction, and gives them the full inner size across it.
 
 step 7qwqcp
 order 27
 parent ipqjft
 author ai
-file src/ui.rs
+file crates/ui/src/tree.rs
 symbol draw
-lines 0 69
-hash 8f3d5c66bfd1fbcf
-note Draw in tree order, layer 0 then layer 1, so a floating popup and everything inside it land on top - a child inherits its ancestors' layer first, which is what makes the contents of a popup rise with it. Per element: push its clip, fill, then text or the custom closure, then the borders. An element whose rectangle does not meet its clip is skipped outright.
+lines 0 12
+hash 8bd2609240a0b251
+link ui-canvas
+note Paint the laid-out tree into a DrawList through a Canvas (see ui-canvas): the base layer, then the floating layer, each followed by its scrollbars so no child covers them. The tree is consumed - custom draw closures run once - and the list is returned for the platform to replay.
+
+step 8qzl72
+order 41
+parent qf94mj
+author ai
+file crates/ui/src/tree.rs
+symbol Placement
+lines 0 4
+hash 8c9a16cf3231ff74
+note Where an id was last frame: its rectangle, its clip and the extent of its content.
 
 step a3j9w8
 order 11
 parent ipqjft
 author ai
-file src/ui.rs
+file crates/ui/src/tree.rs
 symbol begin
-lines 0 28
-hash 5449093943cb4a29
-note The hot element: of every element under the mouse last frame, the one with the smallest visible area (its rectangle cut to its clip), so a block taller than its scroll container still wins over the container.
+lines 0 24
+hash b65e57223c27c64a
+note Start of a frame: clear the tree, copy the pointer and the window size, and pick the hot element - of every id under the mouse last frame (inside both its rectangle and its clip), the one with the smallest visible area, so a block taller than its scroll container still wins over the container. A left press makes the hot id active; releasing the button clears it.
 
 step b8aeve
 order 30
 parent ipqjft
 author ai
-file src/ui.rs
-symbol id
-lines 0 2
-hash 20e411601c085e60
-note An element's identity is a hash of a label, not a position in the tree, so an element keeps its identity when the rows around it change. This is FNV-1a over the string.
+file crates/ui/src/id.rs
+symbol Id
+lines 0 0
+hash a1dbcccc300364c7
+note An element's identity is a hash of a label, not a position in the tree, so an element keeps its identity when the rows around it change. new is FNV-1a over the string.
 
 step bpf1nh
 order 8
 parent 2ykree
 author ai
-file src/ui.rs
+file crates/ui/src/layout.rs
 symbol Align
 lines 0 3
 hash 987792fb9bd98901
@@ -99,257 +120,287 @@ step bv0esw
 order 22
 parent 27nlma
 author ai
-file src/ui.rs
-symbol end
-lines 0 98
-hash 32923dedc1754d46
+file crates/ui/src/tree.rs
+symbol wrap
+lines 0 17
+hash e6a984c492a63a04
 note Between the two axes: widths are final and heights are not, which is the only moment a wrapped text can learn how many lines it will take. Running this here is what makes a wrapped note contribute its real height to the column below it.
-
-step c0y7q8
-order 12
-parent a3j9w8
-author ai
-file src/ui.rs
-symbol InputView
-lines 0 7
-hash f5d538bc9ce02e0c
-note The slice of the input the tree needs while it is being built, copied once per frame so an element builder does not have to carry a reference to the whole input.
 
 step c3xta7
 order 34
 parent 7qwqcp
 author ai
-file src/ui.rs
-symbol scrollbar
-lines 0 9
-hash 48073031d75b3621
-note The track and thumb of a scrollbar for a clipped element, or None when its content fits.
+file crates/ui/src/tree.rs
+symbol of
+lines 0 23
+hash 037deea553ea06b7
+note The track and thumb of a scrollbar for a rectangle, content height and scroll offset, or None when the content fits. The thumb is proportional with a minimum height. The same geometry is painted by draw_scrollbars and hit-tested by scroll_by_wheel, so they cannot disagree.
 
 step csq7jk
 order 31
 parent b8aeve
 author ai
-file src/ui.rs
-symbol id_with
+file crates/ui/src/id.rs
+symbol with
 lines 0 7
-hash 1849fb570650344a
-note The same hash continued from a base, for an id built from a parent id and a string.
-
-step ew2u7x
-order 3
-parent kgjw02
-author ai
-file src/ui.rs
-symbol Text
-lines 0 4
-hash c70bc32b0303f74a
-note Text in one font size: a list of coloured runs on one line, or one run wrapped to the element's width. A run is the unit of colour, which is why a syntax-coloured line is a vector of them.
+hash 16303279c48af538
+note The same hash continued from a base, for an id built from a parent id and a string - the name@suffix form a script uses.
 
 step exk3z1
 order 13
 parent hndy1n
 author ai
-file src/ui.rs
+file crates/ui/src/tree.rs
 symbol Interaction
-lines 0 8
-hash 7b685da112fa6ade
-note The answer an element with an id gets back. Returning it from open and leaf is what lets a caller write 'if self.button(..).clicked' with no callbacks and no event queue in the tree itself.
+lines 0 5
+hash 09f739c1bcabbc17
+note The answer an element with an id gets back: a bitset of signals, the drag and wheel deltas and last frame's rectangle, read through accessors. Returning it from open and leaf is what lets a caller write 'if ui.leaf(..).clicked()' with no callbacks and no event queue in the tree itself.
 
 step g881o9
 order 7
 parent 2ykree
 author ai
-file src/ui.rs
-symbol Dir
+file crates/ui/src/layout.rs
+symbol Direction
 lines 0 3
-hash b20b3ad9e16d322e
-note Row or column; the axis the children are stacked along and the one 'along' is tested against in every pass.
+hash 9f8d3286f8458fea
+note Row or column; main() is the axis the children are stacked along, the one every pass tests 'along' against.
+
+step go9e81
+order 37
+parent 7qwqcp
+author ai
+file crates/ui/src/tree.rs
+symbol draw_layer
+lines 0 18
+hash b35a64406ac59821
+note One layer's pass in tree order: an element is on the floating layer if it floats or any ancestor does, so a popup's contents rise with it. An element whose rectangle does not meet its clip is skipped outright, but its children are still walked.
+
+step hfrcr0
+order 36
+parent v69i14
+author ai
+file crates/ui/src/layout.rs
+symbol Sides
+lines 0 0
+hash 6419410d3b10f91c
+note A set of the four sides as bits, so a style names 'left and bottom' as LEFT.with(BOTTOM).
 
 step hndy1n
 order 15
 parent rd9o1b
 author ai
-file src/ui.rs
-symbol interaction_of
-lines 0 16
-hash f552b830b1effc01
-note What one id learned last frame, and the answer open gives back: hovered is 'it was the hit', clicked is that plus a press this frame, down is that the mouse went down on it and is still down, drag is the pointer movement since last frame while it is the active element, and rect is where it was last frame. Callable without creating an element, for a caller that needs to know it is hovered in order to decide what the element should look like.
+file crates/ui/src/tree.rs
+symbol interaction
+lines 0 19
+hash 9ea958252c40bb39
+note What one id learned last frame, and the answer open gives back: hovered is 'it was the hit', clicked is that plus a left press this frame, double_clicked that plus a double click, down is that it is active and the button is still down, drag is the pointer movement since last frame while it is active (never on the press frame itself), wheel is the wheel only while hovered, and rect is where it was last frame. Callable without creating an element, for a caller that needs to know it is hovered in order to decide what the element should look like.
 
 step inr7qd
 order 19
 parent 27nlma
 author ai
-file src/ui.rs
-symbol end
-lines 3 48
-hash 98e2e228ed6adff1
-note Fit, bottom-up: a parent's fitting size is the sum of its in-flow children along its direction and the largest across it, plus padding and gaps. With no children it is the text's own size, and a wrapped text contributes nothing on the width axis because its width is whatever it is given.
+file crates/ui/src/tree.rs
+symbol fit
+lines 0 25
+hash 7e720ccc14791cef
+note Fit, bottom-up: children first, then a parent's fitting size is the sum of its in-flow children along its direction and the largest across it, plus padding and gaps. Exact is taken as given and Grow counts as zero until the grow pass.
 
 step ipqjft
 order 0
 author ai
-file src/ui.rs
+file crates/ui/src/tree.rs
 symbol Ui
 lines 0 10
-hash 5c157e945bdbd25e
-note The tree itself: the flat element list, which element is currently open, and last frame's rectangle, clip and content extent per id - that map is the whole of what survives a frame, and it is what every hit test and every scroll clamp reads. scroll_drag holds the id whose scrollbar thumb is being dragged and how far down the thumb the mouse grabbed it.
+hash bcf916d54d6c091b
+note The tree itself: roots, the stack of elements still open (the top is the one being filled), and last frame's Placement per id - that map is the whole of what survives a frame, and it is what every hit test and every scroll clamp reads. hot is the id under the mouse, active the id the left button went down on and is still held over, last_mouse turns the pointer into a drag delta, scroll_drag holds the id whose scrollbar thumb is being dragged and how far down the thumb the mouse grabbed it, and pointer and size are this frame's copy of the input's pointer and the window size.
 
 step iw1fmo
 order 28
 parent ipqjft
 author ai
-file src/ui.rs
+file crates/ui/src/tree.rs
 symbol scroll_by_wheel
-lines 0 37
-hash bf1a07dc0417a3f2
-note Scrolls an offset by the wheel when the element is the hit or the mouse is inside its visible rectangle, clamps it to the content extent the element showed last frame, and returns it for the caller to build the element with. The scrollbar is live here too: pressing the thumb starts a drag that follows the mouse from where it grabbed, and clicking the track jumps so the clicked point is centred. The track and thumb come from scrollbar, the same geometry draw paints after every element of a layer so no child covers it.
+lines 0 50
+hash 39eedf45a5ce7cf3
+note Scrolls an offset by the wheel when the element is the hit or the mouse is inside its visible rectangle, clamps it to the content extent the element showed last frame, and returns it for the caller to build the element with. The scrollbar is live here too: pressing the thumb starts a drag that follows the mouse from where it grabbed, and clicking the track jumps so the clicked point is centred. The offset is the caller's state, not the tree's.
 
 step ja80zd
 order 6
 parent 2ykree
 author ai
-file src/ui.rs
+file crates/ui/src/layout.rs
 symbol impl Layout
-lines 0 63
-hash dded08f36752b53e
-note The builders. Every one takes and returns a Layout by value, so a call site reads as one expression - Layout::col().grow().pad(4).gap(2) - and no layout struct is ever named. scroll sets clipping as well, because a scrolling element that does not clip would draw its children over its neighbours.
+lines 0 104
+hash e24415f0161ac1f4
+note The builders. Every one takes and returns a Layout by value and is const, so a call site reads as one expression - Layout::column().grow().padding(px).gap(px) - and no layout struct is ever named. scroll is also what makes clips() true, because a scrolling element that does not clip would draw its children over its neighbours.
 
 step kgjw02
 order 2
 parent xb3aih
 author ai
-file src/ui.rs
+file crates/ui/src/tree.rs
 symbol Kind
 lines 0 4
-hash 7e46c59476ad38e9
-note The three things an element can be. Custom is a boxed closure handed the graphics context and the element's rectangle, which is how the graph canvas draws itself inside the tree without becoming part of it.
+hash cf229eaaf0506056
+note The three things an element can be. Custom is a boxed Draw handed the Canvas and the element's rectangle, which is how the graph canvas draws itself inside the tree without becoming part of it; Text is ui's Text (see ui-text).
 
 step lg4ced
 order 25
 parent 27nlma
 author ai
-file src/ui.rs
-symbol end
-lines 148 154
-hash fb7c1145c0a25ed8
-note The frame's last act: every element with an id records its rectangle, its clip and its content extent, and the mouse position is remembered so the next frame can turn it into a drag delta. This map is the only thing that crosses a frame boundary.
+file crates/ui/src/tree.rs
+symbol record
+lines 0 14
+hash 55dccd5da6b61916
+note The frame's last act: every element with an id records its rectangle, its clip and its content extent; end then remembers the mouse so the next frame can turn it into a drag delta. This map is the only thing that crosses a frame boundary.
 
 step n1kzmu
 order 5
 parent 2ykree
 author ai
-file src/ui.rs
+file crates/ui/src/layout.rs
 symbol Size
 lines 0 4
-hash 4251974b928a5ea8
+hash f2535482ea10caf2
 note The three sizes, and the reason there are two fit passes and one grow pass: Exact is known, Fit is only known after the children are, Grow is only known after the parent is.
 
 step oo347k
 order 16
 parent ipqjft
 author ai
-file src/ui.rs
+file crates/ui/src/tree.rs
 symbol close
-lines 0 4
-hash b1be953c505979f3
-note Close the open element: the parent becomes open again. Unbalanced opens and closes are not detected - the tree is built by code that is read, not by input.
+lines 0 7
+hash 9e228f1cbb17196d
+note Close the open element: pop it off the stack into its parent's children, or into the roots when nothing is open. Unbalanced opens and closes are not detected - the tree is built by code that is read, not by input; end closes whatever is still open.
 
 step qf94mj
 order 29
 parent iw1fmo
 author ai
-file src/ui.rs
-symbol content_of
+file crates/ui/src/tree.rs
+symbol placement
 lines 0 2
-hash 78ec16d1b04dcd35
-note Last frame's content extent and rectangle for an id - the two numbers a clamp needs, and what the path document uses to find where it is scrolled to.
+hash a921a1d862084d85
+note Last frame's Placement for an id - what a clamp needs, and what the path document uses to find where it is scrolled to.
 
 step rd9o1b
 order 14
 parent ipqjft
 author ai
-file src/ui.rs
+file crates/ui/src/tree.rs
 symbol open
-lines 0 37
-hash 49621f3e2fee5202
-note Open an element as the last child of the currently open one: link it in, push it, make it the open one, and answer what its id learned last frame. The one-frame lag is why that answer is available before the element has a position.
+lines 0 21
+hash 1dbe99e8c51d4fe9
+note Open an element as the last child of the currently open one: push it on the stack and answer what its id learned last frame. The one-frame lag is why that answer is available before the element has a position.
 
 step tx2hut
 order 32
 parent b8aeve
 author ai
-file src/ui.rs
-symbol id_n
-lines 0 2
-hash 3d2852d4936dff7d
-note A base id plus a number, for the nth row of a list. Every virtualised table in the GUI addresses its rows through this.
+file crates/ui/src/id.rs
+symbol nth
+lines 0 3
+hash ca7adf723137f4c5
+note A base id plus a number, for the nth row of a list - the name/n form a script uses. Every virtualised table in the GUI addresses its rows through this.
+
+step u2u7pf
+order 38
+parent go9e81
+author ai
+file crates/ui/src/tree.rs
+symbol paint
+lines 0 38
+hash fd4fbe4978a261d7
+note One element: push its clip, fill the background, then text or the custom closure (the closure under a further clip to its own rectangle), then the one-pixel borders, then pop.
 
 step u90iap
 order 17
 parent ipqjft
 author ai
-file src/ui.rs
+file crates/ui/src/tree.rs
 symbol leaf
 lines 0 10
-hash 5fee91d2528290cf
+hash 4ff90607dda3a9d7
 note Open and close in one call, for the elements that have no children - which is most of them.
 
 step unsr3j
 order 23
 parent bv0esw
 author ai
-file src/ui.rs
+file crates/ui/src/text.rs
 symbol wrap
 lines 0 33
-hash 7575a19c261af5f6
+hash 43fd58358426b2fb
 note Greedy wrap at spaces into a column count, with a word longer than the line broken across lines rather than overflowing. Newlines in the text start a new line, so a note written as paragraphs stays paragraphs.
+
+step v49q89
+order 40
+parent 7qwqcp
+author ai
+file crates/ui/src/tree.rs
+symbol draw_scrollbars
+lines 0 22
+hash 7a06783883217434
+note After a layer's elements, the scrollbar of every clipping element whose content is taller than it, under that element's clip, so the bar sits over whatever it scrolls.
 
 step v69i14
 order 9
 parent xb3aih
 author ai
-file src/ui.rs
+file crates/ui/src/layout.rs
 symbol Style
 lines 0 4
-hash 85e75fdf91dafec0
-note The painting an element does for itself: an optional background and any of the four borders in one colour. Anything richer is a Custom element.
+hash 3b06ea3cd440cb52
+note The painting an element does for itself: an optional background and any of the four borders, one pixel wide, in one colour. Anything richer is a Custom element.
 
 step xb3aih
 order 1
 parent ipqjft
 author ai
-file src/ui.rs
+file crates/ui/src/tree.rs
 symbol Element
-lines 0 16
-hash 13f0acca7d295f2e
-note One element. Sibling and child links rather than a children vector, so opening an element is one push; the size, position, rectangle and clip are all filled in by the layout, and lines holds a wrapped text's lines once its width is known.
+lines 0 12
+hash 4ce85fb7afb4652a
+note One element: its kind, layout, style and optional id, its children in a vector, and the fields layout fills in - size, position, rectangle, clip and content extent. lines holds a wrapped text's lines once its width is known. An element is built on the Ui's stack and moved into its parent's children when it closes, so opening one is a push and nothing links siblings by hand.
+
+step xg9w6m
+order 39
+parent u2u7pf
+author ai
+file crates/ui/src/tree.rs
+symbol paint_text
+lines 0 19
+hash c674e6175e87b82b
+note Text at the content origin: a wrapped text draws its lines a row apart in the first run's colour; an unwrapped one chains its coloured runs along the line, each starting where the last one's pen stopped.
 
 step yw3bj2
 order 26
 parent 27nlma
 author ai
-file src/ui.rs
-symbol children
-lines 0 10
-hash e8d268c7304ebb1a
-note The in-flow children, walked from the links: floating children are left out, so every sizing and placing pass skips them and a popup cannot change the layout of what it is drawn over. Called in every pass rather than cached, which is fine at this scale and is the reason there is no children vector to keep in sync.
+file crates/ui/src/tree.rs
+symbol laid_out
+lines 0 4
+hash 3e8032df772f662f
+note The in-flow children: floating children are filtered out, so every sizing and placing pass skips them and a popup cannot change the layout of what it is drawn over. Filtered in every pass rather than kept as a second list, which is fine at this scale.
 
 step ywqiq3
 order 20
 parent inr7qd
 author ai
-file src/ui.rs
-symbol text_cols
-lines 0 2
-hash 1a08fd76309a33c1
-note A line's width in cells: the characters of every run. One monospace font is the whole reason a width is countable rather than measured per glyph.
+file crates/ui/src/tree.rs
+symbol fit_leaf
+lines 0 13
+hash 559efd5d617813cc
+note A childless element's fitting size: nothing but padding unless it is text. A text line is its characters times the cell width - one monospace font is the whole reason a width is countable rather than measured per glyph - and a row high; a wrapped text contributes nothing on the width axis, because its width is whatever it is given, and its line count times the row height on the other.
 
 step zgba8d
 order 10
 parent v69i14
 author ai
-file src/ui.rs
+file crates/ui/src/layout.rs
 symbol impl Style
-lines 0 12
-hash cbe32cf1608c0806
-note Two builders, same by-value style as the layout ones.
+lines 0 20
+hash ba579a9cc601f57c
+note The builders: none, a background, and border(sides, colour) chained onto either, same by-value style as the layout ones.

@@ -1,0 +1,65 @@
+codemap 8
+path feature-remove-step
+kind flow
+author ai
+group features/gui
+note The 'delete' button on a step header removes that step from the path being read; the steps under it move up to its parent. The status bar names what was removed, the selection is cleared, and the map is marked unsaved until ctrl+s or the save button writes it. Steps shown inline under a link have no delete button.
+
+step 2xofld
+order 3
+parent k5svvz
+author ai
+file crates/gui/src/nav.rs
+symbol forget_step
+lines 0 2
+hash 8c38873f3a1dc628
+note The removed step can no longer be the selection.
+
+step 95mfdw
+order 2
+parent k5svvz
+author ai
+file crates/domain/src/map.rs
+symbol remove_step
+lines 0 17
+hash 5aa127210fa4040c
+note The removal in the map: the step leaves the list and its children are re-parented to its parent, so the tree stays connected.
+
+step d3u24h
+order 5
+parent k5svvz
+author ai
+file crates/gui/src/views/document.rs
+symbol step_header
+lines 82 88
+hash cb4108bcc332c87e
+note Trigger: REMOVE_STEP, drawn only for steps of the path being read (not inline occurrences), queues RemoveStep.
+
+step g1wlyd
+order 1
+parent k5svvz
+author ai
+file crates/gui/src/model.rs
+symbol number_of
+lines 0 5
+hash b0abe6e56dab5ac4
+note The hierarchical number shown in the status message, computed while the step still exists.
+
+step k5svvz
+order 0
+author ai
+file crates/gui/src/action.rs
+symbol remove_step
+lines 0 18
+hash 75a713e84107179d
+note The handler. Takes the step's number and identity for the status message before removing it by id from the map, then clears the selected step, shifts the per-step view state and history, and marks the map dirty.
+
+step mlcebf
+order 4
+parent k5svvz
+author ai
+file crates/gui/src/nav.rs
+symbol step_removed
+lines 0 21
+hash 214878c7f891d903
+note Slots after the removed one shift down by one: view flags and context are remapped so they stay with their steps, the removed step's own view is dropped, and history entries on this path are shifted the same way.

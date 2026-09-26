@@ -1,0 +1,46 @@
+codemap 8
+path feature-zoom-graph
+kind flow
+author ai
+group features/gui
+note Ctrl+wheel over the graph zooms in or out one step per notch, around the pointer: the point under the pointer stays under it. The zoom is a font size; the toolbar shows it as a percentage.
+
+step 3tcu6q
+order 3
+parent du7vlm
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_phase
+lines 11 11
+hash bc005286f979fffc
+note Trigger: the graph phase reads the wheel first, before clicks and drags.
+
+step 4d9r3b
+order 2
+parent du7vlm
+author ai
+file crates/gui/src/graph/input.rs
+symbol apply
+lines 2 5
+hash 3db3578daaa78c1d
+link graph-camera
+note Stores zoom and pan together.
+
+step 4j58dm
+order 1
+parent du7vlm
+author ai
+file crates/gui/src/keys.rs
+symbol wheeling
+lines 0 12
+hash 5819eba640507f77
+note Classifies the wheel from the registry's gestures: ctrl is zoom, shift is sideways scrolling, anything else plain scrolling.
+
+step du7vlm
+order 0
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_wheel
+lines 0 32
+hash 6274a33f55353c13
+note The handler: with the ZoomGraph gesture held, the next zoom step is taken, and the pan is recomputed so the cell-space point under the mouse lands at the same pixel with the new cell size.

@@ -1,0 +1,56 @@
+codemap 8
+path feature-check
+kind flow
+author ai
+group features/cli
+note check: the gate. Prints the same listing as stale and then 'ok' when nothing is stale and no link is broken; otherwise ends with an error naming the counts and the process exits 2. No arguments. The CLAUDE.md contract requires it to pass before a commit, and the exit code is what makes it usable from a hook. A map with a merge conflict in it never gets this far: the load itself refuses it.
+
+step 3occ1b
+order 2
+parent ccger0
+author ai
+file crates/cli/src/wire.rs
+symbol all_fresh
+lines 0 2
+hash da3987eda90a9293
+note The single line printed when everything is fresh.
+
+step ccger0
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol check
+lines 0 10
+hash c6f84812be2a7a20
+note Runs stale for its listing and counts, then either prints ok or returns Failure::Stale.
+
+step s86j52
+order 3
+parent ccger0
+author ai
+file crates/cli/src/wire.rs
+symbol fmt
+lines 44 48
+hash c1d6595c5d135112
+note How the failure reads on stderr: 'N stale steps', 'N broken links', or both.
+
+step vr7t8t
+order 1
+parent ccger0
+author ai
+file crates/cli/src/exec.rs
+symbol stale
+lines 0 45
+hash dd3a43befd16f19c
+link feature-stale
+note The full stale listing, hints included, so a failing check already says how to fix each step.
+
+step w0x0tf
+order 4
+parent ccger0
+author ai
+file crates/codemap/src/main.rs
+symbol run
+lines 0 52
+hash e19274bc89dc4430
+note The caller that gives check its exit status: a command error prints what the command wrote so far on stdout, the error on stderr, and exits 2.

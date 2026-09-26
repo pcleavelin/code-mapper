@@ -3,177 +3,196 @@ path navigation
 kind flow
 author ai
 group gui
-note Back and forward, the way a browser does it. Nothing in the app calls a 'navigate' function: at the end of every frame, after the action queue has run, the current place is compared with the place at the end of the last frame, and if they differ the old one is pushed onto the history. So any click anywhere - a symbol in a list, a tab, an xref, a command in the output panel - becomes history for free, and no feature has to remember to record itself. A place is the centre tab, the current file, the line selection, the focused symbol as a stable key, and the selected path and step; a changed line selection alone does not count as a move.
+note Back and forward, the way a browser does it. Nothing in the app calls a 'navigate' function: at the end of every frame, after the action queue has been applied, the current place is compared with the place at the end of the last frame, and if they differ the old one is pushed onto the history. So any click anywhere - a symbol in a list, a tab, an xref, a command in the output panel - becomes history for free, and no feature has to remember to record itself. A place is the centre tab, the current file, the line selection, the focused symbol as a stable key, and the selected path and step; a changed line selection alone does not count as a move. All of it lives in Nav, which only nav.rs changes.
 
 step 0tjy5k
 order 14
-parent gq28ix
 author ai
-file src/gui/nav.rs
+file crates/gui/src/nav.rs
 symbol step_removed
-lines 0 28
-hash 30ec55e7fd507daa
-note Removing a step shifts the indices of every step above it in that path: the step views and every history entry of the path follow, and the removed step's own entries go, so back never lands on the wrong step.
+lines 0 21
+hash 214878c7f891d903
+note Removing a step shifts the slot of every step after it in that path: the step views and every history entry of the path follow, and the removed step's own entries lose their step, so back never lands on the wrong step.
+
+step 3ig36u
+order 13
+parent 5hqfou
+author ai
+file crates/gui/src/keys.rs
+symbol going
+lines 0 10
+hash 47d5664607ed0c9e
+note Back and forward from the input: the GoBack feature's chords with left or right (alt+left, alt+right), or the mouse's side buttons, which the window reports as pressed pointer buttons, so the app does not care which it was.
 
 step 447wu9
 order 10
 parent qab7b7
 author ai
-file src/gui/nav.rs
+file crates/gui/src/nav.rs
 symbol select_symbol
-lines 0 14
-hash 07f9c73792db1f56
+lines 0 20
+hash 478ce11e8427e2a2
 note Selecting the symbol, which lands on a step instead when that symbol is a whole-symbol step of the path being read.
 
 step 4woh4j
-order 13
+order 18
 parent 5hqfou
 author ai
-file src/gui/nav.rs
-symbol step_by
-lines 0 15
-hash b36fa2685a6cceb6
-note Up and down with no field focused: the selected step moves through the path in reading order, clamped at both ends; with nothing selected the first step.
+file crates/gui/src/nav.rs
+symbol walk
+lines 0 32
+hash e81a40541b4ddb7c
+note Up and down with no field focused: the selected step moves through the path in tree order, clamped at both ends; with nothing selected the first step.
 
 step 4wpg9r
 order 0
 author ai
-file src/gui/nav.rs
-symbol Loc
+file crates/gui/src/nav.rs
+symbol Place
 lines 0 7
-hash 46337c0bdbe8219a
-note What counts as a place. The focused symbol is stored as a (file, symbol name) key rather than a SymRef, so the history survives a re-index.
+hash d79c37a511a460a6
+note What counts as a place. The file is kept as its path and the focused symbol as a SymbolKey (file path, symbol name) rather than ids, so the history survives a re-index.
 
 step 5hqfou
 order 12
 author ai
-file src/gui/mod.rs
-symbol frame
-lines 37 48
-hash 44032fd90fdfd78d
-note The keys, read in the frame before the tree is built: ctrl+s saves, alt+left and alt+right go back and forward, and the mouse's two side buttons do the same - the window turns those into flags on the input, so the app does not care which it was.
+file crates/gui/src/app.rs
+symbol keys
+lines 0 25
+hash 980e7236c8f2ecde
+note The keys, read in the frame before the tree is built and turned into actions: the Save chord, back and forward, every field fed the frame's edits and typed text, and up and down walking the path when no field has the keyboard. Which chord does what comes from the feature registry through keys.
 
 step 5wentz
 order 3
 parent syqeay
 author ai
-file src/gui/nav.rs
+file crates/gui/src/nav.rs
 symbol here
-lines 0 9
-hash 2e5a933177519138
-note Snapshots the current place. Used for the comparison and for both stacks.
+lines 0 13
+hash 17921a51cc371b23
+note Snapshots the current place from Nav. Used for the comparison and for both stacks.
+
+step 6ixm0n
+order 19
+parent 0tjy5k
+author ai
+file crates/gui/src/nav.rs
+symbol places_mut
+lines 0 5
+hash 603398673f5fc6cf
+note Every place the history holds - both stacks and the last-frame snapshot - so a removal rewrites them all in one loop.
 
 step c5wt5k
 order 6
 parent gq28ix
 author ai
-file src/gui/nav.rs
+file crates/gui/src/nav.rs
 symbol select_step
-lines 0 34
-hash cc9ca71ae55f93f2
+lines 0 52
+hash eab2b28be6308818
 note A place that had a step is restored through the normal step selection, so the document scrolls and the graph follows exactly as if it had been clicked.
 
 step gq28ix
 order 5
 parent ju7j2n
 author ai
-file src/gui/nav.rs
+file crates/gui/src/nav.rs
 symbol go
-lines 0 20
-hash 651c017ac52104f2
-note Restoring a place without it counting as a new navigation - it overwrites the last-frame snapshot, so track_navigation sees no difference at the end of this frame. A path or symbol that disappeared since is dropped rather than restored. The tab is set last, because selecting a step switches the tab on its own.
+lines 0 22
+hash e8494479d712c6ab
+note Restoring a place without it counting as a new navigation: it overwrites the last-frame snapshot, so track_navigation sees no difference at the end of this frame. A path that disappeared since is dropped, and a step past the end of its path restores only the symbol. The tab is set last, because selecting a step switches the tab on its own.
 
 step hbxizr
 order 15
-parent gq28ix
 author ai
-file src/gui/nav.rs
+file crates/gui/src/nav.rs
 symbol path_removed
-lines 0 23
-hash 2609b1abe2e74d1e
-note Removing a path drops its records and history entries and shifts later paths down one, so nothing of another path is lost or reattached.
+lines 0 19
+hash 179f7ba224f9edfd
+note Removing a path drops its history entries and step views and shifts later paths down one, so nothing of another path is lost or reattached.
 
 step hdsnp8
 order 16
 parent 0tjy5k
 author ai
-file src/gui/document.rs
-symbol remap_steps
-lines 0 6
-hash 045e4d30e8e385b7
+file crates/gui/src/model.rs
+symbol remap
+lines 0 5
+hash df904aa1c5f62297
 note The one rewrite of the step views onto new (path, step) keys: the closure gives each key its new value or drops the view. Removing a step, removing a path and reloading the map each pass their own closure.
 
 step j5iweb
 order 17
 parent syqeay
 author ai
-file src/gui/nav.rs
+file crates/gui/src/nav.rs
 symbol History
 lines 0 4
-hash de7a1f0d2cd2af53
+hash 65e91796392332e8
 note The back and forward stacks and the place at the end of the last frame, which is what track_navigation compares against.
 
 step ju7j2n
 order 4
 author ai
-file src/gui/nav.rs
+file crates/gui/src/nav.rs
 symbol back
-lines 0 6
-hash 1401962590e7a693
-note Back: pop the history, push where we are onto the forward stack, restore. Bound to alt+left and the mouse's back button.
+lines 0 7
+hash 62ffaec576a23e5e
+note Back: pop the history, push where we are onto the forward stack, go. Reached by the Back action, which the '<' button, alt+left and the mouse's back button push.
 
 step kv8kwg
 order 1
 parent 4wpg9r
 author ai
-file src/gui/nav.rs
+file crates/gui/src/nav.rs
 symbol same_place
 lines 0 6
-hash 5842259ecece6136
-note The comparison that decides whether something was a navigation. The line selection is deliberately left out: moving the caret in the listing is not a move.
+hash 49c701209cfb356f
+note The comparison that decides whether something was a navigation. The line selection is left out: moving the selection in the listing is not a move.
 
 step loikda
 order 8
 author ai
-file src/gui/nav.rs
+file crates/gui/src/nav.rs
 symbol forward
-lines 0 6
-hash 647647a28c8b2c15
+lines 0 7
+hash d330435f581d1796
 note Forward: the mirror image, valid only until the next real navigation clears the stack.
 
 step qab7b7
 order 9
 author ai
-file src/gui/nav.rs
+file crates/gui/src/nav.rs
 symbol go_to_symbol
-lines 0 13
-hash 17e72c42f9045991
-note The usual way a symbol is opened from a list or an xref: select it, and open the listing unless the graph or a document is already showing it.
+lines 0 14
+hash 224cf5be04b4d5a1
+note The usual way a symbol is opened from a list or an xref (the Focus action): select it, and when it is not a step of the path being read, open the listing unless the graph or a document is showing - there the status line says the symbol is not a step of that path.
 
 step syqeay
 order 2
 author ai
-file src/gui/nav.rs
+file crates/gui/src/nav.rs
 symbol track_navigation
-lines 0 12
-hash da5223d84139e9b7
-note Called once at the very end of the frame, after the frame's actions have been applied. A difference from last frame pushes the old place and drops the forward stack, exactly like a browser; the history is capped at two hundred entries.
+lines 0 13
+hash e56492ba685dda58
+note Called by the frame once at the very end, after the frame's actions have been applied. A difference from last frame pushes the old place and drops the forward stack, exactly like a browser; the history keeps the last two hundred places.
 
 step t1zqws
 order 11
 author ai
-file src/gui/peek.rs
-symbol probe_def
+file crates/gui/src/action.rs
+symbol definition
 lines 0 18
-hash 4399ab4785ef3090
-note Go-to-definition: the identifier under the pointer is looked up by the language's server (or the index, for a grammar-only file) and, once the answer is in, selected or opened in the listing; a definition outside the repo is pinned in the peek panel instead, since there is no file to open.
+hash d00af4bcb2673b16
+link peek
+note Go-to-definition from any code view: the identifier under the pointer is looked up by the language's server (or the index, for a grammar-only file) and, once the answer is in, selected or opened in the listing; a definition outside the repo is pinned in the peek panel instead, since there is no file to open.
 
 step w39a81
 order 7
 parent gq28ix
 author ai
-file src/gui/nav.rs
-symbol focus
-lines 0 10
-hash 34d6270b286e8114
-note A place with no step restores only the symbol.
+file crates/gui/src/nav.rs
+symbol focus_symbol
+lines 0 12
+hash 8b98063109fcb5a0
+note A place with no step restores only the symbol, looked up again by its key.

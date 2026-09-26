@@ -1,0 +1,77 @@
+codemap 8
+path feature-fit-graph
+kind flow
+author ai
+group features/gui
+note The Graph tab's 'fit' button zooms and pans so the whole graph fits the canvas with a margin, shrinking the font step by step down to the smallest readable size; '1:1' sets the zoom back to 100% and centres the selected node. The camera otherwise moves only on explicit navigation.
+
+step 5ljx4z
+order 1
+parent uounwk
+author ai
+file crates/gui/src/graph/input.rs
+symbol apply
+lines 79 82
+hash d719a8c410342f74
+note The handler for 1:1: zoom one, and a look at the focused node wanted.
+
+step bce7u2
+order 3
+parent etvs2z
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_fit
+lines 0 25
+hash 6e45835e6e56679a
+link graph-camera
+note Starting from the current font, steps the size down until the graph's cell bounds fit the canvas less the margins, or the smallest fit font is reached; the zoom is that font over the base one, the pan puts the top-left of the bounds at the margin.
+
+step etvs2z
+order 2
+parent uounwk
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_phase
+lines 31 34
+hash 9304b7e04b77e9e7
+note The next graph phase, after layout: a wanted fit runs once the canvas has been placed.
+
+step m9kgxr
+order 5
+parent uounwk
+author ai
+file crates/gui/src/graph/input.rs
+symbol move_camera
+lines 0 13
+hash 210ed2bd360de9e1
+link graph-camera
+note For 1:1, the camera centres the focused node, or puts its top at the margin when it is taller than the canvas.
+
+step uounwk
+order 0
+author ai
+file crates/gui/src/graph/input.rs
+symbol apply
+lines 84 84
+hash 5b73e3ed6d27bf7f
+note The handler for fit: marks a fit as wanted; the fit itself needs the canvas size and the laid-out bounds, so it runs in the next graph phase.
+
+step x8i2ul
+order 6
+parent uounwk
+author ai
+file crates/gui/src/views/center.rs
+symbol graph_tab
+lines 24 38
+hash 2edfa2260736694b
+note Trigger: GRAPH_ONE_TO_ONE and GRAPH_FIT in the graph toolbar queue OneToOne and WantFit.
+
+step zita0a
+order 4
+parent etvs2z
+author ai
+file crates/gui/src/graph/input.rs
+symbol apply
+lines 6 12
+hash 1162ee9333b4e6a3
+note Stores the fit's zoom and pan and settles the wish; with no bounds (an empty graph) only the wish settles.

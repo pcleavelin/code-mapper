@@ -9,67 +9,77 @@ step 6881s1
 order 4
 parent mkum0c
 author ai
-file src/map.rs
-symbol add_anchor
-lines 0 30
-hash bba63eaf6c6e0086
-note Each step is anchored to the whole symbol; narrowing one to a slice is a later path-pin.
+file crates/domain/src/map.rs
+symbol add_step
+lines 0 38
+hash d53744822dc161fe
+note Each step is anchored to the whole symbol; narrowing one to a slice is a later path-pin. The step gets a fresh id, the next order number and the parent from the stack.
 
 step 712z8g
+order 3
+parent ia62kn
+author ai
+file crates/domain/src/index.rs
+symbol call_tree
+lines 0 22
+hash b81e86551466166b
+note Where the shape comes from. Default depth is 1: a shallow scaffold the agent deepens on purpose is cheaper to fix than a deep one it has to prune.
+
+step a0t4ce
+order 1
+parent ggmy6f
+author ai
+file crates/cli/src/exec.rs
+symbol index_tree
+lines 0 16
+hash 7a09941bfac5cb5a
+note Asks the language servers for the files the call tree reaches, one round per answer: a newly indexed file can reveal deeper callees, so it repeats until the tree reaches no pending file. Without servers (the GUI's command line) it asks nothing and the tree is what the index already knows.
+
+step e9sag5
 order 2
 parent ia62kn
 author ai
-file src/index/mod.rs
-symbol call_tree
-lines 0 5
-hash f7eaab48fba5decf
-note Where the shape comes from. Default depth is 1: a shallow scaffold the agent deepens on purpose is cheaper to fix than a deep one it has to prune.
-
-step e9sag5
-order 6
-parent ia62kn
-author ai
-file src/map.rs
-symbol name_from
-lines 0 17
-hash 877f8f098fd0d08d
-note A path named after its symbol takes the symbol's name with every character a file name cannot hold turned into '-'.
+file crates/domain/src/map/name.rs
+symbol from_symbol
+lines 0 18
+hash 5e34039e1557ddd6
+note A path named after its symbol takes the symbol's name with every character a path name cannot hold turned into '-', leading and trailing '-' and '.' trimmed, and 'path' when nothing is left.
 
 step ggmy6f
 order 0
 author ai
-file src/cli.rs
-symbol exec
-lines 473 493
-hash 91e3d5b130d0b762
-note The command: index the files the call tree reaches, resolve the symbol to exactly one, promote it, report how many steps the path now has.
+file crates/cli/src/exec.rs
+symbol promote
+lines 0 15
+hash dc99fd0a0eaf7edb
+note The command: index the files the call tree reaches, resolve the symbol to exactly one, hand it to Map::promote with the agent or human as author, and print how many steps the path now has. The name and depth arrive already converted: the name as a PathName or the MapError that refuses it, the depth as Levels, 1 unless given.
 
 step i8jlm4
 order 5
 parent 6881s1
 author ai
-file src/map.rs
-symbol new
-lines 0 31
-hash 7909252712c41373
-note Anchoring relative to the symbol itself, so a promoted step stays valid while everything around it moves.
+file crates/domain/src/map.rs
+symbol pin_span
+lines 0 14
+hash eb22d48f99f68183
+note Anchor::at anchors the span relative to the innermost symbol that encloses it, with a hash of its text, so a promoted step stays valid while everything around it moves; the step starts resolved and current, pointing at that symbol.
 
 step ia62kn
-order 1
+order 7
 parent ggmy6f
 author ai
-file src/map.rs
+file crates/domain/src/map.rs
 symbol promote
-lines 0 34
-hash 9bd88845f3e6e031
-note Walks the call tree in pre-order and keeps a stack of the step index at each depth, so the step created at depth d becomes the parent of everything at depth d+1. The path is created as a flow, since a call tree is a workflow by construction.
+lines 0 48
+hash 9b371b481fd7afe9
+note Walks the call tree in pre-order and keeps a stack of the StepId at each depth, so the step created at depth d becomes the parent of everything at depth d+1. The path is created as a flow, since a call tree is a workflow by construction, and named from the root symbol when no name is given.
 
 step mkum0c
-order 3
+order 6
 parent ia62kn
 author ai
-file src/map.rs
+file crates/domain/src/map.rs
 symbol promote
-lines 22 29
-hash ee71c35d6f45997d
-note Re-promoting reuses the step a symbol already has instead of adding a second one, which also means notes already written survive.
+lines 23 43
+hash 40944294b7ba26d9
+note Re-promoting reuses the step a symbol already has instead of adding a second one, which also means notes already written survive. Only a step anchored at the symbol's first line counts as the symbol's step, so a step narrowed to a slice of it does not stop the whole symbol from being added.

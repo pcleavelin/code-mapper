@@ -6,7 +6,7 @@ mod wire;
 
 use domain::{Author, Changed, Index, Map, MapError, SymbolId};
 use features::Feature;
-use index::{ServerNotice, Servers};
+use index::{ServerNotice, Servers, StartError};
 
 use crate::convert::Request;
 use crate::exec::Run;
@@ -95,6 +95,10 @@ pub fn help() -> Output {
 
 pub fn notice(notice: &ServerNotice) -> Output {
     wire::notice(notice)
+}
+
+pub fn start_error(error: &StartError) -> Output {
+    wire::start_error(error)
 }
 
 pub fn symbol_label(index: &Index, symbol: SymbolId) -> Output {

@@ -1,0 +1,35 @@
+codemap 8
+path feature-step-note
+kind flow
+author ai
+group features/cli
+note step-note <name> <index> <note>: replace one step's note. The index is the one paths prints in square brackets. A step note says what that step does for this path; the same function can be a step in several paths with a different note in each.
+
+step asvjlt
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol step_note
+lines 0 8
+hash 60e7acf9789d0a04
+note Run::step_note: find the step, replace its note. Prints nothing.
+
+step l2dmhj
+order 2
+parent asvjlt
+author ai
+file crates/domain/src/map.rs
+symbol set_step_note
+lines 0 8
+hash eaf7f0309f5c383c
+note Replaces the note on the step.
+
+step xfsiy8
+order 1
+parent asvjlt
+author ai
+file crates/cli/src/exec.rs
+symbol find_step
+lines 0 7
+hash fe848f2c971eee7d
+note The path by name, then the step by index; an index past the last step is an error.

@@ -1,0 +1,147 @@
+codemap 8
+path feature-jump-to-definition
+kind flow
+author ai
+group features/gui
+note Ctrl-click or double-click an identifier in any code view (document, listing, peek, graph node) to go to its definition. A definition that is a symbol in the repo lands on that symbol: the matching step of the path being read when there is one, otherwise the Listing. A definition inside a symbol (a field, a local) opens the Listing on its line. One outside the repo cannot be jumped to and is shown in the peek panel instead, with a status line saying where it is. With a language server the answer arrives a few frames later; without one, the symbol of that name is used; prose files do nothing. No definition found is reported in the status bar.
+
+step 0qrr3m
+order 8
+parent 7x9zhl
+author ai
+file crates/gui/src/widgets/code.rs
+symbol code_block
+lines 74 91
+hash 5201244658bdb3d7
+note Trigger in every code block: when the pointer is over a character, keys::code_gesture classifies the click and a jump queues Definition with Intent::Jump.
+
+step 2sj9sg
+order 7
+parent oyeq3k
+author ai
+file crates/gui/src/nav.rs
+symbol open_line
+lines 0 5
+hash 01ba837e6ef4b139
+note A definition that is not a symbol's first line opens the Listing on its line.
+
+step 7x9zhl
+order 0
+author ai
+file crates/gui/src/action.rs
+symbol definition
+lines 0 18
+hash d00af4bcb2673b16
+note The handler, shared with peek-definition and told apart by the Intent. Finds the word under the pointer, then either asks the language's server for the definition (remembering what the answer is for) or, for a language with a grammar but no server, resolves the word to a symbol at once and lands on it.
+
+step griplk
+order 12
+parent iw967s
+author ai
+file crates/gui/src/work.rs
+symbol definition_landed
+lines 0 16
+hash 3b233d0dcc209a88
+note Turns the answer into a place, then lands it with the intent that was asked for. No answer is reported as no definition.
+
+step iw967s
+order 11
+parent 7x9zhl
+author ai
+file crates/gui/src/work.rs
+symbol poll_backend
+lines 35 39
+hash 0d766cad93d5bf15
+link peek
+note The server's answer, polled at the start of a later frame: it counts only if it matches the definition still wanted, so a stale answer after another click is dropped.
+
+step kjckxd
+order 6
+parent oyeq3k
+author ai
+file crates/gui/src/nav.rs
+symbol jumped_to_symbol
+lines 0 6
+hash 349dd93599fd134d
+note Selects the symbol, which picks the matching step of the path being read when there is one; unless that put the reader on a step in the document, or the graph is showing, the Listing is shown.
+
+step oduobc
+order 13
+parent griplk
+author ai
+file crates/gui/src/work.rs
+symbol peek_at_line
+lines 0 10
+hash 2e827e1a15306c4e
+note A file in the repo becomes the symbol starting on that line when there is one, otherwise the line itself; a file outside the repo is kept as an Outside peek with its text already read and highlighted.
+
+step os8d3f
+order 1
+parent 7x9zhl
+author ai
+file crates/gui/src/peek.rs
+symbol word_at
+lines 0 26
+hash ff0520c97f5c2a66
+note The identifier under the pointer: the run of letters, digits and underscores around the column. Punctuation or whitespace under the pointer means no word and nothing happens.
+
+step oyeq3k
+order 5
+parent 7x9zhl
+author ai
+file crates/gui/src/work.rs
+symbol land
+lines 0 14
+hash 18408dde89f15741
+note Where both routes end. With Intent::Jump a symbol lands through jumped_to_symbol and a line through open_line; an outside definition cannot be jumped to and falls through to the peek panel.
+
+step p4u95c
+order 9
+parent 0qrr3m
+author ai
+file crates/gui/src/keys.rs
+symbol code_gesture
+lines 0 8
+hash 9fbf707f28fe56f5
+note Peek is checked first, so alt wins over ctrl; the gestures are the registry's: ctrl-click and double-click jump, alt-click peeks.
+
+step w6i70v
+order 2
+parent 7x9zhl
+author ai
+file crates/gui/src/peek.rs
+symbol probing
+lines 0 23
+hash 14276686a2367bde
+note Which backend answers: the file's language with a live server gives a probe (file, line, UTF-16 character, file hash); a language whose server failed or is absent falls back to the resolver; a file with no language gets nothing.
+
+step ybnvgv
+order 4
+parent 7x9zhl
+author ai
+file crates/gui/src/peek.rs
+symbol symbol_at
+lines 0 24
+hash 68712ae7ea6ae825
+note The resolver's guess: among symbols with the word's name, the one whose references include this line, else one in the same file, else the first.
+
+step yrbhgj
+order 10
+parent 7x9zhl
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_click
+lines 36 51
+hash 69cc41c96fbf5f8a
+note Trigger on a graph node's code line: the same gestures, with the column computed from the node's line rectangle; the Definition action is deferred to the graph tab's frame.
+
+step zgohcn
+order 3
+parent 7x9zhl
+author ai
+file crates/gui/src/work.rs
+symbol ask
+lines 0 6
+hash 0fea4c20d4fb673d
+link lsp-client
+note Sends the definition request to the language's server thread, starting it on first use.

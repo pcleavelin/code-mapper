@@ -1,0 +1,162 @@
+codemap 8
+path ui-canvas
+kind layer
+author ai
+group render
+note The boundary between the element tree and the GPU. A frame's picture leaves the ui crate as a DrawList: a flat, ordered vector of Commands in window pixels - set the clip, fill a rectangle, fill a quad, a circle, a run of text, a grid of coloured cells - with no element, no id and no wgpu type in it. Everything that draws (the tree's own painting, the graph's custom closure) writes through a Canvas, which keeps the clip stack and turns lines and curves into quads, so the platform's Renderer only replays primitives and never clips, measures or tessellates anything on its own. The one thing the ui side needs back from the font is the cell and row size at a pixel size; that is the Measure trait, which the Renderer implements and a test implements with a fixed cell. So the ui crate lays out and draws with no GPU, and the platform crate draws with no knowledge of elements: the DrawList is the whole contract, and a golden test can compare it command by command.
+
+step 5rg8zf
+order 11
+parent hayl03
+author ai
+file crates/ui/src/canvas.rs
+symbol curve
+lines 0 27
+hash fc2771f5f7d361ec
+note A cubic bezier as twenty-four straight segments through line. Enough for the edge curves on the graph at any zoom the app allows, and it needs no new primitive.
+
+step 63vite
+order 0
+author ai
+file crates/ui/src/canvas.rs
+symbol Measure
+lines 0 2
+hash 668703b9a4884e82
+note All the ui crate wants to know about fonts: the cell width and row height at one pixel size. Layout, text measurement and the canvas's pen all go through it. The platform's Renderer implements it from the real font; the ui tests implement it with a fixed 8x16 cell, which is how the layout and the draw list are testable with no GPU.
+
+step ccccpa
+order 5
+parent hayl03
+author ai
+file crates/ui/src/canvas.rs
+symbol finish
+lines 0 2
+hash d440da145040655b
+note Hands the finished list back; the canvas is gone, and so is its borrow of the Measure.
+
+step ckff24
+order 8
+parent hayl03
+author ai
+file crates/ui/src/canvas.rs
+symbol rect
+lines 0 5
+hash 25a4dff8c6b233e7
+note A filled rectangle: the workhorse. Backgrounds, borders, selection highlights, anchor bars and separators are all this. An empty rectangle or a transparent colour emits nothing.
+
+step hayl03
+order 3
+author ai
+file crates/ui/src/canvas.rs
+symbol Canvas
+lines 0 5
+hash c7483ebee8aebe99
+note The drawing surface handed to the tree's painting and to every custom closure: the list being built, the screen rectangle, the clip stack and the Measure. It lives for one frame and borrows the Measure for that frame only.
+
+step k0psxb
+order 2
+author ai
+file crates/ui/src/canvas.rs
+symbol DrawList
+lines 0 2
+hash c812327da463f108
+note The frame's picture: the commands in paint order. Read-only once built; the Renderer walks it with commands().
+
+step l5fadm
+order 14
+parent hayl03
+author ai
+file crates/ui/src/canvas.rs
+symbol grid
+lines 0 6
+hash a36f5a4b66abae6e
+note A grid of cells at a point and size, the grid shared rather than copied.
+
+step lxe5rm
+order 12
+parent hayl03
+author ai
+file crates/ui/src/canvas.rs
+symbol circle
+lines 0 6
+hash beac03be5e61af70
+note A filled disc, used for the dot at the end of a graph edge; the renderer turns it into a fan.
+
+step nzeb3p
+order 7
+parent hayl03
+author ai
+file crates/ui/src/canvas.rs
+symbol pop_clip
+lines 0 6
+hash 4ecd9fdf4167bb22
+note Back to the enclosing clip, emitted again as a Clip command so everything after it draws under the outer clip. The outermost clip - the screen - is never popped.
+
+step p11mgk
+order 15
+parent hayl03
+author ai
+file crates/ui/src/canvas.rs
+symbol cell
+lines 0 2
+hash 49d1f42afdfc6d01
+note The cell size at a font size, for a custom closure that lays out text itself, as the graph does.
+
+step t46oml
+order 4
+parent hayl03
+author ai
+file crates/ui/src/canvas.rs
+symbol new
+lines 0 8
+hash c7161867a9d4c470
+note Starts with an empty list and the clip stack holding the whole screen.
+
+step tbgj1z
+order 1
+author ai
+file crates/ui/src/canvas.rs
+symbol Command
+lines 0 26
+hash c75537f39962030a
+note The primitives, all in window pixels. Clip carries the absolute clip rectangle already intersected with the ones outside it, so the replayer only sets it. Fill is an axis-aligned rectangle, Quad any four corners (a line segment arrives as one), Circle a filled disc, Text a run of one-colour text at a font size with its top-left at a point, and Grid a shared block of coloured cells drawn a cell and a row apart - the drawn form of every code view, shared by Rc so a big file costs nothing to put in the list twice.
+
+step ue2y72
+order 6
+parent hayl03
+author ai
+file crates/ui/src/canvas.rs
+symbol push_clip
+lines 0 4
+hash 0e311612c53dd2f3
+note A clip is intersected with the current one, so a nested clip can only ever shrink, and the intersection is emitted as a Clip command. The replayer therefore never needs a stack of its own.
+
+step w151s8
+order 10
+parent hayl03
+author ai
+file crates/ui/src/canvas.rs
+symbol line
+lines 0 23
+hash 901d00a21897c0a2
+note A segment of a given thickness, emitted as a Quad offset along the segment's normal. Degenerate segments are dropped, which is what keeps a bezier's repeated points from producing NaNs.
+
+step z5rae2
+order 13
+parent hayl03
+author ai
+file crates/ui/src/canvas.rs
+symbol text
+lines 0 18
+hash 89c83a067989725c
+note A run of text with its top-left at a point, one cell per character. It returns the pen, advanced by a cell per character and stopping at the clip's right edge, so runs of different colours chain along a line; the measuring is here, so the replayer only places glyphs.
+
+step zlrper
+order 9
+parent hayl03
+author ai
+file crates/ui/src/canvas.rs
+symbol outline
+lines 0 11
+hash 62dcde083760aa14
+note Four rectangles just inside a rectangle's edges. Used where a border has to sit inside a rectangle the element tree does not own, such as a graph node.

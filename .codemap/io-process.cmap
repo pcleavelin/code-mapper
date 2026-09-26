@@ -1,0 +1,92 @@
+codemap 8
+path io-process
+kind layer
+author ai
+group index
+note The io-process crate: the one place the program starts other programs (clippy's disallowed_methods keeps Command out of every other crate). Two ways in: Process::run runs a program to completion and captures its output (jj and git, through io-vcs), Process::spawn starts one with pipes for a long-lived conversation (a language server, through io-lsp). The program is looked up on PATH here, before the OS is asked, so every caller reports a missing program the same way. Failures are ProcessError values; each caller words them in its own error type.
+
+step cyuq68
+order 0
+author ai
+file crates/io-process/src/lib.rs
+symbol spawn
+lines 0 25
+hash ef93fcbe4d2fc613
+note Starts a program with piped stdin and stdout and stderr discarded, in a working directory: how a language server runs. A child that did not get both pipes is killed and reported as NoPipe, so a Spawned always has both.
+
+step durh30
+order 2
+author ai
+file crates/io-process/src/lib.rs
+symbol command
+lines 0 13
+hash 572066a53fa4e809
+note The one place a Command is made: the program resolved on PATH first, so a missing program is ProcessError::Missing rather than an OS error, then the arguments and working directory.
+
+step e2ewua
+order 3
+parent durh30
+author ai
+file crates/io-process/src/lib.rs
+symbol find_on_path
+lines 0 12
+hash 2e30cc303858906d
+note Whether a program exists at all, and where. A name with a directory part is taken as a path; a bare name is tried in every PATH directory. On Windows it also tries each PATHEXT suffix, because several language servers install as .cmd shims and a bare name would not be found.
+
+step j1ea3q
+order 5
+author ai
+file crates/io-process/src/lib.rs
+symbol ProcessError
+lines 0 4
+hash 36c4823410a23fe3
+note Why a program did not start: Missing (not on PATH), Start (the OS refused, with its error) or NoPipe. io-lsp turns it into StartError, io-vcs carries it in its own error.
+
+step jhfthp
+order 7
+parent pwq46p
+author ai
+file crates/io-process/src/lib.rs
+symbol Output
+lines 0 4
+hash fc4bbbe3c7c342fa
+note What a finished run leaves: the exit status and both streams.
+
+step pwemod
+order 8
+parent jhfthp
+author ai
+file crates/io-process/src/lib.rs
+symbol impl Captured
+lines 0 12
+hash edb686122784569c
+note A captured stream as bytes, with a lossy UTF-8 text view for messages.
+
+step pwq46p
+order 1
+author ai
+file crates/io-process/src/lib.rs
+symbol run
+lines 0 17
+hash 787a11788e80440d
+note Runs a program to completion with stdin closed, capturing stdout and stderr: how io-vcs asks jj and git. A program that ran and failed is still Ok; the caller reads the status.
+
+step qan5bi
+order 6
+parent cyuq68
+author ai
+file crates/io-process/src/lib.rs
+symbol Spawned
+lines 0 4
+hash 576d04b6760bd34a
+note The running child and its two pipes. The caller owns the child and is the one to wait on or kill it.
+
+step qs48ed
+order 4
+parent e2ewua
+author ai
+file crates/io-process/src/lib.rs
+symbol executable_suffixes
+lines 0 10
+hash cf90957df6c478c5
+note The suffixes a bare name is tried with: PATHEXT lower-cased on Windows (.exe, .cmd and .bat when it is unset), none elsewhere.

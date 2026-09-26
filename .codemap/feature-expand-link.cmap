@@ -1,0 +1,55 @@
+codemap 8
+path feature-expand-link
+kind flow
+author ai
+group features/gui
+note A step that links to another path has an 'expand' button. Pressed, the linked path's steps appear inline under the step, indented one level and numbered after it (1.2 › 1, 1.2 › 1.1), each with its own view buttons; 'collapse' removes them. A link to a path already expanded further up shows 'expanded above' instead of a button, so a cycle of links cannot recurse.
+
+step a79171
+order 4
+parent vxhwtl
+author ai
+file crates/gui/src/views/document.rs
+symbol expand
+lines 0 25
+hash 31e2a67a331427fe
+note Draws the linked path with the same steps function, one occurrence deeper: the number prefix becomes the step's number and a ›, the indent base moves right by the step's depth, and the target joins the chain for the duration. Rows drawn here carry the occurrence in their ids, so their buttons are distinct from the linked path's own document.
+
+step e14fw6
+order 0
+author ai
+file crates/gui/src/action.rs
+symbol apply
+lines 6 6
+hash 8db399b6fb4b876f
+note The handler: the Toggle arm flips one flag in the step's view.
+
+step ui2oxp
+order 1
+parent e14fw6
+author ai
+file crates/gui/src/model.rs
+symbol toggle
+lines 0 2
+hash 5bb2fa45ec21a492
+note Flips the Expanded bit.
+
+step vxhwtl
+order 3
+parent e14fw6
+author ai
+file crates/gui/src/views/document.rs
+symbol steps
+lines 56 60
+hash 9be2e440af9f0ea4
+note The effect on the next frame: after drawing a step that is expanded, not folded, and not linking back into the chain, steps draws the target path under it.
+
+step xpysyc
+order 2
+parent e14fw6
+author ai
+file crates/gui/src/views/document.rs
+symbol link_buttons
+lines 17 31
+hash 8bcaba28866b2a44
+note Trigger: after the link's name button, the EXPAND button queues Toggle with ViewFlag::Expanded, unless the target is on the chain of paths already being expanded, which gets the 'expanded above' label.

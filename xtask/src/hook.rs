@@ -167,7 +167,7 @@ fn guard_edit(root: &Root, path: &RepoPath) -> Decision {
             "The map is written only through codemap commands (`codemap . help`): path-add, step-note, note-edit, path-pin, repin.",
         ));
     }
-    if path.starts_with("tests/golden/") {
+    if path.starts_with("crates/codemap/tests/golden/") {
         return Decision::Deny(Message::new(
             "Goldens are written only by the tests: CODEMAP_BLESS=1 cargo test --test <scenario file>.",
         ));

@@ -1,0 +1,66 @@
+codemap 8
+path feature-follow-xref
+kind flow
+author ai
+group features/gui
+note The Xrefs panel lists what calls the focused symbol (Xrefs to), what it calls (Xrefs from), and every reference the language's server reports. Clicking a caller or callee focuses that symbol the way a Symbols row does: it selects the matching step of the path being read, or opens the Listing on it. Clicking a reference opens its file in the Listing at that line. While the symbol's file waits for its server, the rows are dimmed and caller and callee clicks do nothing.
+
+step 56ca80
+order 0
+author ai
+file crates/gui/src/nav.rs
+symbol go_to_symbol
+lines 0 14
+hash 224cf5be04b4d5a1
+note The handler for a caller or callee row: go_to_symbol, the same as a Symbols row.
+
+step 956vwm
+order 4
+parent tpuq0j
+author ai
+file crates/gui/src/nav.rs
+symbol open_line
+lines 0 5
+hash 01ba837e6ef4b139
+note Opens the reference's file in the Listing with the line selected.
+
+step tpuq0j
+order 3
+parent 56ca80
+author ai
+file crates/gui/src/views/xrefs.rs
+symbol reference_rows
+lines 0 28
+hash 740e59200ec1c2f0
+note Trigger for references: each REFERENCE_ROW shows file:line and the trimmed line; a click queues GoTo, handled by open_line rather than go_to_symbol.
+
+step yn39qh
+order 5
+parent 56ca80
+author ai
+file crates/gui/src/views/xrefs.rs
+symbol xrefs_panel
+lines 16 35
+hash 536206437583a0e5
+note Where references come from: for a server-backed file with none recorded, the panel queues AskReferences once per probe, and the rows fill in when the answer is merged.
+
+step yyf3u1
+order 2
+parent 56ca80
+author ai
+file crates/gui/src/views/xrefs.rs
+symbol call_lists
+lines 0 22
+hash 2738f044b7e232a0
+note Trigger: two lists, CALLER_ROW and CALLEE_ROW rows numbered by position, labelled the way the CLI labels a symbol. A click queues Focus unless the file is still pending.
+
+step zdpboj
+order 1
+parent 56ca80
+author ai
+file crates/gui/src/nav.rs
+symbol select_symbol
+lines 0 20
+hash 478ce11e8427e2a2
+link selection
+note Selects the step when the symbol is a root-anchored step of the path being read, otherwise focuses the symbol.

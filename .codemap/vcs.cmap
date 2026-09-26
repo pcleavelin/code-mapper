@@ -3,50 +3,177 @@ path vcs
 kind layer
 author ai
 group map
-note How the tool reaches version control: jj when a .jj directory is at or above the root, else git when a .git is, so a repo colocated with git is jj's. Only through the command line, never a library. Two questions are asked of it: the map at the parent revision, for diff, and one source file at a revision, for repin. The parent is @- in jj and HEAD in git.
+note The io-vcs crate: how the tool reaches version control. jj when a .jj directory is at or above the root, else git when a .git is, so a repo colocated with git is jj's. Only through the command line (io-process runs the program), never a library. Two questions are asked of it: the map at the parent revision, for diff, and one source file at a revision, for repin. The parent is @- in jj and HEAD in git. wire.rs holds the command lines and parses git's tree listing; convert.rs turns them into io-process arguments and program output into domain text. Every failure is a VcsError value; the callers turn it into their own Failure.
 
 step 0fod9k
-order 1
+order 2
 author ai
-file src/vcs.rs
+file crates/io-vcs/src/lib.rs
 symbol parent
 lines 0 5
-hash ca27e5ce4d0cf492
+hash 774eab9c48f01814
 note The default revision for diff and repin.
 
-step c9zpo1
+step 4nb457
+order 16
+parent o7vsr0
+author ai
+file crates/io-vcs/src/convert.rs
+symbol impl From<&CommandLine> for Invocation
+lines 0 11
+hash 2fd3140594fadb02
+note A program name and its arguments as plain strings, the whole of what wire.rs produces.
+
+step 64rmku
 order 3
 author ai
-file src/vcs.rs
-symbol show_dir
-lines 0 28
-hash e4ec3992ffc18315
-note The map directory at a revision in one call: a glob for jj, ls-tree then one git show of every file for git. Only the .cmap files directly in the directory, in file name order, and None when the revision has none. The files come out one after another, which parse reads as one text.
+file crates/io-vcs/src/lib.rs
+symbol program
+lines 0 5
+hash f0f0a764b9d2c601
+note jj or git, for messages that name the program (NoMapAt).
+
+step 8zc87w
+order 10
+parent c9zpo1
+author ai
+file crates/io-vcs/src/wire.rs
+symbol jj_show_map_files
+lines 0 2
+hash 4528598df5b62c1e
+note jj's one call: file show over glob:<dir>/*.cmap.
+
+step as0pgg
+order 14
+parent o7vsr0
+author ai
+file crates/io-vcs/src/wire.rs
+symbol CommandLine
+lines 0 3
+hash 104667a1f5e71819
+note The command line as io-process's Program and Arguments.
+
+step c9zpo1
+order 6
+author ai
+file crates/io-vcs/src/lib.rs
+symbol map_at
+lines 0 27
+hash f7b02f0b98c73110
+note The map directory at a revision in one call: a glob for jj, ls-tree then one git show of every file for git. Only the .cmap files directly in the directory, in file name order. NoMapFiles when the revision has none. The files come out one after another as RevisionText, which MapStore::base reads as one text.
+
+step cn5plw
+order 12
+parent c9zpo1
+author ai
+file crates/io-vcs/src/wire.rs
+symbol impl TreeListing
+lines 0 10
+hash 921f381ad5def619
+note Keeps the names ending in .cmap, sorted, so the files come out in file name order.
+
+step hg0qol
+order 15
+author ai
+file crates/io-vcs/src/lib.rs
+symbol VcsError
+lines 0 13
+hash eec7c067085fd411
+note Every way asking fails, as data: no repository, an unreadable root, a program that would not start, one that failed (with status and stderr), and a revision with no map files.
+
+step ljlukm
+order 13
+parent c9zpo1
+author ai
+file crates/io-vcs/src/lib.rs
+symbol impl RevisionText
+lines 0 8
+hash d51664e93e873148
+note The raw text of every map file at a revision, only made inside this crate.
 
 step m3kg1y
-order 0
+order 1
 author ai
-file src/vcs.rs
+file crates/io-vcs/src/lib.rs
 symbol detect
-lines 0 11
-hash dc78e4f8cd4c154e
-note Walks up from the root; .jj wins over .git, and a .git that is a file (a worktree) counts.
+lines 0 21
+hash 6bf6bc46c0a519bc
+note Walks up from the canonical root; .jj wins over .git, and a .git that is a file (a worktree) counts. NoRepository when neither is found, UnreadableRoot when the root cannot be canonicalised.
 
 step o7vsr0
+order 8
+parent rw4bei
+author ai
+file crates/io-vcs/src/lib.rs
+symbol run
+lines 0 17
+hash 1ce37c8366a2b78f
+note The one place a program runs, in the root: stdout when it exits zero, else Failure with the program, status and stderr; a program that cannot start is Process.
+
+step rw4bei
+order 5
+author ai
+file crates/io-vcs/src/lib.rs
+symbol file_at
+lines 0 6
+hash 744c2065bfc2cdcc
+note One file at a revision as FileText, tabs expanded like every indexed file: jj file show, or git show rev:./path, which resolves from the root even when the root is a subdirectory of the repo. A file the revision lacks comes back as the program's Failure.
+
+step sa7qol
+order 0
+author ai
+file crates/io-vcs/src/lib.rs
+symbol Vcs
+lines 0 3
+hash b8e537bef38ccf5d
+note Which program and the root it runs in; made only by detect.
+
+step t7mf9h
+order 17
+parent sa7qol
+author ai
+file crates/io-vcs/src/lib.rs
+symbol VcsKind
+lines 0 3
+hash 0d9718e3cb2e6fe7
+note jj or git, the choice detect made; every command line and the parent revision depend on it.
+
+step tr1njy
+order 7
+parent rw4bei
+author ai
+file crates/io-vcs/src/wire.rs
+symbol git_show_files
+lines 0 7
+hash 25d717608c03610a
+note git show with one rev:./path argument per file; several files print one after another.
+
+step vuv0te
+order 11
+parent c9zpo1
+author ai
+file crates/io-vcs/src/wire.rs
+symbol git_list_tree
+lines 0 11
+hash 500cd3ec9f3c5207
+note git ls-tree --name-only <rev> -- <dir>/: the names in the directory at that revision.
+
+step xs49mc
 order 4
 parent rw4bei
 author ai
-file src/vcs.rs
-symbol run
-lines 0 7
-hash 4c55acd3f799fc08
-note The one place a program runs: its output when it succeeds, None otherwise.
+file crates/io-vcs/src/wire.rs
+symbol jj_show_file
+lines 0 11
+hash c649d70888ebc500
+note jj file show -r <rev> <path>; with a glob: path it prints every matching file one after another.
 
-step rw4bei
-order 2
+step ywtgvf
+order 9
+parent rw4bei
 author ai
-file src/vcs.rs
-symbol show
-lines 0 5
-hash 232e53f9a40858f6
-note One file at a revision, None when the file is not in it: jj file show, or git show rev:./path, which resolves from the root even when the root is a subdirectory of the repo.
+file crates/io-vcs/src/convert.rs
+symbol file_text
+lines 0 2
+hash 92e5f97765bf54d8
+note Program output as FileText, so tab expansion and hashing match the index.

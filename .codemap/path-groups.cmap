@@ -3,45 +3,84 @@ path path-groups
 kind flow
 author ai
 group map
-note How paths are placed in groups so the paths list is a tree instead of one flat list. A group is a field of the path, normalised by normal_group, with / nesting one group in another; a group exists while a path is in it. Map::rows orders the list once for both front ends: at each level the groups sorted by name, then the paths of that level in map order.
+note How paths are placed in groups so the paths list is a tree instead of one flat list. A group is a field of the path, a GroupName normalised when it is made, with / nesting one group in another; a group exists while a path is in it. Map::rows orders the list once for both front ends: at each level the groups sorted by name, then the paths of that level in map order.
+
+step 0dem6y
+order 14
+parent cqowwi
+author ai
+file crates/domain/src/map.rs
+symbol level
+lines 0 18
+hash febf3f0c2f4f1706
+note One level: each path goes to the child group its group names under this prefix, or stays at this level; the child groups come first, sorted by name (a BTreeMap), each followed by its own level, then this level's paths in map order.
 
 step 0u8wp3
 order 1
 parent gzhf7a
 author ai
-file src/map.rs
+file crates/domain/src/map.rs
 symbol set_group
-lines 0 2
-hash afd3a27e07ac0adb
-note The one place a group is set, always through normal_group. An empty group leaves the path at the top level of the list.
+lines 0 7
+hash 6cf8b424ae697899
+note The one place a group is set. None leaves the path at the top level of the list.
 
 step 2d3h84
 order 2
-parent 0u8wp3
+parent 7qw1be
 author ai
-file src/map.rs
-symbol normal_group
-lines 0 6
-hash 3251566effe80d88
-note Trims each part and drops empty ones, so " /flows//http/ " and "flows/http" are the same group.
+file crates/domain/src/map/name.rs
+symbol new
+lines 0 8
+hash ce4fe329a70237ec
+note Trims each part and drops empty ones, so " /flows//http/ " and "flows/http" are the same group; None when nothing is left. The only constructor, so every GroupName is normal.
+
+step 49sg4o
+order 12
+parent 0dem6y
+author ai
+file crates/domain/src/map/name.rs
+symbol child_under
+lines 0 16
+hash 36d457b340e902d6
+note The next part of a group below a prefix, as a whole group name (flows under none is flows; flows/http under flows is flows/http). None when the group is not under the prefix or is the prefix itself.
 
 step 77jjzt
 order 4
 parent zwkmx2
 author ai
-file src/map.rs
+file crates/domain/src/map.rs
 symbol rename_group
-lines 0 20
-hash e8ada6b3ce992ad3
-note Matches the group and its descendants by whole parts, so renaming flow leaves flows alone; renaming to "" lifts them one level.
+lines 0 17
+hash 71082228c009f3fc
+note Every path whose group is the old one or inside it gets the new head. NoGroupGiven when the old name normalised to nothing, NoSuchGroup when no path moved; renaming to nothing lifts them one level.
+
+step 79qkl3
+order 13
+parent bthmeg
+author ai
+file crates/gui/src/views/left.rs
+symbol group_row
+lines 0 42
+hash 56fcdaf82e82ef2b
+note One group row: a triangle, the last part of the name and the path count. Open unless the reader closed it, and open by default when it holds the path being read. Red when any path inside it has a stale step. A click toggles it through Action::OpenGroup.
+
+step 7qw1be
+order 0
+author ai
+file crates/cli/src/convert.rs
+symbol from
+lines 0 5
+hash 90983195f0cdf0b2
+note The command line becomes a GroupName here, in cli's convert.rs, for path-group, group-rename and path-new --group alike; a group that normalises to nothing is None, the top level.
 
 step bthmeg
 order 8
 author ai
-file src/gui/panels.rs
+file crates/gui/src/views/left.rs
 symbol paths_window
-lines 0 179
-hash 37e0cd49dbc39f41
+lines 0 51
+hash be256ca63cc76913
 link reader-gui
 note The Paths tab walks the same rows(), skipping everything under a closed group.
 
@@ -49,44 +88,64 @@ step cqowwi
 order 5
 parent p8bthl
 author ai
-file src/map.rs
+file crates/domain/src/map.rs
 symbol rows
-lines 0 42
-hash 03fcad4599b65c06
-note The list order. Group rows carry the number of paths under them at any depth; path rows carry their depth for indenting.
+lines 0 5
+hash 1d26d10d5a0a358b
+note The list order, built by level from the top. Group rows carry the number of paths under them at any depth; path rows carry their depth for indenting.
 
 step gxaocm
 order 7
 author ai
-file src/cli.rs
-symbol exec
-lines 295 311
-hash 1cda8e6052171bac
+file crates/cli/src/exec.rs
+symbol groups
+lines 0 11
+hash 0ce9670b9ee72c88
 note groups: the group rows of rows() alone, indented by depth.
 
 step gzhf7a
-order 0
+order 3
 author ai
-file src/cli.rs
-symbol exec
-lines 285 294
-hash 8ab36039df19c5eb
-note path-group: moves one path; an empty group puts it back at the top level.
+file crates/cli/src/exec.rs
+symbol path_group
+lines 0 10
+hash 1babd9767fc63589
+note path-group: moves one path and prints where it now sits; an empty group puts it back at the top level.
 
 step p8bthl
 order 6
 author ai
-file src/cli.rs
-symbol exec
-lines 178 241
-hash 46d95d29123b4728
+file crates/cli/src/exec.rs
+symbol paths
+lines 0 29
+hash 9e129062a9ee6c33
 note paths: the path rows of rows(), with a == line naming the group wherever it changes, (top level) included, so a flat listing still says where each path sits.
 
-step zwkmx2
-order 3
+step qtxapd
+order 11
+parent cqowwi
 author ai
-file src/cli.rs
-symbol exec
-lines 312 316
-hash 117764014a7a096f
-note group-rename: moves every path of the group and of the groups inside it.
+file crates/domain/src/map.rs
+symbol Row
+lines 0 10
+hash a9b424b52b5ffc75
+note A row of the list: a group with its depth and path count, or a path with its depth.
+
+step xn6107
+order 10
+parent 77jjzt
+author ai
+file crates/domain/src/map/name.rs
+symbol moved
+lines 0 7
+hash 5275a4982490e57e
+note Matches the group and its descendants by whole parts, so renaming flow leaves flows alone, and splices the new head onto the rest.
+
+step zwkmx2
+order 9
+author ai
+file crates/cli/src/exec.rs
+symbol group_rename
+lines 0 8
+hash 0225cff605be5e96
+note group-rename: moves every path of the group and of the groups inside it, and prints how many moved.

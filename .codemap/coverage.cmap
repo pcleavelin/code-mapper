@@ -9,26 +9,26 @@ step gib7y2
 order 0
 parent nb45f6
 author ai
-file src/map.rs
+file crates/domain/src/map.rs
 symbol covers
 lines 0 5
-hash 42c14483e9485334
+hash 285b67ff7daf1155
 note The one definition of covered. Stale steps do not count: their text no longer matches the code, and check fails on them anyway.
 
 step nb45f6
 order 1
 author ai
-file src/cli.rs
-symbol exec
-lines 590 615
-hash 661f758cd409c268
-note uncovered: every symbol at any depth that no step covers, sorted by line count descending. Filter is a substring of the name or the file.
+file crates/cli/src/exec.rs
+symbol uncovered
+lines 0 20
+hash c7b8080a0d2b7354
+note uncovered: every symbol at any depth that no step covers, sorted by line count descending (Run::uncovered in cli). The filter is a substring of the name or the file.
 
 step w7dp4m
 order 2
 author ai
-file src/cli.rs
-symbol exec
-lines 661 674
-hash 805149f0cfeb9aa8
-note coverage: per-file counts for files that have symbols, then a total.
+file crates/cli/src/exec.rs
+symbol coverage
+lines 0 18
+hash 15875cd94287ef57
+note coverage: per-file counts for files that have symbols, then a total (Run::coverage in cli).

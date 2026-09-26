@@ -1,0 +1,78 @@
+codemap 8
+path feature-open-diff-row
+kind flow
+author ai
+group features/gui
+note The Diff tab lists every path added (+), removed (-) or changed (~) against the parent revision's map (@- in jj, HEAD in git), with a summary of what changed and, for changed paths, a line per new or changed step. Clicking a row opens that path in the document; a removed path, which exists only in the parent, is described in the status bar instead. 'refresh' reads the parent's map again, for when the parent revision moved.
+
+step 8tb0ub
+order 6
+parent fosnuc
+author ai
+file crates/gui/src/work.rs
+symbol poll_base
+lines 0 13
+hash 9d2eba5e35c23b23
+note Each frame polls the thread; when it lands, the base map (or the reason there is none) is stored and the Diff tab and the Paths list's +/~ marks follow it.
+
+step 95sndq
+order 2
+parent q71a7x
+author ai
+file crates/gui/src/views/center.rs
+symbol diff_row
+lines 0 40
+hash 04afeb5b3e3d3c59
+link map-diff
+note Trigger: each changed path is a DIFF_ROW. A click queues OpenPath when the path is in the current map, and otherwise sets the OnlyInParent status both in the overlay (this frame) and through Action::Status (from the next).
+
+step bw3ohv
+order 1
+parent q71a7x
+author ai
+file crates/gui/src/nav.rs
+symbol select_path
+lines 0 9
+hash e026ad68c7ae2fbb
+link selection
+note Selects the path's first step.
+
+step fosnuc
+order 3
+parent q71a7x
+author ai
+file crates/gui/src/views/center.rs
+symbol diff_view
+lines 0 10
+hash 39b4fd59e82febe0
+note Trigger for refresh: DIFF_REFRESH queues RefreshBase.
+
+step h5xp9i
+order 4
+parent fosnuc
+author ai
+file crates/gui/src/work.rs
+symbol load_base
+lines 0 4
+hash 5d61c850dcac0963
+note The refresh handler: starts a thread that reads the parent revision's map and marks the base as wanted, which the Diff tab shows as 'reading the parent revision...'.
+
+step q71a7x
+order 0
+author ai
+file crates/gui/src/nav.rs
+symbol open_path
+lines 0 5
+hash d2834021dae76922
+note The handler for a row of a path that exists: open_path on the Path tab.
+
+step r0nnxl
+order 5
+parent h5xp9i
+author ai
+file crates/gui/src/work.rs
+symbol base_map
+lines 0 16
+hash 0e78e729cdc4d26b
+link vcs
+note On the thread: detect jj or git, take the parent revision, read .codemap at it and parse it; each failure becomes the reason the Diff tab shows.

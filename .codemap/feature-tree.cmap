@@ -1,0 +1,68 @@
+codemap 8
+path feature-tree
+kind flow
+author ai
+group features/cli
+note tree <symbol> [depth]: the call tree below a symbol, depth levels deep (default 4), one symbol per line indented by depth. The tree reaches files one level at a time, so indexing repeats until no newly reached file is pending: each round's server answers can add callees in files the previous round did not see.
+
+step 7q4gy0
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol tree
+lines 0 8
+hash d69918baef7b771d
+note Indexes everything the tree reaches, then prints each match's tree.
+
+step esnzp1
+order 3
+parent 7q4gy0
+author ai
+file crates/cli/src/exec.rs
+symbol find_symbols
+lines 0 6
+hash 51665388bbe86c47
+link symbol-lookup
+note Every symbol the name matches, looked up after indexing.
+
+step h7t3i3
+order 1
+parent 7q4gy0
+author ai
+file crates/cli/src/exec.rs
+symbol index_tree
+lines 0 16
+hash 7a09941bfac5cb5a
+note Loop: compute the tree from every match, collect the pending files it reaches that were not asked yet, index them, repeat until none are left or there is no server.
+
+step ntq3mk
+order 4
+parent 7q4gy0
+author ai
+file crates/domain/src/index.rs
+symbol call_tree
+lines 0 22
+hash b81e86551466166b
+link graph-queries
+note Pre-order walk down callees to the depth limit, each symbol once, so a cycle stops.
+
+step siy524
+order 2
+parent h7t3i3
+author ai
+file crates/cli/src/exec.rs
+symbol index_files
+lines 0 18
+hash 395c92f598ee9fff
+link server-index
+note One round of indexing: those files to their server, then the map re-resolved.
+
+step zd3ssm
+order 5
+parent 7q4gy0
+author ai
+file crates/cli/src/wire.rs
+symbol symbol_line
+lines 0 7
+hash 3101ee7e664ec7a8
+note One line per tree entry, indented by its depth.

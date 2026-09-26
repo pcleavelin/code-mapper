@@ -1,0 +1,135 @@
+codemap 8
+path ui-input
+kind type
+author ai
+group render
+note One frame's input, as the platform collects it and the app reads it: no winit type crosses into ui. Input holds the Pointer (mouse position, buttons pressed this frame and held down, click counts, wheel delta, modifiers), the keys pressed with their modifiers, the text typed, the window size and the time since start. Events accumulate into it between frames and end_frame clears the momentary part after each frame, so an app reads 'was this pressed' without an event queue. Typing and shortcuts are kept apart: a key press is a Press, the characters the platform produced go into Typed, and the platform only adds typed text when neither ctrl nor alt is held.
+
+step 2551wi
+order 1
+parent kehwui
+author ai
+file crates/ui/src/input.rs
+symbol end_frame
+lines 0 6
+hash 10fce1e944802010
+note Presses, clicks, the wheel, keys and typed text are momentary and are cleared here after every frame; the pointer position, the button-down state and the modifiers persist, because they describe a state rather than an event. The back and forward buttons live in pressed, so they clear with it.
+
+step 6j8dhr
+order 4
+parent 9o258u
+author ai
+file crates/ui/src/input.rs
+symbol Button
+lines 0 6
+hash d2e14c74236d1e0d
+note Left, right, middle, and the two side buttons. Back and forward only ever appear as presses, which is how navigation reaches the app without being a button that can be held or dragged.
+
+step 9o258u
+order 3
+parent kehwui
+author ai
+file crates/ui/src/input.rs
+symbol Pointer
+lines 0 7
+hash 77cc73bfec492ca5
+note The mouse: its position (-1,-1 once it leaves the window), the buttons pressed this frame and those held down, the click count per button, the wheel delta in pixels and the modifier state.
+
+step b55xgt
+order 9
+parent kehwui
+author ai
+file crates/ui/src/input.rs
+symbol Press
+lines 0 3
+hash 2f7f8738561eda86
+note One key press and the modifiers held when it happened.
+
+step bbejjf
+order 10
+parent b55xgt
+author ai
+file crates/ui/src/input.rs
+symbol Key
+lines 0 12
+hash 6f8f50b027366982
+note The keys the app can ask about: the named ones it uses plus any character. Deliberately small - anything not here never reaches the app.
+
+step bz6q14
+order 6
+parent 9o258u
+author ai
+file crates/ui/src/input.rs
+symbol Clicks
+lines 0 0
+hash a5cf2871013706ed
+note The click count of the press this frame for left, right and middle: 1 for a single, 2 for a double click, set on the press itself. The side buttons have no slot.
+
+step jaldir
+order 7
+parent 9o258u
+author ai
+file crates/ui/src/input.rs
+symbol Mods
+lines 0 0
+hash 02489b2fb92b7577
+note Modifier state as bits. The platform tracks it separately because winit reports it in its own event, and stamps it on every key press and on the pointer.
+
+step kehwui
+order 0
+author ai
+file crates/ui/src/input.rs
+symbol Input
+lines 0 6
+hash 7366cae86e0fe35b
+note Everything the window collected since the last frame: the pointer, the keys with their modifiers, the typed text, the window size and the elapsed time. The app reads it; the element tree copies the pointer and the size in begin.
+
+step pwo4d4
+order 12
+parent kehwui
+author ai
+file crates/ui/src/input.rs
+symbol Typed
+lines 0 0
+hash cbc56cb13a9f1390
+note The text the platform produced this frame, control characters removed, taken only without ctrl or alt - so typing is the text and a shortcut is the key, and the two never collide.
+
+step rg4hof
+order 5
+parent 9o258u
+author ai
+file crates/ui/src/input.rs
+symbol Buttons
+lines 0 0
+hash 123ad40c7ff614c1
+note A set of buttons as bits.
+
+step rsfky3
+order 2
+parent kehwui
+author ai
+file crates/ui/src/input.rs
+symbol pressed_key
+lines 0 4
+hash f26805a25bfbb0ac
+note Whether a key was pressed this frame with the given ctrl and alt state. Shift is deliberately not compared, since it already shaped the character.
+
+step s4h798
+order 8
+parent jaldir
+author ai
+file crates/ui/src/input.rs
+symbol same_ctrl_alt
+lines 0 2
+hash 151724214dcc7a25
+note The comparison every shortcut uses: ctrl and alt must match, shift is free.
+
+step zkproa
+order 11
+parent bbejjf
+author ai
+file crates/ui/src/input.rs
+symbol Glyph
+lines 0 0
+hash 23919658246b0485
+note One character, used both for a character key and for a cell of a text grid.

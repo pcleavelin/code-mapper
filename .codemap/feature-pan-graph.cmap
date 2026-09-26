@@ -1,0 +1,76 @@
+codemap 8
+path feature-pan-graph
+kind flow
+author ai
+group features/gui
+note Drag the graph's background to pan it, or turn the wheel over it: the wheel pans vertically (and horizontally with a sideways wheel), shift+wheel pans sideways. The camera otherwise moves only on explicit navigation, never on an edit.
+
+step 4lmczg
+order 5
+parent ur7axf
+author ai
+file crates/gui/src/graph/input.rs
+symbol apply
+lines 2 5
+hash 3db3578daaa78c1d
+link graph-camera
+note Stores the camera.
+
+step 7n2j2f
+order 6
+parent uyp9xc
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_wheel
+lines 0 12
+hash 91a27c5d266447ce
+note The wheel is read only while the canvas is hovered or something is held, and only when it turned.
+
+step ai1nbn
+order 3
+parent m5ym4f
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_drag
+lines 1 2
+hash 600f32c722dd3764
+note While the background is held, each drag delta becomes Pan.
+
+step m5ym4f
+order 1
+parent uyp9xc
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_phase
+lines 20 28
+hash adb08f9bef82fca4
+note Trigger: a press on the canvas goes to graph_click, the drag delta to graph_drag, and release clears the hold.
+
+step pevzez
+order 2
+parent m5ym4f
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_click
+lines 53 53
+hash af99e67262ff84de
+note A press that hits no node grabs the background.
+
+step ur7axf
+order 4
+parent uyp9xc
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_wheel
+lines 33 46
+hash fe531a621af2cfd9
+note The handler for the wheel, once zoom is ruled out: a notch pans a fixed number of rows at the current font; with the ScrollCode gesture (shift) the vertical wheel pans across instead.
+
+step uyp9xc
+order 0
+author ai
+file crates/gui/src/graph/input.rs
+symbol apply
+lines 48 53
+hash 652800d22d52c09e
+note The handler for a background drag: adds the frame's drag delta to the pan.

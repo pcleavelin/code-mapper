@@ -428,7 +428,7 @@ impl Feature {
             ),
             Self::Help => Spec::new(
                 Text::new("help"),
-                Text::new("every command with its arguments"),
+                Text::new("Print this message or the help of the given subcommand(s)"),
                 Surface::Command,
                 &const { [Trigger::Command(Text::new("help"))] },
             ),
@@ -728,9 +728,16 @@ impl Feature {
             ),
             Self::NodeContext => Spec::new(
                 Text::new("node-context"),
-                Text::new("show more of a graph node's file around it, or cut it to its own lines"),
+                Text::new(
+                    "show more of a graph node's file around it, cut it to its own lines, or cut it to a preview of its lines and back to whole",
+                ),
                 Surface::Window,
-                &const { [Trigger::Click(Element::new("node-context"))] },
+                &const {
+                    [
+                        Trigger::Click(Element::new("node-context")),
+                        Trigger::Click(Element::new("node-preview")),
+                    ]
+                },
             ),
             Self::NodeListing => Spec::new(
                 Text::new("node-listing"),

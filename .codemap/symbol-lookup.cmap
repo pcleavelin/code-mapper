@@ -3,33 +3,63 @@ path symbol-lookup
 kind layer
 author ai
 group index
-note How a name on the command line becomes a symbol. Plain names match every symbol of that name across files; Owner::name narrows to an impl owner or a file stem, path/file.rs:name to a file. Commands that read (callers, callees, tree) take every match; commands that write a step (path-add, promote) demand exactly one and list the candidates otherwise.
+note How a name on the command line becomes a symbol. Plain names match every symbol of that name across files; Owner::name narrows to an impl owner or a file stem, path/file.rs:name to a file, file:Owner::name to both. The parsing and matching are the domain's SymbolQuery and Index::find_symbols; the CLI adds the two guards. Commands that read (callers, callees, tree, refs) take every match; commands that write a step (path-add, promote) demand exactly one and list the candidates otherwise.
+
+step 0ktg96
+order 5
+parent r89s9h
+author ai
+file crates/cli/src/wire.rs
+symbol unique_name
+lines 0 23
+hash 6867d4d453d40c76
+note The shortest name that selects this symbol alone: Owner::name, stem:name, stem:Owner::name, path:name, path:Owner::name, each checked by running the lookup, so nothing it offers is itself ambiguous; the full label when none does.
+
+step 8k7osz
+order 4
+parent xisoli
+author ai
+file crates/domain/src/index.rs
+symbol matches
+lines 0 14
+hash 174ac2937ea111ad
+note The name must be equal. A file scope matches the file's stem or a suffix of its path; an owner scope matches the symbol's owner type exactly; a bare qualifier matches either.
 
 step kybyb1
 order 0
-parent r89s9h
+parent l7lnjn
 author ai
-file src/index/mod.rs
-symbol find_symbols
-lines 0 31
-hash 85568a1b9810ff5b
-note The qualifier splits on :: first, then on a single colon. A bare qualifier is tried as an owner and as a file (stem or path suffix); file:Owner::name pins both, which is what makes every symbol addressable when a free function and a method share a name in one file.
+file crates/domain/src/index.rs
+symbol from
+lines 0 19
+hash 0ecf9916b07ef52f
+note The qualifier splits off on the last :: first, then on the last single colon, with backslashes read as slashes. A qualifier of the form file:Owner pins both; any other qualifier is tried as an owner and as a file, which is what makes every symbol addressable when a free function and a method share a name in one file.
 
 step l7lnjn
 order 2
 parent r89s9h
 author ai
-file src/cli.rs
+file crates/cli/src/exec.rs
 symbol find_symbols
-lines 0 7
-hash d855054b82be699a
-note The reading commands stop here: every match is an answer, and an empty result is the error.
+lines 0 6
+hash 51665388bbe86c47
+note The reading commands stop here: every match is an answer, and none is Failure::NoSuchSymbol.
 
 step r89s9h
 order 1
 author ai
-file src/cli.rs
+file crates/cli/src/exec.rs
 symbol find_symbol
-lines 0 13
-hash c4985ae8d54c46c8
-note The single-match guard. The error lists each candidate under the shortest qualified name that selects it alone, checked by running the lookup, so nothing it offers is itself ambiguous.
+lines 0 9
+hash 83bfb633b05da03e
+note The single-match guard. More than one match is Failure::SymbolClash, which lists each candidate under the shortest qualified name that selects it alone beside its file:lines label.
+
+step xisoli
+order 3
+parent l7lnjn
+author ai
+file crates/domain/src/index.rs
+symbol find_symbols
+lines 0 10
+hash 81d7f4e07f17beb9
+note Every symbol in the index the query matches, in file and symbol order.

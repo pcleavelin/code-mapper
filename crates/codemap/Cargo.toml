@@ -1,11 +1,11 @@
 [package]
-name = "codemap-next"
+name = "codemap"
 version = "0.1.0"
 edition = "2024"
 publish = false
 
 [[bin]]
-name = "codemap-next"
+name = "codemap"
 path = "src/main.rs"
 
 [dependencies]
@@ -14,6 +14,9 @@ gui = { path = "../gui" }
 domain = { path = "../domain" }
 index = { path = "../index" }
 io-map = { path = "../io-map" }
+
+[dev-dependencies]
+features = { path = "../features" }
 
 [lints]
 workspace = true

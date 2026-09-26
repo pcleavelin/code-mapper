@@ -1,0 +1,198 @@
+codemap 8
+path rulebook
+kind type
+author ai
+group tooling
+note The rulebook as data: what only the owner decides, written as constants in xtask so every rule that depends on it reads the same list. The crate graph (DEPENDENCIES) is every dependency each package may have; the gate fails on any other, so layering is decided here and enforced by the compiler. The sanctioned exceptions (EXPECTS) are every lint suppression in the repo, by file and lint; archlint fails on a suppression that is not listed, so an exception is always one visible line the owner added. The owner-only files (RULEBOOK) are guarded three ways: the pre-tool hook denies edits and writing commands, and the gate fails on any change to them in the working copy. Also here: which rules run in test code, and which files are the scenario tables. The API lock (api.rs) records each library crate's public items in api/<crate>.api; the gate fails when the code's surface differs, so a change to a crate's API is always a visible diff, and the io crates' .api files are themselves rulebook, so a new way to reach outside the program needs the owner.
+
+step 3l32n9
+order 1
+parent vbuajw
+author ai
+file xtask/src/arch.rs
+symbol Guard
+lines 0 3
+hash ca8591676d1df1e2
+note A guard is one file or every file under a prefix.
+
+step 5hvo01
+order 13
+author ai
+file xtask/src/api.rs
+symbol surfaces
+lines 0 34
+hash deadd55411cdfac5
+note The API lock. For every workspace member with a lib.rs, lists every pub function, struct, enum, trait, const, static, module and macro in its src/, prefixed by module path, with the signature up to the body and whitespace collapsed, so the listing changes only when the surface does.
+
+step 6q6dw4
+order 17
+parent 5hvo01
+author ai
+file xtask/src/api.rs
+symbol signature
+lines 0 9
+hash 161fb80301084e89
+note An item's signature: the text before its body for functions, traits and modules, the whole item otherwise.
+
+step 7khqpn
+order 4
+parent v9spt4
+author ai
+file xtask/src/arch.rs
+symbol Allowed
+lines 0 3
+hash 8bf3bc786f399ff6
+note One package's allowed dependencies.
+
+step ejq8cu
+order 19
+author ai
+file xtask/src/api.rs
+symbol record
+lines 0 5
+hash 7557e6cb48999314
+note cargo xtask api: writes every listing.
+
+step gqrg0f
+order 14
+parent 5hvo01
+author ai
+file xtask/src/api.rs
+symbol Surface
+lines 0 4
+hash c21994b0e2e26913
+note One crate's listing and the file it is recorded in.
+
+step hjpqgu
+order 18
+author ai
+file xtask/src/api.rs
+symbol check
+lines 0 16
+hash 6150465e6c739f26
+note The gate step: every recorded listing must equal the current one; the message says to run cargo xtask api and commit the file.
+
+step le1568
+order 16
+parent 5hvo01
+author ai
+file xtask/src/api.rs
+symbol module_of
+lines 0 13
+hash b4a4e64660286e79
+note The module path of a file, from its path under src/.
+
+step mb4yru
+order 9
+author ai
+file xtask/src/arch.rs
+symbol TEST_RULES
+lines 0 0
+hash a462625cc48202a3
+note The rules that apply in test code: suppressions, test registration and comments.
+
+step op4xyi
+order 5
+parent v9spt4
+author ai
+file xtask/src/arch.rs
+symbol allowed_dependency
+lines 0 8
+hash 78a114027ff3328c
+note Whether an edge is in the graph.
+
+step q2n39k
+order 10
+parent mb4yru
+author ai
+file xtask/src/arch.rs
+symbol applies
+lines 0 5
+hash 5d5d558899eea684
+note Which rules run for a file, by its zone.
+
+step rcip7d
+order 11
+author ai
+file xtask/src/arch.rs
+symbol SCENARIO_FILES
+lines 0 3
+hash 4c7cab89507cc4ed
+note The scenario files whose tests come from a table.
+
+step sc7qmr
+order 15
+parent 5hvo01
+author ai
+file xtask/src/api.rs
+symbol ITEMS
+lines 0 9
+hash 0f23fbcee4a3165f
+note The item kinds that count as surface.
+
+step ssed1w
+order 7
+parent wnqjal
+author ai
+file xtask/src/arch.rs
+symbol Allowance
+lines 0 3
+hash 3b8f6883d2c92492
+note One suppression: a file and a lint.
+
+step t7gha7
+order 8
+parent wnqjal
+author ai
+file xtask/src/arch.rs
+symbol expected
+lines 0 4
+hash 19bfb53d3c8a130b
+note Whether a file may expect a lint.
+
+step uus3q9
+order 2
+parent vbuajw
+author ai
+file xtask/src/arch.rs
+symbol guarded
+lines 0 5
+hash 5df85eaca7dd12b0
+note Whether a path is guarded.
+
+step v9spt4
+order 3
+author ai
+file xtask/src/arch.rs
+symbol DEPENDENCIES
+lines 0 118
+hash e8d821fa7decb691
+note The crate graph: for each package, the crates it may depend on, workspace crates and external ones alike. domain, io-process, io-store, features and ui depend on nothing; each io crate on domain and at most one lower io crate and its one external library; index, cli, gui and codemap stack on top.
+
+step vbuajw
+order 0
+author ai
+file xtask/src/arch.rs
+symbol RULEBOOK
+lines 0 10
+hash 42a5ba45833ae8ca
+note The owner-only files and trees: xtask/, clippy.toml, rustfmt.toml, .gitattributes, .cargo/config.toml, .claude/settings.json, .claude/skills/, the io crates' API files and CLAUDE.md. The guarded sections of every Cargo.toml and the synonym lines of vocabulary.txt are rulebook too, checked by the gate separately.
+
+step wnqjal
+order 6
+author ai
+file xtask/src/arch.rs
+symbol EXPECTS
+lines 0 109
+hash dc288f512a2c5241
+note Every sanctioned suppression, by file and lint: the files that start processes or write files (disallowed_methods), the feature registry's one long function, the GPU's unsafe code, and the integration tests, which may unwrap, panic and index.
+
+step wqu9s5
+order 12
+parent rcip7d
+author ai
+file xtask/src/arch.rs
+symbol scenario_file
+lines 0 4
+hash 8b879543defc99ba
+note Whether a file is one of them.

@@ -3,173 +3,293 @@ path index-model
 kind type
 author ai
 group index
-note The in-memory shape of the auto layer: what an indexed repo is. One Index per process holds one File per text file under the root, each File holds its lines, its per-line colour spans, its imports and its Symbols, and each Symbol holds the raw material for xrefs plus the resolved callee and caller lists. Nothing here is persisted as truth: the whole thing is rebuilt from disk and the cache at startup. Symbols are addressed by SymRef, a pair of indices, which is fast but only valid until the next re-index; anything that has to survive one uses the (file path, symbol name) key instead.
+note The in-memory shape of the auto layer: what an indexed repo is, in the domain crate with no I/O. One Index per process holds one SourceFile per text file under the root, each SourceFile holds its lines, its per-line highlight spans, its imports and its Symbols, and each Symbol holds the raw material for xrefs plus the resolved callee and caller lists. Nothing here is persisted as truth: the whole thing is rebuilt from disk and the cache at startup. Symbols are addressed by SymbolId, a pair of positions, which is fast but only valid until the next re-index; anything that has to survive one uses SymbolKey, the (file path, symbol name) pair, instead.
 
 step 34s49s
 order 14
 parent 8cainq
 author ai
-file src/index/mod.rs
+file crates/domain/src/index.rs
 symbol find_file
-lines 0 2
-hash 0013a2948dceefd5
-note File by exact repo-relative path. The index holds no map from path to slot, so this is a scan; it is called once per lookup and that has only ever mattered inside link, which builds its own map for the duration.
+lines 0 5
+hash c38bf0c6dc4a7360
+note File by exact repo-relative path. The index holds no map from path to position, so this is a scan; edges builds its own table for the length of a link.
 
 step 3zfy4g
 order 10
 parent iq9eyk
 author ai
-file src/index/mod.rs
-symbol sym
+file crates/domain/src/index.rs
+symbol symbol
 lines 0 2
-hash 75bd9c276e0b4c66
-note The dereference. Panics on a stale SymRef by design: they are not meant to outlive an index.
+hash a7b2038cae85060c
+note The dereference: None when either position is past the end. An id from an older index is not detected and may name another symbol; ids are not meant to outlive an index.
+
+step 6es49t
+order 19
+parent 8cainq
+author ai
+file crates/domain/src/index.rs
+symbol impl Root
+lines 0 12
+hash f2f5ec01af5db572
+note The repository root as given on the command line; join turns a RelativePath into a path on disk.
+
+step 6fx623
+order 18
+parent edf7hu
+author ai
+file crates/domain/src/id.rs
+symbol impl IdList<K, V>
+lines 0 41
+hash 342d5b598fcc5c5d
+note The whole surface: push, get, get_mut, iteration with and without keys. Nothing removes or inserts in the middle.
 
 step 6yblzj
 order 16
 parent rfv0y0
 author ai
-file src/index/mod.rs
-symbol dir
-lines 0 5
-hash 564f1ce32b15bbfd
+file crates/domain/src/text.rs
+symbol directory
+lines 0 3
+hash 90b4bb442c5bbbe2
 note The file's package directory, the other thing that counts as a module: src/core/file_buffer.odin gives core.
 
 step 7s9gpy
 order 7
 parent 9pngy2
 author ai
-file src/index/mod.rs
-symbol LANGS
-lines 0 26
-hash 745046b56b50c38b
-note The whole language table. Adding a language is one row here plus a grammar in language_for.
+file crates/domain/src/index/language.rs
+symbol impl Language
+lines 0 51
+hash 87930c8610f8046d
+note The whole language table: extensions, the server program looked for on PATH, and that program's arguments (--stdio for pyright and typescript-language-server). Adding a language is a variant here plus a grammar in the index crate's Grammar.
 
 step 8cainq
 order 0
 author ai
-file src/index/mod.rs
+file crates/domain/src/index.rs
 symbol Index
 lines 0 3
-hash 845ea89d53aa03e4
-note The root of the auto layer: the absolute root path plus every indexed file, sorted by path. One per process; the GUI holds one and the CLI builds one per invocation.
+hash f59c90b60cf4a2ed
+note The root of the auto layer: the root path plus every indexed file in an IdList, in path order because build sorts before pushing. One per process: the GUI's model holds one and the CLI builds one per invocation. The index crate builds it and io-cache stores it.
 
 step 9pngy2
 order 6
 parent rfv0y0
 author ai
-file src/index/mod.rs
-symbol Lang
-lines 0 4
-hash 0a9bd54ccf749978
-note A language: its extensions and the server binary to look for on PATH. There is no config file; a different server goes on PATH under this name.
+file crates/domain/src/index/language.rs
+symbol Language
+lines 0 6
+hash 3aded217d03920b5
+note A language that has a server: Rust, Odin, C, Python and JavaScript/TypeScript. There is no config file; a different server goes on PATH under the program's name.
 
 step as86h8
 order 12
 parent nrox65
 author ai
-file src/index/mod.rs
+file crates/domain/src/index.rs
 symbol by_key
-lines 0 7
-hash ac0a10b4f17e9bfb
-note The other direction: a key back to a SymRef, or None when the symbol is gone.
+lines 0 4
+hash 70b54e720562460a
+note The other direction: a key back to a SymbolId, the first symbol of that name in the file, or None when the symbol is gone.
+
+step bte8p1
+order 25
+parent g02t1y
+author ai
+file crates/domain/src/index/symbol.rs
+symbol impl Symbol
+lines 0 91
+hash 2762f71d5b7e86b1
+note A symbol is built with its tree-sitter calls; targets and references are set afterwards by the server backend, the cache and the GUI's references answer, and callees and callers only by link (connect clears and pushes them, take_edges copies them from a linked copy).
+
+step c2fh6q
+order 24
+parent nrox65
+author ai
+file crates/domain/src/index/symbol.rs
+symbol SymbolKey
+lines 0 3
+hash fd3137a4432892e5
+note (file path, symbol name): what names a symbol across indices.
+
+step ceyuie
+order 21
+parent rfv0y0
+author ai
+file crates/domain/src/index/file.rs
+symbol impl Imports
+lines 0 24
+hash c58c8d3111ffbb65
+note Imported name or alias to the module it names, filled by the tree-sitter parse and read by resolve. Ordered, so the cache writes it the same way every time.
+
+step d2kzsx
+order 23
+parent g02t1y
+author ai
+file crates/domain/src/index/symbol.rs
+symbol Location
+lines 0 3
+hash 945379ef514723f3
+note A (file, line) in the repo: a server's call target, a reference, an incoming caller. Always relative to the root; io-lsp drops anything outside it.
+
+step edf7hu
+order 17
+parent 8cainq
+author ai
+file crates/domain/src/id.rs
+symbol IdList
+lines 0 3
+hash 06731984566edf80
+note A Vec addressed by a typed key: push gives the key, get gives None past the end, entries pairs each item with its key. Key is the trait FileId and SymbolIndex implement over Position, the raw offset. Keys are positions, so they stay valid only while nothing is removed or reordered, which the index never does: a changed repo gets a new index.
 
 step g02t1y
 order 2
 parent rfv0y0
 author ai
-file src/index/mod.rs
+file crates/domain/src/index/symbol.rs
 symbol Symbol
-lines 0 12
-hash 35c0a73db5f34507
-note A declaration. start/end are inclusive 0-based rows and are what anchors are measured against, so both backends deliberately start a symbol at the line its name is on. depth is 0 or 1 (a member of an impl, mod, trait or class body), owner is the type it belongs to (a member of impl Foo has owner Foo). calls are tree-sitter's raw call sites and targets are the server's (file, line) of each callee's definition, the two backends' raw xref material that link resolves into callees and callers. refs holds the (file, line) of every reference once the GUI has asked the server for them.
+lines 0 11
+hash 5dada50afe668270
+note A declaration. span is inclusive 0-based rows and is what anchors are measured against, so both backends deliberately start a symbol at the line its name is on. depth is 0 or 1 (a member of an impl, mod, trait or class body), owner is the type it belongs to (a member of impl Foo has owner Foo). calls are tree-sitter's raw call sites and targets are the server's (file, line) of each callee's definition, the two backends' raw xref material that link resolves into callees and callers. references holds the (file, line) of every reference once the GUI has asked the server for them. callees and callers are SymbolIds, valid for this index only.
 
 step iq9eyk
 order 9
 parent 8cainq
 author ai
-file src/index/mod.rs
-symbol SymRef
+file crates/domain/src/index/symbol.rs
+symbol SymbolId
 lines 0 3
-hash 553273000d517fe2
-note How a symbol is addressed everywhere else in the tool: two indices, no ownership. Cheap and Copy, but only valid for the current index.
+hash 8982543701c0519d
+note How a symbol is addressed everywhere else in the tool: a FileId and a SymbolIndex, positions in the two IdLists, no ownership. Cheap and Copy, but only valid for the index it came from.
+
+step kd6xbi
+order 27
+parent g02t1y
+author ai
+file crates/domain/src/index/symbol.rs
+symbol impl Depth
+lines 0 17
+hash 80abd20632af240f
+note A symbol's nesting (0 or 1) and a call tree's level share this type; deeper saturates.
+
+step kkh9fd
+order 28
+parent edf7hu
+author ai
+file crates/domain/src/id.rs
+symbol Key
+lines 0 4
+hash 6f5d6dc6a2f05521
+note What makes a type an IdList key: built from a Position and turned back into one. Only FileId and SymbolIndex implement it.
+
+step l21zem
+order 22
+parent rfv0y0
+author ai
+file crates/domain/src/index/file.rs
+symbol call_site
+lines 0 24
+hash c2ed13a7fedf353c
+note Whether a line calls a name: the name as a whole word, not inside a string or comment by the line's highlights. A path orders a step's children by the line of the parent that calls them, and this is the test for that line.
 
 step lkuv4x
 order 3
 parent g02t1y
 author ai
-file src/index/mod.rs
+file crates/domain/src/index/symbol.rs
 symbol Call
 lines 0 3
-hash a6b6782a5e7ce95d
+hash 0308c61714e30817
 note One call site as tree-sitter saw it: a name and how it was qualified. Never a resolved target.
 
 step n3kh86
 order 4
 parent lkuv4x
 author ai
-file src/index/mod.rs
-symbol Qual
+file crates/domain/src/index/symbol.rs
+symbol Qualifier
 lines 0 4
-hash 5eb7f79208656e8f
-note The three shapes a qualifier can take. SelfRef exists so self.m and Self::m bind to the caller's own type without any type inference. a.b.c() and A::c() both name c, qualified by b and by A; self.c(), Self::c() and this.c() are SelfRef.
+hash 7ff00804e111c8cc
+note The three shapes a qualifier can take. SelfReference exists so self.m and Self::m bind to the caller's own type without any type inference. a.b.c() and A::c() both name c, qualified by Named(b) and Named(A); self.c(), Self::c(), this.c() and super.c() are SelfReference.
 
 step nrox65
 order 11
 parent iq9eyk
 author ai
-file src/index/mod.rs
-symbol key
-lines 0 2
-hash 29de9a2703adaae0
-note The identity that does survive a re-index. Everything the GUI carries across an index change (graph focus, expansions, current file) is stored as this pair and looked up again afterwards.
+file crates/domain/src/index.rs
+symbol symbol_key
+lines 0 5
+hash 7128012a3a727eb2
+note The identity that does survive a re-index. Everything the GUI carries across an index change (graph focus, peek, current file) is turned into a key before the change and looked up again after it.
 
 step qjdlil
 order 15
 parent rfv0y0
 author ai
-file src/index/mod.rs
+file crates/domain/src/text.rs
 symbol stem
 lines 0 3
-hash 5eeba30c30fe98bf
+hash 2e3ec6c92e1a2f01
 note The file's module name, used by call resolution and by symbol qualifiers on the command line: src/core/file_buffer.odin gives file_buffer.
 
 step rfv0y0
 order 1
 parent 8cainq
 author ai
-file src/index/mod.rs
-symbol File
-lines 0 10
-hash 92eab16d510ca422
-note One text file. Lines are tab-expanded on load (a tab becomes four spaces) so display, hashing and column arithmetic all agree. mtime is what the GUI's watcher thread compares against the disk, hash, the FNV-1a of the tab-expanded text, keys the cache entry, backend says which resolver produced the symbols, and pending says a server exists for this language and has not answered for this text yet. path is relative to the root with forward slashes, hl holds each line's spans sorted and non-overlapping, and imports maps an imported name or alias to the module stem it comes from.
+file crates/domain/src/index/file.rs
+symbol SourceFile
+lines 0 9
+hash 76dda53c4e952200
+note One text file. text holds its lines, tab-expanded on load (a tab becomes four spaces, in io-source's Contents) so display, hashing and column arithmetic all agree; hash, the FNV-1a of that text, keys the cache entry; backend says which resolver produced the symbols; readiness says whether a server for this language has yet to answer for this text. path is relative to the root with forward slashes, highlights holds each line's spans sorted and non-overlapping, and imports maps an imported name or alias to the module it comes from. Modification times are not here: io-source's Stamps carry them for the GUI's watcher.
 
 step uueo77
 order 13
 parent iq9eyk
 author ai
-file src/index/mod.rs
+file crates/domain/src/index.rs
 symbol by_line
 lines 0 2
-hash bd5d8d4d4d6d3032
-note Innermost symbol at a line. Used to turn a server's (file, line) target into an edge, and to place an anchor inside its symbol.
+hash 34c5914a9a659a34
+note Innermost symbol at a line. Used to turn a server's (file, line) into a symbol, and wherever the GUI or CLI has a line and wants the symbol around it.
 
 step w6fab8
 order 5
 parent rfv0y0
 author ai
-file src/index/mod.rs
+file crates/domain/src/index/file.rs
 symbol Backend
 lines 0 3
-hash dc527b01df8f2a9a
+hash d6320182ed920b71
 note Which resolver answered for this file. A file stays TreeSitter until a server replaces its symbols, and that is also the flag that decides whether refs can be offered.
 
 step w9ehg6
 order 8
-parent 9pngy2
+parent 7s9gpy
 author ai
-file src/index/mod.rs
-symbol lang_for
+file crates/domain/src/index/language.rs
+symbol of
+lines 0 8
+hash 40c270cce3922603
+note Extension to language, by the path's last dotted segment. None is what 'indexed for viewing and grep only' means, and a file with no language is never pending. Every language here has a bundled grammar, so a file with a language has symbols even without its server.
+
+step y43lw6
+order 20
+parent rfv0y0
+author ai
+file crates/domain/src/index/file.rs
+symbol Readiness
 lines 0 3
-hash de6946a4bb9536f1
-note Extension to language. Returning None is what 'indexed for viewing and grep only' means. Every language in the table has a bundled grammar, so a file with a language has symbols even without its server.
+hash abd0cad3a261b03f
+note Pending means a server exists for the file's language and has not answered for this text. build marks it, apply and give_up clear it; the CLI asks a server only for pending files and the GUI greys them out.
+
+step y5y4p0
+order 26
+parent rfv0y0
+author ai
+file crates/domain/src/index/file.rs
+symbol impl SourceFile
+lines 0 156
+hash 538539a2bcd85bad
+note Reads, plus the few changes the index allows: set_text when build fills a cached file's text from disk (the highlight table grows or shrinks with it), set_symbols, set_backend and set_readiness when a server answers or gives up, and without_text for the link thread's copy.

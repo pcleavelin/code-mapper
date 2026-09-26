@@ -321,29 +321,9 @@ dependencies = [
 name = "codemap"
 version = "0.1.0"
 dependencies = [
- "clap",
- "fontdue",
- "ignore",
- "png",
- "regex",
- "serde_json",
- "tree-sitter",
- "tree-sitter-c",
- "tree-sitter-javascript",
- "tree-sitter-odin",
- "tree-sitter-python",
- "tree-sitter-rust",
- "tree-sitter-typescript",
- "wgpu",
- "winit",
-]
-
-[[package]]
-name = "codemap-next"
-version = "0.1.0"
-dependencies = [
  "cli",
  "domain",
+ "features",
  "gui",
  "index",
  "io-map",

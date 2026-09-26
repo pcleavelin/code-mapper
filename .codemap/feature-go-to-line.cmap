@@ -1,0 +1,57 @@
+codemap 8
+path feature-go-to-line
+kind flow
+author ai
+group features/gui
+note In the Listing's toolbar, type a line number in the 'line' field and press enter: the listing selects that line and scrolls it into view, three lines from the top. A number past either end is clamped to the file and the status bar says so; text that is not a number, or no open file, is reported in the status bar.
+
+step 1a0bgg
+order 0
+author ai
+file crates/gui/src/action.rs
+symbol go_to_line
+lines 0 22
+hash 534c18a35e2f6aa3
+note The handler. Parses the field as a 1-based line; with a file open it clamps to the file's line count, warning when it had to, and moves the selection there.
+
+step daaojy
+order 1
+parent 1a0bgg
+author ai
+file crates/gui/src/nav.rs
+symbol go_to_line
+lines 0 3
+hash 9cc590ad79fb9c4b
+note Selects the single line and leaves a ticketed scroll request for the listing.
+
+step urcirn
+order 2
+parent 1a0bgg
+author ai
+file crates/gui/src/app.rs
+symbol keys
+lines 19 21
+hash a97829db87ffdae5
+note Trigger: the keys phase hands edits and typed text to the go-to-line field last.
+
+step xm25ym
+order 3
+parent urcirn
+author ai
+file crates/gui/src/action.rs
+symbol typed
+lines 0 15
+hash 1e1ff82d94cec218
+link feature-new-path
+note The line field keeps its text on enter; a submitted line goes to go_to_line.
+
+step zzv611
+order 4
+parent 1a0bgg
+author ai
+file crates/gui/src/views/center.rs
+symbol listing
+lines 13 34
+hash e8cc8dd91fd8a651
+link listing-view
+note The effect in the listing, and the field: a pending scroll request puts the requested line three rows below the top, clamped to the end, and answers the ticket; the toolbar holds the LINE_FIELD.

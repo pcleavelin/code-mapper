@@ -3,42 +3,101 @@ path graph-camera
 kind flow
 author ai
 group gui/graph
-note When the graph's camera moves, and why it otherwise does not. Pan and zoom are two plain fields on the graph: dragging the background and the wheel write them directly, and nothing else is allowed to, so a rebuild, an edit or a re-index never slides the view out from under the reader. Two things ask for a move: a new focus (centre it, or align its top when it is taller than the canvas) and the fit button (the largest font at which the whole tree fits, then pan to its top-left). A node button that changes the tree's shape (callees, callers, less) instead keeps its node still: the pan follows the relayout so the button stays under the pointer and the new nodes appear beside it. The layout is in cells and rows, which no zoom changes, so fit settles both zoom and pan in one frame instead of converging over several. Both keep MARGIN pixels between the canvas edge and what they bring into view.
+note When the graph's camera moves, and why it otherwise does not. Pan and zoom are two plain fields on GraphState, and like every graph field they change only through a GraphAction applied by GraphState::apply: the wheel sends Camera, dragging the background sends Pan, and the camera's own moves arrive as Look, Keep and Fitted. Nothing else writes them, so a rebuild, an edit or a re-index never slides the view out from under the reader. Two things ask for a move, each by setting a Wish to Wanted: a new focus (look: centre the node, or align its top when it is taller than the canvas) and the fit button (fit: the largest font at which the whole tree fits, then pan to its top-left; 1:1 resets the zoom and asks for a look). A node button that changes the tree's shape (callees, callers, more/less) instead keeps its node still: the pan follows the relayout so the button stays under the pointer and the new nodes appear beside it. The layout is in cells and rows, which no zoom changes, so fit settles both zoom and pan in one frame instead of converging over several. Both keep GRAPH_MARGIN pixels between the canvas edge and what they bring into view, and neither runs until the canvas element has a rectangle from last frame.
 
 step 729kbs
 order 1
+parent 7q8efh
+author ai
+file crates/gui/src/graph/place.rs
+symbol bounds
+lines 0 24
+hash 6f6e69580096d5b3
+note The tree's bounding box in cells and rows over every placed node. No zoom changes it, which is what lets fit pick a font size and a pan in the same frame instead of guessing, re-laying out and guessing again.
+
+step 7q8efh
+order 2
 parent gknv1n
 author ai
-file src/gui/graph.rs
-symbol bbox_cells
-lines 0 12
-hash 79dfcc8ebb50877a
-note The tree's bounding box in cells and rows. No zoom changes it, which is what lets fit pick a font size and a pan in the same frame instead of guessing, re-laying out and guessing again.
+file crates/gui/src/graph/input.rs
+symbol graph_fit
+lines 0 25
+hash 6e45835e6e56679a
+note Walks the font size down one pixel at a time from the current graph font until the tree's cell box, measured with that font's cell, fits the canvas less the margins, stopping at theme::smallest_fit_font. The zoom becomes exactly that size over the UI font (Zoom::of_fonts), so graph_font reproduces the same size next frame, and the pan puts the box's top-left at the margin. A Fitted action carries both and settles the wish; an empty graph settles it with no move.
+
+step 8dlyo7
+order 7
+parent 729kbs
+author ai
+file crates/gui/src/graph/place.rs
+symbol CellBounds
+lines 0 5
+hash 545228e35fd80a55
+note The box as four cell coordinates: left and top of the leftmost and topmost node, right and bottom of the furthest node edges.
 
 step gknv1n
 order 0
 author ai
-file src/gui/graph.rs
-symbol graph_tab
-lines 146 174
-hash 96085945b73d5c07
-note The frame's two camera hooks, side by side. The fit runs here rather than inside the graph because it needs the font metrics: the layout is already done in cells, so it walks the font size down until the tree's cell box fits the canvas, sets the zoom to exactly that size over the UI size (so graph_px reproduces it), and pans to the tree's top-left. Everything else the camera does is move_camera, called once this frame's cell size is recorded, so rect_px can give it pixel rectangles.
+file crates/gui/src/graph/input.rs
+symbol graph_phase
+lines 31 45
+hash 8dd07c62ef51d14b
+note The frame's camera hooks in graph_phase, after the layout: the fit when one is wanted and the canvas has been placed, then this frame's cell size recorded with a Cell action so rect_at can give pixel rectangles, then the focus node looked up and move_camera. The fit runs here rather than inside GraphState because it needs the renderer's Measure for the font metrics.
+
+step hltvil
+order 10
+parent vn03h2
+author ai
+file crates/gui/src/graph.rs
+symbol Wish
+lines 0 3
+hash 303eeb43ce2bff12
+note A camera request: Wanted until the move it asks for has been made, then Settled. look, hold_look and fit are each one of these, so a request made in one frame is honoured in the first frame that can honour it (the canvas placed, the node laid out) and not before.
 
 step v0z9ng
 order 3
 author ai
-file src/gui/graph.rs
-symbol keep
-lines 0 2
-hash 4e7e3b15651f450f
-note The anchor a node button sets before its tree changes shape: the node and its pixel position that frame. After the relayout the pan moves by the node's displacement, so expanding or hiding its callees or callers, or collapsing it, leaves it and the button under the pointer exactly where they were; the new nodes appear beside it and the reader pans if they run off the canvas.
+file crates/gui/src/graph.rs
+symbol keep_node
+lines 0 5
+hash 35617b35f5e0bf8d
+note The anchor a node button sets before its tree changes shape, from apply's ToggleCollapsed and Toggle arms: the node and its pixel position relative to the pan this frame. After the relayout move_camera shifts the pan by the node's displacement, so expanding or hiding its callees or callers, or cutting it to a preview, leaves it and the button under the pointer exactly where they were; the new nodes appear beside it and the reader pans if they run off the canvas.
+
+step vn03h2
+order 6
+author ai
+file crates/gui/src/graph.rs
+symbol focused
+lines 0 4
+hash 6be3c6f4e0305f31
+note Called when the navigation focus changes: it asks for a look unless the graph itself caused the change. A header click sends HoldLook before selecting its step, so selecting a node on the canvas does not re-centre the canvas under the pointer; hold_look is consumed by the next focus change either way.
+
+step wjbikq
+order 8
+parent 7q8efh
+author ai
+file crates/gui/src/graph/input.rs
+symbol Fit
+lines 0 3
+hash 7fe2e65109b45bd9
+note The zoom and pan a fit settled on, carried by the Fitted action so apply writes both together.
 
 step x2p02r
-order 2
+order 4
 parent gknv1n
 author ai
-file src/gui/graph.rs
+file crates/gui/src/graph/input.rs
 symbol move_camera
-lines 0 18
-hash 3c357e9704faa2ef
-note The one place a camera move is honoured, in priority order: a pending look at the focus, then a kept node. A node taller than the canvas is aligned to its top, because its header and its buttons are what the reader came for; centring it put them off screen. Nothing here runs unless a flag asked for it, so a rebuild or a re-index leaves pan and zoom alone.
+lines 0 24
+hash 6297aca265163c31
+note The one place a camera move is honoured, in priority order: a wanted look at the focus node, then a kept node. A node taller than the canvas is aligned to its top, because its header and its buttons are what the reader came for; centring it would put them off screen. The result goes back as a Look or Keep action, which also settles the wish. Nothing here moves the camera unless a wish asked for it, so a rebuild or a re-index leaves pan and zoom alone.
+
+step zwmsl2
+order 9
+parent v0z9ng
+author ai
+file crates/gui/src/graph.rs
+symbol Kept
+lines 0 3
+hash dd9401a116b13074
+note A kept node and its rectangle's origin before the relayout, in pixels relative to the pan, so comparing it with the node's origin after the relayout gives the displacement to add to the pan.

@@ -1,0 +1,34 @@
+codemap 8
+path feature-open-group
+kind flow
+author ai
+group features/gui
+note Click a group's row in the Paths list to open or close it. A closed group hides every path and group inside it; the row shows the group's last name segment, the number of paths under it, and turns red when any of them has a stale step. Until clicked, a group is open exactly when the path being read is inside it. The choice lasts for the session.
+
+step 1sqnqq
+order 2
+parent f1nrga
+author ai
+file crates/gui/src/views/left.rs
+symbol paths_window
+lines 13 28
+hash 39da11a892721b0a
+note The effect in the list: a closed group sets closed_at to its depth and every following row deeper than that is skipped.
+
+step 71087f
+order 1
+parent f1nrga
+author ai
+file crates/gui/src/views/left.rs
+lines 59 102
+hash 529734b7087c5513
+note Trigger and effect: the row's openness is the recorded one or, failing that, whether the path being read is in this group or below it. A click on the GROUP_ROW queues OpenGroup with the opposite openness. The returned openness tells paths_window whether to draw what is inside.
+
+step f1nrga
+order 0
+author ai
+file crates/gui/src/action.rs
+symbol apply
+lines 32 34
+hash 9e18adf391d892d8
+note The handler: records the wanted openness for the group by its full name. Once recorded it overrides the default of following the path being read.

@@ -3,60 +3,100 @@ path cli-read-commands
 kind layer
 author ai
 group cli
-note The read-only half of the CLI: the commands that answer questions about the source rather than the map. files, symbols, show and grep all walk the in-memory index directly, and every one of them prints one item per line in a file:line shape so the output can be pasted back into another command or parsed like grep output. These four are what the agent falls back to when no path covers the code it needs.
+note The read-only half of the CLI: the commands that answer questions about the source rather than the map. files, symbols, show and grep all walk the in-memory Index directly, and every one of them prints one item per line in a file:line shape so the output can be pasted back into another command or parsed like grep output. Each is a method on exec.rs's Run that walks the index, with the row formats in wire.rs. These four are what the agent falls back to when no path covers the code it needs.
 
 step 0dsrz5
 order 0
 author ai
-file src/cli.rs
-symbol exec
-lines 11 22
-hash 0d837a88ab256313
-note files: every indexed file with its line and symbol count. A file with 0 symbols is one whose language has no grammar here, or is not code at all; it is still greppable and viewable.
+file crates/cli/src/exec.rs
+symbol files
+lines 0 8
+hash 1ab56b80f9e4caa2
+note files: every indexed file whose path contains the filter, with its line and symbol count.
+
+step 3mkemu
+order 6
+parent 0dsrz5
+author ai
+file crates/cli/src/wire.rs
+symbol file_row
+lines 0 8
+hash 6991924f6120ea54
+note file (N lines, M symbols). A file with 0 symbols is one whose language has no grammar here, or is not code at all; it is still greppable and viewable.
+
+step 44i3bc
+order 9
+parent z40dra
+author ai
+file crates/cli/src/wire.rs
+symbol grep_line
+lines 0 2
+hash bedecc4c8f45c15a
+note file:line: text, the line 1-based.
 
 step 9mg3jn
 order 2
 author ai
-file src/cli.rs
-symbol exec
-lines 46 51
-hash 5fec91b06ed690fc
-note show: numbered lines, the escape hatch for code no path covers. Start and end default to the whole file and are clamped rather than rejected.
+file crates/cli/src/exec.rs
+symbol show
+lines 0 13
+hash bb764e066c0963fd
+note show: numbered lines, the escape hatch for code no path covers. A file that is not indexed is an error; a range is not.
 
-step patfe1
-order 3
+step d9uhyu
+order 4
 parent 9mg3jn
 author ai
-file src/cli.rs
-symbol print_lines
-lines 0 4
-hash 49e6730f4f8d9338
-note The numbered-line printer, shared with the path command so a step's code and a raw show look the same.
+file crates/cli/src/convert.rs
+symbol visible
+lines 0 16
+hash 8fbe0505b0b42fd8
+note Start and end default to the whole file and are clamped to it rather than rejected, then made the 0-based Span the rest of the program uses.
+
+step hyjze2
+order 7
+parent wdd0ll
+author ai
+file crates/cli/src/wire.rs
+symbol symbol_row
+lines 0 12
+hash 5735b94edc3a3371
+note file:start-end kind name (calls, callers), the range 1-based. Depth-1 members are indented two spaces, which is the only hint of nesting in the output.
+
+step patfe1
+order 8
+parent 9mg3jn
+author ai
+file crates/cli/src/wire.rs
+symbol numbered_lines
+lines 0 6
+hash 88a7e246954e7eda
+note The numbered-line printer, shared with the path command so a step's code and a raw show look the same: the 1-based number right-aligned in five columns, then the text.
 
 step wdd0ll
 order 1
 author ai
-file src/cli.rs
-symbol exec
-lines 23 45
-hash 1b9773e8adf3635f
-note symbols: one row per symbol with kind, 1-based line range and its callee/caller counts. Depth-1 members are indented two spaces, which is the only hint of nesting in the output. The filter is a substring of either the name or the path.
+file crates/cli/src/exec.rs
+symbol symbols
+lines 0 8
+hash 48bb1cf4c47086c5
+note symbols: one row per symbol whose name or file path contains the filter.
 
 step wh8ip2
-order 4
+order 3
 parent 9mg3jn
 author ai
-file src/cli.rs
+file crates/cli/src/exec.rs
 symbol find_file
-lines 0 5
-hash 3f257bd64cce0832
-note File lookup for a user-typed path: backslashes are normalised and a suffix match is accepted, so src\\index\\mod.rs and index/mod.rs both find the file.
+lines 0 10
+hash 20a2fff303e42ef5
+note File lookup for a user-typed path: RelativePath turns backslashes into slashes, an exact path wins, and otherwise the first file whose path ends with the text is taken, so src\\index.rs and index.rs both find crates/domain/src/index.rs.
 
 step z40dra
 order 5
 author ai
-file src/cli.rs
-symbol exec
-lines 52 61
-hash 850cadb6a07c0573
-note grep: a Rust regex over the in-memory lines of every file, no threading and no ignore rules beyond the ones the walk already applied.
+file crates/cli/src/exec.rs
+symbol grep
+lines 0 8
+hash 69562559dc204847
+note grep: a Rust regex over the in-memory lines of every file, no threading and no ignore rules beyond the ones the walk already applied. The regex compiles through the same compile as notes, so a bad one is the same error.

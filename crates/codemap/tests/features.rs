@@ -1,0 +1,180 @@
+use std::fs;
+use std::path::{Path, PathBuf};
+
+use domain::{PathKind, PathName, Root};
+use features::{Feature, Gesture, Key, Modifiers, Surface, Trigger};
+use io_map::MapStore;
+
+fn workspace() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+
+fn read(relative: &str) -> String {
+    fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join(relative)).unwrap_or_default()
+}
+
+fn goldens() -> String {
+    let mut text = String::new();
+    let folder = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/golden");
+    let mut files: Vec<PathBuf> = fs::read_dir(folder)
+        .map(|entries| {
+            entries
+                .filter_map(Result::ok)
+                .map(|entry| entry.path())
+                .collect()
+        })
+        .unwrap_or_default();
+    files.sort();
+    for file in files {
+        text.push_str(&fs::read_to_string(file).unwrap_or_default());
+    }
+    text
+}
+
+fn group_of(surface: Surface) -> &'static str {
+    match surface {
+        Surface::Command => "features/cli",
+        Surface::Window => "features/gui",
+    }
+}
+
+fn key_word(key: Key) -> String {
+    match key {
+        Key::Up => "up".to_owned(),
+        Key::Down => "down".to_owned(),
+        Key::Left => "left".to_owned(),
+        Key::Right => "right".to_owned(),
+        Key::Letter(letter) => letter.as_char().to_string(),
+    }
+}
+
+fn script_lines(scripts: &str) -> Vec<&str> {
+    scripts.lines().map(str::trim).collect()
+}
+
+fn aims_at(line: &str, element: &str) -> bool {
+    line.split_whitespace().nth(1).is_some_and(|target| {
+        target == element
+            || target.starts_with(&format!("{element}/"))
+            || target.starts_with(&format!("{element}@"))
+    })
+}
+
+fn exercised(trigger: Trigger, goldens: &str, scripts: &str) -> bool {
+    let lines = script_lines(scripts);
+    match trigger {
+        Trigger::Command(name) => goldens.lines().any(|line| {
+            line.strip_prefix("$ codemap ")
+                .is_some_and(|rest| rest.split_whitespace().next() == Some(name.as_str()))
+        }),
+        Trigger::Click(element) | Trigger::Type(element) => {
+            let name = element.as_str();
+            lines.iter().any(|line| {
+                (line.starts_with("click-id ") || line.starts_with("dblclick-id "))
+                    && aims_at(line, name)
+            }) || graph_button(name).is_some_and(|label| {
+                lines
+                    .iter()
+                    .any(|line| line.starts_with("click <<DUMP button") && line.contains(label))
+            })
+        }
+        Trigger::Key(chord) => {
+            let modifier = match chord.modifiers() {
+                Modifiers::Plain => None,
+                Modifiers::Control => Some("ctrl"),
+                Modifiers::Alt => Some("alt"),
+            };
+            lines.iter().any(|line| {
+                let words: Vec<&str> = line.split_whitespace().collect();
+                words.first() == Some(&"key")
+                    && words.get(1) == Some(&key_word(chord.key()).as_str())
+                    && modifier.is_none_or(|word| words.contains(&word))
+            })
+        }
+        Trigger::Gesture(gesture, element) => {
+            let name = element.as_str();
+            lines.iter().any(|line| match gesture {
+                Gesture::Hover => line.starts_with("hover-id ") || line.starts_with("mouse "),
+                Gesture::Drag => line.starts_with("drag ") || line == &"down",
+                Gesture::Wheel => line.starts_with("wheel ") && !line.contains("ctrl") && !line.contains("shift"),
+                Gesture::ShiftWheel => line.starts_with("wheel ") && line.contains("shift"),
+                Gesture::ControlWheel => line.starts_with("wheel ") && line.contains("ctrl"),
+                Gesture::DoubleClick => line.starts_with("dblclick"),
+                Gesture::ControlClick => line.starts_with("click") && line.ends_with(" ctrl"),
+                Gesture::AltClick => line.starts_with("click") && line.ends_with(" alt"),
+                Gesture::ShiftClick => line.starts_with("click") && line.ends_with(" shift"),
+                Gesture::BackButton | Gesture::ForwardButton => false,
+            } && (name != "grip" || line.contains("grip") || line == &"down"))
+        }
+    }
+}
+
+fn graph_button(element: &str) -> Option<&'static str> {
+    match element {
+        "node-button" => Some("'callees"),
+        "node-context" => Some("'▼"),
+        "node-listing" => Some("'listing"),
+        "node-preview" => Some("'less"),
+        _ => None,
+    }
+}
+
+#[test]
+fn every_feature_has_its_flow_path_in_the_map() {
+    let root = Root::new(&workspace());
+    let loaded = MapStore::new(&root).load();
+    assert!(loaded.is_ok(), "the map loads");
+    let Ok(map) = loaded else { return };
+    let mut missing = Vec::new();
+    for feature in Feature::ALL {
+        let spec = feature.spec();
+        let wanted = format!("feature-{}", spec.name().as_str());
+        let Ok(name) = PathName::new(&wanted) else {
+            missing.push(format!("{wanted}: not a path name"));
+            continue;
+        };
+        match map.path(&name) {
+            None => missing.push(format!("{wanted}: no such path")),
+            Some(path) => {
+                if path.kind() != PathKind::Flow {
+                    missing.push(format!("{wanted}: not a flow"));
+                }
+                if path.group().map(domain::GroupName::as_str) != Some(group_of(spec.surface())) {
+                    missing.push(format!("{wanted}: not in {}", group_of(spec.surface())));
+                }
+                let roots = path
+                    .steps()
+                    .iter()
+                    .filter(|step| step.parent().is_none())
+                    .count();
+                if roots != 1 {
+                    missing.push(format!(
+                        "{wanted}: {roots} roots, the handler is the one root"
+                    ));
+                }
+            }
+        }
+    }
+    assert!(missing.is_empty(), "feature paths:\n{}", missing.join("\n"));
+}
+
+#[test]
+fn every_feature_is_exercised_by_a_golden_scenario() {
+    let goldens = goldens();
+    let scripts = read("tests/common/gui.rs");
+    let unexercised: Vec<&str> = Feature::ALL
+        .into_iter()
+        .filter(|feature| {
+            !feature
+                .spec()
+                .triggers()
+                .iter()
+                .any(|trigger| exercised(*trigger, &goldens, &scripts))
+        })
+        .map(|feature| feature.spec().name().as_str())
+        .collect();
+    assert!(
+        unexercised.is_empty(),
+        "features no scenario triggers: {unexercised:?}"
+    );
+}

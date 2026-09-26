@@ -1,0 +1,56 @@
+codemap 8
+path feature-scroll-code
+kind flow
+author ai
+group features/gui
+note Shift+wheel over a code block scrolls it sideways, for lines wider than the view. The offset is kept per code block, clamped so the text cannot scroll past its end, and a thin mark on the block's left edge shows it is scrolled. In the graph, shift+wheel pans the canvas sideways instead.
+
+step 7cxi2o
+order 4
+parent vso1s4
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_wheel
+lines 33 42
+hash a4a6320ff946bc4e
+link graph-camera
+note In the graph the same gesture is read by keys::wheeling as Across, and the wheel pans the camera horizontally.
+
+step 83z692
+order 2
+parent vso1s4
+author ai
+file crates/gui/src/action.rs
+symbol apply
+lines 42 42
+hash c5a6628c1b2c605e
+note Stores the offset under the block's id, so the next frame starts from it.
+
+step huq5e1
+order 3
+parent vso1s4
+author ai
+file crates/gui/src/widgets/code.rs
+symbol code_block
+lines 54 60
+hash 24e4b1606a2defb3
+note The effect: the grid is drawn shifted left by the offset, with the scrolled mark on the left edge.
+
+step ux6g3j
+order 1
+parent vso1s4
+author ai
+file crates/gui/src/keys.rs
+symbol scrolls_across
+lines 0 2
+hash f6c6611d061b99d1
+note Whether the registry's ScrollCode gesture, shift+wheel, is held.
+
+step vso1s4
+order 0
+author ai
+file crates/gui/src/widgets/code.rs
+symbol code_block
+lines 20 32
+hash 647eb278bb50b1ac
+note The handler, run as the code block is built: when the block was hovered last frame and the ScrollCode gesture is held, the wheel moves the block's across offset by a fixed number of columns per notch; the offset is clamped to the text's overflow and queued as ScrollAcross.

@@ -3,111 +3,244 @@ path cli-command
 kind flow
 author ai
 group cli
-note How one command line becomes a Command and runs. The process arguments after the root and the GUI output panel's input line both go through cli::parse, which is clap over the Command enum, so help and argument errors read the same in both. exec runs the parsed command against the index and map and says whether the map changed; the CLI saves and exits, the GUI marks the map dirty and leaves saving to ctrl+s. The two front ends share everything but the argument splitting, which the shell does for the CLI.
+note How one command line becomes an Invocation and runs. The process arguments after the root and the GUI output panel's input line both go through cli::Invocation::parse, which is clap over wire.rs's Command enum, so help and argument errors read the same in both. convert.rs turns the parsed Command into a Request (a Query, an Edit or a repin) of domain values, and cli::exec runs it against the Index and Map through exec.rs's Run, writing its lines to an Output and returning whether the map changed or a Failure. The CLI saves through MapStore and exits with a status; the GUI marks the map unsaved and leaves saving to ctrl+s. The two front ends share everything but the argument splitting, which the shell does for the CLI, and the author they pass: Agent from the CLI, Human from the GUI.
+
+step 0s6x73
+order 13
+parent 9zzcig
+author ai
+file crates/cli/src/convert.rs
+symbol from
+lines 0 42
+hash 6b1511c0cb632a9a
+note Command to Request: the reading commands become a Query, the map edits an Edit, repin its own Request. Each argument struct converts through its own From, so names become PathName or TextFragment, numbers become StepIndex, Under, LineNumber, Levels or Count, and a name that cannot be a PathName is carried as the MapError for exec to report.
 
 step 7ad6e4
-order 1
+order 21
 parent gejk1d
 author ai
-file src/main.rs
-symbol cli_main
-lines 0 48
-hash 6e3ba37c95e20af8
-note Parse before indexing so a usage error costs nothing. Then build the index from the cache and tree-sitter, and hand exec a Servers, which starts a language server only when the command needs one. Help goes to stdout with exit 0, usage errors to stderr with exit 2. A map that does not read stops the command with exit 2, before anything could save over it. A mutating command saves the map before its output is printed, so a line saying a step was added never appears for a change that did not reach the disk. A command error prints what it produced so far and exits 2; check relies on this. Output goes through emit so a closed pipe does not panic.
+file crates/codemap/src/main.rs
+symbol run
+lines 0 52
+hash e19274bc89dc4430
+note Text mode. Parse before indexing so a usage error costs nothing. Then build the index from the cache and tree-sitter, load the map, and hand exec a Servers, which starts a language server only when the command needs one and reports its notices on stderr. Servers is dropped before anything is printed, so the servers shut down first. Output is printed only after the save, so a line saying a step was added never appears for a change that did not reach the disk. A command Failure prints what the command produced so far on stdout and the failure on stderr with exit 2; check relies on this.
 
 step 9zzcig
 order 2
 parent 7ad6e4
 author ai
-file src/cli.rs
+file crates/cli/src/lib.rs
 symbol parse
-lines 0 2
-hash 05b5d969df6d0423
-note Prepends the program name clap expects. The Err is clap's rendered text: the help for 'help', or the usage error.
+lines 0 7
+hash 30cb7b5cb3583d06
+note Parses the arguments into the Command, then records the Feature it triggers and converts it into the Request exec runs. The Err is a ParseFailure holding clap's error: the help for 'help', or the usage error.
+
+step acxhz9
+order 20
+parent 7ad6e4
+author ai
+file crates/codemap/src/output.rs
+symbol write
+lines 0 5
+hash 7fdef6a186698d24
+note text and line send an Output or any Display value; every line goes to stdout or stderr through a locked write whose error is dropped, so a closed pipe (codemap ... | head) does not panic.
 
 step bl6ahe
 order 8
-parent uvx2pv
+parent f5fj9z
 author ai
-file src/cli.rs
-symbol tokenize
+file crates/cli/src/wire.rs
+symbol words
 lines 0 19
-hash ae83d581ad4da49a
-note The GUI's argument splitting: whitespace, with double quotes holding a note together. The shell does this for the CLI, so this is the one thing the two front ends do not share.
+hash 30613e826020bcf7
+note The GUI's argument splitting: whitespace, with double quotes holding a note together (the quotes themselves are dropped). The shell does this for the CLI, so this is the one thing the two front ends do not share.
+
+step c8vrt4
+order 16
+parent ckc2c3
+author ai
+file crates/cli/src/exec.rs
+symbol run
+lines 0 6
+hash 0e3308ff30da5d0e
+note Dispatch: a Query changes nothing, an Edit always returns Changed, and repin reports Changed only when it pinned something.
 
 step ckc2c3
-order 4
+order 15
 parent 7ad6e4
 author ai
-file src/cli.rs
+file crates/cli/src/lib.rs
 symbol exec
-lines 0 677
-hash f559c151bfc78512
-note Runs one command. Ok(true) means the map changed and the caller saves. Err is the user-facing message; check returns one to force a non-zero exit. Output is plain grep-style lines written to a String. With Servers (the CLI), a command that needs a file's calls asks the language's server for that file first, and callers and refs ask it about the one symbol; without them (the GUI, which indexes in the background) every command answers from the index as it is.
+lines 0 16
+hash 6eff7cfaa794f5cc
+note Runs one Invocation. Ok(Some(Changed)) means the map changed and the caller saves or marks it unsaved; Ok(None) means a read; Err is a Failure, which wire.rs words for the user. With Servers (the CLI), a command that needs a file's calls asks the language's server for that file first, and callers and refs ask it about the one symbol; without them (the GUI, which indexes in the background) every command answers from the index as it is.
 
 step dtk6tf
 order 7
 author ai
-file src/gui/panels.rs
+file crates/gui/src/views/output.rs
 symbol output_panel
-lines 0 39
-hash 8180ad8bc5fb423f
-note The GUI's command line. A panel docked at the bottom by default: the log scrolls in the upper part, virtualised to the visible rows, and is pinned to its end for two frames after a command so the newest output shows (a command's output exists only after that frame's layout, so the second frame's pin is the one that lands on it); the input row sits under it and takes the keyboard when clicked. 'clear' empties the log.
+lines 0 33
+hash 92fb0018f6583c32
+note The GUI's command line. A panel docked at the bottom by default: the log scrolls in the upper part, virtualised to the visible rows, and is scrolled to its end while output_bottom counts down after a command (a command's output exists only after that frame's layout, so the second frame's pin is the one that lands on it); the input row sits under it and takes the keyboard when clicked.
+
+step f5fj9z
+order 23
+parent uvx2pv
+author ai
+file crates/cli/src/lib.rs
+symbol arguments
+lines 0 2
+hash e21bb5db3e06cd0b
+note CommandLine is the GUI's typed line; its arguments are what the shell would have produced.
 
 step gadnht
 order 3
-parent 9zzcig
+parent zdkp0d
 author ai
-file src/cli.rs
+file crates/cli/src/wire.rs
 symbol Command
-lines 0 165
-hash 5298762353cef769
-note The command set. Variant names kebab-case into subcommand names. Each variant's about attribute is its one-line help, written as signature then description so 'help' reads as a signature table. Kind goes through parse_kind so map.rs does not depend on clap.
+lines 0 74
+hash 4b587db07c70b7d6
+note The command set, one variant per command Feature. Each variant's name and about are the feature's name and summary from the registry, so the registry is the one list of commands and 'help' reads as a signature table. Arguments are plain strings and numbers here; converting them to domain values is convert.rs's job.
 
 step gejk1d
 order 0
 author ai
-file src/main.rs
+file crates/codemap/src/main.rs
 symbol main
-lines 0 18
-hash b22e55e222e45faa
-note Entry. 'help' or no root at all prints clap's help. A root with more arguments runs one command and exits; a bare root titles the window and hands the App to window::run, which owns the loop from there.
+lines 0 19
+hash c460ac8edc2aabaa
+note Entry. help, --help or -h as the first argument prints the help with exit 0, before a root is chosen, so help works in a directory that is not a repo. The first argument is the root (the current directory when there is none); a root alone opens the window, a root with more arguments runs one command.
+
+step gxv29t
+order 19
+parent 7ad6e4
+author ai
+file crates/codemap/src/main.rs
+symbol run
+lines 34 51
+hash e3639bc876e21b78
+link map-file
+note A changed map is saved before the report is printed. A save that fails still prints the report, then the error, with exit 1.
 
 step hupfep
 order 10
 parent gadnht
 author ai
-file src/cli.rs
+file crates/cli/src/wire.rs
 symbol parse_kind
-lines 0 2
-hash 72035fba12b51482
-note kind is parsed by clap through this, which keeps map.rs free of any clap dependency.
+lines 0 9
+hash 9a51b7288752b140
+note kind is parsed by clap through this, against the one table of kind names wire.rs also prints with, so domain's PathKind has no clap dependency.
 
-step sde1gg
-order 6
-parent 7ad6e4
+step jwmb5v
+order 17
+parent c8vrt4
 author ai
-file src/cli.rs
-symbol exec
-lines 434 442
-hash 33cfba89e47fc6c5
-note path-move: index the new parent's file, reparent the step, refusing a cycle, then the same does-not-call note path-add prints so a flow stays a call tree.
+file crates/cli/src/exec.rs
+symbol query
+lines 0 25
+hash d725e93acb0e5f81
+note One arm per reading command; the handlers are Run's methods, and the feature-<name> paths follow each one.
+
+step ly4k41
+order 9
+parent gejk1d
+author ai
+file crates/codemap/src/main.rs
+symbol window
+lines 0 8
+hash 7be41cd6a628570c
+link app-startup
+note gui::run owns the process from here until the window closes; a window that cannot open prints its error and exits 1.
+
+step otmdqd
+order 22
+parent gejk1d
+author ai
+file crates/codemap/src/main.rs
+symbol code
+lines 0 6
+hash 74bde0e13ad9649b
+note Exit codes: 0 done, 1 a save or the window failed, 2 the command was refused (usage error, unreadable map, or a Failure).
 
 step uvx2pv
 order 5
 author ai
-file src/gui/mod.rs
-symbol run_cmd
-lines 0 35
-hash 92007b2492b5fdc3
-note The GUI's side of the same parse then exec. Reached from the frame function when the command field returns a line, not from the panel that draws it. exec gets no servers here: the GUI's own threads index. A parse error, help included, is printed into the log verbatim; a mutating command marks the map dirty instead of saving, and the log is scrolled to the bottom.
+file crates/gui/src/action.rs
+symbol run_command
+lines 0 41
+hash 1250bba1c8b75e9b
+note The GUI's side of the same parse then exec, reached when the command field returns a line. 'clear' empties the log without parsing. exec gets no servers here: the GUI's own threads index. A ParseFailure, help included, is printed into the log verbatim and its first line becomes the status; a Failure is logged as 'error: ...'; a change marks the map unsaved and logs a line saying ctrl+s saves it. The log is pinned to its end for the next two frames so the newest output shows.
+
+step uzpmmo
+order 4
+parent 7ad6e4
+author ai
+file crates/cli/src/lib.rs
+symbol channel
+lines 0 6
+hash 94fa4e290d0a1148
+note Where a ParseFailure goes: clap's help and version output is not an error and goes to stdout with exit 0; a usage error goes to stderr with exit 2.
+
+step v2msgn
+order 12
+parent 9zzcig
+author ai
+file crates/cli/src/wire.rs
+symbol feature
+lines 0 38
+hash 5b9c95ab55f94cfa
+note Which registry Feature a parsed command is, kept on the Invocation so a front end can tell what ran.
+
+step wh8ryh
+order 18
+parent c8vrt4
+author ai
+file crates/cli/src/exec.rs
+symbol edit
+lines 0 37
+hash 7cbf0aa9f389a2c4
+note One arm per map edit; each returns Changed or the Failure that stopped it before the map was touched.
+
+step xr1iac
+order 14
+parent 7ad6e4
+author ai
+file crates/codemap/src/main.rs
+symbol run
+lines 11 20
+hash a08d5934b28afe52
+link map-file
+note Index and map. A map that does not load stops the command with Failure::Load and exit 2, before anything could save over it; the steps are then resolved against the index.
 
 step y08nbq
-order 9
+order 1
 parent gejk1d
 author ai
-file src/cli.rs
+file crates/cli/src/lib.rs
 symbol help
 lines 0 2
-hash e31220697c0ecdaa
-note 'codemap help' short-circuits before a root is even chosen, so help works in a directory that is not a repo.
+hash fb6e5f5dcd73e521
+note The help text: clap's rendering of the Command enum, a signature table built from each feature's summary.
+
+step zdkp0d
+order 11
+parent 9zzcig
+author ai
+file crates/cli/src/wire.rs
+symbol parse
+lines 0 2
+hash 4d14e51060c0af6e
+note Prepends the program name clap expects.
+
+step zuzb3r
+order 24
+parent otmdqd
+author ai
+file crates/codemap/src/main.rs
+symbol Status
+lines 0 5
+hash f8cb4353dcc5a259
+note How a run that got past the help check ended, window or text mode; the exit code is derived from it.

@@ -9,7 +9,6 @@ use crate::text::{LineNumber, Message, RepoPath, Root};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Zone {
     Strict,
-    Legacy,
     Test,
 }
 
@@ -17,8 +16,6 @@ impl Zone {
     pub(crate) fn of(path: &RepoPath) -> Self {
         if path.starts_with("tests/") || path.contains("/tests/") || path.ends_with("/tests.rs") {
             Self::Test
-        } else if path.starts_with("src/") {
-            Self::Legacy
         } else {
             Self::Strict
         }
@@ -180,7 +177,7 @@ pub(crate) fn rust_sources(root: &Root) -> Vec<RepoPath> {
         .into_iter()
         .filter(|path| path.ends_with(".rs"))
         .filter(|path| {
-            ["src/", "crates/", "xtask/", "tests/"]
+            ["crates/", "xtask/"]
                 .iter()
                 .any(|prefix| path.starts_with(prefix))
         })

@@ -3,151 +3,331 @@ path map-file
 kind type
 author ai
 group map
-note The map itself: the only thing this tool persists. A directory, .codemap, at the root, committed with the code, with one text file per path holding its kind, group, note, author and steps. The format is hand-rolled, one field per line, no serialization dependency and no JSON. It exists to merge: two branches that change different paths touch different files, and two that change one path touch different lines unless they edit the same field of the same step. A file written by another version is refused outright and the map regenerated.
+note The map itself: the only thing this tool persists. A directory, .codemap, at the root, committed with the code, with one text file per path holding its kind, group, note, author and steps. The format is hand-rolled, one field per line, no serialization dependency and no JSON. It exists to merge: two branches that change different paths touch different files, and two that change one path touch different lines unless they edit the same field of the same step. A file written by another version is refused outright and the map regenerated. The model (Map, Path, Step) lives in domain and knows nothing of files; the io-map crate is the boundary: wire.rs is the text layout (CmapPath and CmapStep, parse, render), convert.rs turns it into domain values and back, and MapStore in lib.rs reads and writes the directory. Every read fault is data (ParseError, MapLoadError, MapSaveError) that cli's wire.rs words.
+
+step 048co4
+order 18
+parent 3jucfq
+author ai
+file crates/io-map/src/convert.rs
+symbol step_to_wire
+lines 0 19
+hash c4584ca8c72ac442
+note One Step to its block: the anchor's file, symbol, offsets and hash, the order, the parent id and link. Line numbers are zero here; they only matter when reading.
+
+step 1t8ysg
+order 24
+parent p9h2bj
+author ai
+file crates/domain/src/map.rs
+symbol new
+lines 0 8
+hash c6e9c347a9d7d800
+note Refuses two paths of one name, the one invariant of the map as a whole.
 
 step 2vhi6m
 order 5
 parent 42292h
 author ai
-file src/map.rs
-symbol impl Author
-lines 7 19
-hash cf480eb4721076d8
-note The words the file writes, ai and human; parse is the only way back, so an unknown word fails the read.
+file crates/io-map/src/wire.rs
+symbol parse_author
+lines 0 6
+hash e961ff1d3ae6fff9
+note The words the file writes, ai and human (author_name the other way); parse_author is the only way back, so an unknown word fails the read with UnknownAuthor.
+
+step 3jucfq
+order 7
+parent xcqxxp
+author ai
+file crates/io-map/src/convert.rs
+symbol path_to_wire
+lines 0 13
+hash 540b344052eda3ef
+note Domain to wire: every field as a string, an absent group, note, symbol or link as empty, which render leaves out.
 
 step 42292h
 order 3
 parent uivdyq
 author ai
-file src/map.rs
+file crates/domain/src/map/name.rs
 symbol Author
 lines 0 3
-hash fd26555a30321180
-note Who wrote a path or a step. Every CLI mutation records Ai, every GUI edit Human, and that is the whole of the review story: the owner can see what an agent added.
+hash 7eab14dd152a4f8c
+note Who wrote a path or a step: Agent or Human. Every CLI mutation records Agent, every GUI edit Human, and that is the whole of the review story: the owner can see what an agent added.
 
 step 53oc0t
-order 7
-parent 9g28fx
+order 17
+parent xcqxxp
 author ai
-file src/map.rs
-symbol to_text
-lines 0 48
-hash c311c0778bb8f41b
-note One path as its file: the path's fields, then each step in id order. Deterministic, so saving an unchanged path changes no byte. Ids are hash-derived and look random, so the steps two branches add to one path land at unrelated places and merge. Empty optional fields are left out.
+file crates/io-map/src/wire.rs
+symbol render
+lines 0 32
+hash 2ea0dc8446304616
+note The text of one path: the path's fields, then each step in id order. Deterministic, so saving an unchanged path changes no byte. Ids are hash-derived and look random, so the steps two branches add to one path land at unrelated places and merge. Empty optional fields are left out.
 
 step 8egzhr
 order 4
 parent 42292h
 author ai
-file src/map.rs
-symbol tag
+file crates/gui/src/text.rs
+symbol author
 lines 0 5
-hash b96cf13eafbe3f57
-note Rendered as the ' (ai)' suffix in every listing. Human authorship is deliberately unmarked.
+hash 059ea5bd446629ea
+note Rendered as the ' (ai)' suffix in every GUI listing (Tag::author); cli's wire::author_tag prints the same. Human authorship is deliberately unmarked.
 
 step 9g28fx
 order 6
-parent kzkkga
+parent un9pxk
 author ai
-file src/map.rs
+file crates/io-map/src/lib.rs
 symbol save
-lines 0 18
-hash 91c437d8dd7b1e89
-note Writes the paths this process changed and removes the files of the ones it removed or renamed, judged against the text it read or last wrote, so a path it only read is left alone on disk. Processes changing different paths keep each other's work; on one path the last writer wins. An unchanged map saves nothing.
+lines 0 23
+hash a5e5817853317f6f
+note Writes the paths whose text differs from what this process read or last wrote, through io_store::write, and removes the files of the ones it no longer has (removed or renamed), so a path it only read is left alone on disk. Processes changing different paths keep each other's work; on one path the last writer wins. An unchanged map writes nothing. Errors name the file: CreateDirectory, Write, Remove.
 
 step atbu0l
 order 13
+parent m9tf0u
+author ai
+file crates/domain/src/map/name.rs
+symbol new
+lines 0 8
+hash 17cd18797d475a8d
+note A path name is a file name: letters, digits, '.', '_' and '-', not starting with a dot.
+
+step b2k0xf
+order 26
+parent jn6vqv
+author ai
+file crates/io-map/src/wire.rs
+symbol CmapStep
+lines 0 12
+hash 2f7c273376260e05
+note One step block as text: the id and its line, then each field as read, Option where the field is required so convert can name the missing one, with the line of every field that names something (parent, link) so a bad reference points at its line.
+
+step ba3qs2
+order 21
+parent m9tf0u
+author ai
+file crates/io-map/src/convert.rs
+symbol step_from_wire
+lines 0 49
+hash c61da195089a833b
+note One step block to a Step: a well-formed id, the required order, file, lines and hash (MissingField names the one absent), a parent that is a valid id, a link that is a valid path name. An empty symbol means absolute lines.
+
+step c7u7os
+order 16
+parent 9g28fx
+author ai
+file crates/io-map/src/lib.rs
+symbol save
+lines 8 12
+hash b298f9181f5752d1
+link io-store
+note Only a path whose text differs from what is remembered is written, to <name>.cmap, atomically through io-store.
+
+step d4od8v
+order 32
 parent tmbi85
 author ai
-file src/map.rs
-symbol check_name
-lines 0 12
-hash 08e804d33c374982
-note A path name is a file name: letters, digits, '.', '_' and '-', not starting with a dot.
+file crates/io-map/src/wire.rs
+symbol WireFault
+lines 0 3
+hash 7dc4d4d1254c79ec
+note A fault with the 0-based line it was found on; convert turns it into a Located and MapText::paths adds the origin.
 
 step d8rk5e
 order 8
 parent 53oc0t
 author ai
-file src/map.rs
+file crates/io-map/src/wire.rs
 symbol escape
-lines 0 4
-hash d60720ef547556a9
+lines 0 5
+hash 962a22de53e2ead9
 note A value runs to the end of its line, so the three characters that would break a line are escaped.
+
+step fi1a3u
+order 29
+parent tmbi85
+author ai
+file crates/io-map/src/wire.rs
+symbol parse_hash
+lines 0 8
+hash 0cd412eaaaf2b487
+note hash: exactly sixteen hex digits, else Fault::Hash.
 
 step ha8wzu
 order 10
-parent kzkkga
+parent un9pxk
 author ai
-file src/map.rs
+file crates/io-map/src/lib.rs
 symbol load
-lines 0 36
-hash 9aaaeab188897770
-note Every .cmap file in name order, each file's text kept for save to compare against, each holding exactly one path under its own name. A directory that does not exist is an empty map; a .codemap that is a file is the old single-file format, and every read error, conflicts included, is an Err naming the file and line.
+lines 0 49
+hash 1b96845786855780
+note Every .cmap file in name order, each file's text kept for save to compare against, each holding exactly one path under its own name (OnePathPerFile, Misplaced otherwise). A directory that does not exist is an empty map; a .codemap that is a file is the old single-file format (OldFormat). Every read error, conflicts included, is an Err naming the file and line; the store's remembered text changes only when the whole load succeeds.
 
 step jn6vqv
 order 0
 author ai
-file src/map.rs
-lines 146 149
-hash 30c4faf16a7c9b32
-note The directory name, the version line and the conflict markers jj and git write, any of which at a line start stops a read. There is no schema anywhere else, so the layout is this: .codemap/ holds one file per path, <name>.cmap. One field per line as "key value", the value running to the end of the line, with backslash, newline and carriage return escaped as \\\\, \\n and \\r. A blank line ends the path block and each step block. The path block is "codemap 8", "path <name>", "kind flow|layer|type", "author ai|human", then the optional "group <group>" and "note <text>". Each step block is "step <id>", "order <n>" (its place in the step list, ties by id), the optional "parent <id>" (a root has none), "author ai|human", "file <path>", the optional "symbol <name>" (none means absolute lines), "lines <start> <end>" (0-based, from the symbol's first line or absolute), "hash <16 hex digits>", and the optional "link <path name>" and "note <text>". Optional fields are left out when empty and nothing counts anything; a step names its parent by id and holds its place in order, so adding a step changes no other line. Any other version line is rejected: an old map is regenerated, never migrated.
+file crates/io-map/src/wire.rs
+lines 4 22
+hash fb63024f2c999752
+note The directory name, the extension, the version line, the field keys and the conflict markers jj and git write, any of which at a line start stops a read. There is no schema anywhere else, so the layout is this: .codemap/ holds one file per path, <name>.cmap. One field per line as "key value", the value running to the end of the line, with backslash, newline and carriage return escaped as \\\\, \\n and \\r. A blank line ends the path block and each step block. The path block is "codemap 8", "path <name>", "kind flow|layer|type", "author ai|human", then the optional "group <group>" and "note <text>". Each step block is "step <id>", "order <n>" (its place in the step list, ties by id), the optional "parent <id>" (a root has none), "author ai|human", "file <path>", the optional "symbol <name>" (none means absolute lines), "lines <start> <end>" (0-based, from the symbol's first line or absolute), "hash <16 hex digits>", and the optional "link <path name>" and "note <text>". Optional fields are left out when empty and nothing counts anything; a step names its parent by id and holds its place in order, so adding a step changes no other line. Any other version line is rejected: an old map is regenerated, never migrated.
 
 step kzkkga
 order 1
 author ai
-file src/map.rs
+file crates/domain/src/map.rs
 symbol Map
-lines 0 3
-hash f796e3fe09bd31a1
-note The whole manual layer: a list of paths, and the text of each path's file as this process last read or wrote it, which is how save tells what changed. It comes back from disk in file name order, which is the order paths and the Paths tab follow.
+lines 0 2
+hash c53f4fb138f2ee86
+note The whole manual layer: the list of paths, their names unique (new refuses a second path of one name). It holds no file text and does no I/O; MapStore keeps what is on disk. Paths come back from disk in file name order, which is the order the paths listing and the Paths tab follow.
+
+step lgbdic
+order 30
+parent tmbi85
+author ai
+file crates/io-map/src/wire.rs
+symbol parse_order
+lines 0 6
+hash 2247820f9c31fd35
+note order: digits only, no sign, else Fault::Order.
 
 step lt96h2
 order 14
-parent kzkkga
+parent un9pxk
 author ai
-file src/map.rs
+file crates/io-map/src/lib.rs
 symbol stamp
-lines 0 12
-hash 81530d72d6302229
+lines 0 19
+hash 83e801d1ca07f983
 note The newest change time of the map's files and how many there are: what the GUI polls, since a directory's own time does not change when a file in it is rewritten.
 
+step m9tf0u
+order 20
+parent o1sf0n
+author ai
+file crates/io-map/src/convert.rs
+symbol path_from_wire
+lines 0 38
+hash 70eaae9908b85ba8
+note One path block to a domain Path: the name through PathName::new, each step through step_from_wire, every parent checked to be a step of this path (in order, so the first bad one is reported), then Path::new, which sorts the steps by order and id. Every step comes back stale; resolving against the index clears it.
+
 step mks9vm
-order 9
+order 27
 parent 9g28fx
 author ai
-file src/gui/mod.rs
+file crates/gui/src/action.rs
 symbol save
-lines 0 14
-hash 5b3f34dc1dc3f703
-note The GUI's save: refused while the map on disk does not read, since the save would rewrite what did not read. Otherwise clears the dirty flag and records the files' stamp so the disk poller does not read its own write back as an external change.
+lines 0 21
+hash 067e19114a5a97a9
+note The GUI's save: refused while the map on disk does not read (Readable::Broken), since the save would rewrite what did not read. Otherwise clears the dirty flag and records the files' stamp so the disk poller does not read its own write back as an external change.
 
 step n8ip2o
 order 12
 parent tmbi85
 author ai
-file src/map.rs
+file crates/io-map/src/wire.rs
 symbol unescape
-lines 0 15
-hash be67765df5433aba
+lines 0 16
+hash cda9ea495b92ce64
 note The inverse of escape.
+
+step o1sf0n
+order 19
+parent ha8wzu
+author ai
+file crates/io-map/src/lib.rs
+symbol paths
+lines 0 7
+hash d96c79f9a726c294
+note Text to domain paths: wire::parse, then path_from_wire for each block, any fault stamped with where the text came from (a file, or a revision for MapStore::base).
+
+step p9h2bj
+order 23
+parent ha8wzu
+author ai
+file crates/io-map/src/convert.rs
+symbol map_from_paths
+lines 0 2
+hash 8bb5a33abb6f9a03
+note All paths to one Map; a second path of one name (NameTaken) is a fault of the directory as a whole.
+
+step qjsy6z
+order 22
+parent m9tf0u
+author ai
+file crates/domain/src/map/path.rs
+symbol new
+lines 0 41
+hash 2f8cc7e2c6af1e89
+note The domain's own check of a path: no two steps of one id, no parent that is not a step of the path. Then the steps are sorted by order, ties by id, which is the step list every index refers to.
+
+step sbnosg
+order 31
+parent 53oc0t
+author ai
+file crates/io-map/src/wire.rs
+symbol impl CmapText
+lines 0 13
+hash e7c9f45809b128ab
+note Appends one key value line with the value escaped; optional skips an empty value, which is how absent fields stay out of the file.
+
+step sn5cl0
+order 25
+parent jn6vqv
+author ai
+file crates/io-map/src/wire.rs
+symbol CmapPath
+lines 0 7
+hash 8329ebdc1b6982cb
+note One path block as text, before any check: the name with the line it was on (for error positions), kind, author, group and note as raw strings, and the steps. Fields the file left out are empty or None here, and convert decides what that means.
 
 step tmbi85
 order 11
-parent ha8wzu
+parent o1sf0n
 author ai
-file src/map.rs
+file crates/io-map/src/wire.rs
 symbol parse
-lines 0 125
-hash 36dfb53d83b85ea3
-note The reader, shared by the files on disk and the text jj or git hands back for a revision, which is several files one after another. Each codemap line starts a path. Steps are sorted by order, ties by id, and parent ids turned into indices; a parent that is not a step of the path fails the read. Steps come back stale; resolving them against the index clears it.
+lines 0 85
+hash 12b5824cf9a8cd11
+note The reader, shared by the files on disk and the text jj or git hands back for a revision, which is several files one after another. Each codemap line starts a path; a conflict marker, an unknown key, author or kind, a malformed order, lines or hash, and a second step of one id each stop it with the line. Checks that need the whole path wait for convert.
 
 step uivdyq
 order 2
 parent kzkkga
 author ai
-file src/map.rs
-symbol PathDef
+file crates/domain/src/map/path.rs
+symbol Path
 lines 0 7
-hash 04985aecaec52efb
-note One path: a name (the key everywhere and the file name; renaming it renames every link to it), a kind tag, the path note, who wrote it, the group it sits in, and the steps as a flat vector. The tree lives in each step's parent index, not in this structure.
+hash a15966eb08595b82
+note One path: a name (the key everywhere and the file name; renaming it renames every link to it), a kind tag, the path note, who wrote it, the group it sits in, and the steps as a flat vector sorted by order. The tree lives in each step's parent id, not in this structure.
+
+step un9pxk
+order 15
+author ai
+file crates/io-map/src/lib.rs
+symbol MapStore
+lines 0 3
+hash 0709fb902bd0cf2d
+note The store: the .codemap directory under the root and the text of each path's file as this process last read or wrote it, keyed by path name. That text is how save tells what changed; it is the only state here.
+
+step vla4n9
+order 28
+parent tmbi85
+author ai
+file crates/io-map/src/wire.rs
+symbol parse_lines
+lines 0 5
+hash 19097dbf72364d45
+note lines <start> <end>: exactly two signed integers, since offsets from a symbol's first line can be negative in principle; anything else is Fault::Lines.
+
+step xcqxxp
+order 9
+parent 9g28fx
+author ai
+file crates/io-map/src/lib.rs
+symbol of
+lines 0 2
+hash 5627f3b9e9e32ef2
+note One path as its file's text: path_to_wire, then render.

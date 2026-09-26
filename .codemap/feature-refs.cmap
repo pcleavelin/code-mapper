@@ -1,0 +1,67 @@
+codemap 8
+path feature-refs
+kind flow
+author ai
+group features/cli
+note refs <symbol>: every reference to a symbol, as file:line: text under each match. References are asked of the language's server for the one symbol. With no Servers (the GUI) a file that a server indexed answers from the references it stored; otherwise the command says which server it needs, because tree-sitter does not resolve references.
+
+step 04yqdz
+order 5
+parent ynthwk
+author ai
+file crates/cli/src/wire.rs
+symbol reference_row
+lines 0 8
+hash c29c884163c99d9f
+note Prints '  <file>:<line>: <trimmed text>' for one reference.
+
+step 14l7on
+order 4
+parent ynthwk
+author ai
+file crates/cli/src/wire.rs
+symbol server_missing
+lines 0 9
+hash 1807818b48101271
+note Prints '(references need <program>)', or that the language has no server.
+
+step 8irrft
+order 2
+parent ynthwk
+author ai
+file crates/cli/src/wire.rs
+symbol symbol_line
+lines 0 7
+hash 3101ee7e664ec7a8
+note The matched symbol, unindented, as the header for its references.
+
+step mz1bxo
+order 3
+parent ynthwk
+author ai
+file crates/index/src/server.rs
+symbol references
+lines 0 4
+hash 8ab933c9f13f873c
+link server-index
+note The references request at the symbol's name; None when no server runs for its language.
+
+step xs3s2d
+order 1
+parent ynthwk
+author ai
+file crates/cli/src/exec.rs
+symbol find_symbols
+lines 0 6
+hash 51665388bbe86c47
+link symbol-lookup
+note Every symbol the name matches; none is an error.
+
+step ynthwk
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol references
+lines 0 36
+hash 8de52f6d31bc0c42
+note Per match: print it, ask the server, fall back to stored references only for server-indexed files in the GUI, else print the missing-server line; then one row per location with that line's text.

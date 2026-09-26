@@ -1,0 +1,47 @@
+codemap 8
+path feature-open-linked-path
+kind flow
+author ai
+group features/gui
+note A step with a link shows the linked path's name as a button (→ name); clicking it opens that path in the document. Under a path's note, 'linked from' lists every step in other paths that links here; clicking one selects that step in its own path. A link to a path that no longer exists shows as red (missing) and cannot be clicked.
+
+step 2i3qxs
+order 1
+parent r4lu04
+author ai
+file crates/gui/src/nav.rs
+symbol select_path
+lines 0 9
+hash e026ad68c7ae2fbb
+link selection
+note The linked path becomes current with its first step selected and scrolled to.
+
+step blx0n2
+order 2
+parent r4lu04
+author ai
+file crates/gui/src/views/document.rs
+symbol link_buttons
+lines 6 16
+hash cb322a49239feeba
+note Trigger: a step's link is looked up by name; a missing target is drawn as a red label, a found one as the LINK button that queues OpenPath with the Path tab.
+
+step r4lu04
+order 0
+author ai
+file crates/gui/src/nav.rs
+symbol open_path
+lines 0 5
+hash d2834021dae76922
+note The handler for the link button: the same open_path the Paths list uses, with the Path tab.
+
+step zof35p
+order 3
+parent r4lu04
+author ai
+file crates/gui/src/views/document.rs
+symbol linked_from
+lines 0 27
+hash f7943afd29d1c0c7
+link feature-select-step
+note Trigger for the other direction: the 'linked from' toolbar asks the map for every step linking to this path and draws one LINKED_FROM button per step, named by path and step number. A click queues SelectStep with Scrolling::Scroll, which goes through select_step, not open_path.

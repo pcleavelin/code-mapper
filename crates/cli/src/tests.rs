@@ -62,6 +62,18 @@ fn every_command_feature_is_a_subcommand_and_every_subcommand_a_command_feature(
 }
 
 #[test]
+fn help_subcommand_line_carries_its_feature_summary() {
+    let rendered = wire::help();
+    let summary = Feature::Help.spec().summary();
+    let line = rendered
+        .as_str()
+        .lines()
+        .find(|line| line.trim_start().starts_with("help "))
+        .unwrap();
+    assert!(line.contains(summary.as_str()), "{line}");
+}
+
+#[test]
 fn every_subcommand_parses_to_its_own_feature() {
     let command = Command::command();
     let mut seen = BTreeSet::new();

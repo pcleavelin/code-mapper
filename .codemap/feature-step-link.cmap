@@ -1,0 +1,66 @@
+codemap 8
+path feature-step-link
+kind flow
+author ai
+group features/cli
+note step-link <name> <index> <target>: mark one step as the call site of the path named target, so a reader follows the link instead of reading the shared code's steps again in every path that reaches it. index is the step index paths prints. An empty target clears the link, the same as step-unlink without its check. The target must exist and cannot be the step's own path; path --expand prints the linked path inline under the step.
+
+step 92vcw2
+order 3
+parent mr5p96
+author ai
+file crates/cli/src/convert.rs
+symbol step_id
+lines 0 4
+hash 489ec63efb65e873
+note Turns the printed index into the step's stable id, which is what the map stores.
+
+step f78rfv
+order 5
+parent tbo8zd
+author ai
+file crates/cli/src/wire.rs
+symbol step_linked
+lines 0 2
+hash 0f553604d47f1fdc
+note Prints 'step [i] links to <target>'.
+
+step mr5p96
+order 1
+parent tbo8zd
+author ai
+file crates/cli/src/exec.rs
+symbol find_step
+lines 0 7
+hash fe848f2c971eee7d
+note The path by name, then the step at that index; a bad index is an error, not a no-op.
+
+step pdhgff
+order 2
+parent mr5p96
+author ai
+file crates/cli/src/exec.rs
+symbol find_path
+lines 0 5
+hash 63e1a3b28d250aa6
+note The path must exist; the error names what was typed.
+
+step rlxe03
+order 4
+parent tbo8zd
+author ai
+file crates/domain/src/map.rs
+symbol set_link
+lines 0 17
+hash de19adf8cf3aeff4
+link path-links
+note Sets or clears the link on the step, refusing a missing target and a link to the step's own path.
+
+step tbo8zd
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol step_link
+lines 0 19
+hash 40f80718aa33259d
+note Finds the step, checks the target names an existing path (an empty target means no link), sets the link and prints the confirmation.

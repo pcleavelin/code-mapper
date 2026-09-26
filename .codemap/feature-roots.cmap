@@ -1,0 +1,36 @@
+codemap 8
+path feature-roots
+kind flow
+author ai
+group features/cli
+note roots [n]: entry points, the symbols that call something and that nothing calls, biggest first, the first n of them (default 30). Where to start reading an unknown repo. With only tree-sitter xrefs a symbol called through a trait or a closure can look like a root.
+
+step jg0w76
+order 1
+parent v3w0nh
+author ai
+file crates/domain/src/index.rs
+symbol roots
+lines 0 12
+hash 6bbff438bd3725e9
+link graph-queries
+note Symbols with callees and no callers, sorted by callee count descending with ties kept in index order.
+
+step o02zhg
+order 2
+parent v3w0nh
+author ai
+file crates/cli/src/wire.rs
+symbol root_row
+lines 0 7
+hash 4560090fd1b6c1ee
+note Prints the symbol's label and its callee count.
+
+step v3w0nh
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol roots
+lines 0 4
+hash d55a37c7f1d7dbe9
+note Run::roots: take the index's roots, cut to the count, print one row each.

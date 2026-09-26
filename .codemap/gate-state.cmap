@@ -1,0 +1,85 @@
+codemap 8
+path gate-state
+kind type
+author ai
+group tooling
+note The gate's memory between runs, in target/xtask/gate: the stamp of the workspace the last run saw, green or red, how many runs in a row were red with the identical report, and that report. It is what lets the hooks be cheap and strict at once: a commit or a stop is allowed without rerunning the gate when the recorded green matches the current stamp, a stuck session is recognised by its repeat count, and a new session is told what the last one left red. It lives under target/, so it is never committed and a clean build forgets it.
+
+step h4ngqq
+order 7
+parent wna3ij
+author ai
+file xtask/src/state.rs
+symbol save
+lines 0 14
+hash 7f0ff94f6a598b6a
+note Writes both files.
+
+step kgsluh
+order 2
+parent wna3ij
+author ai
+file xtask/src/state.rs
+symbol directory
+lines 0 2
+hash 65cb55a8fe71cd2c
+note target/xtask/gate under the root.
+
+step ni2zsw
+order 5
+parent wdua6h
+author ai
+file xtask/src/text.rs
+symbol impl Stamp
+lines 0 8
+hash bad04f36eca80d91
+note The stamp, written and read as 16 hex digits.
+
+step r5qcog
+order 4
+parent wdua6h
+author ai
+file xtask/src/text.rs
+symbol impl Hasher
+lines 0 15
+hash 7203aa9f7728c6f0
+note FNV-1a, 64 bits.
+
+step sez2rk
+order 1
+parent wna3ij
+author ai
+file xtask/src/state.rs
+symbol Light
+lines 0 3
+hash 569e6a8a72906999
+note Green or red.
+
+step tde3k2
+order 6
+parent wna3ij
+author ai
+file xtask/src/state.rs
+symbol load
+lines 0 24
+hash 0dfd97dce8215312
+note Reads the state file (stamp, result and repeats lines) and the failures file; a state without a stamp or result is no state.
+
+step wdua6h
+order 3
+parent wna3ij
+author ai
+file xtask/src/state.rs
+symbol stamp
+lines 0 11
+hash 888f4fdc72700715
+note The workspace stamp: an FNV-1a hash over every file's path and bytes, as walked by workspace_files (so ignored files, .git, .jj, target and the cache do not count).
+
+step wna3ij
+order 0
+author ai
+file xtask/src/state.rs
+symbol GateState
+lines 0 5
+hash a0c12766922cdc74
+note The recorded result.

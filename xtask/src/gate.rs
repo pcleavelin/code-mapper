@@ -35,6 +35,7 @@ pub(crate) enum Step {
     Clippy,
     Test,
     Map,
+    Features,
     Goldens,
 }
 
@@ -49,6 +50,7 @@ impl fmt::Display for Step {
             Self::Clippy => "clippy",
             Self::Test => "unit tests",
             Self::Map => "codemap check",
+            Self::Features => "feature coverage (crates/codemap/tests/features.rs)",
             Self::Goldens => "CLI goldens",
         })
     }
@@ -144,6 +146,19 @@ fn steps(root: &Root, depth: Depth, ownership: Ownership) -> Result<(), Failure>
         Step::Map,
         Program::CARGO,
         &Argument::list(&["run", "--quiet", "--package", "codemap", "--", ".", "check"]),
+    )?;
+    command(
+        root,
+        Step::Features,
+        Program::CARGO,
+        &Argument::list(&[
+            "test",
+            "--quiet",
+            "--package",
+            "codemap",
+            "--test",
+            "features",
+        ]),
     )?;
     if depth == Depth::Full {
         command(

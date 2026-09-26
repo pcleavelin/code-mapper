@@ -401,7 +401,8 @@ impl App {
                     work.indexing.remove(&language);
                     self.model.index.give_up(language);
                     self.model.queries.server_gone();
-                    self.model.status = Status::ServerFailed(Label::new(error.to_string()));
+                    self.model.status =
+                        Status::ServerFailed(Label::new(cli::start_error(&error).as_str()));
                     batch_ended = true;
                 }
                 Answer::Done(language) => {

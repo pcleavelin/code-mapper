@@ -1,0 +1,46 @@
+codemap 8
+path feature-node-listing
+kind flow
+author ai
+group features/gui
+note A graph node's 'listing' button opens the node's file in the Listing tab, with the first line of the node's shown range selected and scrolled into view. It leaves the graph; back returns to it.
+
+step 0m2cjy
+order 2
+parent w2laus
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_click
+lines 15 19
+hash bebc51b5cc4fd55c
+note The Listing button defers GoTo at the start of the node's shown range.
+
+step 9fzkv2
+order 0
+author ai
+file crates/gui/src/nav.rs
+symbol open_line
+lines 0 5
+hash 01ba837e6ef4b139
+link listing-view
+note The handler: the file becomes current with the line selected and scrolled to, on the Listing tab.
+
+step w2laus
+order 1
+parent 9fzkv2
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_phase
+lines 12 22
+hash 855d90a648f8916d
+note Trigger: a click on the canvas goes to graph_click with the hit under the pointer.
+
+step z8e2sz
+order 3
+parent 9fzkv2
+author ai
+file crates/gui/src/views/center.rs
+symbol graph_tab
+lines 10 15
+hash 368e9ec1452321f2
+note Deferred actions from the graph phase are queued by the graph tab while the views are built, so they apply after the frame like any click.

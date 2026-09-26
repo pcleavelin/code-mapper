@@ -3,82 +3,113 @@ path listing-view
 kind flow
 author ai
 group gui
-note The file viewer, and the one place a human can author a step. Only the rows on screen become elements - a spacer stands in for everything above and below - which is what makes a four-thousand-line file scroll at the same cost as a short one. Each row is numbered, syntax coloured, and carries a coloured bar on the left where a step of the selected path is anchored, green when current and red when stale. Clicking selects a line and shift-clicking extends the selection, which the top bar's 'pin selection' then turns into a step; double-clicking or ctrl-clicking an identifier jumps to its definition instead, and alt-clicking pins it in the peek panel.
+note The file viewer, and the one place a human can author a step. Only the rows on screen become elements - a spacer stands in for everything above and below - which is what makes a four-thousand-line file scroll at the same cost as a short one. Each row is numbered, syntax coloured, and carries a coloured bar on the left where a step of the selected path is anchored, green when current and red when stale. Clicking selects a line and shift-clicking extends the selection, which the top bar's 'pin selection' then turns into a step; double-clicking or ctrl-clicking an identifier jumps to its definition instead, and alt-clicking pins it in the peek panel. The view only reads the Model: every click becomes an Action applied after the tree is built.
 
 step 1cxlr5
 order 7
 parent tx8rkt
 author ai
-file src/gui/widgets.rs
+file crates/gui/src/widgets.rs
 symbol spacer
 lines 0 3
-hash ab92da80c9d659bc
+hash 05ad771085ab5da5
 note An empty element of a given height: the stand-in for rows that are not built, so the scroll extent is the whole list's.
 
 step 2h2qhv
 order 2
 parent azzv57
 author ai
-file src/gui/views.rs
+file crates/gui/src/views/center.rs
 symbol listing
-lines 45 73
-hash c82bf8e3aeb649af
-note The rows. rows_window turns the scroll offset into the first visible line and emits the spacer for the lines above; then one code block of the visible lines plus two, then a spacer for the rest plus a row of slack, so the scrollbar sees the whole file while only what shows is drawn. A plain click on a line selects it, shift extends.
+lines 36 93
+hash 6d0e7c73a13250d1
+note The rows. rows_window turns the scroll offset into the first visible line and emits the spacer for the lines above; then one code block of the visible lines, then a spacer for the rest plus a row of slack, so the scrollbar sees the whole file while only what shows is drawn. The bar closure marks the selected path's anchors in this file, the background closure the selected lines.
+
+step 49joa9
+order 10
+parent yfetc7
+author ai
+file crates/gui/src/nav.rs
+symbol scrolled_to_line
+lines 0 8
+hash 485c5ad014683469
+note Applies ScrolledToLine: clears the request only when its ticket is still the current one, so a newer scroll asked for meanwhile survives.
 
 step azzv57
 order 0
 author ai
-file src/gui/views.rs
+file crates/gui/src/views/center.rs
 symbol listing
-lines 0 75
-hash b3d195b4f665fd9e
-note The whole viewer: the file name and the gestures, a go-to-line box, then the scrolling column of rows. With no current file it says so and draws nothing else.
+lines 0 94
+hash 0b0e481455790e0d
+note The whole viewer: the file name and a line of help, a go-to-line box, then the scrolling column of rows. With no current file it says so and draws nothing else.
 
 step ghy5uj
 order 6
 parent 2h2qhv
 author ai
-file src/gui/widgets.rs
+file crates/gui/src/widgets/code.rs
 symbol code_block
-lines 0 73
-hash 0fd7d1d58264ce86
-note The one code element in the GUI: a block of lines drawn from a cached grid by a custom element, with the hover, jump and peek gestures resolved to (line, column) from the pointer. Per-row backgrounds and bars come from two closures, so the listing's selection and anchor bars and the document's slice highlight all share it.
+lines 0 93
+hash a07e2aa176e811fd
+note The code element: the rows drawn from a cached grid, the gutter, the marks, and the spot under the pointer.
 
 step mlu0tc
 order 5
 author ai
-file src/gui/mod.rs
-symbol add_selection
-lines 0 23
-hash 5bff281021c613e2
-note 'pin selection' in the top bar, the human's authoring gesture: the selected lines become a step of the selected path, under the selected step, authored Human. Pinning again puts the next step under the one just made, so a chain is built by clicking down the file.
+file crates/gui/src/action.rs
+symbol pin_selection
+lines 0 51
+hash 4d00052c41179649
+note 'pin selection' in the top bar, the human's authoring gesture: in the Listing tab, the selected lines become a step of the selected path (Map::add_step, authored Human), under the selected step. The new step becomes the selected one, so pinning again puts the next step under it and a chain is built by clicking down the file. Without selected lines or a selected path it only says what is missing; a refusal from the map is worded by cli.
+
+step qf86nv
+order 8
+parent 2h2qhv
+author ai
+file crates/gui/src/keys.rs
+symbol selects_line
+lines 0 10
+hash ab9491a74b0ed7e2
+note A plain click on a line selects it and a shift-click extends the selection; a click with ctrl or alt, or a double click, is a definition gesture instead and selects nothing. Shift comes from the SelectLines feature's gesture in the registry.
 
 step rmvq1d
 order 4
 parent ghy5uj
 author ai
-file src/gui/peek.rs
-symbol probe
-lines 0 31
-hash 88271a75d1c4b91c
-note The identifier under the pointer, asked of the language's live server; the tooltip and the jump both start here.
+file crates/gui/src/widgets/code.rs
+symbol hover
+lines 0 11
+hash 62ba0b270113ea55
+link peek
+note Hovering an identifier in the listing asks for its tooltip, the same as in every code view; peek follows it.
+
+step tcde93
+order 9
+parent 2h2qhv
+author ai
+file crates/gui/src/widgets.rs
+symbol rows_after
+lines 0 5
+hash a2ad4fed4d7d5641
+note The spacer for the rows below the window, so the column's content height is the whole list's.
 
 step tx8rkt
 order 3
 parent 2h2qhv
 author ai
-file src/gui/widgets.rs
+file crates/gui/src/widgets.rs
 symbol rows_window
-lines 0 13
-hash df41863c5767d73c
-note The virtual-list arithmetic every long list in the GUI shares: from the column's scroll offset and last frame's height, the first row in view and how many fit (a guess before the column has a size). It emits the spacer for the rows above; the caller builds only the visible rows and ends with a spacer for the rows below.
+lines 0 18
+hash 4390877ad0b25c47
+note The virtual-list arithmetic every long list in the GUI shares: from the column's scroll offset and last frame's height, the first row in view and how many fit (two extra, or a guess before the column has a size). It emits the spacer for the rows above; the caller builds only the visible rows and ends with rows_after.
 
 step yfetc7
 order 1
 parent azzv57
 author ai
-file src/gui/views.rs
+file crates/gui/src/views/center.rs
 symbol listing
-lines 8 14
-hash 5d97e8729c56fe44
-note A pending scroll: anything that focused a symbol or opened a hit left a line here, and it becomes a scroll offset three rows above that line, clamped to the file. The viewport height comes from what the column measured last frame.
+lines 12 23
+hash f8bf2bbc7ea5e91c
+note A pending scroll: anything that selected a symbol or opened a line left a LineRequest in Nav, and it becomes a scroll offset three rows above that line, clamped to the file. The viewport height comes from what the column measured last frame. The request carries a ticket, and ScrolledToLine clears it only if no newer request replaced it meanwhile.

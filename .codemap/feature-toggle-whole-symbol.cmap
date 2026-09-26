@@ -1,0 +1,45 @@
+codemap 8
+path feature-toggle-whole-symbol
+kind flow
+author ai
+group features/gui
+note The 'whole symbol' button on a step header shows the whole enclosing symbol around the step's slice, with the slice highlighted; pressed again ('slice') it shows the slice alone. The button exists only while the step's code is shown and the step is a slice smaller than its symbol. The choice is per step and lasts for the session; it is not saved.
+
+step d5orsx
+order 2
+parent wuv152
+author ai
+file crates/gui/src/views/document.rs
+symbol step_header
+lines 55 72
+hash 21e0451d13e025fa
+note Trigger: the WHOLE button, labelled by the current state, queues Toggle with ViewFlag::Whole.
+
+step j6a9vh
+order 3
+parent wuv152
+author ai
+file crates/gui/src/views/document.rs
+symbol step_code
+lines 0 18
+hash 07dfe4bde390d46e
+note The effect on the next frame: with Whole set the code block spans the resolved symbol instead of the slice, and since more than the slice now shows, the slice lines get the SLICE background.
+
+step vstr8g
+order 1
+parent wuv152
+author ai
+file crates/gui/src/model.rs
+symbol toggle
+lines 0 2
+hash 5bb2fa45ec21a492
+note Flips the Whole bit.
+
+step wuv152
+order 0
+author ai
+file crates/gui/src/action.rs
+symbol apply
+lines 6 6
+hash 8db399b6fb4b876f
+note The handler: the Toggle arm flips one flag in the step's view, creating the view with every flag off the first time.

@@ -3,186 +3,620 @@ path behaviour-pin
 kind layer
 author ai
 group tests
-note How a change proves what it did to the tool's behaviour. cargo test replays every CLI command against a generated fixture repo and compares golden transcripts, and plays scripted GUI scenarios in real windows and compares the state after each step. A change that means to alter output reblesses the goldens and the golden diff is the evidence; a refactor instead runs the parity test, which plays every scenario with the old build and the new one and compares transcripts, GUI dumps and screenshots byte for byte. Every run sees a PATH with jj and git and no language server, so every file is indexed by tree-sitter and the output is the same on every run.
+note How a change proves what it did to the tool's behaviour. The harness lives in crates/codemap/tests: common/ holds the fixture, the runners and every scenario; cli.rs and gui.rs turn the scenario lists into one #[test] each, parity.rs plays them against two builds, and features.rs checks the feature registry against the map and the goldens. cargo test replays every CLI command against a generated fixture repo and compares golden transcripts, and plays scripted GUI scenarios in real windows and compares the state after each step. A change that means to alter output reblesses the goldens (CODEMAP_BLESS=1) and the golden diff is the evidence; a refactor instead runs the parity test, which plays every scenario with the old build and the new one and compares transcripts, GUI dumps and screenshots byte for byte. Every run sees a PATH with jj and git and no language server, so every file is indexed by tree-sitter and the output is the same on every run; a scenario that needs jj or git skips itself, with the reason on stderr, when that tool is not installed.
 
 step 1hmv7q
-order 8
+order 13
 parent dkjein
 author ai
-file tests/common/gui.rs
+file crates/codemap/tests/common/gui.rs
 symbol gui_scenarios
 lines 0 4
-hash a8ed96223c1a9921
-note The GUI scenarios: the document's toggles, the peek and tooltip, the listing and pin selection, the graph's expansions, drag and zoom, the side panels, search and the command line, deletions, the diff tab and live reload. Each settles with idle and a save first: with several servers missing, the status line otherwise says whichever failure came last. SETTLE then opens startup by clicking paths/2, since the paths list reads c-lib, shapes, startup, stats. A Scenario is its setup (Missing when a tool is not on PATH), the script, a hook that sees every stderr line with a rect <marker> line in the script as its cue, and after, CLI commands run once the GUI quits with their output appended to the golden gui-<fn>.
+hash 400b4cfeb466d7ce
+note The GUI scenarios, listed once in the gui_scenarios macro that gui.rs and parity.rs both expand. Each settles with SETTLE first; its golden gui-<fn> is the kept dump state followed by the output of its after commands.
+
+step 1wrmiq
+order 25
+parent ii6lor
+author ai
+file crates/codemap/tests/common/cli.rs
+symbol vcs
+lines 0 103
+hash 90a0d7955eca081d
+note diff and repin in a jj repo (skipped without jj): diff with no VCS and with nothing changed, then every kind of map edit diffed against the parent revision, then source edits after the commit (an inserted function, a changed body, a slice, a symbol moved to another file, a rename, a deleted file) and repin from @- and from @--, and a revision that does not exist.
 
 step 216e03
 order 3
 parent yagdfh
 author ai
-file tests/common/mod.rs
+file crates/codemap/tests/common/mod.rs
 symbol MAP
 lines 0 45
-hash a75c563c5592247e
+hash f3681d2a8f8f8fa4
 note Four paths of every kind, with nested steps, a slice step and notes: enough for the document, the outline, the graph and the diff to have something to show.
 
-step 5wnr0m
-order 10
+step 2kgy4u
+order 34
+parent hbyc72
 author ai
-file tests/common/mod.rs
-symbol gui_state
-lines 0 23
-hash 66cbb6d0d32e2bd7
-note What a GUI golden keeps: selection, tooltip, peek, status, backend state, graph node and button names, script errors, and each docked panel's edge and dragged size; only the size depends on the screen, since a script drags to absolute pixels.
+file crates/codemap/tests/common/mod.rs
+symbol first_difference
+lines 0 5
+hash c59b120a30693c4f
+note The index of the first line where two texts differ, or the shorter one's length when one is a prefix of the other. golden and parity both report it.
 
-step 8wo2sa
-order 12
-parent hdfzdl
+step 4finuk
+order 41
+parent 1hmv7q
 author ai
-file tests/parity.rs
-symbol compare_gui
-lines 0 23
-hash aad2ef360ca52fa9
-note Dump lines except frame timings, and every screenshot, byte for byte. A scenario that should have written screenshots and wrote none fails too, so a broken shot path cannot pass as parity.
+file crates/codemap/tests/common/gui.rs
+symbol graph
+lines 0 72
+hash 7ebf0455ffa21c39
+note The graph: the fitted start, a node's callees and hide buttons, an off-path node, shift-wheel and wheel, dragging a node, auto layout, ctrl-wheel zoom, fit, 1:1, panning, and a node's context, listing and no-context buttons.
 
-step 9ci2st
-order 17
+step 5147ql
+order 23
 parent ii6lor
 author ai
-file tests/common/cli.rs
+file crates/codemap/tests/common/cli.rs
+symbol edit
+lines 0 86
+hash 80a809cf08ecf281
+note Every edit command on a scratch path: creating with a bad kind, adding by symbol and by lines with bad parents and ranges, notes and note-edit, moves and swaps, links (to a missing path and to itself), rename, groups and group-rename, path-pin with bad ranges, path-rm of a step and of a linked path, and promote with and without a name.
+
+step 57lpfq
+order 40
+parent 1hmv7q
+author ai
+file crates/codemap/tests/common/gui.rs
+symbol listing
+lines 0 59
+hash 1cada286cde9fb66
+note The listing: opening a file at a line, a shift-click range selection pinned into startup (checked by the after command), goto-line with good, past-the-end and non-numeric input, the tooltip, ctrl-click, and back and forward by button and by key.
+
+step 5wnr0m
+order 30
+author ai
+file crates/codemap/tests/common/mod.rs
+symbol gui_state
+lines 0 23
+hash 58ac671be47edafd
+note What a GUI golden keeps of stderr: the tab and selection line, dock lines, the tooltip and peek line, backend state and script errors, graph node and button names without their rectangles and the graph line without its pan. What depends on the screen or timing stays out.
+
+step 62zoqn
+order 15
+parent hdfzdl
+author ai
+file crates/codemap/tests/parity.rs
+symbol gui_list
+lines 0 7
+hash 3ef5dccf1041f19c
+note Expands gui_scenarios into a list of named GUI scenarios, each built fresh for each build it is played with.
+
+step 6gw6ne
+order 37
+parent 1hmv7q
+author ai
+file crates/codemap/tests/common/gui.rs
+symbol SETTLE
+lines 0 0
+hash 4b6296ae0d051cf5
+note What every script starts with: wait until every server request is answered, save, then open startup by clicking paths/2, since the paths list reads c-lib, shapes, startup, stats. Without the idle and save, with several servers missing, the status line says whichever failure came last.
+
+step 791rdb
+order 50
+parent hdfzdl
+author ai
+file crates/codemap/tests/parity.rs
+symbol same
+lines 0 11
+hash ea518ccb7ec30420
+note One comparison: when the texts differ, writes old.txt and new.txt under parity/<what> and records the first differing line and where to look.
+
+step 8wo2sa
+order 51
+parent hdfzdl
+author ai
+file crates/codemap/tests/parity.rs
+symbol compare_gui
+lines 0 29
+hash 49e8263d03e61928
+note Plays one GUI scenario with each build and compares their stderr (minus timings) and after output, then every screenshot byte for byte. A scenario that should have written screenshots and wrote none fails too, so a broken shot path cannot pass as parity. A missing tool skips it.
+
+step 9ci2st
+order 27
+parent ii6lor
+author ai
+file crates/codemap/tests/common/cli.rs
 symbol merge
 lines 0 45
-hash c1a5c99a4860eefe
-note Two branches edit different notes of one path, one adds a step to another path and a new path: the merge reads with every change. A third branch adding a step to the same path merges too, since the new steps sit apart in the file. A fourth editing the same note conflicts on that one line, and every command refuses the map until it is resolved.
+hash 4f8d6c4e55d3b9dc
+note Two jj branches edit different notes of one path, one adds a step to another path and a new path: the merge reads with every change. A third branch adding a step to the same path merges too, since the new steps sit apart in the file. A fourth editing the same note conflicts on that one line, and every command refuses the map until it is resolved.
 
 step 9ionsq
 order 16
 parent noqsg2
 author ai
-file tests/parity.rs
+file crates/codemap/tests/parity.rs
 symbol snapshot
 lines 0 23
-hash 618b3066fcec7a30
+hash b4ffdadc7dce56a9
+note The repo at the revision as a plain directory: git archive of that revision from the workspace, unpacked under scratch(name)/repo. It has the map of that revision and no VCS.
+
+step 9mybqa
+order 35
+parent 1hmv7q
+author ai
+file crates/codemap/tests/gui.rs
+symbol tests
+lines 0 10
+hash 3232701989645e36
+note gui.rs's tests macro: one #[test] per scenario, each holding ONE_WINDOW so the windows open one at a time, playing the scenario and comparing gui_state of its stderr plus its after output with the golden.
+
+step 9qiv44
+order 22
+parent grgwdh
+author ai
+file crates/codemap/tests/common/mod.rs
+symbol rooted
+lines 0 5
+hash 4129f9ab260e5c72
+note Makes output independent of where the fixture lies: line ends made Unix and the fixture root replaced by <root> in either slash style. Every transcript and GUI stderr goes through it.
+
+step aanf57
+order 55
+author ai
+file crates/codemap/tests/features.rs
+symbol every_feature_has_its_flow_path_in_the_map
+lines 0 36
+hash 767e29ccf51e69d4
+note Every feature in the registry has its flow path feature-<name> in the repo's own map, in features/cli or features/gui by its surface, with exactly one root step, the handler. A feature added without its path fails here.
+
+step b2unkk
+order 60
+parent h9vmup
+author ai
+file crates/codemap/tests/features.rs
+symbol graph_button
+lines 0 8
+hash 93f88fb8b4d1c964
+note The graph node buttons, which scripts click by the label a dump prints rather than by id.
+
+step bqbhzd
+order 18
+parent ii6lor
+author ai
+file crates/codemap/tests/common/cli.rs
+symbol read
+lines 0 57
+hash 51069214390d1b66
+note Every read command on the mapped fixture, including a range past the end of a file, a missing file, a bad regex, an unknown symbol or path, and the refusals of a bad command line.
+
+step by7tn1
+order 43
+parent 1hmv7q
+author ai
+file crates/codemap/tests/common/gui.rs
+symbol delete
+lines 0 30
+hash 71a866262d82eb96
+note Deleting a step and a whole path from the document, then saving; the after command shows what the map lost.
+
+step cylef2
+order 54
+parent gnnw22
+author ai
+file crates/codemap/tests/parity.rs
+symbol pngs
+lines 0 16
+hash 9dfe6c0b40eefd22
+note The screenshots a play wrote, sorted by name, with their bytes.
+
+step df6nr0
+order 32
+parent g4vgzv
+author ai
+file crates/codemap/tests/common/mod.rs
+symbol needs
+lines 0 2
+hash 00d9e0ab764358e7
+note The first line of a scenario that needs jj or git: Missing when the tool is not on PATH, so the scenario returns before building anything.
+
+step dj3kcn
+order 28
+parent 1wrmiq
+author ai
+file crates/codemap/tests/common/mod.rs
+symbol jj
+lines 0 20
+hash 7e01a25631074fda
+note Runs jj in the fixture with a config file holding the test user beside it and the tool PATH; a failure fails the test except for jj git init, which may find a repo already there.
 
 step dkjein
-order 7
+order 21
 author ai
-file tests/common/gui.rs
+file crates/codemap/tests/common/gui.rs
 symbol play
-lines 0 45
-hash 618db3541a38ac03
-note Plays a GUI scenario. A script line aiming at <<prefix>> is resolved first by a probe run of the script up to that line, on a fresh fixture, reading the rectangle the probe's dump or rect printed; the final run then starts from the same state. <<prefix>> stands for the centre of the last stderr line starting with prefix, <<prefix|dx,dy>> for a point offset from its top-left corner. Offsets are pixels: the scripts assume the fixed 1600x1000 script window at scale 1, 16 px rows. The screenshots land in shots(name).
+lines 0 53
+hash 755bf42efdf281d3
+note Plays a GUI scenario and returns its stderr and the output of its after commands. A script line aiming at <<prefix>> is resolved first by a probe run of the script up to that line, on a fresh fixture, reading the rectangle the probe's dump or rect printed; the final run then starts from the same state. <<prefix>> stands for the centre of the last stderr line starting with prefix, <<prefix|dx,dy>> for a point offset from its top-left corner. Offsets are pixels: the scripts assume the fixed 1600x1000 script window at scale 1, 16 px rows. The screenshots land in shots(name).
+
+step g4vgzv
+order 19
+author ai
+file crates/codemap/tests/common/mod.rs
+symbol Missing
+lines 0 0
+hash d47a7ffb3d773907
+note The tool a scenario needed and did not find.
 
 step gal679
 order 2
 parent yagdfh
 author ai
-file tests/common/mod.rs
+file crates/codemap/tests/common/mod.rs
 symbol FILES
 lines 0 158
-hash b542c10603c3c23f
+hash 84117d62e29fe0e3
 note The fixture: a small Rust program over three files, a Python pair, a C file and header, prose, an ignored build directory and a binary file, with a tab to exercise tab expansion.
 
-step hbyc72
-order 6
+step gatfts
+order 24
+parent ii6lor
 author ai
-file tests/common/mod.rs
+file crates/codemap/tests/common/cli.rs
+symbol stale
+lines 0 64
+hash 5be0c9fa7b00257c
+note Source edits that go stale in each way: text moved above a step (still current), a body changed, a slice's line changed, a symbol renamed, text moved down unchanged (stale names where it went), a file deleted; then the re-pins and removals that make check pass again.
+
+step gnnw22
+order 53
+parent 8wo2sa
+author ai
+file crates/codemap/tests/parity.rs
+symbol play_gui
+lines 0 12
+hash d11c926d28d0e5e2
+note Plays the scenario with one build and copies its screenshots under parity/<name>/old or new, so both sides survive the next play.
+
+step grgwdh
+order 7
+author ai
+file crates/codemap/tests/common/mod.rs
+symbol codemap
+lines 0 12
+hash 0b936d48b02bb4e9
+note Runs the binary once on the fixture with the tool PATH and returns stdout, stderr and the exit code, both texts rooted.
+
+step grjpgo
+order 36
+parent 1hmv7q
+author ai
+file crates/codemap/tests/common/gui.rs
+symbol Scenario
+lines 0 5
+hash 08ef493f4255ff87
+note A GUI scenario: its setup (a fixture root, or Missing when a tool is not on PATH), the script, a hook that sees every stderr line (a rect <marker> line in the script is its cue), and after, CLI commands run once the GUI quits with their output appended to the golden.
+
+step h9vmup
+order 58
+parent hed6nt
+author ai
+file crates/codemap/tests/features.rs
+symbol exercised
+lines 0 47
+hash 89c30df8487c26fc
+note Whether a script or golden fires one trigger: a command by its transcript line, a click or typed field by a click-id or dblclick-id aimed at the element (a graph node's buttons by their label in a <<DUMP button>> click), a key by a key line with its modifier, and a gesture by the script command that performs it. The back and forward mouse buttons have no script command, so they never count.
+
+step hbyc72
+order 20
+author ai
+file crates/codemap/tests/common/mod.rs
 symbol golden
 lines 0 25
-hash 07c4cd749bd63ae3
-note Compares with tests/golden/<name>.txt and reports the first line that differs; CODEMAP_BLESS=1 writes the golden instead. A scenario whose setup returns Missing, because a tool such as jj is not on PATH, is skipped with the reason on stderr, not compared.
+hash 8fcbfb69dd01c5c3
+note Compares with tests/golden/<name>.txt and panics naming the first line that differs, with both lines and the whole output; CODEMAP_BLESS=1 writes the golden instead. A scenario that returned Missing is skipped with the reason on stderr, not compared.
 
 step hdfzdl
+order 31
+author ai
+file crates/codemap/tests/parity.rs
+symbol old_and_new_agree
+lines 0 29
+hash fb0e91ca6697f176
+note The refactor's proof: every CLI and GUI scenario with CODEMAP_BASE_BIN and with this build, and with CODEMAP_PARITY_REV the repo itself at that revision, its real map included, as a second fixture. Differences are kept on disk for a diff tool, both sides under the scratch directory parity/, and printed on failure. CODEMAP_PARITY_ONLY=<substring> plays only the scenarios whose name has it. It is #[ignore]d; run it with CODEMAP_BASE_BIN=<old codemap> [CODEMAP_PARITY_REV=<rev>] cargo test --release --test parity -- --ignored.
+
+step hed6nt
+order 56
+author ai
+file crates/codemap/tests/features.rs
+symbol every_feature_is_exercised_by_a_golden_scenario
+lines 0 18
+hash b5db328f2aa1cc8b
+note Every feature in the registry is triggered by some golden scenario: at least one of its triggers appears in a CLI golden or a GUI script. A feature no test reaches fails here.
+
+step hrljo7
+order 39
+parent 1hmv7q
+author ai
+file crates/codemap/tests/common/gui.rs
+symbol peek
+lines 0 47
+hash d5d86570cae28ee4
+note The tooltip on hover, the peek on alt-click and its go and close buttons, jump to definition on ctrl-click, a double-click selection, a peek on a line, and the xrefs rows.
+
+step i0b52u
 order 11
 author ai
-file tests/parity.rs
-symbol old_and_new_agree
-lines 0 27
-hash e1bf0f296cb9255c
-note The refactor's proof: every CLI and GUI scenario with CODEMAP_BASE_BIN and with this build, and with CODEMAP_PARITY_REV the repo itself at that revision, its real map included, as a second fixture. Differences are kept on disk for a diff tool, both sides under the scratch directory parity/, and printed on failure. CODEMAP_PARITY_ONLY=<substring> plays only the scenarios whose name has it. Run it with CODEMAP_BASE_BIN=<old codemap> [CODEMAP_PARITY_REV=<rev>] cargo test --release --test parity -- --ignored.
+file crates/codemap/tests/common/mod.rs
+symbol Outcome
+lines 0 2
+hash 28c20ed21afa368b
+note What a scenario returns: its transcript, or Missing when a tool it needs is not on PATH. It is implemented for String and for Result<String, Missing>, so the generated tests and the parity list call one method on either kind of scenario.
 
 step ii6lor
 order 5
 parent vtkgzt
 author ai
-file tests/common/cli.rs
+file crates/codemap/tests/common/cli.rs
 symbol cli_scenarios
 lines 0 4
 hash 9a8a912be26e3f4d
-note The CLI scenarios: every read command and its error cases, every edit command, source edits that make steps stale and the re-pins that fix them, diff and repin in a jj repo and in a git repo, and merges of jj branches that change one path. Each is a fn(bin, name), listed once in the cli_scenarios macro that both the cli test and the parity test expand, and its golden is cli-<fn>.
+note The CLI scenarios, listed once in the cli_scenarios macro, which takes the name of another macro and calls it with 'cli:' and the scenario names. cli.rs expands it into one #[test] each and parity.rs into its list, so a scenario added here runs in both. Each is a fn(bin, name) returning the transcript (or Missing), and its golden is cli-<fn>.
+
+step j4zwo3
+order 48
+parent 1hmv7q
+author ai
+file crates/codemap/tests/common/gui.rs
+symbol dock
+lines 0 56
+hash d4383312e68d3b3d
+note The docked panels: resizing the nav panel by its splitter, moving the xrefs and output panels by their grips to other edges, and a click and a drag on the nav grip.
+
+step j8h125
+order 33
+parent g4vgzv
+author ai
+file crates/codemap/tests/common/mod.rs
+symbol skip
+lines 0 6
+hash b6093e0be8a82561
+note Reports a skipped scenario on stderr ('name: skipped, jj is not on PATH'); golden and parity both use it, so a missing tool never fails a test and never passes as a comparison.
 
 step j8ntek
 order 14
-parent 8wo2sa
+parent gnnw22
 author ai
-file tests/common/mod.rs
+file crates/codemap/tests/common/mod.rs
 symbol gui_parity
-lines 0 6
-hash 6ee66187700fb7d9
+lines 0 8
+hash 0d521742bc02d37a
 note What two builds of the same behaviour must agree on: every stderr line but frame timings and where screenshots were written.
+
+step jb5agt
+order 62
+parent aanf57
+author ai
+file crates/codemap/tests/features.rs
+symbol group_of
+lines 0 5
+hash f3a6a88c243979d2
+note The group a feature's path belongs in: features/cli for a command, features/gui for a window feature.
+
+step jou14b
+order 57
+parent hed6nt
+author ai
+file crates/codemap/tests/features.rs
+symbol goldens
+lines 0 16
+hash 2135d161d0cbbe04
+note Every golden transcript concatenated, sorted by file name; a command trigger is exercised when a '$ codemap <name>' line in it runs that command.
+
+step js1rob
+order 38
+parent 1hmv7q
+author ai
+file crates/codemap/tests/common/gui.rs
+symbol document
+lines 0 69
+hash 043130874edd7811
+note The document: scrolling, selecting a step, whole-symbol and context toggles, hide and fold, arrow keys, the breadcrumb, collapse, fold and unfold all, wheel scrolling, the outline and the jump to the graph.
 
 step k23duj
 order 9
 parent dkjein
 author ai
-file tests/common/gui.rs
+file crates/codemap/tests/common/gui.rs
 symbol last_rect
-lines 0 12
-hash de382b987d3a09ee
-note The last rectangle printed on a line starting with the prefix, as x, y, width and height.
+lines 0 13
+hash 6ccfad05f336d8b2
+note The last rectangle printed on a line starting with the prefix, as x, y, width and height, read from the Rect { x, y, w, h } in it.
 
 step kasf6v
-order 18
+order 26
 parent ii6lor
 author ai
-file tests/common/cli.rs
+file crates/codemap/tests/common/cli.rs
 symbol git
 lines 0 35
-hash 48388d73108a9371
-note diff and repin against HEAD of a git repo, the same verdicts the jj scenario gets.
+hash aa38097940ddf699
+note diff and repin against HEAD of a git repo (skipped without git), the same verdicts the jj scenario gets.
 
-step noqsg2
-order 15
-parent hdfzdl
+step m9gnrp
+order 59
+parent h9vmup
 author ai
-file tests/parity.rs
-symbol repo_at
-lines 0 78
-hash d9ab600279d97bc2
-note The repo as a second fixture: its files, symbols, roots, coverage and every path printed, then the document, a long path scrolled, the graph fitted and the side panels photographed.
+file crates/codemap/tests/features.rs
+symbol aims_at
+lines 0 6
+hash 8e41d4f8ec9225f9
+note Whether a script line's target is the element, one of its numbered ids (element/n) or one of its suffixed ids (element@x).
 
-step sz59zt
+step mj4l39
 order 0
 author ai
-file tests/common/mod.rs
-symbol tool_path
-lines 0 21
-hash 3d93445c29777ce3
-note The PATH every child process gets: jj and git and no language server. On Unix a directory of links to the two, since git's own directory can hold a server (/usr/bin/clangd on macOS); on Windows their directories, since a link to git.exe does not run there. The links live in one scratch directory shared by every test in the process, so a failed symlink is ignored: a test running beside this one may have made it. Indexing is then tree-sitter's and deterministic, while diff and repin still reach jj and git.
+file crates/codemap/tests/common/mod.rs
+symbol bin
+lines 0 5
+hash 26ae8bf9437150fc
+note The binary under test: CODEMAP_BIN when it is set, so a test can run against a build cargo did not make, else the codemap binary cargo built for this test crate.
 
-step vtkgzt
+step nldu88
 order 4
 author ai
-file tests/common/mod.rs
-symbol run
-lines 0 22
-hash 88e80006aba6d27f
-note One CLI command into the transcript: the command line, stdout, stderr prefixed with '! ' and a non-zero exit code, the fixture root replaced by <root> in either slash style, and line ends made Unix.
+file crates/codemap/tests/common/mod.rs
+symbol scratch
+lines 0 5
+hash 6825e3a0720a9074
+note Every scratch directory: codemap-tests/<process id>/<name> under the system temp directory. It lies outside any repository, so a fixture finds no VCS of its own, and the process id keeps concurrent test binaries and runs apart while a scenario's own name keeps two scenarios apart.
 
-step xwqk4d
-order 13
-parent dkjein
+step noqsg2
+order 52
+parent hdfzdl
 author ai
-file tests/common/mod.rs
-symbol gui
-lines 0 54
-hash 84e6c9512bd2df1f
-note Runs the window with CODEMAP_SCRIPT and reads stderr as it arrives, so a scenario's hook can edit files on disk at a line the script marks; that is how live reload is pinned: the reload scenario edits a source file at rect edit-source and a note through the CLI at rect edit-map. {shots} in a script stands for the directory the screenshots go to.
+file crates/codemap/tests/parity.rs
+symbol repo_at
+lines 0 75
+hash 745133fbd0d8171a
+note The repo as a second fixture: files, symbols, roots, coverage, uncovered, stale, paths, a grep, notes, a tree, callers and callees, then every path printed; then a GUI script opens the document, a long path scrolled, the graph and the graph fitted, and the symbol, file and listing views, all photographed.
 
-step yagdfh
+step o4w5dz
+order 49
+parent 1hmv7q
+author ai
+file crates/codemap/tests/common/gui.rs
+symbol links
+lines 0 59
+hash 5e2e8a84e1071795
+note Path groups and links: collapsing and expanding a group in the paths list, a linked step expanded inline in the document and the code inside it, the linked-from row, collapsing the link again, and following the link.
+
+step q0lbe5
+order 42
+parent 1hmv7q
+author ai
+file crates/codemap/tests/common/gui.rs
+symbol panels
+lines 0 79
+hash 6bc6cc7023a4f76a
+note The side panels and command line: the symbol list and its filter, the file tree and a folder toggle, the paths list, search and a hit, commands typed into the command line (with a bad one and clear), a new path from the field, a pin from the listing, and ctrl-s to save.
+
+step rlmca4
+order 29
+parent kasf6v
+author ai
+file crates/codemap/tests/common/mod.rs
+symbol git
+lines 0 28
+hash 4ea3fc86af1ee07f
+note Runs git in the fixture with the test user, no signing, main as the default branch and no global or system config, so the host's git settings cannot change a transcript.
+
+step sv3kou
+order 61
+parent h9vmup
+author ai
+file crates/codemap/tests/features.rs
+symbol key_word
+lines 0 8
+hash bd720b2319c7a8fd
+note The word a script's key command uses for a key.
+
+step sz59zt
 order 1
 author ai
-file tests/common/mod.rs
+file crates/codemap/tests/common/mod.rs
+symbol tool_path
+lines 0 24
+hash d81e77a558a3f499
+note The PATH every child process gets: jj and git and no language server. On Unix a directory of links to the two, since git's own directory can hold a server (/usr/bin/clangd on macOS); on Windows their directories, since a link to git.exe does not run there. The links live in this process's scratch directory tools/, shared by every test in the process, so a failed symlink is ignored: a test running beside this one may have made it. Indexing is then tree-sitter's and deterministic, while diff and repin still reach jj and git.
+
+step u48xp9
+order 44
+parent 1hmv7q
+author ai
+file crates/codemap/tests/common/gui.rs
+symbol diff
+lines 0 31
+hash fb0df0d6a614751b
+note The diff tab against a parent revision: the rows, following a row to its path, and refresh.
+
+step vtkgzt
+order 10
+author ai
+file crates/codemap/tests/common/mod.rs
+symbol impl Transcript<'_>
+lines 0 27
+hash 708feada2e86c9b1
+note A CLI transcript being written: run records one command, its command line (arguments with spaces quoted), stdout, stderr prefixed with '! ' and '[exit n]' for a non-zero exit code; note adds a '# ' line that says what the scenario does next.
+
+step wf2d4a
+order 46
+parent 1hmv7q
+author ai
+file crates/codemap/tests/common/gui.rs
+symbol reload
+lines 0 22
+hash 317c21afeb0c1ebf
+note Live reload: a source edit and a map edit made from outside while the window is open, each followed by the reloaded view.
+
+step wv4hxm
+order 17
+parent ii6lor
+author ai
+file crates/codemap/tests/cli.rs
+symbol tests
+lines 0 8
+hash 905abc80d7f75e9b
+note cli.rs's tests macro: one #[test] per scenario, named after it, whose golden is cli-<name>; Outcome lets a scenario return a plain transcript or one that may be Missing.
+
+step xj023o
+order 45
+parent u48xp9
+author ai
+file crates/codemap/tests/common/gui.rs
+symbol with_parent
+lines 0 14
+hash e6131c4e1631fd45
+note The diff scenario's setup (skipped without jj): commits the mapped fixture as the parent revision, then edits a note, adds a step, removes a path and adds a new one, so the diff tab has every kind of row.
+
+step xwqk4d
+order 8
+parent dkjein
+author ai
+file crates/codemap/tests/common/mod.rs
+symbol gui
+lines 0 54
+hash 17315ac351ee572e
+note Runs the window with CODEMAP_SCRIPT and reads stderr line by line as it arrives, so a scenario's hook can act at a line the script marks; that is how live reload is pinned. {shots} in a script stands for the directory the screenshots go to. A window that has not quit after 90 s is killed and fails the test, and so does a non-zero exit.
+
+step yagdfh
+order 6
+author ai
+file crates/codemap/tests/common/mod.rs
 symbol fixture
 lines 0 15
-hash c86c91537f25a3a7
-note A fresh copy of the fixture at a fixed place per scenario, so two builds played in turn see the same absolute paths (the status bar prints the map's path, and the screenshots compare it). The scratch directory lies under the system temp directory, outside any repository so a fixture finds no VCS of its own, and under the process id so concurrent runs do not share it. The map is built through the CLI, the way an agent builds one.
+hash c0a703b9159a5802
+note A fresh copy of the fixture at scratch(name)/repo, wiped first, so two builds played in turn see the same absolute paths (the status bar prints the map's path, and the screenshots compare it). With map set, the map is built through the CLI, the way an agent builds one, and any command that fails stops the test.
+
+step yqk1do
+order 47
+parent wf2d4a
+author ai
+file crates/codemap/tests/common/gui.rs
+symbol reload_hook
+lines 0 11
+hash 05f3b426c9cd54e5
+note The reload scenario's hook: at the script's rect edit-source line it edits src/store.rs, at rect edit-map it rewrites a path note through the CLI.
+
+step zrx31m
+order 12
+parent hdfzdl
+author ai
+file crates/codemap/tests/parity.rs
+symbol cli_list
+lines 0 7
+hash 876bfb16bf81a845
+note Expands cli_scenarios into a list of named CLI scenarios, each a closure that runs it with a given binary.

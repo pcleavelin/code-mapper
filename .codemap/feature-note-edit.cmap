@@ -1,0 +1,65 @@
+codemap 8
+path feature-note-edit
+kind flow
+author ai
+group features/cli
+note note-edit <name> <index> <old> <new>: replace the first occurrence of old with new in one note, without resending the whole note. index -1 edits the path note, any other index the note of that step. It exists so a session fixing one clause after a code change does not have to retype a long note and risk dropping the rest of it. The command prints the whole note after the edit so the result can be reread.
+
+step 9d1jpg
+order 2
+parent hkmsqc
+author ai
+file crates/domain/src/map.rs
+symbol edit_path_note
+lines 0 13
+hash 6b648ffdc40c1383
+note Replaces the first old in the path note; an old the note does not contain is an error, so a stale edit never passes silently.
+
+step h4b5db
+order 4
+parent hkmsqc
+author ai
+file crates/domain/src/map.rs
+symbol edit_step_note
+lines 0 14
+hash b8ab3e6dbf72c601
+note The same first-occurrence replacement on the step's note.
+
+step hkmsqc
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol note_edit
+lines 0 20
+hash b0987b4dc1e04c15
+note A negative index (no StepIndex after conversion) edits the path note, otherwise the step's note; then prints the result.
+
+step ru7g7v
+order 5
+parent hkmsqc
+author ai
+file crates/cli/src/wire.rs
+symbol note_text
+lines 0 2
+hash c77fc18bb67f9b43
+note Prints the edited note in full.
+
+step u992mc
+order 3
+parent hkmsqc
+author ai
+file crates/cli/src/exec.rs
+symbol find_step
+lines 0 7
+hash fe848f2c971eee7d
+note Step-note case: the path, then the step at that index.
+
+step vud3hs
+order 1
+parent hkmsqc
+author ai
+file crates/cli/src/exec.rs
+symbol find_path
+lines 0 5
+hash 63e1a3b28d250aa6
+note Path-note case: the path must exist.

@@ -1,0 +1,128 @@
+codemap 8
+path text
+kind type
+author ai
+group map
+note Positions and text, the vocabulary every other crate measures code in (domain's text.rs). A Line is a 0-based line number; the 1-based number users see is Line::number. A Span is an inclusive, never-empty range of lines. LineOffset is signed, the distance of an anchor's lines from its symbol's first line. FileText is a file as lines with tabs expanded to four spaces on the way in, so display, hashing and every column agree whether the text came from disk, a server or a revision. TextHash is FNV-1a, the fingerprint anchors and the index cache compare. RelativePath is a path under the root with forward slashes; Revision names a jj or git revision as the user or the VCS gave it. Each is its own type so a signature cannot take one where another is meant.
+
+step 0humly
+order 11
+author ai
+file crates/domain/src/text.rs
+symbol impl Revision
+lines 0 8
+hash d4be1d1c10bb5eff
+note A revision name passed to jj or git as it is: @-, HEAD, or whatever repin was given.
+
+step 0npeb7
+order 5
+parent lueud8
+author ai
+file crates/domain/src/text.rs
+symbol impl ByteOffset
+lines 0 12
+hash e323efa3b892aa37
+note A byte position in a file's text, for highlight ranges from the parser and the cache.
+
+step 7785cb
+order 7
+author ai
+file crates/domain/src/text.rs
+symbol impl SourceLine
+lines 0 12
+hash eaf43687142fe29e
+note One line of text without its newline. trimmed is what the repin alignment compares, so re-indented code still pairs.
+
+step cwmtw7
+order 10
+parent r8xonk
+author ai
+file crates/domain/src/text.rs
+symbol impl FileText
+lines 0 31
+hash 9c3c5de0405031c6
+note Lookups by Line and Span, None outside the file; hash of a span is the anchor hash; span is the whole file, None when it is empty; whole_hash is the hash of the whole expanded text, equal to the hash io-source gives the file it read.
+
+step dcorpo
+order 3
+author ai
+file crates/domain/src/text.rs
+symbol impl Span
+lines 0 39
+hash c65bc071336be05e
+note An inclusive range of lines, start never after end (new returns None otherwise). overlaps is what coverage asks, encloses what the innermost-symbol search asks, contains whether one line is in it.
+
+step g92qye
+order 2
+parent hu6zog
+author ai
+file crates/domain/src/text.rs
+symbol impl LineOffset
+lines 0 12
+hash fd06e938b710178f
+note A signed distance in lines, what an anchor stores relative to its symbol's first line.
+
+step hu6zog
+order 0
+author ai
+file crates/domain/src/text.rs
+symbol impl Line
+lines 0 42
+hash de33643f31b59ff2
+note A 0-based line. at and position convert to and from slice positions inside domain only; shifted and offset_from move by a LineOffset and give None instead of wrapping below zero or past the range; distance is how far apart two lines are, used to pick the nearest candidate.
+
+step lueud8
+order 4
+author ai
+file crates/domain/src/text.rs
+symbol impl Column
+lines 0 8
+hash bd148cbe908e8625
+note A 0-based column in characters, for the GUI's caret and peek positions.
+
+step oocmwb
+order 9
+parent r8xonk
+author ai
+file crates/domain/src/text.rs
+symbol impl From<&str> for FileText
+lines 0 8
+hash 747d833e1d105001
+note The one way to make FileText: tabs expanded to four spaces, then split into lines. Every text the tool reads, from disk, a server or a revision, comes through here, so hashes match wherever the text came from.
+
+step r8xonk
+order 8
+author ai
+file crates/domain/src/text.rs
+symbol FileText
+lines 0 3
+hash 22880845cbbcce1a
+note A file's text as lines, with the hash of the whole expanded text alongside.
+
+step x20ep8
+order 6
+author ai
+file crates/domain/src/text.rs
+symbol impl TextHash
+lines 0 32
+hash 5e9f607611b575ac
+note FNV-1a, 64-bit. of hashes bytes, of_lines hashes lines each followed by a newline (the anchor hash), and Display prints the sixteen hex digits the map file writes.
+
+step xx1ing
+order 1
+parent hu6zog
+author ai
+file crates/domain/src/text.rs
+symbol impl LineCount
+lines 0 20
+hash b2ccb82946c61ab0
+note A number of lines: a file's length, a span's size, the lines repin kept. last is the last line of that many, None for zero.
+
+step zmtbin
+order 12
+author ai
+file crates/domain/src/text.rs
+symbol impl RelativePath
+lines 0 30
+hash 588ff80ff2645560
+note A path under the root, backslashes turned to forward slashes, the form every file is named by in the index and the map. stem, directory and extension are what the index and the graph label files with; ends_with lets a command take a path suffix.

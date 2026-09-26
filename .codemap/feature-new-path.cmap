@@ -1,0 +1,75 @@
+codemap 8
+path feature-new-path
+kind flow
+author ai
+group features/gui
+note Type a name in the 'new path' field of the top bar and press enter: a flow path with that name, authored by the human, is added to the map and opened, empty, in the document. The field clears. An invalid name or one that clashes is refused in the status bar; a name that already exists opens nothing new. Steps are then added with pin selection.
+
+step 2k2cky
+order 1
+parent las1d3
+author ai
+file crates/domain/src/map.rs
+symbol add_path
+lines 0 12
+hash 1c550d93d9fc194e
+note The map returns Changed for a name that exists without touching it, and checks a new name is free.
+
+step 6bofi6
+order 3
+parent las1d3
+author ai
+file crates/gui/src/app.rs
+symbol keys
+lines 13 15
+hash e8d389049de09e7f
+note Trigger: every frame the keys phase hands the frame's key edits and typed text to the command, search and new-path fields in turn.
+
+step dx82ik
+order 6
+parent las1d3
+author ai
+file crates/gui/src/widgets.rs
+symbol field
+lines 0 36
+hash 3040603c2a55715d
+note Trigger: the field widget; a click on it queues FocusField so it takes the keyboard.
+
+step ealzjc
+order 2
+parent las1d3
+author ai
+file crates/gui/src/nav.rs
+symbol path_created
+lines 0 4
+hash dd0a50399d1a2170
+note The new path is current, with no step, on the Path tab.
+
+step gfjqbl
+order 5
+parent ty8atf
+author ai
+file crates/gui/src/field.rs
+symbol handle
+lines 0 23
+hash ce9dd1e24140c389
+note Applies edits to the focused field; enter returns the line when it is not blank and pushes it onto the field's history, escape gives up focus.
+
+step las1d3
+order 0
+author ai
+file crates/gui/src/action.rs
+symbol create_path
+lines 0 24
+hash db86b4b3e1bd5435
+note The handler. Ignores a blank line; validates the name, adds a flow path authored by the human, opens it with no step selected, and marks the map dirty. A refusal becomes the status line.
+
+step ty8atf
+order 4
+parent 6bofi6
+author ai
+file crates/gui/src/action.rs
+symbol typed
+lines 0 15
+hash 1e1ff82d94cec218
+note Only the focused field takes the edits. The new-path field clears on enter; a submitted line goes to create_path.

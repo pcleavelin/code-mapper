@@ -1,0 +1,55 @@
+codemap 8
+path feature-save
+kind flow
+author ai
+group features/gui
+note Ctrl+s or the save button in the top bar writes the map to .codemap/, one file per path, writing only the files whose text changed and deleting the files of removed paths. The button reads 'save *' while there are unsaved changes. A map that could not be read at startup is never saved over. After a save, the reload that the file watcher would trigger is suppressed because the stored stamp matches.
+
+step 6t9jgh
+order 0
+author ai
+file crates/gui/src/action.rs
+symbol save
+lines 0 21
+hash 067e19114a5a97a9
+note The handler. Refuses when the map on disk was unreadable, so a broken map is not overwritten with an empty one. On success it clears the dirty flag and the disk-changed warning and records the directory's stamp, so the next disk poll sees no outside change.
+
+step 8q577r
+order 3
+parent 9it0r5
+author ai
+file crates/gui/src/keys.rs
+symbol save
+lines 0 2
+hash ae448824d1cc7b27
+note Matches the registry's Save chord, ctrl+s.
+
+step 9it0r5
+order 2
+parent 6t9jgh
+author ai
+file crates/gui/src/app.rs
+symbol keys
+lines 4 6
+hash 34161d4736cad7b0
+note Trigger from the keyboard: the keys phase queues Save when keys::save matches.
+
+step hmfep0
+order 4
+parent 6t9jgh
+author ai
+file crates/gui/src/views/bars.rs
+symbol top_bar
+lines 61 68
+hash 96a2ab798671249d
+note Trigger in the top bar: the SAVE control, labelled 'save *' while dirty, queues Save.
+
+step xzcm54
+order 1
+parent 6t9jgh
+author ai
+file crates/io-map/src/lib.rs
+symbol save
+lines 0 23
+hash a5e5817853317f6f
+note Writes each path whose rendered text differs from what was last read or written, removes the files of paths no longer in the map, then remembers the written texts.

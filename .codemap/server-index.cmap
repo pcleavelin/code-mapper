@@ -3,325 +3,371 @@ path server-index
 kind flow
 author ai
 group index
-note How symbols and xrefs come from a language server. build walks the root and takes every file whose text hash matches the cache; the rest are parsed with tree-sitter and, if the language has a server, marked pending. index_files then asks the server for a batch of pending files' symbols and every symbol's outgoing calls, each stage sent whole with many requests in flight, and each file's answer is applied. References and incoming calls are never asked while indexing: each is a search of the whole workspace, so they are asked for one symbol when a command or the GUI wants them. The CLI indexes only the files a command touches, through Servers; the GUI indexes every pending file on a thread and greys out what is still pending.
+note How symbols and xrefs come from a language server. build (index crate) walks the root through io-source and takes every file whose text hash matches the cache; the rest are parsed with tree-sitter and, if the language has a server, marked pending. index_files then asks the server (an io-lsp LspSession) for a batch of pending files' symbols and every symbol's outgoing calls, each stage sent whole with many requests in flight, and each file's answer is applied. References and incoming calls are never asked while indexing: each is a search of the whole workspace, so they are asked for one symbol when a command or the GUI wants them. The CLI indexes only the files a command touches, through Servers; the GUI indexes every pending file on one thread per language and greys out what is still pending.
+
+step 0gvi2r
+order 41
+parent 1cplvb
+author ai
+file crates/index/src/server.rs
+symbol impl Drop for Servers
+lines 0 6
+hash 985ff838405de907
+note When a command ends, every server that started is shut down politely, so none is left indexing the repo.
 
 step 0rjjy3
 order 30
-parent wn8zbh
+parent 0y6z15
 author ai
-file src/index/server.rs
+file crates/index/src/server.rs
 symbol name_position
-lines 0 7
-hash 923be396ba4b8dd4
+lines 0 18
+hash 5d0804b47b64f2eb
 note Where a server wants to be pointed for a symbol: its first line, which is the line of its name, and the UTF-16 column of the name there. The column is 0 when the name is not on that line as written, as with an impl block.
-
-step 0xtjb7
-order 11
-parent mz27bi
-author ai
-file src/index/server.rs
-symbol locations
-lines 0 20
-hash b0b5d61a00965152
-note Turns a Location array into (file, line) pairs, dropping everything outside the root - which is how std and dependency hits are kept out of the index without asking the server to exclude them.
 
 step 0y6z15
 order 26
 author ai
-file src/index/server.rs
+file crates/index/src/server.rs
 symbol incoming_calls
-lines 0 5
-hash efb13ec5c2aa433d
-note callers asks this: the incoming calls of one symbol, which a server finds across the whole workspace, indexed or not. None when the language has no server.
+lines 0 4
+hash dbf26c303dd028df
+note callers asks this: the incoming calls of one symbol through LspSession::incoming_callers, which a server finds across the whole workspace, indexed or not. None when the language has no server.
 
 step 1cplvb
 order 25
 author ai
-file src/index/server.rs
+file crates/index/src/server.rs
 symbol Servers
 lines 0 4
-hash 356db81e5620a18d
-note The CLI's servers, one per language, started when a command first needs one.
+hash c9afb18835a8091f
+note The CLI's servers, one per language, started when a command first needs one, plus the callback that reports ServerNotices.
 
 step 23z3m9
 order 5
 parent wfyovg
 author ai
-file src/index/link.rs
+file crates/index/src/link.rs
 symbol link
-lines 0 50
-hash bde849ff41f3c713
-note Server targets resolve by (file, line) to the innermost symbol there; tree-sitter calls resolve by name. Callers are the inverse of callees. Rebuilt from scratch each time.
+lines 0 3
+hash 0a3754f861147ee3
+link call-resolution
+note One link after all of a command's answers are applied.
 
 step 2dbn8q
 order 19
 parent ymvuc4
 author ai
-file src/gui/work.rs
-symbol Req
+file crates/gui/src/work.rs
+symbol Request
 lines 0 5
-hash 7f4e33f5195a2afb
-note What the GUI sends the thread: a batch of files, or a position to hover, define, or find references to. A reference request's position is the symbol's name, and poll_backend finds the symbol again by that line.
+hash 30f930d08e6f3cdd
+note What the GUI sends the thread: a batch of file versions, or a probe to hover, define, or find references to. A reference probe's position is the symbol's name, and references_landed finds the symbol again by that line.
+
+step 3vdach
+order 35
+parent tostpl
+author ai
+file crates/index/src/build.rs
+symbol save_cache
+lines 0 2
+hash 7eeeea6968f20d4f
+link index-cache
+note The index crate's name for CacheStore::save, so its callers need not know io-cache.
 
 step 4eup18
 order 13
 parent wfyovg
 author ai
-file src/index/server.rs
+file crates/domain/src/index.rs
 symbol give_up
 lines 0 6
-hash 5b55a12cdcb09564
-note When the server is not there at all. Its files stop being pending and keep the tree-sitter answer; the message is printed once, not once per file.
+hash f4c5cc4057be6b6a
+note When the server is not there at all. Its files stop being pending and keep the tree-sitter answer; the notice is reported once per language, not once per file.
 
 step 89epu3
 order 7
 author ai
-file src/gui/work.rs
+file crates/gui/src/work.rs
 symbol start_backend
 lines 0 16
-hash 3bf59a66c6c43b08
-note The GUI's driver: every pending language's files go as one batch to that language's live server thread; a batch while one runs is remembered and sent when it ends. A language whose server cannot start gives up its files to the tree-sitter answer.
+hash 0ef67aed00b2836a
+note The GUI's driver: every pending language's files go as one batch to that language's server thread; a call while a batch runs is remembered and made again when the batch ends. A language whose server thread cannot be had gives up its files to the tree-sitter answer.
 
-step adehfw
-order 31
-parent orf66y
+step ahwmbv
+order 34
+parent tostpl
 author ai
-file src/index/server.rs
-symbol references
-lines 0 3
-hash 97cfe8ce71ff01ef
-note Points the request at the symbol's name.
+file crates/index/src/parse.rs
+symbol parse
+lines 0 34
+hash 2c6ef013d0090198
+link tree-sitter-index
+note A cache miss gets the tree-sitter answer, which is also what a language with no server keeps.
 
 step dq7ze6
 order 9
 parent gximva
 author ai
-file src/index/server.rs
-symbol symbol_kind_name
-lines 0 5
-hash 599711d59f8141cc
-note LSP SymbolKind is a number; this turns it, through the KINDS table, into the same kind strings the tree-sitter backend produces, so the two backends' symbols are indistinguishable downstream. Kind 19 is where rust-analyzer reports an impl block.
+file crates/index/src/server.rs
+symbol kind_name
+lines 0 39
+hash fdad8cc44fa8008e
+note LSP SymbolKind is a number; this turns it into a word through a table of the protocol's kind names in order, 0 not being a kind and anything past the end reading as 'symbol'. Kind 19 (Object in the protocol) is where rust-analyzer reports an impl block, so a kind-19 name starting with 'impl' is kind impl.
+
+step f450us
+order 39
+parent tostpl
+author ai
+file crates/index/src/build.rs
+symbol build
+lines 3 3
+hash 82994b3f4f82930a
+link index-cache
+note The cache, or an empty one when it is missing or does not read.
 
 step gximva
 order 3
-parent mz27bi
+parent ybptin
 author ai
-file src/index/server.rs
-symbol push_symbol
-lines 0 51
-hash cd23bce01995b0df
-note DocumentSymbol to Symbol. One level of nesting into modules, classes, traits and impls, like the tree-sitter resolver. Servers start a symbol at its doc comment or attributes and tree-sitter at the declaration, so the symbol starts on the line of its name and both backends agree on the start that anchors are relative to. It also records where each name sits, so call-hierarchy and reference requests can point at it.
+file crates/index/src/server.rs
+symbol push
+lines 0 47
+hash 0fa8453a389b401d
+note Outline to Symbol. One level of nesting into modules, namespaces, classes, interfaces and impls (kinds 2, 3, 5, 11 and 19), like the tree-sitter resolver. Servers start a symbol at its doc comment or attributes and tree-sitter at the declaration, so the symbol starts on the line of its name (the selection range) and both backends agree on the start that anchors are relative to; a range ending at column 0 stops on the line before. It also records where each name sits, so the call-hierarchy request can point at it.
 
 step h22r5f
 order 4
 parent wfyovg
 author ai
-file src/index/server.rs
+file crates/index/src/server.rs
 symbol apply
-lines 0 11
-hash f1bc7de0d578cfe9
-note Takes an answer only when the file still has the text it was asked about. The caller re-links afterwards.
-
-step iend19
-order 24
-parent dq7ze6
-author ai
-file src/index/server.rs
-symbol KINDS
-lines 0 28
-hash 78301ae99e305dee
-note The LSP SymbolKind names in protocol order, so a kind number indexes straight into it; 0 is not a kind and anything past the end reads as 'symbol'.
+lines 0 13
+hash 4544a64f6db0070e
+note Takes an answer only when the file is still in the index with the text it was asked about: its symbols replace the tree-sitter ones, the backend becomes Server and the file stops being pending. The caller re-links afterwards.
 
 step kgcc66
 order 14
-parent 89epu3
+parent ymvuc4
 author ai
-file src/gui/work.rs
-symbol Msg
+file crates/gui/src/work.rs
+symbol Answer
 lines 0 8
-hash 8fc3b995d2e3a867
-note What a server thread sends back: finished files, a progress line, a language that failed, the end of a batch, hover and definition answers for the peek, and the references asked for the symbol in the xrefs panel.
+hash af850a06c3726283
+note What a server thread sends back: a finished file, a progress line, a language whose server failed to start, the end of a batch, hover and definition answers for the peek, and the references asked for the symbol in the xrefs panel.
 
 step kn00gd
 order 32
 parent 2dbn8q
 author ai
-file src/gui/work.rs
+file crates/gui/src/peek.rs
 symbol Probe
-lines 0 5
-hash dddea1750ec40612
-note Probe, the position a hover, definition or reference request asks about: the file's path and text hash, so an answer for text that has since changed is never used, and the 0-based line and UTF-16 column of an identifier, as the language server protocol counts them.
+lines 0 3
+hash 58c3f0d498b71437
+note The position a hover, definition or reference request asks about: an io-lsp DocumentPosition (root-relative file, 0-based line, UTF-16 column) plus the file's text hash, so an answer for text that has since changed is never used.
 
 step l6davw
 order 21
 parent vwg30v
 author ai
-file src/index/link.rs
+file crates/domain/src/index.rs
 symbol symbols_only
-lines 0 20
-hash aecc06db6d7f5ea4
-note The copy the link thread gets: paths, hashes, symbols and imports, no lines and no highlights, which is everything link and resolve read.
+lines 0 5
+hash 0d436efd7ab7f988
+note The copy the link thread gets (SourceFile::without_text for every file): paths, hashes, symbols and imports, no lines and no highlights, which is everything link and resolve read.
 
 step mz27bi
 order 2
 parent wfyovg
 author ai
-file src/index/server.rs
-symbol client
-lines 0 9
-hash 3f82511b72df9a37
-note A language's server, started the first time a command needs it and kept until the command ends, when Servers drops and shuts them down. One that will not start is reported once and remembered.
+file crates/index/src/server.rs
+symbol session
+lines 0 13
+hash ffc0340a622e5d9e
+note A language's server, started the first time a command needs it and kept until the command ends, when Servers drops and shuts them down. One that will not start is reported once (ServerNotice::Unavailable) and remembered as None, so it is not tried again.
+
+step o2ax01
+order 38
+parent 1cplvb
+author ai
+file crates/index/src/server.rs
+symbol ServerNotice
+lines 0 3
+hash 987310bf246e9a3c
+note What Servers tells its caller: how many files a language's server is about to be asked, or that it is unavailable and its files keep the tree-sitter resolver. The CLI prints it.
 
 step opvazu
 order 15
 parent mz27bi
 author ai
-file src/index/server.rs
-symbol start_server
-lines 0 8
-hash bf75969d6ab0d6bf
-note Spawn and wait_ready, shared by the CLI's Servers and the GUI's live thread. The absolute root it returns is what the server's URIs are compared against. It waits for the server to finish its own indexing, and fails when the server is not on PATH or will not start.
+file crates/index/src/server.rs
+symbol start_session
+lines 0 4
+hash 0c4bf8034c624561
+note LspSession::start, then wait_ready for up to five minutes, shared by the CLI's Servers and the GUI's server threads. It fails when the server is not on PATH or will not start.
 
 step orf66y
 order 28
 author ai
-file src/index/server.rs
+file crates/index/src/server.rs
 symbol references
-lines 0 5
-hash abe0f966ca7df87d
-note refs asks this: every reference to one symbol. None when the language has no server.
+lines 0 4
+hash 8ab933c9f13f873c
+note refs asks this: every reference to one symbol through LspSession::references, pointed at the symbol's name. None when the language has no server. The GUI's server thread asks the same request for the focused symbol.
 
 step p1e65r
 order 22
 author ai
-file src/gui/work.rs
+file crates/gui/src/work.rs
 symbol poll_link
-lines 0 10
-hash 3127cfc7cd0e56db
-note Run from the top of every frame: takes the linked copy when the thread is done and copies its edges into the live index, or drops it when the index changed meanwhile, in which case the queued link replaces it. A thread that died just ends the link.
+lines 0 9
+hash 0faea3f168a6d474
+note Run every frame: takes the linked copy when the job has landed and copies its edges into the live index through take_edges; then the link queued meanwhile, if any, starts. A job that panicked just ends the link.
 
 step q81upm
 order 23
 parent p1e65r
 author ai
-file src/index/link.rs
+file crates/domain/src/index.rs
 symbol take_edges
-lines 0 17
-hash d51574b3560a322b
-note Edges come back by position, so the copy is accepted only when every file still has the same hash, backend, pending flag and symbol count; anything else means a merge or a rebuild changed the tables under the thread and the edges would land on the wrong symbols.
+lines 0 25
+hash 483d4add183d1ab1
+note Edges come back by position, so the copy is accepted only when every file still has the same hash, backend, readiness and symbol count; anything else means a merge or a rebuild changed the tables under the thread and the edges would land on the wrong symbols.
+
+step t0k60j
+order 37
+parent u2g8ww
+author ai
+file crates/index/src/server.rs
+symbol FileVersion
+lines 0 3
+hash d87978263b5fb8b0
+note A file as a server is asked about it: path plus text hash.
+
+step tegvuq
+order 33
+parent tostpl
+author ai
+file crates/io-source/src/lib.rs
+symbol walk
+lines 0 28
+hash e54f5deeb7ed51a0
+link io-source
+note Every text file under the root, read and tab-expanded.
 
 step tostpl
 order 0
 author ai
-file src/index/mod.rs
+file crates/index/src/build.rs
 symbol build
-lines 0 72
-hash 4bd4ace615f29f0e
-note The walk and the cache check. A cache hit skips parsing entirely. A cached server answer points at lines in other files, so it is asked again when any of those files changed. The walk honours .gitignore even when the root is not a git repo, and skips files over 4 MiB, or with a NUL byte in their first 1 KiB, as binary.
+lines 0 56
+hash fd54ed04d70d1d30
+note The walk and the cache check. A cache hit keeps the cached file and fills in its text; a miss is parsed with tree-sitter. A file whose language has a server and whose symbols did not come from one is marked pending, and so is a cached server answer that points at lines in a file that changed. Files are sorted by path, linked once, and the cache is saved when anything was parsed or a cached file is gone. Returns the index with each file's modification stamp, which the GUI's watcher compares against the disk.
 
 step tw86wt
 order 8
 author ai
-file src/gui/work.rs
+file crates/gui/src/work.rs
 symbol poll_backend
-lines 0 105
-hash ca960ffe74118493
-note Drains every server's channel each frame, but merges at most once a second and once more when the batch ends, since a merge re-resolves the map and drops every drawn grid. A merge applies the answers and starts a link on a thread; the status line's symbol count follows each merge. A batch's end saves the cache and runs the next batch if a rebuild asked for one meanwhile. Any message at all from a server means it is past starting, so a ': starting' status gives way to the index count.
+lines 0 67
+hash 56a1a12ad5d9c5e8
+note Drains every server's channel each frame, but merges at most once a second and once more when a batch ends, since a merge re-resolves the map and drops every drawn grid. A merge applies the answers inside with_index_change and starts a link on a thread; the status line's symbol count follows each merge. A batch's end saves the cache and runs the next batch if a rebuild asked for one meanwhile. Any message at all from a server means it is past starting, so a Starting status gives way to the index count.
+
+step u2g8ww
+order 36
+parent wfyovg
+author ai
+file crates/index/src/server.rs
+symbol versions
+lines 0 9
+hash 0ad7174d4982d678
+note The (path, hash) of each file asked, so each answer can be checked against the text it was asked about.
+
+step v1eghb
+order 40
+parent o2ax01
+author ai
+file crates/cli/src/wire.rs
+symbol notice
+lines 0 10
+hash 3191bd9c92ed742e
+note The words the CLI prints for a notice, in cli's wire.rs: 'rust-analyzer: 12 files to index', or the StartError worded by start_error followed by ': its files keep the tree-sitter resolver'. The GUI's status line words a failed start with the same start_error.
 
 step v9k2x1
 order 10
 parent gximva
 author ai
-file src/index/server.rs
+file crates/index/src/server.rs
 symbol impl_type
-lines 0 8
-hash 237007a3f125a694
+lines 0 9
+hash e0c75ac751010adc
 note An impl block's name arrives as its whole header text; this reduces it to the type it is about, which becomes the owner of every method inside and therefore what a qualified call binds to. impl Trait for Foo<T> and impl Foo both give Foo; a server's kind-19 name carries no generic parameters of the impl itself (see impl_name).
-
-step vut1b3
-order 29
-parent adehfw
-author ai
-file src/index/server.rs
-symbol references_at
-lines 0 12
-hash f14ba12f0f727785
-note The references request itself, shared with the GUI's thread, which asks it for the focused symbol.
 
 step vwg30v
 order 20
 parent tw86wt
 author ai
-file src/gui/work.rs
+file crates/gui/src/work.rs
 symbol start_link
 lines 0 10
-hash a4e5c5038b51cf73
+hash 482c9843d16e49b8
 note A merge does not link. A text-free copy of the index goes to a thread that links it, since a link is a pass over every call site and can take half a second on a repo with many same-named symbols. One link runs at a time; a change that lands meanwhile queues one more.
 
 step wfyovg
 order 6
 author ai
-file src/index/server.rs
+file crates/index/src/server.rs
 symbol index
-lines 0 30
-hash 103061e2e1708194
-note The CLI's driver: the pending files among the ones a command touches, grouped by language, asked 32 at a time of a server started once for the command, then one link and one cache save. A language whose server will not start gives its files up to the tree-sitter answer.
-
-step wn8zbh
-order 27
-parent 0y6z15
-author ai
-file src/index/server.rs
-symbol incoming_calls
 lines 0 32
-hash 14f717085f3bb3de
-note The call-hierarchy item at the symbol's name, then its incoming calls, each as the (file, line) of the caller's name, which by_line turns into the calling symbol.
+hash 8eccf4a6deda988a
+note The CLI's driver: the pending files among the ones a command touches, grouped by language, each language's server started once for the command and asked 32 files at a time, then one link and one cache save when anything was answered. Each language's file count goes to the report callback first. A language whose server will not start gives its files up to the tree-sitter answer.
 
 step wpda6d
 order 12
+parent ybptin
 author ai
-file src/index/server.rs
+file crates/index/src/server.rs
 symbol ServerFile
 lines 0 4
-hash 9c8f0ee0797b0aab
+hash 2e1687757b37486d
 note What comes back per file: the symbols plus the text hash they were asked about, so an answer for text that has since changed can be recognised and dropped.
 
 step y4bkg8
 order 1
 parent wfyovg
 author ai
-file src/index/server.rs
+file crates/domain/src/index.rs
 symbol pending
-lines 0 12
-hash d9203ab53d55a2d0
-note Pending files grouped by language, with the hash each answer must match.
+lines 0 15
+hash 6db89c5e33019d9b
+note Pending files grouped by language, in path order.
 
 step ybptin
 order 16
-parent mz27bi
+parent wfyovg
 author ai
-file src/index/server.rs
+file crates/index/src/server.rs
 symbol index_files
-lines 0 60
-hash b731feb340c63843
-note Three stages against a running server, each sent whole through request_all: the batch's document symbols, a call-hierarchy item for every symbol, the outgoing calls of every item. The answers come back in the order asked and are matched to their file and symbol by position.
+lines 0 58
+hash 4723a8abbd0f3f39
+note Three stages against a running server, each sent whole through request_all: the batch's document symbols, a call-hierarchy item for every symbol, the outgoing calls of every item. The answers come back in the order asked and are matched to their file and symbol by position; each symbol's targets are sorted and deduplicated. One ServerFile per file asked, in order.
 
 step ymvuc4
 order 18
 parent ywt3nh
 author ai
-file src/gui/work.rs
+file crates/gui/src/work.rs
 symbol serve
-lines 0 87
-hash cb0440c6116cc359
+lines 0 61
+hash 33f0218ca952a2e4
 note A batch is queued and worked eight files at a time through index_files; progress and each finished file go back through the channel, Done when the queue empties. Hover, definition and reference requests are taken between batches, so the pointer waits behind eight files at most.
 
 step ywt3nh
 order 17
 parent 89epu3
 author ai
-file src/gui/work.rs
+file crates/gui/src/work.rs
 symbol server
-lines 0 13
-hash 96aedc8d2d35334a
-note One thread per language for the session; indexing batches go to the same server that answers hover and definition.
+lines 0 19
+hash 3336cce433cc404e
+note One thread per language for the session, started on first use; indexing batches go to the same server that answers hover, definition and references. A language already known to have no server gives None.

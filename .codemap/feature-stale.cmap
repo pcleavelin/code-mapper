@@ -1,0 +1,86 @@
+codemap 8
+path feature-stale
+kind flow
+author ai
+group features/cli
+note stale: list every step whose text no longer matches its pinned hash, or whose file or symbol is gone, and every link to a path that does not exist. No arguments. Nothing is computed here: every anchor was re-resolved against the index when the map loaded (main runs resolve_all before any command), so this command only reads each step's stale flag. Each stale step comes with a hint that can be pasted as-is: a path-pin to the place its exact text moved to, or, when its symbol is gone from its file, a path-pin per symbol of that name anywhere. The hints are guesses for the agent to check, not fixes; repin does the text-following work.
+
+step 0b7cgq
+order 7
+parent osmb5z
+author ai
+file crates/cli/src/wire.rs
+symbol dangling
+lines 0 6
+hash 1dc87df7ddd66200
+note One row per broken link with the two ways out: link it elsewhere or unlink it.
+
+step 8r6b02
+order 1
+parent osmb5z
+author ai
+file crates/domain/src/map/step.rs
+symbol is_stale
+lines 0 2
+hash 6b88d1e069652057
+note The flag set when the map loaded and resolved each anchor against the index.
+
+step 9kez9g
+order 6
+parent osmb5z
+author ai
+file crates/domain/src/map.rs
+symbol dangling_links
+lines 0 2
+hash ccd67b102984631c
+note Every step whose link names a path the map does not have, e.g. after a path was removed on another branch.
+
+step doh0pb
+order 3
+parent osmb5z
+author ai
+file crates/cli/src/exec.rs
+symbol moved_to
+lines 0 8
+hash c79267af13672942
+note Looks for the anchor's exact text (same length, same hash) elsewhere in the same file, the case where code above the step shifted it and it did not follow its symbol.
+
+step ft1m8u
+order 5
+parent osmb5z
+author ai
+file crates/cli/src/wire.rs
+symbol same_name
+lines 0 12
+hash edb9f63f802cd17f
+note The hint when the step's symbol is no longer in its file: every symbol with that name in the index, each with a path-pin, since the function may have moved to another file.
+
+step jdz67e
+order 2
+parent osmb5z
+author ai
+file crates/cli/src/wire.rs
+symbol stale_row
+lines 0 14
+hash a2fa3672e183da7e
+note One row per stale step: path [index], where the anchor now resolves or what went missing, and its symbol.
+
+step osmb5z
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol stale
+lines 0 45
+hash dd3a43befd16f19c
+link stale-and-pin
+note Walks every path's steps in list order, printing a row and at most one kind of hint per stale step, then the dangling links. Returns the counts so check can reuse the whole listing.
+
+step vfahf1
+order 4
+parent osmb5z
+author ai
+file crates/cli/src/wire.rs
+symbol same_text
+lines 0 12
+hash cbd1801388fe07bb
+note The hint for moved text: its new lines and the ready-made path-pin command.

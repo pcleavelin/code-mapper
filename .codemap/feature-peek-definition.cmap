@@ -1,0 +1,127 @@
+codemap 8
+path feature-peek-definition
+kind flow
+author ai
+group features/gui
+note Alt-click an identifier in any code view to pin its definition at the top of the right panel, above the xrefs, without leaving the place being read. The peek shows the symbol's whole text, or the lines around a definition that is not a symbol's start, or a definition outside the repo read from disk. Its 'go' button goes there (a symbol is focused, a line opens in the Listing; an outside definition has no go), and 'x' closes it. The peek stays until closed or replaced.
+
+step 1h923r
+order 1
+parent w7mvto
+author ai
+file crates/gui/src/peek.rs
+symbol word_at
+lines 0 26
+hash ff0520c97f5c2a66
+note The identifier under the pointer.
+
+step 5bqh05
+order 6
+parent h3pn83
+author ai
+file crates/gui/src/keys.rs
+symbol code_gesture
+lines 0 8
+hash 9fbf707f28fe56f5
+note The PeekDefinition gesture, alt-click, is tested before the jump gestures.
+
+step bgoi57
+order 11
+parent kctxha
+author ai
+file crates/gui/src/views/xrefs.rs
+symbol peek_header
+lines 0 17
+hash a8d702d4944e5908
+note Triggers in the peek header: PEEK_GO queues the peek's go action, PEEK_CLOSE queues ClosePeek, whose apply arm sets the peek to None.
+
+step bnbuz9
+order 4
+parent w7mvto
+author ai
+file crates/gui/src/work.rs
+symbol land
+lines 0 14
+hash 18408dde89f15741
+note With Intent::Peek every kind of definition becomes model.peek; an outside one also sets a status naming its file and line.
+
+step h3pn83
+order 5
+parent w7mvto
+author ai
+file crates/gui/src/widgets/code.rs
+symbol code_block
+lines 74 91
+hash 5201244658bdb3d7
+note Trigger in every code block: an alt-click over a character queues Definition with Intent::Peek.
+
+step j4pt90
+order 8
+parent w7mvto
+author ai
+file crates/gui/src/work.rs
+symbol poll_backend
+lines 35 39
+hash 0d766cad93d5bf15
+link peek
+note The server's answer arrives in a later frame's poll and lands only if it is the one still wanted.
+
+step kctxha
+order 9
+parent w7mvto
+author ai
+file crates/gui/src/views/xrefs.rs
+symbol peek_section
+lines 0 20
+hash 437b0396d1640a5e
+note The effect: the right panel draws the peek above the xrefs, its title and place clipped to the panel's width.
+
+step pwid7y
+order 10
+parent kctxha
+author ai
+file crates/gui/src/views/xrefs.rs
+symbol peeked
+lines 0 54
+hash 0a150823767af1c7
+note What each kind of peek shows and where 'go' leads: a symbol shows its span and goes by Focus, a line shows from six above to twenty below with the line marked and goes by GoTo, an outside file shows its grid and has no go.
+
+step r2p9ok
+order 7
+parent w7mvto
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_click
+lines 36 51
+hash 69cc41c96fbf5f8a
+note Trigger on a graph node's code line, deferred to the graph tab's frame.
+
+step w7mvto
+order 0
+author ai
+file crates/gui/src/action.rs
+symbol definition
+lines 0 18
+hash d00af4bcb2673b16
+note The handler, shared with jump-to-definition, here with Intent::Peek: ask the server, or resolve the word to a symbol and land it straight away.
+
+step wq172j
+order 3
+parent w7mvto
+author ai
+file crates/gui/src/work.rs
+symbol ask
+lines 0 6
+hash 0fea4c20d4fb673d
+link lsp-client
+note The definition request goes to the language's server thread.
+
+step xt823t
+order 2
+parent w7mvto
+author ai
+file crates/gui/src/peek.rs
+symbol probing
+lines 0 23
+hash 14276686a2367bde
+note Server, resolver or nothing, by the file's language.

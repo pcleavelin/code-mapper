@@ -1,0 +1,46 @@
+codemap 8
+path feature-path-group
+kind flow
+author ai
+group features/cli
+note path-group <name> <group>: put one path in a group. / nests groups (flows/http); an empty group puts the path at the top level. The group is created by being named: nothing else declares it.
+
+step 1khaht
+order 1
+parent sl6avc
+author ai
+file crates/cli/src/exec.rs
+symbol find_path
+lines 0 5
+hash 63e1a3b28d250aa6
+note The path must exist; the error names what was typed.
+
+step 2hopbf
+order 3
+parent sl6avc
+author ai
+file crates/cli/src/wire.rs
+symbol group_place
+lines 0 6
+hash 58685a4f8a1f538e
+note "'name' is in <group>" or "'name' is at the top level".
+
+step sl6avc
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol path_group
+lines 0 10
+hash 1babd9767fc63589
+note Finds the path, sets its group and reports where it ended up.
+
+step vas7o3
+order 2
+parent sl6avc
+author ai
+file crates/domain/src/map.rs
+symbol set_group
+lines 0 7
+hash 6cf8b424ae697899
+link path-groups
+note Replaces the path's group.

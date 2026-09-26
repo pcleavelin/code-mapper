@@ -1,0 +1,106 @@
+codemap 8
+path feature-dock-panel
+kind flow
+author ai
+group features/gui
+note Drag a panel (Paths/Symbols/Files, Xrefs, Output) by its header grip onto the left, right or bottom of the window to dock it there, before or after the panels already on that edge. A band shows where it will land while dragging; the lower quarter of the dock row means bottom, otherwise the half the pointer is in. Letting go outside the body, or before the pointer has left the grab's reach, cancels. A panel moved between a side and the bottom forgets its size. The layout is not saved.
+
+step 0tfo62
+order 1
+parent 54m515
+author ai
+file crates/gui/src/dock.rs
+symbol release
+lines 0 2
+hash aba3001b4d00588e
+note Takes the grab, ending the drag either way.
+
+step 54m515
+order 0
+author ai
+file crates/gui/src/action.rs
+symbol apply
+lines 63 69
+hash 7cd31ead8b424217
+link panel-dock
+note The handler for letting go: ends the grab and, when a drop target came with it, moves the panel there.
+
+step 63oxzl
+order 4
+parent dj8lhg
+author ai
+file crates/gui/src/dock.rs
+symbol take_hold
+lines 0 6
+hash 2af4fa8b3cce6808
+note Holds the panel, not yet moving.
+
+step dj8lhg
+order 3
+parent 54m515
+author ai
+file crates/gui/src/views/docked.rs
+symbol grip
+lines 0 20
+hash 167d05a8eaf3a2f9
+note Trigger: each panel's header starts with a GRIP; a press queues Grab with the pointer position. The cursor is a hand while hovered and a closed hand while held.
+
+step gnt41s
+order 6
+parent if1ys0
+author ai
+file crates/gui/src/dock.rs
+symbol drag_to
+lines 0 8
+hash 9a01188b1057dc05
+note The grab starts moving once the pointer has gone more than GRAB_REACH from where it was pressed, so a click on the grip does not move anything.
+
+step if1ys0
+order 5
+parent 54m515
+author ai
+file crates/gui/src/views/docked.rs
+symbol dock_input
+lines 17 27
+hash 2ab8dd1ec7e490fd
+note The drag, read at the start of each frame before the views: while a panel is held, DragDock follows the pointer; when the button is up, the drop target is computed on a copy moved to the pointer, kept only if the grab has started moving, and queued with Release.
+
+step pbxo1v
+order 9
+parent 54m515
+author ai
+file crates/gui/src/views/docked.rs
+symbol drag_band
+lines 0 6
+hash 83210b878d340549
+note The effect while dragging: the band is drawn over the window at the drop target.
+
+step pd23pa
+order 7
+parent if1ys0
+author ai
+file crates/gui/src/views/docked.rs
+symbol drop_target
+lines 0 11
+hash fec959ef906d11ef
+note The drop target from the last frame's body, dock row and panel rectangles.
+
+step ugkp03
+order 2
+parent 54m515
+author ai
+file crates/gui/src/dock.rs
+symbol move_to
+lines 0 17
+hash e3086a090bb435b6
+note Removes the panel and inserts it before the at-th panel of the target edge (at the end when there is none); crossing between a side and the bottom resets its size to the default.
+
+step yzhmkz
+order 8
+parent pd23pa
+author ai
+file crates/gui/src/dock.rs
+symbol drop_target
+lines 0 70
+hash ef65aaf664db4914
+note Picks the edge from the pointer, the slot from how many of that edge's other panels lie before the pointer, and the band where the panel would sit at its kept or default size.

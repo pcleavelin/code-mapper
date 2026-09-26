@@ -1,0 +1,626 @@
+codemap 8
+path archlint
+kind layer
+author ai
+group tooling
+note archlint: the repo's own linter, for every rule the compiler and clippy cannot hold. Each rule is one Rule variant with a code, one sentence stating the one way the code is written, and a check function over a tree-sitter-rust syntax tree. A finding prints as file:line: code: <the one way> (<what matched>), so the message is the rule: an agent learns it from the error at the moment it applies, and the only way to make the finding go away is to write the code that way. Nothing needs name resolution: a rule that would (only X may call Y) is turned into a crate or privacy boundary instead, so the compiler resolves it. Every file has a zone (strict, or test for tests/ and tests.rs) and arch::applies decides which rules run in which zone; a few rules further narrow themselves to a crate or file (the domain for I/O, the GUI's widget, theme, id and key modules, the scenario files for test registration), and the GUI rules exempt their own home module, which is where the one way lives. Suppressions are the one escape hatch and are themselves a rule: #[expect(lint, reason)] listed by file in arch.rs EXPECTS. The fixtures in lint/tests.rs pin each rule both ways: code that must fail and the closest code that must pass. The gate runs archlint over the workspace; the post-tool hook runs it on each edited file and hands the findings straight back.
+
+step 05jsan
+order 48
+parent 2dbizk
+author ai
+file xtask/src/lint/tests.rs
+symbol comments_are_found_in_every_form
+lines 0 6
+hash d46b908fbe61306c
+note L1 in every comment form, and a string that looks like one.
+
+step 0a4trr
+order 38
+parent m540eb
+author ai
+file xtask/src/lint/checks.rs
+symbol WIDGET_CALLS
+lines 0 0
+hash afecfdd0ac77c03e
+note The element-tree calls only widgets.rs may make.
+
+step 0qk9xv
+order 53
+parent 2dbizk
+author ai
+file xtask/src/lint/tests.rs
+symbol sentinels_for_absence
+lines 0 8
+hash f62f9a007e57a218
+note L6.
+
+step 2191f8
+order 18
+parent dbzwz0
+author ai
+file xtask/src/lint/checks.rs
+symbol primitives
+lines 0 60
+hash 79b97e76965e71a0
+note L2: no primitive, String, &str or tuple in a function's parameters or return, a field, a const or static, or a tuple variant's payload, including inside generics. Exempt: wire modules (they mirror an external format), test code, a function returning plain bool, a newtype's own field, and functions inside a trait impl or inside the newtype's own impl block, which are where a value is wrapped and unwrapped.
+
+step 23201w
+order 33
+parent 33maeo
+author ai
+file xtask/src/lint/checks.rs
+symbol PRINTING
+lines 0 6
+hash 8430b1f30c588383
+note The print-family macros.
+
+step 2b8z6f
+order 40
+parent dbzwz0
+author ai
+file xtask/src/lint/checks.rs
+symbol gui_literals
+lines 0 26
+hash 575c114ccb2a386e
+note L12 (theme) and L13 (element id): outside theme.rs or ids.rs, a Px::new, Color::rgba, FontSize::new or Id::new called with a literal argument. A computed argument passes; only a literal is a new constant.
+
+step 2dbizk
+order 47
+parent ptga7w
+author ai
+file xtask/src/lint/tests.rs
+symbol strict
+lines 0 2
+hash 31c76bd48bc09b22
+note A fixture in a strict domain file.
+
+step 2mmmyo
+order 58
+parent ptga7w
+author ai
+file xtask/src/lint/tests.rs
+symbol scenario_tests_come_from_their_table
+lines 0 12
+hash d0ac08c02b6ba96c
+note L11 in a scenario file, a generated #[test] passing, and a test file that is not a scenario file passing.
+
+step 33maeo
+order 31
+parent dbzwz0
+author ai
+file xtask/src/lint/checks.rs
+symbol domain_io
+lines 0 24
+hash e81a7d94cc5e37fc
+note L9: the domain crate does no I/O: no std::fs, process, thread, net or io, and no print macros. I/O belongs to an io crate.
+
+step 3qrtf3
+order 24
+parent dbzwz0
+author ai
+file xtask/src/lint/checks.rs
+symbol absence
+lines 0 26
+hash 53431b6ead4079c7
+note L6: absence is Option: no comparison with an empty string or -1, and no integer MAX or MIN standing for none.
+
+step 3vr5mp
+order 20
+parent vjvvmm
+author ai
+file xtask/src/lint/checks.rs
+symbol returned_by_closure_bound
+lines 0 8
+hash a498dac9742faf05
+note A bool returned by a closure bound (impl Fn(..) -> bool) is a predicate, not a value, and passes.
+
+step 5gd1gj
+order 28
+parent wh0vcj
+author ai
+file xtask/src/lint/checks.rs
+symbol chosen_names
+lines 0 12
+hash 49c0aa58c1dae03e
+note Drops names a trait dictates (a trait impl's functions, parameters, associated types and consts), since this code did not choose them.
+
+step 6imfg6
+order 10
+parent dbzwz0
+author ai
+file xtask/src/lint/checks.rs
+symbol Report
+lines 0 4
+hash 451531ef43d46c5b
+note A finding sink bound to one file and one rule, so a check function only says which node and what matched.
+
+step 734zq6
+order 11
+parent svdoyl
+author ai
+file xtask/src/lint.rs
+symbol Rule
+lines 0 16
+hash 5b64dcc2b771d94a
+note The rules. A code is a stable id printed with every finding; Widget and Theme share L12. The feature coverage rule is a test (crates/codemap/tests/features.rs), not an archlint rule.
+
+step 7zl7if
+order 21
+parent 2191f8
+author ai
+file xtask/src/lint/checks.rs
+symbol exempt_function
+lines 0 12
+hash 2d54d8032a9b577c
+note A function inside a trait impl (the trait dictates the signature) or inside an impl of a known newtype is exempt.
+
+step 9xfykw
+order 17
+parent dbzwz0
+author ai
+file xtask/src/lint/checks.rs
+symbol comments
+lines 0 7
+hash 417cfffe55a07f78
+note L1: any line or block comment, doc comments included. What a comment would say goes in a type, a name, a test or a step note in the map, where it cannot drift silently.
+
+step brt4wc
+order 60
+parent 2dbizk
+author ai
+file xtask/src/lint/tests.rs
+symbol aliases_are_newtypes
+lines 0 9
+hash 8c6a3d1d387e77b3
+note L16, and that an associated type passes.
+
+step cxyey3
+order 42
+parent 2b8z6f
+author ai
+file xtask/src/lint/checks.rs
+symbol ID_CALLS
+lines 0 0
+hash 33aa0b2cee64a6a5
+note The constructor whose literals belong in ids.rs.
+
+step d1qb97
+order 54
+parent 2dbizk
+author ai
+file xtask/src/lint/tests.rs
+symbol vocabulary_words_and_synonyms
+lines 0 21
+hash 26d5100ec05a51ad
+note L7: unknown words, synonyms, and word forms (plurals) of listed words.
+
+step d7krqv
+order 35
+parent dbzwz0
+author ai
+file xtask/src/lint/checks.rs
+symbol test_registry
+lines 0 9
+hash 7b62b584e5545f40
+note L11: a scenario file (the CLI and GUI golden tests) must not hand-register a #[test]; its table's macro generates them, so a scenario is added in one place.
+
+step dbzwz0
+order 9
+parent w2dj01
+author ai
+file xtask/src/lint/checks.rs
+symbol check
+lines 0 28
+hash 7f5473e235fd1c82
+note Dispatches one rule to its check function. The GUI rules share three generic checks parameterised by their home module and the calls or paths they own.
+
+step dtblhv
+order 52
+parent 2dbizk
+author ai
+file xtask/src/lint/tests.rs
+symbol indexing_and_slicing
+lines 0 11
+hash becdf209d639216c
+note L4, and that get and test code pass.
+
+step e1bfhj
+order 23
+parent dbzwz0
+author ai
+file xtask/src/lint/checks.rs
+symbol indexing
+lines 0 6
+hash db9f94a3244ff62a
+note L4: no indexing or slicing outside test code; a collection is read through get, iter or a typed id.
+
+step exfmz3
+order 15
+parent svdoyl
+author ai
+file xtask/src/lint.rs
+symbol Finding
+lines 0 5
+hash 4961614118555ebd
+note One finding: file, line, rule, and the offending text.
+
+step h10rsq
+order 50
+parent 2dbizk
+author ai
+file xtask/src/lint/tests.rs
+symbol named_types_newtypes_tests_and_trait_impls_pass
+lines 0 35
+hash 98f6633f20d559ca
+note The closest code that must pass L2: named types, bool returns, predicate closures, newtype impls, trait impls, test modules and test files.
+
+step h1pxir
+order 56
+parent 2dbizk
+author ai
+file xtask/src/lint/tests.rs
+symbol the_domain_does_no_io
+lines 0 7
+hash 8f7cfe8b4eee7a08
+note L9 in the domain only.
+
+step h20a61
+order 39
+parent m540eb
+author ai
+file xtask/src/lint/checks.rs
+symbol gui_module
+lines 0 10
+hash 92e9049b56c6cba7
+note Where a file sits relative to a GUI rule's home module: the home itself, elsewhere in crates/gui/src, or outside the GUI (untouched).
+
+step h473rw
+order 44
+parent sg3sp8
+author ai
+file xtask/src/lint/checks.rs
+symbol KEY_PATHS
+lines 0 0
+hash 597b269bee318974
+note The paths only keys.rs may name.
+
+step hvl9la
+order 5
+parent orc9vn
+author ai
+file xtask/src/lint/checks.rs
+symbol newtype_field
+lines 0 11
+hash c0b6269dfe954ab9
+note A one-field tuple struct's field: what makes a struct a newtype.
+
+step ico231
+order 55
+parent ptga7w
+author ai
+file xtask/src/lint/tests.rs
+symbol wire_types_stay_in_their_crate
+lines 0 34
+hash f9c57d464fda8cb6
+note L8: a wire type in a pub signature outside the wire module fails; private use and the wire module itself pass.
+
+step jr5rz9
+order 57
+parent 2dbizk
+author ai
+file xtask/src/lint/tests.rs
+symbol suppressions_are_expectations_with_reasons_on_the_list
+lines 0 23
+hash 828d51cf74944042
+note L10: allow, expect without reason, and an expect whose lint is or is not listed for the file.
+
+step kc6av3
+order 32
+parent 33maeo
+author ai
+file xtask/src/lint/checks.rs
+symbol DOMAIN_IO
+lines 0 6
+hash 33f3266f6d6a62f2
+note The std modules that count as I/O.
+
+step lvkdp2
+order 4
+parent orc9vn
+author ai
+file xtask/src/lint/checks.rs
+symbol package_of
+lines 0 7
+hash 519664a459d6da9b
+note The crate a file is in, from its path under crates/.
+
+step lymc41
+order 8
+parent lz4s6g
+author ai
+file xtask/src/source.rs
+symbol impl Zone
+lines 0 8
+hash 9d3a1618a2f587a0
+link xtask-source
+note A file is test code under tests/, any /tests/ directory or a tests.rs module; everything else is strict.
+
+step lz4s6g
+order 7
+parent w2dj01
+author ai
+file xtask/src/arch.rs
+symbol applies
+lines 0 5
+hash 5d5d558899eea684
+link rulebook
+note The zone gate: in strict code every rule except test registration; in test code only suppressions, test registration and comments, because test code may use literals, indexing and plain types that production code may not.
+
+step m540eb
+order 37
+parent dbzwz0
+author ai
+file xtask/src/lint/checks.rs
+symbol gui_calls
+lines 0 18
+hash 391c48156760f2c4
+note L12 (widget): outside crates/gui/src/widgets.rs, no .open( or .leaf( call: GUI elements are built by the widget helpers.
+
+step mfjas0
+order 41
+parent 2b8z6f
+author ai
+file xtask/src/lint/checks.rs
+symbol THEME_CALLS
+lines 0 4
+hash 2b9da8192ebba471
+note The constructors whose literals belong in theme.rs.
+
+step n9g4c3
+order 1
+parent svdoyl
+author ai
+file xtask/src/lint.rs
+symbol impl Workspace
+lines 0 11
+hash 06c2311d70674afc
+note The facts one file cannot see: every newtype (a one-field tuple struct) and every wire type per crate, collected from every file before any file is checked, plus the vocabulary.
+
+step nsrh11
+order 51
+parent 2dbizk
+author ai
+file xtask/src/lint/tests.rs
+symbol newtype_fields_are_private
+lines 0 3
+hash b08c71290b727702
+note L3.
+
+step nymuoa
+order 59
+parent ptga7w
+author ai
+file xtask/src/lint/tests.rs
+symbol the_gui_builds_through_its_helpers_theme_ids_and_keys
+lines 0 60
+hash 7c706890b16692e8
+note L12, L13 and L15: each fails outside its home module, passes inside it, passes with a computed argument, and nothing fires outside crates/gui.
+
+step o6z14j
+order 49
+parent 2dbizk
+author ai
+file xtask/src/lint/tests.rs
+symbol primitives_in_signatures
+lines 0 12
+hash 52fefe8c9f63c592
+note L2 on each kind of primitive in a signature.
+
+step ojj5fi
+order 14
+parent 734zq6
+author ai
+file xtask/src/lint.rs
+symbol one_way
+lines 0 44
+hash e5c6e5bada2cf932
+note The one way, as one sentence per rule: what to write instead, and where the sanctioned exception lives when there is one (convert.rs, arch.rs EXPECTS, widgets.rs, theme.rs, ids.rs, keys.rs, vocabulary.txt). This text is the rule's whole documentation.
+
+step orc9vn
+order 2
+parent n9g4c3
+author ai
+file xtask/src/lint/checks.rs
+symbol collect_types
+lines 0 32
+hash 6ca29a3a9993b765
+note Collects newtypes from struct items and wire types from structs and enums declared in a wire.rs or a wire/ module, keyed by the crate they are in.
+
+step ozrjrt
+order 26
+parent dbzwz0
+author ai
+file xtask/src/lint/checks.rs
+symbol vocabulary
+lines 0 19
+hash a71981d70c3d4d5f
+note L7: every identifier this code names, split into words, must use vocabulary.txt words; a word listed as a synonym fails with its canonical spelling, so one concept has one name everywhere.
+
+step ptga7w
+order 45
+author ai
+file xtask/src/lint/tests.rs
+symbol rules_hit
+lines 0 12
+hash 8b30109f63c12259
+note The fixture harness: parses (path, text) pairs as if they were files at those paths, lints them with a small fixed vocabulary, and returns the rules that fired. The path is the input that exercises zones and file scoping.
+
+step qb40qq
+order 25
+parent 3qrtf3
+author ai
+file xtask/src/lint/checks.rs
+symbol INTEGER_TYPES
+lines 0 13
+hash 1c8bb561f1fecd27
+note The integer types whose MAX and MIN count as sentinels.
+
+step qbgnfh
+order 12
+parent 734zq6
+author ai
+file xtask/src/lint.rs
+symbol ALL
+lines 0 16
+hash bd091ffda94e9908
+note Every rule, in the order lint runs them.
+
+step qjtytc
+order 34
+parent dbzwz0
+author ai
+file xtask/src/lint/checks.rs
+symbol suppressions
+lines 0 31
+hash ff0daa2a28b345c9
+note L10: allow is never used; expect needs a reason, and each lint it names must be listed for that file in arch.rs EXPECTS. Every suppression in the repo is therefore visible in one rulebook list the owner curates.
+
+step rngfnx
+order 46
+parent ptga7w
+author ai
+file xtask/src/lint/tests.rs
+symbol WORDS
+lines 0 38
+hash d2884e9c00ad5ad3
+note The fixtures' vocabulary: just the words the fixture code uses.
+
+step sg3sp8
+order 43
+parent dbzwz0
+author ai
+file xtask/src/lint/checks.rs
+symbol gui_paths
+lines 0 13
+hash 3a0fdb671ae537ad
+note L15: outside keys.rs, no Key:: or Mods:: path: keys are bound in one place from the feature registry's chords.
+
+step svdoyl
+order 0
+author ai
+file xtask/src/gate.rs
+symbol lint_files
+lines 0 24
+hash 1cad981af1ddcc35
+note The entry point both the gate and the post-tool hook call: parse every source, collect the workspace facts, lint the chosen files, one line per finding.
+
+step uatm6j
+order 61
+parent n9g4c3
+author ai
+file xtask/src/lint.rs
+symbol Workspace
+lines 0 4
+hash af292f90663dd511
+note What lint reads besides the file: the newtype names, the wire type names per crate, and the vocabulary.
+
+step v8n3jn
+order 30
+parent dbzwz0
+author ai
+file xtask/src/lint/checks.rs
+symbol wire_leaks
+lines 0 25
+hash 8d9131cb5fdea37e
+note L8: a pub item outside a wire module must not name its crate's wire types, so an external format never leaks past its crate's convert.
+
+step vhykv2
+order 36
+parent dbzwz0
+author ai
+file xtask/src/lint/checks.rs
+symbol aliases
+lines 0 9
+hash c343504f016674fc
+note L16: no type aliases outside impl or trait blocks; a new name for a type is a newtype.
+
+step vjvvmm
+order 19
+parent 2191f8
+author ai
+file xtask/src/lint/checks.rs
+symbol offenders
+lines 0 10
+hash 56c6832ba2c59115
+note The offending nodes inside one type annotation: primitive types, tuple types and String.
+
+step w2dj01
+order 6
+parent svdoyl
+author ai
+file xtask/src/lint.rs
+symbol lint
+lines 0 12
+hash 396ba453b60b8736
+note Runs every rule that applies to each file's zone and returns the findings sorted and deduplicated, so the report is stable across runs.
+
+step wh0vcj
+order 27
+parent ozrjrt
+author ai
+file xtask/src/lint/checks.rs
+symbol named_by_us
+lines 0 6
+hash 99dfaa7c1b25d076
+note The identifier nodes this code chose, outside test code. Shared with cargo xtask words.
+
+step y9mk0x
+order 3
+parent orc9vn
+author ai
+file xtask/src/lint/checks.rs
+symbol is_wire
+lines 0 2
+hash 1edaa7cf59c6a55a
+note A wire module is wire.rs or anything under wire/: the one place a type mirrors an external format.
+
+step yezqq1
+order 22
+parent dbzwz0
+author ai
+file xtask/src/lint/checks.rs
+symbol newtype_fields
+lines 0 15
+hash e2ede1a0bd33a4f0
+note L3: a newtype's field is private, so it is built only through its constructor and read only through its methods.
+
+step ytihk4
+order 16
+parent exfmz3
+author ai
+file xtask/src/lint.rs
+symbol impl fmt::Display for Finding
+lines 0 12
+hash 14fde6c9283aabf7
+note file:line: code: the one way (what matched). The rule's sentence is in every line, so a finding read alone says how to fix it.
+
+step z8897k
+order 29
+parent 5gd1gj
+author ai
+file xtask/src/lint/checks.rs
+symbol defined_names
+lines 0 31
+hash ab156a74e99cfc47
+note The name nodes an item, variant, field, parameter pattern or let pattern defines.
+
+step zbci01
+order 13
+parent 734zq6
+author ai
+file xtask/src/lint.rs
+symbol code
+lines 0 17
+hash 54a5f0031a3fc0d6
+note The rule's code, printed in every finding.

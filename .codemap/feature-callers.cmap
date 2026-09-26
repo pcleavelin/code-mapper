@@ -1,0 +1,57 @@
+codemap 8
+path feature-callers
+kind flow
+author ai
+group features/cli
+note callers <symbol>: who calls a symbol. Every symbol matching the name is listed, each followed by its callers. Callers live in other files, so indexing the symbol's own file would not find them; with a server the command asks for the symbol's incoming calls instead and maps each call site back to the symbol enclosing it. Without a server (the GUI's command line) the index's caller list is answered.
+
+step esgi7r
+order 3
+parent mufqvf
+author ai
+file crates/index/src/server.rs
+symbol incoming_calls
+lines 0 4
+hash dbf26c303dd028df
+link server-index
+note The call-hierarchy request at the symbol's name; None when there is no server for the language or no Servers at all.
+
+step gv522n
+order 2
+parent mufqvf
+author ai
+file crates/cli/src/wire.rs
+symbol symbol_line
+lines 0 7
+hash 3101ee7e664ec7a8
+note The match at depth 0 and each caller at depth 1.
+
+step h5ezu1
+order 1
+parent mufqvf
+author ai
+file crates/cli/src/exec.rs
+symbol find_symbols
+lines 0 6
+hash 51665388bbe86c47
+link symbol-lookup
+note Every symbol the name matches; none is an error.
+
+step mufqvf
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol callers
+lines 0 27
+hash a1c0477f03781680
+note Per match: print it, ask the server for incoming calls, fall back to the index's callers when there is none, print each caller one level in.
+
+step r4pwgu
+order 4
+parent mufqvf
+author ai
+file crates/domain/src/index.rs
+symbol by_line
+lines 0 2
+hash 34c5914a9a659a34
+note Each call site's file and line becomes the innermost symbol around it; consecutive duplicates are dropped.
