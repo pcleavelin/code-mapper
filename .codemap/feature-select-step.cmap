@@ -31,7 +31,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol select_step
 lines 0 52
-hash eab2b28be6308818
+hash 1b842c90bf50f8bc
 note The handler. Records the path and step, unfolds every folded ancestor so the step is visible, then points file, lines and focus at the step. A step whose symbol resolves focuses that symbol; a bare line slice focuses the symbol enclosing its first line. Scrolling::Scroll leaves a ticketed request that the document answers once the header is laid out.
 
 step c1bc11

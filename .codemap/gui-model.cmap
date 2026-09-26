@@ -115,16 +115,6 @@ lines 0 0
 hash c531c4d7c7e62622
 note A path's slot, and the StepSlot, StepKey and their queries.
 
-step 9d1r76
-order 26
-parent xv5f46
-author ai
-file crates/gui/src/model.rs
-symbol LeftTab
-lines 0 4
-hash f53dfca7cf14f571
-note The left panel's three tabs.
-
 step 9xv7om
 order 12
 parent w41rnw
@@ -152,7 +142,7 @@ author ai
 file crates/gui/src/model.rs
 symbol new
 lines 0 36
-hash f3fca5eafb58a179
+hash 3e19d04571abc081
 note Every panel in its default state, the map's stamp taken from the store, the metrics at the starting font until the first frame measures the real one.
 
 step erlcdz
@@ -261,7 +251,7 @@ author ai
 file crates/gui/src/model.rs
 symbol Model
 lines 0 25
-hash dcd208b2daa7bb23
+hash d9260f0446a023fb
 note All the state a view can see (gui-structure lists the fields). Views get &Model; apply gets &mut.
 
 step x5fqsj
@@ -292,7 +282,7 @@ file crates/gui/src/model.rs
 symbol Tab
 lines 0 6
 hash 808935b379d1e110
-note The five centre tabs; from_name reads one from a script or CODEMAP_SHOT_TAB.
+note The five centre tabs; from_name reads one from CODEMAP_SHOT_TAB (a script's tab command names any view through View::named).
 
 step y3xlpg
 order 2

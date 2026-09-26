@@ -3,9 +3,9 @@ use ui::Label;
 use crate::action::Action;
 use crate::field::Which;
 use crate::ids;
-use crate::model::{Dirty, Model, Tab};
+use crate::model::{Dirty, Model};
 use crate::theme::{NEW_PATH_FIELD, SEARCH_FIELD, TEXT, WEAK};
-use crate::widgets::{Chosen, Container, Enabled, Frame};
+use crate::widgets::{Container, Enabled, Frame};
 
 pub(super) fn top_bar(model: &Model, frame: &mut Frame<'_>) {
     frame.start(Container::TopBar);
@@ -38,24 +38,6 @@ pub(super) fn top_bar(model: &Model, frame: &mut Frame<'_>) {
         .clicked()
     {
         frame.push(Action::Forward);
-    }
-    let results = format!("Results ({})", model.results.len());
-    for (tab, name) in [
-        (Tab::Path, "Path"),
-        (Tab::Diff, "Diff"),
-        (Tab::Graph, "Graph"),
-        (Tab::Listing, "Listing"),
-        (Tab::Results, results.as_str()),
-    ] {
-        let id = ids::TAB.with(&Label::new(name.split(' ').next().unwrap_or(name)));
-        let chosen = if model.nav.tab() == tab {
-            Chosen::Chosen
-        } else {
-            Chosen::Plain
-        };
-        if frame.button(name, id, chosen).clicked() {
-            frame.push(Action::Tab(tab));
-        }
     }
     frame.grow();
     frame.label("new path", WEAK);

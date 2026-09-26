@@ -1,0 +1,86 @@
+codemap 8
+path feature-move-view
+kind flow
+author ai
+group features/gui
+note Press a view's tab and drag it: once the pointer has travelled a few pixels a band shows where it will land. Over the middle of a panel the band covers the panel and letting go adds the view to that panel's tabs; within a quarter of a panel's edge the band covers that half and letting go splits the panel there, the view alone in the new half. A panel left with no views closes and its neighbour takes its room. Letting go over the top or status bar, or before the pointer has moved, changes nothing (a press on a tab alone just shows it).
+
+step a40hff
+order 0
+author ai
+file crates/gui/src/action.rs
+symbol apply
+lines 62 68
+hash b8b73eaa6fa880a7
+link panel-tree
+note The handler: on release, a grab that had a drop target moves the view there; one without just lets go.
+
+step fa2ynj
+order 6
+parent vwjg3u
+author ai
+file crates/gui/src/panels.rs
+symbol drop_target
+lines 0 14
+hash 2b92f0f4296cec28
+note The panel under the pointer from last frame's rectangles, and the zone and band within it.
+
+step fprjmg
+order 5
+parent vwjg3u
+author ai
+file crates/gui/src/panels.rs
+symbol drag_to
+lines 0 8
+hash 9a01188b1057dc05
+note Moving only once the pointer is more than GRAB_REACH from the press.
+
+step grsq72
+order 1
+parent a40hff
+author ai
+file crates/gui/src/panels.rs
+symbol drop_view
+lines 0 38
+hash 17e3951dcaa3a289
+note Join the stack in the middle, split on an edge; a panel's only view dropped on its own edge stays put.
+
+step j5h3es
+order 2
+parent grsq72
+author ai
+file crates/gui/src/panels.rs
+symbol put
+lines 0 5
+hash facd79d22b25d5c7
+note The move itself; the panel the view leaves closes if it is now empty.
+
+step u22cgn
+order 3
+parent a40hff
+author ai
+file crates/gui/src/views/panel_tree.rs
+symbol tab
+lines 0 20
+hash a7ecb3706b41a019
+note Trigger: a press on a tab queues Grab with the pointer position (and ShowView). The cursor is a closed hand while a moving tab is held.
+
+step vwjg3u
+order 4
+parent a40hff
+author ai
+file crates/gui/src/views/panel_tree.rs
+symbol panel_input
+lines 0 27
+hash d7c1ad0ab6996bcc
+note The drag, read at the start of each frame before the views: while a tab is held, DragView follows the pointer; when the button is up, the drop target is computed on a copy moved to the pointer, kept only if the grab has started moving, and queued with Release.
+
+step wtqtdq
+order 7
+parent a40hff
+author ai
+file crates/gui/src/views/panel_tree.rs
+symbol drag_band
+lines 0 7
+hash 638c9efd6c7dc2c1
+note The band, drawn over everything while the grab is moving.

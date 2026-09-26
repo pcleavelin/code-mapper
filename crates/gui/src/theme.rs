@@ -3,6 +3,8 @@ use std::ops::{Add, AddAssign, Div, Mul, Sub};
 use domain::HighlightClass;
 use ui::{Color, Coordinate, FontSize, Pinch, Px, Scale};
 
+use crate::panels::Ratio;
+
 pub(crate) const BACKGROUND: Color = Color::rgba(24, 24, 26, 255);
 pub(crate) const PANEL: Color = Color::rgba(32, 32, 35, 255);
 pub(crate) const FIELD: Color = Color::rgba(18, 18, 20, 255);
@@ -193,13 +195,17 @@ pub(crate) const TOOLTIP_LEAST: Cells = Cells::new(20);
 pub(crate) const TOOLTIP_SYMBOL_WIDTH: Cells = Cells::new(70);
 pub(crate) const TOOLTIP_TEXT_WIDTH: Cells = Cells::new(84);
 pub(crate) const TOOLTIP_RULE: Cells = Cells::new(20);
-pub(crate) const DOCK_LEAST_SIDE: Cells = Cells::new(12);
-pub(crate) const DOCK_LEAST_BOTTOM: Cells = Cells::new(3);
-pub(crate) const DOCK_CENTER_ACROSS: Cells = Cells::new(20);
-pub(crate) const DOCK_CENTER_DOWN: Cells = Cells::new(12);
-pub(crate) const DOCK_NAV: Cells = Cells::new(44);
-pub(crate) const DOCK_XREFS: Cells = Cells::new(40);
-pub(crate) const DOCK_BOTTOM_LEAST: Cells = Cells::new(6);
+pub(crate) const PANEL_LEAST_ACROSS: Cells = Cells::new(12);
+pub(crate) const PANEL_LEAST_DOWN: Cells = Cells::new(4);
+pub(crate) const PICKER_WIDTH: Cells = Cells::new(28);
+pub(crate) const PICKER_FIELD: Cells = Cells::new(24);
+
+pub(crate) const RATIO_WHOLE: Ratio = Ratio::permille(1000);
+pub(crate) const HALF: Ratio = Ratio::permille(500);
+pub(crate) const EDGE_ZONE: Ratio = Ratio::permille(250);
+pub(crate) const DEFAULT_LEFT: Ratio = Ratio::permille(220);
+pub(crate) const DEFAULT_RIGHT: Ratio = Ratio::permille(740);
+pub(crate) const DEFAULT_BOTTOM: Ratio = Ratio::permille(820);
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) struct Cells(i32);

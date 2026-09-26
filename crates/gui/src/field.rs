@@ -27,6 +27,7 @@ pub(crate) enum Which {
     Command,
     SymbolFilter,
     PathFilter,
+    ViewSearch,
     GoToLine,
 }
 
@@ -38,6 +39,7 @@ impl Which {
             Self::Command => ids::COMMAND_FIELD,
             Self::SymbolFilter => ids::FILTER_FIELD,
             Self::PathFilter => ids::PATH_FILTER_FIELD,
+            Self::ViewSearch => ids::VIEW_FIELD,
             Self::GoToLine => ids::LINE_FIELD,
         }
     }
@@ -309,6 +311,7 @@ pub(crate) struct Fields {
     command: Field,
     filter: Field,
     path_filter: Field,
+    view_search: Field,
     line: Field,
     focused: Option<Which>,
 }
@@ -321,6 +324,7 @@ impl Fields {
             Which::Command => &self.command,
             Which::SymbolFilter => &self.filter,
             Which::PathFilter => &self.path_filter,
+            Which::ViewSearch => &self.view_search,
             Which::GoToLine => &self.line,
         }
     }
@@ -332,6 +336,7 @@ impl Fields {
             Which::Command => &mut self.command,
             Which::SymbolFilter => &mut self.filter,
             Which::PathFilter => &mut self.path_filter,
+            Which::ViewSearch => &mut self.view_search,
             Which::GoToLine => &mut self.line,
         }
     }
@@ -342,6 +347,17 @@ impl Fields {
 
     pub(crate) fn focus(&mut self, which: Which) {
         self.focused = Some(which);
+    }
+
+    pub(crate) fn start_empty(&mut self, which: Which) {
+        self.get_mut(which).clear();
+        self.focused = Some(which);
+    }
+
+    pub(crate) fn release(&mut self, which: Which) {
+        if self.focused == Some(which) {
+            self.focused = None;
+        }
     }
 
     pub(crate) fn handle(

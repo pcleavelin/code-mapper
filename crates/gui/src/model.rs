@@ -9,10 +9,10 @@ use domain::{
 use io_map::{MapStore, Stamp};
 use ui::{Count, Extent, FontSize, Id, Label, Px};
 
-use crate::dock::Dock;
 use crate::field::{Fields, Which};
 use crate::graph::GraphState;
 use crate::nav::Nav;
+use crate::panels::Panels;
 use crate::peek::{Peek, Queries};
 use crate::status::{OutputLog, Status};
 use crate::theme;
@@ -119,13 +119,6 @@ impl Tab {
             .find(|tab| tab.name().as_str() == name.as_str())
             .unwrap_or(Self::Path)
     }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum LeftTab {
-    Paths,
-    Symbols,
-    Files,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -341,7 +334,7 @@ pub(crate) struct Model {
     pub(crate) groups: BTreeMap<GroupName, Openness>,
     pub(crate) peek: Option<Peek>,
     pub(crate) queries: Queries,
-    pub(crate) dock: Dock,
+    pub(crate) panels: Panels,
     pub(crate) scrolls: Scrolls,
     pub(crate) across: Scrolls,
     pub(crate) graph: GraphState,
@@ -376,7 +369,7 @@ impl Model {
             groups: BTreeMap::new(),
             peek: None,
             queries: Queries::default(),
-            dock: Dock::default(),
+            panels: Panels::default(),
             scrolls: Scrolls::default(),
             across: Scrolls::default(),
             graph: GraphState::default(),

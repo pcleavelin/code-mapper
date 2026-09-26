@@ -4,15 +4,17 @@ use std::collections::BTreeSet;
 use domain::{FileId, Line, RelativePath, SymbolId, SymbolKey};
 use ui::Count;
 
+use crate::field::Which;
 use crate::keys::{Extend, Walk};
-use crate::model::{LeftTab, LineSelection, Model, PathSlot, StepKey, StepSlot, Tab, ViewFlag};
+use crate::model::{LineSelection, Model, PathSlot, StepKey, StepSlot, Tab, ViewFlag};
+use crate::panels::{BranchId, View};
 use crate::status::Status;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) struct Ticket(u64);
 
 impl Ticket {
-    fn next(self) -> Self {
+    pub(crate) fn next(self) -> Self {
         Self(self.0.wrapping_add(1))
     }
 }
@@ -93,7 +95,6 @@ pub(crate) enum Scrolling {
 #[derive(Clone, Debug)]
 pub(crate) struct Nav {
     tab: Tab,
-    left: LeftTab,
     path: Option<PathSlot>,
     step: Option<StepSlot>,
     focus: Option<SymbolId>,
@@ -104,6 +105,7 @@ pub(crate) struct Nav {
     top_step: Option<StepSlot>,
     outline_shown: Option<StepSlot>,
     ticket: Ticket,
+    asked: Ticket,
     history: History,
 }
 
@@ -111,7 +113,6 @@ impl Default for Nav {
     fn default() -> Self {
         Self {
             tab: Tab::Path,
-            left: LeftTab::Paths,
             path: None,
             step: None,
             focus: None,
@@ -122,6 +123,7 @@ impl Default for Nav {
             top_step: None,
             outline_shown: None,
             ticket: Ticket(0),
+            asked: Ticket(0),
             history: History::default(),
         }
     }
@@ -130,10 +132,6 @@ impl Default for Nav {
 impl Nav {
     pub(crate) const fn tab(&self) -> Tab {
         self.tab
-    }
-
-    pub(crate) const fn left(&self) -> LeftTab {
-        self.left
     }
 
     pub(crate) const fn path(&self) -> Option<PathSlot> {
@@ -190,6 +188,11 @@ impl Nav {
     fn ticket(&mut self) -> Ticket {
         self.ticket = self.ticket.next();
         self.ticket
+    }
+
+    fn show(&mut self, tab: Tab) {
+        self.tab = tab;
+        self.asked = self.ticket();
     }
 
     fn scroll_to_line(&mut self, line: Line) {
@@ -267,7 +270,7 @@ impl Model {
         if let Some(lines) = place.lines {
             self.nav.scroll_to_line(lines.from);
         }
-        self.nav.tab = place.tab;
+        self.nav.show(place.tab);
         self.nav.history.last = Some(self.here());
     }
 
@@ -435,7 +438,7 @@ impl Model {
             });
         }
         if matches!(self.nav.tab, Tab::Listing | Tab::Results | Tab::Diff) {
-            self.nav.tab = Tab::Path;
+            self.nav.show(Tab::Path);
         }
     }
 
@@ -454,7 +457,7 @@ impl Model {
         if self.nav.path != Some(path) {
             self.select_path(path);
         }
-        self.nav.tab = tab;
+        self.nav.show(tab);
     }
 
     pub(crate) fn go_to_symbol(&mut self, symbol: SymbolId) {
@@ -463,7 +466,7 @@ impl Model {
             return;
         }
         if !matches!(self.nav.tab, Tab::Graph | Tab::Path) {
-            self.nav.tab = Tab::Listing;
+            self.nav.show(Tab::Listing);
         } else if let Some(path) = self.nav.path {
             let name = self.index.symbol(symbol).map(|found| found.name().clone());
             let path = self.path(path).map(|found| found.name().clone());
@@ -477,7 +480,7 @@ impl Model {
         self.select_symbol(symbol);
         let on_step = self.nav.step.is_some() && self.nav.tab == Tab::Path;
         if self.nav.tab != Tab::Graph && !on_step {
-            self.nav.tab = Tab::Listing;
+            self.nav.show(Tab::Listing);
         }
     }
 
@@ -485,7 +488,7 @@ impl Model {
         self.nav.file = Some(file);
         self.nav.lines = Some(LineSelection::one(line));
         self.nav.scroll_to_line(line);
-        self.nav.tab = Tab::Listing;
+        self.nav.show(Tab::Listing);
     }
 
     pub(crate) fn go_to_line(&mut self, line: Line) {
@@ -504,17 +507,33 @@ impl Model {
     }
 
     pub(crate) fn set_tab(&mut self, tab: Tab) {
-        self.nav.tab = tab;
+        self.nav.show(tab);
     }
 
-    pub(crate) fn set_left(&mut self, left: LeftTab) {
-        self.nav.left = left;
+    pub(crate) fn show_view(&mut self, view: View) {
+        match view.tab() {
+            Some(tab) => self.set_tab(tab),
+            None => self.panels.activate(view),
+        }
+    }
+
+    pub(crate) fn pick_view(&mut self, panel: BranchId, view: View) {
+        self.panels.pick(panel, view);
+        self.fields.release(Which::ViewSearch);
+        if let Some(tab) = view.tab() {
+            self.set_tab(tab);
+        }
+    }
+
+    pub(crate) fn reveal_tab(&mut self) {
+        let (tab, asked) = (self.nav.tab, self.nav.asked);
+        self.panels.reveal(tab, asked);
     }
 
     pub(crate) fn path_created(&mut self, path: PathSlot) {
         self.nav.path = Some(path);
         self.nav.step = None;
-        self.nav.tab = Tab::Path;
+        self.nav.show(Tab::Path);
     }
 
     pub(crate) fn step_created(&mut self, step: StepSlot) {

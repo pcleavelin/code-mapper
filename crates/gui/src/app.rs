@@ -14,6 +14,7 @@ use crate::grid::Grids;
 use crate::ids;
 use crate::keys::{self, Going};
 use crate::model::{Metrics, Model, PathSlot, Readable, Tab, TabName};
+use crate::panels::View;
 use crate::status::Status;
 use crate::theme::{self, BACKGROUND, TEXT};
 use crate::views;
@@ -106,7 +107,9 @@ impl App {
             }
             if frame == SHOT_TAB_FRAME {
                 let name = env::var("CODEMAP_SHOT_TAB").unwrap_or_default();
-                self.apply(Action::Tab(Tab::from_name(&TabName::new(&name))));
+                self.apply(Action::ShowView(View::of_tab(Tab::from_name(
+                    &TabName::new(&name),
+                ))));
             }
             if frame == SHOT_FRAME {
                 renderer.shoot(path);
@@ -140,11 +143,21 @@ impl App {
         for walk in keys::walks(input) {
             actions.push(Action::WalkWhenIdle(walk));
         }
-        for which in [Which::SymbolFilter, Which::PathFilter, Which::GoToLine] {
+        for which in [
+            Which::SymbolFilter,
+            Which::PathFilter,
+            Which::ViewSearch,
+            Which::GoToLine,
+        ] {
             actions.push(Action::Type(which, edits.clone(), typed.clone()));
         }
         for action in actions {
             self.apply(action);
+        }
+        if self.model.panels.picker().is_some()
+            && self.model.fields.focused() != Some(Which::ViewSearch)
+        {
+            self.apply(Action::ClosePicker);
         }
     }
 
@@ -159,7 +172,7 @@ impl App {
         let parts: [&dyn Dump; 7] = [
             &model.nav,
             &model.scrolls,
-            &model.dock,
+            &model.panels,
             &model.status,
             &model.fields,
             &model.work,
@@ -188,10 +201,14 @@ impl platform::App for App {
         self.model.now = input.time;
         self.keys(input);
         self.ui.begin(input);
-        for action in views::dock_input(&self.model, &self.ui) {
+        for action in views::panel_input(&self.model, &self.ui) {
             self.apply(action);
         }
-        let graph = (self.model.nav.tab() == Tab::Graph).then(|| self.graph_phase(renderer));
+        let graph = self
+            .model
+            .panels
+            .is_shown(View::Graph)
+            .then(|| self.graph_phase(renderer));
         let mut queue = Vec::new();
         let mut frame = Frame {
             ui: &mut self.ui,
@@ -209,6 +226,7 @@ impl platform::App for App {
         for action in queue {
             self.apply(action);
         }
+        self.model.reveal_tab();
         self.model.track_navigation();
         let busy = self.working() || self.shot.is_some();
         PlatformFrame {
@@ -233,8 +251,10 @@ impl platform::App for App {
                 lines.print();
             }
             Some(AppCommand::Tab) => {
-                let name = TabName::new(line.word(1).unwrap_or_default());
-                self.apply(Action::Tab(Tab::from_name(&name)));
+                let name = Label::new(line.word(1).unwrap_or_default());
+                if let Some(view) = View::named(&name) {
+                    self.apply(Action::ShowView(view));
+                }
             }
             Some(AppCommand::Scroll) => {
                 if let (Some(name), Some(offset)) = (

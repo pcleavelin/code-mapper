@@ -1,6 +1,5 @@
 mod action;
 mod app;
-mod dock;
 mod dump;
 mod field;
 mod graph;
@@ -9,6 +8,7 @@ mod ids;
 mod keys;
 mod model;
 mod nav;
+mod panels;
 mod peek;
 mod runtime;
 mod status;

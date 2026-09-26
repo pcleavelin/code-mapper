@@ -4,7 +4,6 @@ use domain::{Backend, Line, Location, SourceFile, Symbol};
 use ui::{Canvas, Color, Count, Extent, Grid, Label, Point, Px, Rect, Run, Size};
 
 use crate::action::Action;
-use crate::dock::Panel;
 use crate::ids;
 use crate::model::Model;
 use crate::peek::{Peek, Probe};
@@ -14,7 +13,6 @@ use crate::theme::{
     CLOSE_BUTTON, FIELD, PEEK_EXTRA, PEEK_LEAST, PEEK_PLACE_ROOM, PEEK_TITLE, PENDING, PIXEL,
     SLICE, TEXT, WEAK,
 };
-use crate::views::docked::grip;
 use crate::widgets::{Chosen, CodeBlock, Container, Frame, Marks, Scroller, Width};
 
 enum Body {
@@ -291,9 +289,6 @@ fn reference_rows(model: &Model, frame: &mut Frame<'_>, references: &[Location],
 
 pub(super) fn xrefs_panel(model: &Model, frame: &mut Frame<'_>, area: Extent) {
     frame.start(Container::PanelColumn);
-    grip(model, frame, Panel::Xrefs);
-    frame.label("Xrefs", WEAK);
-    frame.finish();
     peek_section(model, frame, area);
     let index = &model.index;
     let Some((current, symbol, file)) = model

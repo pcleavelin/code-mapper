@@ -182,8 +182,8 @@ author ai
 file crates/gui/src/model.rs
 symbol new
 lines 0 36
-hash f3fca5eafb58a179
-note The Model is built around the index, the map and its store, with every panel in its default state (Nav on the Path tab, the default dock, empty fields). The map's stamp is taken here, so the once-a-second disk poll starts out knowing the map as it was read.
+hash 3e19d04571abc081
+note The Model is built around the index, the map and its store, with every panel in its default state (Nav on the Path tab, the default panel tree, empty fields). The map's stamp is taken here, so the once-a-second disk poll starts out knowing the map as it was read.
 
 step yzu1mn
 order 6

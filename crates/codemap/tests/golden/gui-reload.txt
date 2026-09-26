@@ -1,17 +1,17 @@
 DUMP tab=Path path=Some(2) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
-DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
+DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path* Diff Graph Listing Results] 2[Xrefs*])) 3[Output*])
 DUMP tip=None peek=None status="saved"
 DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(2) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
-DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
+DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path* Diff Graph Listing Results] 2[Xrefs*])) 3[Output*])
 DUMP tip=None peek=None status="re-indexed: 8 files, 33 symbols indexed (source changed)"
 DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(2) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
-DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
+DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path* Diff Graph Listing Results] 2[Xrefs*])) 3[Output*])
 DUMP tip=None peek=None status="map reloaded (changed on disk)"
 DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false

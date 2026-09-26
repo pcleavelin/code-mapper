@@ -3,54 +3,53 @@ path feature-resize-panel
 kind flow
 author ai
 group features/gui
-note Drag the splitter on a panel's centre side to resize it; the cursor shows the resize arrows while hovering or dragging. The size is clamped so the centre keeps a minimum and every panel after it on the same edge keeps its own minimum. The size lasts until the panel moves between a side and the bottom, and is not saved.
+note Drag the sash between two panels to move the boundary between them; the cursor shows the resize arrows while hovering or dragging. The position is kept as a share of the split, so it follows the window when the window is resized, and each side keeps a floor of 12 columns across or 4 rows down. Nothing is saved.
 
-step 7xbt66
-order 3
-parent lxr34e
-author ai
-file crates/gui/src/views/docked.rs
-symbol splitter
-lines 0 12
-hash d7d8bed9dc8f3a31
-note The splitter itself, on the centre side of each panel, with the resize cursor.
-
-step lxr34e
+step 13x7m5
 order 0
 author ai
-file crates/gui/src/dock.rs
+file crates/gui/src/panels.rs
 symbol resize
 lines 0 4
-hash ca1c48a91e9274a9
-link panel-dock
-note The handler: records the panel's wanted size.
+hash 2769987dee490677
+note The handler: stores the split's new ratio, clamped to the whole.
 
-step mpcqkl
+step 1mgjcd
 order 2
-parent svyvsa
+parent f2g7j8
 author ai
-file crates/gui/src/action.rs
-symbol apply
-lines 61 61
-hash ed5d253fc1498d72
-note Resize is applied straight away, before this frame's views are built, so the panel follows the pointer without lag.
+file crates/gui/src/panels.rs
+symbol ratio_at
+lines 0 7
+hash a7b42257c573e865
+note The pointer's position in the split, less half the sash, over the room.
 
-step svyvsa
+step f2g7j8
 order 1
-parent lxr34e
+parent 13x7m5
 author ai
-file crates/gui/src/views/docked.rs
-symbol dock_input
-lines 4 16
-hash 0c03a5d1b8d5d29a
-note Trigger, read at the start of each frame before the views: for each panel whose SPLIT is held, the size is the distance from the panel's outer edge to the pointer, less half the splitter, and Resize is queued.
+file crates/gui/src/views/panel_tree.rs
+symbol panel_input
+lines 0 27
+hash d7c1ad0ab6996bcc
+note Trigger, read at the start of each frame before the views: for each split whose sash is held, Resize is queued with the ratio under the pointer, from last frame's rectangle of the split's box (pair/<n>), so the sash follows the pointer with no drift.
 
-step x61i1w
-order 4
-parent lxr34e
+step wivzit
+order 3
+parent 13x7m5
 author ai
-file crates/gui/src/dock.rs
-symbol sizes
-lines 0 37
-hash 5ad7f4df64430a11
-note The effect when the layout is built: each wanted size is clamped between the edge's minimum and what is left after keeping a minimum for every later panel on that edge.
+file crates/gui/src/views/panel_tree.rs
+symbol sash_bar
+lines 0 11
+hash e50f04116607371c
+note The sash, one per split between its halves, with the resize cursor.
+
+step zzo4tb
+order 4
+parent 13x7m5
+author ai
+file crates/gui/src/panels.rs
+symbol divide
+lines 0 20
+hash 30f0be96bb714f5a
+note The effect from the next frame: the ratio sets the first half's size, clamped to the floors.

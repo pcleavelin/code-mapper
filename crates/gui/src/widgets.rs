@@ -7,11 +7,11 @@ use ui::{
 };
 
 use crate::action::Action;
-use crate::dock::Edge;
 use crate::field::{Attention, Field, Looks, Which};
 use crate::grid::Grids;
 use crate::ids::{Control, Target};
-use crate::model::{LeftTab, Metrics};
+use crate::model::Metrics;
+use crate::panels::Direction;
 use crate::peek::Tip;
 use crate::status::Status;
 use crate::theme::{
@@ -35,7 +35,6 @@ pub(crate) struct TipAt {
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Overlay {
     pub(crate) focus: Option<Which>,
-    pub(crate) left: Option<LeftTab>,
     pub(crate) status: Option<Status>,
     pub(crate) asked: Count,
 }
@@ -66,7 +65,6 @@ pub(crate) enum Enabled {
 pub(crate) enum Container {
     Window,
     Body,
-    DockRow,
     Center,
     TopBar,
     StatusBar,
@@ -82,6 +80,8 @@ pub(crate) enum Container {
     CodeColumn { selected: Chosen },
     FillRow,
     Tooltip { at: Point },
+    Picker { at: Point, width: Px },
+    PanelHeader,
 }
 
 struct Shape {
@@ -119,7 +119,6 @@ impl Container {
                 Shape::new(Layout::column().grow(), Style::background(BACKGROUND), None)
             }
             Self::Body => Shape::new(Layout::column().grow(), Style::NONE, Some(ids::body())),
-            Self::DockRow => Shape::new(Layout::row().grow(), Style::NONE, Some(ids::dock_row())),
             Self::Center => Shape::new(Layout::column().grow(), Style::NONE, None),
             Self::TopBar => Shape::new(
                 toolbar(GAP),
@@ -170,6 +169,24 @@ impl Container {
                     .padding(TOOLTIP_PADDING)
                     .gap(TIGHT_GAP),
                 Style::background(PANEL).border(Sides::ALL, BORDER),
+                None,
+            ),
+            Self::Picker { at, width } => Shape::new(
+                Layout::column()
+                    .floating(at)
+                    .width(width)
+                    .padding(TOOLTIP_PADDING)
+                    .gap(TIGHT_GAP),
+                Style::background(PANEL).border(Sides::ALL, ACCENT),
+                Some(ids::picker()),
+            ),
+            Self::PanelHeader => Shape::new(
+                Layout::row()
+                    .grow_width()
+                    .padding(BAR_PADDING)
+                    .gap(SMALL_GAP)
+                    .cross(Align::Center),
+                Style::background(PANEL).border(Sides::BOTTOM, BORDER),
                 None,
             ),
         }
@@ -597,47 +614,38 @@ impl Frame<'_> {
         self.spacer(Px::new(Px::of_count(rest).get() * row_height.get()) + extra);
     }
 
-    pub(crate) fn docked(&mut self, id: Id, edge: Edge, size: Px) {
-        let layout = if edge == Edge::Bottom {
-            Layout::column().grow_width().height(size)
-        } else {
-            Layout::row().width(size).grow_height()
+    pub(crate) fn pane(&mut self, id: Id, direction: Option<Direction>, rect: Rect) {
+        let layout = match direction {
+            Some(Direction::Across) => Layout::row(),
+            Some(Direction::Down) | None => Layout::column(),
         };
         self.ui.open(
             Kind::None,
-            layout.scroll(Point::default()),
+            layout
+                .width(rect.width)
+                .height(rect.height)
+                .scroll(Point::default()),
             Style::NONE,
             Some(id),
         );
     }
 
-    pub(crate) fn splitter(&mut self, target: Target, edge: Edge, width: Px) {
+    pub(crate) fn sash(&mut self, target: Target, direction: Direction, rect: Rect) {
         let id = target.id();
         let interaction = self.ui.interaction(id);
-        let (layout, sides) = match edge {
-            Edge::Left => (Layout::column().width(width).grow_height(), Sides::LEFT),
-            Edge::Right => (Layout::column().width(width).grow_height(), Sides::RIGHT),
-            Edge::Bottom => (Layout::row().grow_width().height(width), Sides::BOTTOM),
+        let sides = match direction {
+            Direction::Across => Sides::LEFT,
+            Direction::Down => Sides::TOP,
         };
         let style = if interaction.hovered() || interaction.down() {
             Style::background(ACCENT)
         } else {
             Style::background(BACKGROUND).border(sides, BORDER)
         };
-        self.ui.leaf(Kind::None, layout, style, Some(id));
-    }
-
-    pub(crate) fn grip(&mut self, target: Target, lit: Chosen) {
-        let id = target.id();
-        self.ui.open(
+        self.ui.leaf(
             Kind::None,
-            Layout::row()
-                .grow_width()
-                .padding(BAR_PADDING)
-                .gap(SMALL_GAP)
-                .cross(Align::Center),
-            Style::background(if lit == Chosen::Chosen { HOVER } else { PANEL })
-                .border(Sides::BOTTOM, BORDER),
+            Layout::row().width(rect.width).height(rect.height),
+            style,
             Some(id),
         );
     }

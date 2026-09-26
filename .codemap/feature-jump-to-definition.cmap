@@ -22,7 +22,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol open_line
 lines 0 5
-hash 01ba837e6ef4b139
+hash cdfa051d42083245
 note A definition that is not a symbol's first line opens the Listing on its line.
 
 step 7x9zhl
@@ -62,7 +62,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol jumped_to_symbol
 lines 0 6
-hash 349dd93599fd134d
+hash 543017efdc030005
 note Selects the symbol, which picks the matching step of the path being read when there is one; unless that put the reader on a step in the document, or the graph is showing, the Listing is shown.
 
 step oduobc

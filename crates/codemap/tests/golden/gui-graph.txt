@@ -1,5 +1,5 @@
 DUMP tab=Graph path=Some(2) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
-DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
+DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path Diff Graph* Listing Results] 2[Xrefs*])) 3[Output*])
 DUMP tip=None peek=None status="saved"
 DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
@@ -34,7 +34,7 @@ DUMP button total_area '▲'
 DUMP button log_line 'listing'
 DUMP button log_line '▲'
 DUMP tab=Graph path=Some(2) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
-DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
+DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path Diff Graph* Listing Results] 2[Xrefs*])) 3[Output*])
 DUMP tip=None peek=None status="saved"
 DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
@@ -73,7 +73,7 @@ DUMP button new 'listing'
 DUMP button new '▼'
 DUMP button new '▲'
 DUMP tab=Graph path=Some(2) step=None focus=Some("new") file=Some("src/store.rs") sel=Some((7, 9))
-DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
+DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path Diff Graph* Listing Results] 2[Xrefs*])) 3[Output*])
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
@@ -113,7 +113,7 @@ DUMP button new 'listing'
 DUMP button new '▼'
 DUMP button new '▲'
 DUMP tab=Graph path=Some(2) step=None focus=Some("new") file=Some("src/store.rs") sel=Some((7, 9))
-DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
+DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path Diff Graph* Listing Results] 2[Xrefs*])) 3[Output*])
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
@@ -152,7 +152,7 @@ DUMP button new 'listing'
 DUMP button new '▼'
 DUMP button new '▲'
 DUMP tab=Graph path=Some(2) step=None focus=Some("new") file=Some("src/store.rs") sel=Some((7, 9))
-DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
+DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path Diff Graph* Listing Results] 2[Xrefs*])) 3[Output*])
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
@@ -190,7 +190,7 @@ DUMP button new 'listing'
 DUMP button new '▼'
 DUMP button new '▲'
 DUMP tab=Graph path=Some(2) step=None focus=Some("new") file=Some("src/store.rs") sel=Some((7, 9))
-DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
+DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path Diff Graph* Listing Results] 2[Xrefs*])) 3[Output*])
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
@@ -228,7 +228,7 @@ DUMP button new 'listing'
 DUMP button new '▼'
 DUMP button new '▲'
 DUMP tab=Graph path=Some(2) step=None focus=Some("new") file=Some("src/store.rs") sel=Some((7, 9))
-DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
+DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path Diff Graph* Listing Results] 2[Xrefs*])) 3[Output*])
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
@@ -266,7 +266,7 @@ DUMP button new 'listing'
 DUMP button new '▼'
 DUMP button new '▲'
 DUMP tab=Graph path=Some(2) step=None focus=Some("new") file=Some("src/store.rs") sel=Some((7, 9))
-DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
+DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path Diff Graph* Listing Results] 2[Xrefs*])) 3[Output*])
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
@@ -304,7 +304,7 @@ DUMP button new 'listing'
 DUMP button new '▼'
 DUMP button new '▲'
 DUMP tab=Graph path=Some(2) step=None focus=Some("new") file=Some("src/store.rs") sel=Some((7, 9))
-DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
+DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path Diff Graph* Listing Results] 2[Xrefs*])) 3[Output*])
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
@@ -342,7 +342,7 @@ DUMP button new 'listing'
 DUMP button new '▼'
 DUMP button new '▲'
 DUMP tab=Graph path=Some(2) step=None focus=Some("new") file=Some("src/store.rs") sel=Some((7, 9))
-DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
+DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path Diff Graph* Listing Results] 2[Xrefs*])) 3[Output*])
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
@@ -380,7 +380,7 @@ DUMP button new 'listing'
 DUMP button new '▼'
 DUMP button new '▲'
 DUMP tab=Graph path=Some(2) step=None focus=Some("new") file=Some("src/store.rs") sel=Some((7, 9))
-DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
+DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path Diff Graph* Listing Results] 2[Xrefs*])) 3[Output*])
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
@@ -418,7 +418,7 @@ DUMP button new 'listing'
 DUMP button new '▼'
 DUMP button new '▲'
 DUMP tab=Graph path=Some(2) step=None focus=Some("new") file=Some("src/store.rs") sel=Some((7, 9))
-DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
+DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path Diff Graph* Listing Results] 2[Xrefs*])) 3[Output*])
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
@@ -456,7 +456,7 @@ DUMP button new 'listing'
 DUMP button new '▼'
 DUMP button new '▲'
 DUMP tab=Graph path=Some(2) step=None focus=Some("new") file=Some("src/store.rs") sel=Some((7, 9))
-DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
+DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path Diff Graph* Listing Results] 2[Xrefs*])) 3[Output*])
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
@@ -495,7 +495,7 @@ DUMP button new 'listing'
 DUMP button new '▼'
 DUMP button new '▲'
 DUMP tab=Graph path=Some(2) step=None focus=Some("new") file=Some("src/store.rs") sel=Some((7, 9))
-DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
+DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path Diff Graph* Listing Results] 2[Xrefs*])) 3[Output*])
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false

@@ -3,7 +3,7 @@ path feature-open-path
 kind flow
 author ai
 group features/gui
-note Click a path in the Paths list to read it. The document switches to that path, its first step in tree order is selected and scrolled to, and the centre shows the Path tab. Clicking the path already being read keeps its current step and only switches the tab back to Path.
+note Click a path in the Paths list to read it. The document switches to that path, its first step in tree order is selected and scrolled to, and the Path view is brought to front wherever it is. Clicking the path already being read keeps its current step and only switches the tab back to Path.
 
 step 1tdtjx
 order 0
@@ -11,7 +11,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol open_path
 lines 0 5
-hash d2834021dae76922
+hash 6009b8aa2be3f88c
 note The handler. Selects the path only when it is not the one being read, so a second click keeps the reader's place; the tab is set either way.
 
 step 62e7oy

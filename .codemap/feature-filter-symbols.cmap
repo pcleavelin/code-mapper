@@ -11,7 +11,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol go_to_symbol
 lines 0 14
-hash 224cf5be04b4d5a1
+hash 84310461820f5965
 note The handler for a row click. After select_symbol, a symbol that landed on a step is done; otherwise the Listing is shown, unless the Path or Graph tab is current, where the status bar notes the symbol is off the path being read.
 
 step 5sspkq
@@ -20,8 +20,8 @@ parent j766na
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 17
-hash 9a26fd931f9b4cc4
+lines 0 18
+hash 807c20a6d2bfc6a0
 link feature-new-path
 note The symbol filter keeps its text on enter and has nothing to run; the field's text is all the filter needs.
 
@@ -42,8 +42,8 @@ parent 0pe1eq
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 19 21
-hash cd0482e8acc76635
+lines 19 26
+hash de06bec86c783ce5
 note The typing: after the walks, the keys phase hands edits and typed text to the symbol filter, path filter and go-to-line fields.
 
 step w6a3u3
@@ -53,5 +53,5 @@ author ai
 file crates/gui/src/views/left.rs
 symbol symbols_window
 lines 0 92
-hash 168996c3991031ae
+hash b3f18bc0354fbe07
 note Trigger and filter: the filter field's text is lower-cased and matched against each symbol's name and file path while the table is built, so there is no filter action to apply. Rows are virtualised to the visible window; a click on a SYMBOL_ROW queues Focus.

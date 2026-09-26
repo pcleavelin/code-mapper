@@ -12,7 +12,7 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol gui_scenarios
 lines 0 4
-hash 400b4cfeb466d7ce
+hash 66ae994909445bdd
 note The GUI scenarios, listed once in the gui_scenarios macro that gui.rs and parity.rs both expand. Each settles with SETTLE first; its golden gui-<fn> is the kept dump state followed by the output of its after commands.
 
 step 1wrmiq
@@ -81,8 +81,8 @@ author ai
 file crates/codemap/tests/common/mod.rs
 symbol gui_state
 lines 0 24
-hash 29004200341ab87e
-note What a GUI golden keeps of stderr: the tab and selection line, dock lines, the tooltip and peek line, backend state and script errors, graph node and button names without their rectangles and the graph line without its pan. What depends on the screen or timing stays out.
+hash 4907a9d0b48a8dfa
+note What a GUI golden keeps of stderr: the tab and selection line, the panel tree line, the Paths filter line, the tooltip and peek line, backend state and script errors, graph node and button names without their rectangles and the graph line without its pan. What depends on the screen or timing stays out.
 
 step 62zoqn
 order 15
@@ -306,8 +306,8 @@ parent hed6nt
 author ai
 file crates/codemap/tests/features.rs
 symbol exercised
-lines 0 48
-hash c3644ed575e831d1
+lines 0 47
+hash fca3404bba9cbd79
 note Whether a script or golden fires one trigger: a command by its transcript line, a click or typed field by a click-id or dblclick-id aimed at the element (a graph node's buttons by their label in a <<DUMP button>> click), a key by a key line with its modifier, and a gesture by the script command that performs it. The back and forward mouse buttons have no script command, so they never count.
 
 step hbyc72
@@ -371,10 +371,10 @@ order 48
 parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
-symbol dock
-lines 0 56
-hash d4383312e68d3b3d
-note The docked panels: resizing the nav panel by its splitter, moving the xrefs and output panels by their grips to other edges, and a click and a drag on the nav grip.
+symbol layout
+lines 0 70
+hash e3cc49a5e0fff881
+note The panel tree: resizing the left split by its sash, splitting the centre and picking the Listing by typing, splitting that down and picking Xrefs by clicking (its old panel closes), dragging Output onto the left edge of the Paths panel, a click on a tab that moves nothing, a drag released over the top bar that cancels, closing a panel, and a tab command that brings the Listing back into a panel.
 
 step j8h125
 order 33
@@ -501,7 +501,7 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol panels
 lines 0 88
-hash b11f34522d8a5932
+hash e4b1e5e6fef043b2
 note The side panels and command line: the symbol list and its filter, the file tree and a folder toggle, the paths list, search and a hit, commands typed into the command line (with a bad one and clear), a new path from the field, a pin from the listing, and ctrl-s to save.
 
 step rlmca4

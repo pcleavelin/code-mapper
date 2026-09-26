@@ -546,7 +546,7 @@ pub(crate) fn gui_state(stderr: &str) -> String {
     let mut out = String::new();
     for line in stderr.lines() {
         let keep = if line.starts_with("DUMP tab=")
-            || line.starts_with("DUMP dock")
+            || line.starts_with("DUMP panels ")
             || line.starts_with("DUMP tip=")
             || line.starts_with("DUMP backend")
             || line.starts_with("DUMP paths ")

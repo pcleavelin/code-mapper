@@ -1,0 +1,45 @@
+codemap 8
+path feature-close-panel
+kind flow
+author ai
+group features/gui
+note The x button in a panel's header closes that panel: its neighbour in the split takes the whole of the split's room. The views it held are hidden until picked again or revealed by navigation. The button is not shown when one panel fills the window.
+
+step 7ujof2
+order 1
+parent za46tw
+author ai
+file crates/gui/src/panels.rs
+symbol close
+lines 0 13
+hash abb5ab7738b03169
+note Replaces the parent split with the panel's sibling; the root is never closed.
+
+step gqrc04
+order 2
+parent za46tw
+author ai
+file crates/gui/src/action.rs
+symbol apply
+lines 73 73
+hash 59997f946bcbef4e
+note The arm.
+
+step z9nymi
+order 3
+parent za46tw
+author ai
+file crates/gui/src/views/panel_tree.rs
+symbol header
+lines 0 35
+hash b042600ec43f0aa9
+note Trigger: CLOSE_PANEL (x), close-panel/<n>, drawn only when the root is a split.
+
+step za46tw
+order 0
+author ai
+file crates/gui/src/panels.rs
+symbol close
+lines 0 13
+hash abb5ab7738b03169
+note The handler: closes the panel, and the picker with it when it was open on it.

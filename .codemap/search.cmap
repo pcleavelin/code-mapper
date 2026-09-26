@@ -21,7 +21,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol open_line
 lines 0 5
-hash 01ba837e6ef4b139
+hash cdfa051d42083245
 note Opening a hit: applying GoTo selects that line in the listing, asks the listing to scroll to it and switches to the Listing tab. The only way from a search result into the code.
 
 step x7ce18

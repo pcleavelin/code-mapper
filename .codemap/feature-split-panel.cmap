@@ -1,0 +1,45 @@
+codemap 8
+path feature-split-panel
+kind flow
+author ai
+group features/gui
+note The | and - buttons in a panel's header split it in two, side by side or one above the other, half each: the panel keeps its views in the first half and the second half is a new empty panel. The picker opens on the new panel with its search field taking the keyboard, so typing a view's name and pressing enter fills it.
+
+step 2rwmch
+order 0
+author ai
+file crates/gui/src/panels.rs
+symbol split_panel
+lines 0 15
+hash e3bab6a753d2ac07
+note The handler: the panel is replaced in the tree by a split of it and a new empty panel, and the picker opens on the new one.
+
+step 36t0jg
+order 1
+parent 2rwmch
+author ai
+file crates/gui/src/panels.rs
+symbol replace
+lines 0 12
+hash d7c2086211b04f78
+note Swaps one branch of the tree for what the closure builds from it.
+
+step msyg83
+order 3
+parent 2rwmch
+author ai
+file crates/gui/src/views/panel_tree.rs
+symbol header
+lines 0 35
+hash b042600ec43f0aa9
+note Trigger: SPLIT_ACROSS (|) and SPLIT_DOWN (-) in each panel's header, split-across/<n> and split-down/<n>.
+
+step vk2qts
+order 2
+parent 2rwmch
+author ai
+file crates/gui/src/action.rs
+symbol apply
+lines 69 72
+hash 78235238f5dbaca6
+note The arm: split, then the picker's search starts empty with the keyboard.

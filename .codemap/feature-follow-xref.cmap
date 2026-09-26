@@ -11,7 +11,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol go_to_symbol
 lines 0 14
-hash 224cf5be04b4d5a1
+hash 84310461820f5965
 note The handler for a caller or callee row: go_to_symbol, the same as a Symbols row.
 
 step 956vwm
@@ -21,7 +21,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol open_line
 lines 0 5
-hash 01ba837e6ef4b139
+hash cdfa051d42083245
 note Opens the reference's file in the Listing with the line selected.
 
 step tpuq0j
@@ -40,7 +40,7 @@ parent 56ca80
 author ai
 file crates/gui/src/views/xrefs.rs
 symbol xrefs_panel
-lines 16 35
+lines 13 32
 hash 536206437583a0e5
 note Where references come from: for a server-backed file with none recorded, the panel queues AskReferences once per probe, and the rows fill in when the answer is merged.
 

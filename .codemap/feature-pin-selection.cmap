@@ -11,7 +11,7 @@ parent zwrtqu
 author ai
 file crates/gui/src/views/bars.rs
 symbol top_bar
-lines 58 60
+lines 40 42
 hash 15483fa23bb23ae1
 note Trigger: the PIN control in the top bar queues PinSelection.
 

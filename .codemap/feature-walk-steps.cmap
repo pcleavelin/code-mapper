@@ -31,7 +31,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol select_step
 lines 0 52
-hash eab2b28be6308818
+hash 1b842c90bf50f8bc
 link feature-select-step
 note Selecting the neighbour is the same as clicking it in the outline.
 
@@ -51,7 +51,7 @@ parent 17uw33
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 71 75
+lines 88 92
 hash 547c8bd0901ef4e5
 note The gate: a walk is dropped while any field is focused, so the arrows move the caret or the field's history there instead.
 

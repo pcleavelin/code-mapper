@@ -1,0 +1,488 @@
+codemap 8
+path panel-tree
+kind flow
+author ai
+group gui
+note How the window is divided and how the reader rearranges it. Below the top bar and above the status bar, the window is one tree of panels: a split holds two branches side by side or one above the other at a ratio, and a leaf panel holds a stack of views shown as tabs. The ten views (Paths, Symbols, Files, Path, Diff, Graph, Listing, Results, Xrefs, Output) each live in at most one panel. The tree is Panels in the Model, laid out top-down every frame from the body's rectangle. The reader drags a sash to resize, drags a tab onto a panel to join it or onto a panel's edge to split it, splits a panel with its | and - buttons, closes it with x, and fills a panel from the picker behind +, a searchable list of views. Navigation still speaks in centre tabs: whatever switches the tab brings that view to front wherever it lives, and adds it back next to the last one shown if it was in no panel. Pointer gestures are read before the tree is built and applied at once, so the frame that sees a drag already draws it. Nothing is saved: a launch starts from the default tree.
+
+step 0b3yk5
+order 24
+parent 11g84p
+author ai
+file crates/gui/src/panels.rs
+symbol take
+lines 0 11
+hash 4aba9cfa7192a2fa
+note Removes a view from its panel; a panel it leaves empty is closed, unless it is the panel receiving the view.
+
+step 0o2kg7
+order 46
+parent mp1y9p
+author ai
+file crates/gui/src/panels.rs
+symbol Grab
+lines 0 4
+hash e4ee98c3a500eb0e
+note A tab pressed and not yet released, with where it was pressed and whether it has started moving.
+
+step 11g84p
+order 23
+parent cxcwck
+author ai
+file crates/gui/src/panels.rs
+symbol put
+lines 0 5
+hash facd79d22b25d5c7
+note Moves a view into a panel and shows it: the one place a view changes panel, so it is never in two.
+
+step 17seke
+order 29
+parent y23yqo
+author ai
+file crates/gui/src/nav.rs
+symbol show
+lines 0 3
+hash e9b898b18530a490
+note Every write of the tab goes through here and takes a fresh Ticket, so asking for the tab already current still counts as a new request.
+
+step 1fp7me
+order 9
+parent 1z0rk0
+author ai
+file crates/gui/src/panels.rs
+symbol divide
+lines 0 20
+hash 30f0be96bb714f5a
+note Where the sash goes: the ratio of the room left after the sash, clamped so each half keeps the floor (12 columns across, 4 rows down) or half the room when there is less. The three rectangles tile the split's exactly.
+
+step 1z0rk0
+order 8
+parent yf6cx3
+author ai
+file crates/gui/src/views/panel_tree.rs
+symbol pair
+lines 0 14
+hash 9888c0088c8fda12
+note A split: its box with the split's id (pair/<n>, which resizing reads back), the first branch, the sash, the second branch.
+
+step 30tc7f
+order 33
+author ai
+file crates/gui/src/panels.rs
+symbol impl fmt::Display for Panels
+lines 0 8
+hash 315226a07180575f
+note The tree as a dump prints it (DUMP panels): direction and id, ratio, both halves; a panel as id[views] with * on the active one; then the open picker.
+
+step 5zemej
+order 19
+parent byfw40
+author ai
+file crates/gui/src/panels.rs
+symbol band
+lines 0 17
+hash be857b2b0fb9b6b0
+note The band drawn while dragging: the whole panel for a join, the half the view would take for a split.
+
+step 82tdel
+order 48
+parent 1z0rk0
+author ai
+file crates/gui/src/views/panel_tree.rs
+symbol least
+lines 0 6
+hash aae555236da4ea8a
+note The floor each half keeps: 12 columns across, 4 rows down, in pixels for this font.
+
+step 9sev2z
+order 20
+parent dpeebe
+author ai
+file crates/gui/src/panels.rs
+symbol drag_to
+lines 0 8
+hash 9a01188b1057dc05
+note A grab starts moving only after the pointer travels more than GRAB_REACH, so a click on a tab moves nothing.
+
+step ae4vqc
+order 13
+parent dxzju5
+author ai
+file crates/gui/src/views/panel_tree.rs
+symbol tab
+lines 0 20
+hash a7ecb3706b41a019
+note A tab is a button tab@<View>. A press both shows the view and takes hold of it for a drag; releasing without moving leaves only the show.
+
+step aebgap
+order 38
+parent yf6cx3
+author ai
+file crates/gui/src/widgets.rs
+symbol pane
+lines 0 14
+hash 994000ab5deb09d7
+note A branch's box: exact width and height, a row for an Across split, a column otherwise, clipped.
+
+step aql8s2
+order 18
+parent byfw40
+author ai
+file crates/gui/src/panels.rs
+symbol zone
+lines 0 15
+hash a5e1b6501833b04b
+note Within a quarter of the panel's size from an edge the drop splits on that side, the nearest edge relative to its reach winning; otherwise it joins the panel's stack.
+
+step b4igpm
+order 16
+parent dpeebe
+author ai
+file crates/gui/src/panels.rs
+symbol ratio_at
+lines 0 7
+hash a7b42257c573e865
+note The ratio that puts the sash's middle under the pointer.
+
+step bb44g6
+order 37
+parent jiqvb4
+author ai
+file crates/gui/src/action.rs
+symbol pick_first
+lines 0 8
+hash cfb0206f548181f4
+note Enter in the picker's search picks the first view it lists.
+
+step byfw40
+order 17
+parent dpeebe
+author ai
+file crates/gui/src/panels.rs
+symbol drop_target
+lines 0 14
+hash 2b92f0f4296cec28
+note The panel under the pointer, from last frame's rectangles, and the zone of it the pointer is in. Outside every panel (the bars, off the window) there is no target, so the drop cancels.
+
+step c32v3n
+order 30
+parent y23yqo
+author ai
+file crates/gui/src/panels.rs
+symbol reveal
+lines 0 24
+hash 8bea09596ebbb4fd
+note Acts once per ticket. A view in a panel is brought to front there; a view in no panel is added next to the one navigation showed before, else to the first panel holding a centre view, else to the first panel. A tab the reader clicked away from stays away until navigation asks again.
+
+step cv9ede
+order 12
+parent dxzju5
+author ai
+file crates/gui/src/views/panel_tree.rs
+symbol header
+lines 0 35
+hash b042600ec43f0aa9
+note One row per panel: a tab per view, then + (the picker), | (split across), - (split down) and x (close), the last only when the panel is not the whole window.
+
+step cxcwck
+order 22
+parent wz1vr6
+author ai
+file crates/gui/src/panels.rs
+symbol drop_view
+lines 0 38
+hash 17e3951dcaa3a289
+note A drop in the middle of a panel joins its stack. A drop on an edge takes the view from its panel and splits the target on that side, the view alone in the new half. Dropping a panel's only view on its own edge would leave an empty half, so it does nothing.
+
+step dpeebe
+order 15
+author ai
+file crates/gui/src/views/panel_tree.rs
+symbol panel_input
+lines 0 27
+hash d7c1ad0ab6996bcc
+note Called by App::frame right after the element tree begins, before anything is drawn, and applied at once, so a drag shows in the frame it happens. A held sash becomes a Resize to the ratio under the pointer, read from last frame's rectangle of its pair. A held tab is dragged; released, it becomes a Release carrying the drop target if the grab had started moving, and none otherwise.
+
+step dxzju5
+order 11
+parent yf6cx3
+author ai
+file crates/gui/src/views/panel_tree.rs
+symbol panel_box
+lines 0 16
+hash 52c50515d5bdf2a9
+note A panel: a clipped box (panel/<n>, which drop targets read back) holding its header and the active view, or a hint when it is empty.
+
+step ec5woa
+order 5
+parent ou10qk
+author ai
+file crates/gui/src/panels.rs
+symbol View
+lines 0 11
+hash 515bef6748992345
+note The ten things a panel can show. Each is in at most one panel at a time, so element ids (tab@Listing), scroll offsets and the one selection stay unambiguous; a view in no panel is hidden until picked or revealed. The five with a centre Tab (Path, Diff, Graph, Listing, Results) are the ones navigation switches between.
+
+step ekaolx
+order 10
+parent 1z0rk0
+author ai
+file crates/gui/src/views/panel_tree.rs
+symbol sash_bar
+lines 0 11
+hash e50f04116607371c
+note The sash between the halves, with the resize cursor while hovered or held (unless another drag holds the mouse).
+
+step eqlsww
+order 3
+parent g7v9nb
+author ai
+file crates/gui/src/panels.rs
+symbol Ratio
+lines 0 0
+hash a582f91eede8b6da
+note A share in thousandths, so a split's position is an exact integer and prints the same in every dump.
+
+step g7v9nb
+order 2
+parent tuwrmk
+author ai
+file crates/gui/src/panels.rs
+symbol Split
+lines 0 6
+hash 6912520de1bfe6e7
+note Two branches side by side (Across, a vertical sash between them) or one above the other (Down), with the first one's share of the room as a Ratio in thousandths. The ratio follows the window: resizing the window keeps the proportions.
+
+step gxvqc1
+order 42
+parent ec5woa
+author ai
+file crates/gui/src/panels.rs
+symbol tab
+lines 0 9
+hash 8600dbd4901f2104
+note The centre Tab a view stands for, if any: how navigation's tab and the panels' views meet.
+
+step he0ghg
+order 26
+parent wz1vr6
+author ai
+file crates/gui/src/panels.rs
+symbol split_panel
+lines 0 15
+hash e3bab6a753d2ac07
+note Replaces a panel with a split holding it and a new empty panel after it, half each, and opens the picker on the new one.
+
+step iv5bdl
+order 25
+parent 0b3yk5
+author ai
+file crates/gui/src/panels.rs
+symbol close
+lines 0 13
+hash abb5ab7738b03169
+note Replaces the parent split of a branch with the branch's sibling, so the sibling takes the whole of the split's room. The root cannot be closed.
+
+step jiqvb4
+order 32
+author ai
+file crates/gui/src/views/panel_tree.rs
+symbol picker
+lines 0 51
+hash 9e0655cca298218a
+note The picker, floating under the + of its panel: the search field, then one row per view whose name contains the text (case-insensitive), marked 'here' or 'moves here' when it is already in a panel. A click, or enter for the first row, picks. It closes when the search field loses the keyboard (escape, or another field).
+
+step l3vnxl
+order 41
+parent ou10qk
+author ai
+file crates/gui/src/panels.rs
+symbol add
+lines 0 5
+hash 420bd283247eb3e4
+note Adding a view puts it at the end of the tabs, once, and fronts it.
+
+step m1gly6
+order 14
+parent dxzju5
+author ai
+file crates/gui/src/views/panel_tree.rs
+symbol body
+lines 0 25
+hash a09179738919fc50
+note The one match from a view to what draws it. Paths, Symbols and Files sit in a panel-coloured column; Xrefs is told the panel's size, since its peek fits itself to it.
+
+step mp1y9p
+order 0
+author ai
+file crates/gui/src/panels.rs
+symbol Panels
+lines 0 7
+hash d473d47c9a474335
+note The whole layout: the root of the tree, the next BranchId to hand out, the tab held for a drag, the panel whose picker is open, and what navigation last asked to be shown (revealed, answered). One Panels lives in the Model; nothing about it is saved, so every launch starts from default.
+
+step nx4h7k
+order 43
+parent ec5woa
+author ai
+file crates/gui/src/panels.rs
+symbol named
+lines 0 4
+hash 47dca09172446abe
+note A view by name in any case, for a script's tab command.
+
+step odjrjn
+order 47
+parent yf6cx3
+author ai
+file crates/gui/src/views/panel_tree.rs
+symbol node
+lines 0 11
+hash e8ae4bca57f1028f
+note One branch: a split's pair, or a panel's box.
+
+step ou10qk
+order 4
+parent tuwrmk
+author ai
+file crates/gui/src/panels.rs
+symbol Panel
+lines 0 4
+hash a0b273cc10a39262
+note A leaf: a stack of views shown as tabs and the one on top. A panel may be empty, right after a split, until a view is picked for it.
+
+step qghrps
+order 44
+parent 11g84p
+author ai
+file crates/gui/src/panels.rs
+symbol holder
+lines 0 5
+hash b019b3bdcc82d9f4
+note Which panel holds a view: the one-of-each rule means there is at most one.
+
+step r9nikp
+order 36
+parent jiqvb4
+author ai
+file crates/gui/src/panels.rs
+symbol matching
+lines 0 6
+hash 9d11d4bd70f308fd
+note The rows: every view whose name contains the search, case-insensitively, in View::ALL order.
+
+step s3yr31
+order 35
+parent wz1vr6
+author ai
+file crates/gui/src/field.rs
+symbol impl Fields
+lines 33 42
+hash 8ad3d756dfabc360
+note start_empty clears a field and gives it the keyboard; release takes the keyboard away only if that field has it. The picker uses both, so its search starts empty each time it opens.
+
+step sbmmjo
+order 31
+author ai
+file crates/gui/src/views/panel_tree.rs
+symbol drag_band
+lines 0 7
+hash 638c9efd6c7dc2c1
+note While a moving tab is held, the drop target's band floats over everything.
+
+step tuwrmk
+order 1
+parent mp1y9p
+author ai
+file crates/gui/src/panels.rs
+symbol Branch
+lines 0 3
+hash 97949495d21965bd
+note A branch is a Panel (a leaf) or a Split of two branches. Every branch has a BranchId, the number the element ids and the dump use: panel/<n>, sash/<n>, pick/<n>.
+
+step ue7mqd
+order 6
+parent mp1y9p
+author ai
+file crates/gui/src/panels.rs
+symbol default
+lines 0 23
+hash c7a17ee024d2ee1c
+note The layout a launch starts with: Paths/Symbols/Files on the left (22%), the five centre views in the middle, Xrefs on the right (26% of the rest), Output along the bottom (18%).
+
+step wz1vr6
+order 21
+author ai
+file crates/gui/src/action.rs
+symbol apply
+lines 59 87
+hash 891e78de9a1e5af9
+note The panel arms of apply: grab, resize, drag and release; split, close; the picker opened, closed or picked from. Opening the picker, by + or by a split, empties its search field and gives it the keyboard.
+
+step x1ugnu
+order 40
+parent ou10qk
+author ai
+file crates/gui/src/panels.rs
+symbol remove
+lines 0 8
+hash 2ebd1e713b4586bb
+note Taking a view out of the stack fronts its neighbour, the next tab or else the last.
+
+step y23yqo
+order 28
+author ai
+file crates/gui/src/nav.rs
+symbol reveal_tab
+lines 0 3
+hash f58d3e0634186970
+note Called by App::frame after the action queue: shows whichever centre view navigation asked for, so every feature that switches the tab (open a path, follow an xref, go back) also brings that view to front in whichever panel holds it.
+
+step ycv5xc
+order 27
+parent wz1vr6
+author ai
+file crates/gui/src/panels.rs
+symbol pick
+lines 0 3
+hash 03d65d7e650f7fb1
+note put, then the picker closes.
+
+step yf6cx3
+order 7
+author ai
+file crates/gui/src/views/panel_tree.rs
+symbol tree
+lines 0 7
+hash dd88e7b91fcbf74e
+note Called by views::build inside the body. The tree is laid out top-down from last frame's body rectangle (the window on the very first frame), so every branch gets an exact size and the layout engine only stacks boxes.
+
+step ygb4kr
+order 34
+parent 30tc7f
+author ai
+file crates/gui/src/panels.rs
+symbol impl fmt::Display for Branch
+lines 0 21
+hash 41826227622f3525
+note A branch's half of that print, recursive.
+
+step yo00ww
+order 39
+parent ekaolx
+author ai
+file crates/gui/src/widgets.rs
+symbol sash
+lines 0 18
+hash a64366a815c0edc4
+note The sash itself: the full size of its strip, with a border line on the side facing the first half; accent-coloured while hovered or held.
+
+step yo7md6
+order 45
+parent byfw40
+author ai
+file crates/gui/src/panels.rs
+symbol DropTarget
+lines 0 4
+hash eca362281d959bfa
+note Where a drop lands: the panel, the zone (Middle, or an Edge side) and the band to draw.

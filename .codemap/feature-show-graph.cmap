@@ -11,10 +11,10 @@ parent x7w987
 author ai
 file crates/gui/src/app.rs
 symbol frame
-lines 18 18
-hash 7e8f9f5d2bddf09a
+lines 18 22
+hash 2e7e5b43c61ca4d0
 link graph-draw
-note The effect from the next frame on: with the Graph tab current, each frame runs the graph phase (input, layout, fit, camera, scene) before the views are built, and the centre draws its scene.
+note The effect from the next frame on: while the Graph view is in front of some panel, each frame runs the graph phase (input, layout, fit, camera, scene) before the views are built, and that panel draws its scene.
 
 step 2arc3y
 order 2
@@ -43,5 +43,5 @@ author ai
 file crates/gui/src/nav.rs
 symbol open_path
 lines 0 5
-hash d2834021dae76922
+hash 6009b8aa2be3f88c
 note The handler: open_path with Tab::Graph. The path is already current, so only the tab changes.

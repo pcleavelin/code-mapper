@@ -100,9 +100,9 @@ order 7
 author ai
 file crates/gui/src/views/output.rs
 symbol output_panel
-lines 0 33
-hash 92fb0018f6583c32
-note The GUI's command line. A panel docked at the bottom by default: the log scrolls in the upper part, virtualised to the visible rows, and is scrolled to its end while output_bottom counts down after a command (a command's output exists only after that frame's layout, so the second frame's pin is the one that lands on it); the input row sits under it and takes the keyboard when clicked.
+lines 0 30
+hash bbc90f1609609ccd
+note The GUI's command line. The Output view, in the panel along the bottom by default: the log scrolls in the upper part, virtualised to the visible rows, and is scrolled to its end while output_bottom counts down after a command (a command's output exists only after that frame's layout, so the second frame's pin is the one that lands on it); the input row sits under it and takes the keyboard when clicked.
 
 step f5fj9z
 order 23

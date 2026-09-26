@@ -31,8 +31,8 @@ parent z6m3sw
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 19 21
-hash cd0482e8acc76635
+lines 19 26
+hash de06bec86c783ce5
 note The typing: the keys phase hands edits and typed text to the path filter along with the symbol filter and go-to-line fields; only the focused field takes them.
 
 step mb3pyj
@@ -71,8 +71,8 @@ parent lhcomc
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 17
-hash 9a26fd931f9b4cc4
+lines 0 18
+hash 807c20a6d2bfc6a0
 note The path filter keeps its text on enter and has nothing to run.
 
 step y3c46y
@@ -91,5 +91,5 @@ author ai
 file crates/gui/src/views/left.rs
 symbol paths_window
 lines 0 29
-hash 9aafefe3303a91e6
+hash 71fcc0bceca3bce9
 note Trigger and effect: the filter field sits in a toolbar above the list; its text is read while the list is built, so there is no filter action to apply. A non-empty filter forces every group open. The rows come from listed_rows instead of the whole map, and removed paths pass through lists.

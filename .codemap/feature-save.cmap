@@ -40,7 +40,7 @@ parent 6t9jgh
 author ai
 file crates/gui/src/views/bars.rs
 symbol top_bar
-lines 61 68
+lines 43 50
 hash 96a2ab798671249d
 note Trigger in the top bar: the SAVE control, labelled 'save *' while dirty, queues Save.
 

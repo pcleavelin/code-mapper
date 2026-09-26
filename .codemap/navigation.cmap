@@ -58,8 +58,8 @@ order 12
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 0 25
-hash 7bac38d2807535f4
+lines 0 35
+hash 7e632512b7fef589
 note The keys, read in the frame before the tree is built and turned into actions: the Save chord, back and forward, every field fed the frame's edits and typed text, and up and down walking the path when no field has the keyboard. Which chord does what comes from the feature registry through keys.
 
 step 5wentz
@@ -89,7 +89,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol select_step
 lines 0 52
-hash eab2b28be6308818
+hash 1b842c90bf50f8bc
 note A place that had a step is restored through the normal step selection, so the document scrolls and the graph follows exactly as if it had been clicked.
 
 step gq28ix
@@ -99,7 +99,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol go
 lines 0 22
-hash e8494479d712c6ab
+hash 2905cac6d6a95cb3
 note Restoring a place without it counting as a new navigation: it overwrites the last-frame snapshot, so track_navigation sees no difference at the end of this frame. A path that disappeared since is dropped, and a step past the end of its path restores only the symbol. The tab is set last, because selecting a step switches the tab on its own.
 
 step hbxizr
@@ -165,7 +165,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol go_to_symbol
 lines 0 14
-hash 224cf5be04b4d5a1
+hash 84310461820f5965
 note The usual way a symbol is opened from a list or an xref (the Focus action): select it, and when it is not a step of the path being read, open the listing unless the graph or a document is showing - there the status line says the symbol is not a step of that path.
 
 step syqeay

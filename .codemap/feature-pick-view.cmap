@@ -1,0 +1,85 @@
+codemap 8
+path feature-pick-view
+kind flow
+author ai
+group features/gui
+note The + button in a panel's header opens a list of the ten views under it, with a search field that takes the keyboard. Typing narrows the list to views whose name contains the text; each row says 'here' when the view is already in this panel and 'moves here' when it is in another. Clicking a row, or pressing enter for the first, puts that view in the panel and shows it, taking it from wherever it was. Escape, clicking another field or pressing + again closes the list.
+
+step 06188r
+order 7
+parent m2tf99
+author ai
+file crates/gui/src/app.rs
+symbol keys
+lines 30 34
+hash d0f272934b1a49d8
+note Closing by losing the keyboard: after the keys, a picker whose field no longer has focus (escape, another field clicked) is closed.
+
+step 5z60rb
+order 2
+parent m2tf99
+author ai
+file crates/gui/src/views/panel_tree.rs
+symbol picker
+lines 0 51
+hash 9e0655cca298218a
+note Trigger and list: the field@views search and one VIEW_ROW (view/<n>, n the view's place in View::ALL) per match; a click queues Pick.
+
+step 9g2uo2
+order 4
+parent 5z60rb
+author ai
+file crates/gui/src/action.rs
+symbol pick_first
+lines 0 8
+hash cfb0206f548181f4
+note Enter picks the first match.
+
+step dfh0vm
+order 3
+parent 5z60rb
+author ai
+file crates/gui/src/panels.rs
+symbol matching
+lines 0 6
+hash 9d11d4bd70f308fd
+note The matches, case-insensitive substring of the name.
+
+step m2tf99
+order 0
+author ai
+file crates/gui/src/nav.rs
+symbol pick_view
+lines 0 6
+hash 3ba4e73d67def06f
+note The handler: puts the view in the panel, releases the search field, and for a centre view sets the tab so navigation agrees.
+
+step nefta7
+order 6
+parent pr90gs
+author ai
+file crates/gui/src/panels.rs
+symbol toggle_picker
+lines 0 6
+hash 8d671468a2001c17
+note Opens the picker on a panel, or closes it when it is already open there.
+
+step pr90gs
+order 5
+parent m2tf99
+author ai
+file crates/gui/src/action.rs
+symbol apply
+lines 74 81
+hash 08e29ba4ea3011c4
+note Trigger: + (pick/<n>) queues TogglePicker; opening starts the search empty with the keyboard, closing releases it.
+
+step wwjmn6
+order 1
+parent m2tf99
+author ai
+file crates/gui/src/panels.rs
+symbol pick
+lines 0 3
+hash 03d65d7e650f7fb1
+note put, then the picker closes.

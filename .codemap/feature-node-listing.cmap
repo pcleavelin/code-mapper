@@ -21,7 +21,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol open_line
 lines 0 5
-hash 01ba837e6ef4b139
+hash cdfa051d42083245
 link listing-view
 note The handler: the file becomes current with the line selected and scrolled to, on the Listing tab.
 

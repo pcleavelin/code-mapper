@@ -91,22 +91,21 @@ fn exercised(trigger: Trigger, goldens: &str, scripts: &str) -> bool {
                     && modifier.is_none_or(|word| words.contains(&word))
             })
         }
-        Trigger::Gesture(gesture, element) => {
-            let name = element.as_str();
-            lines.iter().any(|line| match gesture {
-                Gesture::Hover => line.starts_with("hover-id ") || line.starts_with("mouse "),
-                Gesture::Drag => line.starts_with("drag ") || line == &"down",
-                Gesture::Wheel => line.starts_with("wheel ") && !line.contains("ctrl") && !line.contains("shift"),
-                Gesture::ShiftWheel => line.starts_with("wheel ") && line.contains("shift"),
-                Gesture::ControlWheel => line.starts_with("wheel ") && line.contains("ctrl"),
-                Gesture::Pinch => line.starts_with("pinch "),
-                Gesture::DoubleClick => line.starts_with("dblclick"),
-                Gesture::ControlClick => line.starts_with("click") && line.ends_with(" ctrl"),
-                Gesture::AltClick => line.starts_with("click") && line.ends_with(" alt"),
-                Gesture::ShiftClick => line.starts_with("click") && line.ends_with(" shift"),
-                Gesture::BackButton | Gesture::ForwardButton => false,
-            } && (name != "grip" || line.contains("grip") || line == &"down"))
-        }
+        Trigger::Gesture(gesture, _) => lines.iter().any(|line| match gesture {
+            Gesture::Hover => line.starts_with("hover-id ") || line.starts_with("mouse "),
+            Gesture::Drag => line.starts_with("drag ") || line == &"down",
+            Gesture::Wheel => {
+                line.starts_with("wheel ") && !line.contains("ctrl") && !line.contains("shift")
+            }
+            Gesture::ShiftWheel => line.starts_with("wheel ") && line.contains("shift"),
+            Gesture::ControlWheel => line.starts_with("wheel ") && line.contains("ctrl"),
+            Gesture::Pinch => line.starts_with("pinch "),
+            Gesture::DoubleClick => line.starts_with("dblclick"),
+            Gesture::ControlClick => line.starts_with("click") && line.ends_with(" ctrl"),
+            Gesture::AltClick => line.starts_with("click") && line.ends_with(" alt"),
+            Gesture::ShiftClick => line.starts_with("click") && line.ends_with(" shift"),
+            Gesture::BackButton | Gesture::ForwardButton => false,
+        }),
     }
 }
 

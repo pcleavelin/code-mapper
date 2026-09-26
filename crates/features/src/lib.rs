@@ -80,13 +80,16 @@ pub enum Feature {
     FitGraph,
     PanGraph,
     ZoomGraph,
-    DockPanel,
+    MoveView,
     ResizePanel,
+    SplitPanel,
+    ClosePanel,
+    PickView,
     OpenDiffRow,
 }
 
 impl Feature {
-    pub const ALL: [Self; 79] = [
+    pub const ALL: [Self; 82] = [
         Self::Files,
         Self::Symbols,
         Self::Show,
@@ -163,8 +166,11 @@ impl Feature {
         Self::FitGraph,
         Self::PanGraph,
         Self::ZoomGraph,
-        Self::DockPanel,
+        Self::MoveView,
         Self::ResizePanel,
+        Self::SplitPanel,
+        Self::ClosePanel,
+        Self::PickView,
         Self::OpenDiffRow,
     ];
 
@@ -562,14 +568,9 @@ impl Feature {
             ),
             Self::SwitchTab => Spec::new(
                 Text::new("switch-tab"),
-                Text::new("switch the centre or left tab"),
+                Text::new("show a view by clicking its tab in its panel"),
                 Surface::Window,
-                &const {
-                    [
-                        Trigger::Click(Element::new("tab")),
-                        Trigger::Click(Element::new("left")),
-                    ]
-                },
+                &const { [Trigger::Click(Element::new("tab"))] },
             ),
             Self::GoBack => Spec::new(
                 Text::new("go-back"),
@@ -792,17 +793,48 @@ impl Feature {
                     ]
                 },
             ),
-            Self::DockPanel => Spec::new(
-                Text::new("dock-panel"),
-                Text::new("drag a panel by its header to another edge of the window"),
+            Self::MoveView => Spec::new(
+                Text::new("move-view"),
+                Text::new(
+                    "drag a view's tab onto another panel to join it, or onto a panel's edge to split it",
+                ),
                 Surface::Window,
-                &const { [Trigger::Gesture(Gesture::Drag, Element::new("grip"))] },
+                &const { [Trigger::Gesture(Gesture::Drag, Element::new("tab"))] },
             ),
             Self::ResizePanel => Spec::new(
                 Text::new("resize-panel"),
-                Text::new("drag a panel's splitter to resize it"),
+                Text::new("drag the sash between two panels to resize them"),
                 Surface::Window,
-                &const { [Trigger::Gesture(Gesture::Drag, Element::new("split"))] },
+                &const { [Trigger::Gesture(Gesture::Drag, Element::new("sash"))] },
+            ),
+            Self::SplitPanel => Spec::new(
+                Text::new("split-panel"),
+                Text::new("split a panel in two, side by side or one above the other"),
+                Surface::Window,
+                &const {
+                    [
+                        Trigger::Click(Element::new("split-across")),
+                        Trigger::Click(Element::new("split-down")),
+                    ]
+                },
+            ),
+            Self::ClosePanel => Spec::new(
+                Text::new("close-panel"),
+                Text::new("close a panel; its neighbour takes its place"),
+                Surface::Window,
+                &const { [Trigger::Click(Element::new("close-panel"))] },
+            ),
+            Self::PickView => Spec::new(
+                Text::new("pick-view"),
+                Text::new("choose a view for a panel from a searchable list"),
+                Surface::Window,
+                &const {
+                    [
+                        Trigger::Click(Element::new("pick")),
+                        Trigger::Type(Element::new("field@views")),
+                        Trigger::Click(Element::new("view")),
+                    ]
+                },
             ),
             Self::OpenDiffRow => Spec::new(
                 Text::new("open-diff-row"),

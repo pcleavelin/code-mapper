@@ -2,10 +2,9 @@ use domain::{Change, Depth, FileId, GroupName, PathCount, PathDiff, Row, Step, S
 use ui::{Count, Label, Px, Run};
 
 use crate::action::Action;
-use crate::dock::Panel;
 use crate::field::Which;
 use crate::ids;
-use crate::model::{LeftTab, Model, Openness, PathSlot, StepKey, Tab, ViewFlag};
+use crate::model::{Model, Openness, PathSlot, StepKey, Tab, ViewFlag};
 use crate::nav::Scrolling;
 use crate::text::{Clipped, Tag};
 use crate::theme::{
@@ -13,39 +12,7 @@ use crate::theme::{
     PENDING, PIXEL, RED, ROW_EXTRA, SELECTED, SYMBOL_FIXED, SYMBOL_KIND, SYMBOL_NAME,
     SYMBOLS_GUESS, SYMBOLS_LEAST, TEXT, WEAK,
 };
-use crate::views::docked::grip;
 use crate::widgets::{Chosen, Container, Frame, Scroller};
-
-pub(super) fn left_panel(model: &Model, frame: &mut Frame<'_>) {
-    frame.start(Container::PanelColumn);
-    grip(model, frame, Panel::Nav);
-    for (tab, name) in [
-        (LeftTab::Paths, "Paths"),
-        (LeftTab::Symbols, "Symbols"),
-        (LeftTab::Files, "Files"),
-    ] {
-        let current = frame.overlay.left.unwrap_or(model.nav.left());
-        let chosen = if current == tab {
-            Chosen::Chosen
-        } else {
-            Chosen::Plain
-        };
-        if frame
-            .button(name, ids::LEFT_TAB.with(&Label::new(name)), chosen)
-            .clicked()
-        {
-            frame.overlay.left = Some(tab);
-            frame.push(Action::LeftTab(tab));
-        }
-    }
-    frame.finish();
-    match frame.overlay.left.unwrap_or(model.nav.left()) {
-        LeftTab::Paths => paths_window(model, frame),
-        LeftTab::Symbols => symbols_window(model, frame),
-        LeftTab::Files => files_window(model, frame),
-    }
-    frame.finish();
-}
 
 fn columns(frame: &Frame<'_>, rect: Option<ui::Rect>, guess: Cells, least: Cells) -> Count {
     let cell = frame.cell_width().max(PIXEL);
@@ -180,7 +147,7 @@ fn follow_outline(model: &Model, frame: &mut Frame<'_>, offset: Px) {
     frame.push(Action::OutlineShown(step));
 }
 
-fn paths_window(model: &Model, frame: &mut Frame<'_>) {
+pub(super) fn paths_window(model: &Model, frame: &mut Frame<'_>) {
     frame.start(Container::ToolbarSmall);
     frame.field(
         &model.fields,
@@ -317,7 +284,7 @@ fn outline(model: &Model, frame: &mut Frame<'_>, path: PathSlot, pad: &Label) {
     }
 }
 
-fn symbols_window(model: &Model, frame: &mut Frame<'_>) {
+pub(super) fn symbols_window(model: &Model, frame: &mut Frame<'_>) {
     frame.start(Container::ToolbarSmall);
     frame.label("+ = in a path", WEAK);
     frame.field(
@@ -416,7 +383,7 @@ struct Coverage {
     total: Count,
 }
 
-fn files_window(model: &Model, frame: &mut Frame<'_>) {
+pub(super) fn files_window(model: &Model, frame: &mut Frame<'_>) {
     frame.start(Container::Header);
     frame.label("covered/total symbols", WEAK);
     frame.finish();

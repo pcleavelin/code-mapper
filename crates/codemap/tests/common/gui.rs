@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 #[macro_export]
 macro_rules! gui_scenarios {
     ($m:ident) => {
-        $m! { gui: document, peek, listing, graph, panels, delete, diff, reload, dock, links }
+        $m! { gui: document, peek, listing, graph, panels, delete, diff, reload, layout, links }
     };
 }
 
@@ -316,7 +316,7 @@ pub(crate) fn panels() -> Scenario {
         hook: no_hook,
         after: &[&["paths"]],
         script: "SETTLE
-click-id left@Symbols
+click-id tab@Symbols
 wait 3
 shot {shots}/symbols.png
 click-id field@symbols
@@ -327,7 +327,7 @@ shot {shots}/filtered.png
 click-id sym@5:5
 wait 3
 dump
-click-id left@Files
+click-id tab@Files
 wait 3
 shot {shots}/files.png
 click-id dir@src
@@ -339,7 +339,7 @@ wait 2
 click-id file/5
 wait 3
 dump
-click-id left@Paths
+click-id tab@Paths
 wait 2
 click-id field@paths
 text SHAPE
@@ -489,14 +489,14 @@ quit
     }
 }
 
-pub(crate) fn dock() -> Scenario {
+pub(crate) fn layout() -> Scenario {
     Scenario {
         setup: |bin, name| Ok(mapped(bin, name)),
         hook: no_hook,
         after: &[],
         script: "SETTLE
 dump
-hover-id split@nav
+hover-id sash/5
 wait 1
 down
 wait 1
@@ -506,34 +506,41 @@ up
 wait 2
 dump
 shot {shots}/resized.png
-hover-id grip@xrefs
+click-id split-across/1
+wait 3
+click-id field@views
+text lis
+wait 3
+dump
+shot {shots}/picker.png
+key enter
+wait 3
+dump
+click-id split-down/7
+wait 3
+click-id view/8
+wait 3
+dump
+shot {shots}/split.png
+hover-id tab@Output
 wait 1
 down
 wait 1
-mouse 300 400
+mouse 20 400
 wait 2
 shot {shots}/moving.png
 up
 wait 2
 dump
-hover-id grip@output
-wait 1
-down
-wait 1
-mouse 1590 300
-wait 2
-up
-wait 2
-dump
 shot {shots}/moved.png
-hover-id grip@nav
+hover-id tab@Paths
 wait 1
 down
 wait 1
 up
 wait 2
 dump
-hover-id grip@nav
+hover-id tab@Symbols
 wait 1
 down
 wait 1
@@ -542,6 +549,13 @@ wait 2
 up
 wait 2
 dump
+click-id close-panel/7
+wait 3
+dump
+tab listing
+wait 3
+dump
+shot {shots}/revealed.png
 quit
 ",
     }

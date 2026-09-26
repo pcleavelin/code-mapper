@@ -63,7 +63,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol open_path
 lines 0 5
-hash d2834021dae76922
+hash 6009b8aa2be3f88c
 note The handler for a row of a path that exists: open_path on the Path tab.
 
 step r0nnxl

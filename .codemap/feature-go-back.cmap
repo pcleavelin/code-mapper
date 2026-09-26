@@ -22,7 +22,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol go
 lines 0 22
-hash e8494479d712c6ab
+hash 2905cac6d6a95cb3
 note Restores a place: the path if it still exists, the step through select_step (scrolled to) when it still exists, otherwise the focused symbol found again by its key; then file, lines with a scroll request, and the tab. It records the restored place as the last one so the frame end does not push it again.
 
 step 7ygu48

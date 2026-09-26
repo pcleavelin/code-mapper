@@ -3,53 +3,53 @@ path feature-switch-tab
 kind flow
 author ai
 group features/gui
-note The tab buttons at the top of the centre switch between Path, Diff, Graph, Listing and Results (Results shows its hit count); the buttons at the top of the left panel switch between Paths, Symbols and Files. Switching changes only what is shown: the selection, the path being read and the file stay. Other features switch the centre tab on their own (opening a line shows the Listing, a search shows Results).
+note Each panel's header has a tab per view it holds (Results shows its hit count); clicking one brings that view to front in its panel. Switching changes only what is shown: the selection, the path being read and the file stay. Other features switch the centre view on their own (opening a line shows the Listing, a search the Results): that brings the view to front wherever it is, and puts it back next to the last one shown if it was in no panel.
 
-step ifnbpq
+step 0omynn
 order 0
+author ai
+file crates/gui/src/nav.rs
+symbol show_view
+lines 0 5
+hash 02faf9fa554fecd0
+note The handler: a centre view goes through set_tab, so navigation and history see it; any other view is just brought to front in its panel.
+
+step 1ur67u
+order 3
+parent 0omynn
+author ai
+file crates/gui/src/views/panel_tree.rs
+symbol tab
+lines 0 20
+hash a7ecb3706b41a019
+note Trigger: the TAB button tab@<View> in a panel header queues ShowView.
+
+step gf1kjs
+order 2
+parent 0omynn
+author ai
+file crates/gui/src/panels.rs
+symbol activate
+lines 0 6
+hash 944d50956d2b8d7d
+note Brings a view to the front of the panel holding it.
+
+step tu8e50
+order 1
+parent 0omynn
 author ai
 file crates/gui/src/nav.rs
 symbol set_tab
 lines 0 2
-hash 72985926234db14a
-note The handler for the centre tabs: sets the tab. views::build draws the matching centre view from the next frame.
+hash b0a74509ff198664
+note Sets the centre tab through Nav::show, which takes a fresh ticket.
 
-step qcnnl9
+step vf7sqr
 order 4
-parent ifnbpq
-author ai
-file crates/gui/src/views.rs
-symbol build
-lines 8 14
-hash 16f04985fd1e58da
-note The effect: the centre draws one view per tab.
-
-step qo0af6
-order 1
-parent ifnbpq
+parent 0omynn
 author ai
 file crates/gui/src/nav.rs
-symbol set_left
-lines 0 2
-hash e95ae6a9b5e1660b
-note The handler for the left tabs: sets which list the left panel shows.
-
-step r1500w
-order 3
-parent ifnbpq
-author ai
-file crates/gui/src/views/left.rs
-symbol left_panel
-lines 3 27
-hash 04a838175f4426a1
-note Trigger in the left panel: one LEFT_TAB button per list queues Action::LeftTab and also writes the choice to the frame's overlay, so the rest of this same frame already draws the chosen list instead of lagging one frame behind.
-
-step wtvsai
-order 2
-parent ifnbpq
-author ai
-file crates/gui/src/views/bars.rs
-symbol top_bar
-lines 33 49
-hash 134fe01c5cd4d2e0
-note Trigger in the top bar: one TAB button per centre tab, named by the tab's first word, queues Action::Tab.
+symbol reveal_tab
+lines 0 3
+hash f58d3e0634186970
+note The effect for a centre view, after the action queue: reveal fronts it in its panel.

@@ -32,7 +32,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol open_path
 lines 0 5
-hash d2834021dae76922
+hash 6009b8aa2be3f88c
 note The handler for the link button: the same open_path the Paths list uses, with the Path tab.
 
 step zof35p

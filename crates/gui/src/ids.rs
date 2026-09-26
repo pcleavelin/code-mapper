@@ -71,11 +71,18 @@ pub(crate) const COMMAND_FIELD: Control = Control::new(Feature::RunCommand, Elem
 pub(crate) const BACK: Control = Control::new(Feature::GoBack, Element::new("back"));
 pub(crate) const FORWARD: Control = Control::new(Feature::GoBack, Element::new("forward"));
 pub(crate) const TAB: Control = Control::new(Feature::SwitchTab, Element::new("tab"));
-pub(crate) const LEFT_TAB: Control = Control::new(Feature::SwitchTab, Element::new("left"));
 pub(crate) const PIN: Control = Control::new(Feature::PinSelection, Element::new("pin"));
 pub(crate) const SAVE: Control = Control::new(Feature::Save, Element::new("save"));
-pub(crate) const GRIP: Control = Control::new(Feature::DockPanel, Element::new("grip"));
-pub(crate) const SPLIT: Control = Control::new(Feature::ResizePanel, Element::new("split"));
+pub(crate) const SASH: Control = Control::new(Feature::ResizePanel, Element::new("sash"));
+pub(crate) const SPLIT_ACROSS: Control =
+    Control::new(Feature::SplitPanel, Element::new("split-across"));
+pub(crate) const SPLIT_DOWN: Control =
+    Control::new(Feature::SplitPanel, Element::new("split-down"));
+pub(crate) const CLOSE_PANEL: Control =
+    Control::new(Feature::ClosePanel, Element::new("close-panel"));
+pub(crate) const PICK: Control = Control::new(Feature::PickView, Element::new("pick"));
+pub(crate) const VIEW_ROW: Control = Control::new(Feature::PickView, Element::new("view"));
+pub(crate) const VIEW_FIELD: Control = Control::new(Feature::PickView, Element::new("field@views"));
 pub(crate) const PATH_ROW: Control = Control::new(Feature::OpenPath, Element::new("paths"));
 pub(crate) const GROUP_ROW: Control = Control::new(Feature::OpenGroup, Element::new("group"));
 pub(crate) const OUTLINE_ROW: Control = Control::new(Feature::SelectStep, Element::new("outline"));
@@ -132,11 +139,15 @@ pub(crate) const CONTROLS: &[Control] = &[
     BACK,
     FORWARD,
     TAB,
-    LEFT_TAB,
     PIN,
     SAVE,
-    GRIP,
-    SPLIT,
+    SASH,
+    SPLIT_ACROSS,
+    SPLIT_DOWN,
+    CLOSE_PANEL,
+    PICK,
+    VIEW_ROW,
+    VIEW_FIELD,
     PATH_ROW,
     GROUP_ROW,
     OUTLINE_ROW,
@@ -180,8 +191,8 @@ pub(crate) fn body() -> Id {
     Id::new("body")
 }
 
-pub(crate) fn dock_row() -> Id {
-    Id::new("dock-row")
+pub(crate) fn pair() -> Id {
+    Id::new("pair")
 }
 
 pub(crate) fn panel() -> Id {
@@ -244,4 +255,8 @@ pub(crate) fn linked() -> Id {
 
 pub(crate) fn tooltip_code() -> Id {
     Id::new("tip-code")
+}
+
+pub(crate) fn picker() -> Id {
+    Id::new("picker")
 }

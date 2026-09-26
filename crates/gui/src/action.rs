@@ -5,15 +5,14 @@ use domain::{
 use ui::{Count, Id, Label, Point, Px, Typed};
 
 use crate::app::App;
-use crate::dock::{DropTarget, Panel};
 use crate::field::{Edit, Enter, FieldText, Which};
 use crate::graph::GraphAction;
 use crate::keys::{Extend, Walk};
 use crate::model::{
-    Context, Dirty, Hit, LeftTab, Openness, PathSlot, Readable, StepKey, StepSlot, Tab, ViewFlag,
-    Warned,
+    Context, Dirty, Hit, Openness, PathSlot, Readable, StepKey, StepSlot, Tab, ViewFlag, Warned,
 };
 use crate::nav::{Scrolling, Ticket, Tries};
+use crate::panels::{BranchId, Direction, DropTarget, Ratio, View};
 use crate::peek::{HoverStep, Intent, Peek, Probe, Probing, WantedDefinition};
 use crate::status::{Status, Under};
 use crate::work::Request;
@@ -53,8 +52,7 @@ pub(crate) enum Action {
     Context(StepKey, ContextChange),
     ToggleDirectory(Label),
     OpenGroup(GroupName, Openness),
-    Tab(Tab),
-    LeftTab(LeftTab),
+    ShowView(View),
     Back,
     Forward,
     Save,
@@ -72,10 +70,15 @@ pub(crate) enum Action {
     Hover(Language, Probe),
     AskReferences(Language, Probe),
     FocusField(Which),
-    Grab(Panel, Point),
-    Resize(Panel, Px),
-    DragDock(Point),
+    Grab(View, Point),
+    Resize(BranchId, Ratio),
+    DragView(Point),
     Release(Option<DropTarget>),
+    SplitPanel(BranchId, Direction),
+    ClosePanel(BranchId),
+    TogglePicker(BranchId),
+    Pick(BranchId, View),
+    ClosePicker,
     Type(Which, Vec<Edit>, Typed),
     WalkWhenIdle(Walk),
     Graph(GraphAction),
@@ -117,8 +120,7 @@ impl App {
             Action::OpenGroup(group, openness) => {
                 model.groups.insert(group, openness);
             }
-            Action::Tab(tab) => model.set_tab(tab),
-            Action::LeftTab(left) => model.set_left(left),
+            Action::ShowView(view) => model.show_view(view),
             Action::Back => model.back(),
             Action::Forward => model.forward(),
             Action::Save => self.save(),
@@ -142,15 +144,33 @@ impl App {
                 }
             }
             Action::FocusField(which) => model.fields.focus(which),
-            Action::Grab(panel, at) => model.dock.take_hold(panel, at),
-            Action::Resize(panel, size) => model.dock.resize(panel, size),
-            Action::DragDock(at) => model.dock.drag_to(at),
+            Action::Grab(view, at) => model.panels.take_hold(view, at),
+            Action::Resize(split, ratio) => model.panels.resize(split, ratio),
+            Action::DragView(at) => model.panels.drag_to(at),
             Action::Release(target) => {
-                if let Some(grab) = model.dock.release()
+                if let Some(grab) = model.panels.release()
                     && let Some(target) = target
                 {
-                    model.dock.move_to(grab.panel, target.edge, target.at);
+                    model.panels.drop_view(grab.view, target);
                 }
+            }
+            Action::SplitPanel(panel, direction) => {
+                model.panels.split_panel(panel, direction);
+                model.fields.start_empty(Which::ViewSearch);
+            }
+            Action::ClosePanel(panel) => model.panels.close(panel),
+            Action::TogglePicker(panel) => {
+                model.panels.toggle_picker(panel);
+                if model.panels.picker().is_some() {
+                    model.fields.start_empty(Which::ViewSearch);
+                } else {
+                    model.fields.release(Which::ViewSearch);
+                }
+            }
+            Action::Pick(panel, view) => model.pick_view(panel, view),
+            Action::ClosePicker => {
+                model.panels.close_picker();
+                model.fields.release(Which::ViewSearch);
             }
             Action::Type(which, edits, typed) => self.typed(which, &edits, &typed),
             Action::WalkWhenIdle(walk) => {
@@ -357,7 +377,7 @@ impl App {
             Which::Search | Which::SymbolFilter | Which::PathFilter | Which::GoToLine => {
                 Enter::Keep
             }
-            Which::NewPath | Which::Command => Enter::Clear,
+            Which::NewPath | Which::Command | Which::ViewSearch => Enter::Clear,
         };
         let Some(line) = self.model.fields.handle(which, edits, typed, enter) else {
             return;
@@ -367,6 +387,7 @@ impl App {
             Which::Search => self.search(),
             Which::NewPath => self.create_path(&line),
             Which::GoToLine => self.go_to_line(&line),
+            Which::ViewSearch => self.pick_first(&line),
             Which::SymbolFilter | Which::PathFilter => {}
         }
     }
@@ -456,6 +477,16 @@ impl App {
             }
             (Err(_), _) => model.status = Status::NoLineNumber(Label::new(text)),
             (_, None) => model.status = Status::NoFileOpen,
+        }
+    }
+
+    fn pick_first(&mut self, line: &FieldText) {
+        let model = &mut self.model;
+        let Some(panel) = model.panels.picker() else {
+            return;
+        };
+        if let Some(view) = View::matching(&line.label()).first() {
+            model.pick_view(panel, *view);
         }
     }
 

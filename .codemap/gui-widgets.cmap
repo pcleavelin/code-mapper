@@ -19,8 +19,8 @@ order 13
 author ai
 file crates/gui/src/field.rs
 symbol Fields
-lines 0 8
-hash 629e6c08565ed642
+lines 0 9
+hash 62e377731c50a134
 note The six fields, one named member each, reached by Which; focused names the one with the keyboard, at most one, so taking focus is setting it.
 
 step 2yp2r2
@@ -115,9 +115,9 @@ parent rcazsr
 author ai
 file crates/gui/src/widgets.rs
 symbol shape
-lines 0 76
-hash 681bc984d8a1f066
-note The one match that turns a Container into its layout, style and fixed id: the paddings, gaps and colours from theme, the accent bar on the left of a selected step row or code column, and the ids body and dock-row that the dock reads rectangles from.
+lines 0 93
+hash 054da5b8ef06f752
+note The one match that turns a Container into its layout, style and fixed id: the paddings, gaps and colours from theme, the accent bar on the left of a selected step row or code column, and the id body the panel tree is laid out from, and the picker's id.
 
 step aidqqn
 order 3
@@ -172,7 +172,7 @@ step gjm6fk
 order 0
 author ai
 file crates/gui/src/theme.rs
-lines 5 25
+lines 7 27
 hash 6408bff5868596bb
 note The palette, in theme: a dozen colours named by role - background, panel, field, border, text, weak, accent, green, red, orange, hover, selected - and below them the tints made from those by alpha (disabled, selected lines, the slice, the outline's top step, faint, pending, the drop band, the call tint). A colour decision is made once, here, and every view names one.
 
@@ -191,8 +191,8 @@ parent 2havd5
 author ai
 file crates/gui/src/field.rs
 symbol Which
-lines 0 7
-hash b23ffde200cbcc70
+lines 0 8
+hash 55ac3891d4ce2233
 note The six fields: search, new path, the command line, the symbol filter, the path filter and go-to-line. Which::control is the field's Control in ids, whose element name is its script id: field@search, field@new-path, cmd, field@symbols, field@paths, field@goto-line.
 
 step k73r2l
@@ -278,9 +278,9 @@ order 1
 author ai
 file crates/gui/src/widgets.rs
 symbol Container
-lines 0 19
-hash b7ece6cf18660120
-note Every box that holds other elements is one of these: the window, the body, the dock row, the centre, the bars, the toolbars, a panel column, a step row or code column (with its selected mark), a tooltip. A view opens one with Frame::start and closes it with finish; it never spells out a layout or a style.
+lines 0 20
+hash 554ee9e40f0192cf
+note Every box that holds other elements is one of these: the window, the body, the centre, the bars, the toolbars, a panel column, a step row or code column (with its selected mark), a tooltip, a panel header, the floating view picker. A view opens one with Frame::start and closes it with finish; it never spells out a layout or a style.
 
 step rs11uk
 order 14

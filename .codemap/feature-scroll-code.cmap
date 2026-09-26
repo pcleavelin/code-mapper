@@ -22,7 +22,7 @@ parent vso1s4
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 42 42
+lines 41 41
 hash c5a6628c1b2c605e
 note Stores the offset under the block's id, so the next frame starts from it.
 

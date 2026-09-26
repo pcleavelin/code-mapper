@@ -5,12 +5,12 @@ use domain::Row;
 use platform::ScriptLine;
 use ui::{Id, Ui};
 
-use crate::dock::Dock;
 use crate::field::{Fields, Which};
 use crate::graph::{GraphState, Hit, Node};
 use crate::ids;
 use crate::model::{Model, Scrolls};
 use crate::nav::Nav;
+use crate::panels::Panels;
 use crate::peek::Peek;
 use crate::status::Status;
 use crate::work::{Services, WorkState};
@@ -120,9 +120,9 @@ impl Dump for Scrolls {
     }
 }
 
-impl Dump for Dock {
+impl Dump for Panels {
     fn dump(&self, _: &Context<'_>, lines: &mut DumpLines) {
-        lines.line(format_args!("dock {self}"));
+        lines.line(format_args!("panels {self}"));
     }
 }
 

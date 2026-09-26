@@ -80,15 +80,15 @@ author ai
 file crates/gui/src/model.rs
 symbol Model
 lines 0 25
-hash dcd208b2daa7bb23
-note All the state a view can see, in one struct: the index and the map with its MapStore and disk state, the parent map for the Diff tab, Nav, the step views, the open directories and groups, the pinned peek, the server Queries, the dock, the scroll offsets (down and across), the graph's state, the fields, search results, the output log, the status, WorkState, the font metrics and the frame time. gui-model has its values and queries.
+hash d9260f0446a023fb
+note All the state a view can see, in one struct: the index and the map with its MapStore and disk state, the parent map for the Diff tab, Nav, the step views, the open directories and groups, the pinned peek, the server Queries, the panel tree, the scroll offsets (down and across), the graph's state, the fields, search results, the output log, the status, WorkState, the font metrics and the frame time. gui-model has its values and queries.
 
 step 622pjb
 order 25
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 118 150
+lines 120 152
 hash b5ff7b1202508883
 note Every padding, gap and fixed pixel measure the widgets and views use, named by where it is used.
 
@@ -119,7 +119,7 @@ file crates/gui/src/dump.rs
 symbol Dump
 lines 0 2
 hash 32f1e195f6bd176e
-note What a script's dump prints for one part of the Model. The App dumps Nav, the scrolls, the dock, the status, WorkState and the graph, in that order.
+note What a script's dump prints for one part of the Model. The App dumps Nav, the scrolls, the panel tree, the status, the fields, WorkState and the graph, in that order.
 
 step 7h1hw9
 order 32
@@ -155,8 +155,8 @@ order 6
 author ai
 file crates/gui/src/views.rs
 symbol build
-lines 0 24
-hash cfa16bdced0c69eb
+lines 0 12
+hash d8edc5c1ba245f7c
 note Every view is a function of (&Model, &mut Frame): nothing a view does can change the Model, so the whole window is drawn from one consistent state, and a view that wants a change pushes an Action.
 
 step 98q001
@@ -183,9 +183,9 @@ order 26
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 171 201
-hash 9124161bd1b4bfdd
-note Every measure counted in cells: button and field widths, column guesses before a panel has a size, the symbol table's columns, tooltip sizes, the dock's floors and default widths.
+lines 173 207
+hash 00b6b11875de5984
+note Every measure counted in cells: button and field widths, column guesses before a panel has a size, the symbol table's columns, tooltip sizes, the panels' floors and the picker's width.
 
 step an1gef
 order 59
@@ -291,8 +291,8 @@ parent xjz44n
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 0 78
-hash 3e57dd276deca8eb
+lines 0 95
+hash 454e57b28a33fe9b
 note The one place the Model changes during a frame. Each arm is a call into nav.rs, a field of the Model, or a method on the App for changes that need the Services (save, a server question, a command).
 
 step h4xmjq
@@ -417,9 +417,9 @@ parent hfe5mm
 author ai
 file crates/gui/src/widgets.rs
 symbol Overlay
-lines 0 5
-hash a48192fffe747ae5
-note What a view decided this frame, for the views drawn after it: the field that took the keyboard, the left tab clicked, a status to show, and how many hovers were asked. The Model learns these when the queue is applied; the overlay makes the frame that had the click already show it.
+lines 0 4
+hash f74fb5c952fb2f74
+note What a view decided this frame, for the views drawn after it: the field that took the keyboard, a status to show, and how many hovers were asked. The Model learns these when the queue is applied; the overlay makes the frame that had the click already show it.
 
 step mch588
 order 33
@@ -427,8 +427,8 @@ parent 9pik9m
 author ai
 file crates/gui/src/ids.rs
 symbol CONTROLS
-lines 0 52
-hash edae1ffcb0c2d1f3
+lines 0 56
+hash ef32e59eba3e3adc
 note Every control, for the test that checks them against the registry.
 
 step mjhubp
@@ -486,7 +486,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol Nav
 lines 0 14
-hash 66cd970f88054472
+hash 436360219dbe2a21
 note The selection and everything that moves with it (see selection). Its fields are private to nav.rs, so the selection only changes through Model's methods there.
 
 step o9w0e6
@@ -631,8 +631,8 @@ order 8
 author ai
 file crates/gui/src/action.rs
 symbol Action
-lines 0 42
-hash ffbdca32168d3039
+lines 0 46
+hash f2de8d6669a5466b
 note Every change a gesture, a key, a script line or a view's measurement can cause, as data. A view names the change; it never makes it.
 
 step xypoz6

@@ -105,17 +105,29 @@ jumps and off-path graph nodes. Every view shows the selection; nothing selected
 every view is empty. The document, outline and graph are three views of one thing and
 never disagree.
 
-| Panel | Contents |
+Below the top bar the window is a tree of **panels**. A split divides its area in two, side
+by side or one above the other, at a ratio a sash between the halves changes; a leaf is a
+panel holding a stack of **views** as tabs, one of them shown. There are ten views and each
+is in at most one panel. The default tree:
+
+| Panel | Views |
 |---|---|
 | Left, tabs | **Paths**: the groups as folders, each with the number of paths under it and red when one of them is stale, then the paths outside any group; every path with kind, author tag and stale count. A group is closed until the path being read is in it, and a click opens or closes it. The selected path expanded into its **outline**, one row per step with hierarchical number (1, 1.2, 1.2.3), symbol and file, a hidden count on folded subtrees. The topmost step visible in the document is highlighted and the outline scrolls to keep it in view. Clicking a row selects the step. **Symbols**: filterable table with kind, file, line, covered. **Files**: a tree of the indexed files with covered/total per file. |
 | Centre, tabs | **Path** document, below. **Diff**: the map against the parent revision's, every added, removed or changed path, click to read. **Graph**: the selection as a left-to-right tree, below. **Listing**: the file viewer with line numbers, anchor bars, and go-to-line. **Results**: grep output. In the document and the listing, double-click or ctrl-click an identifier to jump to its definition. |
 | Right | **Xrefs** for the selected symbol. |
 | Bottom | **Output**: runs the same commands as the CLI. |
 
-That is the default layout. Dragging a panel's header onto the left, right or bottom of the
-window docks it there, before or after the panels already on that edge, and letting go anywhere else cancels;
-the splitter on a panel's centre side resizes it. The layout is not saved: every launch starts from the
-default.
+Each panel's header holds its tabs and four buttons: **+** opens a list of every view with a
+search field (typing narrows it, enter or a click puts that view in this panel, moving it from
+wherever it was), **|** and **-** split the panel side by side or one above the other and open
+the list on the new empty half, and **x** closes the panel, its sibling taking its place (the
+last panel cannot close). Dragging a tab onto another panel's middle adds the view to that
+panel's tabs; onto the outer quarter of an edge, it splits that panel and the view takes the
+half on that side; anywhere else cancels. A panel whose last view is dragged away closes.
+Navigation that means another centre view (opening a path shows Path, a symbol off the path
+shows Listing, a search shows Results) brings that view's tab to the front wherever it is,
+and puts it back next to the last one navigation showed if it was closed. The layout is not
+saved: every launch starts from the default.
 
 **The document.** A sticky breadcrumb of the topmost visible step's ancestors, name and
 file per crumb, each clickable. Then the steps in tree order: a header with the
@@ -349,7 +361,7 @@ crates/
   platform/     the GPU (wgpu), fonts, the window (winit), the event loop, the test-script
                 runner, screenshots
   gui/          the app (human interface): widgets, theme, ids, keys, actions, navigation,
-                the document, peek, graph, dock, the background runtime
+                the document, peek, graph, the panel tree, the background runtime
   codemap/      the binary: CLI or GUI; the integration tests (cli, gui, parity)
 xtask/          the gate: archlint, the crate graph, the API lock, the hooks
 ```
@@ -466,7 +478,7 @@ Deferred, with the trigger that would pull each in:
 | Step-level review state | a long path gets one re-pinned step and rereading it all is a cost |
 | Kind-specific rendering | a list of 50 mixed-kind paths is unreadable |
 | Documentation panel for the focused symbol | per language: doc comments first, then external docs |
-| Detachable windows, a saved layout | docking within one window is not enough for a real session |
+| Detachable windows, a saved layout | one window's panel tree is not enough for a real session |
 | Multi-threaded grep | a search takes more than 100 ms |
 | Watch for new / deleted files | restarting for new files annoys |
 | Undo | a mis-click deletes something that took effort to build |

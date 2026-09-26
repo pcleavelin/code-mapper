@@ -42,7 +42,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol path_created
 lines 0 4
-hash dd0a50399d1a2170
+hash 233a67c720ba2a84
 note The new path is current, with no step, on the Path tab.
 
 step gfjqbl
@@ -70,6 +70,6 @@ parent 6bofi6
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 17
-hash 9a26fd931f9b4cc4
+lines 0 18
+hash 807c20a6d2bfc6a0
 note Only the focused field takes the edits. The new-path field clears on enter; a submitted line goes to create_path.
