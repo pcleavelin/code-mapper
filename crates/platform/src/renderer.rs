@@ -365,10 +365,11 @@ impl Renderer {
             if pen >= clip.right() {
                 break;
             }
-            if pen + metrics.cell.width > clip.left && character != ' ' {
-                self.put(size, Glyph::new(character), pen, baseline, color);
+            let glyph = Glyph::new(character);
+            if pen + metrics.cell.width > clip.left && glyph != Glyph::SPACE {
+                self.put(size, glyph, pen, baseline, color);
             }
-            pen += metrics.cell.width;
+            pen += metrics.cell.width * Count::new(glyph.columns());
         }
     }
 

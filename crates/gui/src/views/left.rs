@@ -1,5 +1,5 @@
 use domain::{Change, Depth, FileId, GroupName, PathCount, PathDiff, Row, Step, SymbolName};
-use ui::{Count, Label, Px, Run};
+use ui::{Count, Icon, Label, Px, Run};
 
 use crate::action::Action;
 use crate::field::Which;
@@ -42,7 +42,9 @@ fn group_row(
     let label = format!(
         "{}{} {}/  {} paths",
         pad.as_str(),
-        if open { "\u{25be}" } else { "\u{25b8}" },
+        if open { Icon::Unfolded } else { Icon::Folded }
+            .glyph()
+            .get(),
         group.last_segment(),
         paths.value()
     );
@@ -510,7 +512,9 @@ fn files_tree(
                 vec![Run::new(
                     format!(
                         "{indent}{} {}/  {covered}/{total}",
-                        if open { "\u{25be}" } else { "\u{25b8}" },
+                        if open { Icon::Unfolded } else { Icon::Folded }
+                            .glyph()
+                            .get(),
                         directory.as_str()
                     ),
                     TEXT,

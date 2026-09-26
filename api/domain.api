@@ -141,6 +141,25 @@ index::symbol::pub fn set_targets(&mut self, targets: Vec<Location>)
 index::symbol::pub fn set_references(&mut self, references: Vec<Location>)
 index::symbol::pub fn set_callees(&mut self, callees: Vec<SymbolId>)
 index::symbol::pub fn set_callers(&mut self, callers: Vec<SymbolId>)
+layout::pub enum SplitDirection { Across, Down, }
+layout::pub struct Share(u16);
+layout::pub const WHOLE: Self = Self(1000);
+layout::pub fn permille(value: u16) -> Option<Self>
+layout::pub const fn get(self) -> u16
+layout::pub struct ViewKey(String);
+layout::pub fn new(name: &str) -> Option<Self>
+layout::pub fn as_str(&self) -> &str
+layout::pub struct LayoutPanel { views: Vec<ViewKey>, shown: Option<ViewKey>, }
+layout::pub fn new(views: Vec<ViewKey>, shown: Option<ViewKey>) -> Self
+layout::pub fn views(&self) -> &[ViewKey]
+layout::pub const fn shown(&self) -> Option<&ViewKey>
+layout::pub struct LayoutSplit { direction: SplitDirection, share: Share, first: Box<LayoutTree>, second: Box<LayoutTree>, }
+layout::pub fn new( direction: SplitDirection, share: Share, first: LayoutTree, second: LayoutTree, ) -> Self
+layout::pub const fn direction(&self) -> SplitDirection
+layout::pub const fn share(&self) -> Share
+layout::pub fn first(&self) -> &LayoutTree
+layout::pub fn second(&self) -> &LayoutTree
+layout::pub enum LayoutTree { Split(LayoutSplit), Panel(LayoutPanel), }
 map::pub struct Changed;
 map::pub enum Row { Group { group: GroupName, depth: Depth, paths: PathCount, }, Path { name: PathName, depth: Depth, }, }
 map::pub struct Map { paths: Vec<Path>, }

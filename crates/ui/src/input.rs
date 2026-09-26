@@ -72,6 +72,14 @@ impl Glyph {
     pub const fn get(self) -> char {
         self.0
     }
+
+    pub const fn is_icon(self) -> bool {
+        matches!(self.0, '\u{E000}'..='\u{F8FF}')
+    }
+
+    pub const fn columns(self) -> usize {
+        if self.is_icon() { 2 } else { 1 }
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

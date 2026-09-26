@@ -125,7 +125,7 @@ const EXPECTS: [Allowance; 27] = [
     },
 ];
 
-const DEPENDENCIES: [Allowed; 16] = [
+const DEPENDENCIES: [Allowed; 17] = [
     Allowed {
         package: Literal::new("xtask"),
         dependencies: &[
@@ -157,6 +157,10 @@ const DEPENDENCIES: [Allowed; 16] = [
     },
     Allowed {
         package: Literal::new("io-cache"),
+        dependencies: &[Literal::new("domain"), Literal::new("io-store")],
+    },
+    Allowed {
+        package: Literal::new("io-layout"),
         dependencies: &[Literal::new("domain"), Literal::new("io-store")],
     },
     Allowed {
@@ -224,6 +228,7 @@ const DEPENDENCIES: [Allowed; 16] = [
             Literal::new("domain"),
             Literal::new("index"),
             Literal::new("io-map"),
+            Literal::new("io-layout"),
             Literal::new("io-vcs"),
             Literal::new("io-lsp"),
             Literal::new("cli"),

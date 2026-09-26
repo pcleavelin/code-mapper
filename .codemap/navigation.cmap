@@ -138,7 +138,7 @@ file crates/gui/src/nav.rs
 symbol back
 lines 0 7
 hash 62ffaec576a23e5e
-note Back: pop the history, push where we are onto the forward stack, go. Reached by the Back action, which the '<' button, alt+left and the mouse's back button push.
+note Back: pop the history, push where we are onto the forward stack, go. Reached by the Back action, which the back arrow, alt+left and the mouse's back button push.
 
 step kv8kwg
 order 1

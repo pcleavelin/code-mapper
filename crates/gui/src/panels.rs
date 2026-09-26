@@ -1,6 +1,7 @@
 use std::fmt;
 use std::mem;
 
+use domain::{LayoutPanel, LayoutSplit, LayoutTree, Share, SplitDirection, ViewKey};
 use ui::{Axis, Count, Extent, FontSize, Label, Point, Px, Rect};
 
 use crate::model::Tab;
@@ -489,7 +490,72 @@ pub(crate) fn sash_width(font: FontSize) -> Px {
     Px::of_count(usize::try_from(font.get() / 2).unwrap_or(0)).max(SPLIT_LEAST)
 }
 
+fn layout_of(branch: &Branch) -> LayoutTree {
+    match branch {
+        Branch::Panel(panel) => {
+            let key = |view: View| ViewKey::new(view.name().as_str());
+            LayoutTree::Panel(LayoutPanel::new(
+                panel.views.iter().filter_map(|view| key(*view)).collect(),
+                panel.active.and_then(key),
+            ))
+        }
+        Branch::Split(split) => LayoutTree::Split(LayoutSplit::new(
+            match split.direction {
+                Direction::Across => SplitDirection::Across,
+                Direction::Down => SplitDirection::Down,
+            },
+            Share::permille(split.ratio.0).unwrap_or(Share::WHOLE),
+            layout_of(&split.first),
+            layout_of(&split.second),
+        )),
+    }
+}
+
 impl Panels {
+    pub(crate) fn from_layout(layout: &LayoutTree) -> Self {
+        let mut panels = Self::default();
+        let mut placed = Vec::new();
+        panels.next = BranchId(0);
+        panels.root = panels.restore(layout, &mut placed);
+        panels
+    }
+
+    fn restore(&mut self, layout: &LayoutTree, placed: &mut Vec<View>) -> Branch {
+        match layout {
+            LayoutTree::Panel(saved) => {
+                let named = |key: &ViewKey| View::named(&Label::new(key.as_str()));
+                let views: Vec<View> = saved
+                    .views()
+                    .iter()
+                    .filter_map(named)
+                    .filter(|view| !placed.contains(view))
+                    .collect();
+                placed.extend(views.iter().copied());
+                let id = self.fresh();
+                let mut panel = Panel::new(id, views);
+                if let Some(shown) = saved.shown().and_then(named)
+                    && panel.holds(shown)
+                {
+                    panel.active = Some(shown);
+                }
+                Branch::Panel(panel)
+            }
+            LayoutTree::Split(saved) => {
+                let first = self.restore(saved.first(), placed);
+                let second = self.restore(saved.second(), placed);
+                let direction = match saved.direction() {
+                    SplitDirection::Across => Direction::Across,
+                    SplitDirection::Down => Direction::Down,
+                };
+                self.split(direction, Ratio(saved.share().get()), first, second)
+            }
+        }
+    }
+
+    pub(crate) fn layout(&self) -> LayoutTree {
+        layout_of(&self.root)
+    }
+
     fn fresh(&mut self) -> BranchId {
         let id = self.next;
         self.next = id.next();
@@ -590,7 +656,7 @@ impl Panels {
         }
     }
 
-    fn take(&mut self, view: View, keep: BranchId) {
+    fn take(&mut self, view: View, keep: Option<BranchId>) {
         let Some(from) = self.holder(view) else {
             return;
         };
@@ -598,13 +664,17 @@ impl Panels {
             panel.remove(view);
             panel.views.is_empty()
         });
-        if emptied && from != keep {
-            self.root.close(from);
+        if emptied && keep != Some(from) {
+            self.close(from);
         }
     }
 
+    pub(crate) fn close_view(&mut self, view: View) {
+        self.take(view, None);
+    }
+
     pub(crate) fn put(&mut self, view: View, panel: BranchId) {
-        self.take(view, panel);
+        self.take(view, Some(panel));
         if let Some(found) = self.root.panel_mut(panel) {
             found.add(view);
         }
@@ -696,7 +766,7 @@ impl Panels {
         if alone && from == target.panel {
             return;
         }
-        self.take(view, target.panel);
+        self.take(view, Some(target.panel));
         let fresh = self.fresh();
         let split = self.fresh();
         let (direction, before) = match side {

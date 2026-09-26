@@ -331,8 +331,8 @@ parent bv0esw
 author ai
 file crates/ui/src/text.rs
 symbol wrap
-lines 0 33
-hash 43fd58358426b2fb
+lines 0 36
+hash a8967c83cd778a5a
 note Greedy wrap at spaces into a column count, with a word longer than the line broken across lines rather than overflowing. Newlines in the text start a new line, so a note written as paragraphs stays paragraphs.
 
 step v49q89
@@ -393,7 +393,7 @@ file crates/ui/src/tree.rs
 symbol fit_leaf
 lines 0 13
 hash 559efd5d617813cc
-note A childless element's fitting size: nothing but padding unless it is text. A text line is its characters times the cell width - one monospace font is the whole reason a width is countable rather than measured per glyph - and a row high; a wrapped text contributes nothing on the width axis, because its width is whatever it is given, and its line count times the row height on the other.
+note A childless element's fitting size: nothing but padding unless it is text. A text line is its columns (characters, icons counting two) times the cell width - one monospace font is the whole reason a width is countable rather than measured per glyph - and a row high; a wrapped text contributes nothing on the width axis, because its width is whatever it is given, and its line count times the row height on the other.
 
 step zgba8d
 order 10

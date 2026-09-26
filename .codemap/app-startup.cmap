@@ -121,8 +121,8 @@ parent pucdnk
 author ai
 file crates/gui/src/app.rs
 symbol App
-lines 0 7
-hash 985761a168d51d78
+lines 0 8
+hash 86e32590eec1d404
 note The application in four parts: the Model (everything the views read: index, map, selection, panel state, fields, status), the Services (the threads and the channels to them), the element tree (Ui) and the cache of drawn code grids. The App is what platform calls once per frame and once per script line; shot and shot_next are the screenshot aid (CODEMAP_SHOT, and a script's shot command). gui-structure says how the parts divide the work.
 
 step mlmsu7
@@ -141,9 +141,9 @@ parent dosvcv
 author ai
 file crates/gui/src/app.rs
 symbol new
-lines 0 36
-hash 9bd7d50443eb1cab
-note Builds the whole application state before the first frame. The order matters: index first, then the map resolved against it, then the Model that holds both and the Services with their watcher, then the first path selected so the document, outline, listing, xrefs and graph all have something in them, then the language servers and the parent map. A map that did not read leaves its error in the status line; otherwise the status line says how many files and symbols were indexed.
+lines 0 51
+hash c6ff626c0a56207e
+note Builds the whole application state before the first frame. The order matters: index first, then the map resolved against it, then the Model that holds both, with its panel tree from the user's layout file (none for a script or screenshot run unless CODEMAP_LAYOUT names one) and the Services with their watcher, then the first path selected so the document, outline, listing, xrefs and graph all have something in them, then the language servers and the parent map. A map that did not read leaves its error in the status line; otherwise the status line says how many files and symbols were indexed.
 
 step t4wzoi
 order 5

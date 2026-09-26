@@ -256,7 +256,7 @@ impl Dump for GraphState {
                 .map_or("", |symbol| symbol.name().as_str());
             lines.line(format_args!(
                 "button {name} '{}' rect={:?}",
-                labelled.label.as_str(),
+                labelled.label.spelled(),
                 hit.rect
             ));
         }

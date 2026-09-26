@@ -3,7 +3,7 @@ path feature-close-panel
 kind flow
 author ai
 group features/gui
-note The x button in a panel's header closes that panel: its neighbour in the split takes the whole of the split's room. The views it held are hidden until picked again or revealed by navigation. The button is not shown when one panel fills the window.
+note The close icon in a panel's header closes that panel: its neighbour in the split takes the whole of the split's room. The views it held are hidden until picked again or revealed by navigation. The button is not shown when one panel fills the window.
 
 step 7ujof2
 order 1
@@ -31,9 +31,9 @@ parent za46tw
 author ai
 file crates/gui/src/views/panel_tree.rs
 symbol header
-lines 0 35
-hash b042600ec43f0aa9
-note Trigger: CLOSE_PANEL (x), close-panel/<n>, drawn only when the root is a split.
+lines 0 38
+hash cc9e7a94c61b609b
+note Trigger: CLOSE_PANEL (Icon::Close), close-panel/<n>, drawn only when the root is a split.
 
 step za46tw
 order 0

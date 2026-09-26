@@ -84,12 +84,13 @@ pub enum Feature {
     ResizePanel,
     SplitPanel,
     ClosePanel,
+    CloseTab,
     PickView,
     OpenDiffRow,
 }
 
 impl Feature {
-    pub const ALL: [Self; 82] = [
+    pub const ALL: [Self; 83] = [
         Self::Files,
         Self::Symbols,
         Self::Show,
@@ -170,6 +171,7 @@ impl Feature {
         Self::ResizePanel,
         Self::SplitPanel,
         Self::ClosePanel,
+        Self::CloseTab,
         Self::PickView,
         Self::OpenDiffRow,
     ];
@@ -823,6 +825,12 @@ impl Feature {
                 Text::new("close a panel; its neighbour takes its place"),
                 Surface::Window,
                 &const { [Trigger::Click(Element::new("close-panel"))] },
+            ),
+            Self::CloseTab => Spec::new(
+                Text::new("close-tab"),
+                Text::new("close one view's tab; a panel left with no tabs closes"),
+                Surface::Window,
+                &const { [Trigger::Click(Element::new("close-tab"))] },
             ),
             Self::PickView => Spec::new(
                 Text::new("pick-view"),

@@ -231,8 +231,8 @@ author ai
 file crates/gui/src/views/xrefs.rs
 symbol peek_header
 lines 0 17
-hash a8d702d4944e5908
-note The header truncates the title and file:line to the panel width, the place cut from the front, so the go and x buttons never leave it.
+hash 8c5587afee439e63
+note The header truncates the title and file:line to the panel width, the place cut from the front, so the go and close buttons never leave it.
 
 step q0e5of
 order 22
@@ -349,7 +349,7 @@ file crates/gui/src/views/xrefs.rs
 symbol peek_section
 lines 0 20
 hash 437b0396d1640a5e
-note The pinned half, at the top of the xrefs panel: the whole definition in scrollable code rows, with 'go' to select it and 'x' to close. It survives scrolling and clicking elsewhere, which is the difference from the tooltip.
+note The pinned half, at the top of the xrefs panel: the whole definition in scrollable code rows, with 'go' to select it and the close icon to close it. It survives scrolling and clicking elsewhere, which is the difference from the tooltip.
 
 step yu4jg2
 order 15

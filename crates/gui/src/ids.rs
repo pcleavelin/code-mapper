@@ -80,6 +80,7 @@ pub(crate) const SPLIT_DOWN: Control =
     Control::new(Feature::SplitPanel, Element::new("split-down"));
 pub(crate) const CLOSE_PANEL: Control =
     Control::new(Feature::ClosePanel, Element::new("close-panel"));
+pub(crate) const CLOSE_TAB: Control = Control::new(Feature::CloseTab, Element::new("close-tab"));
 pub(crate) const PICK: Control = Control::new(Feature::PickView, Element::new("pick"));
 pub(crate) const VIEW_ROW: Control = Control::new(Feature::PickView, Element::new("view"));
 pub(crate) const VIEW_FIELD: Control = Control::new(Feature::PickView, Element::new("field@views"));
@@ -145,6 +146,7 @@ pub(crate) const CONTROLS: &[Control] = &[
     SPLIT_ACROSS,
     SPLIT_DOWN,
     CLOSE_PANEL,
+    CLOSE_TAB,
     PICK,
     VIEW_ROW,
     VIEW_FIELD,

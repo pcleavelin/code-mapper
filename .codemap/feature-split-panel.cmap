@@ -3,7 +3,7 @@ path feature-split-panel
 kind flow
 author ai
 group features/gui
-note The | and - buttons in a panel's header split it in two, side by side or one above the other, half each: the panel keeps its views in the first half and the second half is a new empty panel. The picker opens on the new panel with its search field taking the keyboard, so typing a view's name and pressing enter fills it.
+note The split-across and split-down icons in a panel's header split it in two, side by side or one above the other, half each: the panel keeps its views in the first half and the second half is a new empty panel. The picker opens on the new panel with its search field taking the keyboard, so typing a view's name and pressing enter fills it.
 
 step 2rwmch
 order 0
@@ -30,8 +30,8 @@ parent 2rwmch
 author ai
 file crates/gui/src/views/panel_tree.rs
 symbol header
-lines 0 35
-hash b042600ec43f0aa9
+lines 0 38
+hash cc9e7a94c61b609b
 note Trigger: SPLIT_ACROSS (|) and SPLIT_DOWN (-) in each panel's header, split-across/<n> and split-down/<n>.
 
 step vk2qts

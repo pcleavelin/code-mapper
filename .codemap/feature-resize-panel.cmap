@@ -3,7 +3,7 @@ path feature-resize-panel
 kind flow
 author ai
 group features/gui
-note Drag the sash between two panels to move the boundary between them; the cursor shows the resize arrows while hovering or dragging. The position is kept as a share of the split, so it follows the window when the window is resized, and each side keeps a floor of 12 columns across or 4 rows down. Nothing is saved.
+note Drag the sash between two panels to move the boundary between them; the cursor shows the resize arrows while hovering or dragging. The position is kept as a share of the split, so it follows the window when the window is resized, and each side keeps a floor of 12 columns across or 4 rows down. The new share is saved with the layout once the sash is let go.
 
 step 13x7m5
 order 0

@@ -1,4 +1,4 @@
-use ui::Label;
+use ui::{Icon, Label};
 
 use crate::action::Action;
 use crate::field::Which;
@@ -24,14 +24,18 @@ pub(super) fn top_bar(model: &Model, frame: &mut Frame<'_>) {
         }
     };
     if frame
-        .nav_button("<", ids::BACK.target(), enabled(model.nav.can_go_back()))
+        .nav_button(
+            Icon::Back,
+            ids::BACK.target(),
+            enabled(model.nav.can_go_back()),
+        )
         .clicked()
     {
         frame.push(Action::Back);
     }
     if frame
         .nav_button(
-            ">",
+            Icon::Forward,
             ids::FORWARD.target(),
             enabled(model.nav.can_go_forward()),
         )

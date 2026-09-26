@@ -3,7 +3,7 @@ path feature-pick-view
 kind flow
 author ai
 group features/gui
-note The + button in a panel's header opens a list of the ten views under it, with a search field that takes the keyboard. Typing narrows the list to views whose name contains the text; each row says 'here' when the view is already in this panel and 'moves here' when it is in another. Clicking a row, or pressing enter for the first, puts that view in the panel and shows it, taking it from wherever it was. Escape, clicking another field or pressing + again closes the list.
+note The add icon in a panel's header opens a list of the ten views under it, with a search field that takes the keyboard. Typing narrows the list to views whose name contains the text; each row says 'here' when the view is already in this panel and 'moves here' when it is in another. Clicking a row, or pressing enter for the first, puts that view in the panel and shows it, taking it from wherever it was. Escape, clicking another field or pressing + again closes the list.
 
 step 06188r
 order 7

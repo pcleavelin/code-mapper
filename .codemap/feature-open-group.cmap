@@ -20,8 +20,9 @@ order 1
 parent f1nrga
 author ai
 file crates/gui/src/views/left.rs
-lines 26 69
-hash ac2a9252412448e3
+symbol group_row
+lines 0 44
+hash 33633ee24efd2183
 note Trigger and effect: the row's openness is the recorded one or, failing that, whether the path being read is in this group or below it. A click on the GROUP_ROW queues OpenGroup with the opposite openness. The returned openness tells paths_window whether to draw what is inside.
 
 step f1nrga

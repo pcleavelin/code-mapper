@@ -80,7 +80,8 @@ Never claim a visual or interactive behaviour from reading the code; drive it an
   `field@paths`, `field@goto-line`, `field@views`; symbol rows
   `sym@<file index>:<symbol index>`; xrefs rows `xto/<i>`, `xfrom/<i>`, `xref/<i>`; panels
   by the number n `DUMP panels` prints: `panel/<n>`, header buttons `pick/<n>`,
-  `split-across/<n>`, `split-down/<n>`, `close-panel/<n>`, sashes `sash/<n>`; view picker
+  `split-across/<n>`, `split-down/<n>`, `close-panel/<n>`, sashes `sash/<n>`, tab close
+  buttons `close-tab@<View>`; view picker
   rows `view/<n>`). Rects come from the previous frame, so `wait 1` after anything that
   changes the layout. `dump` prints the selection, scroll offsets, the panel tree, the
   tooltip and peek, the graph camera and every node's and node button's rectangle to stderr as
@@ -89,7 +90,9 @@ Never claim a visual or interactive behaviour from reading the code; drive it an
   frames since the previous `dump`, and
   `DUMP backend progress=... indexing=... unmerged=<n> reindexing=<bool> linking=<bool>`.
   A script or screenshot run opens a fixed 1600x1000 window at scale 1 and ignores the real
-  mouse and keyboard, so runs and goldens match on every machine. Write script files with the
+  mouse and keyboard, so runs and goldens match on every machine. It starts from the default
+  panel layout and saves none, unless `CODEMAP_LAYOUT=<file>` names a layout file to load and
+  save. Write script files with the
   Write tool and forward-slash paths: a heredoc mangles backslashes.
 - On Linux, run GUI scenarios one at a time under a private headless compositor
   (`weston --backend=headless --renderer=pixman --shell=kiosk --socket=<name>`,

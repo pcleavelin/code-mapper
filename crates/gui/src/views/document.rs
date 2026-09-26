@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use domain::{Change, Depth, FileId, Line, Path, PathDiff, Span, Step, Symbol, SymbolName};
-use ui::{Count, Id, Label, Px, Run};
+use ui::{Count, Icon, Id, Label, Px, Run};
 
 use crate::action::{Action, ContextChange, Fold, Hide};
 use crate::ids::{self, Control, Target};
@@ -413,7 +413,7 @@ fn step_header(
     });
     frame.indent(row.indent);
     if children.get() > 0 {
-        let arrow = if folded { "\u{25b8}" } else { "\u{25be}" };
+        let arrow = if folded { Icon::Folded } else { Icon::Unfolded };
         if frame.small_button(arrow, row.target(ids::FOLD)).clicked() {
             frame.push(Action::Toggle(key, ViewFlag::Folded));
         }
@@ -643,9 +643,17 @@ fn expand(
 
 fn context_button(frame: &mut Frame<'_>, row: &Row<'_>, change: ContextChange, control: Control) {
     let label = match change {
-        ContextChange::Above => format!("\u{25b2} {} lines above", Context::LINES),
+        ContextChange::Above => format!(
+            "{} {} lines above",
+            Icon::MoreAbove.glyph().get(),
+            Context::LINES
+        ),
         ContextChange::Below | ContextChange::Reset => {
-            format!("\u{25bc} {} lines below", Context::LINES)
+            format!(
+                "{} {} lines below",
+                Icon::MoreBelow.glyph().get(),
+                Context::LINES
+            )
         }
     };
     frame.start(Container::FillRow);

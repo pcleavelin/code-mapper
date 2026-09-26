@@ -8,6 +8,7 @@ publish = false
 domain = { path = "../domain" }
 index = { path = "../index" }
 io-map = { path = "../io-map" }
+io-layout = { path = "../io-layout" }
 io-vcs = { path = "../io-vcs" }
 io-lsp = { path = "../io-lsp" }
 cli = { path = "../cli" }

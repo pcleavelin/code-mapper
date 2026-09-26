@@ -11,8 +11,8 @@ parent u5328q
 author ai
 file crates/gui/src/views/document.rs
 symbol context_button
-lines 0 13
-hash c3c3567695b32f62
+lines 0 21
+hash d28da5e37eb9aac5
 note Trigger: CONTEXT_ABOVE and CONTEXT_BELOW, labelled with the line count, queue Context with Above or Below.
 
 step ag37br

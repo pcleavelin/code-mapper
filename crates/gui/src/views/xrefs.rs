@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use domain::{Backend, Line, Location, SourceFile, Symbol};
-use ui::{Canvas, Color, Count, Extent, Grid, Label, Point, Px, Rect, Run, Size};
+use ui::{Canvas, Color, Count, Extent, Grid, Icon, Label, Point, Px, Rect, Run, Size};
 
 use crate::action::Action;
 use crate::ids;
@@ -125,7 +125,7 @@ fn peek_header(frame: &mut Frame<'_>, title: Label, place: Label, go: Option<Act
         frame.push(go);
     }
     if frame
-        .small_button_sized("x", Some(CLOSE_BUTTON), ids::PEEK_CLOSE.target())
+        .small_button_sized(Icon::Close, Some(CLOSE_BUTTON), ids::PEEK_CLOSE.target())
         .clicked()
     {
         frame.push(Action::ClosePeek);

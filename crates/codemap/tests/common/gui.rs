@@ -296,7 +296,7 @@ dump
 click-id graph-fit
 wait 4
 dump
-click <<DUMP button fill '▼>>
+click <<DUMP button fill '[more-below]>>
 wait 4
 dump
 shot {shots}/context.png
@@ -550,6 +550,9 @@ up
 wait 2
 dump
 click-id close-panel/7
+wait 3
+dump
+click-id close-tab@Diff
 wait 3
 dump
 tab listing

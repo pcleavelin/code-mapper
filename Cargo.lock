@@ -771,6 +771,7 @@ dependencies = [
  "domain",
  "features",
  "index",
+ "io-layout",
  "io-lsp",
  "io-map",
  "io-vcs",
@@ -880,6 +881,14 @@ dependencies = [
 
 [[package]]
 name = "io-cache"
+version = "0.1.0"
+dependencies = [
+ "domain",
+ "io-store",
+]
+
+[[package]]
+name = "io-layout"
 version = "0.1.0"
 dependencies = [
  "domain",

@@ -3,7 +3,7 @@ path feature-go-back
 kind flow
 author ai
 group features/gui
-note The < and > buttons in the top bar, alt+left and alt+right, ctrl+left and ctrl+right, and the mouse's back and forward buttons move back and forward through the places visited, the way a browser does: tab, file, selected lines, focused symbol, path and step. Nothing records a place explicitly; the end of every frame compares where the reader is with where they were. The arrow keys with a modifier are left to a focused text field, where they move the caret.
+note The back and forward arrow icons in the top bar, alt+left and alt+right, ctrl+left and ctrl+right, and the mouse's back and forward buttons move back and forward through the places visited, the way a browser does: tab, file, selected lines, focused symbol, path and step. Nothing records a place explicitly; the end of every frame compares where the reader is with where they were. The arrow keys with a modifier are left to a focused text field, where they move the caret.
 
 step 1wvo6m
 order 6
@@ -51,8 +51,8 @@ parent y91rv4
 author ai
 file crates/gui/src/views/bars.rs
 symbol top_bar
-lines 16 31
-hash e94c280fdd3a8c6d
+lines 16 35
+hash 1d1e38ff599e2ab7
 note Trigger in the top bar: the BACK and FORWARD nav buttons, disabled when their stack is empty, queue Back or Forward.
 
 step y91rv4

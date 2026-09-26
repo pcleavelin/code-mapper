@@ -1,5 +1,5 @@
 use platform::Cursor;
-use ui::{Button, Extent, Label, Point, Rect, Run, Ui};
+use ui::{Button, Extent, Icon, Label, Point, Rect, Run, Ui};
 
 use crate::action::Action;
 use crate::field::Which;
@@ -157,24 +157,27 @@ fn header(model: &Model, frame: &mut Frame<'_>, panel: &Panel) {
     }
     frame.grow();
     let id = panel.id();
-    if frame.small_button("+", numbered(ids::PICK, id)).clicked() {
+    if frame
+        .small_button(Icon::Add, numbered(ids::PICK, id))
+        .clicked()
+    {
         frame.push(Action::TogglePicker(id));
     }
     if frame
-        .small_button("|", numbered(ids::SPLIT_ACROSS, id))
+        .small_button(Icon::SplitAcross, numbered(ids::SPLIT_ACROSS, id))
         .clicked()
     {
         frame.push(Action::SplitPanel(id, Direction::Across));
     }
     if frame
-        .small_button("-", numbered(ids::SPLIT_DOWN, id))
+        .small_button(Icon::SplitDown, numbered(ids::SPLIT_DOWN, id))
         .clicked()
     {
         frame.push(Action::SplitPanel(id, Direction::Down));
     }
     if !model.panels.is_single()
         && frame
-            .small_button("x", numbered(ids::CLOSE_PANEL, id))
+            .small_button(Icon::Close, numbered(ids::CLOSE_PANEL, id))
             .clicked()
     {
         frame.push(Action::ClosePanel(id));
@@ -194,6 +197,10 @@ fn tab(model: &Model, frame: &mut Frame<'_>, view: View, chosen: Chosen) {
         let mouse = frame.ui.pointer().mouse;
         frame.push(Action::ShowView(view));
         frame.push(Action::Grab(view, mouse));
+    }
+    let close = ids::CLOSE_TAB.with(&Label::new(view.name().as_str()));
+    if frame.small_button(Icon::Close, close).clicked() {
+        frame.push(Action::CloseView(view));
     }
     if model
         .panels

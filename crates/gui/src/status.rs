@@ -34,6 +34,7 @@ pub(crate) enum Status {
     SaveRefused,
     Saved,
     SaveFailed(Label),
+    LayoutUnsaved(Label),
     CommandRejected(Label),
     CommandFailed(Label),
     RegexRefused(Label),
@@ -129,6 +130,9 @@ impl fmt::Display for Status {
                 .write_str("not saved: the map on disk does not read; fix it and it reloads"),
             Self::Saved => formatter.write_str("saved"),
             Self::SaveFailed(error) => write!(formatter, "save FAILED: {}", error.as_str()),
+            Self::LayoutUnsaved(error) => {
+                write!(formatter, "layout not saved: {}", error.as_str())
+            }
             Self::CommandRejected(first) => formatter.write_str(first.as_str()),
             Self::CommandFailed(error) => write!(formatter, "error: {}", error.as_str()),
             Self::RegexRefused(reason) => write!(formatter, "bad regex: {}", reason.as_str()),

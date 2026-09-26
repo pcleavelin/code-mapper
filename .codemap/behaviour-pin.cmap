@@ -52,7 +52,7 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol graph
 lines 0 75
-hash 4b4c7283c5d7b1d3
+hash 0ad11d99ce1865de
 note The graph: the fitted start, a node's callees and hide buttons, an off-path node, shift-wheel and wheel, dragging a node, auto layout, ctrl-wheel zoom, fit, 1:1, panning, and a node's context, listing and no-context buttons.
 
 step 5147ql
@@ -180,7 +180,7 @@ author ai
 file crates/codemap/tests/features.rs
 symbol graph_button
 lines 0 8
-hash 93f88fb8b4d1c964
+hash 93d13d35f6449227
 note The graph node buttons, which scripts click by the label a dump prints rather than by id.
 
 step bqbhzd
@@ -372,8 +372,8 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol layout
-lines 0 70
-hash e3cc49a5e0fff881
+lines 0 73
+hash 8b3ad5b8413938a8
 note The panel tree: resizing the left split by its sash, splitting the centre and picking the Listing by typing, splitting that down and picking Xrefs by clicking (its old panel closes), dragging Output onto the left edge of the Paths panel, a click on a tab that moves nothing, a drag released over the top bar that cancels, closing a panel, and a tab command that brings the Listing back into a panel.
 
 step j8h125

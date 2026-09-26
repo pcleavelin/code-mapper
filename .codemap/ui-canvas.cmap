@@ -148,8 +148,8 @@ author ai
 file crates/ui/src/canvas.rs
 symbol text
 lines 0 18
-hash 89c83a067989725c
-note A run of text with its top-left at a point, one cell per character. It returns the pen, advanced by a cell per character and stopping at the clip's right edge, so runs of different colours chain along a line; the measuring is here, so the replayer only places glyphs.
+hash cbf2cb643fd38226
+note A run of text with its top-left at a point, one cell per character and two per icon. It returns the pen, advanced by each glyph's columns and stopping at the clip's right edge, so runs of different colours chain along a line; the measuring is here, so the replayer only places glyphs.
 
 step zlrper
 order 9

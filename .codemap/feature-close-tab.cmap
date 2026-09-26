@@ -1,0 +1,65 @@
+codemap 8
+path feature-close-tab
+kind flow
+author ai
+group features/gui
+note Each tab in a panel's header has a close icon after its name. Pressed, that view leaves the layout: the panel shows its next tab (or the one before, at the end), and a panel left with no tabs closes, its sibling taking the room, the same as dragging its last tab away. The last panel of the window never closes; it stays empty with the hint to press +. A closed view comes back through + or when navigation needs it (opening a path brings back Path, a search Results). The change is saved with the layout.
+
+step 0wlosi
+order 0
+author ai
+file crates/gui/src/panels.rs
+symbol close_view
+lines 0 2
+hash 0150fa0c83069b85
+note The handler: take with no panel to keep, so an emptied panel closes.
+
+step 3nbhrx
+order 1
+parent 0wlosi
+author ai
+file crates/gui/src/panels.rs
+symbol take
+lines 0 11
+hash 2697e0c7893c244a
+note Removes the view from its panel (Panel::remove picks the next tab to show) and closes the panel if that left it empty and it is not the one to keep.
+
+step l9l742
+order 5
+parent 0wlosi
+author ai
+file crates/gui/src/action.rs
+symbol apply
+lines 83 83
+hash 79bb258c8ad23a49
+note The apply arm.
+
+step o99j41
+order 2
+parent 3nbhrx
+author ai
+file crates/gui/src/panels.rs
+symbol close
+lines 0 4
+hash 2c2090467f23ae81
+note Closes a panel by handing its split to its sibling; the picker closes with it.
+
+step tozsoc
+order 4
+parent 0wlosi
+author ai
+file crates/gui/src/views/panel_tree.rs
+symbol tab
+lines 0 24
+hash f2ce2220203e3466
+note The trigger: after each tab's button, a small close icon (close-tab@<View>) queues CloseView.
+
+step y2bfva
+order 3
+parent o99j41
+author ai
+file crates/gui/src/panels.rs
+symbol close
+lines 0 13
+hash abb5ab7738b03169
+note The tree surgery: finds the split with this panel as a child and replaces the split with the other child. The root has no parent split, so the last panel stays.

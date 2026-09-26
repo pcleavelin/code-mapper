@@ -123,11 +123,20 @@ wherever it was), **|** and **-** split the panel side by side or one above the 
 the list on the new empty half, and **x** closes the panel, its sibling taking its place (the
 last panel cannot close). Dragging a tab onto another panel's middle adds the view to that
 panel's tabs; onto the outer quarter of an edge, it splits that panel and the view takes the
-half on that side; anywhere else cancels. A panel whose last view is dragged away closes.
-Navigation that means another centre view (opening a path shows Path, a symbol off the path
-shows Listing, a search shows Results) brings that view's tab to the front wherever it is,
-and puts it back next to the last one navigation showed if it was closed. The layout is not
-saved: every launch starts from the default.
+half on that side; anywhere else cancels. Each tab has its own **x**, which takes that view
+out of the layout. A panel whose last view is dragged away or closed closes too, except the
+last panel, which stays empty. Navigation that means another centre view (opening a path
+shows Path, a symbol off the path shows Listing, a search shows Results) brings that view's
+tab to the front wherever it is, and puts it back next to the last one navigation showed if it
+was closed.
+
+The layout is saved whenever it changes (once a drag is let go), to one file per user:
+`$XDG_CONFIG_HOME/codemap/layout`, else `~/.config/codemap/layout`, else
+`%APPDATA%\codemap\layout`, or wherever `CODEMAP_LAYOUT` points. A launch starts from it,
+and from the default when it is missing or unreadable. The file is indented text, one split
+(`across <share>` or `down <share>`, the share in thousandths) or `panel <View> <View>*` per
+line, `*` marking the tab in front. Script and screenshot runs use the file only when
+`CODEMAP_LAYOUT` names one, so goldens never depend on a user's layout.
 
 **The document.** A sticky breadcrumb of the topmost visible step's ancestors, name and
 file per crumb, each clickable. Then the steps in tree order: a header with the
@@ -344,12 +353,14 @@ re-pin put them. The other 29 were gone symbols or rewrites.
 ```
 crates/
   domain/       the model, no I/O: positions and text, the index model and its queries,
-                the map model (paths, steps, anchors, groups, diff, following moved text)
+                the map model (paths, steps, anchors, groups, diff, following moved text),
+                the panel layout as a value
   io-process/   starting a program (PATH lookup included)
   io-store/     writing a file whole (temporary file, rename over)
   io-source/    the walk and reading source files
   io-map/       .codemap/*.cmap: the text format and the store that loads and saves it
   io-cache/     .codemap-cache: the binary format
+  io-layout/    the user's saved panel layout: the text format and the store
   io-vcs/       jj or git: the parent revision, a file or the map directory at a revision
   io-lsp/       a minimal language-server client: JSON-RPC over stdio
   index/        building the index: tree-sitter resolvers and highlighting, server
@@ -375,7 +386,11 @@ The UI is its own library, in the shape of odin_editor's `ui`: every frame the a
 and closes elements (nothing, text, or custom drawing) whose sizes are exact, fit their
 content, or grow; layout runs once at the end of the frame; input answers from the
 previous frame's rectangles. One monospace font at whole-pixel sizes, every glyph in
-one GPU atlas, so text is never scaled. `CODEMAP_SHOT=<file.png>` writes the first
+one GPU atlas, so text is never scaled. Icons are glyphs too: `ui::Icon` names a
+Private Use Area codepoint of Codicons (`assets/codicon.ttf`, CC BY 4.0), so an icon is a
+character in an ordinary label and sits in the same run as text; it is two cells wide,
+rasterised from the icon font into the same atlas, centred in its two cells, and dumps
+spell it `[name]`. No button draws its symbol with a text character. `CODEMAP_SHOT=<file.png>` writes the first
 settled frame to a file and quits, and `CODEMAP_SCRIPT=<file>` plays mouse and keyboard
 input from a script, waits for the servers when told to, and dumps state and element
 rectangles on request, so rendering and interaction claims are checked against pixels
@@ -478,7 +493,7 @@ Deferred, with the trigger that would pull each in:
 | Step-level review state | a long path gets one re-pinned step and rereading it all is a cost |
 | Kind-specific rendering | a list of 50 mixed-kind paths is unreadable |
 | Documentation panel for the focused symbol | per language: doc comments first, then external docs |
-| Detachable windows, a saved layout | one window's panel tree is not enough for a real session |
+| Detachable windows | one window's panel tree is not enough for a real session |
 | Multi-threaded grep | a search takes more than 100 ms |
 | Watch for new / deleted files | restarting for new files annoys |
 | Undo | a mis-click deletes something that took effort to build |

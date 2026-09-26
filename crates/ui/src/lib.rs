@@ -1,6 +1,7 @@
 mod canvas;
 mod color;
 mod geometry;
+mod icon;
 mod id;
 mod input;
 mod layout;
@@ -10,6 +11,7 @@ mod tree;
 pub use canvas::{Canvas, Command, DrawList, Measure};
 pub use color::Color;
 pub use geometry::{Axis, Coordinate, Count, Extent, FontSize, Point, Px, Rect, Scale, Vector};
+pub use icon::{Icon, IconName};
 pub use id::Id;
 pub use input::{Button, Buttons, Clicks, Glyph, Input, Key, Mods, Pinch, Pointer, Press, Typed};
 pub use layout::{Align, Direction, Layout, Sides, Size, Style};

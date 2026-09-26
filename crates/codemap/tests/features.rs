@@ -112,7 +112,7 @@ fn exercised(trigger: Trigger, goldens: &str, scripts: &str) -> bool {
 fn graph_button(element: &str) -> Option<&'static str> {
     match element {
         "node-button" => Some("'callees"),
-        "node-context" => Some("'▼"),
+        "node-context" => Some("'[more-below]"),
         "node-listing" => Some("'listing"),
         "node-preview" => Some("'less"),
         _ => None,

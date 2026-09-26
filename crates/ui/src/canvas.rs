@@ -1,7 +1,8 @@
 use std::rc::Rc;
 
 use crate::color::Color;
-use crate::geometry::{Coordinate, Extent, FontSize, Point, Px, Rect, Vector};
+use crate::geometry::{Coordinate, Count, Extent, FontSize, Point, Px, Rect, Vector};
+use crate::input::Glyph;
 use crate::text::{Grid, Label};
 
 pub trait Measure {
@@ -183,11 +184,11 @@ impl<'frame> Canvas<'frame> {
         let cell = self.measure.cell(size);
         let right = self.clip().right();
         let mut pen = at.horizontal;
-        for _ in text.as_str().chars() {
+        for character in text.as_str().chars() {
             if pen >= right {
                 break;
             }
-            pen += cell.width;
+            pen += cell.width * Count::new(Glyph::new(character).columns());
         }
         self.list.commands.push(Command::Text {
             at,

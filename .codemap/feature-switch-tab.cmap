@@ -20,8 +20,8 @@ parent 0omynn
 author ai
 file crates/gui/src/views/panel_tree.rs
 symbol tab
-lines 0 20
-hash a7ecb3706b41a019
+lines 0 24
+hash f2ce2220203e3466
 note Trigger: the TAB button tab@<View> in a panel header queues ShowView.
 
 step gf1kjs

@@ -59,8 +59,8 @@ parent l5and2
 author ai
 file crates/gui/src/app.rs
 symbol of_model
-lines 0 9
-hash d8b71ec10f4a61fb
+lines 0 10
+hash 286e3a15c3f36beb
 note An App from a ready Model with fresh Services and no screenshot aid, for tests; the Services start only the idle watcher thread.
 
 step 9hxjt5
@@ -136,7 +136,7 @@ step hvkk6w
 order 20
 author ai
 file crates/gui/src/panels.rs
-lines 784 784
+lines 854 854
 hash b0307a5ca14bb937
 note The panel tree's arithmetic and edits: the default tree holds every view once, a split opens the picker and a pick moves the view, a panel emptied by a move closes, an edge drop splits (and a panel's only view on its own edge stays), closing hands the room to the sibling and never the root, navigation reveals a hidden view next to the last one shown once per ticket, a division keeps both halves above the floor, the nearest edge within a quarter picks the side, a grab moves only past its reach, and views are named in any case.
 

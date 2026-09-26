@@ -11,8 +11,8 @@ parent saeyu5
 author ai
 file crates/gui/src/status.rs
 symbol fmt
-lines 0 97
-hash c09ee5ea0b9069ac
+lines 0 100
+hash 802b205cb0a76a02
 note The wording. Map refusals and load failures arrive already worded by cli, so the GUI and the CLI say the same thing.
 
 step 2e645j
@@ -40,8 +40,8 @@ order 1
 author ai
 file crates/gui/src/app.rs
 symbol App
-lines 0 7
-hash 985761a168d51d78
+lines 0 8
+hash 86e32590eec1d404
 note What platform::App is implemented on: the Model, the Services, the element tree and the grid cache, plus the screenshot aid. frame, script and locate are its three methods; all state changes funnel through its apply.
 
 step 3foimq
@@ -166,7 +166,7 @@ author ai
 file crates/gui/src/dump.rs
 symbol dump
 lines 0 50
-hash 8c622bf385b88003
+hash b21acf8de732bcaa
 note The graph: zoom, pan, the canvas rectangle and the camera, the pointer and drag state, then every node's and node button's rectangle by name.
 
 step 9pik9m
@@ -291,8 +291,8 @@ parent xjz44n
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 0 95
-hash 454e57b28a33fe9b
+lines 0 96
+hash 84f676cba54b2687
 note The one place the Model changes during a frame. Each arm is a call into nav.rs, a field of the Model, or a method on the App for changes that need the Services (save, a server question, a command).
 
 step h4xmjq
@@ -427,8 +427,8 @@ parent 9pik9m
 author ai
 file crates/gui/src/ids.rs
 symbol CONTROLS
-lines 0 56
-hash ef32e59eba3e3adc
+lines 0 57
+hash 70641133452bd1e0
 note Every control, for the test that checks them against the registry.
 
 step mjhubp
@@ -533,8 +533,8 @@ order 52
 author ai
 file crates/gui/src/status.rs
 symbol Status
-lines 0 61
-hash 98e4a720df3affdd
+lines 0 62
+hash e7cd3076b13eccb8
 note Everything the status line can say, as data: each outcome of a save, a command, a search, an edit, a definition lookup, a server, a re-index or a disk change. Views and apply set one; nothing formats a message where it happens.
 
 step uhm8r4
@@ -631,8 +631,8 @@ order 8
 author ai
 file crates/gui/src/action.rs
 symbol Action
-lines 0 46
-hash f2de8d6669a5466b
+lines 0 47
+hash 59251f8fbdde8544
 note Every change a gesture, a key, a script line or a view's measurement can cause, as data. A view names the change; it never makes it.
 
 step xypoz6

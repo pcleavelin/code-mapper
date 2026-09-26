@@ -32,7 +32,7 @@ author ai
 file crates/gui/src/views/xrefs.rs
 symbol peek_header
 lines 0 17
-hash a8d702d4944e5908
+hash 8c5587afee439e63
 note Triggers in the peek header: PEEK_GO queues the peek's go action, PEEK_CLOSE queues ClosePeek, whose apply arm sets the peek to None.
 
 step bnbuz9

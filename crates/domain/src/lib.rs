@@ -1,5 +1,6 @@
 mod id;
 mod index;
+mod layout;
 mod map;
 mod text;
 
@@ -10,6 +11,7 @@ pub use index::{
     SourceFile, Symbol, SymbolId, SymbolIndex, SymbolKey, SymbolKind, SymbolName, SymbolQuery,
     TreeEntry, TypeName,
 };
+pub use layout::{LayoutPanel, LayoutSplit, LayoutTree, Share, SplitDirection, ViewKey};
 pub use map::{
     Alignment, Anchor, Author, Change, Changed, Followed, Freshness, GroupName, InvalidName, Map,
     MapError, Note, NumberedStep, ParentLabel, Path, PathCount, PathDiff, PathKind, PathName,

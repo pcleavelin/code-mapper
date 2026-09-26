@@ -3,7 +3,7 @@ path feature-node-context
 kind flow
 author ai
 group features/gui
-note A graph node's header has ▲ and ▼ buttons that show ten more lines of its file above or below its own lines, the way the document's context buttons do, with the node's own lines highlighted; 'no context' cuts it back to its own lines. A node longer than the preview also has 'more'/'less', which switches between a preview of its first lines and its full text. Widening or narrowing pins the node where it is, so the change does not shuffle the layout.
+note A graph node's header has more-above and more-below icon buttons that show ten more lines of its file above or below its own lines, the way the document's context buttons do, with the node's own lines highlighted; 'no context' cuts it back to its own lines. A node longer than the preview also has 'more'/'less', which switches between a preview of its first lines and its full text. Widening or narrowing pins the node where it is, so the change does not shuffle the layout.
 
 step 4ok6o9
 order 0
@@ -21,8 +21,8 @@ author ai
 file crates/gui/src/graph/build.rs
 symbol header
 lines 35 51
-hash fdabc089b94b0b49
-note Which of these buttons a node has: more/less only when it is longer than the preview, and the context buttons only while it is not cut to its preview, ▲ unless it starts at the file's first line, ▼ unless it ends at the last, 'no context' while it has any.
+hash f98bcccf092b9a4c
+note Which of these buttons a node has: more/less only when it is longer than the preview, and the context buttons only while it is not cut to its preview, more-above unless it starts at the file's first line, more-below unless it ends at the last, 'no context' while it has any.
 
 step adjf03
 order 4

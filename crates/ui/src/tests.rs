@@ -1,9 +1,9 @@
 use std::rc::Rc;
 
 use crate::{
-    Button, Canvas, Cell, Color, Command, Coordinate, Count, Extent, FontSize, Glyph, Grid, Id,
-    Input, Key, Kind, Label, Layout, Measure, Mods, Point, Press, Px, Rect, Run, Scale, Scrollbar,
-    Sides, Style, Text, Ui, Vector, Wrap,
+    Button, Canvas, Cell, Color, Command, Coordinate, Count, Extent, FontSize, Glyph, Grid, Icon,
+    Id, Input, Key, Kind, Label, Layout, Measure, Mods, Point, Press, Px, Rect, Run, Scale,
+    Scrollbar, Sides, Style, Text, Ui, Vector, Wrap,
 };
 
 struct Cells;
@@ -502,4 +502,24 @@ fn keys_match_ctrl_and_alt_but_not_shift() {
     frame.pointer.pressed.insert(Button::Back);
     frame.end_frame();
     assert!(frame.keys.is_empty() && !frame.pointer.pressed.contains(Button::Back));
+}
+
+#[test]
+fn an_icon_is_two_columns_wide_and_spells_its_name() {
+    let label = Label::new(format!("{} Paths", Icon::Close.glyph().get()));
+    assert_eq!(label.columns(), 8);
+    assert_eq!(label.spelled(), "[close] Paths");
+    assert!(Icon::ALL.iter().all(|icon| icon.glyph().is_icon()));
+    assert!(!Glyph::new('x').is_icon());
+    assert_eq!(Icon::of(Icon::SplitDown.glyph()), Some(Icon::SplitDown));
+}
+
+#[test]
+fn wrapping_counts_an_icon_as_two_columns() {
+    let icon = Icon::Add.glyph().get();
+    let label = Label::new(format!("{icon}{icon}{icon} ab"));
+    assert_eq!(
+        label.wrap(6),
+        [Label::new(format!("{icon}{icon}{icon}")), Label::new("ab")]
+    );
 }

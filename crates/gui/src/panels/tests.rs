@@ -151,3 +151,52 @@ fn views_are_found_by_name_in_any_case() {
     assert_eq!(View::named(&Label::new("XREFS")), Some(View::Xrefs));
     assert_eq!(View::named(&Label::new("nothing")), None);
 }
+
+#[test]
+fn a_tree_survives_its_saved_layout() {
+    let mut panels = Panels::default();
+    panels.split_panel(BranchId(1), Direction::Down);
+    panels.pick(BranchId(7), View::Graph);
+    panels.resize(BranchId(6), Ratio::permille(700));
+    let restored = Panels::from_layout(&panels.layout());
+    assert_eq!(restored.layout(), panels.layout());
+    assert_eq!(
+        restored.to_string(),
+        "down8(700 across6(220 0[Paths* Symbols Files] across5(740 down3(500 1[Path* Diff Listing Results] 2[Graph*]) 4[Xrefs*])) 7[Output*])"
+    );
+}
+
+#[test]
+fn a_saved_layout_drops_unknown_and_repeated_views() {
+    let key = |name: &str| ViewKey::new(name).unwrap();
+    let saved = LayoutTree::Split(LayoutSplit::new(
+        SplitDirection::Across,
+        Share::permille(300).unwrap(),
+        LayoutTree::Panel(LayoutPanel::new(
+            vec![key("Paths"), key("Gone"), key("Graph")],
+            Some(key("Graph")),
+        )),
+        LayoutTree::Panel(LayoutPanel::new(vec![key("Paths"), key("Output")], None)),
+    ));
+    assert_eq!(
+        Panels::from_layout(&saved).to_string(),
+        "across2(300 0[Paths Graph*] 1[Output*])"
+    );
+}
+
+#[test]
+fn closing_a_panels_last_tab_closes_the_panel_but_never_the_last_panel() {
+    let mut panels = Panels::default();
+    panels.close_view(View::Diff);
+    panels.close_view(View::Xrefs);
+    assert_eq!(
+        panels.to_string(),
+        "down6(820 across5(220 0[Paths* Symbols Files] 1[Path* Graph Listing Results]) 3[Output*])"
+    );
+    for view in View::ALL {
+        panels.close_view(view);
+    }
+    assert!(panels.is_single());
+    assert_eq!(panels.panels().len(), 1);
+    assert!(panels.panels().iter().all(|panel| panel.views().is_empty()));
+}

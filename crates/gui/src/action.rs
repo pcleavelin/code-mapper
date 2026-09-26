@@ -78,6 +78,7 @@ pub(crate) enum Action {
     ClosePanel(BranchId),
     TogglePicker(BranchId),
     Pick(BranchId, View),
+    CloseView(View),
     ClosePicker,
     Type(Which, Vec<Edit>, Typed),
     WalkWhenIdle(Walk),
@@ -168,6 +169,7 @@ impl App {
                 }
             }
             Action::Pick(panel, view) => model.pick_view(panel, view),
+            Action::CloseView(view) => model.panels.close_view(view),
             Action::ClosePicker => {
                 model.panels.close_picker();
                 model.fields.release(Which::ViewSearch);

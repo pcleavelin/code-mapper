@@ -62,7 +62,7 @@ author ai
 file crates/gui/src/views/left.rs
 symbol group_row
 lines 0 38
-hash eba08cf9c3cb040f
+hash 609a29322237fe56
 note forced overrides the recorded and default openness; while it is set a click queues nothing, so a filter never records a group as closed.
 
 step wlbvu3

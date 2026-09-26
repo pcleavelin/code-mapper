@@ -3,7 +3,7 @@ path platform-renderer
 kind layer
 author ai
 group render
-note The GPU side, the platform crate's Renderer: it replays the ui crate's DrawList (see ui-canvas) with one wgpu pipeline that draws everything the app ever draws as textured, coloured triangles out of a single atlas. The atlas holds every glyph at every pixel size in use, rasterised on demand by fontdue from the bundled font, plus a white patch in the corner that solid fills sample - which is why a rectangle, a line, a disc and a run of text are all the same draw call with the same shader. Positions are whole physical pixels and the sampler is nearest, so text is never scaled or sampled between pixels; a different zoom is a different font size, not a transform. Clipping is a scissor rectangle: every Clip command in the list starts a new batch, so a deeply nested tree is still one vertex buffer and a handful of draw calls. The Renderer is also the Measure the tree lays out with, so layout and drawing agree on every cell size. Nothing it does can fail the frame: a lost surface is reconfigured and the frame skipped, a failed screenshot is reported on stderr.
+note The GPU side, the platform crate's Renderer: it replays the ui crate's DrawList (see ui-canvas) with one wgpu pipeline that draws everything the app ever draws as textured, coloured triangles out of a single atlas. The atlas holds every glyph at every pixel size in use, rasterised on demand by fontdue from the bundled fonts (Hack for text, Codicons for icon glyphs, see icons), plus a white patch in the corner that solid fills sample - which is why a rectangle, a line, a disc and a run of text are all the same draw call with the same shader. Positions are whole physical pixels and the sampler is nearest, so text is never scaled or sampled between pixels; a different zoom is a different font size, not a transform. Clipping is a scissor rectangle: every Clip command in the list starts a new batch, so a deeply nested tree is still one vertex buffer and a handful of draw calls. The Renderer is also the Measure the tree lays out with, so layout and drawing agree on every cell size. Nothing it does can fail the frame: a lost surface is reconfigured and the frame skipped, a failed screenshot is reported on stderr.
 
 step 0fd3co
 order 16
@@ -90,8 +90,8 @@ order 54
 author ai
 file crates/platform/src/font.rs
 symbol Font
-lines 0 3
-hash cec75b25cdfa2b19
+lines 0 4
+hash 9c3ba45ea16b962b
 note The font: the parsed face and the metrics memoised per pixel size.
 
 step 6my0c1
@@ -180,8 +180,8 @@ parent 6cx7dp
 author ai
 file crates/platform/src/font.rs
 symbol rasterize
-lines 0 9
-hash 46ccc1de109b3627
+lines 4 12
+hash 2b54a64dd503c2fa
 note One glyph's coverage bitmap at a size, with its size in texels and its offset from pen and baseline.
 
 step d8z3s3
@@ -270,8 +270,8 @@ parent 6my0c1
 author ai
 file crates/platform/src/font.rs
 symbol load
-lines 0 7
-hash 06f0c0aa340a851f
+lines 0 10
+hash d738851796b5a065
 note The font face, parsed from the bundled bytes; a parse failure is a StartError.
 
 step hmokb5
@@ -519,8 +519,8 @@ parent 0q1h08
 author ai
 file crates/platform/src/renderer.rs
 symbol text
-lines 0 14
-hash b9ae6ae52d6a80a9
+lines 0 15
+hash c35e73ee415b2343
 note A run of text with its top-left at a point, one cell per character from the font's metrics, on a baseline an ascent below the top. Characters entirely left of the clip and spaces are skipped and the run stops at the clip's right edge, which is what makes a very long line cheap to draw.
 
 step z2d3kc

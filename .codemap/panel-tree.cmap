@@ -3,7 +3,7 @@ path panel-tree
 kind flow
 author ai
 group gui
-note How the window is divided and how the reader rearranges it. Below the top bar and above the status bar, the window is one tree of panels: a split holds two branches side by side or one above the other at a ratio, and a leaf panel holds a stack of views shown as tabs. The ten views (Paths, Symbols, Files, Path, Diff, Graph, Listing, Results, Xrefs, Output) each live in at most one panel. The tree is Panels in the Model, laid out top-down every frame from the body's rectangle. The reader drags a sash to resize, drags a tab onto a panel to join it or onto a panel's edge to split it, splits a panel with its | and - buttons, closes it with x, and fills a panel from the picker behind +, a searchable list of views. Navigation still speaks in centre tabs: whatever switches the tab brings that view to front wherever it lives, and adds it back next to the last one shown if it was in no panel. Pointer gestures are read before the tree is built and applied at once, so the frame that sees a drag already draws it. Nothing is saved: a launch starts from the default tree.
+note How the window is divided and how the reader rearranges it. Below the top bar and above the status bar, the window is one tree of panels: a split holds two branches side by side or one above the other at a ratio, and a leaf panel holds a stack of views shown as tabs. The ten views (Paths, Symbols, Files, Path, Diff, Graph, Listing, Results, Xrefs, Output) each live in at most one panel. The tree is Panels in the Model, laid out top-down every frame from the body's rectangle. The reader drags a sash to resize, drags a tab onto a panel to join it or onto a panel's edge to split it, splits a panel with its | and - buttons, closes it with x, and fills a panel from the picker behind +, a searchable list of views. Navigation still speaks in centre tabs: whatever switches the tab brings that view to front wherever it lives, and adds it back next to the last one shown if it was in no panel. Pointer gestures are read before the tree is built and applied at once, so the frame that sees a drag already draws it. The tree is saved to the user's layout file whenever it changes and no drag is held, and a launch starts from that file (the io-layout path), or from the default tree when there is none.
 
 step 0b3yk5
 order 24
@@ -12,8 +12,8 @@ author ai
 file crates/gui/src/panels.rs
 symbol take
 lines 0 11
-hash 4aba9cfa7192a2fa
-note Removes a view from its panel; a panel it leaves empty is closed, unless it is the panel receiving the view.
+hash 2697e0c7893c244a
+note Removes a view from its panel; a panel it leaves empty is closed, unless it is the panel receiving the view (keep); close_view passes none, and the root panel never closes.
 
 step 0o2kg7
 order 46
@@ -32,7 +32,7 @@ author ai
 file crates/gui/src/panels.rs
 symbol put
 lines 0 5
-hash facd79d22b25d5c7
+hash 678fb601b3f0d18c
 note Moves a view into a panel and shows it: the one place a view changes panel, so it is never in two.
 
 step 17seke
@@ -74,6 +74,35 @@ lines 0 8
 hash 315226a07180575f
 note The tree as a dump prints it (DUMP panels): direction and id, ratio, both halves; a panel as id[views] with * on the active one; then the open picker.
 
+step 3z8x11
+order 53
+author ai
+file crates/gui/src/panels.rs
+symbol from_layout
+lines 0 6
+hash 2b7409fe994684f3
+note Loading: builds the tree from a saved layout with fresh ids, no picker and no grab. App::new calls it when the user's layout file reads.
+
+step 4hv76a
+order 52
+parent q0t4z1
+author ai
+file crates/gui/src/panels.rs
+symbol layout_of
+lines 0 19
+hash 9d7d596e6ad38ad5
+note Views by name, the shown tab, a split's direction and ratio as a Share; branch ids are not saved, since a load numbers them afresh.
+
+step 5e9nxa
+order 54
+parent 3z8x11
+author ai
+file crates/gui/src/panels.rs
+symbol restore
+lines 0 30
+hash 5270188d0f199a82
+note A saved view name the GUI does not know is dropped, and so is a view already placed in an earlier panel, so a hand-edited file can never break one-of-each.
+
 step 5zemej
 order 19
 parent byfw40
@@ -110,8 +139,8 @@ parent dxzju5
 author ai
 file crates/gui/src/views/panel_tree.rs
 symbol tab
-lines 0 20
-hash a7ecb3706b41a019
+lines 0 24
+hash f2ce2220203e3466
 note A tab is a button tab@<View>. A press both shows the view and takes hold of it for a drag; releasing without moving leaves only the show.
 
 step aebgap
@@ -180,9 +209,9 @@ parent dxzju5
 author ai
 file crates/gui/src/views/panel_tree.rs
 symbol header
-lines 0 35
-hash b042600ec43f0aa9
-note One row per panel: a tab per view, then + (the picker), | (split across), - (split down) and x (close), the last only when the panel is not the whole window.
+lines 0 38
+hash cc9e7a94c61b609b
+note One row per panel: a tab per view, then the add (picker), split-across, split-down and close icons, the last only when the panel is not the whole window.
 
 step cxcwck
 order 22
@@ -191,7 +220,7 @@ author ai
 file crates/gui/src/panels.rs
 symbol drop_view
 lines 0 38
-hash 17e3951dcaa3a289
+hash 80b3445d36c9830c
 note A drop in the middle of a panel joins its stack. A drop on an edge takes the view from its panel and splits the target on that side, the view alone in the new half. Dropping a panel's only view on its own edge would leave an empty half, so it does nothing.
 
 step dpeebe
@@ -283,6 +312,16 @@ lines 0 13
 hash abb5ab7738b03169
 note Replaces the parent split of a branch with the branch's sibling, so the sibling takes the whole of the split's room. The root cannot be closed.
 
+step ixlkib
+order 50
+parent q2y9hy
+author ai
+file crates/gui/src/app.rs
+symbol KeptLayout
+lines 0 3
+hash 1bff90362846f68d
+note The layout file and the tree last written to it. No store (a script or screenshot run without CODEMAP_LAYOUT) means nothing is ever saved.
+
 step jiqvb4
 order 32
 author ai
@@ -319,7 +358,7 @@ file crates/gui/src/panels.rs
 symbol Panels
 lines 0 7
 hash d473d47c9a474335
-note The whole layout: the root of the tree, the next BranchId to hand out, the tab held for a drag, the panel whose picker is open, and what navigation last asked to be shown (revealed, answered). One Panels lives in the Model; nothing about it is saved, so every launch starts from default.
+note The whole layout: the root of the tree, the next BranchId to hand out, the tab held for a drag, the panel whose picker is open, and what navigation last asked to be shown (revealed, answered). One Panels lives in the Model; App::keep_layout saves its layout() whenever that changes, and App::new builds it with from_layout.
 
 step nx4h7k
 order 43
@@ -350,6 +389,25 @@ symbol Panel
 lines 0 4
 hash a0b273cc10a39262
 note A leaf: a stack of views shown as tabs and the one on top. A panel may be empty, right after a split, until a view is picked for it.
+
+step q0t4z1
+order 51
+parent q2y9hy
+author ai
+file crates/gui/src/panels.rs
+symbol layout
+lines 0 2
+hash 715249615cb78709
+note The tree as domain's LayoutTree, for io-layout.
+
+step q2y9hy
+order 49
+author ai
+file crates/gui/src/app.rs
+symbol impl App
+lines 1 17
+hash c1152652d8bba913
+note Saving: at the end of each frame, once no drag or sash is held and the left button is up, the tree's layout() is compared with the last one written and saved when it differs. A failed write shows in the status line and is not retried until the layout changes again.
 
 step qghrps
 order 44
@@ -415,8 +473,8 @@ order 21
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 59 87
-hash 891e78de9a1e5af9
+lines 59 88
+hash d3d2ab03866daec9
 note The panel arms of apply: grab, resize, drag and release; split, close; the picker opened, closed or picked from. Opening the picker, by + or by a split, empties its search field and gives it the keyboard.
 
 step x1ugnu

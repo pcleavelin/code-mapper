@@ -41,7 +41,7 @@ author ai
 file crates/gui/src/views/document.rs
 symbol step_header
 lines 15 26
-hash 93d486c5a0816ddc
+hash e09d246180fad544
 note Trigger: the FOLD arrow, drawn only when the step has descendants, queues Toggle with ViewFlag::Folded; a folded header gets the +n count of its descendants.
 
 step tmx9tb

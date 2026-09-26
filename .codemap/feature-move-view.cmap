@@ -42,7 +42,7 @@ author ai
 file crates/gui/src/panels.rs
 symbol drop_view
 lines 0 38
-hash 17e3951dcaa3a289
+hash 80b3445d36c9830c
 note Join the stack in the middle, split on an edge; a panel's only view dropped on its own edge stays put.
 
 step j5h3es
@@ -52,7 +52,7 @@ author ai
 file crates/gui/src/panels.rs
 symbol put
 lines 0 5
-hash facd79d22b25d5c7
+hash 678fb601b3f0d18c
 note The move itself; the panel the view leaves closes if it is now empty.
 
 step u22cgn
@@ -61,8 +61,8 @@ parent a40hff
 author ai
 file crates/gui/src/views/panel_tree.rs
 symbol tab
-lines 0 20
-hash a7ecb3706b41a019
+lines 0 24
+hash f2ce2220203e3466
 note Trigger: a press on a tab queues Grab with the pointer position (and ShowView). The cursor is a closed hand while a moving tab is held.
 
 step vwjg3u

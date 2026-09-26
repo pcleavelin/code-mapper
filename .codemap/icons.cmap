@@ -1,0 +1,141 @@
+codemap 8
+path icons
+kind flow
+author ai
+group render
+note How an icon reaches the screen as text. An icon is not an image: ui's Icon names a glyph in Unicode's Private Use Area, the codepoint Codicons (assets/codicon.ttf, Microsoft, CC BY 4.0, see assets/codicon-LICENSE.txt) gives it, so an icon is a char inside an ordinary Label and Run and mixes with text in one run: a button, a row, a tab or a format!() string holds it the way it holds a letter, and every widget that takes a Label takes an icon (From<Icon> for Label). Because icons are square and cells are about 0.6 em wide, an icon glyph is two columns: Label::columns, Label::wrap, the canvas's pen and the renderer's pen all advance by Glyph::columns, so layout and drawing agree. The renderer's font holds two faces; a Private Use Area glyph is rasterised from the icon face, sized to fit its two-cell box and one row, centred in it, and cached in the same atlas under the same (size, glyph) key as every letter, so an icon costs one textured quad in the same batch as the text around it. Dumps spell an icon as [name], so scripts and goldens stay readable.
+
+step 256k5h
+order 11
+author ai
+file crates/ui/src/text.rs
+symbol spelled
+lines 0 10
+hash 18194ac51568dcf9
+note A Label for a dump: icons as [name], other characters as they are, so a graph button reads DUMP button fill '[more-below]' and a script can aim at it by that text.
+
+step 3u0ov2
+order 0
+author ai
+file crates/ui/src/icon.rs
+symbol Icon
+lines 0 11
+hash 442819e612180827
+note The icons the GUI draws, by what they mean rather than what they look like: Add (the picker), Close, SplitAcross and SplitDown, Back and Forward, Unfolded and Folded (a fold's or a group's chevron, named after ViewFlag::Folded and Fold/Unfold; Close is the dismiss icon, a different thing), MoreAbove and MoreBelow (context). A new icon is a variant here and its Codicons codepoint in glyph.
+
+step 979nyy
+order 8
+author ai
+file crates/platform/src/font.rs
+symbol rasterize
+lines 0 12
+hash 792b8868b621ad91
+note A glyph's coverage: icon glyphs go to icon, everything else is rasterised from Hack at the font size.
+
+step b8qntx
+order 2
+parent 3u0ov2
+author ai
+file crates/ui/src/icon.rs
+symbol impl From<Icon> for Label
+lines 0 4
+hash deb4f08d6c193c71
+note An icon as a one-glyph Label, so widgets that take impl Into<Label> take an Icon as it is.
+
+step dpb1dg
+order 5
+parent l09gt5
+author ai
+file crates/ui/src/text.rs
+symbol columns
+lines 0 5
+hash 735694fc91221e15
+note A Label's width in columns, summed per glyph, which is what the layout sizes text elements by.
+
+step e01wgc
+order 6
+parent l09gt5
+author ai
+file crates/ui/src/canvas.rs
+symbol text
+lines 0 18
+hash cbf2cb643fd38226
+note The canvas's text command advances its pen by each glyph's columns, so a run after an icon starts where the renderer will leave off.
+
+step l09gt5
+order 4
+parent zzbqtf
+author ai
+file crates/ui/src/input.rs
+symbol columns
+lines 0 2
+hash bf41b40996c02b4c
+note Two columns for an icon, one for anything else: the one width rule that measuring, wrapping and both pens follow.
+
+step obpr6o
+order 10
+parent 979nyy
+author ai
+file crates/platform/src/font.rs
+symbol ICONS
+lines 0 0
+hash d2ec00f935f1e8d7
+note Codicons 0.0.36, compiled into the binary beside Hack.
+
+step rx4uvu
+order 7
+parent l09gt5
+author ai
+file crates/platform/src/renderer.rs
+symbol text
+lines 0 15
+hash c35e73ee415b2343
+note The renderer's line of text: each glyph drawn at the pen, which then moves by that glyph's columns in cells.
+
+step sjtesu
+order 13
+author ai
+file crates/ui/src/tests.rs
+symbol wrapping_counts_an_icon_as_two_columns
+lines 0 7
+hash 695dce07278200aa
+note Wrapping breaks by columns, so three icons (six columns) fill a six-column line.
+
+step vcr5pg
+order 1
+parent 3u0ov2
+author ai
+file crates/ui/src/icon.rs
+symbol glyph
+lines 0 13
+hash 7114c7dd573f9a54
+note Each icon's Codicons codepoint, from the font's own table (codicon.csv in the package): add EA60, close EA76, split-horizontal EB56, split-vertical EB57, arrow-left EA9B, arrow-right EA9C, chevron-down EAB4, chevron-right EAB6, fold-up EAF4, fold-down EAF3.
+
+step xe1trh
+order 9
+parent 979nyy
+author ai
+file crates/platform/src/font.rs
+symbol icon
+lines 0 19
+hash 32551a6bec76c60f
+note An icon's box is its two cells across and one row down; the icon is rasterised at 90% of the box's smaller side and centred in it, the offset measured from pen and baseline like any glyph so put places it without knowing it is an icon.
+
+step y1sl3i
+order 12
+parent 256k5h
+author ai
+file crates/ui/src/icon.rs
+symbol of
+lines 0 2
+hash 9f84d520ea9241d4
+note The icon a glyph is, if any.
+
+step zzbqtf
+order 3
+author ai
+file crates/ui/src/input.rs
+symbol is_icon
+lines 0 2
+hash 8bf2c9c2b7e5975a
+note A glyph is an icon when it is in the Private Use Area (U+E000..U+F8FF), where every Codicons glyph lives and no text the app shows has a character.

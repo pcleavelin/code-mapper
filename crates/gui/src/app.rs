@@ -2,10 +2,12 @@ use std::env;
 use std::path::PathBuf;
 use std::time::Duration;
 
+use domain::LayoutTree;
 use domain::{Line, Map, RelativePath, Root};
+use io_layout::{LayoutStore, Reach};
 use io_map::MapStore;
 use platform::{Cursor, Exit, Frame as PlatformFrame, Outcome, Renderer, ScriptLine};
-use ui::{Count, Id, Input, Label, Measure, Point, Px, Rect, Ui};
+use ui::{Button, Count, Id, Input, Label, Measure, Point, Px, Rect, Ui};
 
 use crate::action::Action;
 use crate::dump::{self, Context, Dump, DumpLines};
@@ -14,7 +16,7 @@ use crate::grid::Grids;
 use crate::ids;
 use crate::keys::{self, Going};
 use crate::model::{Metrics, Model, PathSlot, Readable, Tab, TabName};
-use crate::panels::View;
+use crate::panels::{Panels, View};
 use crate::status::Status;
 use crate::theme::{self, BACKGROUND, TEXT};
 use crate::views;
@@ -33,6 +35,13 @@ pub(crate) struct App {
     pub(crate) grids: Grids,
     shot: Option<Shot>,
     shot_next: Option<PathBuf>,
+    layout: KeptLayout,
+}
+
+#[derive(Debug, Default)]
+struct KeptLayout {
+    store: Option<LayoutStore>,
+    saved: Option<LayoutTree>,
 }
 
 const SHOT_TAB_FRAME: Count = Count::new(3);
@@ -55,7 +64,21 @@ impl App {
         } else {
             Readable::Reads
         };
-        let model = Model::new(indexed.index, map, store, readable);
+        let mut model = Model::new(indexed.index, map, store, readable);
+        let reach =
+            if env::var_os("CODEMAP_SCRIPT").is_some() || env::var_os("CODEMAP_SHOT").is_some() {
+                Reach::OverrideOnly
+            } else {
+                Reach::User
+            };
+        let layout_store = LayoutStore::find(reach);
+        if let Some(saved) = layout_store.as_ref().and_then(LayoutStore::load) {
+            model.panels = Panels::from_layout(&saved);
+        }
+        let layout = KeptLayout {
+            saved: Some(model.panels.layout()),
+            store: layout_store,
+        };
         let mut app = Self {
             model,
             services: Services::new(root),
@@ -66,6 +89,7 @@ impl App {
                 frame: Count::ZERO,
             }),
             shot_next: None,
+            layout,
         };
         app.model.status = match unreadable {
             Some(error) => Status::MapUnreadable(Label::new(cli::Failure::Load(error).to_string())),
@@ -89,6 +113,7 @@ impl App {
             grids: Grids::default(),
             shot: None,
             shot_next: None,
+            layout: KeptLayout::default(),
         }
     }
 
@@ -227,6 +252,7 @@ impl platform::App for App {
             self.apply(action);
         }
         self.model.reveal_tab();
+        self.keep_layout();
         self.model.track_navigation();
         let busy = self.working() || self.shot.is_some();
         PlatformFrame {
@@ -336,5 +362,24 @@ impl AppCommand {
         Self::ALL
             .into_iter()
             .find(|command| command.name().as_str() == word)
+    }
+}
+
+impl App {
+    fn keep_layout(&mut self) {
+        let Some(store) = &self.layout.store else {
+            return;
+        };
+        if self.model.panels.grab().is_some() || self.ui.pointer().down.contains(Button::Left) {
+            return;
+        }
+        let now = self.model.panels.layout();
+        if self.layout.saved.as_ref() == Some(&now) {
+            return;
+        }
+        if let Err(error) = store.save(&now) {
+            self.model.status = Status::LayoutUnsaved(Label::new(error.to_string()));
+        }
+        self.layout.saved = Some(now);
     }
 }

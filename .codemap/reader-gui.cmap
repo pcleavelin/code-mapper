@@ -121,9 +121,9 @@ order 0
 author ai
 file crates/gui/src/app.rs
 symbol frame
-lines 0 50
-hash 68bd9ef30d45d8b4
-note The frame (platform::App::frame), in order: the font and cell size for this scale factor, the screenshot aid, the five polls, the keys, then panel_input and the graph's own input phase, the element tree, layout and draw, the action queue, the reveal of the centre view navigation asked for, and the history snapshot. It asks the loop to come back in 50 ms while any work is in flight and in a second otherwise, so an idle window costs one frame per second.
+lines 0 51
+hash a9c576189bbd32c2
+note The frame (platform::App::frame), in order: the font and cell size for this scale factor, the screenshot aid, the five polls, the keys, then panel_input and the graph's own input phase, the element tree, layout and draw, the action queue, the reveal of the centre view navigation asked for, saving the layout if it changed, and the history snapshot. It asks the loop to come back in 50 ms while any work is in flight and in a second otherwise, so an idle window costs one frame per second.
 
 step 5aljhx
 order 3
@@ -131,8 +131,8 @@ parent bg9t38
 author ai
 file crates/gui/src/views/bars.rs
 symbol top_bar
-lines 0 52
-hash bd9a55dfb0242f3f
+lines 0 56
+hash aa1deae64945bacd
 note The top bar: search box, back and forward, then right-aligned the new-path box, 'pin selection' and 'save', which shows a star while the map has unsaved edits. Every button here only pushes an Action.
 
 step 5j9xn1
@@ -368,7 +368,7 @@ author ai
 file crates/gui/src/views/document.rs
 symbol step_header
 lines 0 91
-hash ad2df1ac66380220
+hash aa6c9a026be47284
 note The header row: the fold arrow when the step has children, the title, the hide-code, whole-symbol and no-context toggles, the link controls, and the delete button alone at the far right. Clicking the title of the path being read selects the step where it is (no scroll), while a step of an inline linked path is selected with a scroll. The toggle buttons keep one width whatever their label, so no button slides under a pointer that clicks twice.
 
 step ffqukt
@@ -437,8 +437,8 @@ parent sn1cn1
 author ai
 file crates/gui/src/action.rs
 symbol Action
-lines 0 46
-hash f2de8d6669a5466b
+lines 0 47
+hash 59251f8fbdde8544
 note What a gesture can ask for. Selection and navigation, the per-step view toggles, the path-wide toggles, the two deletions, opening a line or a definition, tabs, the fields' input, scroll offsets and what a view measured (the top step, a scroll done), server questions, panel gestures and graph gestures. Adding a gesture means adding a variant here and an arm in apply, not threading a callback through the views. A StepKey is a (path, step) pair of slots in the map; Definition carries the intent, peek or jump; SelectLine says whether to extend; SelectStep whether to scroll the document; OpenPath selects the path unless it is the one being read and shows it in the given tab.
 
 step jd4cl1
@@ -487,8 +487,8 @@ parent 62vg11
 author ai
 file crates/gui/src/views/left.rs
 symbol group_row
-lines 0 42
-hash 2e4e4945a1fd241b
+lines 0 44
+hash 33633ee24efd2183
 note A group row, red when a path under it is stale. A group never clicked is open while it holds the path being read; a click records it open or closed through OpenGroup. A non-empty Paths filter forces every group open.
 
 step lwf851
@@ -567,8 +567,8 @@ parent x3sfq6
 author ai
 file crates/gui/src/views/left.rs
 symbol files_tree
-lines 0 91
-hash 2e6ce57d899c640c
+lines 0 93
+hash 324770a3f5aa2aa4
 note The directory tree, derived rather than stored: the file list is sorted by path, so a run of entries sharing the next component is a directory and recursing one component deeper draws it. Top-level directories are open by default and the toggled set flips that, so no state is needed for the common case. A directory row shows its summed coverage; clicking a file opens it in the listing.
 
 step p2ewms
@@ -701,8 +701,8 @@ parent 50ozko
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 0 95
-hash 454e57b28a33fe9b
+lines 0 96
+hash 84f676cba54b2687
 note The action queue, drained once the tree is built; the keys and panel_input use it too, before the tree. apply is the only place the Model changes during a frame, which is what lets every view take the Model read-only. Most arms are one call into nav.rs or a Model field.
 
 step svoo3m
@@ -732,8 +732,8 @@ parent 4uwoav
 author ai
 file crates/gui/src/views/document.rs
 symbol context_button
-lines 0 13
-hash c3c3567695b32f62
+lines 0 21
+hash d28da5e37eb9aac5
 note The row above or below a step's code whose button asks for ten more lines on that side, kept per (path, step) until 'no context' in the header.
 
 step unlgyj

@@ -11,8 +11,8 @@ parent 2xm1wz
 author ai
 file crates/gui/src/views/left.rs
 symbol files_tree
-lines 0 91
-hash 2e6ce57d899c640c
+lines 0 93
+hash 324770a3f5aa2aa4
 note Trigger and effect: files come sorted by path, so a directory is a run of files with the same component at this depth. A FILE_ROW click queues GoTo line one; a DIRECTORY_ROW click queues ToggleDirectory. A directory is open when it is top level XOR flipped, and an open one draws its run one level deeper.
 
 step 2xm1wz

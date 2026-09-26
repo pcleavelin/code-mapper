@@ -2,6 +2,7 @@ use std::mem;
 
 use crate::color::Color;
 use crate::geometry::{Count, FontSize};
+use crate::icon::Icon;
 use crate::input::Glyph;
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Default)]
@@ -16,8 +17,23 @@ impl Label {
         &self.0
     }
 
+    pub fn spelled(&self) -> String {
+        self.0
+            .chars()
+            .map(|character| {
+                Icon::of(Glyph::new(character)).map_or_else(
+                    || String::from(character),
+                    |icon| format!("[{}]", icon.name()),
+                )
+            })
+            .collect()
+    }
+
     pub fn columns(&self) -> usize {
-        self.0.chars().count()
+        self.0
+            .chars()
+            .map(|character| Glyph::new(character).columns())
+            .sum()
     }
 
     pub fn wrap(&self, columns: usize) -> Vec<Self> {
@@ -27,7 +43,10 @@ impl Label {
             let mut line = String::new();
             let mut length = 0;
             for word in paragraph.split(' ') {
-                let word_length = word.chars().count();
+                let word_length: usize = word
+                    .chars()
+                    .map(|character| Glyph::new(character).columns())
+                    .sum();
                 if length > 0 && length + 1 + word_length > columns {
                     out.push(Self(mem::take(&mut line)));
                     length = 0;
@@ -43,7 +62,7 @@ impl Label {
                             length = 0;
                         }
                         line.push(character);
-                        length += 1;
+                        length += Glyph::new(character).columns();
                     }
                 } else {
                     line.push_str(word);

@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use domain::{Index, Line, Span, SymbolId, SymbolName};
-use ui::{Count, Extent, Label, Point, Rect, Run};
+use ui::{Count, Extent, Icon, Label, Point, Rect, Run};
 
 use crate::graph::{Around, Button, Expansion, GraphState, Node, Side};
 use crate::model::{Model, PathSlot, StepKey, StepSlot};
@@ -239,10 +239,10 @@ impl Built {
         }
         if !graph.collapsed.contains(&node) {
             if view.start().value() > 0 {
-                label(Button::Above, "\u{25b2}".to_owned());
+                label(Button::Above, Icon::MoreAbove.glyph().get().to_string());
             }
             if view.end().value() + 1 < source.text().count().value() {
-                label(Button::Below, "\u{25bc}".to_owned());
+                label(Button::Below, Icon::MoreBelow.glyph().get().to_string());
             }
             if graph.context.contains_key(&node) {
                 label(Button::NoContext, "no context".to_owned());
