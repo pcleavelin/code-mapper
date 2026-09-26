@@ -251,8 +251,7 @@ const DEPENDENCIES: [Allowed; 16] = [
     },
 ];
 
-pub(crate) const RULEBOOK: [Guard; 9] = [
-    Guard::Tree(Literal::new("xtask/")),
+pub(crate) const RULEBOOK: [Guard; 8] = [
     Guard::File(Literal::new("clippy.toml")),
     Guard::File(Literal::new("rustfmt.toml")),
     Guard::File(Literal::new(".gitattributes")),
