@@ -80,8 +80,8 @@ order 30
 author ai
 file crates/codemap/tests/common/mod.rs
 symbol gui_state
-lines 0 23
-hash 58ac671be47edafd
+lines 0 24
+hash 29004200341ab87e
 note What a GUI golden keeps of stderr: the tab and selection line, dock lines, the tooltip and peek line, backend state and script errors, graph node and button names without their rectangles and the graph line without its pan. What depends on the screen or timing stays out.
 
 step 62zoqn
@@ -500,8 +500,8 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol panels
-lines 0 79
-hash 6bc6cc7023a4f76a
+lines 0 88
+hash b11f34522d8a5932
 note The side panels and command line: the symbol list and its filter, the file tree and a folder toggle, the paths list, search and a hit, commands typed into the command line (with a bad one and clear), a new path from the field, a pin from the listing, and ctrl-s to save.
 
 step rlmca4

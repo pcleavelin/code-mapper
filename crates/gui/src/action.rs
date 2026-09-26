@@ -354,7 +354,9 @@ impl App {
 
     fn typed(&mut self, which: Which, edits: &[Edit], typed: &Typed) {
         let enter = match which {
-            Which::Search | Which::SymbolFilter | Which::GoToLine => Enter::Keep,
+            Which::Search | Which::SymbolFilter | Which::PathFilter | Which::GoToLine => {
+                Enter::Keep
+            }
             Which::NewPath | Which::Command => Enter::Clear,
         };
         let Some(line) = self.model.fields.handle(which, edits, typed, enter) else {
@@ -365,7 +367,7 @@ impl App {
             Which::Search => self.search(),
             Which::NewPath => self.create_path(&line),
             Which::GoToLine => self.go_to_line(&line),
-            Which::SymbolFilter => {}
+            Which::SymbolFilter | Which::PathFilter => {}
         }
     }
 

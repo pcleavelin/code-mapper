@@ -11,8 +11,8 @@ parent vxejrd
 author ai
 file crates/domain/src/map.rs
 symbol rows
-lines 0 5
-hash 1d26d10d5a0a358b
+lines 0 2
+hash 1e78e876d1b8c878
 link path-groups
 note Builds the nested rows; a group row carries its depth and its path count.
 

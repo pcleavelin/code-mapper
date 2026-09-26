@@ -64,14 +64,14 @@ fn group_row(
     paths: PathCount,
     pad: &Label,
     reading: &Label,
+    forced: Option<Openness>,
 ) -> Openness {
     let full = group.as_str();
     let reading = reading.as_str();
     let holds = reading == full || reading.starts_with(&format!("{full}/"));
-    let open = model
-        .groups
-        .get(group)
-        .map_or(holds, |openness| *openness == Openness::Open);
+    let open = forced
+        .or_else(|| model.groups.get(group).copied())
+        .map_or(holds, |openness| openness == Openness::Open);
     let label = format!(
         "{}{} {}/  {} paths",
         pad.as_str(),
@@ -86,7 +86,7 @@ fn group_row(
     });
     let id = ids::GROUP_ROW.with(&Label::new(full));
     let runs = vec![Run::new(label, if stale { RED } else { TEXT })];
-    if frame.row(runs, id, Chosen::Plain).clicked() {
+    if frame.row(runs, id, Chosen::Plain).clicked() && forced.is_none() {
         let openness = if open {
             Openness::Closed
         } else {
@@ -181,6 +181,21 @@ fn follow_outline(model: &Model, frame: &mut Frame<'_>, offset: Px) {
 }
 
 fn paths_window(model: &Model, frame: &mut Frame<'_>) {
+    frame.start(Container::ToolbarSmall);
+    frame.field(
+        &model.fields,
+        Which::PathFilter,
+        &Label::new("filter"),
+        FILTER_FIELD,
+    );
+    frame.finish();
+    let forced = (!model
+        .fields
+        .get(Which::PathFilter)
+        .text()
+        .as_str()
+        .is_empty())
+    .then_some(Openness::Open);
     let diffs = model.diffs();
     let base = ids::paths();
     let scrolled = frame.scroll_column(base, model.scrolls.get(base), Scroller::Plain, None);
@@ -194,7 +209,7 @@ fn paths_window(model: &Model, frame: &mut Frame<'_>) {
             .map_or("", GroupName::as_str),
     );
     let mut closed_at: Option<Depth> = None;
-    for row in model.map.rows() {
+    for row in model.listed_rows() {
         let depth = match &row {
             Row::Group { depth, .. } | Row::Path { depth, .. } => *depth,
         };
@@ -205,7 +220,9 @@ fn paths_window(model: &Model, frame: &mut Frame<'_>) {
         let pad = Label::new("  ".repeat(usize::try_from(depth.value()).unwrap_or(0)));
         match row {
             Row::Group { group, paths, .. } => {
-                if group_row(model, frame, &group, paths, &pad, &reading) == Openness::Closed {
+                if group_row(model, frame, &group, paths, &pad, &reading, forced)
+                    == Openness::Closed
+                {
                     closed_at = Some(depth);
                 }
             }
@@ -220,7 +237,10 @@ fn paths_window(model: &Model, frame: &mut Frame<'_>) {
             }
         }
     }
-    for diff in diffs.iter().filter(|diff| diff.change() == Change::Removed) {
+    for diff in diffs
+        .iter()
+        .filter(|diff| diff.change() == Change::Removed && model.lists(diff.name()))
+    {
         frame.label(
             format!(
                 "- {}  (removed, {} steps)",

@@ -438,8 +438,12 @@ impl Map {
     }
 
     pub fn rows(&self) -> Vec<Row> {
+        self.rows_where(|_| true)
+    }
+
+    pub fn rows_where(&self, wanted: impl Fn(&Path) -> bool) -> Vec<Row> {
         let mut rows = Vec::new();
-        let members: Vec<&Path> = self.paths.iter().collect();
+        let members: Vec<&Path> = self.paths.iter().filter(|path| wanted(path)).collect();
         level(&members, None, Depth::default(), &mut rows);
         rows
     }

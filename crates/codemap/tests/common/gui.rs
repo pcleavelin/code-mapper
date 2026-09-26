@@ -341,6 +341,15 @@ wait 3
 dump
 click-id left@Paths
 wait 2
+click-id field@paths
+text SHAPE
+wait 3
+dump
+shot {shots}/paths-filtered.png
+key a ctrl
+key backspace
+wait 3
+dump
 click-id paths/1
 wait 3
 dump

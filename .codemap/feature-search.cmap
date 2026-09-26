@@ -61,7 +61,7 @@ parent f1ux4a
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 15
-hash 1e1ff82d94cec218
+lines 0 17
+hash 9a26fd931f9b4cc4
 link feature-new-path
 note The search field keeps its text on enter and marks it whole; a submitted line runs search.

@@ -549,6 +549,7 @@ pub(crate) fn gui_state(stderr: &str) -> String {
             || line.starts_with("DUMP dock")
             || line.starts_with("DUMP tip=")
             || line.starts_with("DUMP backend")
+            || line.starts_with("DUMP paths ")
             || line.starts_with("script:")
         {
             Some(line.to_owned())

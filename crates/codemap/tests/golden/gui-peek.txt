@@ -1,40 +1,48 @@
 DUMP tab=Path path=Some(2) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=Some("add") peek=None status="saved"
+DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(2) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=Some("add") peek=Some(Sym(SymRef { file: 5, sym: 3 })) status="saved"
+DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(2) step=Some(2) focus=Some("add") file=Some("src/store.rs") sel=Some((11, 14))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=Some(Sym(SymRef { file: 5, sym: 3 })) status="saved"
+DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(2) step=Some(2) focus=Some("add") file=Some("src/store.rs") sel=Some((11, 14))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
+DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(2) step=Some(5) focus=Some("total_area") file=Some("src/store.rs") sel=Some((20, 24))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=Some("total_area") peek=None status="saved"
+DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(2) step=Some(5) focus=Some("total_area") file=Some("src/store.rs") sel=Some((20, 24))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=Some("log_line") peek=Some(Sym(SymRef { file: 3, sym: 3 })) status="saved"
+DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(2) step=None focus=Some("area") file=Some("src/shapes.rs") sel=Some((14, 16))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=Some(Sym(SymRef { file: 3, sym: 3 })) status="area selected; not a step of 'startup'"
+DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(2) step=Some(5) focus=Some("total_area") file=Some("src/store.rs") sel=Some((20, 24))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=Some(Sym(SymRef { file: 3, sym: 3 })) status="area selected; not a step of 'startup'"
+DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000

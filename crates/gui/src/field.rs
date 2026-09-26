@@ -26,6 +26,7 @@ pub(crate) enum Which {
     NewPath,
     Command,
     SymbolFilter,
+    PathFilter,
     GoToLine,
 }
 
@@ -36,6 +37,7 @@ impl Which {
             Self::NewPath => ids::NEW_PATH_FIELD,
             Self::Command => ids::COMMAND_FIELD,
             Self::SymbolFilter => ids::FILTER_FIELD,
+            Self::PathFilter => ids::PATH_FILTER_FIELD,
             Self::GoToLine => ids::LINE_FIELD,
         }
     }
@@ -306,6 +308,7 @@ pub(crate) struct Fields {
     new_path: Field,
     command: Field,
     filter: Field,
+    path_filter: Field,
     line: Field,
     focused: Option<Which>,
 }
@@ -317,6 +320,7 @@ impl Fields {
             Which::NewPath => &self.new_path,
             Which::Command => &self.command,
             Which::SymbolFilter => &self.filter,
+            Which::PathFilter => &self.path_filter,
             Which::GoToLine => &self.line,
         }
     }
@@ -327,6 +331,7 @@ impl Fields {
             Which::NewPath => &mut self.new_path,
             Which::Command => &mut self.command,
             Which::SymbolFilter => &mut self.filter,
+            Which::PathFilter => &mut self.path_filter,
             Which::GoToLine => &mut self.line,
         }
     }

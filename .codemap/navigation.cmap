@@ -59,7 +59,7 @@ author ai
 file crates/gui/src/app.rs
 symbol keys
 lines 0 25
-hash 980e7236c8f2ecde
+hash 7bac38d2807535f4
 note The keys, read in the frame before the tree is built and turned into actions: the Save chord, back and forward, every field fed the frame's edits and typed text, and up and down walking the path when no field has the keyboard. Which chord does what comes from the feature registry through keys.
 
 step 5wentz

@@ -1,10 +1,12 @@
 use std::fmt::{self, Write as _};
 use std::io::{self, Write as _};
 
+use domain::Row;
 use platform::ScriptLine;
 use ui::{Id, Ui};
 
 use crate::dock::Dock;
+use crate::field::{Fields, Which};
 use crate::graph::{GraphState, Hit, Node};
 use crate::ids;
 use crate::model::{Model, Scrolls};
@@ -161,6 +163,21 @@ impl Dump for Status {
             Optional(model.tip_shown.as_ref().map(|tip| Quoted(tip.as_str()))),
             Optional(model.peek.as_ref().map(PeekText)),
             Quoted(self)
+        ));
+    }
+}
+
+impl Dump for Fields {
+    fn dump(&self, context: &Context<'_>, lines: &mut DumpLines) {
+        let listed = context
+            .model
+            .listed_rows()
+            .iter()
+            .filter(|row| matches!(row, Row::Path { .. }))
+            .count();
+        lines.line(format_args!(
+            "paths filter={} listed={listed}",
+            Quoted(self.get(Which::PathFilter).text().as_str())
         ));
     }
 }

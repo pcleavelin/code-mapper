@@ -140,7 +140,7 @@ impl App {
         for walk in keys::walks(input) {
             actions.push(Action::WalkWhenIdle(walk));
         }
-        for which in [Which::SymbolFilter, Which::GoToLine] {
+        for which in [Which::SymbolFilter, Which::PathFilter, Which::GoToLine] {
             actions.push(Action::Type(which, edits.clone(), typed.clone()));
         }
         for action in actions {
@@ -156,11 +156,12 @@ impl App {
             ui: &self.ui,
             services: &self.services,
         };
-        let parts: [&dyn Dump; 6] = [
+        let parts: [&dyn Dump; 7] = [
             &model.nav,
             &model.scrolls,
             &model.dock,
             &model.status,
+            &model.fields,
             &model.work,
             &model.graph,
         ];

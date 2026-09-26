@@ -1,56 +1,67 @@
 DUMP tab=Path path=Some(2) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
+DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(2) step=Some(5) focus=Some("total_area") file=Some("src/store.rs") sel=Some((20, 24))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
+DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(2) step=Some(5) focus=Some("total_area") file=Some("src/store.rs") sel=Some((20, 24))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
+DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(2) step=Some(5) focus=Some("total_area") file=Some("src/store.rs") sel=Some((20, 24))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
+DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(2) step=Some(6) focus=Some("log_line") file=Some("src/main.rs") sel=Some((23, 25))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
+DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(2) step=Some(5) focus=Some("total_area") file=Some("src/store.rs") sel=Some((20, 24))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
+DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(2) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
+DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(2) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
+DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(2) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
+DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(2) step=Some(6) focus=Some("log_line") file=Some("src/main.rs") sel=Some((23, 25))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
+DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Graph path=Some(2) step=Some(6) focus=Some("log_line") file=Some("src/main.rs") sel=Some((23, 25))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
+DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP node 1 main

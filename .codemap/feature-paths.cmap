@@ -71,7 +71,7 @@ parent 8leao4
 author ai
 file crates/domain/src/map.rs
 symbol rows
-lines 0 5
-hash 1d26d10d5a0a358b
+lines 0 2
+hash 1e78e876d1b8c878
 link path-groups
 note The full listing's order: groups nested and sorted, paths inside them; group rows are skipped here, groups print as headers instead.

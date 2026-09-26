@@ -70,6 +70,6 @@ parent 6bofi6
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 15
-hash 1e1ff82d94cec218
+lines 0 17
+hash 9a26fd931f9b4cc4
 note Only the focused field takes the edits. The new-path field clears on enter; a submitted line goes to create_path.

@@ -611,6 +611,15 @@ fn groups_nest_and_rename() {
             row("top", 0),
         ]
     );
+    assert_eq!(
+        map.rows_where(|path| matches!(path.name().as_str(), "d" | "top")),
+        [
+            group("flows", 0, 1),
+            group("flows/http", 1, 1),
+            row("d", 2),
+            row("top", 0),
+        ]
+    );
 
     let group_of = |target: &Map, path: &str| {
         target

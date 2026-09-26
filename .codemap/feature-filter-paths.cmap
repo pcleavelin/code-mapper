@@ -1,0 +1,95 @@
+codemap 8
+path feature-filter-paths
+kind flow
+author ai
+group features/gui
+note Type in the filter field at the top of the Paths tab to narrow the list to paths whose name contains the text, case-insensitively; every keystroke re-filters. A group shows only when a path under it matches, its count is the number of matching paths, and every group is open while the filter holds text (clicks on group rows do nothing then). Removed paths from the map diff are filtered the same way. Clearing the field restores the full list with each group's openness as it was.
+
+step 4tvhu1
+order 1
+parent 8j5rz8
+author ai
+file crates/domain/src/map.rs
+symbol rows_where
+lines 0 5
+hash c870f9e1f76b402e
+note The same grouping as rows, over only the wanted paths, so a group with no match disappears and a group's path count covers only matches.
+
+step 8j5rz8
+order 0
+parent z6m3sw
+author ai
+file crates/gui/src/model.rs
+symbol listed_rows
+lines 0 2
+hash 101c5c70af808445
+note The Paths list's rows: the map's rows holding only the paths lists accepts. dump prints how many paths it holds (DUMP paths filter=... listed=n).
+
+step lhcomc
+order 7
+parent z6m3sw
+author ai
+file crates/gui/src/app.rs
+symbol keys
+lines 19 21
+hash cd0482e8acc76635
+note The typing: the keys phase hands edits and typed text to the path filter along with the symbol filter and go-to-line fields; only the focused field takes them.
+
+step mb3pyj
+order 9
+parent z6m3sw
+author ai
+file crates/gui/src/dump.rs
+symbol impl Dump for Fields
+lines 0 13
+hash 29113b68ab1c98fd
+note What a script sees: the filter's text and how many paths listed_rows holds, as DUMP paths filter="..." listed=n; the GUI goldens keep this line.
+
+step o4hj70
+order 2
+parent 4tvhu1
+author ai
+file crates/domain/src/map.rs
+symbol level
+lines 0 18
+hash febf3f0c2f4f1706
+note Groups paths by their next group segment under the prefix; a group row exists only when some member is inside it.
+
+step tuyi1n
+order 6
+parent z6m3sw
+author ai
+file crates/gui/src/views/left.rs
+symbol group_row
+lines 0 38
+hash eba08cf9c3cb040f
+note forced overrides the recorded and default openness; while it is set a click queues nothing, so a filter never records a group as closed.
+
+step wlbvu3
+order 8
+parent lhcomc
+author ai
+file crates/gui/src/action.rs
+symbol typed
+lines 0 17
+hash 9a26fd931f9b4cc4
+note The path filter keeps its text on enter and has nothing to run.
+
+step y3c46y
+order 4
+parent 8j5rz8
+author ai
+file crates/gui/src/model.rs
+symbol lists
+lines 0 5
+hash 85eaffe95289771a
+note Whether a path name passes the Paths filter: case-insensitive substring; an empty filter passes everything.
+
+step z6m3sw
+order 5
+author ai
+file crates/gui/src/views/left.rs
+symbol paths_window
+lines 0 29
+hash 9aafefe3303a91e6
+note Trigger and effect: the filter field sits in a toolbar above the list; its text is read while the list is built, so there is no filter action to apply. A non-empty filter forces every group open. The rows come from listed_rows instead of the whole map, and removed paths pass through lists.

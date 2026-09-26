@@ -3,13 +3,14 @@ use std::fmt;
 use std::time::{Duration, Instant};
 
 use domain::{
-    Depth, FileId, GroupName, Index, Line, LineCount, Map, Path, PathDiff, PathName, Step, StepId,
+    Depth, FileId, GroupName, Index, Line, LineCount, Map, Path, PathDiff, PathName, Row, Step,
+    StepId,
 };
 use io_map::{MapStore, Stamp};
 use ui::{Count, Extent, FontSize, Id, Label, Px};
 
 use crate::dock::Dock;
-use crate::field::Fields;
+use crate::field::{Fields, Which};
 use crate::graph::GraphState;
 use crate::nav::Nav;
 use crate::peek::{Peek, Queries};
@@ -408,6 +409,17 @@ impl Model {
 
     pub(crate) fn step_count(&self, path: PathSlot) -> Count {
         Count::new(self.path(path).map_or(0, |found| found.steps().len()))
+    }
+
+    pub(crate) fn lists(&self, name: &PathName) -> bool {
+        let filter = self.fields.get(Which::PathFilter).text().as_str();
+        name.as_str()
+            .to_lowercase()
+            .contains(&filter.to_lowercase())
+    }
+
+    pub(crate) fn listed_rows(&self) -> Vec<Row> {
+        self.map.rows_where(|path| self.lists(path.name()))
     }
 
     pub(crate) fn find_path(&self, name: &PathName) -> Option<PathSlot> {

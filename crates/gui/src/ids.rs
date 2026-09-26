@@ -63,6 +63,8 @@ pub(crate) const NEW_PATH_FIELD: Control =
     Control::new(Feature::NewPath, Element::new("field@new-path"));
 pub(crate) const FILTER_FIELD: Control =
     Control::new(Feature::FilterSymbols, Element::new("field@symbols"));
+pub(crate) const PATH_FILTER_FIELD: Control =
+    Control::new(Feature::FilterPaths, Element::new("field@paths"));
 pub(crate) const LINE_FIELD: Control =
     Control::new(Feature::GoToLine, Element::new("field@goto-line"));
 pub(crate) const COMMAND_FIELD: Control = Control::new(Feature::RunCommand, Element::new("cmd"));
@@ -124,6 +126,7 @@ pub(crate) const CONTROLS: &[Control] = &[
     SEARCH_FIELD,
     NEW_PATH_FIELD,
     FILTER_FIELD,
+    PATH_FILTER_FIELD,
     LINE_FIELD,
     COMMAND_FIELD,
     BACK,

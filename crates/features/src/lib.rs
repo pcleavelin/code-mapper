@@ -63,6 +63,7 @@ pub enum Feature {
     Search,
     RunCommand,
     FilterSymbols,
+    FilterPaths,
     BrowseFiles,
     FollowXref,
     GoToLine,
@@ -85,7 +86,7 @@ pub enum Feature {
 }
 
 impl Feature {
-    pub const ALL: [Self; 78] = [
+    pub const ALL: [Self; 79] = [
         Self::Files,
         Self::Symbols,
         Self::Show,
@@ -145,6 +146,7 @@ impl Feature {
         Self::Search,
         Self::RunCommand,
         Self::FilterSymbols,
+        Self::FilterPaths,
         Self::BrowseFiles,
         Self::FollowXref,
         Self::GoToLine,
@@ -636,6 +638,12 @@ impl Feature {
                         Trigger::Click(Element::new("sym")),
                     ]
                 },
+            ),
+            Self::FilterPaths => Spec::new(
+                Text::new("filter-paths"),
+                Text::new("filter the Paths tab to the paths whose name contains the text"),
+                Surface::Window,
+                &const { [Trigger::Type(Element::new("field@paths"))] },
             ),
             Self::BrowseFiles => Spec::new(
                 Text::new("browse-files"),

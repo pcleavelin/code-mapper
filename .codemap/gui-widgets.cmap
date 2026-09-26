@@ -19,9 +19,9 @@ order 13
 author ai
 file crates/gui/src/field.rs
 symbol Fields
-lines 0 7
-hash 6c1c9bff5c80d0c4
-note The five fields, one named member each, reached by Which; focused names the one with the keyboard, at most one, so taking focus is setting it.
+lines 0 8
+hash 629e6c08565ed642
+note The six fields, one named member each, reached by Which; focused names the one with the keyboard, at most one, so taking focus is setting it.
 
 step 2yp2r2
 order 5
@@ -191,9 +191,9 @@ parent 2havd5
 author ai
 file crates/gui/src/field.rs
 symbol Which
-lines 0 6
-hash 0890e3b238942e1f
-note The five fields: search, new path, the command line, the symbol filter and go-to-line. Which::control is the field's Control in ids, whose element name is its script id: field@search, field@new-path, cmd, field@symbols, field@goto-line.
+lines 0 7
+hash b23ffde200cbcc70
+note The six fields: search, new path, the command line, the symbol filter, the path filter and go-to-line. Which::control is the field's Control in ids, whose element name is its script id: field@search, field@new-path, cmd, field@symbols, field@paths, field@goto-line.
 
 step k73r2l
 order 25

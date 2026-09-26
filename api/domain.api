@@ -166,6 +166,7 @@ map::pub fn remove_path(&mut self, name: &PathName) -> Result<Path, MapError>
 map::pub fn promote( &mut self, index: &Index, root: SymbolId, depth: Depth, name: Option<PathName>, author: Author, ) -> Result<PathName, MapError>
 map::pub fn resolve_all(&mut self, index: &Index)
 map::pub fn rows(&self) -> Vec<Row>
+map::pub fn rows_where(&self, wanted: impl Fn(&Path) -> bool) -> Vec<Row>
 map::pub fn links_to(&self, target: &PathName) -> Vec<StepAddress>
 map::pub fn dangling_links(&self) -> Vec<StepAddress>
 map::pub fn covers(&self, file: &RelativePath, span: Span) -> bool
