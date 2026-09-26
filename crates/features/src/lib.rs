@@ -775,13 +775,13 @@ impl Feature {
             ),
             Self::ZoomGraph => Spec::new(
                 Text::new("zoom-graph"),
-                Text::new("zoom the graph around the pointer"),
+                Text::new("zoom the graph around the pointer with a pinch or ctrl+wheel"),
                 Surface::Window,
                 &const {
-                    [Trigger::Gesture(
-                        Gesture::ControlWheel,
-                        Element::new("graph-canvas"),
-                    )]
+                    [
+                        Trigger::Gesture(Gesture::Pinch, Element::new("graph-canvas")),
+                        Trigger::Gesture(Gesture::ControlWheel, Element::new("graph-canvas")),
+                    ]
                 },
             ),
             Self::DockPanel => Spec::new(

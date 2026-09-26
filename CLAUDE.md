@@ -67,6 +67,7 @@ Never claim a visual or interactive behaviour from reading the code; drive it an
 - `CODEMAP_SCRIPT=<file> target/release/codemap <root>` plays a script, one command per
   line, as real input: `wait n` (frames), `pause ms` (wall time), `mouse x y`, `down`, `up`,
   `click x y [ctrl|alt|shift]`, `dblclick x y`, `drag x0 y0 x1 y1`, `wheel dy [ctrl|shift]`,
+  `pinch n` (a trackpad pinch of n percent, negative to zoom out),
   `key <name> [ctrl] [alt]`, `text ...`, `quit`; app commands `tab <name>`,
   `open <file> [line]`, `scroll <panel> <n>`, `idle` (waits until every server request is
   answered, merged and re-indexed), `rect <id>` (an element's rectangle by id name),

@@ -11,8 +11,8 @@ parent vso1s4
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_wheel
-lines 33 42
-hash a4a6320ff946bc4e
+lines 42 50
+hash 1c29e9d9f7c4d1e4
 link graph-camera
 note In the graph the same gesture is read by keys::wheeling as Across, and the wheel pans the camera horizontally.
 

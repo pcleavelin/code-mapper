@@ -11,9 +11,9 @@ parent jcl12n
 author ai
 file crates/platform/src/script.rs
 symbol run_line
-lines 0 66
-hash 9756bd31149086f7
-note One line. Input commands write the Input directly - mouse moves the pointer, down presses and holds the left button (twice makes it a double click, carried on the press since that is the frame the app sees it on) with the modifiers named after it, up releases it, wheel adds to the wheel, key pushes a Press, text appends typed text - and all but mouse yield, so each is a frame of its own. wait and pause yield for their duration. click, dblclick and drag queue their expansion; the -id forms aim first. quit ends the run. Anything else goes to the app.
+lines 0 71
+hash 4754191344bd6175
+note One line. Input commands write the Input directly - mouse moves the pointer, down presses and holds the left button (twice makes it a double click, carried on the press since that is the frame the app sees it on) with the modifiers named after it, up releases it, wheel adds to the wheel, pinch n adds a pinch of n percent, key pushes a Press, text appends typed text - and all but mouse yield, so each is a frame of its own. wait and pause yield for their duration. click, dblclick and drag queue their expansion; the -id forms aim first. quit ends the run. Anything else goes to the app.
 
 step 09hitd
 order 7

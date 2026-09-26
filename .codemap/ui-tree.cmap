@@ -152,9 +152,9 @@ parent hndy1n
 author ai
 file crates/ui/src/tree.rs
 symbol Interaction
-lines 0 5
-hash 09f739c1bcabbc17
-note The answer an element with an id gets back: a bitset of signals, the drag and wheel deltas and last frame's rectangle, read through accessors. Returning it from open and leaf is what lets a caller write 'if ui.leaf(..).clicked()' with no callbacks and no event queue in the tree itself.
+lines 0 6
+hash 9598cf722122b60b
+note The answer an element with an id gets back: a bitset of signals, the drag, wheel and pinch deltas and last frame's rectangle, read through accessors. Returning it from open and leaf is what lets a caller write 'if ui.leaf(..).clicked()' with no callbacks and no event queue in the tree itself.
 
 step g881o9
 order 7
@@ -192,9 +192,9 @@ parent rd9o1b
 author ai
 file crates/ui/src/tree.rs
 symbol interaction
-lines 0 19
-hash 9ea958252c40bb39
-note What one id learned last frame, and the answer open gives back: hovered is 'it was the hit', clicked is that plus a left press this frame, double_clicked that plus a double click, down is that it is active and the button is still down, drag is the pointer movement since last frame while it is active (never on the press frame itself), wheel is the wheel only while hovered, and rect is where it was last frame. Callable without creating an element, for a caller that needs to know it is hovered in order to decide what the element should look like.
+lines 0 20
+hash 86e90582666b85ef
+note What one id learned last frame, and the answer open gives back: hovered is 'it was the hit', clicked is that plus a left press this frame, double_clicked that plus a double click, down is that it is active and the button is still down, drag is the pointer movement since last frame while it is active (never on the press frame itself), wheel and pinch are the wheel and pinch only while hovered, and rect is where it was last frame. Callable without creating an element, for a caller that needs to know it is hovered in order to decide what the element should look like.
 
 step inr7qd
 order 19

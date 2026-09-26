@@ -181,7 +181,28 @@ pub struct Pointer {
     pub down: Buttons,
     pub clicks: Clicks,
     pub wheel: Vector,
+    pub pinch: Pinch,
     pub mods: Mods,
+}
+
+#[derive(Clone, Copy, PartialEq, Debug, Default)]
+pub struct Pinch(f32);
+
+impl Pinch {
+    pub const ZERO: Self = Self(0.0);
+
+    pub const fn new(amount: f32) -> Self {
+        Self(amount)
+    }
+
+    pub const fn get(self) -> f32 {
+        self.0
+    }
+
+    #[must_use]
+    pub fn plus(self, other: Self) -> Self {
+        Self(self.0 + other.0)
+    }
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Default)]
@@ -223,6 +244,7 @@ impl Input {
         self.pointer.pressed = Buttons::NONE;
         self.pointer.clicks = Clicks::default();
         self.pointer.wheel = Vector::ZERO;
+        self.pointer.pinch = Pinch::ZERO;
         self.keys.clear();
         self.typed.clear();
     }

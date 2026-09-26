@@ -327,7 +327,7 @@ pub(super) fn graph_tab(model: &Model, frame: &mut Frame<'_>, graph: Option<Grap
     }
     frame.start(Container::Toolbar);
     frame.label(
-        "drag the background to pan, ctrl+wheel to zoom, drag a node's title to move it",
+        "drag or scroll to pan, pinch or ctrl+wheel to zoom, drag a title to move a node",
         WEAK,
     );
     if frame

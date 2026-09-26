@@ -2,8 +2,8 @@ use std::collections::BTreeMap;
 
 use domain::{Column, Line, LineCount};
 use ui::{
-    Button as MouseButton, Coordinate, Extent, FontSize, Interaction, Measure, Point, Pointer, Px,
-    Rect, Vector,
+    Button as MouseButton, Coordinate, Extent, FontSize, Interaction, Measure, Pinch, Point,
+    Pointer, Px, Rect, Vector,
 };
 
 use crate::action::Action;
@@ -18,7 +18,7 @@ use crate::model::{Context, StepKey};
 use crate::nav::Scrolling;
 use crate::peek::Hovering;
 use crate::peek::Intent;
-use crate::theme::{self, CANVAS_GUESS, Cells, GRAPH_MARGIN, PAN_ROWS, PIXEL, WHEEL_NOTCH, Zoom};
+use crate::theme::{self, CANVAS_GUESS, Cells, GRAPH_MARGIN, PIXEL, Zoom};
 use crate::widgets::TipAt;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -210,15 +210,24 @@ impl App {
         } = *aim;
         let mouse = pointer.mouse;
         let wheel = interaction.wheel();
+        let pinch = interaction.pinch();
         let graph = &self.model.graph;
-        if wheel.vertical.get() == 0.0 || !(interaction.hovered() || graph.drag.is_some()) {
+        let quiet = wheel == Vector::ZERO && pinch == Pinch::ZERO;
+        if quiet || !(interaction.hovered() || graph.drag.is_some()) {
             return;
         }
         let pan = graph.pan;
-        if keys::wheeling(pointer) == Wheeling::Zoom {
+        let base = self.model.metrics.font;
+        let zoom = if pinch != Pinch::ZERO {
+            Some(graph.zoom.by_pinch(pinch, base))
+        } else if keys::wheeling(pointer) == Wheeling::Zoom {
+            Some(graph.zoom.wheeled(wheel.vertical, base))
+        } else {
+            None
+        };
+        if let Some(zoom) = zoom {
             let old = measure.cell(self.graph_font());
-            let zoom = graph.zoom.wheeled(wheel.vertical.get() > 0.0);
-            let new = measure.cell(theme::graph_font(self.model.metrics.font, zoom));
+            let new = measure.cell(theme::graph_font(base, zoom));
             let mouse_across = (mouse.horizontal - canvas.left).float();
             let mouse_down = (mouse.vertical - canvas.top).float();
             let unit_across = (mouse_across - pan.horizontal.float()) / old.width.float();
@@ -234,8 +243,7 @@ impl App {
             });
             return;
         }
-        let per_notch = PAN_ROWS.of(measure.cell(self.graph_font()).height).float();
-        let step = |delta: f32| round(Coordinate::new(delta / WHEEL_NOTCH.get() * per_notch));
+        let step = |delta: f32| round(Coordinate::new(delta));
         let pan = if keys::wheeling(pointer) == Wheeling::Across {
             Point::new(pan.horizontal + step(wheel.vertical.get()), pan.vertical)
         } else {

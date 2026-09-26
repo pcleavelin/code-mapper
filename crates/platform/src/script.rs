@@ -4,7 +4,7 @@ use std::fmt;
 use std::fs;
 use std::time::{Duration, Instant};
 
-use ui::{Button, Coordinate, Glyph, Id, Key, Mods, Point, Press, Px};
+use ui::{Button, Coordinate, Glyph, Id, Key, Mods, Pinch, Point, Press, Px};
 
 use crate::report::report;
 use crate::window::{App, Exit, Runner};
@@ -289,6 +289,11 @@ impl<Application: App> Runner<Application> {
                     pointer.wheel.vertical.get() + Coordinate::of_integer(line.number(1)).get();
                 pointer.wheel.vertical = Coordinate::new(vertical);
                 pointer.mods = line.mods_from(2);
+                Flow::Yield
+            }
+            "pinch" => {
+                let amount = Coordinate::of_integer(line.number(1)).get();
+                pointer.pinch = pointer.pinch.plus(Pinch::new(amount / 100.0));
                 Flow::Yield
             }
             "key" => {

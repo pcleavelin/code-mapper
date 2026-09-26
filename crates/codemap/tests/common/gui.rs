@@ -278,6 +278,9 @@ wheel 120 ctrl
 wait 4
 dump
 shot {shots}/zoomed.png
+pinch -60
+wait 4
+dump
 click-id graph-fit
 wait 4
 dump

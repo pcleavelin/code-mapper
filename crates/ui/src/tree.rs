@@ -6,7 +6,7 @@ use crate::canvas::{Canvas, DrawList, Measure};
 use crate::color::Color;
 use crate::geometry::{Axis, Count, Extent, Point, Px, Rect, Vector};
 use crate::id::Id;
-use crate::input::{Button, Input, Pointer};
+use crate::input::{Button, Input, Pinch, Pointer};
 use crate::layout::{Align, Layout, Sides, Size, Style};
 use crate::text::{Label, Text, Wrap};
 
@@ -95,6 +95,7 @@ pub struct Interaction {
     signals: Signals,
     drag: Option<Point>,
     wheel: Vector,
+    pinch: Pinch,
     rect: Option<Rect>,
 }
 
@@ -121,6 +122,10 @@ impl Interaction {
 
     pub const fn wheel(self) -> Vector {
         self.wheel
+    }
+
+    pub const fn pinch(self) -> Pinch {
+        self.pinch
     }
 
     pub const fn rect(self) -> Option<Rect> {
@@ -510,6 +515,7 @@ impl Ui {
                 .when(active && left_down, Signals::DOWN),
             drag: (active && left_down && !left_pressed).then(|| pointer.mouse - self.last_mouse),
             wheel: if hovered { pointer.wheel } else { Vector::ZERO },
+            pinch: if hovered { pointer.pinch } else { Pinch::ZERO },
             rect: self.previous.get(&id).map(|placement| placement.rect),
         }
     }

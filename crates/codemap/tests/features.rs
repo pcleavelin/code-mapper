@@ -99,6 +99,7 @@ fn exercised(trigger: Trigger, goldens: &str, scripts: &str) -> bool {
                 Gesture::Wheel => line.starts_with("wheel ") && !line.contains("ctrl") && !line.contains("shift"),
                 Gesture::ShiftWheel => line.starts_with("wheel ") && line.contains("shift"),
                 Gesture::ControlWheel => line.starts_with("wheel ") && line.contains("ctrl"),
+                Gesture::Pinch => line.starts_with("pinch "),
                 Gesture::DoubleClick => line.starts_with("dblclick"),
                 Gesture::ControlClick => line.starts_with("click") && line.ends_with(" ctrl"),
                 Gesture::AltClick => line.starts_with("click") && line.ends_with(" alt"),

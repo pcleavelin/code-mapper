@@ -3,7 +3,7 @@ path feature-zoom-graph
 kind flow
 author ai
 group features/gui
-note Ctrl+wheel over the graph zooms in or out one step per notch, around the pointer: the point under the pointer stays under it. The zoom is a font size; the toolbar shows it as a percentage.
+note A trackpad pinch or ctrl+wheel over the graph zooms it around the pointer: the point under the pointer stays under it. The zoom changes in proportion to the gesture (a pinch's magnification, or the wheel's pixel delta, one Zoom step per WHEEL_NOTCH pixels), so a trackpad's many small scroll events add up to the same zoom as one mouse notch of the same distance. The zoom is a font size; the toolbar shows it as a percentage. It goes down until the graph font is SMALLEST_GRAPH_FONT (a few pixels, an overview where boxes and edges are legible but text is not) or Zoom::SMALLEST, whichever is larger.
 
 step 3tcu6q
 order 3
@@ -41,6 +41,6 @@ order 0
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_wheel
-lines 0 32
-hash 6274a33f55353c13
-note The handler: with the ZoomGraph gesture held, the next zoom step is taken, and the pan is recomputed so the cell-space point under the mouse lands at the same pixel with the new cell size.
+lines 0 41
+hash 29b759f7564b8bc7
+note The handler: a pinch, or the wheel with the ZoomGraph ctrl gesture held, gives the new zoom (Zoom::by_pinch, Zoom::wheeled), and the pan is recomputed so the cell-space point under the mouse lands at the same pixel with the new cell size. A pinch zooms whatever modifiers are held.

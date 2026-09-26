@@ -61,8 +61,8 @@ author ai
 file crates/gui/src/views/center.rs
 symbol graph_tab
 lines 0 54
-hash 45ebb21452957684
-note The view: the deferred actions pushed (a hover through push_hover), the tooltip set, then the toolbar - the gestures spelled out, '1:1' which resets the zoom and re-centres, 'auto layout' which drops every dragged position, 'fit' which zooms out until the whole tree is on the canvas, the legend for the edge colours when a path is being read, and the zoom percentage - then the canvas element whose closure paints the scene. There is no authoring control on the graph by design.
+hash 77a69fc56c4b11ea
+note The view: the deferred actions pushed (a hover through push_hover), the tooltip set, then the toolbar - the pan and zoom gestures spelled out, '1:1' which resets the zoom and re-centres, 'auto layout' which drops every dragged position, 'fit' which zooms out until the whole tree is on the canvas, the legend for the edge colours when a path is being read, and the zoom percentage - then the canvas element whose closure paints the scene. There is no authoring control on the graph by design.
 
 step 4yhd4f
 order 0
@@ -281,9 +281,9 @@ parent 4yhd4f
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_wheel
-lines 0 47
-hash 68e4eb8d8acdaebc
-note The wheel, when the canvas is hovered or a drag is in progress: ctrl+wheel zooms by one Zoom step and keeps the cell under the mouse still, computed from the old and new cell sizes rather than the zoom factor; the plain wheel pans PAN_ROWS rows per notch (a notch reports WHEEL_NOTCH pixels of delta) and shift+wheel does the same sideways. Both send a Camera action.
+lines 0 55
+hash c3ea092899281f12
+note The wheel, when the canvas is hovered or a drag is in progress: a pinch or ctrl+wheel zooms in proportion to the gesture and keeps the cell under the mouse still, computed from the old and new cell sizes rather than the zoom factor; the plain wheel pans by its pixel delta and shift+wheel does the same sideways. Both send a Camera action.
 
 step sj6fsf
 order 3

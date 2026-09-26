@@ -21,9 +21,19 @@ parent fhtrrf
 author ai
 file crates/ui/src/input.rs
 symbol end_frame
-lines 0 6
-hash 10fce1e944802010
+lines 0 7
+hash e29a6fcee371dc45
 note The momentary part of the Input is cleared after the frame (see ui-input): presses, clicks, wheel, keys and text go, the pointer, held buttons and modifiers stay.
+
+step 5sfd6n
+order 24
+parent o82jom
+author ai
+file crates/platform/src/window.rs
+symbol pinch
+lines 0 6
+hash b0f5f06b01bc42b4
+note A trackpad pinch (winit's PinchGesture, macOS) adds its magnification delta to the Input's pinch; a NaN delta, which winit allows, is dropped.
 
 step 7x1cc9
 order 1
@@ -122,8 +132,8 @@ parent o82jom
 author ai
 file crates/platform/src/window.rs
 symbol real_input
-lines 0 10
-hash 24f6d6cc43818eed
+lines 0 11
+hash 494a048de86d01e4
 note The events a script run ignores: modifiers, cursor movement, mouse buttons, the wheel and keys.
 
 step l544vz
@@ -162,9 +172,9 @@ parent h41g96
 author ai
 file crates/platform/src/window.rs
 symbol window_event
-lines 0 46
-hash f5721594e9d77479
-note Every event for the window. Almost all of them only write into the accumulated Input and mark a redraw pending; the redraw is the one that does work. While a script runs, real input events are dropped before they get here, so the script is the only input. A resize reconfigures the renderer, and a scale change is taken only by a maximised window.
+lines 0 49
+hash ae5430dda8171bb5
+note Every event for the window. Almost all of them (a trackpad pinch included) only write into the accumulated Input and mark a redraw pending; the redraw is the one that does work. While a script runs, real input events are dropped before they get here, so the script is the only input. A resize reconfigures the renderer, and a scale change is taken only by a maximised window.
 
 step pr08z4
 order 12

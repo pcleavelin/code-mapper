@@ -3,7 +3,7 @@ path ui-input
 kind type
 author ai
 group render
-note One frame's input, as the platform collects it and the app reads it: no winit type crosses into ui. Input holds the Pointer (mouse position, buttons pressed this frame and held down, click counts, wheel delta, modifiers), the keys pressed with their modifiers, the text typed, the window size and the time since start. Events accumulate into it between frames and end_frame clears the momentary part after each frame, so an app reads 'was this pressed' without an event queue. Typing and shortcuts are kept apart: a key press is a Press, the characters the platform produced go into Typed, and the platform only adds typed text when neither ctrl nor alt is held.
+note One frame's input, as the platform collects it and the app reads it: no winit type crosses into ui. Input holds the Pointer (mouse position, buttons pressed this frame and held down, click counts, wheel delta, trackpad pinch, modifiers), the keys pressed with their modifiers, the text typed, the window size and the time since start. Events accumulate into it between frames and end_frame clears the momentary part after each frame, so an app reads 'was this pressed' without an event queue. Typing and shortcuts are kept apart: a key press is a Press, the characters the platform produced go into Typed, and the platform only adds typed text when neither ctrl nor alt is held.
 
 step 2551wi
 order 1
@@ -11,8 +11,8 @@ parent kehwui
 author ai
 file crates/ui/src/input.rs
 symbol end_frame
-lines 0 6
-hash 10fce1e944802010
+lines 0 7
+hash e29a6fcee371dc45
 note Presses, clicks, the wheel, keys and typed text are momentary and are cleared here after every frame; the pointer position, the button-down state and the modifiers persist, because they describe a state rather than an event. The back and forward buttons live in pressed, so they clear with it.
 
 step 6j8dhr
@@ -25,15 +25,25 @@ lines 0 6
 hash d2e14c74236d1e0d
 note Left, right, middle, and the two side buttons. Back and forward only ever appear as presses, which is how navigation reaches the app without being a button that can be held or dragged.
 
+step 6l3e71
+order 13
+parent 9o258u
+author ai
+file crates/ui/src/input.rs
+symbol impl Pinch
+lines 0 15
+hash 9136da446b165b2e
+note A trackpad pinch as a change in magnification: 0.1 asks for 10% larger, -0.1 for 10% smaller. Pinch events accumulate with plus between frames, like the wheel.
+
 step 9o258u
 order 3
 parent kehwui
 author ai
 file crates/ui/src/input.rs
 symbol Pointer
-lines 0 7
-hash 77cc73bfec492ca5
-note The mouse: its position (-1,-1 once it leaves the window), the buttons pressed this frame and those held down, the click count per button, the wheel delta in pixels and the modifier state.
+lines 0 8
+hash 904bc32314dd0288
+note The mouse: its position (-1,-1 once it leaves the window), the buttons pressed this frame and those held down, the click count per button, the wheel delta in pixels, the trackpad pinch as a magnification change (0.1 is 10% larger) and the modifier state.
 
 step b55xgt
 order 9

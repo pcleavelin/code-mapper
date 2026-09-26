@@ -122,7 +122,12 @@ input::pub struct Clicks([u8; 3]);
 input::pub fn count(self, button: Button) -> u8
 input::pub fn set(&mut self, button: Button, count: u8)
 input::pub fn is_double(self, button: Button) -> bool
-input::pub struct Pointer { pub mouse: Point, pub pressed: Buttons, pub down: Buttons, pub clicks: Clicks, pub wheel: Vector, pub mods: Mods, }
+input::pub struct Pointer { pub mouse: Point, pub pressed: Buttons, pub down: Buttons, pub clicks: Clicks, pub wheel: Vector, pub pinch: Pinch, pub mods: Mods, }
+input::pub struct Pinch(f32);
+input::pub const ZERO: Self = Self(0.0);
+input::pub const fn new(amount: f32) -> Self
+input::pub const fn get(self) -> f32
+input::pub fn plus(self, other: Self) -> Self
 input::pub struct Typed(String);
 input::pub fn as_str(&self) -> &str
 input::pub fn is_empty(&self) -> bool
@@ -188,13 +193,14 @@ tree::pub struct Scrollbar { pub track: Rect, pub thumb: Rect, }
 tree::pub const WIDTH: Px = Px::new(8);
 tree::pub fn of(rect: Rect, content_height: Px, scroll: Px) -> Option<Self>
 tree::pub struct Placement { pub rect: Rect, pub clip: Rect, pub content: Extent, }
-tree::pub struct Interaction { signals: Signals, drag: Option<Point>, wheel: Vector, rect: Option<Rect>, }
+tree::pub struct Interaction { signals: Signals, drag: Option<Point>, wheel: Vector, pinch: Pinch, rect: Option<Rect>, }
 tree::pub const fn hovered(self) -> bool
 tree::pub const fn clicked(self) -> bool
 tree::pub const fn double_clicked(self) -> bool
 tree::pub const fn down(self) -> bool
 tree::pub const fn drag(self) -> Option<Point>
 tree::pub const fn wheel(self) -> Vector
+tree::pub const fn pinch(self) -> Pinch
 tree::pub const fn rect(self) -> Option<Rect>
 tree::pub struct Ui { roots: Vec<Element>, stack: Vec<Element>, previous: BTreeMap<Id, Placement>, hot: Option<Id>, active: Option<Id>, last_mouse: Point, scroll_drag: Option<ScrollGrab>, pointer: Pointer, size: Extent, }
 tree::pub fn begin(&mut self, input: &Input)

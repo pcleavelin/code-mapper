@@ -114,6 +114,7 @@
                 rust-analyzer
                 pkg-config
                 jujutsu
+                git
               ]
               ++ lib.optionals stdenv.hostPlatform.isLinux [
                 headless

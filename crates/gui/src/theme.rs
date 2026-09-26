@@ -1,7 +1,7 @@
 use std::ops::{Add, AddAssign, Div, Mul, Sub};
 
 use domain::HighlightClass;
-use ui::{Color, Coordinate, FontSize, Px, Scale};
+use ui::{Color, Coordinate, FontSize, Pinch, Px, Scale};
 
 pub(crate) const BACKGROUND: Color = Color::rgba(24, 24, 26, 255);
 pub(crate) const PANEL: Color = Color::rgba(32, 32, 35, 255);
@@ -49,7 +49,7 @@ pub(crate) const fn highlight(class: HighlightClass) -> Color {
 const BASE_FONT: FontSize = FontSize::new(14);
 pub(crate) const START_CELL: ui::Extent = ui::Extent::new(Px::new(8), Px::new(16));
 const SMALLEST_FONT: FontSize = FontSize::new(8);
-const SMALLEST_GRAPH_FONT: FontSize = FontSize::new(6);
+const SMALLEST_GRAPH_FONT: FontSize = FontSize::new(2);
 
 pub(crate) const fn start_font() -> FontSize {
     BASE_FONT
@@ -76,14 +76,14 @@ fn rounded_font(size: Coordinate) -> FontSize {
     FontSize::new(Coordinate::new(rounded).truncate().unsigned())
 }
 
-const FIT_SMALLEST: Zoom = Zoom(0.3);
+const FIT_SMALLEST: Zoom = Zoom(0.1);
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub(crate) struct Zoom(f32);
 
 impl Zoom {
     pub(crate) const ONE: Self = Self(1.0);
-    const SMALLEST: Self = Self(0.3);
+    const SMALLEST: Self = Self(0.1);
     const LARGEST: Self = Self(2.0);
     const STEP: Self = Self(1.1);
 
@@ -96,9 +96,23 @@ impl Zoom {
     }
 
     #[must_use]
-    pub(crate) fn wheeled(self, up: bool) -> Self {
-        let factor = if up { Self::STEP.0 } else { 1.0 / Self::STEP.0 };
-        Self((self.0 * factor).clamp(Self::SMALLEST.0, Self::LARGEST.0))
+    pub(crate) fn wheeled(self, wheel: Coordinate, base: FontSize) -> Self {
+        self.times(
+            Self(Self::STEP.0.powf(wheel.get() / WHEEL_NOTCH.get())),
+            base,
+        )
+    }
+
+    #[must_use]
+    pub(crate) fn by_pinch(self, pinch: Pinch, base: FontSize) -> Self {
+        self.times(Self(pinch.get().exp()), base)
+    }
+
+    fn times(self, factor: Self, base: FontSize) -> Self {
+        let smallest = Self::SMALLEST
+            .0
+            .max(SMALLEST_GRAPH_FONT.float() / base.float());
+        Self((self.0 * factor.0).clamp(smallest, Self::LARGEST.0))
     }
 }
 
@@ -152,8 +166,7 @@ pub(crate) const GRAPH_EDGE_END: Coordinate = Coordinate::new(3.5);
 pub(crate) const GRAPH_BEND: Coordinate = Coordinate::new(0.8);
 pub(crate) const GRAPH_THIN_BORDER: Px = PIXEL;
 pub(crate) const GRAPH_THICK_BORDER: Px = Px::new(2);
-pub(crate) const WHEEL_NOTCH: Coordinate = Coordinate::new(40.0);
-pub(crate) const PAN_ROWS: Cells = Cells::new(3);
+const WHEEL_NOTCH: Coordinate = Coordinate::new(40.0);
 pub(crate) const WHEEL_ACROSS: Cells = Cells::new(3);
 
 pub(crate) const NAV_BUTTON: Cells = Cells::new(3);

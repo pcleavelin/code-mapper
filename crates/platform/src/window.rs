@@ -3,8 +3,8 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use ui::{
-    Button, Color, Coordinate, Count, DrawList, Extent, Glyph, Id, Input, Key, Mods, Point, Press,
-    Px, Scale, Vector,
+    Button, Color, Coordinate, Count, DrawList, Extent, Glyph, Id, Input, Key, Mods, Pinch, Point,
+    Press, Px, Scale, Vector,
 };
 use winit::application::ApplicationHandler;
 use winit::dpi::{LogicalSize, PhysicalSize};
@@ -240,6 +240,14 @@ impl<Application: App> Runner<Application> {
         self.redraw = Redraw::Pending;
     }
 
+    fn pinch(&mut self, amount: Pinch) {
+        if amount.get().is_finite() {
+            let pointer = &mut self.input.pointer;
+            pointer.pinch = pointer.pinch.plus(amount);
+            self.redraw = Redraw::Pending;
+        }
+    }
+
     fn keyboard(&mut self, event: &KeyEvent) {
         if event.state == ElementState::Pressed {
             let key = match &event.logical_key {
@@ -313,6 +321,7 @@ fn real_input(event: &WindowEvent) -> bool {
             | WindowEvent::CursorLeft { .. }
             | WindowEvent::MouseInput { .. }
             | WindowEvent::MouseWheel { .. }
+            | WindowEvent::PinchGesture { .. }
             | WindowEvent::KeyboardInput { .. }
     )
 }
@@ -376,6 +385,9 @@ impl<Application: App> ApplicationHandler for Runner<Application> {
             }
             WindowEvent::MouseInput { state, button, .. } => self.mouse_button(state, button),
             WindowEvent::MouseWheel { delta, .. } => self.wheel(delta),
+            WindowEvent::PinchGesture { delta, .. } => {
+                self.pinch(Pinch::new(Coordinate::narrow(delta).get()));
+            }
             WindowEvent::KeyboardInput { event, .. } => self.keyboard(&event),
             WindowEvent::RedrawRequested => self.redraw(event_loop),
             _ => {}

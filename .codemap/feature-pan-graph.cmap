@@ -3,7 +3,7 @@ path feature-pan-graph
 kind flow
 author ai
 group features/gui
-note Drag the graph's background to pan it, or turn the wheel over it: the wheel pans vertically (and horizontally with a sideways wheel), shift+wheel pans sideways. The camera otherwise moves only on explicit navigation, never on an edit.
+note Drag the graph's background to pan it, or scroll over it: the wheel or a two-finger trackpad swipe pans by its pixel delta in both directions, shift+wheel pans sideways. The camera otherwise moves only on explicit navigation, never on an edit.
 
 step 4lmczg
 order 5
@@ -22,9 +22,9 @@ parent uyp9xc
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_wheel
-lines 0 12
-hash 91a27c5d266447ce
-note The wheel is read only while the canvas is hovered or something is held, and only when it turned.
+lines 0 14
+hash 4e6033f66c2e0041
+note The wheel and pinch are read only while the canvas is hovered or something is held, and only when one of them moved; a sideways-only swipe counts.
 
 step ai1nbn
 order 3
@@ -62,9 +62,9 @@ parent uyp9xc
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_wheel
-lines 33 46
-hash fe531a621af2cfd9
-note The handler for the wheel, once zoom is ruled out: a notch pans a fixed number of rows at the current font; with the ScrollCode gesture (shift) the vertical wheel pans across instead.
+lines 42 54
+hash 23f77ea97dd57a33
+note The handler for the wheel, once zoom is ruled out: the pan moves by the wheel's pixel delta, whatever the zoom, so content follows a trackpad's two-finger swipe one to one; with the ScrollCode gesture (shift) the vertical wheel pans across instead.
 
 step uyp9xc
 order 0

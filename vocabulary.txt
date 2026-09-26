@@ -655,6 +655,7 @@ perform
 phase
 pick
 pin
+pinch
 pinned
 pipe
 pipeline

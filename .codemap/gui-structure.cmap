@@ -88,7 +88,7 @@ order 25
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 104 136
+lines 118 150
 hash b5ff7b1202508883
 note Every padding, gap and fixed pixel measure the widgets and views use, named by where it is used.
 
@@ -183,7 +183,7 @@ order 26
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 158 188
+lines 171 201
 hash 9124161bd1b4bfdd
 note Every measure counted in cells: button and field widths, column guesses before a panel has a size, the symbol table's columns, tooltip sizes, the dock's floors and default widths.
 
@@ -223,9 +223,9 @@ parent uhm8r4
 author ai
 file crates/gui/src/keys.rs
 symbol seen
-lines 0 15
-hash 533fcb38cc44bdfa
-note Whether a gesture happened to an element this frame: alt, ctrl or shift click, double click, hover, drag, wheel (plain, shift or ctrl), and the mouse's side buttons.
+lines 0 16
+hash f3783d45d4ab0ab4
+note Whether a gesture happened to an element this frame: alt, ctrl or shift click, double click, hover, drag, wheel (plain, shift or ctrl), pinch, and the mouse's side buttons.
 
 step e7qp3v
 order 54
@@ -360,9 +360,9 @@ parent jp7qh7
 author ai
 file crates/gui/src/theme.rs
 symbol impl Zoom
-lines 0 19
-hash 2bd476cb31ca4ca7
-note One is 100%; of_fonts recovers a zoom from two font sizes; wheeled steps and clamps it.
+lines 0 33
+hash 06bbf4a50bb5c6cd
+note One is 100%; of_fonts recovers a zoom from two font sizes; wheeled and by_pinch scale it in proportion to the gesture and clamp it, the lower bound being wherever the graph font would fall below SMALLEST_GRAPH_FONT so no part of the range does nothing.
 
 step ig3dba
 order 15

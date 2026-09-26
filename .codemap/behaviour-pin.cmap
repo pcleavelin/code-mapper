@@ -51,8 +51,8 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol graph
-lines 0 72
-hash 7ebf0455ffa21c39
+lines 0 75
+hash 4b4c7283c5d7b1d3
 note The graph: the fitted start, a node's callees and hide buttons, an off-path node, shift-wheel and wheel, dragging a node, auto layout, ctrl-wheel zoom, fit, 1:1, panning, and a node's context, listing and no-context buttons.
 
 step 5147ql
@@ -306,8 +306,8 @@ parent hed6nt
 author ai
 file crates/codemap/tests/features.rs
 symbol exercised
-lines 0 47
-hash 89c30df8487c26fc
+lines 0 48
+hash c3644ed575e831d1
 note Whether a script or golden fires one trigger: a command by its transcript line, a click or typed field by a click-id or dblclick-id aimed at the element (a graph node's buttons by their label in a <<DUMP button>> click), a key by a key line with its modifier, and a gesture by the script command that performs it. The back and forward mouse buttons have no script command, so they never count.
 
 step hbyc72

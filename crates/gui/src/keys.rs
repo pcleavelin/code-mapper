@@ -146,6 +146,7 @@ fn seen(gesture: Gesture, interaction: Interaction, pointer: Pointer) -> bool {
         Gesture::Wheel => interaction.wheel().vertical.get() != 0.0,
         Gesture::ShiftWheel => mods.shift(),
         Gesture::ControlWheel => mods.ctrl(),
+        Gesture::Pinch => interaction.pinch().get() != 0.0,
         Gesture::BackButton => pointer.pressed.contains(Button::Back),
         Gesture::ForwardButton => pointer.pressed.contains(Button::Forward),
     }
