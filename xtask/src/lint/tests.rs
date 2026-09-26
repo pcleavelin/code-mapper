@@ -4,6 +4,11 @@ use crate::text::{Content, RepoPath};
 use crate::vocabulary::Vocabulary;
 
 const WORDS: &str = "
+id
+key
+width
+gap
+ui
 line
 number
 get
@@ -257,6 +262,69 @@ fn scenario_tests_come_from_their_table() {
     assert_eq!(rules_hit(&generated), []);
     assert_eq!(
         rules_hit(&[("tests/parity.rs", "#[test]\nfn old() {}")]),
+        []
+    );
+}
+
+#[test]
+fn the_gui_builds_through_its_helpers_theme_ids_and_keys() {
+    let gui = |path: &str, text: &str| rules_hit(&[(path, text)]);
+    assert_eq!(
+        gui("crates/gui/src/panels.rs", "fn main() { ui.open(item); }"),
+        [Rule::Widget]
+    );
+    assert_eq!(
+        gui("crates/gui/src/widgets.rs", "fn main() { ui.open(item); }"),
+        []
+    );
+    assert_eq!(
+        gui(
+            "crates/gui/src/panels.rs",
+            "fn main() { let x = Px::new(4); }"
+        ),
+        [Rule::Theme]
+    );
+    assert_eq!(
+        gui("crates/gui/src/theme.rs", "const GAP: Px = Px::new(4);"),
+        []
+    );
+    assert_eq!(
+        gui(
+            "crates/gui/src/panels.rs",
+            "fn main() { let x = Px::new(width); }"
+        ),
+        []
+    );
+    assert_eq!(
+        gui(
+            "crates/gui/src/panels.rs",
+            "fn main() { let id = Id::new(\"save\"); }"
+        ),
+        [Rule::ElementId]
+    );
+    assert_eq!(
+        gui(
+            "crates/gui/src/ids.rs",
+            "fn main() { let id = Id::new(\"save\"); }"
+        ),
+        []
+    );
+    assert_eq!(
+        gui(
+            "crates/gui/src/panels.rs",
+            "fn main() { let key = Key::Up; }"
+        ),
+        [Rule::KeyBinding]
+    );
+    assert_eq!(
+        gui("crates/gui/src/keys.rs", "fn main() { let key = Key::Up; }"),
+        []
+    );
+    assert_eq!(
+        gui(
+            "crates/ui/src/tree.rs",
+            "fn main() { ui.open(item); let x = Px::new(4); }"
+        ),
         []
     );
 }

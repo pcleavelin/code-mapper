@@ -277,7 +277,7 @@ impl Feature {
             Self::PathGroup => Spec::new(
                 Text::new("path-group"),
                 Text::new(
-                    "<name> <group>                   put a path in a group; / nests groups (flows/http), \\\"\\\" = top level",
+                    "<name> <group>                   put a path in a group; / nests groups (flows/http), \"\" = top level",
                 ),
                 Surface::Command,
                 &const { [Trigger::Command(Text::new("path-group"))] },
@@ -491,13 +491,18 @@ impl Feature {
                 Text::new("expand-link"),
                 Text::new("show the path a step links to inline under it"),
                 Surface::Window,
-                &const { [Trigger::Click(Element::new("link"))] },
+                &const { [Trigger::Click(Element::new("expand"))] },
             ),
             Self::OpenLinkedPath => Spec::new(
                 Text::new("open-linked-path"),
                 Text::new("open the path a step links to, or a step that links here"),
                 Surface::Window,
-                &const { [Trigger::Click(Element::new("linked"))] },
+                &const {
+                    [
+                        Trigger::Click(Element::new("link")),
+                        Trigger::Click(Element::new("from")),
+                    ]
+                },
             ),
             Self::HideAllCode => Spec::new(
                 Text::new("hide-all-code"),

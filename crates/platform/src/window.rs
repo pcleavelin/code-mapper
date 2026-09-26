@@ -24,11 +24,32 @@ pub enum Exit {
     Quit,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Cursor {
+    Default,
+    ColumnResize,
+    RowResize,
+    Grab,
+    Grabbing,
+}
+
+impl Cursor {
+    const fn icon(self) -> CursorIcon {
+        match self {
+            Self::Default => CursorIcon::Default,
+            Self::ColumnResize => CursorIcon::ColResize,
+            Self::RowResize => CursorIcon::RowResize,
+            Self::Grab => CursorIcon::Grab,
+            Self::Grabbing => CursorIcon::Grabbing,
+        }
+    }
+}
+
 pub struct Frame {
     pub redraw_after: Duration,
     pub exit: Exit,
     pub clear: Color,
-    pub cursor: CursorIcon,
+    pub cursor: Cursor,
     pub drawing: DrawList,
 }
 
@@ -117,7 +138,7 @@ pub(crate) struct Runner<Application: App> {
     redraw: Redraw,
     next_redraw: Instant,
     pub(crate) start: Instant,
-    cursor: CursorIcon,
+    cursor: Cursor,
     pub(crate) script: Option<Script>,
     mode: WindowMode,
     pub(crate) statistics: FrameStatistics,
@@ -267,7 +288,7 @@ impl<Application: App> Runner<Application> {
         renderer.render(&frame.drawing, frame.clear);
         if frame.cursor != self.cursor {
             self.cursor = frame.cursor;
-            renderer.window.set_cursor(frame.cursor);
+            renderer.window.set_cursor(frame.cursor.icon());
         }
         self.statistics.record(began.elapsed());
         self.input.end_frame();
@@ -391,7 +412,7 @@ pub fn run<Application: App>(title: Title, app: Application) -> Result<(), Start
         redraw: Redraw::Pending,
         next_redraw: Instant::now(),
         start: Instant::now(),
-        cursor: CursorIcon::Default,
+        cursor: Cursor::Default,
         script: Script::load(),
         mode,
         statistics: FrameStatistics::default(),

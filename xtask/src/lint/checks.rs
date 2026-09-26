@@ -31,6 +31,18 @@ const DOMAIN_IO: [Literal; 5] = [
     Literal::new("std::io"),
 ];
 
+const WIDGET_CALLS: [Literal; 2] = [Literal::new("open"), Literal::new("leaf")];
+
+const THEME_CALLS: [Literal; 3] = [
+    Literal::new("Px::new"),
+    Literal::new("Color::rgba"),
+    Literal::new("FontSize::new"),
+];
+
+const ID_CALLS: [Literal; 1] = [Literal::new("Id::new")];
+
+const KEY_PATHS: [Literal; 2] = [Literal::new("Key::"), Literal::new("Mods::")];
+
 const PRINTING: [Literal; 5] = [
     Literal::new("print"),
     Literal::new("println"),
@@ -79,6 +91,10 @@ pub(super) fn check(
         Rule::Suppression => suppressions(file, &mut report),
         Rule::TestRegistry => test_registry(file, &mut report),
         Rule::Alias => aliases(file, &mut report),
+        Rule::Widget => gui_calls(file, &mut report, Literal::new("widgets"), &WIDGET_CALLS),
+        Rule::Theme => gui_literals(file, &mut report, Literal::new("theme"), &THEME_CALLS),
+        Rule::ElementId => gui_literals(file, &mut report, Literal::new("ids"), &ID_CALLS),
+        Rule::KeyBinding => gui_paths(file, &mut report, Literal::new("keys"), &KEY_PATHS),
     }
 }
 
@@ -482,6 +498,88 @@ fn aliases(file: &SourceFile, report: &mut Report<'_>) {
             .any(|item| matches!(item.kind(), "impl_item" | "trait_item"));
         if node.kind() == "type_item" && !associated && !in_test_code(node, &file.text) {
             report.add(node, format!("`{}`", file.text.of(node)));
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Place {
+    Home,
+    Elsewhere,
+    Outside,
+}
+
+fn gui_module(file: &SourceFile, home: Literal) -> Place {
+    if !file.path.starts_with("crates/gui/src/") {
+        Place::Outside
+    } else if file.path.ends_with(&format!("/{home}.rs"))
+        || file.path.contains(&format!("/{home}/"))
+    {
+        Place::Home
+    } else {
+        Place::Elsewhere
+    }
+}
+
+fn gui_calls(file: &SourceFile, report: &mut Report<'_>, home: Literal, methods: &[Literal]) {
+    if gui_module(file, home) != Place::Elsewhere {
+        return;
+    }
+    for node in file.nodes() {
+        if node.kind() != "call_expression" || in_test_code(node, &file.text) {
+            continue;
+        }
+        let called = node
+            .child_by_field_name("function")
+            .filter(|function| function.kind() == "field_expression")
+            .and_then(|function| function.child_by_field_name("field"))
+            .map(|field| file.text.of(field))
+            .unwrap_or_default();
+        if methods.iter().any(|method| method.as_str() == called) {
+            report.add(node, format!("`.{called}(`"));
+        }
+    }
+}
+
+fn gui_literals(file: &SourceFile, report: &mut Report<'_>, home: Literal, calls: &[Literal]) {
+    if gui_module(file, home) != Place::Elsewhere {
+        return;
+    }
+    for node in file.nodes() {
+        if node.kind() != "call_expression" || in_test_code(node, &file.text) {
+            continue;
+        }
+        let called = node
+            .child_by_field_name("function")
+            .map(|function| file.text.of(function))
+            .unwrap_or_default();
+        let literal = node
+            .child_by_field_name("arguments")
+            .is_some_and(|arguments| {
+                named_children(arguments).iter().any(|argument| {
+                    matches!(
+                        argument.kind(),
+                        "integer_literal" | "float_literal" | "string_literal" | "unary_expression"
+                    )
+                })
+            });
+        if literal && calls.iter().any(|call| called.ends_with(call.as_str())) {
+            report.add(node, format!("`{}`", file.text.of(node)));
+        }
+    }
+}
+
+fn gui_paths(file: &SourceFile, report: &mut Report<'_>, home: Literal, paths: &[Literal]) {
+    if gui_module(file, home) != Place::Elsewhere {
+        return;
+    }
+    for node in file.nodes() {
+        if node.kind() != "scoped_identifier" || in_test_code(node, &file.text) {
+            continue;
+        }
+        let text = file.text.of(node);
+        if paths.iter().any(|path| text.starts_with(path.as_str())) {
+            report.add(node, format!("`{text}`"));
         }
     }
 }

@@ -14,7 +14,8 @@ script::pub fn rest(&self, from: usize) -> String
 script::pub fn contains_word(&self, wanted: &str) -> bool
 script::pub enum Outcome { Done, Retry, }
 window::pub enum Exit { Stay, Quit, }
-window::pub struct Frame { pub redraw_after: Duration, pub exit: Exit, pub clear: Color, pub cursor: CursorIcon, pub drawing: DrawList, }
+window::pub enum Cursor { Default, ColumnResize, RowResize, Grab, Grabbing, }
+window::pub struct Frame { pub redraw_after: Duration, pub exit: Exit, pub clear: Color, pub cursor: Cursor, pub drawing: DrawList, }
 window::pub trait App
 window::pub struct Title(String);
 window::pub fn new(text: impl Into<String>) -> Self

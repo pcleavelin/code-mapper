@@ -6,6 +6,7 @@ pub struct Px(i32);
 
 impl Px {
     pub const ZERO: Self = Self(0);
+    pub const LARGEST: Self = Self(0x7fff_ffff);
 
     pub const fn new(value: i32) -> Self {
         Self(value)

@@ -305,6 +305,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c133bc6a41be0d194c306b5506d15e6feeea7b1d6604bd3f8310dfb2ca96486"
 
 [[package]]
+name = "cli"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "domain",
+ "features",
+ "index",
+ "io-map",
+ "io-vcs",
+ "regex",
+]
+
+[[package]]
 name = "codemap"
 version = "0.1.0"
 dependencies = [
@@ -323,6 +336,17 @@ dependencies = [
  "tree-sitter-typescript",
  "wgpu",
  "winit",
+]
+
+[[package]]
+name = "codemap-next"
+version = "0.1.0"
+dependencies = [
+ "cli",
+ "domain",
+ "gui",
+ "index",
+ "io-map",
 ]
 
 [[package]]
@@ -757,6 +781,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fdf242682df893b86f33a73828fb09ca4b2d3bb6cc95249707fc684d27484b91"
 dependencies = [
  "bitflags 2.13.2",
+]
+
+[[package]]
+name = "gui"
+version = "0.1.0"
+dependencies = [
+ "cli",
+ "domain",
+ "features",
+ "index",
+ "io-lsp",
+ "io-map",
+ "io-vcs",
+ "platform",
+ "regex",
+ "ui",
 ]
 
 [[package]]

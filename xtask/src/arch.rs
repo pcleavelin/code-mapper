@@ -63,7 +63,7 @@ const EXPECTS: [Allowance; 10] = [
     },
 ];
 
-const DEPENDENCIES: [Allowed; 17] = [
+const DEPENDENCIES: [Allowed; 18] = [
     Allowed {
         package: Literal::new("codemap"),
         dependencies: &[
@@ -199,6 +199,16 @@ const DEPENDENCIES: [Allowed; 17] = [
             Literal::new("io-map"),
             Literal::new("cli"),
             Literal::new("gui"),
+        ],
+    },
+    Allowed {
+        package: Literal::new("codemap-next"),
+        dependencies: &[
+            Literal::new("cli"),
+            Literal::new("gui"),
+            Literal::new("domain"),
+            Literal::new("index"),
+            Literal::new("io-map"),
         ],
     },
 ];

@@ -4,6 +4,7 @@ mod parse;
 mod server;
 
 pub use build::{Indexed, build, save_cache};
+pub use io_lsp::StartError;
 pub use io_source::{Contents, Modified, Stamp, Stamps, read_outside};
 pub use link::link;
 pub use parse::Parsers;

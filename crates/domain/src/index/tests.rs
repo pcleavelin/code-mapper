@@ -264,3 +264,13 @@ fn edges_move_between_indexes_of_the_same_files() {
     index.take_edges(&linked);
     assert_eq!(index.symbol(run).unwrap().callees(), [new_a]);
 }
+
+#[test]
+fn ids_print_as_their_positions() {
+    let index = fixture();
+    let found = id(&index, "src/b.rs", "helper");
+    assert_eq!(found.file().to_string(), "1");
+    assert_eq!(found.symbol().to_string(), "2");
+    assert_eq!(found.file().number(), 1);
+    assert_eq!(found.symbol().number(), 2);
+}

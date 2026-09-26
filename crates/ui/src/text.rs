@@ -4,7 +4,7 @@ use crate::color::Color;
 use crate::geometry::{Count, FontSize};
 use crate::input::Glyph;
 
-#[derive(Clone, PartialEq, Eq, Hash, Debug, Default)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Default)]
 pub struct Label(String);
 
 impl Label {

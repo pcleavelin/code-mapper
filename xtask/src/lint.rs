@@ -21,10 +21,14 @@ pub(crate) enum Rule {
     Suppression,
     TestRegistry,
     Alias,
+    Widget,
+    Theme,
+    ElementId,
+    KeyBinding,
 }
 
 impl Rule {
-    pub(crate) const ALL: [Self; 11] = [
+    pub(crate) const ALL: [Self; 15] = [
         Self::Comment,
         Self::Primitive,
         Self::NewtypeField,
@@ -36,6 +40,10 @@ impl Rule {
         Self::Suppression,
         Self::TestRegistry,
         Self::Alias,
+        Self::Widget,
+        Self::Theme,
+        Self::ElementId,
+        Self::KeyBinding,
     ];
 
     pub(crate) const fn code(self) -> RuleCode {
@@ -51,6 +59,9 @@ impl Rule {
             Self::Suppression => "L10",
             Self::TestRegistry => "L11",
             Self::Alias => "L16",
+            Self::Widget | Self::Theme => "L12",
+            Self::ElementId => "L13",
+            Self::KeyBinding => "L15",
         })
     }
 
@@ -85,6 +96,18 @@ impl Rule {
                 "tests are registered once: add the scenario to its table, which generates the #[test]"
             }
             Self::Alias => "no type aliases: a new name for a type is a newtype",
+            Self::Widget => {
+                "GUI elements are built by the widget helpers: call one from crates/gui/src/widgets.rs, or add the helper there"
+            }
+            Self::Theme => {
+                "sizes and colours are named in crates/gui/src/theme.rs: use the constant, or add one there"
+            }
+            Self::ElementId => {
+                "element ids are named in crates/gui/src/ids.rs: use the constant, or add one there"
+            }
+            Self::KeyBinding => {
+                "keys are bound in crates/gui/src/keys.rs from the feature registry's chords: add the trigger to crates/features"
+            }
         })
     }
 }

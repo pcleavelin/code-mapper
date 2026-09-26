@@ -29,6 +29,7 @@ color::pub const fn with_alpha(self, alpha: u8) -> Self
 color::pub const fn is_invisible(self) -> bool
 geometry::pub struct Px(i32);
 geometry::pub const ZERO: Self = Self(0);
+geometry::pub const LARGEST: Self = Self(0x7fff_ffff);
 geometry::pub const fn new(value: i32) -> Self
 geometry::pub const fn get(self) -> i32
 geometry::pub fn of_count(count: usize) -> Self

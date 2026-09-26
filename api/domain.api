@@ -98,6 +98,8 @@ index::language::pub const fn arguments(self) -> &'static [Argument]
 index::language::pub fn of(path: &RelativePath) -> Option<Self>
 index::symbol::pub struct FileId(Position);
 index::symbol::pub struct SymbolIndex(Position);
+index::symbol::pub const fn number(self) -> usize
+index::symbol::pub const fn number(self) -> usize
 index::symbol::pub struct SymbolId { file: FileId, symbol: SymbolIndex, }
 index::symbol::pub const fn file(self) -> FileId
 index::symbol::pub const fn symbol(self) -> SymbolIndex

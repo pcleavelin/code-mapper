@@ -219,7 +219,10 @@ pub const MAP: &[&[&str]] = &[
 ];
 
 pub fn bin() -> PathBuf {
-    PathBuf::from(env!("CARGO_BIN_EXE_codemap"))
+    std::env::var_os("CODEMAP_BIN").map_or_else(
+        || PathBuf::from(env!("CARGO_BIN_EXE_codemap")),
+        PathBuf::from,
+    )
 }
 
 fn find_tool(tool: &str) -> Option<PathBuf> {

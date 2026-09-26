@@ -19,6 +19,18 @@ impl Key for FileId {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SymbolIndex(Position);
 
+impl FileId {
+    pub const fn number(self) -> usize {
+        self.0.value()
+    }
+}
+
+impl fmt::Display for FileId {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "{}", self.0.value())
+    }
+}
+
 impl Key for SymbolIndex {
     fn at(position: Position) -> Self {
         Self(position)
@@ -26,6 +38,18 @@ impl Key for SymbolIndex {
 
     fn position(self) -> Position {
         self.0
+    }
+}
+
+impl SymbolIndex {
+    pub const fn number(self) -> usize {
+        self.0.value()
+    }
+}
+
+impl fmt::Display for SymbolIndex {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "{}", self.0.value())
     }
 }
 

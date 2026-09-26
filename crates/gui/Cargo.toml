@@ -1,0 +1,20 @@
+[package]
+name = "gui"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+domain = { path = "../domain" }
+index = { path = "../index" }
+io-map = { path = "../io-map" }
+io-vcs = { path = "../io-vcs" }
+io-lsp = { path = "../io-lsp" }
+cli = { path = "../cli" }
+features = { path = "../features" }
+ui = { path = "../ui" }
+platform = { path = "../platform" }
+regex = "1"
+
+[lints]
+workspace = true

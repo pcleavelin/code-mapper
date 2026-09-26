@@ -56,8 +56,9 @@ Deferred items and their triggers are in section 11.
 
 What goes in a note: the path note describes the workflow as a whole; a step note
 says what this step does for this path. Anything true of the code regardless of which
-path you read it in is a code comment, not a note. The same function can be a step in
-several paths and play a different role in each.
+path you read it in goes in the note of the `layer` or `type` path covering that code: the
+code itself carries no comments, so the map is the only prose about it. The same function can
+be a step in several paths and play a different role in each.
 
 ## 5. The agent contract
 
@@ -329,38 +330,34 @@ re-pin put them. The other 29 were gone symbols or rewrites.
 ## 10. Architecture and the CLI
 
 ```
-src/
-  index/          the auto layer
-    mod.rs        files, symbols, the walk, the queries (find, roots, call trees)
-    treesitter.rs symbols, call sites, imports and highlight spans from the syntax tree
-    server.rs     the same from a language server, and which files still wait for one
-    link.rs       call sites and server targets resolved into callees and callers
-    cache.rs      .codemap-cache
-  lsp.rs          a minimal language-server client: JSON-RPC over stdio, used by index/server.rs
-  map.rs          paths, anchors, the map's text files, staleness, diff, following moved text (manual layer)
-  vcs.rs          jj or git: the parent revision, a file or the map directory at a revision
-  codec.rs        the cache's little-endian encoding, FNV-1a, the atomic write
-  cli.rs          text commands over index + map  (agent interface, and the GUI's output panel)
-  ui.rs           the element tree: open/close, Exact/Fit/Grow, layout passes, one-frame-late input
-  gfx.rs          the GPU (wgpu): one pipeline, one glyph atlas, clipping
-  window.rs       the window (winit), the event loop, and the test-script runner
-  gui/            the app (human interface)
-    mod.rs        App, the action queue, the frame, the script hooks
-    work.rs       server threads, the source watcher, the rebuild, link and parent-map jobs
-    nav.rs        the selection and the history
-    peek.rs       hover, go-to-definition, the peek and the tooltip
-    widgets.rs    theme, text field, buttons, rows, scrolling columns, the code block
-    panels.rs     top bar, status bar, output panel, left panel, xrefs
-    dock.rs       which edge each panel is docked to, its size, the splitters and header drags
-    document.rs   the path document and each step's view state
-    views.rs      listing, search results, map diff
-    graph.rs      the Graph tab: node tree, layout, scene, hit testing
-  main.rs         entry: CLI or GUI
-tests/
-  cli.rs          every command against a generated fixture repo, against golden transcripts
-  gui.rs          scripted GUI scenarios, the state after each step against golden files
-  parity.rs       an old build against this one: transcripts, dumps and screenshots byte for byte
+crates/
+  domain/       the model, no I/O: positions and text, the index model and its queries,
+                the map model (paths, steps, anchors, groups, diff, following moved text)
+  io-process/   starting a program (PATH lookup included)
+  io-store/     writing a file whole (temporary file, rename over)
+  io-source/    the walk and reading source files
+  io-map/       .codemap/*.cmap: the text format and the store that loads and saves it
+  io-cache/     .codemap-cache: the binary format
+  io-vcs/       jj or git: the parent revision, a file or the map directory at a revision
+  io-lsp/       a minimal language-server client: JSON-RPC over stdio
+  index/        building the index: tree-sitter resolvers and highlighting, server
+                orchestration, call sites resolved into callees and callers
+  features/     every function the app offers a user: name, summary, triggers
+  cli/          text commands over index + map (agent interface, and the GUI's output panel)
+  ui/           the element tree: open/close, Exact/Fit/Grow, layout passes, one-frame-late
+                input, geometry, a draw list
+  platform/     the GPU (wgpu), fonts, the window (winit), the event loop, the test-script
+                runner, screenshots
+  gui/          the app (human interface): widgets, theme, ids, keys, actions, navigation,
+                the document, peek, graph, dock, the background runtime
+  codemap/      the binary: CLI or GUI; the integration tests (cli, gui, parity)
+xtask/          the gate: archlint, the crate graph, the API lock, the hooks
 ```
+
+Each I/O surface has wire types that mirror the external format and one `convert` into the
+domain types, so the program's internals change without changing a format. Every function a
+user can reach is a `Feature` in `crates/features`; the CLI's commands and help, and the GUI's
+buttons and key bindings, are built from it.
 
 The UI is its own library, in the shape of odin_editor's `ui`: every frame the app opens
 and closes elements (nothing, text, or custom drawing) whose sizes are exact, fit their
@@ -372,10 +369,10 @@ input from a script, waits for the servers when told to, and dumps state and ele
 rectangles on request, so rendering and interaction claims are checked against pixels
 and numbers, never against the code alone.
 
-`index` and `map` know nothing about the UI. `cli` and `gui` are two front ends over
-the same two structs. Any operation that mutates the map lives on `Map` so both call
-the same code. `cli::exec` writes to a `String` so the output panel and stdout share one
-code path.
+`domain` knows nothing about the UI or I/O. `cli` and `gui` are two front ends over the same
+`Index` and `Map`. Any operation that mutates the map is a method of `Map` so both call the
+same code. `cli::exec` writes into a buffer so the output panel and stdout share one code
+path.
 
 `codemap <root>` opens the GUI. `codemap <root> <command> [args]` runs one command,
 saves if it mutated the map, and exits. One root per process. Output is plain text,
