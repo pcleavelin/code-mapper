@@ -4,7 +4,7 @@
 //! centre of the last stderr line starting with `prefix`, `<<prefix|dx,dy>>` a point offset from
 //! its top-left corner. Each is resolved by a probe run of the script up to that line, on a fresh
 //! fixture, so the final run starts from the same state. Offsets are pixels: the scripts assume
-//! the owner's display (16 px rows at 100% scale).
+//! the fixed 1600x1000 script window at scale 1 (16 px rows).
 //!
 //! Every script settles with `idle` and a save before its first dump: with several servers
 //! missing, the status line otherwise says whichever failure arrived last.
@@ -78,6 +78,8 @@ pub fn document() -> Scenario {
         script: "SETTLE
 dump
 shot {shots}/open.png
+scroll document 2000
+wait 2
 click-id step/5
 wait 2
 dump
@@ -91,6 +93,8 @@ wait 2
 dump
 shot {shots}/context.png
 click-id ctx0/5
+wait 2
+scroll document 0
 wait 2
 click-id hide/1
 wait 2
@@ -165,6 +169,9 @@ dump
 shot {shots}/jumped.png
 rect doccode/4
 dblclick <<DUMP rect doccode/4|244,24>>
+wait 3
+rect doccode/4
+mouse <<DUMP rect doccode/4|244,24>>
 wait 3
 dump
 rect doccode/4
@@ -264,9 +271,19 @@ dump
 shot {shots}/off-path.png
 click <<DUMP button main 'hide>>
 wait 4
+hover-id graph-canvas
+wheel -400 shift
+wait 4
+mouse 5 5
+wait 2
 dump
 click <<DUMP button new 'hide>>
 wait 4
+hover-id graph-canvas
+wheel 400
+wait 4
+mouse 5 5
+wait 2
 dump
 drag <<DUMP node 1.2 report|30,8>> <<DUMP node 1.2 report|130,108>>
 wait 4
@@ -395,10 +412,14 @@ pub fn delete() -> Scenario {
         hook: no_hook,
         after: &[&["paths"]],
         script: "SETTLE
+scroll document 2000
+wait 2
 click-id del/6
 wait 3
 dump
 shot {shots}/step-deleted.png
+scroll document 0
+wait 2
 click-id del/0
 wait 3
 dump
@@ -505,7 +526,7 @@ hover-id grip@output
 wait 1
 down
 wait 1
-mouse 1700 300
+mouse 1590 300
 wait 2
 up
 wait 2

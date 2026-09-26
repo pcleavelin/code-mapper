@@ -10,12 +10,12 @@ DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Listing path=Some(2) step=Some(7) focus=Some("main") file=Some("src/store.rs") sel=Some((0, 2))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
-DUMP tip=None peek=None status="step [7] added to 'startup' under [0]"
+DUMP tip=None peek=None status="step 1.3 added to 'startup' under 1"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Listing path=Some(2) step=Some(7) focus=Some("main") file=Some("src/store.rs") sel=Some((29, 29))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
-DUMP tip=None peek=None status="step [7] added to 'startup' under [0]"
+DUMP tip=None peek=None status="step 1.3 added to 'startup' under 1"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Listing path=Some(2) step=Some(7) focus=Some("main") file=Some("src/store.rs") sel=Some((31, 31))

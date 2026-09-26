@@ -1,4 +1,4 @@
-DUMP tab=Graph path=Some(0) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
+DUMP tab=Graph path=Some(2) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
@@ -32,7 +32,7 @@ DUMP button total_area '▼'
 DUMP button total_area '▲'
 DUMP button log_line 'listing'
 DUMP button log_line '▲'
-DUMP tab=Graph path=Some(0) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
+DUMP tab=Graph path=Some(2) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="saved"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
@@ -70,7 +70,7 @@ DUMP button log_line '▲'
 DUMP button new 'listing'
 DUMP button new '▼'
 DUMP button new '▲'
-DUMP tab=Graph path=Some(0) step=None focus=Some("new") file=Some("src/store.rs") sel=Some((7, 9))
+DUMP tab=Graph path=Some(2) step=None focus=Some("new") file=Some("src/store.rs") sel=Some((7, 9))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
@@ -109,7 +109,7 @@ DUMP button new 'hide 1 callers'
 DUMP button new 'listing'
 DUMP button new '▼'
 DUMP button new '▲'
-DUMP tab=Graph path=Some(0) step=None focus=Some("new") file=Some("src/store.rs") sel=Some((7, 9))
+DUMP tab=Graph path=Some(2) step=None focus=Some("new") file=Some("src/store.rs") sel=Some((7, 9))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
@@ -147,7 +147,7 @@ DUMP button new 'hide 1 callers'
 DUMP button new 'listing'
 DUMP button new '▼'
 DUMP button new '▲'
-DUMP tab=Graph path=Some(0) step=None focus=Some("new") file=Some("src/store.rs") sel=Some((7, 9))
+DUMP tab=Graph path=Some(2) step=None focus=Some("new") file=Some("src/store.rs") sel=Some((7, 9))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
@@ -184,7 +184,7 @@ DUMP button log_line '▲'
 DUMP button new 'listing'
 DUMP button new '▼'
 DUMP button new '▲'
-DUMP tab=Graph path=Some(0) step=Some(4) focus=Some("report") file=Some("src/main.rs") sel=Some((17, 21))
+DUMP tab=Graph path=Some(2) step=Some(4) focus=Some("report") file=Some("src/main.rs") sel=Some((17, 21))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
@@ -218,7 +218,7 @@ DUMP button total_area '▼'
 DUMP button total_area '▲'
 DUMP button log_line 'listing'
 DUMP button log_line '▲'
-DUMP tab=Graph path=Some(0) step=Some(4) focus=Some("report") file=Some("src/main.rs") sel=Some((17, 21))
+DUMP tab=Graph path=Some(2) step=Some(4) focus=Some("report") file=Some("src/main.rs") sel=Some((17, 21))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
@@ -252,11 +252,11 @@ DUMP button total_area '▼'
 DUMP button total_area '▲'
 DUMP button log_line 'listing'
 DUMP button log_line '▲'
-DUMP tab=Graph path=Some(0) step=Some(4) focus=Some("report") file=Some("src/main.rs") sel=Some((17, 21))
+DUMP tab=Graph path=Some(2) step=Some(4) focus=Some("report") file=Some("src/main.rs") sel=Some((17, 21))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
-DUMP graph zoom=0.714
+DUMP graph zoom=0.429
 DUMP node 1 main
 DUMP node 1.1 fill
 DUMP node 1.1.1 add
@@ -286,7 +286,7 @@ DUMP button total_area '▼'
 DUMP button total_area '▲'
 DUMP button log_line 'listing'
 DUMP button log_line '▲'
-DUMP tab=Graph path=Some(0) step=Some(4) focus=Some("report") file=Some("src/main.rs") sel=Some((17, 21))
+DUMP tab=Graph path=Some(2) step=Some(4) focus=Some("report") file=Some("src/main.rs") sel=Some((17, 21))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
@@ -320,7 +320,7 @@ DUMP button total_area '▼'
 DUMP button total_area '▲'
 DUMP button log_line 'listing'
 DUMP button log_line '▲'
-DUMP tab=Graph path=Some(0) step=Some(4) focus=Some("report") file=Some("src/main.rs") sel=Some((17, 21))
+DUMP tab=Graph path=Some(2) step=Some(4) focus=Some("report") file=Some("src/main.rs") sel=Some((17, 21))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
@@ -354,11 +354,45 @@ DUMP button total_area '▼'
 DUMP button total_area '▲'
 DUMP button log_line 'listing'
 DUMP button log_line '▲'
-DUMP tab=Graph path=Some(0) step=Some(4) focus=Some("report") file=Some("src/main.rs") sel=Some((17, 21))
+DUMP tab=Graph path=Some(2) step=Some(4) focus=Some("report") file=Some("src/main.rs") sel=Some((17, 21))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
-DUMP graph zoom=1.000
+DUMP graph zoom=0.429
+DUMP node 1 main
+DUMP node 1.1 fill
+DUMP node 1.1.1 add
+DUMP node 1.1.1.1 check
+DUMP node 1.2 report
+DUMP node 1.2.1 total_area
+DUMP node 1.2.2 log_line
+DUMP button main 'callees > 1'
+DUMP button main 'listing'
+DUMP button main '▼'
+DUMP button main '▲'
+DUMP button fill 'listing'
+DUMP button fill '▼'
+DUMP button fill '▲'
+DUMP button add 'listing'
+DUMP button add '▼'
+DUMP button add '▲'
+DUMP button check 'listing'
+DUMP button check '▼'
+DUMP button check '▲'
+DUMP button report 'listing'
+DUMP button report '▼'
+DUMP button report '▲'
+DUMP button total_area 'callees > 1'
+DUMP button total_area 'listing'
+DUMP button total_area '▼'
+DUMP button total_area '▲'
+DUMP button log_line 'listing'
+DUMP button log_line '▲'
+DUMP tab=Graph path=Some(2) step=Some(4) focus=Some("report") file=Some("src/main.rs") sel=Some((17, 21))
+DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
+DUMP tip=None peek=None status="new selected; not a step of 'startup'"
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=0.429
 DUMP node 1 main
 DUMP node 1.1 fill
 DUMP node 1.1.1 add
@@ -389,11 +423,11 @@ DUMP button total_area '▼'
 DUMP button total_area '▲'
 DUMP button log_line 'listing'
 DUMP button log_line '▲'
-DUMP tab=Graph path=Some(0) step=Some(4) focus=Some("report") file=Some("src/main.rs") sel=Some((17, 21))
+DUMP tab=Graph path=Some(2) step=Some(4) focus=Some("report") file=Some("src/main.rs") sel=Some((17, 21))
 DUMP dock nav=Left xrefs=Right output=Bottom sizes=None,None,None
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
-DUMP graph zoom=1.000
+DUMP graph zoom=0.429
 DUMP node 1 main
 DUMP node 1.1 fill
 DUMP node 1.1.1 add
