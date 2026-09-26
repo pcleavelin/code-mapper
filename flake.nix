@@ -29,6 +29,13 @@
             libxrandr
           ]
         );
+
+      hostDrivers = pkgs: ''
+        if [ ! -e /run/opengl-driver ]; then
+          export VK_DRIVER_FILES="''${VK_DRIVER_FILES:-${pkgs.mesa}/share/vulkan/icd.d}"
+          export __EGL_VENDOR_LIBRARY_FILENAMES="''${__EGL_VENDOR_LIBRARY_FILENAMES:-${pkgs.mesa}/share/glvnd/egl_vendor.d/50_mesa.json}"
+        fi
+      '';
     in
     {
       packages = forAllSystems (
@@ -61,7 +68,8 @@
             doCheck = false;
             nativeBuildInputs = pkgs.lib.optionals pkgs.stdenv.hostPlatform.isLinux [ pkgs.makeWrapper ];
             postInstall = pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
-              wrapProgram $out/bin/codemap --suffix LD_LIBRARY_PATH : ${libPath}
+              wrapProgram $out/bin/codemap --suffix LD_LIBRARY_PATH : ${libPath} \
+                --run ${pkgs.lib.escapeShellArg (hostDrivers pkgs)}
             '';
             meta.mainProgram = "codemap";
           };
@@ -112,6 +120,7 @@
               ];
             LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath (runtimeLibs pkgs);
             RUST_SRC_PATH = "${pkgs.rustPlatform.rustLibSrc}";
+            shellHook = pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isLinux (hostDrivers pkgs);
           };
         }
       );

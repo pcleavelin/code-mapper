@@ -392,6 +392,10 @@ impl<Application: App> ApplicationHandler for Runner<Application> {
         }
         event_loop.set_control_flow(ControlFlow::WaitUntil(self.next_redraw));
     }
+
+    fn exiting(&mut self, _event_loop: &ActiveEventLoop) {
+        self.renderer = None;
+    }
 }
 
 pub fn run<Application: App>(title: Title, app: Application) -> Result<(), StartError> {

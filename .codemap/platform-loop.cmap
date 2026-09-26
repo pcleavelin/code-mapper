@@ -5,6 +5,16 @@ author ai
 group render
 note The window and the event loop, in the platform crate, and the only place this program blocks. winit owns the loop; the application is one trait, App, built around one method, frame (the other two answer a test script), so nothing above here knows what a window event is - the gui crate sees ui's Input going in and a Frame with a DrawList coming out. The loop is not a game loop: it waits for events and redraws only when input arrived or a deadline the last frame asked for came due, so an idle codemap costs one frame a second. Every event does the same two things - update the accumulated Input and mark a redraw pending - and the redraw turns that Input into one frame, has the Renderer present it, and clears the momentary part. Under CODEMAP_SCRIPT or CODEMAP_SHOT the window is fixed at 1600x1000 and scale 1 and ignores the real mouse and keyboard, so a scripted run looks the same on every machine; the script itself is the platform-script flow.
 
+step 1lyh8v
+order 23
+parent h41g96
+author ai
+file crates/platform/src/window.rs
+symbol exiting
+lines 0 2
+hash bfa00d9b2bbfb663
+note Drops the Renderer while the loop still holds the display connection. run_app consumes the event loop and closes the Wayland connection when it returns, and the runner outlives it; a Renderer dropped after that tears its GPU instance down against a closed connection, which with wgpu's GL backend (EGL on Wayland) segfaults on exit.
+
 step 3tety5
 order 14
 parent fhtrrf
