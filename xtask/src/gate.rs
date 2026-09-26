@@ -1,4 +1,3 @@
-use std::collections::BTreeSet;
 use std::fmt;
 use std::fs;
 
@@ -11,7 +10,6 @@ use crate::source::{SourceFile, rust_sources};
 use crate::state::{GateState, Light, stamp};
 use crate::text::{Argument, Content, Count, Literal, Message, Program, RepoPath, Root};
 use crate::vcs::Vcs;
-use crate::vocabulary::{VOCABULARY_FILE, Vocabulary};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Depth {
@@ -213,12 +211,11 @@ fn command(root: &Root, step: Step, program: Program, words: &[Argument]) -> Res
 }
 
 pub(crate) fn lint_files(root: &Root, paths: &[RepoPath]) -> Result<(), Message> {
-    let vocabulary = Vocabulary::load(root)?;
     let every: Vec<SourceFile> = rust_sources(root)
         .into_iter()
         .map(|path| SourceFile::load(root, path))
         .collect::<Result<_, _>>()?;
-    let workspace = Workspace::of(&every, vocabulary);
+    let workspace = Workspace::of(&every);
     let chosen: Vec<SourceFile> = if paths.is_empty() {
         every
     } else {
@@ -282,9 +279,6 @@ fn rulebook(root: &Root) -> Result<(), Message> {
             true
         } else if path.ends_with(File::Manifest.name().as_str()) {
             Manifest::parse(&parent).guarded() != Manifest::parse(&current).guarded()
-        } else if path.as_str() == VOCABULARY_FILE.as_str() {
-            let before: BTreeSet<Message> = Vocabulary::synonym_lines(&parent);
-            before != Vocabulary::synonym_lines(&current)
         } else {
             false
         };

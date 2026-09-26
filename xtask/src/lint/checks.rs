@@ -6,8 +6,7 @@ use crate::source::{
     NodeKind, SourceFile, SourceText, TestAttribute, ancestors, descendants, in_test_code, line_of,
     named_children, public,
 };
-use crate::text::{CrateName, LintName, Literal, Message, TypeName, Word};
-use crate::vocabulary::Verdict;
+use crate::text::{CrateName, LintName, Literal, Message, TypeName};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Operator {
@@ -275,7 +274,6 @@ pub(super) fn check(
         Rule::NewtypeField => newtype_fields(file, &mut report),
         Rule::Indexing => indexing(file, &mut report),
         Rule::Absence => absence(file, &mut report),
-        Rule::Vocabulary => vocabulary(workspace, file, &mut report),
         Rule::WireLeak => wire_leaks(workspace, file, &mut report),
         Rule::DomainIo => domain_io(file, &mut report),
         Rule::Suppression => suppressions(file, &mut report),
@@ -517,88 +515,6 @@ fn absence(file: &SourceFile, report: &mut Report<'_>) {
     }
 }
 
-pub(crate) fn named_by_us(file: &SourceFile) -> Vec<Node<'_>> {
-    file.nodes()
-        .into_iter()
-        .filter(|node| !in_test_code(*node, &file.text))
-        .flat_map(chosen_names)
-        .collect()
-}
-
-fn chosen_names(node: Node<'_>) -> Vec<Node<'_>> {
-    let dictated = matches!(
-        NodeKind::of(node),
-        Some(NodeKind::Parameter | NodeKind::Function | NodeKind::TypeItem | NodeKind::Constant)
-    ) && ancestors(node)
-        .iter()
-        .any(|item| NodeKind::Impl.is(*item) && item.child_by_field_name("trait").is_some());
-    if dictated {
-        Vec::new()
-    } else {
-        defined_names(node)
-    }
-}
-
-fn defined_names(node: Node<'_>) -> Vec<Node<'_>> {
-    let field = match NodeKind::of(node) {
-        Some(
-            NodeKind::Function
-            | NodeKind::FunctionSignature
-            | NodeKind::Struct
-            | NodeKind::Enum
-            | NodeKind::Trait
-            | NodeKind::TypeItem
-            | NodeKind::Union
-            | NodeKind::EnumVariant
-            | NodeKind::Constant
-            | NodeKind::Static
-            | NodeKind::Module
-            | NodeKind::FieldDeclaration
-            | NodeKind::MacroDefinition,
-        ) => "name",
-        Some(NodeKind::Parameter | NodeKind::LetDeclaration) => "pattern",
-        _ => return Vec::new(),
-    };
-    node.child_by_field_name(field)
-        .map(|name| {
-            descendants(name)
-                .into_iter()
-                .filter(|part| {
-                    matches!(
-                        NodeKind::of(*part),
-                        Some(
-                            NodeKind::Identifier
-                                | NodeKind::TypeIdentifier
-                                | NodeKind::FieldIdentifier
-                        )
-                    )
-                })
-                .collect()
-        })
-        .unwrap_or_default()
-}
-
-fn vocabulary(workspace: &Workspace, file: &SourceFile, report: &mut Report<'_>) {
-    for name in named_by_us(file) {
-        {
-            let identifier = file.text.of(name);
-            for word in Word::split(identifier) {
-                match workspace.vocabulary.verdict(&word) {
-                    Verdict::Known => {}
-                    Verdict::Unknown => report.add(
-                        name,
-                        format!("`{word}` in `{identifier}` is not in vocabulary.txt"),
-                    ),
-                    Verdict::Synonym(canonical) => report.add(
-                        name,
-                        format!("`{word}` in `{identifier}` is written `{canonical}`"),
-                    ),
-                }
-            }
-        }
-    }
-}
-
 fn wire_leaks(workspace: &Workspace, file: &SourceFile, report: &mut Report<'_>) {
     if is_wire(file) {
         return;
@@ -825,6 +741,10 @@ fn compared(file: &SourceFile, report: &mut Report<'_>) {
 }
 
 fn compared_place(file: &SourceFile, literal: Node<'_>) -> Option<Message> {
+    let literal = literal
+        .parent()
+        .filter(|parent| NodeKind::ReferenceExpression.is(*parent))
+        .unwrap_or(literal);
     let parent = literal.parent()?;
     let pattern = matches!(
         NodeKind::of(parent),

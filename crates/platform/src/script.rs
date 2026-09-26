@@ -49,10 +49,11 @@ impl ScriptLine {
 
     pub(crate) fn mods_from(&self, from: usize) -> Mods {
         let later: Vec<&str> = self.words().into_iter().skip(from).collect();
+        let held = |key: HeldKey| later.contains(&key.name().as_str());
         Mods::new(
-            later.contains(&"ctrl"),
-            later.contains(&"shift"),
-            later.contains(&"alt"),
+            held(HeldKey::Control),
+            held(HeldKey::Shift),
+            held(HeldKey::Alt),
         )
     }
 
@@ -479,6 +480,23 @@ impl Suffix {
     const fn name(self) -> Literal {
         Literal(match self {
             Self::Id => "-id",
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum HeldKey {
+    Control,
+    Shift,
+    Alt,
+}
+
+impl HeldKey {
+    const fn name(self) -> Literal {
+        Literal(match self {
+            Self::Control => "ctrl",
+            Self::Shift => "shift",
+            Self::Alt => "alt",
         })
     }
 }

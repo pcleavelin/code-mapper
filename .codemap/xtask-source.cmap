@@ -3,7 +3,7 @@ path xtask-source
 kind layer
 author ai
 group tooling
-note Rust sources as tree-sitter syntax trees, for archlint, the API lock and the words report. The walk takes every file under the root the way git sees it (ignore files honoured, hidden files included, .git, .jj, target and the cache skipped), and the Rust files under crates/ and xtask/ are what is linted. A SourceFile is its path, text, tree and zone. The helpers walk the tree without name resolution: everything a rule decides, it decides from syntax and the file's path.
+note Rust sources as tree-sitter syntax trees, for archlint and the API lock. The walk takes every file under the root the way git sees it (ignore files honoured, hidden files included, .git, .jj, target and the cache skipped), and the Rust files under crates/ and xtask/ are what is linted. A SourceFile is its path, text, tree and zone. The helpers walk the tree without name resolution: everything a rule decides, it decides from syntax and the file's path.
 
 step 0npha0
 order 6
@@ -125,8 +125,8 @@ parent 0npha0
 author ai
 file xtask/src/source.rs
 symbol NodeKind
-lines 0 50
-hash 893c83b71c8aeca9
+lines 0 51
+hash 85880f58f18f1a80
 note Every tree-sitter-rust node kind a check names, one variant per grammar production it cares about.
 
 step w8w517
@@ -155,6 +155,6 @@ parent vancak
 author ai
 file xtask/src/source.rs
 symbol impl NodeKind
-lines 0 117
-hash 9d21f3e740d3fbe8
+lines 0 119
+hash 797dba61f682752d
 note is compares a node's kind string against the variant's name, for a single check; of looks a node's numeric kind_id up in kind_map and gets the matching variant (or None for a kind no check names), which is what every match on a node's kind goes through.

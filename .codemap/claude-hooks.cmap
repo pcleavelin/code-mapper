@@ -234,8 +234,8 @@ parent ogsnht
 author ai
 file xtask/src/gate.rs
 symbol lint_files
-lines 0 24
-hash 1cad981af1ddcc35
+lines 0 23
+hash 3032deded64cd834
 link archlint
 note archlint on the one edited file, with the workspace facts from every file.
 
@@ -355,8 +355,8 @@ parent tdvwx5
 author ai
 file xtask/src/arch.rs
 symbol RULEBOOK
-lines 0 9
-hash 25db0d81dfcd0969
+lines 0 8
+hash b3f1f4459cc3918c
 link rulebook
 note The guarded paths the command is searched for.
 

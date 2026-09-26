@@ -115,16 +115,6 @@ lines 0 8
 hash a5a496fc4a85f8fb
 note A bool returned by a closure bound (impl Fn(..) -> bool) is a predicate, not a value, and passes.
 
-step 5gd1gj
-order 28
-parent wh0vcj
-author ai
-file xtask/src/lint/checks.rs
-symbol chosen_names
-lines 0 12
-hash b0d077a3b3134bb4
-note Drops names a trait dictates (a trait impl's functions, parameters, associated types and consts), since this code did not choose them.
-
 step 6imfg6
 order 10
 parent dbzwz0
@@ -141,8 +131,8 @@ parent svdoyl
 author ai
 file xtask/src/lint.rs
 symbol Rule
-lines 0 17
-hash ea6bb4f952570b19
+lines 0 16
+hash 919a6b3c29106e9f
 note The rules. A code is a stable id printed with every finding; Widget and Theme share L12. The feature coverage rule is a test (crates/codemap/tests/features.rs), not an archlint rule.
 
 step 7zl7if
@@ -161,8 +151,8 @@ parent fe3mhk
 author ai
 file xtask/src/lint/checks.rs
 symbol compared_place
-lines 0 40
-hash 77fd4e0cffca7368
+lines 0 44
+hash 7889dd3457ef45f8
 note Where one literal falls foul, checked in order: a pattern position (including matches! by field name); an operand of a binary == or !=, unless it is the empty string; the first argument of a call whose method is one of PatternMethod's. Anything else falls through to in_matches_pattern.
 
 step 9xfykw
@@ -195,16 +185,6 @@ lines 0 0
 hash 33aa0b2cee64a6a5
 note The constructor whose literals belong in ids.rs.
 
-step d1qb97
-order 54
-parent 2dbizk
-author ai
-file xtask/src/lint/tests.rs
-symbol vocabulary_words_and_synonyms
-lines 0 21
-hash 26d5100ec05a51ad
-note L7: unknown words, synonyms, and word forms (plurals) of listed words.
-
 step d7krqv
 order 35
 parent dbzwz0
@@ -221,8 +201,8 @@ parent w2dj01
 author ai
 file xtask/src/lint/checks.rs
 symbol check
-lines 0 29
-hash 3aa9ab31b0b1fe32
+lines 0 28
+hash 87a719bf6bb638a3
 note Dispatches one rule to its check function. The GUI rules share three generic checks parameterised by their home module and the calls or paths they own.
 
 step dtblhv
@@ -413,9 +393,9 @@ parent svdoyl
 author ai
 file xtask/src/lint.rs
 symbol impl Workspace
-lines 0 11
-hash 06c2311d70674afc
-note The facts one file cannot see: every newtype (a one-field tuple struct) and every wire type per crate, collected from every file before any file is checked, plus the vocabulary.
+lines 0 8
+hash 26a4b2d777d9ba62
+note The facts one file cannot see: every newtype (a one-field tuple struct) and every wire type per crate, collected from every file before any file is checked.
 
 step nsrh11
 order 51
@@ -453,9 +433,9 @@ parent 734zq6
 author ai
 file xtask/src/lint.rs
 symbol one_way
-lines 0 47
-hash da2f990baf87d78f
-note The one way, as one sentence per rule: what to write instead, and where the sanctioned exception lives when there is one (convert.rs, arch.rs EXPECTS, widgets.rs, theme.rs, ids.rs, keys.rs, vocabulary.txt). This text is the rule's whole documentation.
+lines 0 44
+hash 99839ce23d817a8a
+note The one way, as one sentence per rule: what to write instead, and where the sanctioned exception lives when there is one (convert.rs, arch.rs EXPECTS, widgets.rs, theme.rs, ids.rs, keys.rs). This text is the rule's whole documentation.
 
 step orc9vn
 order 2
@@ -467,24 +447,14 @@ lines 0 32
 hash b42aa41ec9458cac
 note Collects newtypes from struct items and wire types from structs and enums declared in a wire.rs or a wire/ module, keyed by the crate they are in.
 
-step ozrjrt
-order 26
-parent dbzwz0
-author ai
-file xtask/src/lint/checks.rs
-symbol vocabulary
-lines 0 19
-hash a71981d70c3d4d5f
-note L7: every identifier this code names, split into words, must use vocabulary.txt words; a word listed as a synonym fails with its canonical spelling, so one concept has one name everywhere.
-
 step ptga7w
 order 45
 author ai
 file xtask/src/lint/tests.rs
 symbol rules_hit
 lines 0 12
-hash 8b30109f63c12259
-note The fixture harness: parses (path, text) pairs as if they were files at those paths, lints them with a small fixed vocabulary, and returns the rules that fired. The path is the input that exercises zones and file scoping.
+hash 2aa785a0bd13c620
+note The fixture harness: parses (path, text) pairs as if they were files at those paths, lints them, and returns the rules that fired. The path is the input that exercises zones and file scoping.
 
 step qb40qq
 order 25
@@ -502,8 +472,8 @@ parent 734zq6
 author ai
 file xtask/src/lint.rs
 symbol ALL
-lines 0 17
-hash 816cda6706930346
+lines 0 16
+hash 542c7b3ea554382b
 note Every rule, in the order lint runs them.
 
 step qjtytc
@@ -515,16 +485,6 @@ symbol suppressions
 lines 0 32
 hash 588d454cc975ce4a
 note L10: allow is never used; expect needs a reason, and each lint it names must be listed for that file in arch.rs EXPECTS. Every suppression in the repo is therefore visible in one rulebook list the owner curates.
-
-step rngfnx
-order 46
-parent ptga7w
-author ai
-file xtask/src/lint/tests.rs
-symbol WORDS
-lines 0 38
-hash d2884e9c00ad5ad3
-note The fixtures' vocabulary: just the words the fixture code uses.
 
 step sg3sp8
 order 43
@@ -541,8 +501,8 @@ order 0
 author ai
 file xtask/src/gate.rs
 symbol lint_files
-lines 0 24
-hash 1cad981af1ddcc35
+lines 0 23
+hash 3032deded64cd834
 note The entry point both the gate and the post-tool hook call: parse every source, collect the workspace facts, lint the chosen files, one line per finding.
 
 step uatm6j
@@ -551,9 +511,9 @@ parent n9g4c3
 author ai
 file xtask/src/lint.rs
 symbol Workspace
-lines 0 4
-hash af292f90663dd511
-note What lint reads besides the file: the newtype names, the wire type names per crate, and the vocabulary.
+lines 0 3
+hash 8ef53c4b47d9e94a
+note What lint reads besides the file: the newtype names and the wire type names per crate.
 
 step v8n3jn
 order 30
@@ -605,16 +565,6 @@ lines 0 12
 hash 396ba453b60b8736
 note Runs every rule that applies to each file's zone and returns the findings sorted and deduplicated, so the report is stable across runs.
 
-step wh0vcj
-order 27
-parent ozrjrt
-author ai
-file xtask/src/lint/checks.rs
-symbol named_by_us
-lines 0 6
-hash 99dfaa7c1b25d076
-note The identifier nodes this code chose, outside test code. Shared with cargo xtask words.
-
 step y9mk0x
 order 3
 parent orc9vn
@@ -645,22 +595,12 @@ lines 0 12
 hash 14fde6c9283aabf7
 note file:line: code: the one way (what matched). The rule's sentence is in every line, so a finding read alone says how to fix it.
 
-step z8897k
-order 29
-parent 5gd1gj
-author ai
-file xtask/src/lint/checks.rs
-symbol defined_names
-lines 0 37
-hash 38036b94485a1adb
-note The name nodes an item, variant, field, parameter pattern or let pattern defines.
-
 step zbci01
 order 13
 parent 734zq6
 author ai
 file xtask/src/lint.rs
 symbol code
-lines 0 18
-hash 80218c2ae1726d88
+lines 0 17
+hash 1e508e7c5afa9f4a
 note The rule's code, printed in every finding.

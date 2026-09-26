@@ -251,13 +251,12 @@ const DEPENDENCIES: [Allowed; 16] = [
     },
 ];
 
-pub(crate) const RULEBOOK: [Guard; 8] = [
+pub(crate) const RULEBOOK: [Guard; 7] = [
     Guard::File(Literal::new("clippy.toml")),
     Guard::File(Literal::new("rustfmt.toml")),
     Guard::File(Literal::new(".gitattributes")),
     Guard::File(Literal::new(".cargo/config.toml")),
     Guard::File(Literal::new(".claude/settings.json")),
-    Guard::Tree(Literal::new(".claude/skills/")),
     Guard::Tree(Literal::new("api/io-")),
     Guard::File(Literal::new("CLAUDE.md")),
 ];

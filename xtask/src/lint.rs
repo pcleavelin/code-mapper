@@ -6,7 +6,6 @@ use std::fmt;
 use crate::arch;
 use crate::source::SourceFile;
 use crate::text::{CrateName, LineNumber, Message, RepoPath, RuleCode, TypeName};
-use crate::vocabulary::Vocabulary;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum Rule {
@@ -15,7 +14,6 @@ pub(crate) enum Rule {
     NewtypeField,
     Indexing,
     Absence,
-    Vocabulary,
     WireLeak,
     DomainIo,
     Suppression,
@@ -29,13 +27,12 @@ pub(crate) enum Rule {
 }
 
 impl Rule {
-    pub(crate) const ALL: [Self; 16] = [
+    pub(crate) const ALL: [Self; 15] = [
         Self::Comment,
         Self::Primitive,
         Self::NewtypeField,
         Self::Indexing,
         Self::Absence,
-        Self::Vocabulary,
         Self::WireLeak,
         Self::DomainIo,
         Self::Suppression,
@@ -55,7 +52,6 @@ impl Rule {
             Self::NewtypeField => "L3",
             Self::Indexing => "L4",
             Self::Absence => "L6",
-            Self::Vocabulary => "L7",
             Self::WireLeak => "L8",
             Self::DomainIo => "L9",
             Self::Suppression => "L10",
@@ -83,9 +79,6 @@ impl Rule {
                 "no indexing or slicing: read the collection through its interface (get, iter, a typed id)"
             }
             Self::Absence => "absence is Option: no \"\", -1 or MAX standing for none",
-            Self::Vocabulary => {
-                "identifiers are made of vocabulary.txt words: use the listed word, or add a new concept's word to vocabulary.txt"
-            }
             Self::WireLeak => {
                 "wire types stay inside their crate: convert to a domain type in convert.rs before it leaves"
             }
@@ -150,15 +143,11 @@ impl fmt::Display for Finding {
 pub(crate) struct Workspace {
     pub(crate) newtypes: BTreeSet<TypeName>,
     pub(crate) wire_types: BTreeMap<CrateName, BTreeSet<TypeName>>,
-    pub(crate) vocabulary: Vocabulary,
 }
 
 impl Workspace {
-    pub(crate) fn of(files: &[SourceFile], vocabulary: Vocabulary) -> Self {
-        let mut workspace = Self {
-            vocabulary,
-            ..Self::default()
-        };
+    pub(crate) fn of(files: &[SourceFile]) -> Self {
+        let mut workspace = Self::default();
         for file in files {
             checks::collect_types(file, &mut workspace);
         }

@@ -11,9 +11,9 @@ parent 7su02d
 author ai
 file xtask/src/gate.rs
 symbol rulebook
-lines 0 29
-hash 4c31af493bbbbab7
-note Lists the files the working copy changed against the parent revision (jj or git) and fails on any that is part of the rulebook. A whole guarded file or tree counts on any change; a Cargo.toml counts only when its guarded sections ([workspace*], [lints*], [*dependencies]) differ, since an agent may still bump a version or add a feature; vocabulary.txt counts only when its synonym lines differ, since an agent may add words but not decide which of two words is the canonical one. This is the back-stop for the pre-tool hook's guards, which a shell command can slip past. The message says to undo it and propose the change instead.
+lines 0 26
+hash 5f89d45cd54a4328
+note Lists the files the working copy changed against the parent revision (jj or git) and fails on any that is part of the rulebook. A whole guarded file or tree counts on any change; a Cargo.toml counts only when its guarded sections ([workspace*], [lints*], [*dependencies]) differ, since an agent may still bump a version or add a feature. This is the back-stop for the pre-tool hook's guards, which a shell command can slip past. The message says to undo it and propose the change instead.
 
 step 1hpban
 order 9
@@ -207,10 +207,10 @@ parent bk3rnn
 author ai
 file xtask/src/gate.rs
 symbol lint_files
-lines 0 24
-hash 1cad981af1ddcc35
+lines 0 23
+hash 3032deded64cd834
 link archlint
-note Loads vocabulary.txt and parses every Rust source, builds the workspace-wide facts (newtypes, wire types) from all of them, then lints the chosen files and joins the findings into one report, one finding per line. The whole workspace is parsed even for one file, because a rule like the wire-type leak needs to know types declared elsewhere.
+note Parses every Rust source, builds the workspace-wide facts (newtypes, wire types) from all of them, then lints the chosen files and joins the findings into one report, one finding per line. The whole workspace is parsed even for one file, because a rule like the wire-type leak needs to know types declared elsewhere.
 
 step o8x5ky
 order 3
@@ -221,17 +221,6 @@ symbol steps
 lines 1 6
 hash c028a5bc8b560d3a
 note rustfmt over the workspace in check mode: layout has one form, the default rustfmt.toml one. The post-tool hook formats every edited file, so this fails only on a file edited another way.
-
-step pt54q2
-order 18
-parent 0uqdxt
-author ai
-file xtask/src/vocabulary.rs
-symbol synonym_lines
-lines 0 6
-hash 1848149839fff353
-link vocabulary
-note The synonym lines of vocabulary.txt, compared before and after.
 
 step r06whu
 order 20

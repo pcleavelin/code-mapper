@@ -6,13 +6,23 @@ description: Finish any change to this repo before stopping or committing. Runs 
 # Finish a change
 
 The Stop hook runs the gate and blocks until it is green; commits are refused while it is red.
-This is the order that gets it green in one pass.
+A stop while background tasks are still running, and a subagent's stop, are not gated: the
+session's first stop with nothing in flight is. This is the order that gets it green in one pass.
 
 1. `cargo xtask gate`. It stops at the first failing step and prints what failed. Fix that,
    run it again. Each lint message states the rule and the one way to satisfy it; do not look
    for a way around a message, do what it says. If a rule itself looks wrong for the case,
    stop and use the `tripped` skill instead of working around it.
-2. The map. Build the binary once (`cargo build --release -p codemap`) and use
+2. Naming. Spawn one Sonnet subagent with the change (`jj diff --git`) and this brief: for each
+   name the diff introduces (types, variants, functions, fields, modules), find how the code
+   already names the same concept (`codemap . refs`, `api/*.api`, the glossary in design.md
+   section 4) and report only real inconsistencies: one concept under two names, one name for
+   two concepts, an abbreviation where the code spells the word out, a name that contradicts
+   the glossary. It suggests renames with the reason for each and edits nothing. Apply the
+   ones you agree with before the map step (a rename that reaches code outside the diff is a
+   `refactor`), and say in your reply which you declined and why. Skip this step when the diff
+   introduces no names.
+3. The map. Build the binary once (`cargo build --release -p codemap`) and use
    `target/release/codemap .` below.
    1. `stale` lists every step whose text changed. `repin` follows each one from the parent
       revision (after a rebase: `repin <pre-rebase commit>` from `jj evolog` / `git reflog`).
@@ -31,9 +41,9 @@ This is the order that gets it green in one pass.
       read the map until no conflict is left.
    8. `uncovered <crate dir>` for the crates you touched lists only what you judge trivial;
       the owner audits that judgement.
-3. `cargo xtask api` if a library crate's public items changed, and include the `api/` diff.
-4. If the change was meant to alter output, rebless: `CODEMAP_BLESS=1 cargo test --release
+4. `cargo xtask api` if a library crate's public items changed, and include the `api/` diff.
+5. If the change was meant to alter output, rebless: `CODEMAP_BLESS=1 cargo test --release
    --test cli` (and `--test gui` for GUI output), and read the golden diff before committing
    it. If it was meant not to, run the `refactor` skill's parity check instead.
-5. `cargo xtask gate` once more, then commit (`jj commit -m ...` or `git commit`). The
+6. `cargo xtask gate` once more, then commit (`jj commit -m ...` or `git commit`). The
    message says what changed and why, for someone who did not see the session.

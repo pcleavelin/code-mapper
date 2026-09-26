@@ -1,13 +1,14 @@
 ---
 name: tripped
-description: Use when you lost time in this repo - guessed which of two ways was current, redid work, hit a rule that did not fit the case, or were corrected by the owner. Turns the friction into a proposed check for the owner instead of a workaround.
+description: Use when you lost time in this repo - guessed which of two ways was current, redid work, hit a rule that did not fit the case, or were corrected by the owner. Turns the friction into a check, so the next session cannot trip the same way.
 ---
 
 # Turn friction into a check
 
-The rules live only in checks (`xtask/src/lint/checks.rs`, clippy's lint table in
-`Cargo.toml`, `clippy.toml`, `xtask/src/arch.rs`), and those are the owner's. You propose;
-the owner applies.
+The rules live only in checks: the lint rules in `xtask/src/lint/checks.rs`, the architecture
+tables in `xtask/src/arch.rs`, the skills in `.claude/skills/`, and clippy's configuration
+(`clippy.toml`, the lint table in `Cargo.toml`). You apply the first three yourself; clippy's
+configuration is the owner's, so a clippy change is a proposal.
 
 1. Say what happened in two sentences: what you did, what you expected, what it cost.
 2. Classify it:
@@ -16,9 +17,12 @@ the owner applies.
    - a rule rejected something it should allow: the exact code and the finding;
    - a rule allowed something that bit you: the code and what went wrong;
    - a step of a skill is missing or wrong.
-3. Propose the check: the one-way sentence its message will state, where it lives (a lint
-   rule in `xtask/src/lint/checks.rs`, a clippy lint, a type that makes the wrong shape
-   unwritable), and a passing and a failing fixture in the form of
-   `xtask/src/lint/tests.rs`. Write it as a patch in your reply; do not apply it.
-4. Go on with the task the one way the proposal names, without weakening or bypassing any
-   existing check.
+3. Make the check: the one-way sentence its message states, where it lives (a lint rule in
+   `xtask/src/lint/checks.rs`, a type that makes the wrong shape unwritable, a skill step), and
+   a passing and a failing fixture in `xtask/src/lint/tests.rs`. Apply it, convert every place
+   it finds, and keep `cargo xtask lint` output otherwise unchanged. For a clippy lint, write
+   the change as a patch in your reply instead.
+4. Tell the owner in your reply what you added and why: the rule's code, its one-way sentence,
+   and the places it converted. Never weaken or bypass an existing check to get past the
+   friction; a rule that is wrong is changed openly, with the reason, like any other check.
+5. Go on with the task the one way the check names.

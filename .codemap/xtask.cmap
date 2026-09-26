@@ -3,7 +3,7 @@ path xtask
 kind layer
 author ai
 group tooling
-note The xtask binary: the owner's rulebook as a program. cargo xtask is an alias in .cargo/config.toml that runs this crate with its own target directory, so the gate never waits on the workspace's build lock and a broken workspace build cannot break the tool that reports it. Five tasks: gate (the gate path), lint (archlint over the workspace or named files), api (record the API lock), words (identifier words missing from vocabulary.txt) and hook (the Claude Code hooks). The whole directory is rulebook: an agent may run every task but change none of them, which is what makes the rules binding on the agent that is being checked. A task answers with a Message on success or failure; main prints the first to stdout and the second to stderr and exits non-zero on failure, so a hook or a shell sees the verdict in the exit code.
+note The xtask binary: the owner's rulebook as a program. cargo xtask is an alias in .cargo/config.toml that runs this crate with its own target directory, so the gate never waits on the workspace's build lock and a broken workspace build cannot break the tool that reports it. Four tasks: gate (the gate path), lint (archlint over the workspace or named files), api (record the API lock) and hook (the Claude Code hooks). The whole directory is rulebook: an agent may run every task but change none of them, which is what makes the rules binding on the agent that is being checked. A task answers with a Message on success or failure; main prints the first to stdout and the second to stderr and exits non-zero on failure, so a hook or a shell sees the verdict in the exit code.
 
 step 1me7il
 order 1
@@ -11,8 +11,8 @@ parent 8n4pmn
 author ai
 file xtask/src/main.rs
 symbol parse
-lines 0 26
-hash e54a23318e9fb536
+lines 0 25
+hash eb98e342b2c6fc25
 note The argument grammar: the first word picks the task; gate takes --full (adds the CLI goldens) and --owner (skips the rulebook check, for the owner committing rulebook changes); hook takes its event name. Anything unrecognised is Usage.
 
 step 8n4pmn
@@ -41,20 +41,9 @@ parent f926wy
 author ai
 file xtask/src/main.rs
 symbol USAGE
-lines 0 7
-hash 655113730cbac4ee
+lines 0 6
+hash 265e4efafca1e2d2
 note The usage text printed for an unknown task; it names what each gate step checks in one line, so the list of checks is discoverable from the tool itself.
-
-step cmd3w1
-order 9
-parent f926wy
-author ai
-file xtask/src/words.rs
-symbol unknown
-lines 0 31
-hash 537fa972eb358cd9
-link vocabulary
-note words: the vocabulary report.
 
 step e1h4v9
 order 2
@@ -62,8 +51,8 @@ parent 1me7il
 author ai
 file xtask/src/main.rs
 symbol Task
-lines 0 7
-hash 0efca0d4cc67bfc8
+lines 0 6
+hash 51c6720f179e1f59
 note One variant per task, carrying its already-parsed arguments, so perform never looks at a string.
 
 step f860cd
@@ -83,9 +72,9 @@ parent 8n4pmn
 author ai
 file xtask/src/main.rs
 symbol perform
-lines 0 11
-hash a26f47b664df6aaf
-note Runs one task. Each arm maps the task's own result into the Message pair main prints: gate: green, archlint: clean, api: recorded, the words report, or nothing for a hook (whose output is the JSON it already printed).
+lines 0 10
+hash 01bb2b5b968ee636
+note Runs one task. Each arm maps the task's own result into the Message pair main prints: gate: green, archlint: clean, api: recorded, or nothing for a hook (whose output is the JSON it already printed).
 
 step j1bqii
 order 8
@@ -115,7 +104,7 @@ parent f926wy
 author ai
 file xtask/src/gate.rs
 symbol lint_files
-lines 0 24
-hash 1cad981af1ddcc35
+lines 0 23
+hash 3032deded64cd834
 link archlint
 note lint [file...]: the files named, or every source.

@@ -54,6 +54,7 @@ pub(crate) enum NodeKind {
     TupleStructPattern,
     FieldPattern,
     ReferencePattern,
+    ReferenceExpression,
     CapturedPattern,
     Arguments,
     MacroInvocation,
@@ -70,7 +71,7 @@ pub(crate) enum NodeKind {
 }
 
 impl NodeKind {
-    const ALL: [Self; 49] = [
+    const ALL: [Self; 50] = [
         Self::Struct,
         Self::Enum,
         Self::Function,
@@ -107,6 +108,7 @@ impl NodeKind {
         Self::TupleStructPattern,
         Self::FieldPattern,
         Self::ReferencePattern,
+        Self::ReferenceExpression,
         Self::CapturedPattern,
         Self::Arguments,
         Self::MacroInvocation,
@@ -160,6 +162,7 @@ impl NodeKind {
             Self::TupleStructPattern => "tuple_struct_pattern",
             Self::FieldPattern => "field_pattern",
             Self::ReferencePattern => "reference_pattern",
+            Self::ReferenceExpression => "reference_expression",
             Self::CapturedPattern => "captured_pattern",
             Self::Arguments => "arguments",
             Self::MacroInvocation => "macro_invocation",

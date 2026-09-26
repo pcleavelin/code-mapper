@@ -80,8 +80,8 @@ parent 006u4m
 author ai
 file crates/platform/src/script.rs
 symbol mods_from
-lines 0 7
-hash 172dbe19f2e686de
+lines 0 8
+hash 0c2e63c91270cf53
 note The modifiers named anywhere after a given word.
 
 step i1u3a4

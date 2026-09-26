@@ -11,8 +11,6 @@ mod state;
 mod terminal;
 mod text;
 mod vcs;
-mod vocabulary;
-mod words;
 
 use std::env;
 use std::process::ExitCode;
@@ -27,7 +25,6 @@ const USAGE: Literal = Literal::new(
   gate [--full] [--owner]   format, archlint, crate graph, API lock, rulebook, clippy, unit tests, codemap check; --full adds the CLI goldens
   lint [file...]            archlint over the workspace or the given files
   api                       record every library crate's public API in api/<crate>.api
-  words                     identifier words not in vocabulary.txt, with where they occur
   hook <event>              a Claude Code hook: pre-tool, post-tool, stop, session-start",
 );
 
@@ -36,7 +33,6 @@ enum Task {
     Gate(Depth, Ownership),
     Lint(Vec<RepoPath>),
     Api,
-    Words,
     Hook(Event),
     Usage,
 }
@@ -46,19 +42,17 @@ enum TaskKind {
     Gate,
     Lint,
     Api,
-    Words,
     Hook,
 }
 
 impl TaskKind {
-    const ALL: [Self; 5] = [Self::Gate, Self::Lint, Self::Api, Self::Words, Self::Hook];
+    const ALL: [Self; 4] = [Self::Gate, Self::Lint, Self::Api, Self::Hook];
 
     const fn name(self) -> Literal {
         match self {
             Self::Gate => Literal::new("gate"),
             Self::Lint => Literal::new("lint"),
             Self::Api => Literal::new("api"),
-            Self::Words => Literal::new("words"),
             Self::Hook => Literal::new("hook"),
         }
     }
@@ -70,17 +64,32 @@ impl TaskKind {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Flag {
+    Full,
+    Owner,
+}
+
+impl Flag {
+    const fn name(self) -> Literal {
+        match self {
+            Self::Full => Literal::new("--full"),
+            Self::Owner => Literal::new("--owner"),
+        }
+    }
+}
+
 impl Task {
     fn parse(words: &[Argument]) -> Self {
         let rest: Vec<&str> = words.iter().skip(1).map(Argument::as_str).collect();
         match words.first().and_then(TaskKind::named) {
             Some(TaskKind::Gate) => Self::Gate(
-                if rest.contains(&"--full") {
+                if rest.contains(&Flag::Full.name().as_str()) {
                     Depth::Full
                 } else {
                     Depth::Fast
                 },
-                if rest.contains(&"--owner") {
+                if rest.contains(&Flag::Owner.name().as_str()) {
                     Ownership::Owner
                 } else {
                     Ownership::Agent
@@ -90,7 +99,6 @@ impl Task {
                 Self::Lint(rest.iter().map(|path| RepoPath::new(path)).collect())
             }
             Some(TaskKind::Api) => Self::Api,
-            Some(TaskKind::Words) => Self::Words,
             Some(TaskKind::Hook) => words
                 .get(1)
                 .and_then(Event::parse)
@@ -107,7 +115,6 @@ fn perform(root: &Root, task: Task) -> Result<Message, Message> {
             .map_err(|failure| Message::new(failure.to_string())),
         Task::Lint(paths) => lint_files(root, &paths).map(|()| Message::new("archlint: clean")),
         Task::Api => api::record(root).map(|()| Message::new("api: recorded")),
-        Task::Words => words::unknown(root),
         Task::Hook(event) => hook::handle(root, event).map(|()| Message::default()),
         Task::Usage => Err(Message::new(USAGE.as_str())),
     }

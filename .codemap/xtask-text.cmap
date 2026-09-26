@@ -86,7 +86,7 @@ file xtask/src/text.rs
 symbol impl Count
 lines 0 10
 hash 4e0e6b4b099e89f4
-note A count, for repeats and the words report.
+note A count, for repeats.
 
 step zlgwij
 order 8

@@ -1,54 +1,13 @@
 use crate::lint::{Rule, Workspace, lint};
 use crate::source::{SourceFile, SourceText};
-use crate::text::{Content, RepoPath};
-use crate::vocabulary::Vocabulary;
-
-const WORDS: &str = "
-id
-key
-width
-gap
-ui
-line
-number
-get
-new
-count
-value
-span
-start
-end
-path
-text
-make
-read
-write
-store
-shape
-wire
-file
-test
-record
-rows
-first
-second
-item
-self
-main
-old
-here
-name
-point
-x
-y
-";
+use crate::text::RepoPath;
 
 fn rules_hit(files: &[(&str, &str)]) -> Vec<Rule> {
     let parsed: Vec<SourceFile> = files
         .iter()
         .map(|(path, text)| SourceFile::parse(RepoPath::new(path), SourceText::new(*text)).unwrap())
         .collect();
-    let workspace = Workspace::of(&parsed, Vocabulary::parse(&Content::new(WORDS)).unwrap());
+    let workspace = Workspace::of(&parsed);
     let mut rules: Vec<Rule> = lint(&workspace, &parsed)
         .into_iter()
         .map(|finding| finding.rule)
@@ -176,6 +135,8 @@ fn string_literals_are_not_compared() {
         found("let end = name.split_once(r\"x\");"),
         [Rule::Compared]
     );
+    assert_eq!(found("let end = rows.contains(&\"x\");"), [Rule::Compared]);
+    assert_eq!(found("if name == &\"x\" {}"), [Rule::Compared]);
     assert_eq!(
         found("let end = matches!(name, \"x\" | \"y\");"),
         [Rule::Compared]
@@ -190,30 +151,6 @@ fn string_literals_are_not_compared() {
     assert_eq!(found("let end = Key::new(\"x\");"), []);
     assert_eq!(found("match key { Key::X => \"x\", Key::Y => \"y\" };"), []);
     assert_eq!(strict("#[test]\nfn test() { if name == \"x\" {} }"), []);
-}
-
-#[test]
-fn vocabulary_words_and_synonyms() {
-    let files = [("crates/domain/src/line.rs", "fn get_line_number() {}")];
-    assert_eq!(rules_hit(&files), []);
-    assert_eq!(strict("fn fetch_line() {}"), [Rule::Vocabulary]);
-    assert_eq!(strict("fn get_lines(entries: Rows) {}"), [Rule::Vocabulary]);
-    assert_eq!(strict("fn get_lines(numbers: Rows) {}"), []);
-    let parsed = [SourceFile::parse(
-        RepoPath::new("crates/domain/src/line.rs"),
-        SourceText::new("fn get_idx() {}"),
-    )
-    .unwrap()];
-    let workspace = Workspace::of(
-        &parsed,
-        Vocabulary::parse(&Content::new("get\nidx -> index\nindex")).unwrap(),
-    );
-    let findings = lint(&workspace, &parsed);
-    assert!(
-        findings
-            .iter()
-            .any(|finding| finding.detail.as_str().contains("is written `index`"))
-    );
 }
 
 #[test]

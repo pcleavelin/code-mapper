@@ -174,9 +174,9 @@ order 0
 author ai
 file xtask/src/arch.rs
 symbol RULEBOOK
-lines 0 9
-hash 25db0d81dfcd0969
-note The owner-only files and trees: clippy.toml, rustfmt.toml, .gitattributes, .cargo/config.toml, .claude/settings.json, .claude/skills/, the io crates' API files and CLAUDE.md. The guarded sections of every Cargo.toml and the synonym lines of vocabulary.txt are rulebook too, checked by the gate separately.
+lines 0 8
+hash b3f1f4459cc3918c
+note The owner-only files and trees: clippy.toml, rustfmt.toml, .gitattributes, .cargo/config.toml, .claude/settings.json, the io crates' API files and CLAUDE.md. The guarded sections of every Cargo.toml are rulebook too, checked by the gate separately.
 
 step wnqjal
 order 6
