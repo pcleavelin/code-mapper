@@ -1,11 +1,11 @@
 pub(crate) mod checks;
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 use crate::arch;
 use crate::source::SourceFile;
-use crate::text::{LineNumber, Message, RepoPath, RuleCode, TypeName};
+use crate::text::{CrateName, LineNumber, Message, RepoPath, RuleCode, TypeName};
 use crate::vocabulary::Vocabulary;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -120,7 +120,7 @@ impl fmt::Display for Finding {
 #[derive(Debug, Default)]
 pub(crate) struct Workspace {
     pub(crate) newtypes: BTreeSet<TypeName>,
-    pub(crate) wire_types: BTreeSet<TypeName>,
+    pub(crate) wire_types: BTreeMap<CrateName, BTreeSet<TypeName>>,
     pub(crate) vocabulary: Vocabulary,
 }
 

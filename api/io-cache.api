@@ -1,0 +1,8 @@
+pub struct Cache(BTreeMap<RelativePath, SourceFile>);
+pub fn take(&mut self, path: &RelativePath) -> Option<SourceFile>
+pub fn is_empty(&self) -> bool
+pub fn files(&self) -> impl Iterator<Item = &SourceFile>
+pub struct CacheStore;
+pub fn location(root: &Root) -> PathBuf
+pub fn load(root: &Root) -> Option<Cache>
+pub fn save(index: &Index) -> io::Result<()>

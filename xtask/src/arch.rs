@@ -20,7 +20,7 @@ pub(crate) enum Guard {
     Tree(Literal),
 }
 
-const EXPECTS: [Allowance; 9] = [
+const EXPECTS: [Allowance; 10] = [
     Allowance {
         path: Literal::new("tests/common/mod.rs"),
         lint: Literal::new("dead_code"),
@@ -52,6 +52,10 @@ const EXPECTS: [Allowance; 9] = [
     Allowance {
         path: Literal::new("crates/gui/src/runtime.rs"),
         lint: Literal::new("clippy::disallowed_methods"),
+    },
+    Allowance {
+        path: Literal::new("crates/features/src/lib.rs"),
+        lint: Literal::new("clippy::too_many_lines"),
     },
     Allowance {
         path: Literal::new("crates/platform/src/gpu.rs"),

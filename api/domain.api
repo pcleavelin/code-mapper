@@ -1,0 +1,326 @@
+id::pub struct Position(usize);
+id::pub trait Key: Copy
+id::pub struct Entry<K, V> { pub id: K, pub item: V, }
+id::pub struct IdList<K, V> { items: Vec<V>, key: PhantomData<K>, }
+id::pub fn new() -> Self
+id::pub fn push(&mut self, item: V) -> K
+id::pub fn get(&self, id: K) -> Option<&V>
+id::pub fn get_mut(&mut self, id: K) -> Option<&mut V>
+id::pub fn is_empty(&self) -> bool
+id::pub fn iter(&self) -> impl Iterator<Item = &V>
+id::pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut V>
+id::pub fn ids(&self) -> impl Iterator<Item = K> + use<K, V>
+id::pub fn entries(&self) -> impl Iterator<Item = Entry<K, &V>>
+index::pub struct Root(PathBuf);
+index::pub fn new(path: &Path) -> Self
+index::pub fn as_path(&self) -> &Path
+index::pub fn join(&self, path: &RelativePath) -> PathBuf
+index::pub struct SymbolQuery { name: SymbolName, file: Option<Scope>, owner: Option<Scope>, }
+index::pub fn name(&self) -> &SymbolName
+index::pub struct TreeEntry { pub symbol: SymbolId, pub depth: Depth, }
+index::pub struct PendingBatch { pub language: Language, pub files: Vec<FileId>, }
+index::pub struct Index { root: Root, files: IdList<FileId, SourceFile>, }
+index::pub fn new(root: Root) -> Self
+index::pub fn root(&self) -> &Root
+index::pub fn push(&mut self, file: SourceFile) -> FileId
+index::pub fn file(&self, file: FileId) -> Option<&SourceFile>
+index::pub fn file_mut(&mut self, file: FileId) -> Option<&mut SourceFile>
+index::pub fn replace(&mut self, file: FileId, source: SourceFile) -> Option<SourceFile>
+index::pub fn files(&self) -> impl Iterator<Item = &SourceFile>
+index::pub fn files_mut(&mut self) -> impl Iterator<Item = &mut SourceFile>
+index::pub fn file_entries(&self) -> impl Iterator<Item = Entry<FileId, &SourceFile>>
+index::pub fn symbol_ids(&self) -> impl Iterator<Item = SymbolId>
+index::pub fn find_file(&self, path: &RelativePath) -> Option<FileId>
+index::pub fn symbol(&self, symbol: SymbolId) -> Option<&Symbol>
+index::pub fn symbol_mut(&mut self, symbol: SymbolId) -> Option<&mut Symbol>
+index::pub fn symbol_key(&self, symbol: SymbolId) -> Option<SymbolKey>
+index::pub fn by_key(&self, key: &SymbolKey) -> Option<SymbolId>
+index::pub fn by_line(&self, path: &RelativePath, line: Line) -> Option<SymbolId>
+index::pub fn symbol_at(&self, file: FileId, line: Line) -> Option<SymbolId>
+index::pub fn find_symbols(&self, query: &SymbolQuery) -> Vec<SymbolId>
+index::pub fn roots(&self) -> Vec<SymbolId>
+index::pub fn call_tree(&self, root: SymbolId, deepest: Depth) -> Vec<TreeEntry>
+index::pub fn call_site(&self, file: FileId, line: Line, name: &SymbolName) -> bool
+index::pub fn connect(&mut self, edges: &[Edge])
+index::pub fn symbols_only(&self) -> Self
+index::pub fn take_edges(&mut self, linked: &Self)
+index::pub fn pending(&self) -> Vec<PendingBatch>
+index::pub fn give_up(&mut self, language: Language)
+index::file::pub enum HighlightClass { Plain, Keyword, String, Comment, Function, Type, Constant, Property, }
+index::file::pub const ALL: [Self; 8] = [ Self::Plain, Self::Keyword, Self::String, Self::Comment, Self::Function, Self::Type, Self::Constant, Self::Property, ];
+index::file::pub const fn is_quoted(self) -> bool
+index::file::pub struct Highlight { pub start: ByteOffset, pub end: ByteOffset, pub class: HighlightClass, }
+index::file::pub enum Backend { TreeSitter, Server, }
+index::file::pub enum Readiness { Ready, Pending, }
+index::file::pub struct Imports(BTreeMap<String, String>);
+index::file::pub fn new() -> Self
+index::file::pub fn insert(&mut self, name: &str, module: &str)
+index::file::pub fn get(&self, name: &str) -> Option<&str>
+index::file::pub fn is_empty(&self) -> bool
+index::file::pub fn count(&self) -> usize
+index::file::pub fn iter(&self) -> impl Iterator<Item = (&str, &str)>
+index::file::pub struct SourceFile { path: RelativePath, text: FileText, highlights: Vec<Vec<Highlight>>, symbols: IdList<SymbolIndex, Symbol>, imports: Imports, hash: TextHash, backend: Backend, readiness: Readiness, }
+index::file::pub fn new( path: RelativePath, text: FileText, highlights: Vec<Vec<Highlight>>, symbols: Vec<Symbol>, imports: Imports, hash: TextHash, backend: Backend, ) -> Self
+index::file::pub fn path(&self) -> &RelativePath
+index::file::pub fn text(&self) -> &FileText
+index::file::pub fn highlights(&self) -> &[Vec<Highlight>]
+index::file::pub fn highlights_on(&self, line: Line) -> &[Highlight]
+index::file::pub fn symbols(&self) -> impl Iterator<Item = &Symbol>
+index::file::pub fn symbol_entries(&self) -> impl Iterator<Item = Entry<SymbolIndex, &Symbol>>
+index::file::pub fn symbol(&self, symbol: SymbolIndex) -> Option<&Symbol>
+index::file::pub fn symbol_mut(&mut self, symbol: SymbolIndex) -> Option<&mut Symbol>
+index::file::pub fn symbols_mut(&mut self) -> impl Iterator<Item = &mut Symbol>
+index::file::pub fn imports(&self) -> &Imports
+index::file::pub fn hash(&self) -> TextHash
+index::file::pub fn backend(&self) -> Backend
+index::file::pub fn readiness(&self) -> Readiness
+index::file::pub fn is_pending(&self) -> bool
+index::file::pub fn language(&self) -> Option<Language>
+index::file::pub fn set_text(&mut self, text: FileText)
+index::file::pub fn set_symbols(&mut self, symbols: Vec<Symbol>)
+index::file::pub fn set_backend(&mut self, backend: Backend)
+index::file::pub fn set_readiness(&mut self, readiness: Readiness)
+index::file::pub fn without_text(&self) -> Self
+index::file::pub fn innermost(&self, span: Span) -> Option<SymbolIndex>
+index::file::pub fn first_named(&self, name: &SymbolName) -> Option<SymbolIndex>
+index::file::pub fn call_site(&self, line: Line, name: &SymbolName) -> bool
+index::language::pub struct Extension(&'static str);
+index::language::pub const fn as_str(self) -> &'static str
+index::language::pub struct Program(&'static str);
+index::language::pub const fn as_str(self) -> &'static str
+index::language::pub struct Argument(&'static str);
+index::language::pub const fn as_str(self) -> &'static str
+index::language::pub enum Language { Rust, Odin, Clang, Python, Javascript, }
+index::language::pub const ALL: [Self; 5] = [ Self::Rust, Self::Odin, Self::Clang, Self::Python, Self::Javascript, ];
+index::language::pub const fn extensions(self) -> &'static [Extension]
+index::language::pub const fn program(self) -> Program
+index::language::pub const fn arguments(self) -> &'static [Argument]
+index::language::pub fn of(path: &RelativePath) -> Option<Self>
+index::symbol::pub struct FileId(Position);
+index::symbol::pub struct SymbolIndex(Position);
+index::symbol::pub struct SymbolId { file: FileId, symbol: SymbolIndex, }
+index::symbol::pub const fn file(self) -> FileId
+index::symbol::pub const fn symbol(self) -> SymbolIndex
+index::symbol::pub struct Depth(u32);
+index::symbol::pub const fn new(value: u32) -> Self
+index::symbol::pub const fn value(self) -> u32
+index::symbol::pub const fn deeper(self) -> Self
+index::symbol::pub struct SymbolName(String);
+index::symbol::pub fn new(name: &str) -> Self
+index::symbol::pub fn as_str(&self) -> &str
+index::symbol::pub struct SymbolKind(String);
+index::symbol::pub fn new(kind: &str) -> Self
+index::symbol::pub fn as_str(&self) -> &str
+index::symbol::pub fn contains(&self, word: &str) -> bool
+index::symbol::pub struct TypeName(String);
+index::symbol::pub fn new(name: &str) -> Self
+index::symbol::pub fn as_str(&self) -> &str
+index::symbol::pub struct Scope(String);
+index::symbol::pub fn new(name: &str) -> Self
+index::symbol::pub fn as_str(&self) -> &str
+index::symbol::pub enum Qualifier { Plain, SelfReference, Named(Scope), }
+index::symbol::pub struct Call { pub name: SymbolName, pub qualifier: Qualifier, }
+index::symbol::pub struct Location { pub file: RelativePath, pub line: Line, }
+index::symbol::pub struct SymbolKey { pub file: RelativePath, pub name: SymbolName, }
+index::symbol::pub struct Edge { pub from: SymbolId, pub to: SymbolId, }
+index::symbol::pub struct Symbol { name: SymbolName, kind: SymbolKind, span: Span, depth: Depth, owner: Option<TypeName>, calls: Vec<Call>, targets: Vec<Location>, references: Vec<Location>, callees: Vec<SymbolId>, callers: Vec<SymbolId>, }
+index::symbol::pub fn new( name: SymbolName, kind: SymbolKind, span: Span, depth: Depth, owner: Option<TypeName>, calls: Vec<Call>, ) -> Self
+index::symbol::pub fn name(&self) -> &SymbolName
+index::symbol::pub fn kind(&self) -> &SymbolKind
+index::symbol::pub fn span(&self) -> Span
+index::symbol::pub fn depth(&self) -> Depth
+index::symbol::pub fn owner(&self) -> Option<&TypeName>
+index::symbol::pub fn calls(&self) -> &[Call]
+index::symbol::pub fn targets(&self) -> &[Location]
+index::symbol::pub fn references(&self) -> &[Location]
+index::symbol::pub fn callees(&self) -> &[SymbolId]
+index::symbol::pub fn callers(&self) -> &[SymbolId]
+index::symbol::pub fn set_targets(&mut self, targets: Vec<Location>)
+index::symbol::pub fn set_references(&mut self, references: Vec<Location>)
+index::symbol::pub fn set_callees(&mut self, callees: Vec<SymbolId>)
+index::symbol::pub fn set_callers(&mut self, callers: Vec<SymbolId>)
+map::pub struct Changed;
+map::pub enum Row { Group { group: GroupName, depth: Depth, paths: PathCount, }, Path { name: PathName, depth: Depth, }, }
+map::pub struct Map { paths: Vec<Path>, }
+map::pub fn new(paths: Vec<Path>) -> Result<Self, MapError>
+map::pub fn paths(&self) -> &[Path]
+map::pub fn path(&self, name: &PathName) -> Option<&Path>
+map::pub fn step(&self, name: &PathName, step: &StepId) -> Option<&Step>
+map::pub fn add_path( &mut self, name: PathName, kind: PathKind, author: Author, ) -> Result<Changed, MapError>
+map::pub fn rename(&mut self, old: &PathName, new: PathName) -> Result<Changed, MapError>
+map::pub fn set_group( &mut self, name: &PathName, group: Option<GroupName>, ) -> Result<Changed, MapError>
+map::pub fn rename_group( &mut self, old: Option<&GroupName>, new: Option<&GroupName>, ) -> Result<PathCount, MapError>
+map::pub fn set_path_note( &mut self, name: &PathName, note: Option<Note>, ) -> Result<Changed, MapError>
+map::pub fn set_step_note( &mut self, name: &PathName, step: &StepId, note: Option<Note>, ) -> Result<Changed, MapError>
+map::pub fn edit_path_note( &mut self, name: &PathName, old: &TextFragment, new: &TextFragment, ) -> Result<Option<Note>, MapError>
+map::pub fn edit_step_note( &mut self, name: &PathName, step: &StepId, old: &TextFragment, new: &TextFragment, ) -> Result<Option<Note>, MapError>
+map::pub fn add_step( &mut self, index: &Index, name: &PathName, file: FileId, span: Span, author: Author, parent: Option<&StepId>, ) -> Result<StepId, MapError>
+map::pub fn pin( &mut self, index: &Index, name: &PathName, step: &StepId, file: FileId, span: Span, author: Author, ) -> Result<Changed, MapError>
+map::pub fn set_link( &mut self, name: &PathName, step: &StepId, target: Option<PathName>, ) -> Result<Changed, MapError>
+map::pub fn reparent( &mut self, name: &PathName, step: &StepId, parent: Option<&StepId>, ) -> Result<Changed, MapError>
+map::pub fn swap( &mut self, name: &PathName, one: &StepId, other: &StepId, ) -> Result<Changed, MapError>
+map::pub fn remove_step(&mut self, name: &PathName, step: &StepId) -> Result<Step, MapError>
+map::pub fn remove_path(&mut self, name: &PathName) -> Result<Path, MapError>
+map::pub fn promote( &mut self, index: &Index, root: SymbolId, depth: Depth, name: Option<PathName>, author: Author, ) -> Result<PathName, MapError>
+map::pub fn resolve_all(&mut self, index: &Index)
+map::pub fn rows(&self) -> Vec<Row>
+map::pub fn links_to(&self, target: &PathName) -> Vec<StepAddress>
+map::pub fn dangling_links(&self) -> Vec<StepAddress>
+map::pub fn covers(&self, file: &RelativePath, span: Span) -> bool
+map::pub fn diff(&self, base: &Self) -> Vec<PathDiff>
+map::diff::pub enum Change { Same, Added, Removed, Changed, }
+map::diff::pub enum StepChange { Added, Repinned, NoteEdited, Relinked, }
+map::diff::pub struct StepDiff { pub step: StepId, pub change: Option<StepChange>, }
+map::diff::pub struct PathDiff { name: PathName, change: Change, header: Header, steps: Vec<StepDiff>, removed: Vec<Step>, }
+map::diff::pub fn name(&self) -> &PathName
+map::diff::pub fn change(&self) -> Change
+map::diff::pub fn note_changed(&self) -> bool
+map::diff::pub fn steps(&self) -> &[StepDiff]
+map::diff::pub fn removed(&self) -> &[Step]
+map::error::pub struct InvalidName(String);
+map::error::pub fn new(name: &str) -> Self
+map::error::pub fn as_str(&self) -> &str
+map::error::pub struct StepAddress { pub path: PathName, pub step: StepId, }
+map::error::pub enum MapError { InvalidName(InvalidName), NameTaken(PathName), CaseClash { name: PathName, other: PathName, }, NoGroupGiven, NoSuchGroup(GroupName), NoSuchPath(PathName), NoSuchStep(StepAddress), NoSuchParent, NoSuchFile, NoSuchSymbol, OutsideFile, LinkToOwnPath, LinkedFrom { path: PathName, steps: Vec<StepAddress>, }, UnderItself, NoteLacks(TextFragment), SecondStep(StepAddress), UnknownParent { step: StepAddress, parent: StepId, }, }
+map::follow::pub struct Alignment(Vec<Option<usize>>);
+map::follow::pub fn between(old: &[SourceLine], new: &[SourceLine]) -> Self
+map::follow::pub fn get(&self, line: Line) -> Option<Line>
+map::follow::pub struct Followed { pub span: Span, pub kept: LineCount, pub alignment: Alignment, }
+map::follow::pub fn follow(old: &[SourceLine], slice: Span, new: &[SourceLine]) -> Option<Followed>
+map::name::pub struct PathName(String);
+map::name::pub fn new(name: &str) -> Result<Self, MapError>
+map::name::pub fn from_symbol(symbol: &SymbolName) -> Self
+map::name::pub fn as_str(&self) -> &str
+map::name::pub fn same_letters(&self, other: &Self) -> bool
+map::name::pub struct GroupName(String);
+map::name::pub fn new(group: &str) -> Option<Self>
+map::name::pub fn as_str(&self) -> &str
+map::name::pub fn last_segment(&self) -> &str
+map::name::pub struct Note(String);
+map::name::pub fn new(text: &str) -> Option<Self>
+map::name::pub fn as_str(&self) -> &str
+map::name::pub fn lines(&self) -> impl Iterator<Item = &str>
+map::name::pub struct TextFragment(String);
+map::name::pub fn new(text: &str) -> Self
+map::name::pub fn as_str(&self) -> &str
+map::name::pub enum PathKind { Flow, Layer, Type, }
+map::name::pub const ALL: [Self; 3] = [Self::Flow, Self::Layer, Self::Type];
+map::name::pub enum Author { Human, Agent, }
+map::name::pub struct PathCount(u32);
+map::name::pub const fn new(value: u32) -> Self
+map::name::pub const fn value(self) -> u32
+map::path::pub struct PlacedStep { pub step: StepId, pub depth: Depth, }
+map::path::pub struct StepNumber(Vec<u32>);
+map::path::pub fn parts(&self) -> &[u32]
+map::path::pub struct NumberedStep { pub step: StepId, pub depth: Depth, pub number: StepNumber, }
+map::path::pub enum ParentLabel { Symbol(SymbolName), Line { file: RelativePath, line: Line }, TopLevel, }
+map::path::pub struct Path { name: PathName, kind: PathKind, author: Author, group: Option<GroupName>, note: Option<Note>, steps: Vec<Step>, }
+map::path::pub fn new( name: PathName, kind: PathKind, author: Author, group: Option<GroupName>, note: Option<Note>, mut steps: Vec<Step>, ) -> Result<Self, MapError>
+map::path::pub fn name(&self) -> &PathName
+map::path::pub fn kind(&self) -> PathKind
+map::path::pub fn author(&self) -> Author
+map::path::pub fn group(&self) -> Option<&GroupName>
+map::path::pub fn note(&self) -> Option<&Note>
+map::path::pub fn steps(&self) -> &[Step]
+map::path::pub fn step(&self, id: &StepId) -> Option<&Step>
+map::path::pub fn tree_order(&self) -> Vec<PlacedStep>
+map::path::pub fn tree_order_by(&self, key: impl Fn(&Step, &Step) -> Option<Line>) -> Vec<PlacedStep>
+map::path::pub fn numbered(&self, index: &Index) -> Vec<NumberedStep>
+map::path::pub fn descendants(&self, id: &StepId) -> Vec<StepId>
+map::path::pub fn parent_label(&self, id: &StepId) -> Option<ParentLabel>
+map::step::pub struct StepId(String);
+map::step::pub fn new(id: &str) -> Option<Self>
+map::step::pub fn as_str(&self) -> &str
+map::step::pub struct StepOrder(u32);
+map::step::pub const fn new(value: u32) -> Self
+map::step::pub const fn value(self) -> u32
+map::step::pub const fn next(self) -> Self
+map::step::pub struct Anchor { file: RelativePath, symbol: Option<SymbolName>, start: LineOffset, end: LineOffset, hash: TextHash, }
+map::step::pub fn new( file: RelativePath, symbol: Option<SymbolName>, start: LineOffset, end: LineOffset, hash: TextHash, ) -> Self
+map::step::pub fn at(file: &SourceFile, span: Span) -> Option<Self>
+map::step::pub fn file(&self) -> &RelativePath
+map::step::pub fn symbol(&self) -> Option<&SymbolName>
+map::step::pub fn start(&self) -> LineOffset
+map::step::pub fn end(&self) -> LineOffset
+map::step::pub fn hash(&self) -> TextHash
+map::step::pub fn resolve(&self, index: &Index) -> Option<Resolution>
+map::step::pub enum Freshness { Current, Stale, }
+map::step::pub struct Resolution { pub span: Span, pub freshness: Freshness, pub symbol: Option<SymbolId>, }
+map::step::pub struct Step { id: StepId, order: StepOrder, parent: Option<StepId>, author: Author, anchor: Anchor, note: Option<Note>, link: Option<PathName>, resolution: Resolution, }
+map::step::pub fn new( id: StepId, order: StepOrder, parent: Option<StepId>, author: Author, anchor: Anchor, note: Option<Note>, link: Option<PathName>, ) -> Self
+map::step::pub fn id(&self) -> &StepId
+map::step::pub fn order(&self) -> StepOrder
+map::step::pub fn parent(&self) -> Option<&StepId>
+map::step::pub fn author(&self) -> Author
+map::step::pub fn anchor(&self) -> &Anchor
+map::step::pub fn file(&self) -> &RelativePath
+map::step::pub fn symbol(&self) -> Option<&SymbolName>
+map::step::pub fn note(&self) -> Option<&Note>
+map::step::pub fn link(&self) -> Option<&PathName>
+map::step::pub fn resolution(&self) -> Resolution
+map::step::pub fn span(&self) -> Span
+map::step::pub fn is_stale(&self) -> bool
+map::step::pub fn resolved_symbol(&self) -> Option<SymbolId>
+map::step::pub fn resolve(&mut self, index: &Index)
+text::pub struct Line(u32);
+text::pub const fn new(value: u32) -> Self
+text::pub const fn value(self) -> u32
+text::pub const fn number(self) -> u32
+text::pub fn next(self) -> Option<Self>
+text::pub fn previous(self) -> Option<Self>
+text::pub fn shifted(self, offset: LineOffset) -> Option<Self>
+text::pub fn offset_from(self, base: Self) -> Option<LineOffset>
+text::pub fn distance(self, other: Self) -> LineCount
+text::pub struct LineCount(u32);
+text::pub const fn new(value: u32) -> Self
+text::pub const fn value(self) -> u32
+text::pub const fn is_zero(self) -> bool
+text::pub fn last(self) -> Option<Line>
+text::pub struct LineOffset(i32);
+text::pub const fn new(value: i32) -> Self
+text::pub const fn value(self) -> i32
+text::pub const fn is_zero(self) -> bool
+text::pub struct Span { start: Line, end: Line, }
+text::pub fn new(start: Line, end: Line) -> Option<Self>
+text::pub const fn line(line: Line) -> Self
+text::pub const fn start(self) -> Line
+text::pub const fn end(self) -> Line
+text::pub fn contains(self, line: Line) -> bool
+text::pub fn encloses(self, inner: Self) -> bool
+text::pub fn overlaps(self, other: Self) -> bool
+text::pub fn lines(self) -> impl Iterator<Item = Line>
+text::pub fn count(self) -> LineCount
+text::pub struct Column(u32);
+text::pub const fn new(value: u32) -> Self
+text::pub const fn value(self) -> u32
+text::pub struct ByteOffset(u32);
+text::pub const fn new(value: u32) -> Self
+text::pub const fn value(self) -> u32
+text::pub struct TextHash(u64);
+text::pub const fn new(value: u64) -> Self
+text::pub const fn value(self) -> u64
+text::pub fn of(bytes: &[u8]) -> Self
+text::pub fn of_bytes(bytes: impl IntoIterator<Item = u8>) -> Self
+text::pub fn of_lines(lines: &[SourceLine]) -> Self
+text::pub struct SourceLine(String);
+text::pub fn new(text: &str) -> Self
+text::pub fn as_str(&self) -> &str
+text::pub fn trimmed(&self) -> &str
+text::pub struct FileText { lines: Vec<SourceLine>, whole: TextHash, }
+text::pub fn line(&self, line: Line) -> Option<&SourceLine>
+text::pub fn lines(&self, span: Span) -> Option<&[SourceLine]>
+text::pub fn all(&self) -> &[SourceLine]
+text::pub fn hash(&self, span: Span) -> Option<TextHash>
+text::pub fn count(&self) -> LineCount
+text::pub fn span(&self) -> Option<Span>
+text::pub fn whole_hash(&self) -> TextHash
+text::pub struct Revision(String);
+text::pub fn new(revision: &str) -> Self
+text::pub fn as_str(&self) -> &str
+text::pub struct RelativePath(String);
+text::pub fn new(path: &str) -> Self
+text::pub fn as_str(&self) -> &str
+text::pub fn stem(&self) -> &str
+text::pub fn directory(&self) -> Option<&str>
+text::pub fn extension(&self) -> Option<&str>
+text::pub fn ends_with(&self, suffix: &str) -> bool

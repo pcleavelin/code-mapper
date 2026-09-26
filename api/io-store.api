@@ -1,0 +1,2 @@
+pub fn write<Contents: AsRef<[u8]>>(path: &Path, contents: Contents) -> io::Result<()>
+pub fn remove(path: &Path) -> io::Result<()>

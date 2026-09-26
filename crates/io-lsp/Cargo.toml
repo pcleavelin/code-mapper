@@ -1,0 +1,13 @@
+[package]
+name = "io-lsp"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+domain = { path = "../domain" }
+io-process = { path = "../io-process" }
+serde_json = "1"
+
+[lints]
+workspace = true

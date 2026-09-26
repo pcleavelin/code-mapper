@@ -1,0 +1,12 @@
+[package]
+name = "io-source"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+domain = { path = "../domain" }
+ignore = "0.4"
+
+[lints]
+workspace = true

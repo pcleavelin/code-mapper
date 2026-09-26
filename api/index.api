@@ -1,0 +1,22 @@
+build::pub struct Indexed { pub index: Index, pub stamps: Stamps, }
+build::pub fn build(root: &Root) -> Indexed
+build::pub fn save_cache(index: &Index) -> io::Result<()>
+link::pub fn link(index: &mut Index)
+parse::pub struct Parsers { parser: Parser, compiled: BTreeMap<Grammar, Option<Compiled>>, }
+parse::pub fn parse(&mut self, path: RelativePath, contents: &Contents) -> SourceFile
+server::pub struct ServerFile { pub path: RelativePath, pub hash: TextHash, pub symbols: Vec<Symbol>, }
+server::pub struct FileVersion { pub path: RelativePath, pub hash: TextHash, }
+server::pub struct FileCount(usize);
+server::pub const fn new(count: usize) -> Self
+server::pub const fn value(self) -> usize
+server::pub enum ServerNotice { ToIndex { program: Program, files: FileCount }, Unavailable(StartError), }
+server::pub fn start_session(root: &Root, language: Language) -> Result<LspSession, StartError>
+server::pub fn versions(index: &Index, files: &[FileId]) -> Vec<FileVersion>
+server::pub fn apply(index: &mut Index, answer: ServerFile)
+server::pub fn index_files(session: &mut LspSession, files: &[FileVersion]) -> Vec<ServerFile>
+server::pub fn name_position(index: &Index, id: SymbolId) -> Option<DocumentPosition>
+server::pub struct Servers { root: Root, live: BTreeMap<Language, Option<LspSession>>, report: Box<dyn FnMut(&ServerNotice)>, }
+server::pub fn new(root: &Root, report: impl FnMut(&ServerNotice) + 'static) -> Self
+server::pub fn index(&mut self, index: &mut Index, paths: &[RelativePath])
+server::pub fn incoming_calls(&mut self, index: &Index, id: SymbolId) -> Option<Vec<Location>>
+server::pub fn references(&mut self, index: &Index, id: SymbolId) -> Option<Vec<Location>>

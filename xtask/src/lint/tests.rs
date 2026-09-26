@@ -84,6 +84,19 @@ fn primitives_in_signatures() {
 fn named_types_newtypes_tests_and_trait_impls_pass() {
     assert_eq!(strict("fn get(line: Line) -> Option<Span> { None }"), []);
     assert_eq!(strict("fn get() -> bool { true }"), []);
+    assert_eq!(strict("fn get(test: impl Fn(&Line) -> bool) {}"), []);
+    assert_eq!(
+        strict("fn get(test: impl Fn(u32) -> bool) {}"),
+        [Rule::Primitive]
+    );
+    assert_eq!(
+        strict("struct Line(u32);\nimpl Line { const FIRST: u32 = 0; }"),
+        []
+    );
+    assert_eq!(
+        strict("struct Span;\nimpl Span { const FIRST: u32 = 0; }"),
+        [Rule::Primitive]
+    );
     assert_eq!(
         strict(
             "struct Line(u32);\nimpl Line { fn get(self) -> u32 { self.0 } fn new(value: u32) -> Self { Self(value) } }"
@@ -184,6 +197,17 @@ fn wire_types_stay_in_their_crate() {
         ),
     ];
     assert_eq!(rules_hit(&private), []);
+    let elsewhere = [
+        (
+            "crates/io-map/src/wire.rs",
+            "pub struct Record { pub text: String }",
+        ),
+        (
+            "crates/index/src/lib.rs",
+            "pub struct Record;\npub fn read() -> Record { todo() }",
+        ),
+    ];
+    assert_eq!(rules_hit(&elsewhere), []);
 }
 
 #[test]
@@ -241,6 +265,12 @@ fn scenario_tests_come_from_their_table() {
 fn aliases_are_newtypes() {
     assert_eq!(strict("type Line = u32;"), [Rule::Alias]);
     assert_eq!(strict("type Span = Line;"), [Rule::Alias]);
+    assert_eq!(
+        strict(
+            "struct Line;\nimpl Add for Line { type Output = Self; fn add(self, other: Self) -> Self { self } }"
+        ),
+        []
+    );
 }
 
 #[test]

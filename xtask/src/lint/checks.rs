@@ -5,7 +5,7 @@ use crate::lint::{Finding, Rule, Workspace};
 use crate::source::{
     SourceFile, SourceText, ancestors, descendants, in_test_code, line_of, named_children, public,
 };
-use crate::text::{LintName, Literal, Message, TypeName, Word};
+use crate::text::{CrateName, LintName, Literal, Message, TypeName, Word};
 use crate::vocabulary::Verdict;
 
 const INTEGER_TYPES: [Literal; 12] = [
@@ -92,7 +92,11 @@ pub(super) fn collect_types(file: &SourceFile, workspace: &mut Workspace) {
         };
         let name = TypeName::new(file.text.of(name));
         if is_wire(file) {
-            workspace.wire_types.insert(name.clone());
+            workspace
+                .wire_types
+                .entry(package_of(file))
+                .or_default()
+                .insert(name.clone());
         }
         if newtype_field(node).is_some() {
             workspace.newtypes.insert(name);
@@ -105,9 +109,20 @@ pub(super) fn collect_types(file: &SourceFile, workspace: &mut Workspace) {
         {
             workspace
                 .wire_types
+                .entry(package_of(file))
+                .or_default()
                 .insert(TypeName::new(file.text.of(name)));
         }
     }
+}
+
+fn package_of(file: &SourceFile) -> CrateName {
+    let inside = file
+        .path
+        .as_str()
+        .strip_prefix("crates/")
+        .and_then(|rest| rest.split('/').next());
+    CrateName::new(inside.unwrap_or_default())
 }
 
 fn is_wire(file: &SourceFile) -> bool {
@@ -140,11 +155,22 @@ fn offenders<'tree>(annotation: Node<'tree>, text: &'tree SourceText) -> Vec<Nod
     descendants(annotation)
         .into_iter()
         .filter(|node| match node.kind() {
-            "primitive_type" | "tuple_type" => true,
+            "primitive_type" => !returned_by_closure_bound(*node, text),
+            "tuple_type" => true,
             "type_identifier" => text.of(*node) == "String",
             _ => false,
         })
         .collect()
+}
+
+fn returned_by_closure_bound(node: Node<'_>, text: &SourceText) -> bool {
+    text.of(node) == "bool"
+        && node.parent().is_some_and(|parent| {
+            parent.kind() == "function_type"
+                && parent
+                    .child_by_field_name("return_type")
+                    .is_some_and(|returned| returned.id() == node.id())
+        })
 }
 
 fn exempt_function(workspace: &Workspace, file: &SourceFile, function: Node<'_>) -> bool {
@@ -189,8 +215,13 @@ fn primitives(workspace: &Workspace, file: &SourceFile, report: &mut Report<'_>)
                     types.push(returned);
                 }
             }
-            "field_declaration" | "const_item" | "static_item" => {
+            "field_declaration" => {
                 types.extend(node.child_by_field_name("type"));
+            }
+            "const_item" | "static_item" => {
+                if !exempt_function(workspace, file, node) {
+                    types.extend(node.child_by_field_name("type"));
+                }
             }
             "ordered_field_declaration_list" => {
                 let newtype = node.parent().is_some_and(|item| {
@@ -280,10 +311,12 @@ pub(crate) fn named_by_us(file: &SourceFile) -> Vec<Node<'_>> {
 }
 
 fn chosen_names(node: Node<'_>) -> Vec<Node<'_>> {
-    let dictated = matches!(node.kind(), "parameter" | "function_item")
-        && ancestors(node)
-            .iter()
-            .any(|item| item.kind() == "impl_item" && item.child_by_field_name("trait").is_some());
+    let dictated = matches!(
+        node.kind(),
+        "parameter" | "function_item" | "type_item" | "const_item"
+    ) && ancestors(node)
+        .iter()
+        .any(|item| item.kind() == "impl_item" && item.child_by_field_name("trait").is_some());
     if dictated {
         Vec::new()
     } else {
@@ -363,7 +396,8 @@ fn wire_leaks(workspace: &Workspace, file: &SourceFile, report: &mut Report<'_>)
             if part.kind() == "type_identifier"
                 && workspace
                     .wire_types
-                    .contains(&TypeName::new(file.text.of(part)))
+                    .get(&package_of(file))
+                    .is_some_and(|names| names.contains(&TypeName::new(file.text.of(part))))
             {
                 report.add(part, format!("`{}` is a wire type", file.text.of(part)));
             }
@@ -443,7 +477,10 @@ fn test_registry(file: &SourceFile, report: &mut Report<'_>) {
 
 fn aliases(file: &SourceFile, report: &mut Report<'_>) {
     for node in file.nodes() {
-        if node.kind() == "type_item" && !in_test_code(node, &file.text) {
+        let associated = ancestors(node)
+            .iter()
+            .any(|item| matches!(item.kind(), "impl_item" | "trait_item"));
+        if node.kind() == "type_item" && !associated && !in_test_code(node, &file.text) {
             report.add(node, format!("`{}`", file.text.of(node)));
         }
     }

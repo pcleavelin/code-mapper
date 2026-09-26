@@ -1,0 +1,212 @@
+canvas::pub trait Measure
+canvas::pub enum Command { Clip(Rect), Fill { rect: Rect, color: Color, }, Quad { corners: [Vector; 4], color: Color, }, Circle { center: Vector, radius: Coordinate, color: Color, }, Text { at: Point, size: FontSize, text: Label, color: Color, }, Grid { at: Point, size: FontSize, grid: Rc<Grid>, }, }
+canvas::pub struct DrawList { commands: Vec<Command>, }
+canvas::pub fn commands(&self) -> impl Iterator<Item = &Command>
+canvas::pub fn is_empty(&self) -> bool
+canvas::pub struct Canvas<'frame> { list: DrawList, screen: Rect, clips: Vec<Rect>, measure: &'frame mut dyn Measure, }
+canvas::pub fn new(screen: Extent, measure: &'frame mut dyn Measure) -> Self
+canvas::pub fn finish(self) -> DrawList
+canvas::pub fn cell(&mut self, size: FontSize) -> Extent
+canvas::pub fn clip(&self) -> Rect
+canvas::pub fn push_clip(&mut self, rect: Rect)
+canvas::pub fn pop_clip(&mut self)
+canvas::pub fn rect(&mut self, rect: Rect, color: Color)
+canvas::pub fn outline(&mut self, rect: Rect, width: Px, color: Color)
+canvas::pub fn line(&mut self, from: Vector, to: Vector, width: Coordinate, color: Color)
+canvas::pub fn curve(&mut self, points: [Vector; 4], width: Coordinate, color: Color)
+canvas::pub fn circle(&mut self, center: Vector, radius: Coordinate, color: Color)
+canvas::pub fn text(&mut self, at: Point, size: FontSize, text: impl Into<Label>, color: Color) -> Px
+canvas::pub fn grid(&mut self, at: Point, size: FontSize, grid: &Rc<Grid>)
+color::pub struct Color([u8; 4]);
+color::pub const TRANSPARENT: Self = Self([0; 4]);
+color::pub const fn rgba(red: u8, green: u8, blue: u8, alpha: u8) -> Self
+color::pub const fn channels(self) -> [u8; 4]
+color::pub const fn red(self) -> u8
+color::pub const fn green(self) -> u8
+color::pub const fn blue(self) -> u8
+color::pub const fn alpha(self) -> u8
+color::pub const fn with_alpha(self, alpha: u8) -> Self
+color::pub const fn is_invisible(self) -> bool
+geometry::pub struct Px(i32);
+geometry::pub const ZERO: Self = Self(0);
+geometry::pub const fn new(value: i32) -> Self
+geometry::pub const fn get(self) -> i32
+geometry::pub fn of_count(count: usize) -> Self
+geometry::pub fn wide(self) -> i64
+geometry::pub fn of_wide(value: i64) -> Self
+geometry::pub fn float(self) -> f32
+geometry::pub fn unsigned(self) -> u32
+geometry::pub const fn absolute(self) -> Self
+geometry::pub const fn ratio(self, divisor: Self) -> i32
+geometry::pub struct Count(usize);
+geometry::pub const ZERO: Self = Self(0);
+geometry::pub const fn new(value: usize) -> Self
+geometry::pub const fn get(self) -> usize
+geometry::pub fn of_px(value: Px) -> Self
+geometry::pub struct Point { pub horizontal: Px, pub vertical: Px, }
+geometry::pub const fn new(horizontal: Px, vertical: Px) -> Self
+geometry::pub const fn along(self, axis: Axis) -> Px
+geometry::pub const fn with(self, axis: Axis, value: Px) -> Self
+geometry::pub struct Extent { pub width: Px, pub height: Px, }
+geometry::pub const fn new(width: Px, height: Px) -> Self
+geometry::pub const fn along(self, axis: Axis) -> Px
+geometry::pub const fn with(self, axis: Axis, value: Px) -> Self
+geometry::pub enum Axis { Horizontal, Vertical, }
+geometry::pub const BOTH: [Self; 2] = [Self::Horizontal, Self::Vertical];
+geometry::pub const fn other(self) -> Self
+geometry::pub struct Rect { pub left: Px, pub top: Px, pub width: Px, pub height: Px, }
+geometry::pub const fn new(left: Px, top: Px, width: Px, height: Px) -> Self
+geometry::pub const fn at(origin: Point, extent: Extent) -> Self
+geometry::pub const fn origin(self) -> Point
+geometry::pub const fn extent(self) -> Extent
+geometry::pub fn right(self) -> Px
+geometry::pub fn bottom(self) -> Px
+geometry::pub fn center(self) -> Point
+geometry::pub fn contains(self, point: Point) -> bool
+geometry::pub fn intersect(self, other: Self) -> Self
+geometry::pub fn shrink(self, amount: Px) -> Self
+geometry::pub fn is_empty(self) -> bool
+geometry::pub struct Coordinate(f32);
+geometry::pub const ZERO: Self = Self(0.0);
+geometry::pub const fn new(value: f32) -> Self
+geometry::pub const fn get(self) -> f32
+geometry::pub fn of_px(value: Px) -> Self
+geometry::pub fn of_integer(value: i32) -> Self
+geometry::pub fn narrow(value: f64) -> Self
+geometry::pub fn truncate(self) -> Px
+geometry::pub fn truncate_wide(value: f64) -> Px
+geometry::pub struct Vector { pub horizontal: Coordinate, pub vertical: Coordinate, }
+geometry::pub const ZERO: Self = Self::new(Coordinate::ZERO, Coordinate::ZERO);
+geometry::pub const fn new(horizontal: Coordinate, vertical: Coordinate) -> Self
+geometry::pub fn of_point(point: Point) -> Self
+geometry::pub struct Scale(f64);
+geometry::pub const ONE: Self = Self(1.0);
+geometry::pub const fn new(value: f64) -> Self
+geometry::pub const fn get(self) -> f64
+geometry::pub struct FontSize(u32);
+geometry::pub const fn new(value: u32) -> Self
+geometry::pub const fn get(self) -> u32
+geometry::pub fn scaled(base: u32, scale: Scale, minimum: u32) -> Self
+geometry::pub fn float(self) -> f32
+id::pub struct Id(u64);
+id::pub fn new(name: &str) -> Self
+id::pub fn with(self, suffix: &str) -> Self
+id::pub fn nth(self, number: usize) -> Self
+id::pub fn from_name(name: &str) -> Self
+id::pub const fn get(self) -> u64
+input::pub struct Mods(u8);
+input::pub const NONE: Self = Self(0);
+input::pub const CTRL: Self = Self(1);
+input::pub const SHIFT: Self = Self(2);
+input::pub const ALT: Self = Self(4);
+input::pub fn new(ctrl: bool, shift: bool, alt: bool) -> Self
+input::pub const fn with(self, other: Self) -> Self
+input::pub const fn ctrl(self) -> bool
+input::pub const fn shift(self) -> bool
+input::pub const fn alt(self) -> bool
+input::pub const fn same_ctrl_alt(self, other: Self) -> bool
+input::pub struct Glyph(char);
+input::pub const SPACE: Self = Self(' ');
+input::pub const fn new(value: char) -> Self
+input::pub const fn get(self) -> char
+input::pub enum Key { Enter, Escape, Backspace, Remove, Left, Right, Up, Down, Home, End, Character(Glyph), }
+input::pub struct Press { pub key: Key, pub mods: Mods, }
+input::pub enum Button { Left, Right, Middle, Back, Forward, }
+input::pub struct Buttons(u8);
+input::pub const NONE: Self = Self(0);
+input::pub const fn contains(self, button: Button) -> bool
+input::pub const fn insert(&mut self, button: Button)
+input::pub const fn remove(&mut self, button: Button)
+input::pub struct Clicks([u8; 3]);
+input::pub fn count(self, button: Button) -> u8
+input::pub fn set(&mut self, button: Button, count: u8)
+input::pub fn is_double(self, button: Button) -> bool
+input::pub struct Pointer { pub mouse: Point, pub pressed: Buttons, pub down: Buttons, pub clicks: Clicks, pub wheel: Vector, pub mods: Mods, }
+input::pub struct Typed(String);
+input::pub fn as_str(&self) -> &str
+input::pub fn is_empty(&self) -> bool
+input::pub fn push_str(&mut self, text: &str)
+input::pub fn push(&mut self, character: char)
+input::pub fn clear(&mut self)
+input::pub struct Input { pub pointer: Pointer, pub keys: Vec<Press>, pub typed: Typed, pub size: Extent, pub time: Duration, }
+input::pub fn end_frame(&mut self)
+input::pub fn pressed_key(&self, key: Key, mods: Mods) -> bool
+layout::pub enum Size { Exact(Px), Fit, Grow, }
+layout::pub enum Direction { Row, Column, }
+layout::pub const fn main(self) -> Axis
+layout::pub enum Align { Start, Center, }
+layout::pub struct Layout { pub direction: Direction, pub width: Size, pub height: Size, pub floating: Option<Point>, pub padding: Px, pub gap: Px, pub cross: Align, pub scroll: Option<Point>, }
+layout::pub const fn row() -> Self
+layout::pub const fn column() -> Self
+layout::pub const fn size_along(self, axis: Axis) -> Size
+layout::pub const fn clips(self) -> bool
+layout::pub const fn scroll_offset(self) -> Point
+layout::pub const fn size(mut self, width: Size, height: Size) -> Self
+layout::pub const fn grow(self) -> Self
+layout::pub const fn grow_width(mut self) -> Self
+layout::pub const fn grow_height(mut self) -> Self
+layout::pub const fn width(mut self, width: Px) -> Self
+layout::pub const fn height(mut self, height: Px) -> Self
+layout::pub const fn padding(mut self, padding: Px) -> Self
+layout::pub const fn gap(mut self, gap: Px) -> Self
+layout::pub const fn cross(mut self, align: Align) -> Self
+layout::pub const fn scroll(mut self, offset: Point) -> Self
+layout::pub const fn floating(mut self, at: Point) -> Self
+layout::pub struct Sides(u8);
+layout::pub const NONE: Self = Self(0);
+layout::pub const LEFT: Self = Self(1);
+layout::pub const RIGHT: Self = Self(2);
+layout::pub const TOP: Self = Self(4);
+layout::pub const BOTTOM: Self = Self(8);
+layout::pub const ALL: Self = Self(15);
+layout::pub const fn with(self, other: Self) -> Self
+layout::pub const fn contains(self, side: Self) -> bool
+layout::pub struct Style { pub background: Option<Color>, pub border: Sides, pub border_color: Color, }
+layout::pub const NONE: Self = Self { background: None, border: Sides::NONE, border_color: Color::TRANSPARENT, };
+layout::pub const fn background(color: Color) -> Self
+layout::pub const fn border(mut self, sides: Sides, color: Color) -> Self
+text::pub struct Label(String);
+text::pub fn new(text: impl Into<String>) -> Self
+text::pub fn as_str(&self) -> &str
+text::pub fn columns(&self) -> usize
+text::pub fn wrap(&self, columns: usize) -> Vec<Self>
+text::pub struct Run { pub text: Label, pub color: Color, }
+text::pub fn new(text: impl Into<Label>, color: Color) -> Self
+text::pub enum Wrap { None, Words, }
+text::pub struct Text { pub runs: Vec<Run>, pub size: FontSize, pub wrap: Wrap, }
+text::pub struct Cell { pub glyph: Glyph, pub color: Color, }
+text::pub struct Grid { columns: Count, rows: Count, cells: Vec<Option<Cell>>, }
+text::pub fn new(columns: Count, rows: Count) -> Self
+text::pub const fn columns(&self) -> Count
+text::pub const fn rows(&self) -> Count
+text::pub fn set(&mut self, column: Count, row: Count, cell: Cell)
+text::pub fn row(&self, row: Count) -> impl Iterator<Item = Option<Cell>> + '_
+tree::pub trait Draw
+tree::pub enum Kind { None, Text(Text), Custom(Box<dyn Draw>), }
+tree::pub struct Scrollbar { pub track: Rect, pub thumb: Rect, }
+tree::pub const WIDTH: Px = Px::new(8);
+tree::pub fn of(rect: Rect, content_height: Px, scroll: Px) -> Option<Self>
+tree::pub struct Placement { pub rect: Rect, pub clip: Rect, pub content: Extent, }
+tree::pub struct Interaction { signals: Signals, drag: Option<Point>, wheel: Vector, rect: Option<Rect>, }
+tree::pub const fn hovered(self) -> bool
+tree::pub const fn clicked(self) -> bool
+tree::pub const fn double_clicked(self) -> bool
+tree::pub const fn down(self) -> bool
+tree::pub const fn drag(self) -> Option<Point>
+tree::pub const fn wheel(self) -> Vector
+tree::pub const fn rect(self) -> Option<Rect>
+tree::pub struct Ui { roots: Vec<Element>, stack: Vec<Element>, previous: BTreeMap<Id, Placement>, hot: Option<Id>, active: Option<Id>, last_mouse: Point, scroll_drag: Option<ScrollGrab>, pointer: Pointer, size: Extent, }
+tree::pub fn begin(&mut self, input: &Input)
+tree::pub const fn hot(&self) -> Option<Id>
+tree::pub const fn active(&self) -> Option<Id>
+tree::pub const fn pointer(&self) -> Pointer
+tree::pub const fn size(&self) -> Extent
+tree::pub fn interaction(&self, id: Id) -> Interaction
+tree::pub fn open( &mut self, kind: Kind, layout: Layout, style: Style, id: Option<Id>, ) -> Interaction
+tree::pub fn close(&mut self)
+tree::pub fn leaf( &mut self, kind: Kind, layout: Layout, style: Style, id: Option<Id>, ) -> Interaction
+tree::pub const fn dragging(&self) -> bool
+tree::pub fn placement(&self, id: Id) -> Option<Placement>
+tree::pub fn scroll_by_wheel(&mut self, id: Id, offset: &mut Px) -> Px
+tree::pub fn end(&mut self, measure: &mut dyn Measure)
+tree::pub fn draw(&mut self, measure: &mut dyn Measure, text_color: Color) -> DrawList

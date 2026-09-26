@@ -1,0 +1,11 @@
+pub enum VcsKind { Jj, Git, }
+pub struct RevisionText(String);
+pub fn as_str(&self) -> &str
+pub enum VcsError { NoRepository, UnreadableRoot(io::Error), Process(ProcessError), Failure { program: Program, status: ExitStatus, stderr: Captured, }, NoMapFiles { directory: RelativePath, revision: Revision, }, }
+pub struct Vcs { kind: VcsKind, root: Root, }
+pub fn detect(root: &Root) -> Result<Self, VcsError>
+pub fn kind(&self) -> VcsKind
+pub fn program(&self) -> Program
+pub fn parent(&self) -> Revision
+pub fn file_at(&self, revision: &Revision, file: &RelativePath) -> Result<FileText, VcsError>
+pub fn map_at( &self, revision: &Revision, directory: &RelativePath, ) -> Result<RevisionText, VcsError>

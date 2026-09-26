@@ -1,0 +1,15 @@
+pub struct Contents(String);
+pub fn new(raw: &str) -> Self
+pub fn as_str(&self) -> &str
+pub fn text(&self) -> FileText
+pub fn hash(&self) -> TextHash
+pub struct Modified(SystemTime);
+pub fn of(path: &Path) -> Option<Self>
+pub struct Stamp { pub path: RelativePath, pub modified: Option<Modified>, }
+pub struct Stamps(Vec<Stamp>);
+pub fn new(stamps: Vec<Stamp>) -> Self
+pub fn iter(&self) -> impl Iterator<Item = &Stamp>
+pub fn changed(&self, root: &Root) -> bool
+pub struct SourceRead { pub path: RelativePath, pub contents: Contents, pub modified: Option<Modified>, }
+pub fn walk(root: &Root) -> Vec<SourceRead>
+pub fn read_outside(path: &Path) -> Contents

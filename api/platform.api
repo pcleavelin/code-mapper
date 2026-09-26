@@ -1,0 +1,21 @@
+error::pub struct Reason(&'static str);
+error::pub enum StartError { EventLoop(EventLoopError), Window(OsError), Surface(CreateSurfaceError), Adapter(RequestAdapterError), Device(RequestDeviceError), SurfaceConfiguration, Font(Reason), }
+renderer::pub struct Renderer { pub(crate) window: Arc<Window>, pub(crate) surface: Surface<'static>, pub(crate) device: Device, pub(crate) queue: Queue, pub(crate) config: SurfaceConfiguration, pub(crate) pipeline: Pipeline, pub(crate) bind_group: BindGroup, sampler: Sampler, pub(crate) uniforms: Buffer, pub(crate) texture: Texture, pub(crate) vertex_buffer: Option<GpuBuffer>, pub(crate) index_buffer: Option<GpuBuffer>, font: Font, pub(crate) atlas: Atlas, pub(crate) vertices: Vec<Vertex>, pub(crate) indices: Indices, pub(crate) batches: Vec<Batch>, clip: Rect, pub(crate) size: Extent, pub(crate) scale: Scale, pub(crate) shot: Option<PathBuf>, }
+renderer::pub const fn scale(&self) -> Scale
+renderer::pub const fn size(&self) -> Extent
+renderer::pub fn shoot(&mut self, path: PathBuf)
+script::pub struct ScriptLine(String);
+script::pub fn new(text: impl Into<String>) -> Self
+script::pub fn as_str(&self) -> &str
+script::pub fn words(&self) -> Vec<&str>
+script::pub fn word(&self, index: usize) -> Option<&str>
+script::pub fn number(&self, index: usize) -> i32
+script::pub fn rest(&self, from: usize) -> String
+script::pub fn contains_word(&self, wanted: &str) -> bool
+script::pub enum Outcome { Done, Retry, }
+window::pub enum Exit { Stay, Quit, }
+window::pub struct Frame { pub redraw_after: Duration, pub exit: Exit, pub clear: Color, pub cursor: CursorIcon, pub drawing: DrawList, }
+window::pub trait App
+window::pub struct Title(String);
+window::pub fn new(text: impl Into<String>) -> Self
+window::pub fn run<Application: App>(title: Title, app: Application) -> Result<(), StartError>

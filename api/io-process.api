@@ -1,0 +1,18 @@
+pub struct Program(String);
+pub fn new(name: &str) -> Self
+pub fn as_str(&self) -> &str
+pub fn find_on_path(&self) -> Option<PathBuf>
+pub struct Argument(String);
+pub fn new(argument: &str) -> Self
+pub fn as_str(&self) -> &str
+pub struct Captured(Vec<u8>);
+pub fn as_bytes(&self) -> &[u8]
+pub fn is_empty(&self) -> bool
+pub fn text(&self) -> String
+pub struct Output { pub status: ExitStatus, pub stdout: Captured, pub stderr: Captured, }
+pub fn success(&self) -> bool
+pub struct Spawned { pub child: Child, pub input: ChildStdin, pub output: ChildStdout, }
+pub enum ProcessError { Missing(Program), Start { program: Program, error: io::Error }, NoPipe(Program), }
+pub struct Process;
+pub fn run( program: &Program, arguments: &[Argument], directory: &Path, ) -> Result<Output, ProcessError>
+pub fn spawn( program: &Program, arguments: &[Argument], directory: &Path, ) -> Result<Spawned, ProcessError>
