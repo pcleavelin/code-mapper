@@ -19,8 +19,8 @@ order 11
 author ai
 file src/gui/mod.rs
 symbol App
-lines 42 42
-hash 3dc0f54cfac34c02
+lines 41 41
+hash 1a468725c58af1f2
 note The five fields live in one array on the App, indexed by Which: a field is named by its enum, and focus and the 'is any field focused' check walk the array in one loop.
 
 step 2yp2r2
@@ -47,7 +47,7 @@ author ai
 file src/gui/widgets.rs
 symbol field
 lines 0 19
-hash 674366e5662fd3ee
+hash 17ed28543179572a
 note A text field: a fixed-width box that clips its text and scrolls it sideways so the caret stays visible; clicking takes the keyboard from the other fields.
 
 step aidqqn
@@ -95,7 +95,7 @@ file src/gui/mod.rs
 symbol Which
 lines 0 6
 hash 0beb72b11528388a
-note The five fields: search, new path, the command line, the symbol filter and go-to-line. A variant's value is its index in App::fields.
+note The five fields: search, new path, the command line, the symbol filter and go-to-line. A variant's value is its index in App::fields, and Which::name is its element id suffix, so a script names a field as field@<name>.
 
 step kn1cnd
 order 17
@@ -112,9 +112,9 @@ order 15
 author ai
 file src/gui/widgets.rs
 symbol code_block
-lines 0 74
-hash bfa50cf0aa43d2b6
-note The one code element in the GUI: a block of lines drawn from a cached grid by a custom element, with the hover, jump and peek gestures resolved to (line, column) from the pointer. Per-row backgrounds and bars come from two closures, so the listing's selection and anchor bars and the document's slice highlight all share it.
+lines 0 73
+hash 0fd7d1d58264ce86
+note The one code element in the GUI: a block of lines drawn from a cached grid by a custom element, with the hover, jump and peek gestures resolved to (line, column) from the pointer. Per-row backgrounds and bars come from two closures, so the listing's selection and anchor bars and the document's slice highlight all share it. wide makes the block take the full width rather than the grid's. It returns the interaction and, under the pointer, the line and the text column, the column being None over the gutter. Shift+wheel over a block whose lines are wider than it scrolls it sideways, and while it is scrolled a thin weak bar on its left edge shows that the start of the lines is cut off.
 
 step pwtsq2
 order 18
@@ -150,7 +150,7 @@ file src/gui/widgets.rs
 symbol scroll_open
 lines 0 6
 hash a215967502c0fff3
-note Opens a scrolling column and remembers its offset by id on the App. The tree clamps the offset against what the column showed last frame, so a panel that shrank cannot stay scrolled past its end.
+note Opens a scrolling column and remembers its offset by id on the App; the wheel moves it and the caller closes it with ui.close(). The tree clamps the offset against what the column showed last frame, so a panel that shrank cannot stay scrolled past its end.
 
 step tstdq3
 order 8
@@ -159,8 +159,8 @@ author ai
 file src/gui/widgets.rs
 symbol handle
 lines 0 93
-hash 0699c88cf608a250
-note The keys a field understands: editing, home and end, up and down through the history, enter to submit (a field that keeps its text selects it all so the next entry replaces it), ctrl+a to select all, ctrl+u to clear, escape to drop focus. Left and right with ctrl or alt are left to the app.
+hash a314363340775bd3
+note The keys a field understands: editing, home and end, up and down through the history, enter to submit (a field that keeps its text selects it all so the next entry replaces it), ctrl+a to select all, ctrl+u to clear, escape to drop focus. Returns the line when enter was pressed. Left and right with ctrl or alt are left to the app.
 
 step ug0bcn
 order 9
@@ -179,8 +179,8 @@ author ai
 file src/gui/widgets.rs
 symbol Field
 lines 0 7
-hash 0698e50c8467b288
-note The one widget with state: the text, the caret in characters, whether it has the keyboard, and a submitted-line history. Five of these live on the App and are named by the enum below.
+hash c24659eee4c6258d
+note The one widget with state: the text, the caret in characters, whether it has the keyboard, whether the whole text is selected so the next character typed replaces it, and a submitted-line history. Five of these live on the App and are named by the enum below.
 
 step v1qf6b
 order 3

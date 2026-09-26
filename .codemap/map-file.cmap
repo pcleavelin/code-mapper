@@ -11,7 +11,7 @@ parent 42292h
 author ai
 file src/map.rs
 symbol impl Author
-lines 8 20
+lines 7 19
 hash cf480eb4721076d8
 note The words the file writes, ai and human; parse is the only way back, so an unknown word fails the read.
 
@@ -33,7 +33,7 @@ file src/map.rs
 symbol to_text
 lines 0 48
 hash c311c0778bb8f41b
-note One path as its file: the path's fields, then each step in id order. Ids are random-looking, so the steps two branches add to one path land at unrelated places and merge. Empty optional fields are left out.
+note One path as its file: the path's fields, then each step in id order. Deterministic, so saving an unchanged path changes no byte. Ids are hash-derived and look random, so the steps two branches add to one path land at unrelated places and merge. Empty optional fields are left out.
 
 step 8egzhr
 order 4
@@ -89,9 +89,9 @@ step jn6vqv
 order 0
 author ai
 file src/map.rs
-lines 167 201
-hash 16ed1980ef63c486
-note The layout, written out as a comment because there is no schema anywhere else, with the directory name, the version line and the conflict markers that stop a read.
+lines 146 149
+hash 30c4faf16a7c9b32
+note The directory name, the version line and the conflict markers jj and git write, any of which at a line start stops a read. There is no schema anywhere else, so the layout is this: .codemap/ holds one file per path, <name>.cmap. One field per line as "key value", the value running to the end of the line, with backslash, newline and carriage return escaped as \\\\, \\n and \\r. A blank line ends the path block and each step block. The path block is "codemap 8", "path <name>", "kind flow|layer|type", "author ai|human", then the optional "group <group>" and "note <text>". Each step block is "step <id>", "order <n>" (its place in the step list, ties by id), the optional "parent <id>" (a root has none), "author ai|human", "file <path>", the optional "symbol <name>" (none means absolute lines), "lines <start> <end>" (0-based, from the symbol's first line or absolute), "hash <16 hex digits>", and the optional "link <path name>" and "note <text>". Optional fields are left out when empty and nothing counts anything; a step names its parent by id and holds its place in order, so adding a step changes no other line. Any other version line is rejected: an old map is regenerated, never migrated.
 
 step kzkkga
 order 1
@@ -118,8 +118,8 @@ parent 9g28fx
 author ai
 file src/gui/mod.rs
 symbol save
-lines 0 16
-hash 8354618b9820c296
+lines 0 14
+hash 5b3f34dc1dc3f703
 note The GUI's save: refused while the map on disk does not read, since the save would rewrite what did not read. Otherwise clears the dirty flag and records the files' stamp so the disk poller does not read its own write back as an external change.
 
 step n8ip2o
@@ -138,8 +138,8 @@ parent ha8wzu
 author ai
 file src/map.rs
 symbol parse
-lines 0 126
-hash 15d8ce6c3a930889
+lines 0 125
+hash 36dfb53d83b85ea3
 note The reader, shared by the files on disk and the text jj or git hands back for a revision, which is several files one after another. Each codemap line starts a path. Steps are sorted by order, ties by id, and parent ids turned into indices; a parent that is not a step of the path fails the read. Steps come back stale; resolving them against the index clears it.
 
 step uivdyq

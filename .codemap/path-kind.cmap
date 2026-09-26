@@ -3,7 +3,7 @@ path path-kind
 kind type
 author ai
 group map
-note A path's kind: flow, layer or type. A tag only; it is listed and filterable and changes no rendering. Stored as one byte in the map file.
+note A path's kind: flow, layer or type. A tag only; it is listed and filterable and changes no rendering. Stored in the map file as its name, one kind line.
 
 step 2um3w4
 order 3
@@ -30,14 +30,15 @@ order 0
 author ai
 file src/map.rs
 symbol Kind
-lines 0 7
-hash 79b841549eb2e3f4
-note The three kinds and their byte values.
+lines 0 4
+hash 88102c337b3c799a
+note The three kinds and their byte values. Flow is a workflow, what happens when X; Layer is an abstraction boundary, the functions that form its surface; Type is a data structure and what mutates it.
 
 step ywvq6u
 order 2
 author ai
 file src/map.rs
-lines 167 196
-hash 430b6233ac38671d
+symbol parse
+lines 69 72
+hash c188ee9ed40239a6
 note The file layout: the kind is one line, kind flow, layer or type. One version; any other is rejected and the map regenerated, never migrated.

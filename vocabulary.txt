@@ -127,6 +127,7 @@ main
 manifest
 map
 markers
+member
 members
 message
 module

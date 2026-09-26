@@ -1,6 +1,3 @@
-//! The CLI, the agent's interface, pinned command by command against golden transcripts.
-//! `CODEMAP_BLESS=1 cargo test --test cli` rewrites them.
-
 mod common;
 
 macro_rules! tests {

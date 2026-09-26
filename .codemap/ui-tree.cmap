@@ -11,8 +11,8 @@ parent 27nlma
 author ai
 file src/ui.rs
 symbol end
-lines 102 152
-hash fc76b603c3428c09
+lines 0 147
+hash 685a94b527dbb34b
 note Positions, top-down: an element's rectangle comes from the position its parent gave it, its clip is its parent's clip narrowed by the parent's own rectangle when the parent clips, and then it walks a cursor along its own direction placing its children, applying the cross-axis alignment and subtracting the scroll offset. The extent the cursor reached is stored as the content size, which is what the next frame clamps a scroll against.
 
 step 27nlma
@@ -21,8 +21,8 @@ parent ipqjft
 author ai
 file src/ui.rs
 symbol end
-lines 0 161
-hash 70f022a960bbd74d
+lines 0 155
+hash e35b5aad3f78f151
 note Layout, once, for the whole frame. Each axis gets a fit pass bottom-up and a grow pass top-down; between the two axes, with widths final and heights not, wrapped text learns how many lines it takes; then one pass places every element and stores the rectangles for next frame's input. Floating elements are left out of every flow calculation and sized against the window instead.
 
 step 2ykree
@@ -32,8 +32,8 @@ author ai
 file src/ui.rs
 symbol Layout
 lines 0 9
-hash d64e799985bd023a
-note How an element lays its children out: direction, a size per axis, padding, gap, cross-axis alignment, clipping, a scroll offset applied to the children, and a floating position that takes it out of the parent's flow and onto the upper layer.
+hash 621e2f945a3a4908
+note How an element lays its children out: direction, a size per axis, padding, gap, cross-axis alignment, clipping, a scroll offset applied to the children, and a floating absolute position that takes it out of the parent's flow and onto the upper layer.
 
 step 38mrfs
 order 33
@@ -41,8 +41,8 @@ parent ipqjft
 author ai
 file src/ui.rs
 symbol Measure
-lines 0 3
-hash 2a2c6970b5b2ff62
+lines 0 2
+hash c42fdc557d6b59ea
 note All the tree wants to know about fonts: the cell and row size at one pixel size. The renderer implements it; the tests implement it with a fixed 8x16 cell, which is how the layout is testable with no GPU.
 
 step 5r4iu3
@@ -51,8 +51,8 @@ parent 27nlma
 author ai
 file src/ui.rs
 symbol end
-lines 50 85
-hash bdc26e0c16f62c74
+lines 49 83
+hash 76a68372db0c4d41
 note Grow, top-down: a root or a floating element grows to the window, then each parent splits whatever it has left after its non-growing children equally among its growing ones along its direction, and gives them the full inner size across it.
 
 step 7qwqcp
@@ -61,8 +61,8 @@ parent ipqjft
 author ai
 file src/ui.rs
 symbol draw
-lines 0 72
-hash 4b13efce1cfc62f5
+lines 0 69
+hash 8f3d5c66bfd1fbcf
 note Draw in tree order, layer 0 then layer 1, so a floating popup and everything inside it land on top - a child inherits its ancestors' layer first, which is what makes the contents of a popup rise with it. Per element: push its clip, fill, then text or the custom closure, then the borders. An element whose rectangle does not meet its clip is skipped outright.
 
 step a3j9w8
@@ -71,8 +71,8 @@ parent ipqjft
 author ai
 file src/ui.rs
 symbol begin
-lines 0 29
-hash c7466d7b30bd3dbb
+lines 0 28
+hash 5449093943cb4a29
 note The hot element: of every element under the mouse last frame, the one with the smallest visible area (its rectangle cut to its clip), so a block taller than its scroll container still wins over the container.
 
 step b8aeve
@@ -101,8 +101,8 @@ parent 27nlma
 author ai
 file src/ui.rs
 symbol end
-lines 0 101
-hash 8cd588ac2f0170b3
+lines 0 98
+hash 32923dedc1754d46
 note Between the two axes: widths are final and heights are not, which is the only moment a wrapped text can learn how many lines it will take. Running this here is what makes a wrapped note contribute its real height to the column below it.
 
 step c0y7q8
@@ -123,6 +123,7 @@ file src/ui.rs
 symbol scrollbar
 lines 0 9
 hash 48073031d75b3621
+note The track and thumb of a scrollbar for a clipped element, or None when its content fits.
 
 step csq7jk
 order 31
@@ -151,7 +152,7 @@ author ai
 file src/ui.rs
 symbol Interaction
 lines 0 8
-hash 2de47646757405ae
+hash 7b685da112fa6ade
 note The answer an element with an id gets back. Returning it from open and leaf is what lets a caller write 'if self.button(..).clicked' with no callbacks and no event queue in the tree itself.
 
 step g881o9
@@ -172,7 +173,7 @@ file src/ui.rs
 symbol interaction_of
 lines 0 16
 hash f552b830b1effc01
-note What one id learned last frame, and the answer open gives back: hovered is 'it was the hit', clicked is that plus a press this frame, drag is the pointer movement since last frame while it is the active element, and rect is where it was last frame. Callable without creating an element, for a caller that needs to know it is hovered in order to decide what the element should look like.
+note What one id learned last frame, and the answer open gives back: hovered is 'it was the hit', clicked is that plus a press this frame, down is that the mouse went down on it and is still down, drag is the pointer movement since last frame while it is the active element, and rect is where it was last frame. Callable without creating an element, for a caller that needs to know it is hovered in order to decide what the element should look like.
 
 step inr7qd
 order 19
@@ -180,8 +181,8 @@ parent 27nlma
 author ai
 file src/ui.rs
 symbol end
-lines 3 49
-hash 596ed329494336cf
+lines 3 48
+hash 98e2e228ed6adff1
 note Fit, bottom-up: a parent's fitting size is the sum of its in-flow children along its direction and the largest across it, plus padding and gaps. With no children it is the text's own size, and a wrapped text contributes nothing on the width axis because its width is whatever it is given.
 
 step ipqjft
@@ -190,8 +191,8 @@ author ai
 file src/ui.rs
 symbol Ui
 lines 0 10
-hash b9bd6ae82d6f9dcd
-note The tree itself: the flat element list, which element is currently open, and last frame's rectangle, clip and content extent per id - that map is the whole of what survives a frame, and it is what every hit test and every scroll clamp reads.
+hash 5c157e945bdbd25e
+note The tree itself: the flat element list, which element is currently open, and last frame's rectangle, clip and content extent per id - that map is the whole of what survives a frame, and it is what every hit test and every scroll clamp reads. scroll_drag holds the id whose scrollbar thumb is being dragged and how far down the thumb the mouse grabbed it.
 
 step iw1fmo
 order 28
@@ -199,9 +200,9 @@ parent ipqjft
 author ai
 file src/ui.rs
 symbol scroll_by_wheel
-lines 0 38
-hash 5e665c6ffb667de0
-note The track and thumb for a clipped element whose content overflows: thumb height in proportion to what is visible, position in proportion to the offset. Drawn after every element of a layer so no child covers it; scroll_by_wheel uses the same geometry for the drag.
+lines 0 37
+hash bf1a07dc0417a3f2
+note Scrolls an offset by the wheel when the element is the hit or the mouse is inside its visible rectangle, clamps it to the content extent the element showed last frame, and returns it for the caller to build the element with. The scrollbar is live here too: pressing the thumb starts a drag that follows the mouse from where it grabbed, and clicking the track jumps so the clicked point is centred. The track and thumb come from scrollbar, the same geometry draw paints after every element of a layer so no child covers it.
 
 step ja80zd
 order 6
@@ -229,8 +230,8 @@ parent 27nlma
 author ai
 file src/ui.rs
 symbol end
-lines 153 160
-hash 36f6f115aa9b5724
+lines 148 154
+hash fb7c1145c0a25ed8
 note The frame's last act: every element with an id records its rectangle, its clip and its content extent, and the mouse position is remembered so the next frame can turn it into a drag delta. This map is the only thing that crosses a frame boundary.
 
 step n1kzmu
@@ -320,7 +321,7 @@ author ai
 file src/ui.rs
 symbol Element
 lines 0 16
-hash 666c417923444dc1
+hash 13f0acca7d295f2e
 note One element. Sibling and child links rather than a children vector, so opening an element is one push; the size, position, rectangle and clip are all filled in by the layout, and lines holds a wrapped text's lines once its width is known.
 
 step yw3bj2

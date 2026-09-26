@@ -30,9 +30,9 @@ parent a41e5v
 author ai
 file src/index/treesitter.rs
 symbol find_calls
-lines 0 29
-hash 843801b72d50b117
-note Recursively collects the call sites inside one declaration. Anything whose node kind contains 'call' counts; the callee expression is its 'function' field. The extra work here is recovering a qualifier the grammar hid: some languages parse pkg.proc(x) as member(pkg, call(proc, x)), so the qualifier is the sibling before the call, not part of it.
+lines 0 27
+hash 30f6c878de68fd30
+note Recursively collects the call sites inside one declaration. Anything whose node kind contains 'call' counts; the callee expression is its 'function' field or else its first named child. The extra work here is recovering a qualifier the grammar hid: some languages parse pkg.proc(x) as member(pkg, call(proc, x)), so the qualifier is the sibling before the call, not part of it.
 
 step 7arqxd
 order 9
@@ -52,7 +52,7 @@ file src/codec.rs
 symbol fnv1a
 lines 0 7
 hash 8d5478bd35c04a36
-note The file's content hash, the key everything derived from this file is cached under. Computed on the tab-expanded text, so what is hashed is what is displayed.
+note The file's content hash, the key everything derived from this file is cached under. Computed on the tab-expanded text, so what is hashed is what is displayed. The algorithm is FNV-1a, and the map keys its anchored slices with the same function.
 
 step a41e5v
 order 3
@@ -60,9 +60,9 @@ parent 0c73gq
 author ai
 file src/index/treesitter.rs
 symbol collect
-lines 0 113
-hash bf274bca43ab12b5
-note The walk that produces symbols. Named children of the root become symbols; imports are diverted to record_import; comments, package clauses, attributes and bodyless 'mod foo;' are skipped. Containers (impl, mod, trait, class) recurse exactly one level so methods appear with their owner type, which is what gives depth 1 symbols and what a qualified call later binds against.
+lines 0 108
+hash 9998206cf0a0fd29
+note The walk that produces symbols. Named children of the root become symbols; imports are diverted to record_import; comments, package clauses, attributes and bodyless 'mod foo;' are skipped. Containers (impl, mod, trait, class) recurse exactly one level so methods appear with their owner type, which is what gives depth 1 symbols and what a qualified call later binds against. A symbol's name is the grammar's name field, else its first line up to a brace or '::' (Odin's foo :: proc), capped at 80 characters because a bad guess is a whole line of code; Odin attributes such as @(test) are part of the declaration node, so that guess reads the line after them. A bodyless 'mod foo;' is a reference, and as a symbol it would pull every .map() call to 'mod map;'. A container's owner is its type field (Rust impl X for Y gives Y) or, for a class, its own name.
 
 step adt563
 order 6
@@ -70,8 +70,8 @@ parent 5g8ut6
 author ai
 file src/index/treesitter.rs
 symbol parse_callee
-lines 0 35
-hash 44ae64d6b57eb457
+lines 0 34
+hash ee5e49ce9d7495c7
 note Turns the callee's source text into a Call. Generics and argument lists are stripped, then the last dotted or scoped segment is the name and the one before it the qualifier, with self/Self/this/super folded into Qual::SelfRef. This is the whole of what the tree-sitter backend knows about a call.
 
 step jnnl3s
@@ -80,9 +80,9 @@ parent a41e5v
 author ai
 file src/index/treesitter.rs
 symbol record_import
-lines 0 71
-hash 627747d66cd0e63a
-note Every import statement in the file, reduced to a map of name-or-alias to module stem. Deliberately string work rather than per-language parsing: it only has to be good enough for resolve to send an unqualified or aliased call to the right file.
+lines 0 69
+hash ace77dd92e1b7166
+note Every import statement in the file, reduced to a map of name-or-alias to module stem. Deliberately string work rather than per-language parsing: it only has to be good enough for resolve to send an unqualified or aliased call to the right file. Two shapes: a quoted module (Odin import "core:fmt" or import alias "../pkg", JS import {a, b} from './mod') maps every identifier before the quote to the module's last path segment, or the module to itself when none is named; anything else is a path plus items (Rust use a::b::{c, d as e}, Python from a.b import c, d or import a.b), and each item or its alias maps to the last segment of the path.
 
 step k1m1hq
 order 2
@@ -100,9 +100,9 @@ parent 0c73gq
 author ai
 file src/index/treesitter.rs
 symbol query_for
-lines 0 13
-hash 9de52f39cdabe19d
-note Grammars and their compiled highlight queries are expensive, so they are built once per extension and kept in the Parsers map. It takes the map rather than &mut self so the caller can keep using the parser at the same time.
+lines 0 12
+hash cc1a8b4f3627699d
+note Grammars and their compiled highlight queries are expensive, so they are built once per extension and kept in the Parsers map. It takes the map rather than &mut self so the caller can keep using the parser at the same time. A grammar whose bundled highlight query fails to compile yields None, and parse_file then skips the parse, so its files get neither colours nor symbols.
 
 step mngdal
 order 7
@@ -122,4 +122,4 @@ file src/index/treesitter.rs
 symbol impl_name
 lines 0 11
 hash 7846e5a2ffb0b4b9
-note An impl block has no name in the grammar, so its name is built from the trait and type fields to read exactly as rust-analyzer reports it - 'impl Trait for Type<T>', without the block's own generic parameters. The two backends have to agree letter for letter or a step anchored to an impl under one of them is stale under the other, which is what happened to every generic impl on a cold cache.
+note An impl block has no name in the grammar, so its name is built from the trait and type fields to read exactly as rust-analyzer reports it - 'impl Trait for Type<T>', without the block's own generic parameters and with any newline folded to a space. The two backends have to agree letter for letter or a step anchored to an impl under one of them is stale under the other, which is what happened to every generic impl on a cold cache.

@@ -21,8 +21,8 @@ parent d43fmw
 author ai
 file src/map.rs
 symbol promote
-lines 22 30
-hash 204abc7d2e71f0dd
+lines 22 29
+hash ee71c35d6f45997d
 note Is this symbol already a step of this path? The check that makes re-promoting add only what is missing instead of duplicating the tree.
 
 step 7gczkl
@@ -32,8 +32,8 @@ author ai
 file src/map.rs
 symbol tree_order_by
 lines 0 41
-hash f0963fef3204948e
-note The walk: roots in list order, then each step's children sorted by the caller's key with list order breaking ties. The views pass the line of the parent's slice that names the child, so siblings read in the order the code calls them; the plain tree_order passes a constant.
+hash c6c4cb79ebb5c3cf
+note The walk: roots in list order, then each step's children sorted by the caller's key with list order breaking ties. The views pass the line of the parent's slice that names the child, so siblings read in the order the code calls them; the plain tree_order passes a constant. A step whose parent index is out of range or is itself counts as a root, and steps caught in a parent cycle are visited once each, as roots, after everything else.
 
 step d43fmw
 order 3
@@ -51,9 +51,19 @@ parent 7gczkl
 author ai
 file src/map.rs
 symbol numbered
-lines 0 35
-hash 678a2cfa8512be8d
-note The same walk with the hierarchical numbers attached: (step, depth, '1.2.3') in reading order. The outline, the document, the breadcrumb and the graph nodes all number steps through this one function, so a step carries the same number wherever it is shown.
+lines 0 34
+hash c1485730f8a4ac79
+note The same walk with the hierarchical numbers attached: (step, depth, '1.2.3') in reading order. The outline, the document, the breadcrumb and the graph nodes all number steps through this one function, so a step carries the same number wherever it is shown. A child with no symbol, or whose symbol no line of the parent's slice names, sorts after its siblings that have a call line.
+
+step hx786i
+order 9
+parent qhqkj9
+author ai
+file src/map.rs
+symbol swap_anchors
+lines 0 16
+hash 6bc7a0f6c67b4171
+note Swapping two steps in list order, which is what orders siblings nothing else orders. The two steps trade their order values, so the sequence of orders in the list stays where it was, and every parent index that named either step is rewritten to keep naming the same step.
 
 step peom6j
 order 6
@@ -62,7 +72,7 @@ author ai
 file src/map.rs
 symbol remove_anchor
 lines 0 11
-hash 6be07168074c0be6
+hash 64eb166bb3a8c061
 note Deleting a step. Its children are re-pointed at its parent so the tree stays connected, and every index above it shifts down by one, which is why a deletion invalidates indices you were about to use.
 
 step qhqkj9
@@ -92,4 +102,4 @@ file src/map.rs
 symbol find
 lines 0 2
 hash 3ba838097b27f605
-note Paths are addressed by name everywhere; this is the lookup. Names are never changed by any command, which is why a path with the wrong name has to be rebuilt rather than renamed.
+note Paths are addressed by name everywhere; this is the lookup. A name changes only through rename, which rewrites every link to it.

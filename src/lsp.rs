@@ -1,8 +1,3 @@
-//! A minimal Language Server Protocol client: JSON-RPC over the server's stdio, synchronous
-//! requests, and just enough of the server-to-client traffic (progress, configuration,
-//! capability registration) to keep a server happy. Positions are 0-based like LSP's own;
-//! columns are UTF-16 units.
-
 use serde_json::{Value, json};
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
@@ -15,12 +10,11 @@ pub struct Client {
     stdin: ChildStdin,
     rx: Receiver<Value>,
     next_id: u64,
-    open_progress: usize, // progress tokens begun and not yet ended
+    open_progress: usize,
     last_progress: Instant,
-    quiescent: Option<bool>, // rust-analyzer's own "done indexing" flag, when it sends one
+    quiescent: Option<bool>,
 }
 
-/// Full path of `name` on PATH. On Windows also tries PATHEXT, since npm installs `.cmd` shims.
 pub fn find_on_path(name: &str) -> Option<PathBuf> {
     let exts: Vec<String> = if cfg!(windows) {
         std::env::var("PATHEXT")
@@ -75,7 +69,6 @@ fn percent_decode(s: &str) -> String {
     String::from_utf8_lossy(&out).into_owned()
 }
 
-/// The absolute path a `file:` URI names.
 pub fn uri_path(uri: &str) -> Option<PathBuf> {
     let d = percent_decode(uri.strip_prefix("file://")?);
     Some(PathBuf::from(if cfg!(windows) {
@@ -85,8 +78,6 @@ pub fn uri_path(uri: &str) -> Option<PathBuf> {
     }))
 }
 
-/// `path` relative to `root` (forward slashes), or None when it lies outside. Both absolute.
-/// Drive letters compare case-insensitively on Windows.
 pub fn relative(path: &Path, root: &Path) -> Option<String> {
     let p = path.to_string_lossy().replace('\\', "/");
     let root = root.to_string_lossy().replace('\\', "/");
@@ -123,7 +114,6 @@ fn read_message(r: &mut impl BufRead) -> Option<Value> {
 }
 
 impl Client {
-    /// Spawns `exe args` with `root` as the workspace and completes the initialize handshake.
     pub fn start(exe: &Path, args: &[&str], root: &Path) -> Option<Client> {
         let mut child = Command::new(exe)
             .args(args)
@@ -170,8 +160,6 @@ impl Client {
                 "workspace": {"configuration": true},
                 "experimental": {"serverStatusNotification": true}
             },
-            // rust-analyzer computes what it is asked when it is asked instead of priming every
-            // crate first, so a large workspace is ready once it is loaded
             "initializationOptions": {"checkOnSave": false, "cachePriming": {"enable": false}}
         });
         c.request("initialize", params).ok()?;
@@ -193,7 +181,6 @@ impl Client {
         self.send(json!({"jsonrpc": "2.0", "id": id, "result": result}));
     }
 
-    /// Sends a request and blocks for its response, servicing whatever else arrives meanwhile.
     pub fn request(&mut self, method: &str, params: Value) -> Result<Value, String> {
         self.next_id += 1;
         let id = self.next_id;
@@ -213,9 +200,6 @@ impl Client {
         }
     }
 
-    /// Sends every request with up to `WINDOW` in flight, so the server answers them on its
-    /// own threads, and returns the answers in the order asked. A request the server does not
-    /// answer within two minutes of the one before it is an Err, and so is every one after.
     pub fn request_all(&mut self, reqs: Vec<(&str, Value)>) -> Vec<Result<Value, String>> {
         const WINDOW: usize = 64;
         let n = reqs.len();
@@ -255,7 +239,6 @@ impl Client {
             .collect()
     }
 
-    /// Notifications and server-to-client requests.
     fn handle(&mut self, msg: Value) {
         match msg["method"].as_str().unwrap_or("") {
             "$/progress" => {
@@ -276,9 +259,6 @@ impl Client {
         }
     }
 
-    /// Blocks until the server has finished its own indexing: it says so, or every progress it
-    /// began has ended and nothing new arrived for half a second. A server that reports no
-    /// progress at all is assumed ready after three seconds. Gives up after `max`.
     pub fn wait_ready(&mut self, max: Duration) {
         let start = Instant::now();
         let mut seen_progress = false;
@@ -305,9 +285,6 @@ impl Client {
         json!({"textDocument": {"uri": to_uri(path)}, "position": {"line": line, "character": col}})
     }
 
-    /// What the server knows about the thing at a position, as plain lines: the markdown's
-    /// code fences are dropped and blank lines never repeat, everything else is kept. None
-    /// when it knows nothing.
     pub fn hover(&mut self, path: &Path, line: u32, col: u32) -> Option<String> {
         let v = self
             .request("textDocument/hover", Self::at(path, line, col))
@@ -333,8 +310,6 @@ impl Client {
         (!out.is_empty()).then_some(out)
     }
 
-    /// Where the thing at a position is defined: the first location the server names, as an
-    /// absolute path and 0-based line and column.
     pub fn definition(&mut self, path: &Path, line: u32, col: u32) -> Option<(PathBuf, u32, u32)> {
         let v = self
             .request("textDocument/definition", Self::at(path, line, col))
@@ -388,7 +363,6 @@ mod tests {
         assert_eq!(rel("file:///elsewhere/x.rs"), None);
     }
 
-    /// Needs rust-analyzer on PATH: `cargo test -- --ignored`.
     #[test]
     #[ignore]
     fn rust_analyzer_answers() {

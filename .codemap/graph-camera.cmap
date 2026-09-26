@@ -3,7 +3,7 @@ path graph-camera
 kind flow
 author ai
 group gui/graph
-note When the graph's camera moves, and why it otherwise does not. Pan and zoom are two plain fields on the graph: dragging the background and the wheel write them directly, and nothing else is allowed to, so a rebuild, an edit or a re-index never slides the view out from under the reader. Two things ask for a move: a new focus (centre it, or align its top when it is taller than the canvas) and the fit button (the largest font at which the whole tree fits, then pan to its top-left). A node button that changes the tree's shape (callees, callers, less) instead keeps its node still: the pan follows the relayout so the button stays under the pointer and the new nodes appear beside it. The layout is in cells and rows, which no zoom changes, so fit settles both zoom and pan in one frame instead of converging over several.
+note When the graph's camera moves, and why it otherwise does not. Pan and zoom are two plain fields on the graph: dragging the background and the wheel write them directly, and nothing else is allowed to, so a rebuild, an edit or a re-index never slides the view out from under the reader. Two things ask for a move: a new focus (centre it, or align its top when it is taller than the canvas) and the fit button (the largest font at which the whole tree fits, then pan to its top-left). A node button that changes the tree's shape (callees, callers, less) instead keeps its node still: the pan follows the relayout so the button stays under the pointer and the new nodes appear beside it. The layout is in cells and rows, which no zoom changes, so fit settles both zoom and pan in one frame instead of converging over several. Both keep MARGIN pixels between the canvas edge and what they bring into view.
 
 step 729kbs
 order 1
@@ -20,8 +20,8 @@ order 0
 author ai
 file src/gui/graph.rs
 symbol graph_tab
-lines 150 180
-hash f40bff76e09f4901
+lines 146 174
+hash 96085945b73d5c07
 note The frame's two camera hooks, side by side. The fit runs here rather than inside the graph because it needs the font metrics: the layout is already done in cells, so it walks the font size down until the tree's cell box fits the canvas, sets the zoom to exactly that size over the UI size (so graph_px reproduces it), and pans to the tree's top-left. Everything else the camera does is move_camera, called once this frame's cell size is recorded, so rect_px can give it pixel rectangles.
 
 step v0z9ng
@@ -39,6 +39,6 @@ parent gknv1n
 author ai
 file src/gui/graph.rs
 symbol move_camera
-lines 0 20
-hash 96cd2d474f18eee8
+lines 0 18
+hash 3c357e9704faa2ef
 note The one place a camera move is honoured, in priority order: a pending look at the focus, then a kept node. A node taller than the canvas is aligned to its top, because its header and its buttons are what the reader came for; centring it put them off screen. Nothing here runs unless a flag asked for it, so a rebuild or a re-index leaves pan and zoom alone.

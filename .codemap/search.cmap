@@ -29,6 +29,6 @@ order 0
 author ai
 file src/gui/mod.rs
 symbol run_search
-lines 0 33
-hash 957dab6d023847d3
+lines 0 32
+hash f4891c26e3e8c112
 note The search: the regex is compiled before the previous results are dropped, so a typo keeps the last hit list and only reports; the scan is over the lines already in memory.

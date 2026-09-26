@@ -28,7 +28,7 @@ pub(crate) struct Surface {
 pub(crate) fn surfaces(root: &Root) -> Result<Vec<Surface>, Message> {
     let workspace = Manifest::load(root, &RepoPath::new("Cargo.toml"))?;
     let mut out = Vec::new();
-    for member in workspace.members() {
+    for member in workspace.members(root) {
         let library = RepoPath::new(&format!("{member}/src/lib.rs"));
         if !root.join(&library).is_file() {
             continue;

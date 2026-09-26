@@ -1,6 +1,3 @@
-//! The bars and panels around the centre: top bar, status bar, and the docked panels' contents
-//! (the output panel, the Paths, Symbols and Files tabs, the xrefs panel); `dock` places them.
-
 use super::*;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -96,8 +93,6 @@ impl App {
         self.grip(Panel::Output);
         self.label("Output", WEAK);
         self.ui.close();
-        // a command's output exists only after this frame's layout, so the pin to the end is
-        // asked for two frames running: the second one lands on the new content
         if self.output_bottom > 0 {
             self.output_bottom -= 1;
             self.scrolls.insert(id, i32::MAX);
@@ -163,8 +158,6 @@ impl App {
         let cols = it.rect.map_or(44, |r| {
             ((r.w - 8 - ui::SCROLLBAR_W) / self.cell.0.max(1)).max(20)
         }) as usize;
-        // a group opens or closes on a click; one never clicked is open while it holds the
-        // path being read
         let reading = self
             .sel_path
             .and_then(|pi| self.map.paths.get(pi))
@@ -254,7 +247,6 @@ impl App {
             if !selected {
                 continue;
             }
-            // the outline: every step of the path being read, folded subtrees hidden
             let numbered = self.map.numbered(&self.idx, pi);
             let mut hide_below: Option<usize> = None;
             for (ai, depth, number) in numbered {
@@ -319,8 +311,6 @@ impl App {
                     self.actions.push(Action::SelectStep(pi, ai, false));
                 }
             }
-            // the outline follows the document: when the topmost step changes and its row is
-            // out of view, scroll it to the upper third, never under a scrollbar drag
             if let (Some(ai), Some((_, view))) = (self.top_step, self.ui.content_of(base))
                 && self.outline_shown != Some(ai)
                 && !self.ui.dragging()
@@ -437,8 +427,6 @@ impl App {
         self.ui.close();
     }
 
-    /// `files` are sorted by path and share their first `depth` components; a run with the
-    /// same next component is a directory.
     pub(super) fn files_tree(&mut self, files: &[usize], depth: usize, cov: &[(usize, usize)]) {
         let comp = |app: &App, fi: usize| {
             app.idx.files[fi]
@@ -510,7 +498,6 @@ impl App {
         self.grip(Panel::Xrefs);
         self.label("Xrefs", WEAK);
         self.ui.close();
-        // the peek: a symbol's definition, a line inside one, or text from a file outside the repo
         let peek = match self.peek.clone() {
             Some(Peek::Sym(r))
                 if r.file < self.idx.files.len()
@@ -542,7 +529,6 @@ impl App {
             _ => None,
         };
         if let Some((title, place, go, body)) = peek {
-            // the header fits the panel whatever the path's length: the buttons never leave it
             let cols = (w / self.cell.0.max(1)) as usize;
             let title = trunc(&title, 24.min(cols / 2));
             let place = trunc_left(&place, cols.saturating_sub(title.chars().count() + 14));
@@ -634,7 +620,6 @@ impl App {
         );
         let pending = self.idx.files[cur.file].pending;
         let (callers, callees, refs) = (s.callers.clone(), s.callees.clone(), s.refs.clone());
-        // references are asked of the server for the symbol on show, once per text of its file
         let f = &self.idx.files[cur.file];
         let (line, col) = index::name_position(&self.idx, cur);
         let probe = Probe {

@@ -1,10 +1,5 @@
-//! Little-endian writing and reading for the index cache, the hash that file text and anchored
-//! slices are keyed by, and a write that never leaves a file half written, which the cache and
-//! the map's files both use.
-
 use std::path::Path;
 
-/// FNV-1a: what a file's text and an anchored slice are keyed by.
 pub fn fnv1a(bytes: impl IntoIterator<Item = u8>) -> u64 {
     let mut h: u64 = 0xcbf29ce484222325;
     for b in bytes {
@@ -49,9 +44,6 @@ impl Reader<'_> {
     }
 }
 
-/// Write `data` whole: to a temporary file beside `path`, then renamed over it, so a reader
-/// or a second writer never sees a half-written file. Retries while Windows refuses the file
-/// for a moment (errors 1224, 32 and 5, while another process or a scanner has it open).
 pub fn write_retry(path: &Path, data: &[u8]) -> std::io::Result<()> {
     static N: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
     let tmp = path.with_extension(format!(

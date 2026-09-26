@@ -11,8 +11,8 @@ parent 9o0i08
 author ai
 file src/map.rs
 symbol new
-lines 0 32
-hash a8e6c557396ae989
+lines 0 31
+hash 7909252712c41373
 note Creating an anchor records the author it is given and picks the innermost symbol whose range contains the slice and stores offsets from that symbol's first line. With no containing symbol the offsets are absolute and the anchor is as fragile as a line number, which is why whole-symbol steps are preferred.
 
 step 9o0i08
@@ -20,9 +20,9 @@ order 0
 author ai
 file src/map.rs
 symbol Anchor
-lines 0 18
-hash 1ab4e02c36558648
-note The stored half is the id, the order, file, symbol, the two offsets and the hash, plus the note, the author, the parent that makes a path a tree, and the link to another path. The id is set once when the step is made and is how the file names a parent and how diff matches a step; order places it in the step list. line_start, line_end and stale are filled in per session by resolve and never written to disk.
+lines 0 17
+hash efc17902f6b48808
+note The stored half is the id, the order, file, symbol, the two offsets and the hash, plus the note, the author, the parent that makes a path a tree, and the link to another path. The id is set once when the step is made and is how the file names a parent and how diff matches a step; order places it in the step list, ordering siblings the code does not, and is set once to one past the highest in the path, after which only a swap changes it. An empty symbol means the offsets are absolute lines; an empty link means none. line_start, line_end, stale and sym (the index of the resolved symbol in its file's symbol list) are filled in per session by resolve and never written to disk.
 
 step lp72jd
 order 5

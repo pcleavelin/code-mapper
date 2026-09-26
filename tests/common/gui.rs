@@ -1,19 +1,6 @@
-//! GUI scenarios: scripts played against a fresh fixture (see CLAUDE.md for the commands).
-//!
-//! A script may aim at a rectangle a previous `dump` or `rect` printed: `<<prefix>>` is the
-//! centre of the last stderr line starting with `prefix`, `<<prefix|dx,dy>>` a point offset from
-//! its top-left corner. Each is resolved by a probe run of the script up to that line, on a fresh
-//! fixture, so the final run starts from the same state. Offsets are pixels: the scripts assume
-//! the fixed 1600x1000 script window at scale 1 (16 px rows).
-//!
-//! Every script settles with `idle` and a save before its first dump: with several servers
-//! missing, the status line otherwise says whichever failure arrived last.
-
 use super::{Missing, Transcript, codemap, edit_file, fixture, gui, jj_commit, needs, scratch};
 use std::path::{Path, PathBuf};
 
-/// Every GUI scenario, handed to `$m` as `gui: <fn>, ...`. Each is a `fn() -> Scenario` below,
-/// and its golden is `gui-<fn>`.
 #[macro_export]
 macro_rules! gui_scenarios {
     ($m:ident) => {
@@ -22,12 +9,9 @@ macro_rules! gui_scenarios {
 }
 
 pub struct Scenario {
-    /// Builds the fixture for a scenario name; `Err` when it needs a tool that is missing.
     pub setup: fn(&Path, &str) -> Result<PathBuf, Missing>,
     pub script: &'static str,
-    /// Sees every stderr line of the run; a `rect <marker>` line in the script is the cue.
     pub hook: fn(&Path, &Path, &str),
-    /// CLI commands run after the GUI quits, their output appended to the golden.
     pub after: &'static [&'static [&'static str]],
 }
 
@@ -53,7 +37,6 @@ fn with_parent(bin: &Path, name: &str) -> Result<PathBuf, Missing> {
 
 fn no_hook(_: &Path, _: &Path, _: &str) {}
 
-/// The reload scenario's cues: a source edit, then a map edit through the CLI.
 fn reload_hook(bin: &Path, root: &Path, line: &str) {
     if line.starts_with("DUMP rect edit-source") {
         edit_file(root, "src/store.rs", "< 1000", "< 2000");
@@ -67,7 +50,6 @@ fn reload_hook(bin: &Path, root: &Path, line: &str) {
     }
 }
 
-// the scripts read startup, which is third in the paths list: c-lib, shapes, startup, stats
 const SETTLE: &str = "idle\nclick-id save\nclick-id paths/2\nwait 2\n";
 
 pub fn document() -> Scenario {
@@ -553,8 +535,6 @@ quit
     }
 }
 
-/// Plays scenario `name` with `bin`: its stderr, and the transcript of its `after` commands.
-/// The screenshots land in `shots(name)`.
 pub fn play(bin: &Path, name: &str, s: &Scenario) -> Result<(String, String), Missing> {
     let script = s.script.replace("SETTLE\n", SETTLE);
     let mut lines: Vec<String> = script.lines().map(str::to_owned).collect();
@@ -602,7 +582,6 @@ pub fn play(bin: &Path, name: &str, s: &Scenario) -> Result<(String, String), Mi
     Ok((err, after.out))
 }
 
-/// The last rectangle printed on a line starting with `prefix`: (x, y, w, h).
 fn last_rect(stderr: &str, prefix: &str) -> Option<(i32, i32, i32, i32)> {
     let l = stderr.lines().rfind(|l| l.starts_with(prefix))?;
     let r = l.split("Rect { ").nth(1)?;

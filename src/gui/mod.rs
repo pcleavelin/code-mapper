@@ -1,8 +1,3 @@
-//! The human's surface, built from `ui` elements and drawn by `gfx`. One selection (a symbol,
-//! with a step behind it when reached through a path) drives every view; the panels are
-//! functions that open and close elements each frame, and every click becomes an `Action`
-//! applied once the frame is built.
-
 mod dock;
 mod document;
 mod graph;
@@ -30,7 +25,6 @@ use std::rc::Rc;
 use std::sync::mpsc::{Receiver, Sender, TryRecvError, channel};
 use std::time::{Duration, Instant, SystemTime};
 
-/// The tab of the centre panel.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Tab {
     Path,
@@ -41,7 +35,6 @@ pub enum Tab {
 }
 
 impl Tab {
-    /// The tab a script or CODEMAP_SHOT_TAB names; any other name is the path document.
     fn from_name(name: &str) -> Tab {
         match name {
             "graph" => Tab::Graph,
@@ -53,27 +46,26 @@ impl Tab {
     }
 }
 
-/// What a click asked for; applied after the frame is built.
 pub enum Action {
     Focus(SymRef),
-    OpenPath(usize, Tab), // select the path unless it is the one being read, and show it in the tab
-    SelectStep(usize, usize, bool), // (path, step, clicked inside the document)
-    ToggleWhole(usize, usize), // show the whole symbol / just the slice in the document
-    ToggleCode(usize, usize), // hide / show a step's code
-    ToggleFold(usize, usize), // hide / show a step's subtree
-    ToggleLink(usize, usize), // show / hide the path a step links to, inline under it
-    CollapseAll(usize, bool), // (path, hide): hide every step's code, or show all and unfold all
-    FoldAll(usize, bool), // (path, fold): fold every step with children, or unfold all
+    OpenPath(usize, Tab),
+    SelectStep(usize, usize, bool),
+    ToggleWhole(usize, usize),
+    ToggleCode(usize, usize),
+    ToggleFold(usize, usize),
+    ToggleLink(usize, usize),
+    CollapseAll(usize, bool),
+    FoldAll(usize, bool),
     DeleteStep(usize, usize),
     DeletePath(usize),
-    GoTo(usize, usize),          // (file, line) in the listing
-    Jump(usize, usize, usize),   // (file, line, column): to the definition of the identifier there
-    PeekAt(usize, usize, usize), // the same, pinned in the peek panel
-    SelectLine(usize, bool),     // (line, extend) in the listing
+    GoTo(usize, usize),
+    Jump(usize, usize, usize),
+    PeekAt(usize, usize, usize),
+    SelectLine(usize, bool),
     ClosePeek,
-    Context(usize, usize, i8), // (path, step): more lines above (-1), below (1), or back to the slice (0)
+    Context(usize, usize, i8),
     ToggleDir(String),
-    OpenGroup(String, bool), // open (true) or close a group in the Paths tab
+    OpenGroup(String, bool),
     Tab(Tab),
     Back,
     Forward,
@@ -83,36 +75,35 @@ pub enum Action {
 
 pub struct App {
     pub idx: Index,
-    work: Work,     // the server threads, the watcher and the jobs running off the frame
-    lookup: Lookup, // hover and definition requests to the servers
-    now: f64,       // the frame's time, seconds since the window opened
-    grids: HashMap<(usize, u64, usize, usize), Rc<Glyphs>>, // (file, text hash, first line, last line) -> its drawn form
-    hscroll: HashMap<Id, i32>, // horizontal offset of each code block, in pixels
-    output_bottom: u8,         // frames left in which the log is pinned to its end
+    work: Work,
+    lookup: Lookup,
+    now: f64,
+    grids: HashMap<(usize, u64, usize, usize), Rc<Glyphs>>,
+    hscroll: HashMap<Id, i32>,
+    output_bottom: u8,
     pub map: Map,
-    base: Option<Map>, // the map at the parent revision, for the diff
-    base_why: String,  // why there is no base map, when there is none
-    file: MapFile,     // the map on disk against the one in memory
+    base: Option<Map>,
+    base_why: String,
+    file: MapFile,
 
-    // the selection
-    pub focus: Option<SymRef>,     // the selected symbol
-    pub sel_path: Option<usize>,   // the path being read: outline expanded, document shown
-    pub sel_anchor: Option<usize>, // the selected step of it, when the selection came through the path
+    pub focus: Option<SymRef>,
+    pub sel_path: Option<usize>,
+    pub sel_anchor: Option<usize>,
     pub cur_file: Option<usize>,
-    pub sel: Option<(usize, usize)>, // (anchor line, active line) of the line selection
-    scroll_to: Option<usize>,        // the listing scrolls this line into view next frame
-    scroll_to_step: Option<(usize, u8)>, // the document scrolls this step's header to the top; tries left
-    top_step: Option<usize>, // the step whose header is topmost in the document viewport
-    outline_shown: Option<usize>, // the top step the outline last scrolled to keep in view
+    pub sel: Option<(usize, usize)>,
+    scroll_to: Option<usize>,
+    scroll_to_step: Option<(usize, u8)>,
+    top_step: Option<usize>,
+    outline_shown: Option<usize>,
 
-    steps: HashMap<(usize, usize), StepView>, // (path, step) -> how the step shows, when not the default
-    dir_toggled: HashSet<String>, // directories in the Files tab whose default open state is flipped
-    groups_open: HashMap<String, bool>, // groups in the Paths tab the reader opened or closed
-    peek: Option<Peek>,           // a definition pinned in the right panel
+    steps: HashMap<(usize, usize), StepView>,
+    dir_toggled: HashSet<String>,
+    groups_open: HashMap<String, bool>,
+    peek: Option<Peek>,
     history: History,
 
     pub ui: Ui,
-    pub px: u32, // the UI font size in pixels
+    pub px: u32,
     pub cell: (i32, i32),
     pub tab: Tab,
     left: LeftTab,
@@ -120,15 +111,15 @@ pub struct App {
     pub scrolls: HashMap<Id, i32>,
     pub actions: Vec<Action>,
     pub graph: graph::Graph,
-    pub tooltip: Option<(Tip, (i32, i32))>, // what to show at the pointer this frame
-    pub tip_shown: Option<String>,          // the first line of last frame's tooltip, for dumps
+    pub tooltip: Option<(Tip, (i32, i32))>,
+    pub tip_shown: Option<String>,
 
-    fields: [Field; 5],           // the text fields, indexed by `Which`
-    results: Vec<(usize, usize)>, // (file, line)
+    fields: [Field; 5],
+    results: Vec<(usize, usize)>,
     output: String,
     status: String,
-    shot: Option<(PathBuf, u32)>, // screenshot mode: write the window to this file after a few frames, then quit
-    shot_next: Option<PathBuf>,   // a script asked for a screenshot of the next frame
+    shot: Option<(PathBuf, u32)>,
+    shot_next: Option<PathBuf>,
 }
 
 impl App {
@@ -206,8 +197,6 @@ impl App {
     }
 
     fn save(&mut self) {
-        // saving writes every path and removes the files of the rest, so a map that did not
-        // read from disk is never saved over it
         if self.file.broken {
             self.status = "not saved: the map on disk does not read; fix it and it reloads".into();
             return;
@@ -271,7 +260,6 @@ impl App {
                 return;
             }
         };
-        // ponytail: single-threaded scan of the in-memory index; rayon it when it takes >100ms.
         self.results = self
             .idx
             .files
@@ -295,7 +283,6 @@ impl App {
         self.tab = Tab::Results;
     }
 
-    /// A new empty flow from the top bar, selected so 'pin selection' lands in it.
     fn create_path(&mut self, name: String) {
         if name.is_empty() {
             return;
@@ -313,8 +300,6 @@ impl App {
         self.file.dirty = true;
     }
 
-    /// Pin the listing's selected lines as a step of the selected path, under the selected
-    /// step (else a root). The new step becomes the selected one so repeated pins build a chain.
     fn add_selection(&mut self) {
         let (Tab::Listing, Some(fi), Some((a, b))) = (self.tab, self.cur_file, self.sel) else {
             self.status = "select lines in the listing first".into();
@@ -340,7 +325,6 @@ impl App {
         );
     }
 
-    /// The step's hierarchical number (1.2.3), the way the document and outline show it.
     fn step_label(&self, pi: usize, ai: usize) -> String {
         self.map
             .numbered(&self.idx, pi)
@@ -389,7 +373,6 @@ impl App {
                     }
                 }
             }
-            // ponytail: no undo
             Action::DeleteStep(pi, ai) => {
                 let number = self
                     .map
@@ -461,7 +444,6 @@ impl App {
     }
 }
 
-/// A text field, as its index in `App::fields`.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Which {
     Search,
@@ -472,7 +454,6 @@ enum Which {
 }
 
 impl Which {
-    /// The field's element id suffix, `field@<name>` in a script.
     fn name(self) -> &'static str {
         match self {
             Which::Search => "search",
@@ -485,8 +466,6 @@ impl Which {
 }
 
 impl App {
-    /// Element names for `rect`, `click-id` and `hover-id`: `name`, `name/<n>` (an id_n) or
-    /// `name@<suffix>` (an id_with).
     fn named_id(name: &str) -> Id {
         if let Some((base, n)) = name.split_once('/') {
             ui::id_n(ui::id(base), n.parse().unwrap_or(0))
@@ -499,11 +478,6 @@ impl App {
 }
 
 impl window::App for App {
-    /// Script commands: `tab <path|graph|listing|diff|results>`, `open <file> [line]`, `scroll <panel> <n>`,
-    /// `idle` (waits until no server request, merge, re-index or link is in flight), `shot <file.png>`, `rect <id> [n]`
-    /// (last frame's rectangle of an element by its id name), `dump` (state to stderr:
-    /// selection, tab, scrolls, docked panels, tooltip, peek, graph camera, node and button rectangles, the
-    /// canvas rectangle).
     fn script(&mut self, line: &str) -> bool {
         let w: Vec<&str> = line.split_whitespace().collect();
         match w[0] {
@@ -602,8 +576,6 @@ impl window::App for App {
         self.px = (14.0 * gfx.scale).round().max(8.0) as u32;
         self.cell = gfx.cell(self.px);
         let mut quit = false;
-        // Development aid: with CODEMAP_SHOT=<file.png> the window is written there once the
-        // first frames have settled, and the app quits. CODEMAP_SHOT_TAB picks the centre tab.
         if let Some((path, frame)) = self.shot.as_mut() {
             *frame += 1;
             if *frame == 6
@@ -633,7 +605,6 @@ impl window::App for App {
         self.poll_link();
         self.poll_disk();
 
-        // keys
         self.now = input.time;
         if input.key_with(Key::Char('s'), true, false) {
             self.save();
@@ -662,7 +633,6 @@ impl window::App for App {
         if let Some(name) = self.fields[Which::NewPath as usize].handle(input, false) {
             self.create_path(name.trim().to_owned());
         }
-        // with no field focused, up and down walk the path
         if !self.fields.iter().any(|f| f.focused) {
             if input.key_with(Key::Down, false, false) {
                 self.step_by(1);
@@ -688,7 +658,6 @@ impl window::App for App {
             }
         }
 
-        // the frame
         self.ui.begin(input);
         self.dock.cursor = Default::default();
         self.dock_input();

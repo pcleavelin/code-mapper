@@ -245,9 +245,10 @@ fn aliases_are_newtypes() {
 
 #[test]
 fn legacy_code_is_held_to_its_own_list() {
+    assert_eq!(rules_hit(&[("src/main.rs", "fn get(line: u32) {}")]), []);
     assert_eq!(
-        rules_hit(&[("src/main.rs", "// line\nfn get(line: u32) {}")]),
-        []
+        rules_hit(&[("src/main.rs", "// line\nfn main() {}")]),
+        [Rule::Comment]
     );
     assert_eq!(
         rules_hit(&[("src/main.rs", "#[allow(dead_code)]\nfn main() {}")]),

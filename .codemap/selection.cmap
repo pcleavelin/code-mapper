@@ -19,9 +19,9 @@ order 0
 author ai
 file src/gui/nav.rs
 symbol select_step
-lines 0 36
-hash 5784b2fcadca70b2
-note The step entry point. Sets the path and step, focuses the step's symbol and selects its lines, asks the document to scroll the header to the top unless the click was inside it, and leaves a Listing, Results or Diff tab for the Path tab.
+lines 0 34
+hash cc9ca71ae55f93f2
+note The step entry point. Sets the path and step, unfolds every folded ancestor of the step so the document shows it, focuses the step's symbol and selects its lines, asks the document to scroll the header to the top unless the click was inside it, and leaves a Listing, Results or Diff tab for the Path tab. A step over lines with no symbol of their own focuses the symbol around those lines, so the xrefs panel still has something to show.
 
 step epz6w8
 order 4
@@ -29,8 +29,8 @@ parent ascpfh
 author ai
 file src/gui/graph.rs
 symbol rebuild
-lines 0 104
-hash 342d4508504deac7
+lines 0 99
+hash a2e3d0c8d20d1975
 note The graph reads the same two fields and keeps nothing of its own: every frame it derives its node set from the selected path and the focused symbol, so it cannot disagree with the document or the outline. The path is drawn whenever one is selected, step or no step: selecting a symbol off the path adds it as another root beside the path rather than replacing it.
 
 step gjewkp

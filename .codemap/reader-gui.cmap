@@ -11,9 +11,9 @@ parent 50ozko
 author ai
 file src/gui/panels.rs
 symbol xrefs_panel
-lines 0 217
-hash 9abe442241f86b8d
-note The xrefs panel, docked right by default: the pinned peek on top when there is one, then the focused symbol's callers, callees and references, each row clickable. References are asked of the server the first time a symbol is shown, and the heading says so while the answer is out. It is the only panel that says a file is still waiting for its language server, by dimming the rows.
+lines 0 214
+hash 84677800f87ad145
+note The xrefs panel, docked right by default: the pinned peek on top when there is one, then the focused symbol's callers, callees and references, each row clickable. References are asked of the server the first time a symbol is shown, once per text of its file (the probe carries the file hash), and the heading says so while the answer is out. It is the only panel that says a file is still waiting for its language server, by dimming the rows.
 
 step 25fyn8
 order 14
@@ -21,8 +21,8 @@ parent 50ozko
 author ai
 file src/gui/peek.rs
 symbol tooltip_element
-lines 0 121
-hash edfde7052456be6a
+lines 0 120
+hash b0cae58b28640518
 note Built after every panel and before the layout, so the floating definition a code row asked for this frame is drawn over everything.
 
 step 37g7kf
@@ -51,8 +51,8 @@ parent jdewtv
 author ai
 file src/gui/document.rs
 symbol doc_steps
-lines 224 270
-hash c038d5c9627ab549
+lines 0 261
+hash 4bed7e91d5e2bc65
 note Context buttons: ten more lines of the file above or below the code each press, kept per (path, step) and cleared by 'no context' in the header. The slice is highlighted whenever what shows is not exactly the slice, the same rule the whole-symbol toggle uses.
 
 step 50ozko
@@ -60,8 +60,8 @@ order 0
 author ai
 file src/gui/mod.rs
 symbol frame
-lines 0 143
-hash 02d88d4f6fc4f03d
+lines 0 138
+hash 8aad18486067e2d6
 note The frame, in order: the font size for this scale factor, the screenshot aid, the three polls, the keys, then the element tree, then layout, draw, the action queue and the history snapshot. It asks the loop to come back in 50ms while a thread is running and in a second otherwise, so an idle window costs one frame per second.
 
 step 5aljhx
@@ -80,9 +80,9 @@ parent myq0zo
 author ai
 file src/gui/panels.rs
 symbol paths_window
-lines 0 184
-hash b26feca1a4b38d78
-note Paths: the groups from Map::rows as folders with their path counts, red when a path under them is stale, then one row per path with kind, author tag, step count and its diff mark, red when it has stale steps. A group never clicked is open while it holds the path being read; a click records it open or closed in groups_open. The selected path expands into the outline underneath - one row per step, indented by depth, carrying the hierarchical number, the link as an arrow and a hidden count on a folded subtree. The row highlighted is the step the document currently has at the top, which is how the outline follows scrolling.
+lines 0 179
+hash 37e0cd49dbc39f41
+note Paths: the groups from Map::rows as folders with their path counts, red when a path under them is stale, then one row per path with kind, author tag, step count and its diff mark, red when it has stale steps. A group never clicked is open while it holds the path being read; a click records it open or closed in groups_open. The selected path expands into the outline underneath - one row per step, indented by depth, carrying the hierarchical number, the link as an arrow and a hidden count on a folded subtree. The row highlighted is the step the document currently has at the top, which is how the outline follows scrolling: when that step changes and its row is out of view, the outline scrolls it to the upper third, never while the scrollbar is being dragged.
 
 step 7jhifk
 order 20
@@ -100,8 +100,8 @@ parent 50ozko
 author ai
 file src/gui/mod.rs
 symbol frame
-lines 4 25
-hash e64af7bbf1d16fd4
+lines 4 23
+hash ff0a74da0e087bc2
 note The development aid: with CODEMAP_SHOT set, the tab named by CODEMAP_SHOT_TAB is selected on frame 3, the renderer is asked for a PNG on frame 20 once the layout has settled, and the app quits. It is how a rendering claim is checked against pixels rather than asserted.
 
 step a4si22
@@ -110,8 +110,8 @@ parent 50ozko
 author ai
 file src/gui/mod.rs
 symbol frame
-lines 35 89
-hash a7340cfd7a2beab8
+lines 33 85
+hash c8fc75a147b69251
 note Everything that happens before a single element exists: the frame time, the four chords (ctrl+s, alt or ctrl with left and right for back and forward), every field fed the frame's keys with enter running the command, the search, a new path or a line jump, and up and down walking the path when no field has the keyboard.
 
 step cj7z2z
@@ -130,8 +130,8 @@ parent 50ozko
 author ai
 file src/gui/document.rs
 symbol path_document
-lines 0 232
-hash 683187a9e00fd431
+lines 0 227
+hash 56336e40820b0647
 note The document, the reader's landing view: the path header with its group, the note, the steps that link here, and a sticky breadcrumb of the topmost visible step's ancestors, then the steps from doc_steps. Which step is topmost and where a pending scroll lands both come from last frame's rectangles, looked up by the ids of the path's own steps.
 
 step gy5tg5
@@ -150,8 +150,8 @@ parent jdewtv
 author ai
 file src/gui/document.rs
 symbol doc_steps
-lines 162 188
-hash a09440c29bef3e01
+lines 157 182
+hash 8bfd936f8fa6d037
 note The link controls: the name opens the linked path, the toggle flips StepView.expanded, a link to a path already open further up says so instead, and one to a missing path shows red.
 
 step j7n739
@@ -161,8 +161,8 @@ author ai
 file src/gui/mod.rs
 symbol Action
 lines 0 25
-hash 83487e5a9fe872cb
-note What a click can ask for. Navigation, selection, the per-step view toggles, opening a group, the two deletions, tab switches and the three commands the top bar offers. Adding a gesture means adding a variant here and an arm in apply, not threading a callback through the panels.
+hash c5362cc361e22e46
+note What a click can ask for. Navigation, selection, the per-step view toggles, opening a group, the two deletions, tab switches and the three commands the top bar offers. Adding a gesture means adding a variant here and an arm in apply, not threading a callback through the panels. The fields are positional: a (path, step) pair indexes map.paths and that path's anchors; GoTo, Jump and PeekAt take a file index and 0-based line (and column), Jump and PeekAt meaning the definition of the identifier there; SelectLine's bool extends the listing selection; SelectStep's bool says the click was inside the document; OpenPath selects the path unless it is the one being read and shows it in the given tab; CollapseAll's bool hides every step's code, false showing all and unfolding all; FoldAll's bool folds every step with children, false unfolding all; OpenGroup's bool opens or closes the group; Context's i8 is -1 for more lines above, 1 for more below and 0 for back to the slice.
 
 step jdewtv
 order 30
@@ -170,9 +170,9 @@ parent d5you8
 author ai
 file src/gui/document.rs
 symbol doc_steps
-lines 0 293
-hash bda340c73c412120
-note The steps of one path in tree order, each a header with the hierarchical number and the fold, hide-code, whole-symbol, link and delete controls, then the note and the anchored lines. The same function draws a linked path inline: occ tells its element ids apart, the numbers carry the linking step's number as a prefix, and chain stops a path from opening inside itself.
+lines 0 283
+hash 763c25fba0b81912
+note The steps of one path in tree order, each a header with the hierarchical number and the fold, hide-code, whole-symbol, link and delete controls, then the note and the anchored lines. The same function draws a linked path inline: occ tells its element ids apart, the numbers carry the linking step's number as a prefix, and chain stops a path from opening inside itself. occ is None for the path being read; each inline expansion takes a fresh number from next_occ, so its ids differ from the path's own and from another expansion of the same path. Clicking a header of the path being read selects the step where it is, while a step of an inline linked path opens that path. The toggle buttons keep one width whatever their label, and the delete button sits alone at the far right, so no button slides under a pointer that clicks twice.
 
 step jjshc9
 order 13
@@ -190,8 +190,8 @@ parent jdewtv
 author ai
 file src/gui/document.rs
 symbol doc_steps
-lines 276 291
-hash b34049742e9b9568
+lines 267 281
+hash 09c4241c2441c4e0
 note The inline expansion: the linked path's steps drawn by doc_steps itself, one level deeper, under a fresh occ, while the step's own subtree is not folded.
 
 step myq0zo
@@ -210,8 +210,8 @@ parent d5you8
 author ai
 file src/gui/widgets.rs
 symbol code_block
-lines 0 74
-hash bfa50cf0aa43d2b6
+lines 0 73
+hash 0fd7d1d58264ce86
 note One block of code as one element, shared with the listing, the peek panel and the tooltip; the document passes the slice highlight as the row background.
 
 step o4p6no
@@ -241,7 +241,7 @@ author ai
 file src/gui/panels.rs
 symbol symbols_window
 lines 0 60
-hash 14f0098d734f9148
+hash 1b3dbf347da53244
 note Symbols: a filter box over every symbol in the index, one row each with a '+' when a path covers it. Only the rows on screen become elements, with a spacer above and below standing in for the rest, so the table is the same cost at ten symbols or ten thousand.
 
 step qnrb07
@@ -250,8 +250,8 @@ parent 50ozko
 author ai
 file src/gui/panels.rs
 symbol output_panel
-lines 0 41
-hash a2629d2a20d1c35a
+lines 0 39
+hash 8180ad8bc5fb423f
 note The output panel, docked at the bottom by default: the command log and the input line that runs exactly the CLI's commands. See cli-command for what happens to a line.
 
 step rdm4l3
@@ -260,8 +260,8 @@ parent sn1cn1
 author ai
 file src/gui/mod.rs
 symbol add_selection
-lines 0 22
-hash a58d65b610bf5d00
+lines 0 23
+hash 5bff281021c613e2
 note 'pin selection': the listing's selected lines become a step of the selected path, under the selected step. The new step becomes the selected one, so pinning repeatedly builds a chain rather than a fan.
 
 step sn1cn1
@@ -270,8 +270,8 @@ parent 50ozko
 author ai
 file src/gui/mod.rs
 symbol apply
-lines 0 109
-hash 8f8e9f74c9eb5318
+lines 0 108
+hash 2f80317e4ea9153b
 note The action queue, drained once the tree is built. This is the only place the app mutates itself during a frame, so a panel can hold &mut self while it draws and still cause a selection change.
 
 step svoo3m
@@ -281,8 +281,8 @@ author ai
 file src/gui/document.rs
 symbol StepView
 lines 0 6
-hash 4a92eafff33fcca0
-note How one step shows: whole symbol or slice, code hidden, subtree folded, the context lines asked for, and whether the path it links to shows inline. One map from (path, step) to this, missing meaning the default, so removing or renumbering steps remaps one collection and a toggle is a field flip. A linked path shown inline uses the views of its own steps.
+hash 96dd570cb8630ea7
+note How one step shows: whole symbol or slice, code hidden, subtree folded, the context lines asked for above and below, and whether the path it links to shows inline. One map from (path, step) to this, missing meaning the default - the slice, code shown, subtree open, no context - so removing or renumbering steps remaps one collection and a toggle is a field flip. A linked path shown inline uses the views of its own steps.
 
 step ujbodh
 order 27

@@ -1,8 +1,3 @@
-//! The auto layer: every file under the root, its symbols and highlight spans, and the call
-//! graph between symbols. Each language is indexed by its server when one is on PATH
-//! (`server`), by tree-sitter otherwise (`treesitter`); `link` turns either backend's answer
-//! into callee and caller lists, and `cache` keeps the result between runs.
-
 mod cache;
 mod link;
 mod server;
@@ -23,8 +18,6 @@ pub struct SymRef {
     pub sym: usize,
 }
 
-/// How a call names its target. `a.b.c()` and `A::c()` both give name `c` with qualifier `b`
-/// or `A`; `self.c()`, `Self::c()`, `this.c()` are `SelfRef`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Qual {
     None,
@@ -42,25 +35,23 @@ pub struct Call {
 pub struct Symbol {
     pub name: String,
     pub kind: String,
-    pub start: usize, // inclusive 0-based line rows
+    pub start: usize,
     pub end: usize,
     pub depth: u8,
-    pub owner: Option<String>, // the type / class a member belongs to (impl Foo -> "Foo")
-    pub calls: Vec<Call>,      // tree-sitter backend: raw call sites, resolved by name in `link`
-    pub targets: Vec<(String, u32)>, // server backend: (file, line) of each callee's definition, resolved in `link`
-    pub refs: Vec<(String, u32)>, // (file, line) of every reference, once the GUI has asked the server for them
+    pub owner: Option<String>,
+    pub calls: Vec<Call>,
+    pub targets: Vec<(String, u32)>,
+    pub refs: Vec<(String, u32)>,
     pub callees: Vec<SymRef>,
     pub callers: Vec<SymRef>,
 }
 
-/// Where a file's symbols and xrefs came from.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Backend {
     TreeSitter = 0,
     Server = 1,
 }
 
-/// A language and its server, looked up on PATH by name.
 pub struct Lang {
     pub exts: &'static [&'static str],
     pub server: &'static str,
@@ -95,14 +86,11 @@ pub const LANGS: [Lang; 5] = [
     },
 ];
 
-/// The language of `path`, by extension. Each has a bundled grammar (`language_for`), so a
-/// file with a language has symbols even without its server.
 pub fn lang_for(path: &str) -> Option<&'static Lang> {
     let ext = path.rsplit('.').next().unwrap_or("");
     LANGS.iter().find(|l| l.exts.contains(&ext))
 }
 
-/// Syntax colour span within one line: byte start, byte end, class (see `HL_*`).
 pub type Span = (u32, u32, u8);
 
 pub const HL_PLAIN: u8 = 0;
@@ -115,24 +103,22 @@ pub const HL_CONSTANT: u8 = 6;
 pub const HL_PROPERTY: u8 = 7;
 
 pub struct File {
-    pub path: String, // relative to root, forward slashes
+    pub path: String,
     pub lines: Vec<String>,
-    pub hl: Vec<Vec<Span>>, // per line, sorted, non-overlapping
+    pub hl: Vec<Vec<Span>>,
     pub symbols: Vec<Symbol>,
-    pub imports: HashMap<String, String>, // imported name or alias -> module stem it comes from
+    pub imports: HashMap<String, String>,
     pub mtime: Option<SystemTime>,
-    pub hash: u64, // FNV-1a of the text as indexed (tabs expanded)
+    pub hash: u64,
     pub backend: Backend,
-    pub pending: bool, // a server exists for this language and has not answered for this text yet
+    pub pending: bool,
 }
 
 impl File {
-    /// `src/core/file_buffer.odin` -> `file_buffer`
     pub fn stem(&self) -> &str {
         let base = self.path.rsplit('/').next().unwrap_or(&self.path);
         base.split('.').next().unwrap_or(base)
     }
-    /// `src/core/file_buffer.odin` -> `core` (the package / module directory)
     pub fn dir(&self) -> &str {
         match self.path.rfind('/') {
             Some(i) => self.path[..i].rsplit('/').next().unwrap_or(""),
@@ -148,19 +134,12 @@ pub struct Index {
 
 const MAX_FILE: usize = 4 << 20;
 
-/// Walks the root. A file whose text matches its cache entry is taken from the cache without
-/// parsing; anything else is parsed with tree-sitter now and, if its language has a server,
-/// marked pending for it. A server answer names lines in other files, so a cached answer is
-/// also pending again when any file it points into changed.
-// ponytail: reads the whole tree into memory up front on the main thread; move to a background
-// thread with a progress bar when startup on a big repo becomes annoying.
 pub fn build(root: &Path) -> Index {
     let mut parsers = Parsers::default();
     let mut cache = load_cache(&root.join(CACHE)).unwrap_or_default();
     let mut changed: HashSet<String> = HashSet::new();
     let mut files = Vec::new();
 
-    // require_git(false): honour .gitignore even when the root is not a git repo (target/ etc.)
     for entry in ignore::WalkBuilder::new(root)
         .require_git(false)
         .build()
@@ -173,7 +152,7 @@ pub fn build(root: &Path) -> Index {
             continue;
         };
         if raw.len() > MAX_FILE || raw[..raw.len().min(1024)].contains(&0) {
-            continue; // too big or binary
+            continue;
         }
 
         let ext = entry
@@ -187,7 +166,6 @@ pub fn build(root: &Path) -> Index {
             .unwrap_or(entry.path())
             .to_string_lossy()
             .replace('\\', "/");
-        // ponytail: tabs become 4 spaces once, for display and hashing alike
         let text = String::from_utf8_lossy(&raw).replace('\t', "    ");
         let hash = fnv1a(text.bytes());
         let mut f = match cache.remove(&rel) {
@@ -225,13 +203,11 @@ pub fn build(root: &Path) -> Index {
     };
     idx.link();
     if !changed.is_empty() || !cache.is_empty() {
-        idx.save_cache(); // parsed something, or a cached file is gone
+        idx.save_cache();
     }
     idx
 }
 
-/// `word` appears on line `li` of `f` as a whole identifier outside comments and strings: a
-/// place that names it in code.
 pub fn call_site(f: &File, li: usize, word: &str) -> bool {
     let Some(line) = f.lines.get(li) else {
         return false;
@@ -257,7 +233,6 @@ impl Index {
         &self.files[r.file].symbols[r.sym]
     }
 
-    /// Stable identity across re-indexes: (file path, symbol name).
     pub fn key(&self, r: SymRef) -> (String, String) {
         (self.files[r.file].path.clone(), self.sym(r).name.clone())
     }
@@ -271,12 +246,10 @@ impl Index {
         Some(SymRef { file, sym })
     }
 
-    /// The innermost symbol of `path` containing `line`.
     pub fn by_line(&self, path: &str, line: usize) -> Option<SymRef> {
         self.sym_at(self.find_file(path)?, line)
     }
 
-    /// The innermost symbol of file `file` spanning `line`.
     fn sym_at(&self, file: usize, line: usize) -> Option<SymRef> {
         let sym = self.files[file]
             .symbols
@@ -288,9 +261,6 @@ impl Index {
         Some(SymRef { file, sym })
     }
 
-    /// Every symbol called `name`. `Owner::name` narrows to that owner, `file:name` to a file
-    /// (its stem or a path suffix), `file:Owner::name` to both; a bare qualifier that is neither
-    /// is tried as each.
     pub fn find_symbols(&self, name: &str) -> Vec<SymRef> {
         let (qual, name) = match name.rsplit_once("::").or_else(|| name.rsplit_once(':')) {
             Some((q, n)) => (Some(q.replace('\\', "/")), n),
@@ -324,7 +294,6 @@ impl Index {
         out
     }
 
-    /// Symbols that call something but are called by nothing: entry points of auto-mapped paths.
     pub fn roots(&self) -> Vec<SymRef> {
         let mut out = Vec::new();
         for (file, f) in self.files.iter().enumerate() {
@@ -338,7 +307,6 @@ impl Index {
         out
     }
 
-    /// Pre-order call tree from `root`, depth-limited, each symbol at most once.
     pub fn call_tree(&self, root: SymRef, max_depth: usize) -> Vec<(SymRef, usize)> {
         let mut out = Vec::new();
         let mut seen = HashSet::new();

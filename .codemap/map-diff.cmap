@@ -12,8 +12,8 @@ author ai
 file src/map.rs
 symbol PathDiff
 lines 0 6
-hash 0f7144251350c470
-note One path's difference: whether the path itself is new, gone or changed, whether its note, kind or group moved, a per-step verdict, and the base steps that no longer exist.
+hash a712147e5056a95e
+note One path's difference: whether the path itself is new, gone or changed, whether its note, kind or group moved, a verdict per step of the working path, and the base steps that no longer exist. Those removed steps are the base's anchors as parsed and never resolved against the index, so their line_start and line_end mean nothing.
 
 step 53qktx
 order 9
@@ -21,8 +21,8 @@ parent c08ljl
 author ai
 file src/gui/work.rs
 symbol poll_base
-lines 0 8
-hash 42ed93ed5cb7662a
+lines 0 11
+hash 8d400c456a9e29f6
 note Picks up the parent revision's map once the thread has it, or the reason there is none, which the Diff tab shows. Until then the tab says it is reading.
 
 step 6xac32
@@ -30,8 +30,8 @@ order 3
 author ai
 file src/gui/views.rs
 symbol diff_view
-lines 0 103
-hash 66d0d6c3ecfa8097
+lines 0 104
+hash f0ced8f90a60b8d8
 note The Diff tab: every added, removed or changed path with a one-line summary, and under a changed one the per-step verdicts. Click a row to read that path's document. 'refresh' reads the parent revision again, which also happens on start and whenever the map reloads from disk; with no base map the tab says why.
 
 step c08ljl
@@ -69,7 +69,7 @@ order 2
 author ai
 file src/cli.rs
 symbol exec
-lines 620 664
+lines 616 660
 hash ef5ab07126cc4353
 note The text form: one line per changed path, then its changed steps indented with +, ~ or -.
 
@@ -102,7 +102,7 @@ file src/map.rs
 symbol diff
 lines 0 78
 hash 22aa3a27318429ad
-note Path by name, step by id. A step whose file, symbol, lines or hash moved is re-pinned, one with only a different note is note edited, one with only a different link is link changed; an id on one side only is new here or removed there. A change of the path note, kind or group marks the path changed too.
+note Path by name, step by id. A step whose file, symbol, lines or hash moved is re-pinned, one with only a different note is note edited, one with only a different link is link changed; an id on one side only is new here or removed there. A change of the path note, kind or group marks the path changed too. The result lists this map's paths in its order, then the base's paths this map no longer has.
 
 step vfghsy
 order 8

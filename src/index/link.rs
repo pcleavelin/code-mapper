@@ -1,6 +1,3 @@
-//! Call resolution: every symbol's callees and callers, from a server's (file, line) targets or
-//! from tree-sitter call sites resolved by name.
-
 use super::{Call, File, Index, Qual, SymRef};
 use std::collections::HashMap;
 
@@ -14,19 +11,12 @@ impl Index {
         f.stem() == m || f.dir() == m
     }
 
-    /// Where a call goes. Qualifier-aware, no types: `self.m` / `Self::m` bind to the caller's
-    /// owner; `T::m` / `t.m` to a member of type `T`, else to module (file stem or directory)
-    /// `T`, else through the file's imports; a lowercase receiver picks a member somewhere;
-    /// an unqualified name picks a free function in the same file, then an imported one, then
-    /// one in the same directory, then anywhere. Wrong when two types share a method name and
-    /// the receiver is a variable; a real resolver needs per-language scope and type rules.
     fn resolve(
         &self,
         from: SymRef,
         call: &Call,
         by_name: &HashMap<String, Vec<SymRef>>,
     ) -> Option<SymRef> {
-        // a struct/enum/union is data, not a call target, even where `Foo{...}` parses as a call
         let cands: Vec<SymRef> = by_name
             .get(&call.name)?
             .iter()
@@ -59,7 +49,6 @@ impl Index {
                 .or_else(|| pick(&mut cands.iter().filter(|r| self.in_module(**r, q))))
                 .or_else(|| {
                     if let Some(m) = f.imports.get(q) {
-                        // a known import that matched no file here is an external module (`log.error`)
                         return pick(&mut cands.iter().filter(|r| self.in_module(**r, m)));
                     }
                     let lowercase = q
@@ -67,10 +56,8 @@ impl Index {
                         .next()
                         .is_some_and(|c| c.is_lowercase() || c == '_');
                     if !lowercase {
-                        return None; // `Regex::new`: a type this repo does not define
+                        return None;
                     }
-                    // a variable receiver: some type's member, the caller's own type first; a
-                    // variable never calls a free function
                     owner
                         .and_then(|o| pick(&mut cands.iter().filter(|r| self.owner_is(**r, o))))
                         .or_else(|| pick(&mut cands.iter().filter(member)))
@@ -90,8 +77,6 @@ impl Index {
                     )
                 })
                 .or_else(|| {
-                    // only C reaches other files without naming them (headers); elsewhere an
-                    // unqualified name that is not local or imported is a builtin or a std call
                     let c = f.path.ends_with(".c") || f.path.ends_with(".h");
                     if c {
                         pick(&mut cands.iter().filter(free)).or_else(|| pick(&mut cands.iter()))
@@ -102,8 +87,6 @@ impl Index {
         }
     }
 
-    /// Rebuilds every callee / caller list: server targets by (file, line), tree-sitter calls
-    /// by name.
     pub fn link(&mut self) {
         let mut by_name: HashMap<String, Vec<SymRef>> = HashMap::new();
         for (file, f) in self.files.iter().enumerate() {
@@ -115,8 +98,6 @@ impl Index {
             }
         }
 
-        // a server names its targets by path and line, once per call site, so the file lookup
-        // is a map rather than `find_file`'s scan over every file
         let file_of: HashMap<&str, usize> = self
             .files
             .iter()
@@ -158,8 +139,6 @@ impl Index {
         }
     }
 
-    /// A copy with the symbol tables and imports but no text, which is all `link` reads:
-    /// small enough to hand to a thread. `take_edges` brings the result back.
     pub fn symbols_only(&self) -> Index {
         let files = self
             .files
@@ -182,9 +161,6 @@ impl Index {
         }
     }
 
-    /// Copy every symbol's callees and callers from `linked`, a `symbols_only` copy of this
-    /// same index after `link`. Symbol tables must match; a mismatch means the index changed
-    /// under the thread and the copy is stale.
     pub fn take_edges(&mut self, linked: &Index) {
         let same = self.files.len() == linked.files.len()
             && self.files.iter().zip(&linked.files).all(|(a, b)| {
@@ -276,13 +252,10 @@ mod tests {
         let b = "use crate::a::helper;\npub struct B;\nimpl B { pub fn new() -> B { B } fn step(&self) {} }\nfn run(x: &B) { A::new(); B::new(); x.step(); helper(); a::helper(); }\nfn helper() {}\n";
         let idx = index(&[("src/a.rs", a), ("src/b.rs", b)]);
 
-        // self.step / Self::new bind to A's members, not B's
         assert_eq!(
             callee_names(&idx, "go", "src/a.rs"),
             ["src/a.rs:new", "src/a.rs:step"]
         );
-        // A::new -> A's new, B::new -> B's new, x.step -> a member (same file wins), helper -> same-file free fn,
-        // a::helper -> module a
         let run = callee_names(&idx, "run", "src/b.rs");
         assert!(run.contains(&"src/a.rs:new".to_string()), "{run:?}");
         assert!(run.contains(&"src/b.rs:new".to_string()), "{run:?}");

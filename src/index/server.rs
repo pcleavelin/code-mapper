@@ -1,21 +1,15 @@
-//! The server backend: files' symbols and outgoing calls asked of the language's server a batch
-//! at a time, one symbol's callers and references asked when they are wanted, and the
-//! bookkeeping of which files still wait for a server.
-
 use super::{Backend, Index, Lang, SymRef, Symbol, lang_for, treesitter::bare_type};
 use crate::lsp;
 use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-/// One file's symbols as a server reported them, with the text hash they were asked for.
 pub struct ServerFile {
     pub path: String,
     pub hash: u64,
     pub symbols: Vec<Symbol>,
 }
 
-/// LSP SymbolKind names, indexed by kind; 0 is not a kind.
 const KINDS: [&str; 27] = [
     "symbol",
     "file",
@@ -53,8 +47,6 @@ fn symbol_kind_name(k: u64, name: &str) -> &'static str {
     }
 }
 
-/// `impl Trait for Foo<T>` -> `Foo`; `impl Foo` -> `Foo`. Takes a server's kind-19 name,
-/// which carries no generic parameters of the impl itself (see `impl_name`).
 fn impl_type(name: &str) -> String {
     bare_type(
         name.rsplit(" for ")
@@ -65,8 +57,6 @@ fn impl_type(name: &str) -> String {
     )
 }
 
-/// One DocumentSymbol and, for a container, its direct children. Records where each symbol's
-/// name sits so call-hierarchy and reference requests can point at it.
 fn push_symbol(
     v: &Value,
     depth: u8,
@@ -81,8 +71,6 @@ fn push_symbol(
     let k = v["kind"].as_u64().unwrap_or(0);
     let r = &v["range"];
     let p = &v["selectionRange"]["start"];
-    // Servers start a symbol at its doc comment or attributes; tree-sitter at the declaration.
-    // Anchors are offsets from the start, so both backends use the line the name is on.
     let start = p["line"].as_u64().unwrap_or(0) as usize;
     let mut end = (r["end"]["line"].as_u64().unwrap_or(0) as usize).max(start);
     if r["end"]["character"] == 0 && end > start {
@@ -122,7 +110,6 @@ fn push_symbol(
     }
 }
 
-/// (file, line) for each element of a Location-like array, files outside the root dropped.
 fn locations(
     v: &Value,
     root: &Path,
@@ -145,9 +132,6 @@ fn locations(
     out
 }
 
-/// Starts the language's server on the root and waits for it to finish its own indexing.
-/// Err when it is not on PATH or will not start. The returned root is absolute, which is
-/// what the server's URIs are compared against.
 pub fn start_server(root: &Path, lang: &Lang) -> Result<(lsp::Client, PathBuf), String> {
     let exe =
         lsp::find_on_path(lang.server).ok_or_else(|| format!("{} not on PATH", lang.server))?;
@@ -158,9 +142,6 @@ pub fn start_server(root: &Path, lang: &Lang) -> Result<(lsp::Client, PathBuf), 
     Ok((c, root))
 }
 
-/// Symbols and outgoing calls for a batch of files from a running server. Each stage (the
-/// files' symbols, every symbol's call-hierarchy item, every item's outgoing calls) is sent
-/// whole, so the server works on many requests at once.
 pub fn index_files(c: &mut lsp::Client, root: &Path, files: &[(String, u64)]) -> Vec<ServerFile> {
     let docs: Vec<Value> = files
         .iter()
@@ -179,7 +160,6 @@ pub fn index_files(c: &mut lsp::Client, root: &Path, files: &[(String, u64)]) ->
         }
         per_file.push((symbols, sel));
     }
-    // (file, symbol) of every request in the next two stages, in the order sent
     let mut who = Vec::new();
     let mut reqs = Vec::new();
     for (fi, (_, sel)) in per_file.iter().enumerate() {
@@ -224,9 +204,6 @@ pub fn index_files(c: &mut lsp::Client, root: &Path, files: &[(String, u64)]) ->
         .collect()
 }
 
-/// Where a symbol's name sits, as a server counts it: the symbol's first line, which is the
-/// line of its name, and the UTF-16 column of the name on it (0 when the name is not there
-/// as written, as with an impl block).
 pub fn name_position(idx: &Index, r: SymRef) -> (u32, u32) {
     let (f, s) = (&idx.files[r.file], idx.sym(r));
     let line = f.lines.get(s.start).map_or("", String::as_str);
@@ -236,13 +213,11 @@ pub fn name_position(idx: &Index, r: SymRef) -> (u32, u32) {
     (s.start as u32, col as u32)
 }
 
-/// Every reference to `r`, as (file, line) inside the root, from a running server.
 pub fn references(c: &mut lsp::Client, root: &Path, idx: &Index, r: SymRef) -> Vec<(String, u32)> {
     let (line, col) = name_position(idx, r);
     references_at(c, root, &idx.files[r.file].path, line, col)
 }
 
-/// Every reference to the name at (`line`, `col`) of `path`, as (file, line) inside the root.
 pub fn references_at(
     c: &mut lsp::Client,
     root: &Path,
@@ -257,8 +232,6 @@ pub fn references_at(
     locations(&refs, root, |l| (&l["uri"], &l["range"]["start"]))
 }
 
-/// Every place that calls `r`, as the (file, line) of the caller's name inside the root, from
-/// a running server.
 pub fn incoming_calls(
     c: &mut lsp::Client,
     root: &Path,
@@ -293,8 +266,6 @@ pub fn incoming_calls(
     out
 }
 
-/// The CLI's servers: each language's started the first time a command needs it and kept
-/// for the rest of the command, so a command that asks several things starts it once.
 pub struct Servers {
     root: PathBuf,
     live: std::collections::HashMap<&'static str, Option<(lsp::Client, PathBuf)>>,
@@ -310,8 +281,6 @@ impl Servers {
         }
     }
 
-    /// The running server for `lang`, started now if it is not yet. None when it is not on
-    /// PATH or will not start, which is reported once.
     fn client(&mut self, lang: &'static Lang) -> Option<&mut (lsp::Client, PathBuf)> {
         if !self.live.contains_key(lang.server) {
             let started = start_server(&self.root, lang);
@@ -323,9 +292,6 @@ impl Servers {
         self.live.get_mut(lang.server).and_then(Option::as_mut)
     }
 
-    /// Asks the servers for the files among `paths` that still wait for one, then re-links and
-    /// saves the cache when anything was answered. Files of a language with no server keep the
-    /// tree-sitter answer.
     pub fn index(&mut self, idx: &mut Index, paths: &[String]) {
         let want: std::collections::HashSet<&str> = paths.iter().map(String::as_str).collect();
         let mut answered = false;
@@ -358,7 +324,6 @@ impl Servers {
         }
     }
 
-    /// Where `r` is called from, asked of its language's server; None when there is none.
     pub fn incoming_calls(&mut self, idx: &Index, r: SymRef) -> Option<Vec<(String, u32)>> {
         let lang = lang_for(&idx.files[r.file].path)?;
         let (c, root) = self.client(lang)?;
@@ -366,7 +331,6 @@ impl Servers {
         Some(incoming_calls(c, &root, idx, r))
     }
 
-    /// Every reference to `r`, asked of its language's server; None when there is none.
     pub fn references(&mut self, idx: &Index, r: SymRef) -> Option<Vec<(String, u32)>> {
         let lang = lang_for(&idx.files[r.file].path)?;
         let (c, root) = self.client(lang)?;
@@ -384,7 +348,6 @@ impl Drop for Servers {
 }
 
 impl Index {
-    /// Files waiting on a server, grouped by language.
     pub fn pending(&self) -> Vec<(&'static Lang, Vec<(String, u64)>)> {
         let mut out: Vec<(&'static Lang, Vec<(String, u64)>)> = Vec::new();
         for f in self.files.iter().filter(|f| f.pending) {
@@ -399,8 +362,6 @@ impl Index {
         out
     }
 
-    /// Takes a server's answer for a file, unless the file changed since it was asked. The
-    /// caller re-links afterwards.
     pub fn apply(&mut self, r: ServerFile) {
         let Some(fi) = self.find_file(&r.path) else {
             return;
@@ -414,8 +375,6 @@ impl Index {
         f.pending = false;
     }
 
-    /// Files of a language stop waiting: its server is not available, so tree-sitter's answer
-    /// stands.
     pub fn give_up(&mut self, lang: &Lang) {
         for f in &mut self.files {
             if lang_for(&f.path).is_some_and(|l| l.server == lang.server) {

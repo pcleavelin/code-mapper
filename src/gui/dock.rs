@@ -1,13 +1,9 @@
-//! The panels around the centre: which edge each one is docked to, in what order, and how
-//! big. Dragging a panel's header onto another edge moves it; dragging the splitter on its
-//! centre side resizes it. Nothing is saved: every launch starts from the default layout.
-
 use super::*;
 use winit::window::CursorIcon;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub(super) enum Panel {
-    Nav, // Paths, Symbols, Files
+    Nav,
     Xrefs,
     Output,
 }
@@ -32,10 +28,9 @@ pub(super) enum Edge {
 struct Place {
     panel: Panel,
     edge: Edge,
-    size: Option<i32>, // across the edge (a width at the sides, a height at the bottom); None is the default
+    size: Option<i32>,
 }
 
-/// A header held down; it becomes a move once the pointer has left the spot it was pressed at.
 struct Grab {
     panel: Panel,
     from: (i32, i32),
@@ -43,7 +38,7 @@ struct Grab {
 }
 
 pub(super) struct Dock {
-    places: Vec<Place>, // each edge's panels in screen order, left to right and top to bottom
+    places: Vec<Place>,
     grab: Option<Grab>,
     pub cursor: CursorIcon,
 }
@@ -72,9 +67,6 @@ fn panel_id(p: Panel) -> Id {
 }
 
 impl Dock {
-    /// Every panel's size this frame, in `places` order, held between a floor and what leaves
-    /// the centre 20 columns and 12 rows (with the top and status bars). The stored size is
-    /// left alone, so a panel squeezed by a small window grows back with it.
     pub(super) fn sizes(&self, win: (i32, i32), cell: (i32, i32)) -> Vec<i32> {
         let mut out = vec![0; self.places.len()];
         for bottom in [false, true] {
@@ -99,9 +91,6 @@ impl Dock {
         out
     }
 
-    /// Takes `panel` out and puts it at position `at` among `edge`'s panels. A panel changing
-    /// between a side and the bottom goes back to the default size, since its size was across
-    /// the other axis.
     fn move_to(&mut self, panel: Panel, edge: Edge, at: usize) {
         let Some(from) = self.places.iter().position(|p| p.panel == panel) else {
             return;
@@ -121,7 +110,6 @@ impl Dock {
         self.places.insert(i, p);
     }
 
-    /// For dumps: each panel's edge in order, then the sizes.
     pub(super) fn describe(&self) -> String {
         let places: Vec<String> = self
             .places
@@ -149,7 +137,6 @@ impl App {
         (self.px as i32 / 2).max(5)
     }
 
-    /// The panels docked to `edge`, each with its splitter on the centre side.
     pub(super) fn docked(&mut self, edge: Edge, sizes: &[i32]) {
         let split = self.split_w();
         for i in 0..self.dock.places.len() {
@@ -185,8 +172,6 @@ impl App {
         }
     }
 
-    /// The bar between a panel and the centre, wider than the line it shows so it is easy to
-    /// catch; the rest of it is the centre's colour.
     fn splitter(&mut self, i: usize) {
         let Place { panel, edge, .. } = self.dock.places[i];
         let split = self.split_w();
@@ -212,8 +197,6 @@ impl App {
         self.ui.leaf(Kind::None, layout, style, Some(id));
     }
 
-    /// Opens a panel's header row: pressing on it anywhere a button is not starts a move.
-    /// The caller fills it and closes it.
     pub(super) fn grip(&mut self, panel: Panel) {
         let id = ui::id_with(ui::id("grip"), panel.name());
         let held = self.dock.grab.as_ref().is_some_and(|g| g.panel == panel);
@@ -238,9 +221,6 @@ impl App {
         );
     }
 
-    /// The dock's share of the frame's input, taken before any size is read so a drag shows
-    /// in the frame it happens: a held splitter puts its panel's inner edge under the
-    /// pointer, and a held header arms or, released, drops.
     pub(super) fn dock_input(&mut self) {
         let split = self.split_w();
         let (mx, my) = self.ui.input.mouse;
@@ -276,8 +256,6 @@ impl App {
         }
     }
 
-    /// Where a dragged header would land, as a band over the window. Runs after the tree is
-    /// built, so the band floats over it.
     pub(super) fn drag_band(&mut self) {
         let Some(g) = self.dock.grab.as_ref().filter(|g| g.moving) else {
             return;
@@ -292,10 +270,6 @@ impl App {
         }
     }
 
-    /// The edge under the pointer (the bottom panels or the bottom quarter of the row above
-    /// them, else the row's nearer half), the position among that edge's other panels, and
-    /// the band the panel would take there. Outside the body there is none: letting go there
-    /// cancels the move.
     fn drop_target(&self, panel: Panel, (mx, my): (i32, i32)) -> Option<(Edge, usize, Rect)> {
         let body = self.ui.interaction_of(ui::id("body")).rect?;
         let row = self.ui.interaction_of(ui::id("dock-row")).rect?;

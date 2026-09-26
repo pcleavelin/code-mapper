@@ -10,7 +10,7 @@ order 11
 author ai
 file src/cli.rs
 symbol exec
-lines 142 160
+lines 141 159
 hash 3ad6b5769056132d
 note index: every pending file under a path asked for at once, how a session readies a crate before mapping it. The GUI refuses it, since it indexes everything in the background.
 
@@ -47,7 +47,7 @@ parent d764ep
 author ai
 file src/cli.rs
 symbol exec
-lines 161 168
+lines 160 167
 hash 8fa39fe546ab7223
 note The tree command: need_tree indexes the files the tree reaches first, then the walk prints with its depth as indentation.
 
@@ -75,7 +75,7 @@ parent 5xix2r
 author ai
 file src/cli.rs
 symbol exec
-lines 169 178
+lines 168 177
 hash 4652d4ec9d26a8eb
 note The roots command, and the same list the GUI focuses on at startup.
 
@@ -104,8 +104,8 @@ order 5
 author ai
 file src/cli.rs
 symbol exec
-lines 94 116
-hash ed7afcaeebe386d4
+lines 94 115
+hash a6a31dc41294f284
 note callers: with a server, its incoming calls for the symbol, which cover files nothing has indexed; without one (the GUI's command line), the callers link derived. Every symbol of that name is answered, so an unqualified ambiguous name shows all of them.
 
 step vhx9tz
@@ -113,6 +113,6 @@ order 7
 author ai
 file src/cli.rs
 symbol exec
-lines 117 141
+lines 116 140
 hash 4809d4de7d0ded81
 note refs: asked of the language's server for the one symbol; the GUI's command line, which has no servers, prints what the xrefs panel already asked for, and a file with no server says which one is missing.

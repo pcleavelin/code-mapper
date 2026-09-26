@@ -1,7 +1,3 @@
-//! The version control the root is kept in, reached by running its command line: jj when a
-//! `.jj` directory is at or above the root, else git when a `.git` is. A repo colocated with
-//! git has both and is jj's. There is no VCS library.
-
 use std::path::Path;
 use std::process::Command;
 
@@ -32,7 +28,6 @@ impl Vcs {
         }
     }
 
-    /// The revision the working copy's changes sit on: `@-` in jj, `HEAD` in git.
     pub fn parent(self) -> &'static str {
         match self {
             Vcs::Jj => "@-",
@@ -40,8 +35,6 @@ impl Vcs {
         }
     }
 
-    /// The bytes of `path`, relative to `root`, in revision `rev`. None when the file is not
-    /// in that revision.
     pub fn show(self, root: &Path, rev: &str, path: &str) -> Option<Vec<u8>> {
         match self {
             Vcs::Jj => run(root, "jj", &["file", "show", "-r", rev, path]),
@@ -49,8 +42,6 @@ impl Vcs {
         }
     }
 
-    /// Every `.cmap` file directly in `dir`, relative to `root`, in revision `rev`, one after
-    /// another in file name order. None when `rev` has none.
     pub fn show_dir(self, root: &Path, rev: &str, dir: &str) -> Option<Vec<u8>> {
         match self {
             Vcs::Jj => run(
@@ -82,7 +73,6 @@ impl Vcs {
     }
 }
 
-/// `program args` in `root`: its output when it succeeds.
 fn run(root: &Path, program: &str, args: &[&str]) -> Option<Vec<u8>> {
     let out = Command::new(program)
         .args(args)

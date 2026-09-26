@@ -9,9 +9,9 @@ step 29a3aw
 order 0
 author ai
 file src/index/cache.rs
-lines 0 11
-hash 19ca98f362ff9d64
-note The layout. One version, rejected wholesale otherwise.
+lines 5 7
+hash 0d8738f575070e11
+note The layout. One version, rejected wholesale otherwise. "CMCH", u32 version, u32 file count, then per file: str path, u64 hash, u8 backend (1 = server), u32 symbol count and per symbol str name, str kind, u32 start, u32 end, u8 depth, str owner (empty = none), u32 call count and per call str name, u8 qual (0 none, 1 self, 2 named) and a str qualifier only when 2, then targets and refs each as a u32 count of (str path, u32 line); then a u32 count of (str name, str module) imports, written sorted so the same index writes the same bytes; then a u32 line count, each line a u32 count of (u32 start, u32 end, u8 class) spans. A str is a u32 length plus UTF-8 bytes; everything is little-endian.
 
 step 7n74ir
 order 2
@@ -40,7 +40,7 @@ file src/codec.rs
 symbol write_retry
 lines 0 23
 hash 3a0b4d615c8a0c45
-note Every file the tool writes, the map and the cache alike, goes through here: the bytes land in a temporary file beside the target and are renamed over it, so a reader, or the second of two threads saving at once, never sees a half-written file. A sharing violation from an editor or scanner holding the file is retried a few times.
+note Every file the tool writes, the map and the cache alike, goes through here: the bytes land in a temporary file beside the target and are renamed over it, so a reader, or the second of two threads saving at once, never sees a half-written file. A sharing violation from an editor or scanner holding the file is retried a few times: Windows errors 1224, 32 and 5, which another process or a scanner holding the file open causes for a moment.
 
 step nre0yw
 order 7
@@ -68,8 +68,8 @@ parent 29a3aw
 author ai
 file src/index/cache.rs
 symbol save_cache
-lines 0 48
-hash f7b6b1b7712a95b8
+lines 0 50
+hash 278ba10ffc1224c4
 note Written whole after a build that parsed anything and after every server run.
 
 step t4sexp

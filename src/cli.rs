@@ -1,13 +1,8 @@
-//! Text commands over the same index + map the GUI uses. Runs from the shell (the AI's way in)
-//! and from the GUI's output panel. Output is plain lines, grep-style, written to a String.
-
 use crate::index::{Backend, File, Index, Servers, SymRef};
 use crate::map::{Anchor, Author, Change, Kind, Map, Row, StepChange};
 use clap::{CommandFactory, Parser};
 use std::fmt::Write;
 
-// One CLI command. Parsed by clap from the process arguments and from the GUI's command line,
-// so `help` and argument errors read the same in both.
 #[derive(Parser, Debug)]
 #[command(
     name = "codemap",
@@ -185,8 +180,6 @@ fn parse_kind(s: &str) -> Result<Kind, String> {
     Kind::parse(s).ok_or_else(|| format!("expected one of {}", Kind::NAMES.join(", ")))
 }
 
-/// Parses `args` (without the program name). The `Err` is clap's own message: help text for
-/// `help`, or a usage error.
 pub fn parse(args: &[String]) -> Result<Command, clap::Error> {
     Command::try_parse_from(std::iter::once("codemap").chain(args.iter().map(String::as_str)))
 }
@@ -199,8 +192,6 @@ macro_rules! p {
     ($out:expr, $($t:tt)*) => { let _ = writeln!($out, $($t)*); };
 }
 
-/// Asks `servers` for the files among `files` that wait for a server, then resolves the map's
-/// anchors again, since a server's answer replaces the file's symbols and their indices.
 fn need(servers: &mut Option<&mut Servers>, idx: &mut Index, map: &mut Map, files: Vec<String>) {
     let Some(s) = servers.as_deref_mut() else {
         return;
@@ -216,8 +207,6 @@ fn need(servers: &mut Option<&mut Servers>, idx: &mut Index, map: &mut Map, file
     map.resolve_all(idx);
 }
 
-/// Indexes the files the call trees of the symbols named `name` reach within `depth`, one
-/// depth of the tree at a time, since a file's callees are known only once it is indexed.
 fn need_tree(
     servers: &mut Option<&mut Servers>,
     idx: &mut Index,
@@ -243,8 +232,6 @@ fn need_tree(
     }
 }
 
-/// The files of the step `under` points at in path `name`, for a command that says whether
-/// that step calls the one placed under it.
 fn parent_file(map: &Map, name: &str, under: i64) -> Vec<String> {
     let step = map.find(name).and_then(|pi| {
         usize::try_from(under)
@@ -254,10 +241,6 @@ fn parent_file(map: &Map, name: &str, under: i64) -> Vec<String> {
     step.map(|a| vec![a.file.clone()]).unwrap_or_default()
 }
 
-/// Runs one command. Returns whether the map was mutated (caller saves). With `servers`, a
-/// command that needs a file's calls asks the language's server for that file first, and
-/// callers and refs ask it about the one symbol; without them (the GUI, which indexes in the
-/// background) every command answers from the index as it is.
 pub fn exec(
     idx: &mut Index,
     map: &mut Map,
@@ -355,7 +338,6 @@ pub fn exec(
         Command::Callers { symbol } => {
             for r in find_symbols(idx, &symbol)? {
                 p!(out, "{}", describe(idx, r));
-                // the server's answer covers files it has not indexed; the index's only its own
                 let from: Vec<SymRef> = match servers
                     .as_deref_mut()
                     .and_then(|s| s.incoming_calls(idx, r))
@@ -438,8 +420,6 @@ pub fn exec(
             }
         }
         Command::Paths { name } => {
-            // the one path asked for, or every path in group order, each run of paths of one
-            // group under a line naming it
             let pis: Vec<usize> = match &name {
                 Some(n) => vec![find_path(map, n)?],
                 None => map
@@ -777,7 +757,6 @@ pub fn exec(
                             le + 1
                         );
                     } else if a.sym.is_none() && !a.symbol.is_empty() {
-                        // the symbol is gone from its file: the same name elsewhere is the likely home
                         for r in idx.find_symbols(&a.symbol) {
                             let (s, f) = (idx.sym(r), &idx.files[r.file]);
                             p!(
@@ -941,7 +920,6 @@ pub fn exec(
     Ok(dirty)
 }
 
-/// Shell-style split with double quotes, for the GUI command line.
 pub fn tokenize(line: &str) -> Vec<String> {
     let mut out = Vec::new();
     let mut cur = String::new();
@@ -963,9 +941,6 @@ pub fn tokenize(line: &str) -> Vec<String> {
     out
 }
 
-/// The steps of path `pi` in tree order, each indented by `base` more levels and numbered
-/// after `prefix`. With `expand`, a linked path prints inline under the step that links to it,
-/// unless it is already open in `chain`, the paths printed around this one.
 fn print_steps(
     out: &mut String,
     idx: &Index,
@@ -1031,7 +1006,6 @@ fn print_steps(
     }
 }
 
-/// `  → name` for a step that links to another path, empty otherwise.
 fn link_tag(a: &Anchor) -> String {
     if a.link.is_empty() {
         String::new()
@@ -1040,7 +1014,6 @@ fn link_tag(a: &Anchor) -> String {
     }
 }
 
-/// A step index the way the commands write one: -1 is the root.
 fn step_number(p: Option<usize>) -> i64 {
     p.map_or(-1, |p| p as i64)
 }
@@ -1056,7 +1029,6 @@ pub fn describe(idx: &Index, r: SymRef) -> String {
     )
 }
 
-/// In a flow, a step belongs under the step that calls it. Says so when it does not.
 fn call_warning(out: &mut String, idx: &Index, map: &Map, pi: usize, ai: usize) {
     let path = &map.paths[pi];
     if path.kind != Kind::Flow {
@@ -1077,25 +1049,20 @@ fn call_warning(out: &mut String, idx: &Index, map: &Map, pi: usize, ai: usize) 
             .iter()
             .any(|w| k.contains(w))
     };
-    if let (Some(p), Some(c)) = (sym_of(parent), sym_of(a)) {
-        // data under the function that works on it is a normal step; only a misplaced call is noted
-        if p != c && callable(&idx.sym(c).kind) && !idx.sym(p).callees.contains(&c) {
-            p!(
-                out,
-                "note: {} does not call {}; in a flow a step goes under the step that calls it (path-move <name> {ai} <under>)",
-                parent.symbol,
-                a.symbol
-            );
-        }
+    if let (Some(p), Some(c)) = (sym_of(parent), sym_of(a))
+        && p != c
+        && callable(&idx.sym(c).kind)
+        && !idx.sym(p).callees.contains(&c)
+    {
+        p!(
+            out,
+            "note: {} does not call {}; in a flow a step goes under the step that calls it (path-move <name> {ai} <under>)",
+            parent.symbol,
+            a.symbol
+        );
     }
 }
 
-/// Where a stale step's text went: its slice is found in `old` (the file in `rev`) by hash, then
-/// aligned with each symbol of the step's name in its file, or in every file when the file or
-/// the symbol is gone from it (the whole file for a step with no symbol), and the best alignment
-/// wins, ties going to the one nearest the step's old place. Prints the old and new range, with
-/// the new file when it moved, and when the text changed, the lines that differ. An Err says
-/// why the step needs a hand; fewer than half its lines surviving is one such reason.
 fn follow_step(
     idx: &Index,
     a: &Anchor,
@@ -1134,7 +1101,6 @@ fn follow_step(
         .filter(|&ls| crate::map::slice_hash(old, ls, ls + len - 1) == a.hash)
         .min_by_key(|&ls| ls.abs_diff(a.line_start))
         .ok_or_else(|| format!("its text is not in {rev}"))?;
-    // three lines of context each side let a changed edge line end at the nearest line that survived
     let (w0, w1) = (a0.saturating_sub(3), (a0 + len + 3).min(old.len()));
     let (window, sa, sb) = (&old[w0..w1], a0 - w0, a0 - w0 + len - 1);
     if regions.is_empty() {
@@ -1172,7 +1138,6 @@ fn follow_step(
         if same { ", text unchanged" } else { "" }
     );
     if !same {
-        // the old slice and the new range side by side: removed lines, then added ones, in order
         let (mut i, mut j) = (sa, s);
         while i <= sb || j <= e {
             if i <= sb && m[i].is_none() {
@@ -1189,8 +1154,6 @@ fn follow_step(
     Ok((fi, ls, le))
 }
 
-/// Where a stale step's unchanged text now sits in its file, if it moved rather than changed:
-/// the same number of lines with the same hash. The re-pin stays the agent's explicit call.
 fn moved_to(f: &File, a: &Anchor) -> Option<(usize, usize)> {
     let len = (a.off_end - a.off_start) as usize;
     (0..f.lines.len().checked_sub(len)?)
@@ -1201,7 +1164,6 @@ fn moved_to(f: &File, a: &Anchor) -> Option<(usize, usize)> {
         })
 }
 
-/// A slice that no single symbol contains only survives edits below it.
 fn absolute_warning(out: &mut String, a: &Anchor) {
     if a.symbol.is_empty() {
         p!(
@@ -1213,7 +1175,6 @@ fn absolute_warning(out: &mut String, a: &Anchor) {
     }
 }
 
-/// `file:start-end` for a resolved anchor; says what is gone otherwise.
 fn where_is(idx: &Index, a: &Anchor) -> String {
     match idx.find_file(&a.file) {
         None => format!("{} (file gone)", a.file),
@@ -1228,7 +1189,6 @@ fn print_lines(out: &mut String, f: &File, start: usize, end: usize) {
     }
 }
 
-/// 1-based inclusive user range -> 0-based, checked against the file.
 fn check_range(f: &File, start: i64, end: i64) -> Result<(usize, usize), String> {
     if start < 1 || end < start || end > f.lines.len() as i64 {
         return Err("line range out of bounds".into());
@@ -1252,8 +1212,6 @@ fn find_symbols(idx: &Index, name: &str) -> Result<Vec<SymRef>, String> {
     }
 }
 
-/// Exactly one symbol; an ambiguous name lists each candidate with the qualified name that
-/// selects it.
 fn find_symbol(idx: &Index, name: &str) -> Result<SymRef, String> {
     let found = find_symbols(idx, name)?;
     if found.len() > 1 {
@@ -1269,8 +1227,6 @@ fn find_symbol(idx: &Index, name: &str) -> Result<SymRef, String> {
     Ok(found[0])
 }
 
-/// The shortest qualified name that selects exactly `r`: `Owner::name`, `stem:name`,
-/// `stem:Owner::name`, or the full path forms.
 pub fn unique_name(idx: &Index, r: SymRef) -> String {
     let (s, f) = (idx.sym(r), &idx.files[r.file]);
     let mut tries = Vec::new();
@@ -1295,7 +1251,6 @@ fn find_path(map: &Map, name: &str) -> Result<usize, String> {
     map.find(name).ok_or(format!("no such path: {name}"))
 }
 
-/// The path named `name`, provided it has a step `i`.
 fn find_step(map: &Map, name: &str, i: usize) -> Result<usize, String> {
     let pi = find_path(map, name)?;
     if i >= map.paths[pi].anchors.len() {

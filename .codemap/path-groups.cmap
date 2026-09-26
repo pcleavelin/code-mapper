@@ -13,7 +13,7 @@ file src/map.rs
 symbol set_group
 lines 0 2
 hash afd3a27e07ac0adb
-note The one place a group is set, always through normal_group.
+note The one place a group is set, always through normal_group. An empty group leaves the path at the top level of the list.
 
 step 2d3h84
 order 2
@@ -40,8 +40,8 @@ order 8
 author ai
 file src/gui/panels.rs
 symbol paths_window
-lines 0 184
-hash b26feca1a4b38d78
+lines 0 179
+hash 37e0cd49dbc39f41
 link reader-gui
 note The Paths tab walks the same rows(), skipping everything under a closed group.
 
@@ -60,7 +60,7 @@ order 7
 author ai
 file src/cli.rs
 symbol exec
-lines 298 314
+lines 295 311
 hash 1cda8e6052171bac
 note groups: the group rows of rows() alone, indented by depth.
 
@@ -69,7 +69,7 @@ order 0
 author ai
 file src/cli.rs
 symbol exec
-lines 288 297
+lines 285 294
 hash 8ab36039df19c5eb
 note path-group: moves one path; an empty group puts it back at the top level.
 
@@ -78,8 +78,8 @@ order 6
 author ai
 file src/cli.rs
 symbol exec
-lines 179 244
-hash cb5212e594a6d2e3
+lines 178 241
+hash 46d95d29123b4728
 note paths: the path rows of rows(), with a == line naming the group wherever it changes, (top level) included, so a flat listing still says where each path sits.
 
 step zwkmx2
@@ -87,6 +87,6 @@ order 3
 author ai
 file src/cli.rs
 symbol exec
-lines 315 319
+lines 312 316
 hash 117764014a7a096f
 note group-rename: moves every path of the group and of the groups inside it.

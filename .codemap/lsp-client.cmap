@@ -3,7 +3,7 @@ path lsp-client
 kind layer
 author ai
 group index
-note A minimal language-server client: JSON-RPC over the spawned server's stdio, and nothing more of the protocol than this tool needs. Requests are synchronous - a reader thread queues every incoming message and request() blocks for the matching id, servicing notifications and the server's own requests as they go by, which is what keeps a chatty server from deadlocking. The client is used by the index's server backend (index/server.rs) for exactly three things: document symbols, outgoing calls and references. Everything about it is shaped by one fact: a server takes seconds to become useful, so wait_ready exists and the answers are cached.
+note A minimal language-server client: JSON-RPC over the spawned server's stdio, and nothing more of the protocol than this tool needs. Requests are synchronous - a reader thread queues every incoming message and request() blocks for the matching id, servicing notifications and the server's own requests as they go by, which is what keeps a chatty server from deadlocking. The client is used by the index's server backend (index/server.rs) for exactly three things: document symbols, outgoing calls and references. Everything about it is shaped by one fact: a server takes seconds to become useful, so wait_ready exists and the answers are cached. Positions are 0-based like LSP's own and columns are UTF-16 units. The test that drives a real server needs rust-analyzer on PATH and runs only with cargo test -- --ignored.
 
 step 0o0uib
 order 17
@@ -50,7 +50,7 @@ author ai
 file src/lsp.rs
 symbol Client
 lines 0 8
-hash 956b234b78cdc79e
+hash b00a17ec333256c3
 note The client state: the child process, the queue the reader thread fills, and the three things wait_ready watches - how many progress tokens are open, when the last one moved, and rust-analyzer's own quiescent flag.
 
 step b1v4eb
@@ -108,7 +108,7 @@ file src/lsp.rs
 symbol request_all
 lines 0 37
 hash ab764870ce0bddb5
-note Many requests with up to 64 in flight, answers returned in the order asked by matching ids; notifications and server requests that arrive meanwhile are handled as request does. This is what lets rust-analyzer answer on its own threads instead of one request at a time.
+note Many requests with up to 64 in flight, answers returned in the order asked by matching ids; a request unanswered two minutes after the previous answer is an Err, and so is every one after it; notifications and server requests that arrive meanwhile are handled as request does. This is what lets rust-analyzer answer on its own threads instead of one request at a time.
 
 step k7abu8
 order 7
@@ -163,8 +163,8 @@ order 0
 author ai
 file src/lsp.rs
 symbol start
-lines 0 53
-hash a6784b45c7ede427
+lines 0 51
+hash fbf968941fdbc0b4
 note Spawn, reader thread, initialize handshake. Declares hierarchical symbols, call hierarchy, progress and rust-analyzer's server-status notification, and turns off rust-analyzer's cache priming, so a large workspace is ready once loaded and each answer is computed when asked.
 
 step usbs7l

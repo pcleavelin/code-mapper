@@ -16,7 +16,6 @@ impl Author {
             Author::Ai => " (ai)",
         }
     }
-    /// The word the map file writes.
     pub fn name(self) -> &'static str {
         match self {
             Author::Human => "human",
@@ -32,14 +31,10 @@ impl Author {
     }
 }
 
-/// What a path describes. A tag only: listed and filterable, no rendering difference.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Kind {
-    /// A workflow: what happens when X.
     Flow = 0,
-    /// An abstraction boundary: the functions that form its surface.
     Layer = 1,
-    /// A data structure and what mutates it.
     Type = 2,
 }
 
@@ -58,13 +53,6 @@ impl Kind {
     }
 }
 
-/// Pins a slice of lines. Offsets are relative to the start of the enclosing symbol so the anchor
-/// survives edits elsewhere in the file. `symbol == ""` means absolute lines. `hash` detects when
-/// the anchored text itself changed (-> stale). `parent` makes a path a tree: the step this one
-/// is reached from, None for a root; on disk it is the parent's `id`, which stays the same for
-/// the life of the step. `link` names another path that documents what the step's lines call,
-/// `""` for none. `order` places the step in the step list, which orders siblings the code
-/// does not: it is set once, one past the highest in the path, and only a swap changes it.
 #[derive(Clone)]
 pub struct Anchor {
     pub id: String,
@@ -79,15 +67,12 @@ pub struct Anchor {
     pub parent: Option<usize>,
     pub link: String,
 
-    // resolved per session, not stored
     pub line_start: usize,
     pub line_end: usize,
     pub stale: bool,
-    pub sym: Option<usize>, // index of the enclosing symbol in its file, when it was found
+    pub sym: Option<usize>,
 }
 
-/// `group` places the path in the paths list: `/` nests one group in another
-/// (`flows/http`), `""` leaves the path at the top level.
 pub struct PathDef {
     pub name: String,
     pub kind: Kind,
@@ -97,8 +82,6 @@ pub struct PathDef {
     pub anchors: Vec<Anchor>,
 }
 
-/// One row of the paths list in group order: a group with the number of paths under it at
-/// any depth, or a path. `depth` counts the groups around the row.
 #[derive(Debug, PartialEq)]
 pub enum Row {
     Group {
@@ -112,7 +95,6 @@ pub enum Row {
     },
 }
 
-/// A group written the one way the map stores it: no empty, leading or trailing parts.
 pub fn normal_group(g: &str) -> String {
     g.split('/')
         .map(str::trim)
@@ -121,8 +103,6 @@ pub fn normal_group(g: &str) -> String {
         .join("/")
 }
 
-/// `disk` is the text of each path's file as this process last read or wrote it, which is
-/// how a save tells the paths it changed from the ones it only read.
 #[derive(Default)]
 pub struct Map {
     pub paths: Vec<PathDef>,
@@ -156,49 +136,17 @@ impl StepChange {
     }
 }
 
-/// One path's difference against the parent revision's map.
 pub struct PathDiff {
     pub name: String,
     pub change: Change,
-    pub note_changed: bool,             // the path note, kind or group
-    pub steps: Vec<Option<StepChange>>, // per step of the working path
-    pub removed: Vec<Anchor>,           // base steps no longer present (unresolved)
+    pub note_changed: bool,
+    pub steps: Vec<Option<StepChange>>,
+    pub removed: Vec<Anchor>,
 }
-
-// ---- file format -------------------------------------------------------------------
-// `.codemap/` at the root holds one text file per path, `<name>.cmap`, so two branches that
-// change different paths never touch the same file, and two that change one path merge line
-// by line. One field per line, `key value`, the value running to the end of the line with
-// `\` escaping a backslash, a newline (`\n`) and a carriage return (`\r`). A blank line ends
-// the path's block and each step's. Optional fields are left out when empty; nothing counts
-// anything. A step names its parent by id and holds its place in the step list in `order`, so
-// adding a step changes no other. Steps are written in id order, and ids are random, so steps
-// that two branches add to one path land apart in the file and merge without a conflict.
-//
-//   codemap 8
-//   path <name>
-//   kind flow | layer | type
-//   author ai | human
-//   group <group>          optional
-//   note <text>            optional
-//
-//   step <id>
-//   order <n>              the place in the step list; ties go by id
-//   parent <id>            optional: a root has none
-//   author ai | human
-//   file <path>
-//   symbol <name>          optional: none means absolute lines
-//   lines <start> <end>    from the symbol's first line, or absolute
-//   hash <16 hex digits>
-//   link <path name>       optional
-//   note <text>            optional
-//
-// Any other version is rejected: an old map is regenerated, never migrated.
 
 pub const MAP_DIR: &str = ".codemap";
 const VERSION: &str = "codemap 8";
 
-/// Lines jj and git write into a file with a conflict in it.
 const CONFLICT_MARKS: [&str; 5] = ["<<<<<<<", "=======", ">>>>>>>", "%%%%%%%", "+++++++"];
 
 fn escape(s: &str) -> String {
@@ -224,8 +172,6 @@ fn unescape(s: &str) -> String {
     out
 }
 
-/// A path name as the map stores it: it is also the file name, so letters, digits, `.`, `_`
-/// and `-` only, not starting with a dot.
 pub fn check_name(name: &str) -> Result<(), String> {
     if name.is_empty()
         || name.starts_with('.')
@@ -240,8 +186,6 @@ pub fn check_name(name: &str) -> Result<(), String> {
     Ok(())
 }
 
-/// `name` with every character a path name cannot hold turned into `-`, for names taken from
-/// symbols.
 pub fn name_from(name: &str) -> String {
     let s: String = name
         .chars()
@@ -261,9 +205,6 @@ pub fn name_from(name: &str) -> String {
     }
 }
 
-/// A new step id: six base36 digits of a hash of `seed`, which says what the step is, and a
-/// counter that moves past ids the path already holds. The digits spread new steps across the
-/// file, and two branches that add the same step add the same id.
 fn fresh_id(seed: &str, taken: &[Anchor]) -> String {
     (0u32..)
         .map(|n| {
@@ -281,8 +222,6 @@ fn fresh_id(seed: &str, taken: &[Anchor]) -> String {
 }
 
 impl PathDef {
-    /// The path's file, written the same way every time so saving an unchanged path changes
-    /// no byte.
     pub fn to_text(&self) -> String {
         let mut t = String::new();
         let mut field = |k: &str, v: &str| {
@@ -334,11 +273,9 @@ impl PathDef {
     }
 }
 
-/// Every path in `text`: one path's file, or several files read one after another (what jj
-/// and git print for a directory at a revision). An error names `origin` and the line.
 pub fn parse(text: &str, origin: &str) -> Result<Vec<PathDef>, String> {
     let mut paths: Vec<PathDef> = Vec::new();
-    let mut parents: Vec<Vec<Option<(String, usize)>>> = Vec::new(); // per path, per step: (parent id, line)
+    let mut parents: Vec<Vec<Option<(String, usize)>>> = Vec::new();
     let mut in_step = false;
     for (i, line) in text.lines().enumerate() {
         let at = |msg: &str| format!("{origin}:{}: {msg}", i + 1);
@@ -443,7 +380,6 @@ pub fn parse(text: &str, origin: &str) -> Result<Vec<PathDef>, String> {
         if p.name.is_empty() {
             return Err(format!("{origin}: a path with no 'path' line"));
         }
-        // the step list in order, each step's parent id travelling with it
         let mut steps: Vec<(Anchor, Option<(String, usize)>)> =
             std::mem::take(&mut p.anchors).into_iter().zip(ps).collect();
         steps.sort_by(|(a, _), (b, _)| (a.order, &a.id).cmp(&(b.order, &b.id)));
@@ -464,8 +400,6 @@ pub fn parse(text: &str, origin: &str) -> Result<Vec<PathDef>, String> {
     Ok(paths)
 }
 
-/// The newest change time of the map's files and how many there are: what the GUI polls to
-/// know the map changed on disk.
 pub fn stamp(dir: &Path) -> Option<(std::time::SystemTime, usize)> {
     let mut newest = std::fs::metadata(dir).ok()?.modified().ok()?;
     let mut n = 0;
@@ -481,9 +415,6 @@ pub fn stamp(dir: &Path) -> Option<(std::time::SystemTime, usize)> {
 }
 
 impl Map {
-    /// The map in `dir`, or an empty one when there is no such directory. Paths come in file
-    /// name order. Every file that does not read is an error, and so is a map in the old
-    /// single-file format.
     pub fn load(dir: &Path) -> Result<Map, String> {
         if dir.is_file() {
             return Err(format!(
@@ -522,10 +453,6 @@ impl Map {
         Ok(m)
     }
 
-    /// Write the paths this process changed and remove the files of the ones it removed or
-    /// renamed, against what it read or last wrote. A path it only read is left alone on disk,
-    /// so two processes that change different paths never undo each other's work; two that
-    /// change the same path leave the last one's.
     pub fn save(&mut self, dir: &Path) -> std::io::Result<()> {
         std::fs::create_dir_all(dir)?;
         let mut now = std::collections::HashMap::new();
@@ -546,8 +473,6 @@ impl Map {
         Ok(())
     }
 
-    /// The map as committed in the parent revision. Err says why there is none: no repo, no
-    /// committed map, or a map that does not read.
     pub fn base_from_vcs(root: &Path) -> Result<Map, String> {
         let vcs = Vcs::detect(root).ok_or("not in a jj or git repo")?;
         let text = vcs
@@ -565,8 +490,6 @@ impl Map {
         Ok(m)
     }
 
-    /// The lines of `path` in revision `rev`, with tabs expanded as the index expands them so
-    /// slice hashes compare. None when there is no repo or the file is not in `rev`.
     pub fn file_from_vcs(root: &Path, rev: &str, path: &str) -> Option<Vec<String>> {
         let out = Vcs::detect(root)?.show(root, rev, path)?;
         Some(
@@ -578,15 +501,10 @@ impl Map {
         )
     }
 
-    // ---- mutations shared by the GUI and the CLI ----
-
     pub fn find(&self, name: &str) -> Option<usize> {
         self.paths.iter().position(|p| p.name == name)
     }
 
-    /// A name a new or renamed path can take: one `check_name` accepts, and not the name of
-    /// another path in other letter case, since the two files would be one on a
-    /// case-insensitive file system.
     fn free_name(&self, name: &str, pi: Option<usize>) -> Result<(), String> {
         check_name(name)?;
         match self
@@ -605,7 +523,6 @@ impl Map {
         }
     }
 
-    /// Returns the existing path of that name, or creates it.
     pub fn add_path(&mut self, name: &str, kind: Kind, author: Author) -> Result<usize, String> {
         if let Some(pi) = self.find(name) {
             return Ok(pi);
@@ -622,13 +539,10 @@ impl Map {
         Ok(self.paths.len() - 1)
     }
 
-    /// Put path `pi` in `group`, or at the top level with `""`.
     pub fn set_group(&mut self, pi: usize, group: &str) {
         self.paths[pi].group = normal_group(group);
     }
 
-    /// Rename group `old` to `new`, with every group nested in it, which moves their paths.
-    /// Returns how many paths moved.
     pub fn rename_group(&mut self, old: &str, new: &str) -> Result<usize, String> {
         let (old, new) = (normal_group(old), normal_group(new));
         if old.is_empty() {
@@ -651,8 +565,6 @@ impl Map {
         Ok(moved)
     }
 
-    /// The paths list in group order. At each level the groups come first, sorted by name,
-    /// then the paths of that level in map order.
     pub fn rows(&self) -> Vec<Row> {
         fn level(m: &Map, pis: &[usize], prefix: &str, depth: usize, out: &mut Vec<Row>) {
             let mut groups: std::collections::BTreeMap<&str, Vec<usize>> = Default::default();
@@ -697,8 +609,6 @@ impl Map {
         out
     }
 
-    /// Re-anchor an existing step to new lines. Note, parent and link stay; the pinning author
-    /// is recorded.
     pub fn pin_anchor(
         &mut self,
         idx: &Index,
@@ -719,8 +629,6 @@ impl Map {
         self.paths[pi].anchors[ai] = a;
     }
 
-    /// Link step `ai` of path `pi` to the path named `target`, or unlink it with `""`. A path
-    /// cannot link to itself, and the target must exist.
     pub fn set_link(&mut self, pi: usize, ai: usize, target: &str) -> Result<(), String> {
         if !target.is_empty() {
             if self.find(target).is_none() {
@@ -734,7 +642,6 @@ impl Map {
         Ok(())
     }
 
-    /// Every step that links to the path named `name`: (path, step), in map order.
     pub fn links_to(&self, name: &str) -> Vec<(usize, usize)> {
         self.paths
             .iter()
@@ -749,7 +656,6 @@ impl Map {
             .collect()
     }
 
-    /// Every step whose link names a path the map does not have: (path, step).
     pub fn dangling_links(&self) -> Vec<(usize, usize)> {
         self.paths
             .iter()
@@ -764,7 +670,6 @@ impl Map {
             .collect()
     }
 
-    /// Remove a path. Refuses while another path's step links to it, and lists those steps.
     pub fn remove_path(&mut self, pi: usize) -> Result<PathDef, String> {
         let from: Vec<String> = self
             .links_to(&self.paths[pi].name)
@@ -782,8 +687,6 @@ impl Map {
         Ok(self.paths.remove(pi))
     }
 
-    /// Whether any current (non-stale) step overlaps lines `[start, end]` of `file`. Coverage is
-    /// derived here and never stored.
     pub fn covers(&self, file: &str, start: usize, end: usize) -> bool {
         self.paths
             .iter()
@@ -791,8 +694,6 @@ impl Map {
             .any(|a| !a.stale && a.file == file && a.line_start <= end && start <= a.line_end)
     }
 
-    /// Append a step under `parent`: None for a root, else an index the path has, which every
-    /// caller checks before calling this. Returns the new index.
     pub fn add_anchor(
         &mut self,
         idx: &Index,
@@ -825,7 +726,6 @@ impl Map {
         self.paths[pi].anchors.len() - 1
     }
 
-    /// Rename a path, and every link to it with it.
     pub fn rename(&mut self, pi: usize, new: &str) -> Result<(), String> {
         self.free_name(new, Some(pi))?;
         let old = std::mem::replace(&mut self.paths[pi].name, new.to_owned());
@@ -840,8 +740,6 @@ impl Map {
         Ok(())
     }
 
-    /// Put step `ai` under `parent` (None = root). Refuses a parent that is the step itself or
-    /// one of its descendants.
     pub fn reparent(&mut self, pi: usize, ai: usize, parent: Option<usize>) -> Result<(), String> {
         let anchors = &self.paths[pi].anchors;
         let mut p = parent;
@@ -855,7 +753,6 @@ impl Map {
         Ok(())
     }
 
-    /// Name of the step `ai` is under, for a reader coming back up the tree.
     pub fn parent_name(&self, pi: usize, ai: usize) -> String {
         match self.paths[pi].anchors[ai]
             .parent
@@ -867,12 +764,9 @@ impl Map {
         }
     }
 
-    /// Swap two steps in list order, which is what orders siblings that nothing else orders,
-    /// keeping every parent link pointing at the same step.
     pub fn swap_anchors(&mut self, pi: usize, a: usize, b: usize) {
         let p = &mut self.paths[pi];
         p.anchors.swap(a, b);
-        // the places stay where they were, so the two steps trade them
         let (oa, ob) = (p.anchors[b].order, p.anchors[a].order);
         (p.anchors[a].order, p.anchors[b].order) = (oa, ob);
         for x in &mut p.anchors {
@@ -888,10 +782,9 @@ impl Map {
         }
     }
 
-    /// Remove a step; its children move up to its parent so the tree stays connected.
     pub fn remove_anchor(&mut self, pi: usize, ai: usize) {
         let p = &mut self.paths[pi];
-        let up = p.anchors[ai].parent.map(|u| if u > ai { u - 1 } else { u }); // the parent's index after the removal shifts everything above `ai`
+        let up = p.anchors[ai].parent.map(|u| if u > ai { u - 1 } else { u });
         p.anchors.remove(ai);
         for a in &mut p.anchors {
             match a.parent {
@@ -902,15 +795,10 @@ impl Map {
         }
     }
 
-    /// Pre-order walk of a path's tree: (anchor index, depth). Roots in list order, children in
-    /// list order. A dangling parent counts as a root.
     pub fn tree_order(&self, pi: usize) -> Vec<(usize, usize)> {
         self.tree_order_by(pi, &|_, _| 0)
     }
 
-    /// Tree order with the children of each step sorted by `key(parent, child)`, list order
-    /// breaking ties. The key the views use is the line of the parent's slice that names the
-    /// child, so siblings read in the order the code calls them.
     pub fn tree_order_by(
         &self,
         pi: usize,
@@ -929,7 +817,7 @@ impl Map {
             out: &mut Vec<(usize, usize)>,
         ) {
             if seen[i] {
-                return; // cycle guard
+                return;
             }
             seen[i] = true;
             out.push((i, depth));
@@ -948,17 +836,14 @@ impl Map {
         }
         for i in 0..n {
             if !seen[i] {
-                visit(anchors, i, 0, key, &mut seen, &mut out); // orphaned cycles
+                visit(anchors, i, 0, key, &mut seen, &mut out);
             }
         }
         out
     }
 
-    /// Tree order with each step's hierarchical number: roots 1, 2, ...; the children of 1 are
-    /// 1.1, 1.2, ...
     pub fn numbered(&self, idx: &Index, pi: usize) -> Vec<(usize, usize, String)> {
         let anchors = &self.paths[pi].anchors;
-        // the line of the parent's slice that names the child's symbol, or last
         let call_line = |p: usize, c: usize| -> usize {
             let (parent, child) = (&anchors[p], &anchors[c]);
             if child.symbol.is_empty() {
@@ -993,7 +878,6 @@ impl Map {
             .collect()
     }
 
-    /// How many steps sit below `ai` in the tree.
     pub fn descendants(&self, pi: usize, ai: usize) -> usize {
         let order = self.tree_order(pi);
         let Some(pos) = order.iter().position(|&(i, _)| i == ai) else {
@@ -1006,9 +890,6 @@ impl Map {
             .count()
     }
 
-    /// A path named `name` (default: after `root`) shaped like the root's call tree: one step per
-    /// symbol, each under the step it is called from. Re-promoting adds only symbols the path
-    /// lacks.
     pub fn promote(
         &mut self,
         idx: &Index,
@@ -1022,7 +903,7 @@ impl Map {
             Kind::Flow,
             author,
         )?;
-        let mut stack: Vec<usize> = Vec::new(); // step index at each depth
+        let mut stack: Vec<usize> = Vec::new();
         for (r, d) in idx.call_tree(root, depth) {
             let s = idx.sym(r);
             let file = &idx.files[r.file].path;
@@ -1031,7 +912,6 @@ impl Map {
             } else {
                 stack.get(d - 1).copied()
             };
-            // a symbol the path already pins whole keeps its step
             let ai = match self.paths[pi]
                 .anchors
                 .iter()
@@ -1046,9 +926,6 @@ impl Map {
         Ok(pi)
     }
 
-    /// This map against `base`: every path in either, in this map's order then the removed
-    /// ones. Steps match by id. A match with different lines or text is re-pinned, one with a
-    /// different note is edited, one with a different link is relinked.
     pub fn diff(&self, base: &Map) -> Vec<PathDiff> {
         let mut out = Vec::new();
         for p in &self.paths {
@@ -1138,8 +1015,6 @@ impl Map {
     }
 }
 
-// ---- anchoring --------------------------------------------------------------------
-
 pub fn slice_hash(lines: &[String], ls: usize, le: usize) -> u64 {
     fnv1a(
         lines[ls..=le]
@@ -1148,19 +1023,6 @@ pub fn slice_hash(lines: &[String], ls: usize, le: usize) -> u64 {
     )
 }
 
-/// Where lines `[a, b]` of `old` (a step's slice as it was, with a few lines of context around
-/// it) sit within `new` (a candidate symbol's lines as they are): the new range, how many of the
-/// slice's lines survive, and each old line's partner. None when no slice line pairs up.
-///
-/// A patience alignment: lines that occur once on each side, taken in an order both sides agree
-/// on, pair first; pairing then grows outward from them into equal neighbouring lines and recurses
-/// into the gaps between. Growth only runs from a paired line, never in from an open edge, so a
-/// slice's closing brace is not paired with the last line of a longer function. Lines compare
-/// with surrounding whitespace ignored, so re-indented code still pairs.
-///
-/// A changed edge line of the slice takes the range to just inside the nearest paired context
-/// line on that side, or to that edge of `new` when none pairs: nothing before a slice pairing
-/// inside the symbol means the slice began where the symbol begins.
 pub fn follow(
     old: &[String],
     a: usize,
@@ -1182,8 +1044,6 @@ pub fn follow(
     Some((start, end, kept, m))
 }
 
-/// Aligns `old[o]` with `new[n]` into `m`. `paired` says whether the line just before and the
-/// line just after the gap are paired, which is what lets equal lines grow from that side.
 fn patience(
     old: &[String],
     new: &[String],
@@ -1208,7 +1068,6 @@ fn patience(
         (o.end, n.end) = (o.end - 1, n.end - 1);
         m[o.end] = Some(n.end);
     }
-    // per line text: (count in old, last old index, count in new, last new index)
     let mut seen: std::collections::HashMap<&str, (u32, usize, u32, usize)> =
         std::collections::HashMap::new();
     for i in o.clone() {
@@ -1238,9 +1097,8 @@ fn patience(
     patience(old, new, po..o.end, pn..n.end, (true, paired.1), m);
 }
 
-/// The longest run of `pairs` (sorted by first element) whose second elements also increase.
 fn increasing(pairs: &[(usize, usize)]) -> Vec<(usize, usize)> {
-    let mut tails: Vec<usize> = Vec::new(); // tails[k]: the pair ending the best run of length k + 1
+    let mut tails: Vec<usize> = Vec::new();
     let mut prev = vec![usize::MAX; pairs.len()];
     for (k, &(_, j)) in pairs.iter().enumerate() {
         let at = tails.partition_point(|&t| pairs[t].1 < j);
@@ -1282,7 +1140,6 @@ impl Anchor {
             stale: false,
             sym: None,
         };
-        // innermost symbol containing the slice
         if let Some((si, s)) = f
             .symbols
             .iter()
@@ -1298,9 +1155,6 @@ impl Anchor {
         a
     }
 
-    /// Several symbols in one file can share a name (`Author::tag`, `Kind::tag`): the one whose
-    /// text still hashes right wins, else the first, so a re-pin is only needed when the text
-    /// itself changed.
     pub fn resolve(&mut self, idx: &Index) {
         self.stale = true;
         self.sym = None;
@@ -1406,7 +1260,6 @@ mod tests {
         assert_eq!(loaded.paths[0].anchors[0].note, "the middle");
         assert_eq!(loaded.paths[0].anchors[0].parent, None);
 
-        // symbol `b` moved down two lines: anchor follows it and is not stale
         let mut idx = idx;
         idx.files[0]
             .lines
@@ -1419,7 +1272,6 @@ mod tests {
         assert_eq!(loaded.paths[0].anchors[0].line_start, 6);
         assert!(!loaded.paths[0].anchors[0].stale);
 
-        // text changed: stale, and no longer covers; re-pin restores both and keeps the note
         idx.files[0].lines[6] = "  3".into();
         loaded.resolve_all(&idx);
         assert!(loaded.paths[0].anchors[0].stale);
@@ -1436,9 +1288,9 @@ mod tests {
         let idx = one_file();
         let mut m = Map::default();
         let pi = m.add_path("t", Kind::Flow, Author::Human).unwrap();
-        let root = m.add_anchor(&idx, pi, 0, 0, 2, Author::Human, None); // a
-        let mid = m.add_anchor(&idx, pi, 0, 3, 5, Author::Human, Some(root)); // b under a
-        let leaf = m.add_anchor(&idx, pi, 0, 1, 1, Author::Human, Some(mid)); // line in a, under b
+        let root = m.add_anchor(&idx, pi, 0, 0, 2, Author::Human, None);
+        let mid = m.add_anchor(&idx, pi, 0, 3, 5, Author::Human, Some(root));
+        let leaf = m.add_anchor(&idx, pi, 0, 1, 1, Author::Human, Some(mid));
         assert_eq!(m.tree_order(pi), [(0, 0), (1, 1), (2, 2)]);
         let numbers: Vec<String> = m
             .numbered(&idx, pi)
@@ -1449,7 +1301,7 @@ mod tests {
         assert_eq!(m.descendants(pi, 0), 2);
         assert_eq!(m.descendants(pi, 2), 0);
 
-        m.remove_anchor(pi, mid); // remove the middle: leaf moves up under the root
+        m.remove_anchor(pi, mid);
         assert_eq!(m.paths[pi].anchors.len(), 2);
         assert_eq!(m.paths[pi].anchors[leaf - 1].parent, Some(root));
         assert_eq!(m.tree_order(pi), [(0, 0), (1, 1)]);
@@ -1524,7 +1376,6 @@ mod tests {
         let _ = std::fs::remove_dir_all(&tmp);
         m.save(&tmp).unwrap();
         let mut m = Map::load(&tmp).unwrap();
-        // a map reads back in file name order
         let group = |m: &Map, name: &str| m.paths[m.find(name).unwrap()].group.clone();
         assert_eq!(group(&m, "a"), "flows/http");
 
@@ -1548,7 +1399,6 @@ mod tests {
         }
         m.save(&dir).unwrap();
 
-        // two processes read the same map, then each changes a different path
         let (mut a, mut b) = (Map::load(&dir).unwrap(), Map::load(&dir).unwrap());
         let pi = a.find("one").unwrap();
         a.paths[pi].note = "from a".into();
@@ -1566,7 +1416,6 @@ mod tests {
         );
         assert!(m.find("three").is_some());
 
-        // a removal and a rename remove the files they leave behind, and nothing else
         let mut m = m;
         let pi = m.find("three").unwrap();
         m.remove_path(pi).unwrap();
@@ -1595,7 +1444,6 @@ mod tests {
             "    0",
             "}",
         ]);
-        // b moved above a and re-indented; a gained a line and changed one
         let new = lines(&[
             "mod m {",
             "  fn b() {",
@@ -1612,10 +1460,10 @@ mod tests {
         let at = |a: usize, b: usize, lo: usize, hi: usize| {
             follow(&old, a, b, &new[lo..=hi]).map(|(s, e, kept, _)| (lo + s, lo + e, kept))
         };
-        assert_eq!(at(5, 7, 1, 3), Some((1, 3, 3))); // b whole: moved and re-indented
-        assert_eq!(at(0, 4, 5, 10), Some((5, 10, 4))); // a whole: 4 of 5 lines survive
-        assert_eq!(at(1, 3, 5, 10), Some((6, 9, 2))); // part of a: the closing brace stays out
-        assert_eq!(at(0, 2, 5, 10), Some((5, 8, 2))); // a changed last line ends before `x + y`
-        assert_eq!(at(2, 2, 5, 10), None); // the changed line alone has nothing to follow
+        assert_eq!(at(5, 7, 1, 3), Some((1, 3, 3)));
+        assert_eq!(at(0, 4, 5, 10), Some((5, 10, 4)));
+        assert_eq!(at(1, 3, 5, 10), Some((6, 9, 2)));
+        assert_eq!(at(0, 2, 5, 10), Some((5, 8, 2)));
+        assert_eq!(at(2, 2, 5, 10), None);
     }
 }

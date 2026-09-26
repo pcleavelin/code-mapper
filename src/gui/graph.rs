@@ -1,10 +1,3 @@
-//! The Graph tab: the selection as a left-to-right tree of nodes showing their code, derived
-//! every frame from the selected path (or the selected symbol alone) plus the expansions the
-//! reader opened. The tree is laid out in cells and rows of the node font and drawn at the
-//! cell size of the current zoom, so text is drawn at a whole pixel size and never scaled, and
-//! zooming scales positions by exactly the factor the text grew by. Everything is drawn by one
-//! custom element; clicks are resolved against the rectangles the last frame recorded.
-
 use super::{
     ACCENT, Action, App, BG, BORDER, CONTEXT_LINES, FIELD, GREEN, GUTTER, HOVER, ORANGE, PANEL,
     RED, SELECTED, TEXT, WEAK, dim,
@@ -16,15 +9,10 @@ use crate::ui::{self, Kind, Layout, Measure, Style};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::rc::Rc;
 
-/// A graph node: a symbol, and the step it stands for when it is one. Two slice steps of one
-/// symbol are two nodes; an expansion that reveals a symbol some step already shows reuses
-/// that step's node.
 pub type Node = (SymRef, Option<usize>);
 
-/// A node across a re-index: (file path, symbol name) instead of the symbol's index.
 type NodeKey = ((String, String), Option<usize>);
 
-/// The graph state that is the reader's, not the index's, held while the index is rebuilt.
 pub struct Saved {
     expansions: Vec<(NodeKey, bool)>,
     collapsed: Vec<NodeKey>,
@@ -36,19 +24,17 @@ pub struct Saved {
 const PREVIEW_LINES: usize = 12;
 const MIN_COLS: i32 = 44;
 const MAX_COLS: i32 = 110;
-const GAP_X: i32 = 12; // cells between columns
-const GAP_Y: i32 = 2; // rows between stacked subtrees
-const WHEEL_NOTCH: f32 = 40.0; // pixels one wheel notch reports
-const PAN_ROWS: i32 = 3; // rows the wheel pans per notch
-const MARGIN: i32 = 8; // pixels kept between the canvas edge and what a camera move brings in
+const GAP_X: i32 = 12;
+const GAP_Y: i32 = 2;
+const WHEEL_NOTCH: f32 = 40.0;
+const PAN_ROWS: i32 = 3;
+const MARGIN: i32 = 8;
 
-/// The node font's cell at the current zoom. Layout happens in cells and rows; these turn it
-/// into pixels.
 #[derive(Clone, Copy)]
 struct Metrics {
     cell_w: i32,
     row_h: i32,
-    pad: i32, // inside a node, in pixels
+    pad: i32,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -57,17 +43,16 @@ enum Btn {
     Listing,
     Callees,
     Callers,
-    Above, // more context above the slice
-    Below, // more context below
+    Above,
+    Below,
     NoContext,
 }
 
-/// A rectangle of last frame's scene the mouse can land on, in window pixels.
 #[derive(Clone, Copy)]
 enum Hit {
     Header(Node),
     Button(Node, Btn),
-    Line(Node, usize), // a code line: the file line index
+    Line(Node, usize),
     Body(Node),
 }
 
@@ -79,37 +64,34 @@ enum Drag {
 
 #[derive(Default)]
 pub struct Graph {
-    // The tree: rebuilt every frame from the selection and the reader's state below, and read
-    // as last frame's by the next frame's input.
     nodes: Vec<Node>,
     col: HashMap<Node, i32>,
-    pos: HashMap<Node, (i32, i32)>,       // in cells and rows
-    size: HashMap<Node, (i32, i32)>,      // in cells and rows
-    cell: (i32, i32),                     // the cell width and row height, in pixels
-    range: HashMap<Node, (usize, usize)>, // a node's own lines: the step's slice, or the whole symbol
-    view: HashMap<Node, (usize, usize)>,  // range widened by context, clamped to the file
+    pos: HashMap<Node, (i32, i32)>,
+    size: HashMap<Node, (i32, i32)>,
+    cell: (i32, i32),
+    range: HashMap<Node, (usize, usize)>,
+    view: HashMap<Node, (usize, usize)>,
     by_sym: HashMap<SymRef, Node>,
     path_id: Option<usize>,
-    step: HashMap<Node, (usize, usize, String)>, // step node -> (pre-order position, anchor index, hierarchical number)
+    step: HashMap<Node, (usize, usize, String)>,
     step_parent: HashMap<Node, Node>,
-    origin: HashMap<Node, (Node, bool)>, // expansion node -> (the node that revealed it, via callees?)
-    code_top: HashMap<Node, i32>,        // y of each node's first code row
-    has_note: HashSet<Node>,             // step nodes with a note row
-    hits: Vec<(Rect, Hit)>,              // what the mouse can land on, in window pixels
+    origin: HashMap<Node, (Node, bool)>,
+    code_top: HashMap<Node, i32>,
+    has_note: HashSet<Node>,
+    hits: Vec<(Rect, Hit)>,
 
-    // The reader's: what they opened, cut, widened and dragged, and the camera.
     expansions: Vec<(Node, bool)>,
-    auto_open: Option<Node>, // the off-path root whose callers and callees were opened for it
-    collapsed: HashSet<Node>, // nodes cut to a preview
-    context: HashMap<Node, (usize, usize)>, // extra lines shown above and below, asked for with the node's buttons
-    manual: HashMap<Node, (f32, f32)>,      // dragged positions, in cells and rows
+    auto_open: Option<Node>,
+    collapsed: HashSet<Node>,
+    context: HashMap<Node, (usize, usize)>,
+    manual: HashMap<Node, (f32, f32)>,
     drag: Option<Drag>,
     pub pan: (i32, i32),
     pub zoom: f32,
-    pub want_look: bool, // centre on the focus once it has a position
-    pub hold_look: bool, // the next focus change came from the graph itself: do not move the camera
-    want_fit: bool,      // zoom out and pan so the whole tree is on the canvas
-    keep: Option<(Node, (i32, i32))>, // a node and its pixel position before the relayout its button caused
+    pub want_look: bool,
+    pub hold_look: bool,
+    want_fit: bool,
+    keep: Option<(Node, (i32, i32))>,
 }
 
 impl Graph {
@@ -120,8 +102,6 @@ impl Graph {
         }
     }
 
-    /// Everything the reader built on top of the selection, keyed by symbol name instead of
-    /// symbol index, so it survives a re-index that renumbers the symbols of a file.
     pub fn save(&self, idx: &Index) -> Saved {
         let key = |n: &Node| (idx.key(n.0), n.1);
         Saved {
@@ -133,8 +113,6 @@ impl Graph {
         }
     }
 
-    /// Put it back on the new index, dropping whatever no longer has a symbol. The camera is
-    /// not touched: a re-index is not a navigation.
     pub fn restore(&mut self, idx: &Index, s: Saved) {
         let node = |k: &NodeKey| idx.by_key(&k.0).map(|r| (r, k.1));
         self.expansions = s
@@ -156,7 +134,6 @@ impl Graph {
         self.auto_open = s.auto_open.as_ref().and_then(node);
     }
 
-    /// What the camera still owes the reader, for dumps: a pending fit, look or keep.
     pub fn camera_state(&self) -> String {
         format!(
             "fit={} look={} keep={}",
@@ -174,7 +151,6 @@ impl Graph {
         }
     }
 
-    /// Every node button's node name, drawn label and last frame's window rectangle.
     pub fn button_rects(&self, idx: &Index) -> Vec<(String, String, Rect)> {
         self.hits
             .iter()
@@ -193,7 +169,6 @@ impl Graph {
             .collect()
     }
 
-    /// Every node's name (with its step number) and last frame's window rectangle.
     pub fn node_rects(&self, idx: &Index) -> Vec<(String, Rect)> {
         self.hits
             .iter()
@@ -216,7 +191,6 @@ impl Graph {
 }
 
 impl Graph {
-    /// `n`'s rectangle in canvas pixels, offset by `o`; None when `n` is not in this frame's tree.
     fn rect_px(&self, n: Node, o: (i32, i32)) -> Option<Rect> {
         if !self.col.contains_key(&n) {
             return None;
@@ -260,15 +234,12 @@ impl Graph {
         self.nodes.push(n);
     }
 
-    /// The first line of `n` that names `word` as an identifier outside comments and strings.
     fn call_line(&self, idx: &Index, n: Node, word: &str) -> Option<usize> {
         let (lo, hi) = self.range[&n];
         let f = &idx.files[n.0.file];
         (lo..=hi.min(f.lines.len().saturating_sub(1))).find(|&li| index::call_site(f, li, word))
     }
 
-    /// What `n` calls: the symbol's callees, narrowed to the ones its lines name when the node
-    /// is a slice of the symbol.
     fn callees_of(&self, idx: &Index, n: Node) -> Vec<SymRef> {
         let s = idx.sym(n.0);
         if self.range[&n] == (s.start, s.end) {
@@ -281,7 +252,6 @@ impl Graph {
             .collect()
     }
 
-    /// Derive the node set from the selection + expansions.
     fn rebuild(&mut self, idx: &Index, map: &Map, path_id: Option<usize>, focus: Option<SymRef>) {
         self.nodes.clear();
         self.col.clear();
@@ -294,7 +264,6 @@ impl Graph {
         self.path_id = path_id.filter(|&pi| pi < map.paths.len());
         if let Some(pi) = self.path_id {
             let anchors = &map.paths[pi].anchors;
-            // a step that gets no node passes its parent on, so its children stay in the tree
             let mut node_of: HashMap<usize, Node> = HashMap::new();
             for (k, (ai, depth, number)) in map.numbered(idx, pi).into_iter().enumerate() {
                 let a = &anchors[ai];
@@ -310,8 +279,6 @@ impl Graph {
                 };
                 let si = match a.sym {
                     Some(si) => Some(si),
-                    // a lines-only anchor takes the symbol its first line is inside, else the
-                    // file's first symbol; a file with no symbols at all has no node
                     None if a.symbol.is_empty() => idx
                         .by_line(&a.file, a.line_start)
                         .map(|r| r.sym)
@@ -339,8 +306,7 @@ impl Graph {
             && !self.by_sym.contains_key(&f)
         {
             let s = idx.sym(f);
-            self.add(idx, (f, None), 0, (s.start, s.end)); // an off-path selection is its own root
-            // it arrives with its neighbourhood open, once: closing them again sticks
+            self.add(idx, (f, None), 0, (s.start, s.end));
             if self.auto_open != Some((f, None)) {
                 self.auto_open = Some((f, None));
                 for callees in [true, false] {
@@ -376,7 +342,6 @@ impl Graph {
         self.view.clear();
         for &n in &self.nodes {
             let (lo, hi) = self.range[&n];
-            // a preview is of the node's own lines: context waits until the node is opened
             let (a, b) = if self.collapsed.contains(&n) {
                 (0, 0)
             } else {
@@ -399,8 +364,6 @@ impl Graph {
         self.manual.remove(&n);
     }
 
-    /// The column of the file line under the pointer, or None over the line-number gutter.
-    /// The grid a node draws is the one `code_block` draws, so the gutter is the same width.
     fn code_col(&self, cell_w: i32, n: Node, li: usize, mouse: (i32, i32)) -> Option<usize> {
         let rect = self
             .hits
@@ -411,21 +374,16 @@ impl Graph {
         col.checked_sub(GUTTER)
     }
 
-    /// Keep `n` at its screen position through the relayout its button causes, so the tree
-    /// growing or shrinking around it does not slide it out from under the pointer.
     fn keep(&mut self, n: Node) {
         self.keep = self.rect_px(n, (0, 0)).map(|r| (n, (r.x, r.y)));
     }
 
-    /// Keep `n` where it is when its own size is about to change, so the button under the
-    /// pointer does not move.
     fn pin(&mut self, n: Node) {
         if let Some(&(x, y)) = self.pos.get(&n) {
             self.manual.insert(n, (x as f32, y as f32));
         }
     }
 
-    /// A node's header runs and the buttons the header carries, left to right.
     fn header(&self, idx: &Index, n: Node) -> (Vec<(String, Color)>, Vec<(Btn, String)>) {
         let s = idx.sym(n.0);
         let f = &idx.files[n.0.file];
@@ -465,8 +423,6 @@ impl Graph {
             }
         }
         labels.push((Btn::Listing, "listing".into()));
-        // an expansion that is open says so and closes on a click; a closed one that would
-        // reveal nothing new is not offered at all
         let hidden = |list: &[SymRef]| list.iter().filter(|r| !self.by_sym.contains_key(r)).count();
         let callees = self.callees_of(idx, n);
         if self.expansions.contains(&(n, true)) && !callees.is_empty() {
@@ -482,7 +438,6 @@ impl Graph {
         (header, labels)
     }
 
-    /// Cells the header needs: its text, then every button with its padding and gap.
     fn header_cols(&self, idx: &Index, n: Node) -> i32 {
         let (header, labels) = self.header(idx, n);
         let text: usize = header.iter().map(|(s, _)| s.chars().count()).sum();
@@ -490,8 +445,6 @@ impl Graph {
         (text + buttons + 2) as i32
     }
 
-    /// A node is as wide as its longest shown line within limits, and never narrower than
-    /// its header, so the buttons always sit inside it.
     fn node_size(&self, idx: &Index, n: Node) -> (i32, i32) {
         let (lo, _) = self.view[&n];
         let (shown, total) = self.lines_shown(n);
@@ -507,12 +460,9 @@ impl Graph {
             .max(self.header_cols(idx, n));
         let note_rows = i32::from(self.has_note.contains(&n));
         let rows = 1 + note_rows + shown as i32 + usize::from(shown < total) as i32;
-        (cols + 1, rows + 1) // one cell and one row of padding
+        (cols + 1, rows + 1)
     }
 
-    /// Recompute every position as a left-to-right forest: a column per depth anchored at
-    /// column 0, each subtree stacked beside its parent, children in the order the parent's
-    /// code calls them.
     fn layout(&mut self, idx: &Index) {
         if self.nodes.is_empty() {
             return;
@@ -535,7 +485,6 @@ impl Graph {
         for c in (first..anchor).rev() {
             col_x.insert(c, col_x[&(c + 1)] - col_w[&c] - GAP_X);
         }
-        // the forest
         let mut right: HashMap<Node, Vec<Node>> = HashMap::new();
         let mut left: HashMap<Node, Vec<Node>> = HashMap::new();
         let mut has_parent: HashSet<Node> = HashSet::new();
@@ -570,7 +519,6 @@ impl Graph {
             .collect();
         roots.sort_by_key(|r| self.step.get(r).map_or(usize::MAX, |s| s.0));
 
-        // block heights, bottom-up
         let mut height: HashMap<Node, i32> = HashMap::new();
         fn measure(
             g: &Graph,
@@ -606,7 +554,6 @@ impl Graph {
         for &r in &roots {
             measure(self, r, &right, &left, &mut height, &mut seen);
         }
-        // place, top-down
         fn place(
             g: &mut Graph,
             r: Node,
@@ -648,7 +595,6 @@ impl Graph {
             place(self, r, cur, &col_x, &right, &left, &height, &mut done);
             cur += height[&r] + GAP_Y * 2;
         }
-        // different subtrees can still meet in one column; push the later one down
         for ns in cols.values_mut() {
             ns.sort_by_key(|n| self.pos[n].1);
             let mut prev_bottom = i32::MIN / 2;
@@ -663,7 +609,6 @@ impl Graph {
 }
 
 impl Graph {
-    /// The bounding box of the whole tree in cells and rows, which no zoom changes.
     fn bbox_cells(&self) -> Option<(i32, i32, i32, i32)> {
         let mut b: Option<(i32, i32, i32, i32)> = None;
         for n in &self.nodes {
@@ -678,14 +623,9 @@ impl Graph {
         b.map(|(l, t, r, bo)| (l, t, r - l, bo - t))
     }
 
-    /// The camera moves only on an explicit request: a new focus or the fit button. A node
-    /// whose button changed the tree around it is held at its screen position, so the pan
-    /// follows the relayout and the pointer stays over the button it pressed.
     fn move_camera(&mut self, canvas: Rect, focus_node: Option<Node>) {
         if self.want_look {
             if let Some(Rect { x, y, w, h }) = focus_node.and_then(|f| self.rect_px(f, (0, 0))) {
-                // a node taller than the canvas is aligned to its top: its header and buttons
-                // are what the reader came for
                 let y = if h + MARGIN * 2 > canvas.h {
                     MARGIN - y
                 } else {
@@ -704,11 +644,10 @@ impl Graph {
     }
 }
 
-/// Everything the custom element draws, in window pixels.
 struct Scene {
     px: u32,
     m: Metrics,
-    edges: Vec<([(f32, f32); 4], Color, f32)>, // curve, colour, width; each ends in an arrow head
+    edges: Vec<([(f32, f32); 4], Color, f32)>,
     nodes: Vec<SceneNode>,
 }
 
@@ -718,19 +657,17 @@ struct SceneNode {
     border: Color,
     border_w: i32,
     header: Vec<(String, Color)>,
-    buttons: Vec<(Rect, String, bool)>, // rect, label, hovered
+    buttons: Vec<(Rect, String, bool)>,
     note: Option<String>,
     code_top: i32,
-    code: Rc<Glyphs>, // the shown lines, the first being file line `lo`
+    code: Rc<Glyphs>,
     lo: usize,
     tinted: HashSet<usize>,
-    slice: Option<(usize, usize)>, // the node's own lines, highlighted when context shows around them
+    slice: Option<(usize, usize)>,
     more: Option<usize>,
 }
 
 impl App {
-    /// The graph tab: input from last frame's rectangles, then the tree rebuilt, laid out and
-    /// turned into a scene that a custom element draws.
     pub fn graph_tab(&mut self, gfx: &mut Gfx) {
         let canvas_id = ui::id("graph-canvas");
         let it = self.ui.interaction_of(canvas_id);
@@ -739,12 +676,10 @@ impl App {
         let mouse = self.ui.input.mouse;
         let mods = self.ui.input.mods;
 
-        // zoom around the mouse with ctrl+wheel, pan with the wheel
         if it.wheel.1 != 0.0 && (it.hovered || self.graph.drag.is_some()) {
             if mods.ctrl {
                 let old = self.graph.zoom;
                 let new = (old * if it.wheel.1 > 0.0 { 1.1 } else { 1.0 / 1.1 }).clamp(0.3, 2.0);
-                // keep the cell under the mouse still: positions scale by the cell, not the zoom
                 let (oc, or) = gfx.cell(self.graph_px());
                 self.graph.zoom = new;
                 let (nc, nr) = gfx.cell(self.graph_px());
@@ -768,7 +703,6 @@ impl App {
                 }
             }
         }
-        // clicks and drags against last frame's hit rectangles
         let hit = self
             .graph
             .hits
@@ -810,10 +744,10 @@ impl App {
                         (Some(ai), Some(pi)) => Action::SelectStep(pi, ai, false),
                         _ => Action::Focus(n.0),
                     });
-                    self.graph.hold_look = true; // selecting from the graph must not move the camera
+                    self.graph.hold_look = true;
                 }
                 Some(Hit::Line(n, li)) => {
-                    self.graph.drag = Some(Drag::Node(n)); // dragging code moves the node without selecting it
+                    self.graph.drag = Some(Drag::Node(n));
                     if let Some(col) =
                         self.graph
                             .code_col(gfx.cell(self.graph_px()).0, n, li, mouse)
@@ -867,7 +801,6 @@ impl App {
             self.tooltip = Some((t, mouse));
         }
 
-        // the tree for this selection: the whole selected path, whatever is selected inside it
         self.graph
             .rebuild(&self.idx, &self.map, self.sel_path, self.focus);
         let px = self.graph_px();
@@ -881,8 +814,6 @@ impl App {
                 .pos
                 .insert(n, (p.0.round() as i32, p.1.round() as i32));
         }
-        // fit: the layout is in cells, so the largest font at which the tree fits the canvas
-        // settles both the zoom and the pan in one frame
         if self.graph.want_fit && canvas_known {
             self.graph.want_fit = false;
             if let Some((x, y, w, h)) = self.graph.bbox_cells() {
@@ -913,7 +844,6 @@ impl App {
             self.graph.move_camera(canvas, focus_node);
         }
 
-        // toolbar
         self.ui.open(
             Kind::None,
             Layout::row()
@@ -951,7 +881,6 @@ impl App {
         self.label(&format!("{:.0}%", z * 100.0), WEAK);
         self.ui.close();
 
-        // the scene
         let scene = self.build_scene(canvas, focus_node, px, m);
         self.ui.leaf(
             Kind::Custom(Box::new(move |gfx: &mut Gfx, _: Rect| {
@@ -963,7 +892,6 @@ impl App {
         );
     }
 
-    /// The node font: the UI size scaled by the zoom, whole pixels.
     fn graph_px(&self) -> u32 {
         ((self.px as f32) * self.graph.zoom).round().max(6.0) as u32
     }
@@ -980,7 +908,6 @@ impl App {
         let mut hits = Vec::new();
         let mut nodes = Vec::new();
         let step_color = GREEN;
-        // nodes
         for i in 0..self.graph.nodes.len() {
             let n = self.graph.nodes[i];
             let rect = self.graph.rect_px(n, o).unwrap();
@@ -1005,7 +932,6 @@ impl App {
             let node_hits_from = hits.len();
             let fill = if off_path { PANEL } else { FIELD };
             let (header, labels) = self.graph.header(&self.idx, n);
-            // buttons, right-aligned in the header
             let mut buttons = Vec::new();
             let mut button_hits = Vec::new();
             let mut bx = rect.right() - m.pad;
@@ -1037,8 +963,6 @@ impl App {
                 hits.push((lr, Hit::Line(n, li)));
             }
             hits.extend(button_hits);
-            // the lines an edge leaves from: every node on the canvas this one calls, plus its
-            // child steps, whichever way either was revealed
             let mut targets: Vec<SymRef> = self
                 .graph
                 .callees_of(&self.idx, n)
@@ -1057,7 +981,6 @@ impl App {
                 .filter_map(|c| self.graph.call_line(&self.idx, n, &self.idx.sym(*c).name))
                 .filter(|&li| li < lo + shown)
                 .collect();
-            // later hits win: body, then the header, then lines, then the buttons
             let mut ordered = vec![(rect, Hit::Body(n)), (header_rect, Hit::Header(n))];
             ordered.extend(hits.drain(node_hits_from..));
             hits.extend(ordered);
@@ -1079,7 +1002,6 @@ impl App {
                 more: (shown < total).then_some(total - shown),
             });
         }
-        // edges: where an edge leaves a node is level with the call line when it is shown
         let g = &self.graph;
         let edge_out = |n: Node, word: &str| -> (f32, f32) {
             let r = g.rect_px(n, o).unwrap();
@@ -1093,8 +1015,6 @@ impl App {
                 _ => (r.right() as f32, (r.y + m.pad + m.row_h / 2) as f32),
             }
         };
-        // a curve leaving p0 and entering p1 horizontally, bowing out rightwards for `dir` 1.0
-        // and leftwards for -1.0
         let curve = |p0: (f32, f32), p1: (f32, f32), dir: f32| {
             let dx = ((p1.0 - p0.0).abs() * 0.5).max((GAP_X * m.cell_w) as f32 * 0.8) * dir;
             [p0, (p0.0 + dx, p0.1), (p1.0 - dx, p1.1), p1]

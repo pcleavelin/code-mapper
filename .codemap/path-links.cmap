@@ -10,8 +10,8 @@ order 10
 author ai
 file src/gui/document.rs
 symbol doc_steps
-lines 162 188
-hash a09440c29bef3e01
+lines 157 182
+hash 8bfd936f8fa6d037
 link reader-gui
 note The GUI side: the link controls on a step header, and below them the inline expansion.
 
@@ -29,7 +29,7 @@ order 6
 author ai
 file src/cli.rs
 symbol exec
-lines 369 377
+lines 366 374
 hash 9f68e28c136c9518
 note path-rename: counts the links first so the output says how many now point at the new name.
 
@@ -38,7 +38,7 @@ order 3
 author ai
 file src/cli.rs
 symbol exec
-lines 245 272
+lines 242 269
 hash fbc90ca50c0493ad
 note path: the header lists the steps that link here; the steps print through print_steps, which expands links with --expand.
 
@@ -86,7 +86,7 @@ order 2
 author ai
 file src/cli.rs
 symbol exec
-lines 340 348
+lines 337 345
 hash 0276f03430f48fd2
 note step-unlink: refuses a step that has no link, so a typo in the index says so.
 
@@ -95,7 +95,7 @@ order 0
 author ai
 file src/cli.rs
 symbol exec
-lines 330 339
+lines 327 336
 hash 2243792e3c788604
 note step-link: the step must exist, then set_link decides.
 

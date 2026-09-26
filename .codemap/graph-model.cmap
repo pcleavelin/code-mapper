@@ -10,9 +10,9 @@ order 0
 author ai
 file src/gui/graph.rs
 symbol Graph
-lines 0 32
-hash 32256f850dd9f8ef
-note The fields split two ways, and the struct says which is which. The tree - nodes, their columns, positions, sizes, line ranges, step numbers, parents and origins, and the hit rectangles - is rebuilt every frame from the selection and is read as last frame's by the next frame's input. The reader's part survives frames: the expansions opened, the nodes cut to a preview or widened with context, the positions dragged (manual, which freezes the layout until the node set changes) and the camera.
+lines 0 29
+hash 5b8bdd4eac0c3347
+note The fields split two ways, and the struct says which is which. The tree - nodes, their columns, positions, sizes, line ranges, step numbers, parents and origins, and the hit rectangles - is rebuilt every frame from the selection and is read as last frame's by the next frame's input. The reader's part survives frames: the expansions opened, the nodes cut to a preview or widened with context, the positions dragged (manual, which freezes the layout until the node set changes) and the camera. pos, size and manual are in cells and rows, cell is the cell width and row height in pixels, and hits are in window pixels. range is a node's own lines (the step's slice or the whole symbol) and view is that range widened by context and clamped to the file. step maps a step node to its pre-order position, anchor index and hierarchical number; origin maps an expansion node to the node that revealed it and whether it came through callees; code_top is the y of a node's first code row. auto_open is the off-path root whose callers and callees were opened for it; want_look asks to centre on the focus once it has a position, hold_look says the next focus change came from the graph itself and must not move the camera, want_fit asks for the fit, and keep is a node and its pixel position before the relayout its button caused.
 
 step 1qriwj
 order 7
@@ -102,7 +102,7 @@ file src/gui/graph.rs
 symbol call_line
 lines 0 4
 hash 0b992c6e7fa10e69
-note The first line of a node that names an identifier: where the call sits, found textually because neither backend records call-site lines. It decides where an edge leaves a node, which lines are tinted, and the order siblings are stacked in.
+note The first line of a node that names an identifier outside comments and strings: where the call sits, found textually because neither backend records call-site lines. It decides where an edge leaves a node, which lines are tinted, and the order siblings are stacked in.
 
 step l461m7
 order 4
@@ -160,8 +160,8 @@ parent yxmrlu
 author ai
 file src/gui/graph.rs
 symbol header
-lines 0 54
-hash 4df9ae75c4e04b17
+lines 0 52
+hash fbebd7bf775647d6
 note The header runs and the button list, built once here for both measuring and drawing: step number, name, off-path tag, file:lines; then more/less, context above, below and none (never while collapsed), listing, and the two expansions. An expansion that is open says 'hide N' and closes on a click; a closed one is offered only when it would actually reveal something, so a button whose targets are all on the canvas already is not drawn at all rather than doing nothing when pressed.
 
 step wu5v06
@@ -170,9 +170,9 @@ parent 1fwzx4
 author ai
 file src/gui/graph.rs
 symbol rebuild
-lines 0 104
-hash 342d4508504deac7
-note The derivation, run every frame: clear, then one node per step of the selected path at its depth in the tree (its slice as the line range, its note kept for the header; a step with no symbol of its own takes the symbol its first line sits in, and a step that gets no node at all hands its children to its parent so the tree keeps its shape), then the focused symbol as its own root when no step already shows it, with its callers and its callees opened once so an off-path jump lands in a neighbourhood rather than on a lone box, then the expansions in the order they were opened. A dragged position is kept only while its node still exists.
+lines 0 99
+hash a2e3d0c8d20d1975
+note The derivation, run every frame: clear, then one node per step of the selected path at its depth in the tree (its slice as the line range, its note kept for the header; a step with no symbol of its own takes the symbol its first line sits in, else the file's first symbol (a file with no symbols gives no node), and a step that gets no node at all hands its children to its parent so the tree keeps its shape), then the focused symbol as its own root when no step already shows it, with its callers and its callees opened once so an off-path jump lands in a neighbourhood rather than on a lone box (auto_open remembers that root, so closing them afterwards sticks), then the expansions in the order they were opened. A dragged position is kept only while its node still exists. A node cut to a preview shows only its own lines: its context applies once it is opened again.
 
 step yxmrlu
 order 9
@@ -181,5 +181,5 @@ author ai
 file src/gui/graph.rs
 symbol node_size
 lines 0 16
-hash e50acb326d86e010
-note A node's size in cells and rows: the longest shown line plus the gutter, within limits, but never narrower than its header text and buttons, so the buttons always sit inside the node whatever the preview shows.
+hash 836db79cefe1609b
+note A node's size in cells and rows: the longest shown line plus the gutter, within limits, plus one cell and one row of padding, but never narrower than its header text and buttons, so the buttons always sit inside the node whatever the preview shows.

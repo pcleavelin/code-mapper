@@ -33,7 +33,7 @@ file src/index/mod.rs
 symbol dir
 lines 0 5
 hash 564f1ce32b15bbfd
-note The file's package directory, the other thing that counts as a module.
+note The file's package directory, the other thing that counts as a module: src/core/file_buffer.odin gives core.
 
 step 7s9gpy
 order 7
@@ -81,8 +81,8 @@ author ai
 file src/index/mod.rs
 symbol Symbol
 lines 0 12
-hash 65ad1e6424ba5f27
-note A declaration. start/end are inclusive 0-based rows and are what anchors are measured against, so both backends deliberately start a symbol at the line its name is on. depth is 0 or 1 (a member of an impl, mod, trait or class body), owner is the type it belongs to. calls and targets are the two backends' raw xref material; callees and callers are what link derives from them.
+hash 35c0a73db5f34507
+note A declaration. start/end are inclusive 0-based rows and are what anchors are measured against, so both backends deliberately start a symbol at the line its name is on. depth is 0 or 1 (a member of an impl, mod, trait or class body), owner is the type it belongs to (a member of impl Foo has owner Foo). calls are tree-sitter's raw call sites and targets are the server's (file, line) of each callee's definition, the two backends' raw xref material that link resolves into callees and callers. refs holds the (file, line) of every reference once the GUI has asked the server for them.
 
 step iq9eyk
 order 9
@@ -112,7 +112,7 @@ file src/index/mod.rs
 symbol Qual
 lines 0 4
 hash 5eb7f79208656e8f
-note The three shapes a qualifier can take. SelfRef exists so self.m and Self::m bind to the caller's own type without any type inference.
+note The three shapes a qualifier can take. SelfRef exists so self.m and Self::m bind to the caller's own type without any type inference. a.b.c() and A::c() both name c, qualified by b and by A; self.c(), Self::c() and this.c() are SelfRef.
 
 step nrox65
 order 11
@@ -132,7 +132,7 @@ file src/index/mod.rs
 symbol stem
 lines 0 3
 hash 5eeba30c30fe98bf
-note The file's module name, used by call resolution and by symbol qualifiers on the command line.
+note The file's module name, used by call resolution and by symbol qualifiers on the command line: src/core/file_buffer.odin gives file_buffer.
 
 step rfv0y0
 order 1
@@ -141,8 +141,8 @@ author ai
 file src/index/mod.rs
 symbol File
 lines 0 10
-hash 511186dd5c3cedf5
-note One text file. Lines are tab-expanded on load so display, hashing and column arithmetic all agree. mtime is what the GUI's watcher thread compares against the disk, hash keys the cache entry, backend says which resolver produced the symbols, and pending says a server exists for this language and has not answered for this text yet.
+hash 92eab16d510ca422
+note One text file. Lines are tab-expanded on load (a tab becomes four spaces) so display, hashing and column arithmetic all agree. mtime is what the GUI's watcher thread compares against the disk, hash, the FNV-1a of the tab-expanded text, keys the cache entry, backend says which resolver produced the symbols, and pending says a server exists for this language and has not answered for this text yet. path is relative to the root with forward slashes, hl holds each line's spans sorted and non-overlapping, and imports maps an imported name or alias to the module stem it comes from.
 
 step uueo77
 order 13
@@ -172,4 +172,4 @@ file src/index/mod.rs
 symbol lang_for
 lines 0 3
 hash de6946a4bb9536f1
-note Extension to language. Returning None is what 'indexed for viewing and grep only' means.
+note Extension to language. Returning None is what 'indexed for viewing and grep only' means. Every language in the table has a bundled grammar, so a file with a language has symbols even without its server.

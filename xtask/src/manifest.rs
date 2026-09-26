@@ -59,7 +59,7 @@ impl Manifest {
         self.keys(Literal::new("[dependencies]"))
     }
 
-    pub(crate) fn members(&self) -> Vec<RepoPath> {
+    pub(crate) fn members(&self, root: &Root) -> Vec<RepoPath> {
         let Some(lines) = self.sections.get(&Section::new("[workspace]")) else {
             return Vec::new();
         };
@@ -76,12 +76,18 @@ impl Manifest {
             .and_then(|(_, rest)| rest.split_once(']'))
             .map(|(inside, _)| inside)
             .unwrap_or_default();
-        inside
+        let mut out = Vec::new();
+        for member in inside
             .split(',')
             .map(|member| member.trim().trim_matches('"'))
             .filter(|member| !member.is_empty())
-            .map(RepoPath::new)
-            .collect()
+        {
+            match member.strip_suffix("/*") {
+                Some(folder) => out.extend(member_folders(root, &RepoPath::new(folder))),
+                None => out.push(RepoPath::new(member)),
+            }
+        }
+        out
     }
 
     pub(crate) fn guarded(&self) -> BTreeMap<Section, Vec<Message>> {
@@ -121,4 +127,18 @@ impl Manifest {
                 (name.trim() == key.as_str()).then(|| Message::new(value.trim().trim_matches('"')))
             })
     }
+}
+
+fn member_folders(root: &Root, folder: &RepoPath) -> Vec<RepoPath> {
+    let mut out: Vec<RepoPath> = fs::read_dir(root.join(folder))
+        .map(|entries| {
+            entries
+                .filter_map(Result::ok)
+                .filter(|entry| entry.path().join("Cargo.toml").is_file())
+                .filter_map(|entry| root.relative(&entry.path()))
+                .collect()
+        })
+        .unwrap_or_default();
+    out.sort();
+    out
 }

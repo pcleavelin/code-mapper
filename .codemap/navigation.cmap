@@ -49,7 +49,7 @@ order 12
 author ai
 file src/gui/mod.rs
 symbol frame
-lines 40 51
+lines 37 48
 hash 44032fd90fdfd78d
 note The keys, read in the frame before the tree is built: ctrl+s saves, alt+left and alt+right go back and forward, and the mouse's two side buttons do the same - the window turns those into flags on the input, so the app does not care which it was.
 
@@ -69,8 +69,8 @@ parent gq28ix
 author ai
 file src/gui/nav.rs
 symbol select_step
-lines 0 36
-hash 5784b2fcadca70b2
+lines 0 34
+hash cc9ca71ae55f93f2
 note A place that had a step is restored through the normal step selection, so the document scrolls and the graph follows exactly as if it had been clicked.
 
 step gq28ix
@@ -81,7 +81,7 @@ file src/gui/nav.rs
 symbol go
 lines 0 20
 hash 651c017ac52104f2
-note Restoring a place without it counting as a new navigation - it overwrites the last-frame snapshot, so track_navigation sees no difference at the end of this frame. A path or symbol that disappeared since is dropped rather than restored.
+note Restoring a place without it counting as a new navigation - it overwrites the last-frame snapshot, so track_navigation sees no difference at the end of this frame. A path or symbol that disappeared since is dropped rather than restored. The tab is set last, because selecting a step switches the tab on its own.
 
 step hbxizr
 order 15
@@ -98,9 +98,9 @@ order 16
 parent 0tjy5k
 author ai
 file src/gui/document.rs
-symbol impl App
-lines 5 13
-hash 3eb19391a0886714
+symbol remap_steps
+lines 0 6
+hash 045e4d30e8e385b7
 note The one rewrite of the step views onto new (path, step) keys: the closure gives each key its new value or drops the view. Removing a step, removing a path and reloading the map each pass their own closure.
 
 step j5iweb
@@ -110,7 +110,7 @@ author ai
 file src/gui/nav.rs
 symbol History
 lines 0 4
-hash 2da7338204144d77
+hash de7a1f0d2cd2af53
 note The back and forward stacks and the place at the end of the last frame, which is what track_navigation compares against.
 
 step ju7j2n

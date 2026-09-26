@@ -1,7 +1,3 @@
-//! The window and its event loop: winit events become one frame's `Input`, the app builds and
-//! draws a frame when input arrived or it asked to be redrawn, and a test script from
-//! `CODEMAP_SCRIPT` can stand in for the mouse and keyboard.
-
 use crate::gfx::{Color, Gfx};
 use crate::ui::{Input, Key, Mods};
 use std::sync::Arc;
@@ -12,7 +8,6 @@ use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::keyboard::{Key as WKey, NamedKey};
 use winit::window::{CursorIcon, Window, WindowId};
 
-/// What a frame asks of the loop.
 pub struct Frame {
     pub redraw_after: Duration,
     pub quit: bool,
@@ -22,20 +17,10 @@ pub struct Frame {
 
 pub trait App {
     fn frame(&mut self, gfx: &mut Gfx, input: &mut Input) -> Frame;
-    /// A line of a test script the loop did not understand: the app's own commands. False
-    /// means the line is not done yet and is run again next frame.
     fn script(&mut self, line: &str) -> bool;
-    /// The centre of the element a script names, from last frame's rectangles.
     fn locate(&mut self, name: &str) -> Option<(i32, i32)>;
 }
 
-/// A test script from `CODEMAP_SCRIPT=<file>`: one command per line, fed to the app as if the
-/// mouse and keyboard had done it. `wait <n>` lets n frames pass; `mouse <x> <y>`, `down`, `up`,
-/// `click <x> <y>`, `dblclick <x> <y>`, `drag <x0> <y0> <x1> <y1>`, `wheel <dy> [ctrl|shift]`,
-/// `down [ctrl|shift|alt] [twice]` (`twice` makes the press a double-click),
-/// `key <name> [ctrl] [alt]`, `text <chars>`, `pause <ms>` (frames keep coming for that much
-/// wall time), `quit`; anything else goes to the app. Every input command is its own frame, so
-/// the app sees it exactly as a real event.
 struct Script {
     lines: Vec<String>,
     pc: usize,
@@ -67,23 +52,18 @@ struct Runner<A: App> {
     input: Input,
     mods: Mods,
     last_click: Option<(Instant, u8, (i32, i32))>,
-    pending: bool, // input arrived since the last frame
+    pending: bool,
     next_redraw: Instant,
     start: Instant,
     cursor: CursorIcon,
     script: Option<Script>,
-    // a script or a screenshot run: a fixed 1600x1000 window at scale 1 that ignores the real
-    // mouse and keyboard, so the run looks the same on every machine
     fixed: bool,
-    // frames built since the last `dump`, for the script harness's frame-time line
     frames: u32,
     frame_max: Duration,
     frame_over: u32,
 }
 
 impl<A: App> Runner<A> {
-    /// Run the script up to and including the next input command or wait. Returns whether to
-    /// quit.
     fn step_script(&mut self) -> bool {
         let Some(sc) = self.script.as_mut() else {
             return false;
@@ -133,7 +113,6 @@ impl<A: App> Runner<A> {
                     return false;
                 }
                 "click" | "dblclick" => {
-                    // expands into its own frames; the press carries the click count
                     let mut rest: String = w[3.min(w.len())..].join(" ");
                     if w[0] == "dblclick" {
                         rest.push_str(" twice");
@@ -151,7 +130,6 @@ impl<A: App> Runner<A> {
                     );
                 }
                 "click-id" | "hover-id" | "dblclick-id" => {
-                    // the element by name, then the plain form of the same gesture
                     let Some(name) = w.get(1) else { continue };
                     match self.app.locate(name) {
                         Some((x, y)) => {
@@ -223,7 +201,7 @@ impl<A: App> Runner<A> {
                         return false;
                     }
                     if line.starts_with("shot") {
-                        return false; // the screenshot is of the frame that follows, before the next command
+                        return false;
                     }
                 }
             }

@@ -13,7 +13,7 @@ file src/gfx.rs
 symbol Glyphs
 lines 0 4
 hash 5471c4826de3e949
-note The drawn form of a block of text: a row-major grid of (character, colour), NUL past a line's end.
+note The drawn form of a block of text: a row-major grid of (character, colour), NUL past a line's end. Built when the text or its colours change and drawn every frame without allocating.
 
 step diqs80
 order 4
@@ -30,8 +30,8 @@ order 2
 author ai
 file src/gui/widgets.rs
 symbol code_block
-lines 0 74
-hash bfa50cf0aa43d2b6
+lines 0 73
+hash 0fd7d1d58264ce86
 note The one code element in the GUI: a block of lines drawn from a cached grid by a custom element, with the hover, jump and peek gestures resolved to (line, column) from the pointer. Per-row backgrounds and bars come from two closures, so the listing's selection and anchor bars and the document's slice highlight all share it.
 
 step k0lp9q
@@ -51,7 +51,7 @@ file src/gui/widgets.rs
 symbol build_grid
 lines 0 25
 hash 94ce9697426ba1ea
-note The line's cached spans become one colour per character in a grid: the line number in the gutter, then the text. Built once per (file text, range); every view of those lines shares the grid and drawing it allocates nothing.
+note The line's cached spans become one colour per character in a grid: the line number in the gutter, GUTTER columns of number and a space, then the text. Built once per (file text, range); every view of those lines shares the grid and drawing it allocates nothing.
 
 step oy9py2
 order 1
@@ -77,8 +77,8 @@ step uj81kd
 order 5
 author ai
 file src/index/mod.rs
-lines 104 114
-hash 18e4db0908b568e1
+lines 93 102
+hash c83d99e6f3f146c6
 note The vocabulary: a span is a byte range in one line plus a class, and there are eight classes. Storing a class byte rather than a colour is what lets the cache outlive a theme change, and keeps the whole highlight table for a large file small.
 
 step ymeigk

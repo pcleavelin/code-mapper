@@ -1,7 +1,3 @@
-//! The theme and the handful of widgets the GUI is written in: text builders, the code grid,
-//! the single-line field, buttons, rows, scrolling columns and the code block every view
-//! draws code with.
-
 use super::*;
 
 pub const BG: Color = [24, 24, 26, 255];
@@ -21,7 +17,6 @@ pub fn dim(c: Color, a: u8) -> Color {
     [c[0], c[1], c[2], a]
 }
 
-/// Syntax classes from the index, as colours.
 pub fn hl_color(class: u8) -> Color {
     match class {
         index::HL_KEYWORD => [197, 134, 192, 255],
@@ -59,11 +54,8 @@ pub(super) fn runs(runs: Vec<(String, Color)>, px: u32) -> Kind {
     })
 }
 
-/// Columns of line number and a space in front of every code line.
 pub const GUTTER: usize = 6;
 
-/// Lines `lo..=hi` of a file as a grid: the line number in the gutter, then the line with
-/// its syntax colours, one cell per character.
 pub fn build_grid(f: &index::File, lo: usize, hi: usize) -> Glyphs {
     let w = (lo..=hi)
         .map(|li| f.lines[li].chars().count())
@@ -102,7 +94,6 @@ pub(super) fn trunc(s: &str, n: usize) -> String {
     }
 }
 
-/// Cuts from the front, keeping the tail: what a path needs, since the file name is at the end.
 pub(super) fn trunc_left(s: &str, n: usize) -> String {
     let count = s.chars().count();
     if count <= n {
@@ -114,19 +105,17 @@ pub(super) fn trunc_left(s: &str, n: usize) -> String {
     }
 }
 
-/// A single-line text field.
 #[derive(Default)]
 pub struct Field {
     pub text: String,
-    cursor: usize, // in chars
+    cursor: usize,
     pub focused: bool,
-    selected: bool, // the whole text is selected: the next character typed replaces it
+    selected: bool,
     history: Vec<String>,
     hist_at: Option<usize>,
 }
 
 impl Field {
-    /// Feed the frame's keys; returns the line when enter was pressed.
     pub(super) fn handle(&mut self, input: &ui::Input, keep_on_enter: bool) -> Option<String> {
         if !self.focused {
             return None;
@@ -136,7 +125,7 @@ impl Field {
             match k {
                 Key::Enter => {
                     let line = if keep_on_enter {
-                        self.selected = !self.text.is_empty(); // the next entry replaces this one
+                        self.selected = !self.text.is_empty();
                         self.text.clone()
                     } else {
                         self.cursor = 0;
@@ -166,7 +155,7 @@ impl Field {
                         self.text.remove(i);
                     }
                 }
-                Key::Left | Key::Right if m.ctrl || m.alt => {} // those chords belong to the app
+                Key::Left | Key::Right if m.ctrl || m.alt => {}
                 Key::Left => {
                     self.cursor = self.cursor.saturating_sub(1);
                     self.selected = false;
@@ -230,7 +219,6 @@ impl Field {
             .unwrap_or(self.text.len())
     }
 
-    /// The text with the caret, as runs.
     pub(super) fn runs(&self, hint: &str) -> Vec<(String, Color)> {
         if self.text.is_empty() && !self.focused {
             return vec![(hint.to_owned(), WEAK)];
@@ -280,8 +268,6 @@ impl App {
         self.small_button_w(s, 0, id)
     }
 
-    /// A small button `cols` cells wide whatever its label, so a label that changes on click
-    /// does not move the buttons beside it; 0 fits the label.
     pub fn small_button_w(&mut self, s: &str, cols: usize, id: Id) -> Interaction {
         let it = self.ui.interaction_of(id);
         let layout = if cols > 0 {
@@ -297,7 +283,6 @@ impl App {
         )
     }
 
-    /// A navigation button three cells wide, dimmed when it has nowhere to go.
     pub(super) fn nav_button(&mut self, s: &str, id: Id, enabled: bool) -> Interaction {
         let it = self.ui.interaction_of(id);
         let color = if !enabled {
@@ -316,7 +301,6 @@ impl App {
         )
     }
 
-    /// A selectable row: a full-width line of text with a hover and selection background.
     pub(super) fn row(
         &mut self,
         runs_: Vec<(String, Color)>,
@@ -326,7 +310,6 @@ impl App {
         self.row_bg(runs_, id, selected.then_some(SELECTED))
     }
 
-    /// A row with its own background when it is marked; hover shows otherwise.
     pub(super) fn row_bg(
         &mut self,
         runs_: Vec<(String, Color)>,
@@ -346,8 +329,6 @@ impl App {
         )
     }
 
-    /// A text field; clicking it takes the keyboard. The text is clipped to the box and
-    /// scrolled so the caret stays in view.
     pub(super) fn field(&mut self, which: Which, hint: &str, width: i32) {
         let id = ui::id_with(ui::id("field"), which.name());
         let f = &self.fields[which as usize];
@@ -375,8 +356,6 @@ impl App {
         }
     }
 
-    /// Open a scrolling column with `id`; the wheel moves it and the offset is clamped to what
-    /// it showed last frame. Close it with `ui.close()`.
     pub fn scroll_open(&mut self, id: Id, layout: Layout, style: Style) -> Interaction {
         let mut off = self.scrolls.get(&id).copied().unwrap_or(0);
         let off = self.ui.scroll_by_wheel(id, &mut off);
@@ -385,10 +364,6 @@ impl App {
             .open(Kind::None, layout.scroll(0, off), style, Some(id))
     }
 
-    /// A virtual list of `n` rows `row_h` high in the scrolling column `id`, whose rectangle is
-    /// `rect`: the first row in view and how many fit (`guess` before the column has a size).
-    /// Only those rows are built. This emits the spacer standing for the rows above; the caller
-    /// ends the list with a `spacer` for the rows below.
     pub(super) fn rows_window(
         &mut self,
         id: Id,
@@ -404,15 +379,11 @@ impl App {
         (first, visible)
     }
 
-    /// Empty space `h` pixels high.
     pub(super) fn spacer(&mut self, h: i32) {
         self.ui
             .leaf(Kind::None, Layout::row().h(h), Style::default(), None);
     }
 
-    /// The drawn form of lines `lo..=hi` of a file, built once per (file text, range) and
-    /// shared by every element that shows it. The cache is dropped whole when it grows large
-    /// or the index changes.
     pub fn grid(&mut self, fi: usize, lo: usize, hi: usize) -> Rc<Glyphs> {
         let key = (fi, self.idx.files[fi].hash, lo, hi);
         if let Some(g) = self.grids.get(&key) {
@@ -426,11 +397,6 @@ impl App {
         g
     }
 
-    /// A block of a file's lines as one element drawn from its grid. Hovering an identifier
-    /// shows its tooltip, ctrl-click or double-click jumps to its definition, alt-click
-    /// peeks. `bg(line)` paints a row, `bar(line)` its left edge; `wide` takes the full width
-    /// rather than the grid's. Returns the interaction and, under the pointer, the line and
-    /// the text column (None in the gutter).
     pub fn code_block(
         &mut self,
         fi: usize,
@@ -449,7 +415,6 @@ impl App {
         let px = self.px;
         let (cw, rh) = self.cell;
         let (w, h) = (g.w as i32 * cw, g.h as i32 * rh);
-        // shift+wheel over the block scrolls it sideways when its lines are wider than it
         let prev = self.ui.interaction_of(id);
         let mut hx = self.hscroll.get(&id).copied().unwrap_or(0);
         if prev.hovered && self.ui.input.mods.shift && self.ui.input.wheel.1 != 0.0 {
@@ -471,7 +436,7 @@ impl App {
             }
             gfx.glyphs(r.x - hx, r.y, px, &g);
             if hx > 0 {
-                gfx.rect(Rect::new(r.x, r.y, 2, r.h), WEAK); // the left edge is cut off
+                gfx.rect(Rect::new(r.x, r.y, 2, r.h), WEAK);
             }
         };
         let layout = if wide {

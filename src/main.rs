@@ -22,7 +22,6 @@ fn cli_main(root: &Path, args: &[String]) -> i32 {
     };
     let mut idx = index::build(root);
     let map_path = root.join(map::MAP_DIR);
-    // a map that does not read stops every command, so no save can write over what is there
     let mut map = match Map::load(&map_path) {
         Ok(m) => m,
         Err(e) => {
@@ -32,7 +31,6 @@ fn cli_main(root: &Path, args: &[String]) -> i32 {
     };
     map.resolve_all(&idx);
     let mut out = String::new();
-    // A closed pipe (`| head`) is not an error worth a panic.
     let emit = |s: &str| {
         let _ = std::io::Write::write_all(&mut std::io::stdout(), s.as_bytes());
     };
@@ -48,8 +46,6 @@ fn cli_main(root: &Path, args: &[String]) -> i32 {
     drop(servers);
     match done {
         Ok(dirty) => {
-            // the map is saved before the command's output is shown, so a line that says a
-            // step was added is never printed for a change that did not reach the disk
             if dirty && let Err(e) = map.save(&map_path) {
                 emit(&out);
                 eprintln!("save failed: {e}");

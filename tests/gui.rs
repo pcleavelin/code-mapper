@@ -1,7 +1,3 @@
-//! The GUI, pinned by scripted scenarios: the selection, tooltip, peek, status and graph nodes
-//! after each step, against golden files. Opens real windows, one at a time.
-//! `CODEMAP_BLESS=1 cargo test --test gui` rewrites the goldens.
-
 mod common;
 
 use std::sync::Mutex;

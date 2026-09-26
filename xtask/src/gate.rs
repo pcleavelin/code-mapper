@@ -204,7 +204,7 @@ fn lint_all(root: &Root) -> Result<(), Message> {
 fn architecture(root: &Root) -> Result<(), Message> {
     let workspace = Manifest::load(root, &RepoPath::new("Cargo.toml"))?;
     let mut report = Message::default();
-    for member in workspace.members() {
+    for member in workspace.members(root) {
         let path = if member.as_str() == "." {
             RepoPath::new("Cargo.toml")
         } else {

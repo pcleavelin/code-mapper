@@ -13,7 +13,7 @@ file src/index/server.rs
 symbol name_position
 lines 0 7
 hash 923be396ba4b8dd4
-note Where a server wants to be pointed for a symbol: its first line, which is the line of its name, and the UTF-16 column of the name there.
+note Where a server wants to be pointed for a symbol: its first line, which is the line of its name, and the UTF-16 column of the name there. The column is 0 when the name is not on that line as written, as with an impl block.
 
 step 0xtjb7
 order 11
@@ -32,7 +32,7 @@ file src/index/server.rs
 symbol incoming_calls
 lines 0 5
 hash efb13ec5c2aa433d
-note callers asks this: the incoming calls of one symbol, which a server finds across the whole workspace, indexed or not.
+note callers asks this: the incoming calls of one symbol, which a server finds across the whole workspace, indexed or not. None when the language has no server.
 
 step 1cplvb
 order 25
@@ -49,8 +49,8 @@ parent wfyovg
 author ai
 file src/index/link.rs
 symbol link
-lines 0 52
-hash f3927addb3ea0cdc
+lines 0 50
+hash bde849ff41f3c713
 note Server targets resolve by (file, line) to the innermost symbol there; tree-sitter calls resolve by name. Callers are the inverse of callees. Rebuilt from scratch each time.
 
 step 2dbn8q
@@ -60,8 +60,8 @@ author ai
 file src/gui/work.rs
 symbol Req
 lines 0 5
-hash 202c0afbbb68f5d2
-note What the GUI sends the thread: a batch of files, or a position to hover, define, or find references to.
+hash 7f4e33f5195a2afb
+note What the GUI sends the thread: a batch of files, or a position to hover, define, or find references to. A reference request's position is the symbol's name, and poll_backend finds the symbol again by that line.
 
 step 4eup18
 order 13
@@ -108,9 +108,9 @@ parent mz27bi
 author ai
 file src/index/server.rs
 symbol push_symbol
-lines 0 53
-hash df86813965e934e7
-note DocumentSymbol to Symbol. One level of nesting into modules, classes, traits and impls, like the tree-sitter resolver. The symbol starts on the line of its name so both backends agree on the start that anchors are relative to.
+lines 0 51
+hash cd23bce01995b0df
+note DocumentSymbol to Symbol. One level of nesting into modules, classes, traits and impls, like the tree-sitter resolver. Servers start a symbol at its doc comment or attributes and tree-sitter at the declaration, so the symbol starts on the line of its name and both backends agree on the start that anchors are relative to. It also records where each name sits, so call-hierarchy and reference requests can point at it.
 
 step h22r5f
 order 4
@@ -120,7 +120,7 @@ file src/index/server.rs
 symbol apply
 lines 0 11
 hash f1bc7de0d578cfe9
-note Takes an answer only when the file still has the text it was asked about.
+note Takes an answer only when the file still has the text it was asked about. The caller re-links afterwards.
 
 step iend19
 order 24
@@ -141,6 +141,16 @@ symbol Msg
 lines 0 8
 hash 8fc3b995d2e3a867
 note What a server thread sends back: finished files, a progress line, a language that failed, the end of a batch, hover and definition answers for the peek, and the references asked for the symbol in the xrefs panel.
+
+step kn00gd
+order 32
+parent 2dbn8q
+author ai
+file src/gui/work.rs
+symbol Probe
+lines 0 5
+hash dddea1750ec40612
+note Probe, the position a hover, definition or reference request asks about: the file's path and text hash, so an answer for text that has since changed is never used, and the 0-based line and UTF-16 column of an identifier, as the language server protocol counts them.
 
 step l6davw
 order 21
@@ -170,7 +180,7 @@ file src/index/server.rs
 symbol start_server
 lines 0 8
 hash bf75969d6ab0d6bf
-note Spawn and wait_ready, shared by the CLI's Servers and the GUI's live thread. The absolute root it returns is what the server's URIs are compared against.
+note Spawn and wait_ready, shared by the CLI's Servers and the GUI's live thread. The absolute root it returns is what the server's URIs are compared against. It waits for the server to finish its own indexing, and fails when the server is not on PATH or will not start.
 
 step orf66y
 order 28
@@ -179,7 +189,7 @@ file src/index/server.rs
 symbol references
 lines 0 5
 hash abe0f966ca7df87d
-note refs asks this: every reference to one symbol.
+note refs asks this: every reference to one symbol. None when the language has no server.
 
 step p1e65r
 order 22
@@ -205,18 +215,18 @@ order 0
 author ai
 file src/index/mod.rs
 symbol build
-lines 0 74
-hash adc915988237f3ee
-note The walk and the cache check. A cache hit skips parsing entirely. A cached server answer points at lines in other files, so it is asked again when any of those files changed.
+lines 0 72
+hash 4bd4ace615f29f0e
+note The walk and the cache check. A cache hit skips parsing entirely. A cached server answer points at lines in other files, so it is asked again when any of those files changed. The walk honours .gitignore even when the root is not a git repo, and skips files over 4 MiB, or with a NUL byte in their first 1 KiB, as binary.
 
 step tw86wt
 order 8
 author ai
 file src/gui/work.rs
 symbol poll_backend
-lines 0 107
-hash 44c51ecc48e08d7e
-note Drains every server's channel each frame, but merges at most once a second and once more when the batch ends, since a merge re-resolves the map and drops every drawn grid. A merge applies the answers and starts a link on a thread; the status line's symbol count follows each merge. A batch's end saves the cache and runs the next batch if a rebuild asked for one meanwhile.
+lines 0 105
+hash ca960ffe74118493
+note Drains every server's channel each frame, but merges at most once a second and once more when the batch ends, since a merge re-resolves the map and drops every drawn grid. A merge applies the answers and starts a link on a thread; the status line's symbol count follows each merge. A batch's end saves the cache and runs the next batch if a rebuild asked for one meanwhile. Any message at all from a server means it is past starting, so a ': starting' status gives way to the index count.
 
 step v9k2x1
 order 10
@@ -226,7 +236,7 @@ file src/index/server.rs
 symbol impl_type
 lines 0 8
 hash 237007a3f125a694
-note An impl block's name arrives as its whole header text; this reduces it to the type it is about, which becomes the owner of every method inside and therefore what a qualified call binds to.
+note An impl block's name arrives as its whole header text; this reduces it to the type it is about, which becomes the owner of every method inside and therefore what a qualified call binds to. impl Trait for Foo<T> and impl Foo both give Foo; a server's kind-19 name carries no generic parameters of the impl itself (see impl_name).
 
 step vut1b3
 order 29
@@ -292,8 +302,8 @@ parent mz27bi
 author ai
 file src/index/server.rs
 symbol index_files
-lines 0 61
-hash 82acd0f546f48745
+lines 0 60
+hash b731feb340c63843
 note Three stages against a running server, each sent whole through request_all: the batch's document symbols, a call-hierarchy item for every symbol, the outgoing calls of every item. The answers come back in the order asked and are matched to their file and symbol by position.
 
 step ymvuc4
@@ -302,8 +312,8 @@ parent ywt3nh
 author ai
 file src/gui/work.rs
 symbol serve
-lines 0 89
-hash cefe8defa9dcb30f
+lines 0 87
+hash cb0440c6116cc359
 note A batch is queued and worked eight files at a time through index_files; progress and each finished file go back through the channel, Done when the queue empties. Hover, definition and reference requests are taken between batches, so the pointer waits behind eight files at most.
 
 step ywt3nh

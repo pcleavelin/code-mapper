@@ -1,9 +1,6 @@
-//! The other centre tabs: the listing, the search results and the map diff.
-
 use super::*;
 
 impl App {
-    /// The working map against the parent revision's, when that is known.
     pub(super) fn diffs(&self) -> Vec<PathDiff> {
         self.base
             .as_ref()
@@ -84,7 +81,7 @@ impl App {
                 self.actions.push(Action::SelectLine(li, mods.shift));
             }
         }
-        self.spacer(n.saturating_sub(first + visible) as i32 * row_h + row_h); // a row of slack so the last line clears the edge
+        self.spacer(n.saturating_sub(first + visible) as i32 * row_h + row_h);
         self.ui.close();
     }
 
@@ -127,7 +124,6 @@ impl App {
         self.ui.close();
     }
 
-    /// The map against the parent revision's: what an agent session changed.
     pub(super) fn diff_view(&mut self) {
         self.ui.open(
             Kind::None,

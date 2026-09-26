@@ -1,20 +1,14 @@
-//! The path document, the reader's landing view: one path as a column of steps with their
-//! notes and code, and the per-step view state (folds, hidden code, context).
-
 use super::*;
 
-/// Lines one press of a context button adds above or below a step's code.
 pub const CONTEXT_LINES: usize = 10;
 
-/// How one step of a path shows in the document. The default is its slice, code shown,
-/// subtree open, no context.
 #[derive(Clone, Copy, Default)]
 pub(super) struct StepView {
-    pub(super) whole: bool,  // the whole enclosing symbol instead of the slice
-    pub(super) hidden: bool, // the code is hidden
-    pub(super) folded: bool, // the subtree is hidden
-    pub(super) context: (usize, usize), // extra lines shown above and below
-    pub(super) expanded: bool, // the linked path shows inline under the step
+    pub(super) whole: bool,
+    pub(super) hidden: bool,
+    pub(super) folded: bool,
+    pub(super) context: (usize, usize),
+    pub(super) expanded: bool,
 }
 
 impl App {
@@ -22,8 +16,6 @@ impl App {
         self.steps.get(&(pi, ai)).copied().unwrap_or_default()
     }
 
-    /// Carry the step views over to new (path, step) keys: `f` gives a view's new key, or None
-    /// when the view goes.
     pub(super) fn remap_steps(&mut self, f: impl Fn((usize, usize)) -> Option<(usize, usize)>) {
         self.steps = self
             .steps
@@ -32,7 +24,6 @@ impl App {
             .collect();
     }
 
-    /// The reader's landing view: the selected path as one document.
     pub(super) fn path_document(&mut self) {
         let Some(pi) = self.sel_path.filter(|&pi| pi < self.map.paths.len()) else {
             self.label(
@@ -54,8 +45,6 @@ impl App {
         let header_id = |ai: usize| ui::id_n(ui::id("step"), ai);
         let numbered = self.map.numbered(&self.idx, pi);
 
-        // from last frame's rectangles: the step under the top of the viewport, and a pending
-        // scroll to a selected step
         if let Some((_, doc_rect)) = self.ui.content_of(doc_id) {
             let mut top = None;
             for &(ai, _, _) in &numbered {
@@ -81,7 +70,6 @@ impl App {
             }
         }
 
-        // header
         let (name, kind, tag, n, note, group) = {
             let p = &self.map.paths[pi];
             (
@@ -188,7 +176,6 @@ impl App {
             self.ui.close();
         }
 
-        // breadcrumb: the ancestors of the step under the top of the viewport
         let number_of: HashMap<usize, String> =
             numbered.iter().map(|(ai, _, n)| (*ai, n.clone())).collect();
         self.ui.open(
@@ -245,7 +232,6 @@ impl App {
         }
         self.ui.close();
 
-        // the steps
         self.scroll_open(doc_id, Layout::col().grow().pad(6).gap(2), Style::default());
         self.doc_steps(pi, 0, "", diff.as_ref(), &mut vec![pi], None, &mut 0);
         if let Some(d) = diff.as_ref().filter(|d| !d.removed.is_empty()) {
@@ -267,12 +253,6 @@ impl App {
         self.ui.close();
     }
 
-    /// The steps of path `pi` in tree order, indented `base` more levels and numbered after
-    /// `prefix`, each followed by the path it links to when that is expanded. `occ` is None
-    /// for the path being read. A linked path shown inline gets a number from `next_occ`,
-    /// which keeps the element ids of each expansion apart from the path's own and from
-    /// another expansion of the same path. `chain` holds the paths open around this one; a
-    /// link to one of them is not expanded again.
     fn doc_steps(
         &mut self,
         pi: usize,
@@ -332,7 +312,6 @@ impl App {
             let view = self.step_view(pi, ai);
             let (folded, collapsed, ctx) = (view.folded, view.hidden, view.context);
             let kids = self.map.descendants(pi, ai);
-            // header row
             self.ui.open(
                 Kind::None,
                 Layout::row().grow_x().gap(6).cross(Align::Center),
@@ -402,13 +381,9 @@ impl App {
                 },
                 Some(hid),
             );
-            // a step of a linked path opens in its own path; one of the path being read is
-            // selected where it is
             if it.clicked {
                 self.actions.push(Action::SelectStep(pi, ai, occ.is_none()));
             }
-            // toggles keep their width across labels, and the one destructive button sits alone
-            // at the far right, so nothing slides under a pointer that clicks twice
             if gone.is_none()
                 && self
                     .small_button_w(
@@ -435,7 +410,6 @@ impl App {
             if ctx != (0, 0) && self.small_button("no context", key("ctx0", ai)).clicked {
                 self.actions.push(Action::Context(pi, ai, 0));
             }
-            // the link: the name opens the linked path, the toggle shows it inline here
             let link = self.map.paths[pi].anchors[ai].link.clone();
             let target = self.map.find(&link);
             if !link.is_empty() {
@@ -469,7 +443,6 @@ impl App {
                 self.actions.push(Action::DeleteStep(pi, ai));
             }
             self.ui.close();
-            // note
             self.ui
                 .open(Kind::None, Layout::row().grow_x(), Style::default(), None);
             self.ui.leaf(
@@ -497,8 +470,6 @@ impl App {
                 None,
             );
             self.ui.close();
-            // code: the slice, or the whole symbol, plus the context asked for above and below;
-            // the slice is highlighted whenever anything else shows
             if let (Some(fi), None, false) = (fi, gone, collapsed) {
                 let (blo, bhi) = if view.whole {
                     sym.unwrap_or((ls, le))
@@ -549,7 +520,6 @@ impl App {
             }
             self.ui
                 .leaf(Kind::None, Layout::row().h(6), Style::default(), None);
-            // the linked path, inline under the step, as long as the step's subtree shows
             if let Some(t) = target.filter(|t| view.expanded && !folded && !chain.contains(t)) {
                 *next_occ += 1;
                 let o = *next_occ;
@@ -568,7 +538,6 @@ impl App {
         }
     }
 
-    /// The row above (`dir` -1) or below (1) a step's code whose button shows more lines there.
     pub(super) fn ctx_button(&mut self, pi: usize, ai: usize, dir: i8, indent: i32, id: ui::Id) {
         let label = if dir < 0 {
             format!("▲ {CONTEXT_LINES} lines above")

@@ -1,38 +1,31 @@
-//! What is known about the identifier under the pointer: the tooltip, go-to-definition and the
-//! peek, answered by the language's server or by the index.
-
 use super::*;
 
-/// Why a definition was asked for.
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub(super) enum Intent {
     Jump,
     Peek,
 }
 
-/// Hover and definition requests to the servers and their answers.
 #[derive(Default)]
 pub(super) struct Lookup {
-    pub(super) hovers: HashMap<Probe, Option<Option<String>>>, // asked (None) or answered (Some: text or nothing)
-    pub(super) want: Option<(Probe, f64)>, // the position under the pointer and since when
-    pub(super) inflight: bool,             // a hover request the server has not answered
-    pub(super) asked: usize,               // hover and definition requests not yet answered
-    pub(super) want_def: Option<(Probe, Intent)>, // the definition lookup whose answer is awaited
-    pub(super) refs_asked: HashSet<Probe>, // symbols whose references the server was asked for
+    pub(super) hovers: HashMap<Probe, Option<Option<String>>>,
+    pub(super) want: Option<(Probe, f64)>,
+    pub(super) inflight: bool,
+    pub(super) asked: usize,
+    pub(super) want_def: Option<(Probe, Intent)>,
+    pub(super) refs_asked: HashSet<Probe>,
 }
 
-/// What the tooltip under the pointer shows.
 pub enum Tip {
     Sym(SymRef),
     Text(String),
 }
 
-/// What the peek panel shows, and what a definition lookup landed on.
 #[derive(Clone)]
 pub enum Peek {
     Sym(SymRef),
-    Line(usize, usize), // (file, line): a definition inside a symbol, or in a file with none
-    Outside(PathBuf, usize, usize, Rc<Glyphs>), // path, line, first line of the grid, the grid
+    Line(usize, usize),
+    Outside(PathBuf, usize, usize, Rc<Glyphs>),
 }
 
 impl std::fmt::Debug for Peek {
@@ -47,13 +40,11 @@ impl std::fmt::Debug for Peek {
     }
 }
 
-/// The UTF-16 column of char index `col` in `line`, which is how servers count.
 pub(super) fn utf16_col(line: &str, col: usize) -> u32 {
     line.chars().take(col).map(|c| c.len_utf16() as u32).sum()
 }
 
 impl App {
-    /// The identifier at `col` of a line, as (first column, text).
     pub(super) fn word_at(&self, fi: usize, li: usize, col: usize) -> Option<(usize, String)> {
         let chars: Vec<char> = self.idx.files[fi].lines.get(li)?.chars().collect();
         let is_id = |c: &char| c.is_alphanumeric() || *c == '_';
@@ -72,9 +63,6 @@ impl App {
         Some((start, chars[start..=end].iter().collect()))
     }
 
-    /// The position the language's server is asked about for the identifier at a column, when
-    /// there is a server for the file. Err(true) when the file has a grammar and names are
-    /// looked up in the index instead; Err(false) when nothing answers for it.
     pub(super) fn probe_for(
         &self,
         fi: usize,
@@ -96,10 +84,6 @@ impl App {
         }
     }
 
-    /// What is known about the identifier at a position. A language with a live server is
-    /// asked once per position, after the pointer has rested on it for a moment and with no
-    /// other hover in flight, and answers a frame or more later; a language with only a
-    /// grammar answers with the symbol of that name; prose answers nothing.
     pub fn probe(&mut self, fi: usize, li: usize, col: usize) -> Option<Tip> {
         let (start, _) = self.word_at(fi, li, col)?;
         match self.probe_for(fi, li, start) {
@@ -133,8 +117,6 @@ impl App {
         }
     }
 
-    /// Look up where the identifier at a position is defined and act on it: the server
-    /// answers later through `poll_backend`, the index at once.
     pub(super) fn probe_def(&mut self, fi: usize, li: usize, col: usize, intent: Intent) {
         let Some((start, word)) = self.word_at(fi, li, col) else {
             return;
@@ -155,8 +137,6 @@ impl App {
         }
     }
 
-    /// Go to, or pin, what a definition lookup found.
-    /// A definition outside the repo is pinned whatever the intent, since only the peek shows it.
     pub(super) fn land(&mut self, found: Peek, intent: Intent) {
         match (intent, found) {
             (Intent::Jump, Peek::Sym(r)) => {
@@ -176,9 +156,6 @@ impl App {
         }
     }
 
-    /// The symbol the identifier at `col` names, by name: a definition that lists this line
-    /// among its references wins, then one in the same file, then any. For files whose
-    /// language has a grammar but no server.
     pub(super) fn symbol_at(&self, fi: usize, li: usize, col: usize) -> Option<SymRef> {
         let (_, word) = self.word_at(fi, li, col)?;
         let cands = self.idx.find_symbols(&word);
@@ -193,8 +170,6 @@ impl App {
 }
 
 impl App {
-    /// The floating tooltip under the pointer, drawn over everything: what the language's
-    /// server says about the identifier, or the definition of the symbol of that name.
     pub fn tooltip_element(&mut self) {
         self.tip_shown = None;
         let Some((tip, (mx, my))) = self.tooltip.take() else {
@@ -207,7 +182,6 @@ impl App {
         let (w, h) = (self.ui.size.0, self.ui.size.1);
         let (cw, rh) = self.cell;
         let max_cols = ((w - 40) / cw.max(1)).max(20) as usize;
-        // the box goes beside the pointer, flipping above or to the left when it would not fit
         let place_at = |cols: i32, rows: i32| {
             let (tw, th) = (cols * cw + 12, rows * (rh + 2) + 12);
             let x = if mx + 16 + tw <= w {

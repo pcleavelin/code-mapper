@@ -41,8 +41,8 @@ author ai
 file src/gui/work.rs
 symbol MapFile
 lines 0 7
-hash 514903d682867698
-note The map on disk against the one in memory: its directory, the stamp this window last read or wrote, whether the disk copy failed to read (which stops saves), whether there are unsaved edits, and whether the status already warned that the disk changed under them.
+hash 3b5d9aa46d37c9e4
+note The map on disk against the one in memory: its directory, the stamp this window last read or wrote, whether the disk copy failed to read (which stops saves), whether there are unsaved edits, and whether the status already warned that the disk changed under them. The stamp is the newest modification time among the directory and its .cmap files plus their count, so a removed path file also counts as a change.
 
 step 83o6v1
 order 2
@@ -70,8 +70,8 @@ parent gra0bb
 author ai
 file src/index/mod.rs
 symbol build
-lines 0 74
-hash adc915988237f3ee
+lines 0 72
+hash 4bd4ace615f29f0e
 note The same walk the app started with, this time on the rebuild thread. Unchanged files come straight from the cache, so re-indexing after one edit costs one parse; the window keeps drawing from the old index while it runs.
 
 step gra0bb
@@ -120,8 +120,8 @@ author ai
 file src/gui/work.rs
 symbol poll_reindex
 lines 0 14
-hash 31d711891c602d46
-note Run from the top of every frame like poll_disk: when the rebuild thread has an index, this is the frame that swaps it in. The whole cost of a re-index lands here - the carry-over, the re-resolve and the re-render - and it is one frame, not the whole rebuild. Search results are dropped because their file and line indices no longer mean anything, the watcher gets the new modification times so it starts looking again, and whatever changed is sent to the servers.
+hash 5cb5d9c0858e2e3d
+note Run from the top of every frame like poll_disk: when the rebuild thread has an index, this is the frame that swaps it in. The whole cost of a re-index lands here - the carry-over, the re-resolve and the re-render - and it is one frame, not the whole rebuild. Search results are dropped because their file and line indices no longer mean anything, the watcher gets the new modification times so it starts looking again, and whatever changed is sent to the servers. A rebuild thread that panicked leaves the old index in use and the status says so.
 
 step smd4uj
 order 8
@@ -129,8 +129,8 @@ parent 174dll
 author ai
 file src/gui/work.rs
 symbol reload_map
-lines 0 40
-hash 3cad71c1e9a04027
+lines 0 39
+hash 26abbe3c4df859cb
 note The reload keeps as much of the reading position as the new map still supports: the path by name, the selected step when the anchor at that index still names the same file, symbol and offsets, and a path's step views when its step count is unchanged. Paths are matched by name throughout, so a path added or removed by the agent does not shift another path's state onto the wrong rows.
 
 step yy35zu

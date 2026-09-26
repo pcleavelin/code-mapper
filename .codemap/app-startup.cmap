@@ -60,8 +60,8 @@ parent 5nd6jr
 author ai
 file src/window.rs
 symbol run
-lines 0 19
-hash 08da502749d2eb24
+lines 0 21
+hash 162272ec1db85a69
 note The handover: the event loop is created and owns the App from here. The window itself is not made until the loop resumes, which is the first thing gfx-loop does. Closing the window just exits the loop, so unsaved map edits are lost; the save button and ctrl+s are the only way out for them.
 
 step fwdacy
@@ -81,8 +81,8 @@ author ai
 file src/gui/work.rs
 symbol Work
 lines 0 14
-hash 0efcdf7b8bbfa600
-note The threads the window keeps busy and what the frame knows of each: a server per language with its batch and progress, the answers waiting for the next merge, and the link, rebuild, watcher and parent-map channels. working() is true while any of it is in flight.
+hash 70c60bb00afae322
+note The threads the window keeps busy and what the frame knows of each: a server per language with its batch and progress, the answers waiting for the next merge, and the link, rebuild, watcher and parent-map channels. working() is true while any of it is in flight. servers, no_server and indexing are keyed by server name, and a server in no_server failed to start and is never tried again. restart and relink record that the index changed while a batch or a link ran, so another one follows when it ends; last_merge is when answers last went into the index.
 
 step lhmt8w
 order 2
@@ -90,9 +90,9 @@ parent pucdnk
 author ai
 file src/gui/mod.rs
 symbol App
-lines 0 48
-hash 91f739badd5cded8
-note Everything the GUI knows, in one struct: the index and the map, the background work (Work), the server lookups (Lookup), the map on disk (MapFile), the reader's selection and History, the step views, the panel state, the fields and the graph. There is no model layer under it - a panel is a method that takes &mut self, draws, and queues Actions.
+lines 0 47
+hash 1d3946d0e37de3cc
+note Everything the GUI knows, in one struct: the index and the map, the background work (Work), the server lookups (Lookup), the map on disk (MapFile), the reader's selection and History, the step views, the panel state, the fields and the graph. There is no model layer under it - a panel is a method that takes &mut self, draws, and queues Actions. Units and keys: now is seconds since the window opened; grids caches a drawn code block by (file, text hash, first line, last line); hscroll is each code block's horizontal offset in pixels; output_bottom counts frames left in which the log stays pinned to its end; base_why says why there is no base map. The selection: focus is the selected symbol, sel_path the path being read, sel_anchor its selected step when the selection came through the path, sel the listing's (anchor line, active line); scroll_to is a listing line to bring into view next frame, scroll_to_step a step to scroll to the document's top with the tries left, top_step the step whose header is topmost in the document, outline_shown the top step the outline last kept in view. steps holds the (path, step) views that differ from the default, dir_toggled the Files-tab directories whose default open state is flipped, groups_open the Paths-tab groups the reader opened or closed, peek the definition pinned in the right panel. tip_shown is the first line of last frame's tooltip, for dumps; results are (file, line) hits; shot is screenshot mode (write the window after a few frames, then quit) and shot_next a screenshot a script asked for on the next frame.
 
 step mlmsu7
 order 11
@@ -120,8 +120,8 @@ parent v49gqc
 author ai
 file src/index/cache.rs
 symbol save_cache
-lines 0 48
-hash f7b6b1b7712a95b8
+lines 0 50
+hash 278ba10ffc1224c4
 note Written back only when something was parsed or a cached file disappeared, so opening an unchanged repo does not rewrite it.
 
 step uzot4i
@@ -140,8 +140,8 @@ parent pucdnk
 author ai
 file src/index/mod.rs
 symbol build
-lines 0 74
-hash adc915988237f3ee
+lines 0 72
+hash 4bd4ace615f29f0e
 note The walk. It blocks the startup, which is why the cache exists: a file whose text hash matches its cache entry is taken whole and never parsed.
 
 step yzu1mn

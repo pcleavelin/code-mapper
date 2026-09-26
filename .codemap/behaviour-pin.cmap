@@ -10,10 +10,10 @@ order 8
 parent dkjein
 author ai
 file tests/common/gui.rs
-symbol SCENARIOS
-lines 0 442
-hash 585715b90d5f9938
-note The GUI scenarios: the document's toggles, the peek and tooltip, the listing and pin selection, the graph's expansions, drag and zoom, the side panels, search and the command line, deletions, the diff tab and live reload. Each settles with idle and a save first: with several servers missing, the status line otherwise says whichever failure came last.
+symbol gui_scenarios
+lines 0 4
+hash a8ed96223c1a9921
+note The GUI scenarios: the document's toggles, the peek and tooltip, the listing and pin selection, the graph's expansions, drag and zoom, the side panels, search and the command line, deletions, the diff tab and live reload. Each settles with idle and a save first: with several servers missing, the status line otherwise says whichever failure came last. SETTLE then opens startup by clicking paths/2, since the paths list reads c-lib, shapes, startup, stats. A Scenario is its setup (Missing when a tool is not on PATH), the script, a hook that sees every stderr line with a rect <marker> line in the script as its cue, and after, CLI commands run once the GUI quits with their output appended to the golden gui-<fn>.
 
 step 216e03
 order 3
@@ -40,8 +40,8 @@ parent hdfzdl
 author ai
 file tests/parity.rs
 symbol compare_gui
-lines 0 21
-hash 012c031717c4a459
+lines 0 23
+hash aad2ef360ca52fa9
 note Dump lines except frame timings, and every screenshot, byte for byte. A scenario that should have written screenshots and wrote none fails too, so a broken shot path cannot pass as parity.
 
 step 9ci2st
@@ -50,8 +50,8 @@ parent ii6lor
 author ai
 file tests/common/cli.rs
 symbol merge
-lines 0 47
-hash cd870b009c12e51e
+lines 0 45
+hash c1a5c99a4860eefe
 note Two branches edit different notes of one path, one adds a step to another path and a new path: the merge reads with every change. A third branch adding a step to the same path merges too, since the new steps sit apart in the file. A fourth editing the same note conflicts on that one line, and every command refuses the map until it is resolved.
 
 step 9ionsq
@@ -68,9 +68,9 @@ order 7
 author ai
 file tests/common/gui.rs
 symbol play
-lines 0 46
-hash c3b11d53c8b6559c
-note Plays a GUI scenario. A script line aiming at <<prefix>> is resolved first by a probe run of the script up to that line, on a fresh fixture, reading the rectangle the probe's dump or rect printed; the final run then starts from the same state. Offsets are pixels, so the scripts assume the owner's display.
+lines 0 45
+hash 618db3541a38ac03
+note Plays a GUI scenario. A script line aiming at <<prefix>> is resolved first by a probe run of the script up to that line, on a fresh fixture, reading the rectangle the probe's dump or rect printed; the final run then starts from the same state. <<prefix>> stands for the centre of the last stderr line starting with prefix, <<prefix|dx,dy>> for a point offset from its top-left corner. Offsets are pixels: the scripts assume the fixed 1600x1000 script window at scale 1, 16 px rows. The screenshots land in shots(name).
 
 step gal679
 order 2
@@ -88,27 +88,27 @@ author ai
 file tests/common/mod.rs
 symbol golden
 lines 0 25
-hash 3ef0f068d69f4646
-note Compares with tests/golden/<name>.txt and reports the first line that differs; CODEMAP_BLESS=1 writes the golden instead.
+hash 07c4cd749bd63ae3
+note Compares with tests/golden/<name>.txt and reports the first line that differs; CODEMAP_BLESS=1 writes the golden instead. A scenario whose setup returns Missing, because a tool such as jj is not on PATH, is skipped with the reason on stderr, not compared.
 
 step hdfzdl
 order 11
 author ai
 file tests/parity.rs
 symbol old_and_new_agree
-lines 0 29
-hash af328a9dcc62d981
-note The refactor's proof: every CLI and GUI scenario with CODEMAP_BASE_BIN and with this build, and with CODEMAP_PARITY_REV the repo itself at that revision, its real map included, as a second fixture. Differences are kept on disk for a diff tool.
+lines 0 27
+hash e1bf0f296cb9255c
+note The refactor's proof: every CLI and GUI scenario with CODEMAP_BASE_BIN and with this build, and with CODEMAP_PARITY_REV the repo itself at that revision, its real map included, as a second fixture. Differences are kept on disk for a diff tool, both sides under the scratch directory parity/, and printed on failure. CODEMAP_PARITY_ONLY=<substring> plays only the scenarios whose name has it. Run it with CODEMAP_BASE_BIN=<old codemap> [CODEMAP_PARITY_REV=<rev>] cargo test --release --test parity -- --ignored.
 
 step ii6lor
 order 5
 parent vtkgzt
 author ai
 file tests/common/cli.rs
-symbol SCENARIOS
-lines 0 7
-hash cacbe03a192dee85
-note The CLI scenarios: every read command and its error cases, every edit command, source edits that make steps stale and the re-pins that fix them, diff and repin in a jj repo and in a git repo, and merges of jj branches that change one path.
+symbol cli_scenarios
+lines 0 4
+hash 9a8a912be26e3f4d
+note The CLI scenarios: every read command and its error cases, every edit command, source edits that make steps stale and the re-pins that fix them, diff and repin in a jj repo and in a git repo, and merges of jj branches that change one path. Each is a fn(bin, name), listed once in the cli_scenarios macro that both the cli test and the parity test expand, and its golden is cli-<fn>.
 
 step j8ntek
 order 14
@@ -118,6 +118,7 @@ file tests/common/mod.rs
 symbol gui_parity
 lines 0 6
 hash 6ee66187700fb7d9
+note What two builds of the same behaviour must agree on: every stderr line but frame timings and where screenshots were written.
 
 step k23duj
 order 9
@@ -134,9 +135,9 @@ order 18
 parent ii6lor
 author ai
 file tests/common/cli.rs
-symbol git_vcs
-lines 0 37
-hash 8faf8b49c0d94948
+symbol git
+lines 0 35
+hash 48388d73108a9371
 note diff and repin against HEAD of a git repo, the same verdicts the jj scenario gets.
 
 step noqsg2
@@ -145,8 +146,8 @@ parent hdfzdl
 author ai
 file tests/parity.rs
 symbol repo_at
-lines 0 79
-hash a1ef21f7bce6c8a0
+lines 0 78
+hash d9ab600279d97bc2
 note The repo as a second fixture: its files, symbols, roots, coverage and every path printed, then the document, a long path scrolled, the graph fitted and the side panels photographed.
 
 step sz59zt
@@ -155,8 +156,8 @@ author ai
 file tests/common/mod.rs
 symbol tool_path
 lines 0 21
-hash 6298e3735b9d1e9b
-note The PATH every child process gets: jj and git and no language server. On Unix a directory of links to the two, since git's own directory can hold a server (/usr/bin/clangd on macOS); on Windows their directories. Indexing is then tree-sitter's and deterministic, while diff and repin still reach jj and git.
+hash 3d93445c29777ce3
+note The PATH every child process gets: jj and git and no language server. On Unix a directory of links to the two, since git's own directory can hold a server (/usr/bin/clangd on macOS); on Windows their directories, since a link to git.exe does not run there. The links live in one scratch directory shared by every test in the process, so a failed symlink is ignored: a test running beside this one may have made it. Indexing is then tree-sitter's and deterministic, while diff and repin still reach jj and git.
 
 step vtkgzt
 order 4
@@ -165,7 +166,7 @@ file tests/common/mod.rs
 symbol run
 lines 0 22
 hash 88e80006aba6d27f
-note One CLI command into the transcript: the command line, stdout, stderr prefixed with '! ' and a non-zero exit code, the fixture root replaced by <root>.
+note One CLI command into the transcript: the command line, stdout, stderr prefixed with '! ' and a non-zero exit code, the fixture root replaced by <root> in either slash style, and line ends made Unix.
 
 step xwqk4d
 order 13
@@ -173,9 +174,9 @@ parent dkjein
 author ai
 file tests/common/mod.rs
 symbol gui
-lines 0 55
-hash 3bcd3bf33cf94701
-note Runs the window with CODEMAP_SCRIPT and reads stderr as it arrives, so a scenario's hook can edit files on disk at a line the script marks; that is how live reload is pinned.
+lines 0 54
+hash 84e6c9512bd2df1f
+note Runs the window with CODEMAP_SCRIPT and reads stderr as it arrives, so a scenario's hook can edit files on disk at a line the script marks; that is how live reload is pinned: the reload scenario edits a source file at rect edit-source and a note through the CLI at rect edit-map. {shots} in a script stands for the directory the screenshots go to.
 
 step yagdfh
 order 1
@@ -184,4 +185,4 @@ file tests/common/mod.rs
 symbol fixture
 lines 0 15
 hash c86c91537f25a3a7
-note A fresh copy of the fixture at a fixed place per scenario, so two builds played in turn see the same absolute paths (the status bar prints the map's path, and the screenshots compare it). The map is built through the CLI, the way an agent builds one.
+note A fresh copy of the fixture at a fixed place per scenario, so two builds played in turn see the same absolute paths (the status bar prints the map's path, and the screenshots compare it). The scratch directory lies under the system temp directory, outside any repository so a fixture finds no VCS of its own, and under the process id so concurrent runs do not share it. The map is built through the CLI, the way an agent builds one.

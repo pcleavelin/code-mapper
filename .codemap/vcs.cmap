@@ -21,7 +21,7 @@ file src/vcs.rs
 symbol show_dir
 lines 0 28
 hash e4ec3992ffc18315
-note The map directory at a revision in one call: a glob for jj, ls-tree then one git show of every file for git. The files come out one after another, which parse reads as one text.
+note The map directory at a revision in one call: a glob for jj, ls-tree then one git show of every file for git. Only the .cmap files directly in the directory, in file name order, and None when the revision has none. The files come out one after another, which parse reads as one text.
 
 step m3kg1y
 order 0
@@ -49,4 +49,4 @@ file src/vcs.rs
 symbol show
 lines 0 5
 hash 232e53f9a40858f6
-note One file at a revision: jj file show, or git show rev:./path, which resolves from the root even when the root is a subdirectory of the repo.
+note One file at a revision, None when the file is not in it: jj file show, or git show rev:./path, which resolves from the root even when the root is a subdirectory of the repo.

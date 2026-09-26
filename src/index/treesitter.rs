@@ -1,6 +1,3 @@
-//! The tree-sitter backend: symbols, raw call sites and imports read off the syntax tree, and
-//! the highlight spans every language gets whatever its backend.
-
 use super::{
     Backend, Call, File, HL_COMMENT, HL_CONSTANT, HL_FUNCTION, HL_KEYWORD, HL_PLAIN, HL_PROPERTY,
     HL_STRING, HL_TYPE, Qual, Span, Symbol,
@@ -45,7 +42,6 @@ fn language_for(ext: &str) -> Option<(Language, &'static str)> {
     })
 }
 
-/// Parser plus compiled highlight queries, one per extension, reused across files.
 #[derive(Default)]
 pub struct Parsers {
     parser: Parser,
@@ -53,7 +49,6 @@ pub struct Parsers {
 }
 
 impl Parsers {
-    /// A free function over the map (not `&mut self`) so the caller can still use `parser`.
     fn query_for<'a>(
         queries: &'a mut HashMap<String, Option<(Language, Query)>>,
         ext: &str,
@@ -62,7 +57,6 @@ impl Parsers {
             .entry(ext.to_owned())
             .or_insert_with(|| {
                 let (lang, q) = language_for(ext)?;
-                // ponytail: a grammar whose bundled query fails to compile just gets no colours
                 let query = Query::new(&lang, q).ok()?;
                 Some((lang, query))
             })
@@ -119,8 +113,6 @@ fn class_of(capture: &str) -> u8 {
     }
 }
 
-/// Run the grammar's highlight query and bucket the captures per line. First capture wins where
-/// they overlap, which is what tree-sitter highlight queries are written for.
 fn highlight(root: Node, query: &Query, text: &str, lines: &[String]) -> Vec<Vec<Span>> {
     let line_starts: Vec<usize> = std::iter::once(0)
         .chain(text.match_indices('\n').map(|(i, _)| i + 1))
@@ -163,7 +155,6 @@ fn highlight(root: Node, query: &Query, text: &str, lines: &[String]) -> Vec<Vec
     hl
 }
 
-/// `Foo<T>` -> `Foo`, `&mut Foo` -> `Foo`, `crate::a::Foo` -> `Foo`.
 pub(super) fn bare_type(t: &str) -> String {
     let t = t
         .split('<')
@@ -175,13 +166,8 @@ pub(super) fn bare_type(t: &str) -> String {
     t.rsplit("::").next().unwrap_or(t).trim().to_owned()
 }
 
-/// Record what an import statement brings into scope: every identifier segment maps to the
-/// module it came from (the last path segment before it), so later `name` or `alias.name`
-/// calls can be sent to that module's file. Loose by design: it is string work over the
-/// statement's text, the same for every language.
 fn record_import(text: &str, imports: &mut HashMap<String, String>) {
     let text = text.trim().trim_end_matches(';');
-    // Odin: import "core:fmt" / import alias "../pkg"; JS: import {a, b} from './mod'
     if let Some(q) = text.find(['"', '\'']) {
         let quoted: String = text[q + 1..]
             .chars()
@@ -211,7 +197,6 @@ fn record_import(text: &str, imports: &mut HashMap<String, String>) {
         }
         return;
     }
-    // Rust `use a::b::{c, d as e}` / Python `from a.b import c, d` / `import a.b`
     let body = text
         .trim_start_matches("pub ")
         .trim_start_matches("use ")
@@ -252,10 +237,6 @@ fn record_import(text: &str, imports: &mut HashMap<String, String>) {
     }
 }
 
-/// A Rust `impl` block's name in the shape `rust-analyzer` reports it: the trait and the type,
-/// without the block's own generic parameters and with any newline in them folded to a space.
-/// The two backends must agree on it, or a step anchored to an impl block under one of them is
-/// stale under the other.
 fn impl_name(node: Node, src: &[u8]) -> String {
     let field = |f: &str| {
         node.child_by_field_name(f)
@@ -269,9 +250,6 @@ fn impl_name(node: Node, src: &[u8]) -> String {
     }
 }
 
-// Named children of `parent` become symbols. Name comes from the grammar's `name` field when
-// there is one, else the first line (Odin's `foo :: proc` splits on `::`). One level of recursion
-// into impl/mod/trait/class bodies so methods show up, tagged with their owner type.
 fn collect(
     parent: Node,
     src: &[u8],
@@ -293,7 +271,6 @@ fn collect(
         if kind.contains("comment") || kind.contains("package") || kind.contains("attribute") {
             continue;
         }
-        // `mod foo;` (no body) is a reference, not a definition; otherwise every `.map()` links to `mod map;`
         if kind == "mod_item" && node.child_by_field_name("body").is_none() {
             continue;
         }
@@ -304,7 +281,6 @@ fn collect(
             end -= 1;
         }
 
-        // Odin attributes (`@(test)`, `@(private)`) are part of the declaration node; name from the line after them.
         let mut name_row = start;
         while name_row < end
             && lines
@@ -314,8 +290,6 @@ fn collect(
             name_row += 1;
         }
         let first = lines.get(name_row).map(|l| l.trim()).unwrap_or("");
-        // a name the grammar spells out is taken as is; only the first-line guess is length
-        // capped, since a bad guess is a whole line of code
         let (name, guessed) = match node.child_by_field_name("name") {
             Some(n) => (n.utf8_text(src).unwrap_or("").to_owned(), false),
             None if kind == "impl_item" => (impl_name(node, src), false),
@@ -337,7 +311,6 @@ fn collect(
         }
 
         let container = depth == 0 && CONTAINERS.iter().any(|k| kind.contains(k));
-        // the type an impl/class is about: Rust `impl X for Y` -> Y (field "type"), class -> its name
         let own_type: Option<String> = if container {
             node.child_by_field_name("type")
                 .and_then(|t| t.utf8_text(src).ok())
@@ -387,9 +360,6 @@ fn collect(
     }
 }
 
-// Every `*call*` node below `node`; the callee is its `function` field (or first named child),
-// split into the called name and the segment before it: `a.b.c(...)` -> c via b,
-// `Foo::new(...)` -> new via Foo, `self.f()` -> f via self, `f!(...)` -> f.
 fn find_calls(node: Node, src: &[u8], out: &mut Vec<Call>) {
     let mut cursor = node.walk();
     for child in node.children(&mut cursor) {
@@ -400,8 +370,6 @@ fn find_calls(node: Node, src: &[u8], out: &mut Vec<Call>) {
             if let Some(text) = callee.and_then(|c| c.utf8_text(src).ok())
                 && let Some(mut call) = parse_callee(text)
             {
-                // Odin (and some others) parse `pkg.proc(x)` as member(pkg, call(proc, x)):
-                // the qualifier is the sibling before the call in the parent expression.
                 if call.qual == Qual::None {
                     let pk = node.kind();
                     if ["member", "selector", "scoped"]
@@ -422,7 +390,6 @@ fn find_calls(node: Node, src: &[u8], out: &mut Vec<Call>) {
 }
 
 fn parse_callee(text: &str) -> Option<Call> {
-    // drop generics and argument lists, then split on the last separator
     let mut clean = String::with_capacity(text.len());
     let mut depth = 0;
     for c in text.chars() {
@@ -458,7 +425,6 @@ fn parse_callee(text: &str) -> Option<Call> {
     })
 }
 
-/// The qualifier a call names: its own receiver or type, or another type.
 fn qual_of(q: &str) -> Qual {
     match q {
         "self" | "Self" | "this" | "super" => Qual::SelfRef,
@@ -470,8 +436,6 @@ fn qual_of(q: &str) -> Qual {
 mod tests {
     use super::*;
 
-    /// An impl block's name must read the way rust-analyzer reports it, or a step anchored to
-    /// one under the server is stale under the resolver and the other way round.
     #[test]
     fn impl_names_match_the_server() {
         let src = "pub struct S<R, RA>;\nimpl<R, RA> S<R, RA>\nwhere\n    R: Repo,\n{\n    fn new() {}\n}\nimpl<R, RA> Service<Form<Long>, (A, B, C)> for S<R, RA> {\n    fn go() {}\n}\n";

@@ -50,7 +50,7 @@ file src/gui/dock.rs
 symbol default
 lines 0 15
 hash c219ec190df1f10c
-note The layout a launch starts with, the one the fixed panels had: Paths on the left, Xrefs on the right, Output at the bottom, all at default sizes.
+note The layout a launch starts with: Paths on the left, Xrefs on the right, Output at the bottom, all at default sizes.
 
 step c243u8
 order 0
@@ -58,7 +58,7 @@ author ai
 file src/gui/dock.rs
 symbol Dock
 lines 0 4
-hash 2dc6b7f360830634
+hash 81c6362981bad022
 note The whole layout: the places, the header being held if any, and the cursor the frame asks the window for, reset to the default at the start of every frame and set by whatever the pointer is over.
 
 step hy57r7
@@ -116,8 +116,8 @@ author ai
 file src/gui/dock.rs
 symbol Place
 lines 0 4
-hash f4c7dc3f8ff98ff8
-note One panel's dock: its edge and its size across that edge. The list's order is the order along each edge, left to right and top to bottom; only same-edge neighbours' relative order means anything. A size of None follows the window, the way the fixed layout did.
+hash 49cfa06431bde53b
+note One panel's dock: its edge and its size across that edge. The list's order is the order along each edge, left to right and top to bottom; only same-edge neighbours' relative order means anything. A size of None follows the window.
 
 step pydeuk
 order 7
@@ -127,7 +127,7 @@ file src/gui/dock.rs
 symbol default_size
 lines 0 5
 hash 0a83dcdb9ec136a6
-note The size a panel has until it is dragged: at a side the old fixed widths (44 columns for Paths, 40 otherwise, at most a quarter of the window), at the bottom a sixth of the window height, at least six rows.
+note The size a panel has until it is dragged: at a side a fixed width (44 columns for Paths, 40 otherwise, at most a quarter of the window), at the bottom a sixth of the window height, at least six rows.
 
 step r4ihf3
 order 2
@@ -136,7 +136,7 @@ author ai
 file src/gui/dock.rs
 symbol Panel
 lines 0 4
-hash 25bc5a17e585d72f
+hash f5201ac34438e83f
 note The three dockable panels. The name is what element ids and dumps call them: panel@nav, grip@xrefs, split@output.
 
 step ziukmm

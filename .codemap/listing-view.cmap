@@ -22,7 +22,7 @@ author ai
 file src/gui/views.rs
 symbol listing
 lines 45 73
-hash 370aeccf7ccbbf7c
+hash c82bf8e3aeb649af
 note The rows. rows_window turns the scroll offset into the first visible line and emits the spacer for the lines above; then one code block of the visible lines plus two, then a spacer for the rest plus a row of slack, so the scrollbar sees the whole file while only what shows is drawn. A plain click on a line selects it, shift extends.
 
 step azzv57
@@ -31,7 +31,7 @@ author ai
 file src/gui/views.rs
 symbol listing
 lines 0 75
-hash eea10d51a9d88743
+hash b3d195b4f665fd9e
 note The whole viewer: the file name and the gestures, a go-to-line box, then the scrolling column of rows. With no current file it says so and draws nothing else.
 
 step ghy5uj
@@ -40,8 +40,8 @@ parent 2h2qhv
 author ai
 file src/gui/widgets.rs
 symbol code_block
-lines 0 74
-hash bfa50cf0aa43d2b6
+lines 0 73
+hash 0fd7d1d58264ce86
 note The one code element in the GUI: a block of lines drawn from a cached grid by a custom element, with the hover, jump and peek gestures resolved to (line, column) from the pointer. Per-row backgrounds and bars come from two closures, so the listing's selection and anchor bars and the document's slice highlight all share it.
 
 step mlu0tc
@@ -49,8 +49,8 @@ order 5
 author ai
 file src/gui/mod.rs
 symbol add_selection
-lines 0 22
-hash a58d65b610bf5d00
+lines 0 23
+hash 5bff281021c613e2
 note 'pin selection' in the top bar, the human's authoring gesture: the selected lines become a step of the selected path, under the selected step, authored Human. Pinning again puts the next step under the one just made, so a chain is built by clicking down the file.
 
 step rmvq1d

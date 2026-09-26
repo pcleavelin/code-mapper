@@ -1,17 +1,12 @@
-//! The selection and the way back to earlier ones: selecting a symbol, a step or a line, and
-//! the history of places the reader moved through.
-
 use super::*;
 
-/// The places the reader moved through, for back and forward.
 #[derive(Default)]
 pub(super) struct History {
     pub(super) back: Vec<Loc>,
     pub(super) forward: Vec<Loc>,
-    pub(super) last: Option<Loc>, // where the reader was at the end of the last frame
+    pub(super) last: Option<Loc>,
 }
 
-/// A place in the centre panel, kept so the reader can go back and forward.
 #[derive(Clone, PartialEq)]
 pub(super) struct Loc {
     tab: Tab,
@@ -23,7 +18,6 @@ pub(super) struct Loc {
 }
 
 impl Loc {
-    /// Same place for history purposes: a changed line selection alone is not a navigation.
     pub(super) fn same_place(&self, o: &Loc) -> bool {
         self.tab == o.tab
             && self.file == o.file
@@ -45,8 +39,6 @@ impl App {
         }
     }
 
-    /// Once a frame: whatever moved the reader, the place they left goes into the history and
-    /// the forward stack is dropped.
     pub(super) fn track_navigation(&mut self) {
         let now = self.here();
         if let Some(prev) = self.history.last.take()
@@ -77,8 +69,6 @@ impl App {
         self.go(loc);
     }
 
-    /// Restore a place without it counting as a navigation. The tab is set last, since
-    /// selecting a step moves the tab on its own.
     pub(super) fn go(&mut self, loc: Loc) {
         self.sel_path = loc.path.filter(|&pi| pi < self.map.paths.len());
         match (self.sel_path, loc.step) {
@@ -101,9 +91,6 @@ impl App {
         self.history.last = Some(self.here());
     }
 
-    /// Every per-step record of path `pi` after its step `ai` was removed: the step's own
-    /// entries go and the ones above it move down one, in the fold, code, whole-symbol and
-    /// context sets and in the history.
     pub(super) fn step_removed(&mut self, pi: usize, ai: usize) {
         let shift = |a: usize| {
             if a == ai {
@@ -134,7 +121,6 @@ impl App {
         }
     }
 
-    /// The same after path `pi` was removed: its records go, later paths move down one.
     pub(super) fn path_removed(&mut self, pi: usize) {
         let shift = |p: usize| {
             if p == pi {
@@ -160,7 +146,6 @@ impl App {
         self.top_step = None;
     }
 
-    /// Move the selected step through the path in reading order.
     pub(super) fn step_by(&mut self, d: i32) {
         let Some(pi) = self.sel_path.filter(|&pi| pi < self.map.paths.len()) else {
             return;
@@ -178,7 +163,6 @@ impl App {
         self.select_step(pi, order[at].0, false);
     }
 
-    /// Make `r` the selected symbol: listing position and xrefs. Moves the view, not the tab.
     pub(super) fn focus(&mut self, r: SymRef) {
         let s = self.idx.sym(r);
         let (start, end) = (s.start, s.end);
@@ -191,8 +175,6 @@ impl App {
         }
     }
 
-    /// Select a symbol reached outside any path. When it is a whole-symbol step of the path
-    /// being read, that step is selected instead so every view agrees.
     pub fn select_symbol(&mut self, r: SymRef) {
         if let Some(pi) = self.sel_path {
             let file = &self.idx.files[r.file].path;
@@ -209,12 +191,9 @@ impl App {
         self.focus(r);
     }
 
-    /// Select a step. The document scrolls its header to the top unless the click came from
-    /// inside the document.
     pub fn select_step(&mut self, pi: usize, ai: usize, in_document: bool) {
         self.sel_path = Some(pi);
         self.sel_anchor = Some(ai);
-        // a folded ancestor would hide the step: unfold the way down to it
         let mut up = self.map.paths[pi].anchors[ai].parent;
         while let Some(u) = up {
             if let Some(v) = self.steps.get_mut(&(pi, u)) {
@@ -231,7 +210,6 @@ impl App {
                 self.scroll_to = Some(ls);
             }
             (Some(fi), None) => {
-                // lines with no symbol of their own: the right panel shows the one around them
                 self.cur_file = Some(fi);
                 self.sel = Some((ls, le));
                 self.scroll_to = Some(ls);
@@ -249,7 +227,6 @@ impl App {
         }
     }
 
-    /// Open a path for reading: its first step is selected.
     pub(super) fn select_path(&mut self, pi: usize) {
         self.sel_path = Some(pi);
         match self.map.tree_order(pi).first() {
@@ -258,8 +235,6 @@ impl App {
         }
     }
 
-    /// Select `r` and show its code: the graph or document follows when one is up, else the
-    /// listing opens.
     pub(super) fn go_to_symbol(&mut self, r: SymRef) {
         self.select_symbol(r);
         if self.sel_anchor.is_none() {

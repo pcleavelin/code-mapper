@@ -1,15 +1,3 @@
-//! Old against new: every CLI and GUI scenario played with a base build and with this one, and
-//! the transcripts, the GUI's dump lines and the screenshots compared byte for byte. A
-//! behaviour-preserving change passes; anything that moves a pixel or a word fails.
-//!
-//! ```text
-//! CODEMAP_BASE_BIN=<old codemap.exe> [CODEMAP_PARITY_REV=<rev>] cargo test --release --test parity -- --ignored
-//! ```
-//!
-//! With CODEMAP_PARITY_REV the repo itself at that revision (its real map included) is played
-//! as a second fixture; CODEMAP_PARITY_ONLY=<substring> plays only the scenarios whose name has
-//! it. Differences are written under the scratch directory `parity/`, printed on failure.
-
 mod common;
 
 use common::Missing;
@@ -28,7 +16,6 @@ fn out_dir(name: &str) -> PathBuf {
     d
 }
 
-/// Compare and, on a difference, keep both sides for a diff tool.
 fn same(what: &str, old: &str, new: &str, fails: &mut Vec<String>) {
     if old != new {
         let d = out_dir(what);
@@ -100,8 +87,6 @@ fn compare_gui(name: &str, s: &Scenario, old: &Path, new: &Path, fails: &mut Vec
     }
 }
 
-/// A scenario list from `common::cli::scenarios!` or `common::gui::scenarios!`: each golden
-/// name with its function.
 macro_rules! list {
     ($kind:ident: $($s:ident),* $(,)?) => {
         [$((concat!(stringify!($kind), "-", stringify!($s)), common::$kind::$s)),*]
@@ -139,7 +124,6 @@ fn old_and_new_agree() {
     );
 }
 
-/// This repo at `rev` as a fixture: a real codebase with a real map of 38 paths.
 fn snapshot(rev: &str, name: &str) -> PathBuf {
     let root = common::scratch(name).join("repo");
     let _ = std::fs::remove_dir_all(common::scratch(name));

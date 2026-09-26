@@ -10,7 +10,7 @@ order 3
 author ai
 file src/cli.rs
 symbol exec
-lines 320 324
+lines 317 321
 hash 062a1203273ede6e
 note path-note: replace the path note. The note is the part written for someone who did not see the code, so it is set separately from creation and usually rewritten once the steps exist.
 
@@ -20,16 +20,16 @@ parent sf7kmc
 author ai
 file src/cli.rs
 symbol call_warning
-lines 0 31
-hash 0a007d502c6bbd88
-note The guard rail: in a flow, a step belongs under the step that calls it, so a placement the call graph does not support prints a note with the path-move command that fixes it. Only flows are checked; layers and types are groupings, not call trees.
+lines 0 32
+hash c1f1a01503a500b9
+note The guard rail: in a flow, a step belongs under the step that calls it, so a placement the call graph does not support prints a note with the path-move command that fixes it. Only a callable child is checked, so data placed under the function that works on it is a normal step. Only flows are checked; layers and types are groupings, not call trees.
 
 step 59ckov
 order 0
 author ai
 file src/cli.rs
 symbol exec
-lines 273 287
+lines 270 284
 hash 854d6227660d2aaa
 note path-new: create the path, set its note and its group if they were given. Creating an existing name is a no-op on the path and only replaces what was given, so a script can be re-run.
 
@@ -58,7 +58,7 @@ order 10
 author ai
 file src/cli.rs
 symbol exec
-lines 465 475
+lines 462 472
 hash 54f5ee04900d52ec
 note path-rm: with an index it deletes one step, without one it deletes the whole path, which Map::remove_path refuses while another path links to it. There is no undo anywhere in this tool.
 
@@ -87,7 +87,7 @@ order 5
 author ai
 file src/cli.rs
 symbol exec
-lines 378 431
+lines 375 428
 hash ff2452e31e0120b7
 note path-add, the command that does the real work. The parent step's file is indexed first, for the does-not-call note. The trailing numbers decide what was meant: none or one is a whole symbol, two or three is a line range, and the last number is the parent when it is there. Default parent is the last step added, so consecutive adds build a chain and an explicit index starts a branch.
 
@@ -108,7 +108,7 @@ author ai
 file src/map.rs
 symbol remove_anchor
 lines 0 11
-hash 6be07168074c0be6
+hash 64eb166bb3a8c061
 note Deleting a step keeps the tree connected by moving its children up, and shifts every index above it.
 
 step w73udm
@@ -116,7 +116,7 @@ order 4
 author ai
 file src/cli.rs
 symbol exec
-lines 325 329
+lines 322 326
 hash b46a9e6933198236
 note step-note: replace one step's note. The index is the one shown in square brackets by paths, and a bad one is an error rather than a silent no-op.
 
@@ -128,7 +128,7 @@ file src/map.rs
 symbol add_path
 lines 0 14
 hash e1e87d39590af66a
-note The only constructor of a path, so kind and author exist from birth.
+note The only constructor of a path, so kind and author exist from birth. A name that already exists returns that path unchanged, kind and author included.
 
 step yrqc53
 order 8

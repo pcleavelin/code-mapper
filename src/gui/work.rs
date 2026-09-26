@@ -1,19 +1,12 @@
-//! Everything that runs off the frame: a language server thread per language that indexes and
-//! answers hover and definition, the watcher on the source files, and the rebuild, link and
-//! parent-map jobs, with the polling that folds their results into the app.
-
 use super::*;
 
-/// A request to a language's server thread.
 pub(super) enum Req {
     Index(Vec<(String, u64)>),
     Hover(Probe),
     Def(Probe),
-    Refs(Probe), // the position of a symbol's name
+    Refs(Probe),
 }
 
-/// A position asked about: the file's path and text hash, so an answer for text that has
-/// since changed is never used, and the 0-based line and UTF-16 column of an identifier.
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub(super) struct Probe {
     pub(super) path: String,
@@ -22,9 +15,6 @@ pub(super) struct Probe {
     pub(super) col: u32,
 }
 
-/// A definition the server found: the file relative to the root when it is inside, the
-/// absolute path either way, the 0-based line, and the lines around it drawn from the file
-/// on disk (starting at line `first`) for a peek when the file is not indexed.
 pub(super) struct Def {
     rel: Option<String>,
     abs: PathBuf,
@@ -33,7 +23,6 @@ pub(super) struct Def {
     grid: Glyphs,
 }
 
-/// What the language-server thread sends back.
 pub(super) enum Msg {
     File(ServerFile),
     Progress(String),
@@ -44,9 +33,6 @@ pub(super) enum Msg {
     Refs(Probe, Vec<(String, u32)>),
 }
 
-/// A language's server, alive on its own thread for the life of the window. It indexes the
-/// files it is sent a few at a time and answers hover, definition and reference requests
-/// between them, so the pointer never waits behind a batch.
 pub(super) fn serve(root: PathBuf, lang: &'static index::Lang, rx: Receiver<Req>, tx: Sender<Msg>) {
     let (mut c, abs) = match index::start_server(&root, lang) {
         Ok(x) => x,
@@ -119,8 +105,6 @@ pub(super) fn serve(root: PathBuf, lang: &'static index::Lang, rx: Receiver<Req>
                 let _ = tx.send(Msg::Refs(p, refs));
             }
             None => {
-                // a few files at a time: enough to keep the server busy, few enough that a
-                // hover waits behind one batch at most
                 let batch: Vec<(String, u64)> = (0..8).map_while(|_| queue.pop_front()).collect();
                 if batch.is_empty() {
                     continue;
@@ -142,10 +126,6 @@ pub(super) fn mtime(p: &Path) -> Option<SystemTime> {
     std::fs::metadata(p).ok().and_then(|m| m.modified().ok())
 }
 
-/// The indexed files' modification times, compared against the disk once a second off the main
-/// thread. Each list the main thread sends is watched until a file differs from it, which is
-/// reported once; the thread then waits for the refreshed list the main thread sends after the
-/// re-index, so it never reports the same edit twice.
 pub(super) fn watch(
     root: PathBuf,
     rx: Receiver<Vec<(String, Option<SystemTime>)>>,
@@ -161,7 +141,6 @@ pub(super) fn watch(
     }
 }
 
-/// Run `f` on its own thread; its result arrives on the returned channel.
 pub(super) fn bg<T: Send + 'static>(f: impl FnOnce() -> T + Send + 'static) -> Receiver<T> {
     let (tx, rx) = channel();
     std::thread::spawn(move || {
@@ -170,8 +149,6 @@ pub(super) fn bg<T: Send + 'static>(f: impl FnOnce() -> T + Send + 'static) -> R
     rx
 }
 
-/// A thread's result: None while it runs, Some(None) when it died without one, Some(Some(value))
-/// when it answered. The receiver is dropped once either lands.
 pub(super) fn landed<T>(rx: &mut Option<Receiver<T>>) -> Option<Option<T>> {
     let got = match rx.as_ref()?.try_recv() {
         Err(TryRecvError::Empty) => return None,
@@ -181,25 +158,23 @@ pub(super) fn landed<T>(rx: &mut Option<Receiver<T>>) -> Option<Option<T>> {
     Some(got)
 }
 
-/// The threads the window keeps busy, and what the frame knows of each.
 pub(super) struct Work {
-    pub(super) servers: HashMap<&'static str, (Sender<Req>, Receiver<Msg>)>, // a live server thread per language, by server name
-    pub(super) no_server: HashSet<&'static str>, // servers that failed to start: not tried again
-    pub(super) indexing: HashSet<&'static str>,  // servers with a batch of files in flight
-    pub(super) progress: String,                 // the last progress line a server sent
-    pub(super) restart: bool, // the index changed while a batch ran: send the next when it ends
-    pub(super) merge_wait: Vec<ServerFile>, // server answers held back until the next merge
-    pub(super) last_merge: Instant, // when the last batch of answers went into the index
-    pub(super) link_rx: Option<Receiver<Index>>, // a link of the index running on a thread
-    pub(super) relink: bool,  // the index changed while that link ran: link again when it lands
-    pub(super) watch_tx: Sender<Vec<(String, Option<SystemTime>)>>, // the file list the watcher thread compares against
-    pub(super) watch_rx: Receiver<()>,                              // a source file changed
-    pub(super) reindex_rx: Option<Receiver<Index>>, // a rebuild is running on a thread
-    pub(super) base_rx: Option<Receiver<Result<Map, String>>>, // jj is being asked for the parent revision's map
+    pub(super) servers: HashMap<&'static str, (Sender<Req>, Receiver<Msg>)>,
+    pub(super) no_server: HashSet<&'static str>,
+    pub(super) indexing: HashSet<&'static str>,
+    pub(super) progress: String,
+    pub(super) restart: bool,
+    pub(super) merge_wait: Vec<ServerFile>,
+    pub(super) last_merge: Instant,
+    pub(super) link_rx: Option<Receiver<Index>>,
+    pub(super) relink: bool,
+    pub(super) watch_tx: Sender<Vec<(String, Option<SystemTime>)>>,
+    pub(super) watch_rx: Receiver<()>,
+    pub(super) reindex_rx: Option<Receiver<Index>>,
+    pub(super) base_rx: Option<Receiver<Result<Map, String>>>,
 }
 
 impl Work {
-    /// Nothing runs yet but the watcher thread, which waits for `watch_files` to give it a list.
     pub(super) fn new(root: &Path) -> Work {
         let (watch_tx, list_rx) = channel();
         let (changed_tx, watch_rx) = channel();
@@ -223,18 +198,16 @@ impl Work {
     }
 }
 
-/// The map on disk against the one in memory.
 pub(super) struct MapFile {
     pub(super) path: PathBuf,
-    pub(super) stamp: Option<(SystemTime, usize)>, // the files' newest change and count when this window last read or wrote them
-    pub(super) broken: bool, // the map on disk does not read, so it is not saved over
-    pub(super) dirty: bool,  // edits not saved
-    pub(super) last_poll: Instant, // when the disk was last looked at
-    pub(super) warned: bool, // the status said it changed under unsaved edits
+    pub(super) stamp: Option<(SystemTime, usize)>,
+    pub(super) broken: bool,
+    pub(super) dirty: bool,
+    pub(super) last_poll: Instant,
+    pub(super) warned: bool,
 }
 
 impl App {
-    /// Ask jj for the parent revision's map on a thread; `poll_base` picks it up.
     pub(super) fn load_base(&mut self) {
         let root = self.idx.root.clone();
         self.work.base_rx = Some(bg(move || Map::base_from_vcs(&root)));
@@ -253,7 +226,6 @@ impl App {
         }
     }
 
-    /// The live server for a language, started on first use. None once it has failed to start.
     pub(super) fn server(&mut self, lang: &'static index::Lang) -> Option<&Sender<Req>> {
         if self.work.no_server.contains(lang.server) {
             return None;
@@ -269,8 +241,6 @@ impl App {
         self.work.servers.get(lang.server).map(|(tx, _)| tx)
     }
 
-    /// Send every pending language's files to its server; answers arrive through
-    /// `poll_backend`. A language whose server cannot start keeps the tree-sitter answer.
     pub(super) fn start_backend(&mut self) {
         if !self.work.indexing.is_empty() {
             self.work.restart = true;
@@ -289,7 +259,6 @@ impl App {
         }
     }
 
-    /// Merge whatever the server threads have answered since the last frame.
     pub(super) fn poll_backend(&mut self) {
         let mut msgs = Vec::new();
         for (_, rx) in self.work.servers.values() {
@@ -297,7 +266,7 @@ impl App {
                 msgs.push(m);
             }
         }
-        let answered = !msgs.is_empty(); // any message at all means a server is past "starting"
+        let answered = !msgs.is_empty();
         let mut files = Vec::new();
         let mut batch_ended = false;
         for m in msgs {
@@ -369,8 +338,6 @@ impl App {
                 }
             }
         }
-        // Every answer costs a map re-resolve and every drawn grid, so they are merged at most
-        // once a second and once more when the batch ends; the re-link runs on a thread.
         self.work.merge_wait.append(&mut files);
         if !self.work.merge_wait.is_empty()
             && (batch_ended || self.work.last_merge.elapsed() >= Duration::from_secs(1))
@@ -399,10 +366,6 @@ impl App {
         }
     }
 
-    /// Once a second: pick up a map written by the CLI. Source changes are found by the watcher
-    /// thread, so nothing here stats the tree; one it reports starts a rebuild of the index from
-    /// disk and the cache on a thread, and the index in use is untouched until `poll_reindex`
-    /// swaps the new one in.
     pub(super) fn poll_disk(&mut self) {
         if self.work.watch_rx.try_recv().is_ok() {
             let root = self.idx.root.clone();
@@ -436,10 +399,6 @@ impl App {
         }
     }
 
-    /// Read `.codemap` again and keep as much of the reading position as the new map still
-    /// supports: the path by name, the step when the step at that index is still the same lines
-    /// of the same symbol, and a path's fold, collapse and context sets when its step count is
-    /// unchanged. Paths are matched by name, so adding one does not shift another's state.
     pub(super) fn reload_map(&mut self) -> Result<(), String> {
         let was: Vec<(String, usize)> = self
             .map
@@ -466,7 +425,6 @@ impl App {
                 .map(|_| ai),
             _ => None,
         };
-        // old path index -> new one, for the paths whose steps cannot have moved
         let kept: HashMap<usize, usize> = was
             .iter()
             .enumerate()
@@ -482,8 +440,6 @@ impl App {
         Ok(())
     }
 
-    /// Run `change` on the index and carry the selection, the listing and the map's anchors
-    /// over by (file, symbol) identity, since symbol indices do not survive it.
     pub(super) fn with_index_change(&mut self, change: impl FnOnce(&mut App)) {
         let focus = self.focus.map(|r| self.idx.key(r));
         let cur_file = self.cur_file.map(|fi| self.idx.files[fi].path.clone());
@@ -510,7 +466,6 @@ impl App {
         self.cur_file = cur_file.and_then(|p| self.idx.find_file(&p));
     }
 
-    /// Give the watcher thread the indexed files' modification times so it starts looking.
     pub(super) fn watch_files(&self) {
         let _ = self.work.watch_tx.send(
             self.idx
@@ -521,8 +476,6 @@ impl App {
         );
     }
 
-    /// Take the rebuilt index, then ask the servers about what changed and give the watcher
-    /// thread the new modification times so it starts looking again.
     pub(super) fn poll_reindex(&mut self) {
         let Some(idx) = landed(&mut self.work.reindex_rx) else {
             return;
@@ -533,14 +486,12 @@ impl App {
                 self.results.clear();
                 self.status = format!("re-indexed: {} (source changed)", self.indexed_status());
             }
-            None => self.status = "re-index failed; the index in use is the old one".into(), // the rebuild thread panicked
+            None => self.status = "re-index failed; the index in use is the old one".into(),
         }
         self.watch_files();
         self.start_backend();
     }
 
-    /// Link the index on a thread over a text-free copy, since a link is a pass over every call
-    /// site in the repo. One runs at a time; a change meanwhile queues another.
     pub(super) fn start_link(&mut self) {
         if self.work.link_rx.is_some() {
             self.work.relink = true;
@@ -553,8 +504,6 @@ impl App {
         }));
     }
 
-    /// Take a finished link. A copy whose symbol tables no longer match the index is dropped:
-    /// the change that made it stale queued the link that replaces it.
     pub(super) fn poll_link(&mut self) {
         let Some(done) = landed(&mut self.work.link_rx) else {
             return;
@@ -579,8 +528,6 @@ impl App {
         )
     }
 
-    /// Work in flight: a server request or batch of files, or the parent map, a re-index or a
-    /// link on a thread.
     pub(super) fn working(&self) -> bool {
         self.lookup.asked > 0
             || !self.work.indexing.is_empty()

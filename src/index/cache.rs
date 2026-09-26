@@ -1,16 +1,3 @@
-//! ".codemap-cache" at the root: every file's symbols, xrefs, imports and highlight spans, keyed
-//! by the file's text hash. Derived from the backends, never committed, and rebuilt whenever
-//! it cannot be read.
-//!
-//! "CMCH" u32 version
-//! u32 nfiles { str path, u64 hash, u8 backend,
-//!   u32 nsyms { str name, str kind, u32 start, u32 end, u8 depth, str owner ("" = none),
-//!     u32 ncalls { str name, u8 qual (0 none, 1 self, 2 named), str qualifier (only when 2) },
-//!     u32 ntargets { str path, u32 line }, u32 nrefs { str path, u32 line } }
-//!   u32 nimports { str name, str module }
-//!   u32 nlines { u32 nspans { u32 start, u32 end, u8 class } } }
-//! str = u32 len + utf8 bytes. All little-endian.
-
 use super::{Backend, Call, File, Index, Qual, Span, Symbol};
 use crate::codec::{Reader, w_str, w_u32, write_retry};
 use std::collections::HashMap;
@@ -32,7 +19,6 @@ fn locs(r: &mut Reader) -> Option<Vec<(String, u32)>> {
     (0..r.u32()?).map(|_| Some((r.str()?, r.u32()?))).collect()
 }
 
-/// Cached files by path; their `lines` are empty until `build` fills them from disk.
 pub(super) fn load_cache(path: &Path) -> Option<HashMap<String, File>> {
     let data = std::fs::read(path).ok()?;
     let mut r = Reader {

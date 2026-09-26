@@ -37,25 +37,29 @@ names, so the dependency direction is the compiler's, not a convention.
 
 ```
 crates/
-  domain/      the model: Map, Path, Step, Anchor, Span, Line, File (text in memory), Symbol,
-               Xref, the anchor rules, diff, patience, staleness. No I/O, no threads, no
-               external crates.
+  domain/      the model: Map, Path, Step, Anchor, Span, Line, FileText, Symbol, Xref, the anchor
+               rules, diff, patience, staleness. No I/O, no threads, no external crates.
+  io-process/  the one place a process is started                      -> (std only)
+  io-store/    the one atomic file writer and file removal             -> domain
   io-source/   the walk and source file reads                          -> domain, ignore
-  io-map/      .codemap/*.cmap read and write                          -> domain
-  io-cache/    .codemap-cache read and write                           -> domain
+  io-map/      .codemap/*.cmap read and write                          -> domain, io-store
+  io-cache/    .codemap-cache read and write                           -> domain, io-store
   io-vcs/      jj / git: the parent revision, a file at a revision     -> domain, io-process
   io-lsp/      JSON-RPC over stdio                                     -> domain, io-process, serde_json
-  io-process/  the one place a process is started                      -> (std only)
-  features/    the feature registry, section 2.4                       -> (std only)
   index/       symbols and xrefs: tree-sitter resolvers, server orchestration
                                                                         -> domain, io-lsp, io-source, io-cache, tree-sitter*
-  cli/         the command surface: clap wire types in, text out       -> domain, features, index, io-map, io-vcs, clap
-  ui/          the element tree                                         -> (std only)
-  gfx/         wgpu                                                     -> ui, wgpu, fontdue
-  gui/         the app                                                  -> domain, features, index, cli, ui, gfx, winit, io-*
+  features/    the feature registry, section 2.4                       -> (std only)
+  cli/         the command surface: clap wire types in, text out       -> domain, features, index, io-map, io-vcs, clap, regex
+  ui/          the element tree, geometry, input, the draw list        -> (std only)
+  platform/    wgpu renderer, fontdue glyphs, winit window, scripts    -> ui, winit, wgpu, fontdue, png
+  gui/         the app                                                  -> domain, features, index, cli, ui, platform, io-*
   codemap/     the binary: main                                         -> cli, gui
-xtask/         gate, archlint, hook handlers                            -> tree-sitter, tree-sitter-rust, serde_json
+xtask/         gate, archlint, hook handlers                            -> tree-sitter, tree-sitter-rust, serde_json, ignore
 ```
+
+`ui` and the renderer depend on each other in the legacy code (`ui` draws through `Gfx`, `gfx`
+measures through `ui::Measure`); the split makes `ui` produce a draw list that `platform`
+renders.
 
 The allowed edges are also written in `xtask/src/arch.rs` as data; the gate compares every
 `Cargo.toml` against it, so adding a dependency is a rulebook change, not a code change.

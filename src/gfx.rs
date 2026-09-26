@@ -1,8 +1,3 @@
-//! The window and the GPU. One wgpu pipeline draws everything as textured, coloured quads from
-//! one atlas: every glyph at every size in use, rasterised on demand, plus a white pixel for
-//! solid fills. Positions are whole physical pixels, so text is never scaled or sampled between
-//! pixels. Clipping is a scissor rect per draw command.
-
 use crate::ui::Measure;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -11,9 +6,6 @@ use winit::window::Window;
 
 pub type Color = [u8; 4];
 
-/// A block of text as it will be drawn: a grid of characters with a colour each, one cell
-/// per character, row-major, '\0' past the end of a line. Built when the text or its
-/// colours change and drawn every frame without allocating.
 pub struct Glyphs {
     pub w: usize,
     pub h: usize,
@@ -92,18 +84,16 @@ struct Vertex {
     color: Color,
 }
 
-/// A glyph in the atlas: where its bitmap sits and how it hangs off the pen.
 #[derive(Clone, Copy)]
 struct Glyph {
     u: u32,
     v: u32,
     w: u32,
     h: u32,
-    dx: i32, // bitmap left relative to the pen x
-    dy: i32, // bitmap top relative to the baseline
+    dx: i32,
+    dy: i32,
 }
 
-/// Cell of a monospace font at one pixel size.
 #[derive(Clone, Copy)]
 pub struct FontMetrics {
     pub cell_w: i32,
@@ -113,7 +103,7 @@ pub struct FontMetrics {
 
 struct Atlas {
     size: u32,
-    pixels: Vec<u8>, // one coverage byte per texel
+    pixels: Vec<u8>,
     row_x: u32,
     row_y: u32,
     row_h: u32,
@@ -132,7 +122,6 @@ impl Atlas {
             dirty: true,
             glyphs: HashMap::new(),
         };
-        // the white pixel for solid quads, with a margin so filtering never bleeds a neighbour
         for y in 0..4 {
             for x in 0..4 {
                 a.pixels[(y * size + x) as usize] = 255;
@@ -143,9 +132,8 @@ impl Atlas {
         a
     }
 
-    /// A slot of w x h texels, or None when the atlas is full.
     fn alloc(&mut self, w: u32, h: u32) -> Option<(u32, u32)> {
-        let (w, h) = (w + 1, h + 1); // one texel of margin
+        let (w, h) = (w + 1, h + 1);
         if self.row_x + w > self.size {
             self.row_y += self.row_h;
             self.row_x = 0;
@@ -161,10 +149,9 @@ impl Atlas {
     }
 }
 
-/// Everything drawn this frame: quads in one batch, split into commands where the clip changes.
 struct Cmd {
     clip: Rect,
-    start: u32, // index range of this command
+    start: u32,
     end: u32,
 }
 
@@ -193,7 +180,6 @@ pub struct Gfx {
     clips: Vec<Rect>,
     pub size: (i32, i32),
     pub scale: f32,
-    /// Set by the app: the next frame is also written to this file as a PNG.
     pub shot: Option<std::path::PathBuf>,
 }
 
@@ -228,8 +214,6 @@ fn bytes_of<T: Copy>(v: &[T]) -> &[u8] {
     unsafe { std::slice::from_raw_parts(v.as_ptr() as *const u8, std::mem::size_of_val(v)) }
 }
 
-/// Run a future to completion on this thread. wgpu's adapter and device requests are ready
-/// on the first poll on native backends, so polling in a loop with no waker is enough.
 fn block_on<F: Future>(f: F) -> F::Output {
     let mut f = std::pin::pin!(f);
     let mut cx = Context::from_waker(Waker::noop());
@@ -240,8 +224,6 @@ fn block_on<F: Future>(f: F) -> F::Output {
     }
 }
 
-/// Make `buf` hold at least `len` bytes, keeping it when it already does. A new buffer is a
-/// power of two of at least 64 KiB, so it is replaced rarely.
 fn fit_buffer(
     device: &wgpu::Device,
     buf: &mut Option<(wgpu::Buffer, usize)>,
@@ -277,7 +259,6 @@ impl Gfx {
             .get_default_config(&adapter, size.width.max(1), size.height.max(1))
             .expect("surface config");
         let caps = surface.get_capabilities(&adapter);
-        // colours are given in sRGB already; a non-sRGB target writes them through untouched
         if let Some(f) = caps.formats.iter().find(|f| {
             matches!(
                 f,
@@ -287,7 +268,7 @@ impl Gfx {
             config.format = *f;
         }
         config.present_mode = wgpu::PresentMode::AutoVsync;
-        config.usage |= wgpu::TextureUsages::COPY_SRC; // screenshots read the frame back
+        config.usage |= wgpu::TextureUsages::COPY_SRC;
         surface.configure(&device, &config);
 
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -474,9 +455,6 @@ impl Gfx {
         self.size = (w as i32, h as i32);
     }
 
-    // ---- fonts ----
-
-    /// Cell and row of the font at `px` pixels. Whole pixels, so rows and columns tile exactly.
     pub fn font(&mut self, px: u32) -> FontMetrics {
         if let Some(m) = self.metrics.get(&px) {
             return *m;
@@ -538,8 +516,6 @@ impl Gfx {
         Some(g)
     }
 
-    /// Twice the atlas, every glyph rasterised again on demand. Full at the cap, it starts over
-    /// at the same size rather than stop drawing text.
     fn grow_atlas(&mut self) {
         let size = (self.atlas.size * 2).min(8192);
         self.atlas = Atlas::new(size);
@@ -552,8 +528,6 @@ impl Gfx {
             &self.sampler,
         );
     }
-
-    // ---- drawing ----
 
     pub(crate) fn begin(&mut self) {
         self.verts.clear();
@@ -580,12 +554,11 @@ impl Gfx {
         *self.clips.last().unwrap()
     }
 
-    /// Start a new command at the current clip.
     fn cut(&mut self) {
         let n = self.idx.len() as u32;
         let clip = self.clip();
         match self.cmds.last_mut() {
-            Some(c) if c.start == c.end => c.clip = clip, // nothing drawn under the old clip yet
+            Some(c) if c.start == c.end => c.clip = clip,
             _ => self.cmds.push(Cmd {
                 clip,
                 start: n,
@@ -594,7 +567,6 @@ impl Gfx {
         }
     }
 
-    /// Extend the current command over every index pushed so far.
     fn extend_cmd(&mut self) {
         if self.cmds.is_empty() {
             self.cut();
@@ -602,7 +574,6 @@ impl Gfx {
         self.cmds.last_mut().unwrap().end = self.idx.len() as u32;
     }
 
-    /// Four corners clockwise from the one at uv (u0, v0), textured with `uv` = [u0, v0, u1, v1].
     fn quad(&mut self, p: [[f32; 2]; 4], uv: [f32; 4], color: Color) {
         let n = self.verts.len() as u32;
         self.verts.push(Vertex {
@@ -651,7 +622,6 @@ impl Gfx {
         self.rect(Rect::new(r.right() - width, r.y, width, r.h), color);
     }
 
-    /// A straight segment of the given thickness.
     pub fn line(&mut self, x0: f32, y0: f32, x1: f32, y1: f32, width: f32, color: Color) {
         let (dx, dy) = (x1 - x0, y1 - y0);
         let len = (dx * dx + dy * dy).sqrt();
@@ -672,7 +642,6 @@ impl Gfx {
         );
     }
 
-    /// A cubic bezier as a polyline.
     pub fn curve(&mut self, p: [(f32, f32); 4], width: f32, color: Color) {
         let n = 24;
         let mut prev = p[0];
@@ -717,7 +686,6 @@ impl Gfx {
         self.extend_cmd();
     }
 
-    /// One character from the atlas at a pen position on a baseline.
     fn put(&mut self, px: u32, c: char, pen: i32, baseline: i32, color: Color) {
         if let Some(g) = self.glyph(px, c) {
             let s = self.atlas.size as f32;
@@ -733,7 +701,6 @@ impl Gfx {
         }
     }
 
-    /// Text at `px` with its top-left at (x, y), one cell per character. Returns the pen x.
     pub fn text(&mut self, x: i32, y: i32, px: u32, text: &str, color: Color) -> i32 {
         let m = self.font(px);
         let clip = self.clip();
@@ -751,8 +718,6 @@ impl Gfx {
         pen
     }
 
-    /// A grid at `px` with its top-left at (x, y): rows `row_h` apart, columns `cell_w`.
-    /// Rows and cells outside the clip are skipped, nothing is allocated.
     pub fn glyphs(&mut self, x: i32, y: i32, px: u32, g: &Glyphs) {
         let m = self.font(px);
         let clip = self.clip();
@@ -813,7 +778,6 @@ impl Gfx {
         let screen = [self.size.0 as f32, self.size.1 as f32, 0.0, 0.0];
         self.queue
             .write_buffer(&self.uniforms, 0, bytes_of(&screen));
-        // vertex and index buffers grow to fit and are reused
         let vbytes = bytes_of(&self.verts);
         fit_buffer(
             &self.device,
@@ -888,7 +852,6 @@ impl Gfx {
         frame.present();
     }
 
-    /// Copy the rendered frame to a buffer, wait for it, and write it as a PNG.
     fn read_back(
         &mut self,
         encoder: &mut wgpu::CommandEncoder,
@@ -896,7 +859,7 @@ impl Gfx {
         path: &std::path::Path,
     ) {
         let (w, h) = (self.config.width, self.config.height);
-        let row = (w * 4).div_ceil(256) * 256; // rows are padded to 256 bytes for the copy
+        let row = (w * 4).div_ceil(256) * 256;
         let buf = self.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("shot"),
             size: (row * h) as u64,

@@ -1,17 +1,8 @@
-//! An immediate-mode element tree. Every frame the app opens and closes elements; each is
-//! nothing, text, or custom drawing, with a size per axis that is exact, fits its content, or
-//! grows into what its parent has left. Layout runs once at the end of the frame in five passes
-//! over the flat element list (parents come before their children, so a forward walk is
-//! top-down and a reverse walk bottom-up), then the tree is drawn in order, floating popups
-//! last. Input answers from last frame's rectangles: an element with an id learns whether it is
-//! hovered, clicked or dragged one frame late.
-
 use crate::gfx::{Color, Gfx, Rect};
 use std::collections::HashMap;
 
 pub type Id = u64;
 
-/// FNV-1a of a label, for element ids.
 pub fn id(s: &str) -> Id {
     id_with(0xcbf29ce484222325, s)
 }
@@ -28,8 +19,6 @@ pub fn id_with(base: Id, s: &str) -> Id {
 pub fn id_n(base: Id, n: usize) -> Id {
     (base ^ (n as u64).wrapping_mul(0x9e3779b97f4a7c15)).wrapping_mul(0x100000001b3)
 }
-
-// ---- input ----
 
 #[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
 pub struct Mods {
@@ -53,13 +42,12 @@ pub enum Key {
     Char(char),
 }
 
-/// Everything the window collected since the last frame.
 #[derive(Default)]
 pub struct Input {
     pub mouse: (i32, i32),
-    pub down: [bool; 3], // left, right, middle
+    pub down: [bool; 3],
     pub pressed: [bool; 3],
-    pub clicks: [u8; 3], // 1 single, 2 double, on the press
+    pub clicks: [u8; 3],
     pub wheel: (f32, f32),
     pub keys: Vec<(Key, Mods)>,
     pub text: String,
@@ -90,7 +78,6 @@ impl Input {
 
 pub const SCROLLBAR_W: i32 = 8;
 
-/// The track and thumb of a scrollbar for a clipped element, or None when it all fits.
 pub fn scrollbar(r: Rect, content_h: i32, scroll: i32) -> Option<(Rect, Rect)> {
     if content_h <= r.h || r.h <= 0 {
         return None;
@@ -102,13 +89,9 @@ pub fn scrollbar(r: Rect, content_h: i32, scroll: i32) -> Option<(Rect, Rect)> {
     Some((track, Rect::new(track.x, ty, SCROLLBAR_W, th)))
 }
 
-/// What the renderer knows about fonts.
 pub trait Measure {
-    /// (cell width, row height) at `px`.
     fn cell(&mut self, px: u32) -> (i32, i32);
 }
-
-// ---- elements ----
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Size {
@@ -133,12 +116,12 @@ pub enum Align {
 pub struct Layout {
     pub dir: Dir,
     pub size: [Size; 2],
-    pub floating: Option<(i32, i32)>, // absolute position, out of the parent's flow, drawn over everything else
+    pub floating: Option<(i32, i32)>,
     pub pad: i32,
     pub gap: i32,
-    pub cross: Align, // how children sit across the direction
+    pub cross: Align,
     pub clip: bool,
-    pub scroll: (i32, i32), // children are shifted up / left by this
+    pub scroll: (i32, i32),
 }
 
 impl Layout {
@@ -233,7 +216,6 @@ impl Style {
     }
 }
 
-/// Text in one font size: runs of colour on one line, or one run wrapped to the width.
 pub struct Text {
     pub runs: Vec<(String, Color)>,
     pub px: u32,
@@ -258,38 +240,36 @@ pub struct Element {
     pub id: Option<Id>,
     size: [i32; 2],
     pos: [i32; 2],
-    content: [i32; 2],  // extent of the children along the direction, for scrolling
-    lines: Vec<String>, // a wrapped text's lines, once the width is known
+    content: [i32; 2],
+    lines: Vec<String>,
     pub rect: Rect,
     pub clip: Rect,
 }
 
-/// What an element with an id learned about the mouse, from last frame's rectangle.
 #[derive(Clone, Copy, Default, Debug)]
 pub struct Interaction {
     pub hovered: bool,
     pub clicked: bool,
     pub double_clicked: bool,
-    pub down: bool,               // the mouse went down on it and is still down
-    pub drag: Option<(i32, i32)>, // movement this frame while down on it
+    pub down: bool,
+    pub drag: Option<(i32, i32)>,
     pub wheel: (f32, f32),
-    pub rect: Option<Rect>, // where it was last frame
+    pub rect: Option<Rect>,
 }
 
 #[derive(Default)]
 pub struct Ui {
     els: Vec<Element>,
     open: Option<usize>,
-    prev: HashMap<Id, (Rect, Rect, [i32; 2])>, // rect, clip, content last frame
+    prev: HashMap<Id, (Rect, Rect, [i32; 2])>,
     hot: Option<Id>,
     active: Option<Id>,
     last_mouse: (i32, i32),
-    scroll_drag: Option<(Id, i32)>, // a scrollbar thumb being dragged, and where in it the mouse grabbed
+    scroll_drag: Option<(Id, i32)>,
     pub input: InputView,
     pub size: (i32, i32),
 }
 
-/// The slice of the input the tree needs while building.
 #[derive(Clone, Copy, Default)]
 pub struct InputView {
     pub mouse: (i32, i32),
@@ -301,7 +281,6 @@ pub struct InputView {
 }
 
 impl Ui {
-    /// Start a frame: resolve which element the mouse is on from last frame's rectangles.
     pub fn begin(&mut self, input: &Input) {
         self.els.clear();
         self.open = None;
@@ -315,13 +294,12 @@ impl Ui {
             mods: input.mods,
         };
         let (mx, my) = input.mouse;
-        // the topmost element under the mouse: highest layer, then latest in draw order
         self.hot = self
             .prev
             .iter()
             .filter(|(_, (r, c, _))| r.contains(mx, my) && c.contains(mx, my))
             .max_by_key(|(id, (r, c, _))| {
-                let v = r.intersect(c); // smallest visible rect wins among nested ids
+                let v = r.intersect(c);
                 (-(v.w as i64 * v.h as i64), **id)
             })
             .map(|(id, _)| *id);
@@ -341,7 +319,6 @@ impl Ui {
         self.active
     }
 
-    /// What an element with `id` would learn if opened now.
     pub fn interaction_of(&self, id: Id) -> Interaction {
         let hovered = self.hot == Some(id);
         let i = &self.input;
@@ -360,8 +337,6 @@ impl Ui {
         }
     }
 
-    /// Open an element as the last child of the open one. Returns its interaction when it has
-    /// an id.
     pub fn open(
         &mut self,
         kind: Kind,
@@ -407,7 +382,6 @@ impl Ui {
         }
     }
 
-    /// A leaf: open and close at once.
     pub fn leaf(
         &mut self,
         kind: Kind,
@@ -420,18 +394,14 @@ impl Ui {
         r
     }
 
-    /// A scrollbar thumb is being dragged.
     pub fn dragging(&self) -> bool {
         self.scroll_drag.is_some()
     }
 
-    /// Last frame's content extent of the element with `id`, for scroll clamping.
     pub fn content_of(&self, id: Id) -> Option<([i32; 2], Rect)> {
         self.prev.get(&id).map(|(r, _, c)| (*c, *r))
     }
 
-    /// Scroll `offset` by the wheel when the element with `id` is hovered, clamped to what it
-    /// showed last frame. Returns the clamped offset to build the element with.
     pub fn scroll_by_wheel(&mut self, id: Id, offset: &mut i32) -> i32 {
         let (mx, my) = self.input.mouse;
         let inside = self
@@ -441,7 +411,6 @@ impl Ui {
         if self.hot == Some(id) || inside {
             *offset -= self.input.wheel.1 as i32;
         }
-        // the scrollbar: press on the thumb and drag it, or click the track to jump
         if let Some((content, r)) = self.content_of(id) {
             if let Some((track, thumb)) = scrollbar(r, content[1], *offset) {
                 let max = (content[1] - r.h).max(0);
@@ -472,9 +441,6 @@ impl Ui {
         *offset
     }
 
-    // ---- layout ----
-
-    /// The children that sit in the element's flow; floating ones are placed on their own.
     fn children(&self, i: usize) -> Vec<usize> {
         let mut out = Vec::new();
         let mut c = self.els[i].first;
@@ -487,7 +453,6 @@ impl Ui {
         out
     }
 
-    /// Wrap one run of text to `cols` columns at spaces, breaking words longer than a line.
     pub fn wrap(text: &str, cols: usize) -> Vec<String> {
         let cols = cols.max(1);
         let mut out = Vec::new();
@@ -527,12 +492,10 @@ impl Ui {
         t.runs.iter().map(|(s, _)| s.chars().count() as i32).sum()
     }
 
-    /// Resolve every size and position. `m` measures text.
     pub fn end(&mut self, m: &mut dyn Measure) {
         let n = self.els.len();
         let win = [self.size.0, self.size.1];
         for axis in 0..2 {
-            // fit, bottom-up
             for i in (0..n).rev() {
                 let kids = self.children(i);
                 let e = &self.els[i];
@@ -578,7 +541,6 @@ impl Ui {
                 };
                 self.els[i].size[axis] = v;
             }
-            // grow, top-down
             for i in 0..n {
                 if (self.els[i].parent.is_none() || self.els[i].layout.floating.is_some())
                     && self.els[i].layout.size[axis] == Size::Grow
@@ -614,7 +576,6 @@ impl Ui {
                     }
                 }
             }
-            // widths are known: wrapped text learns its lines before the height pass
             if axis == 0 {
                 for i in 0..n {
                     let e = &self.els[i];
@@ -630,7 +591,6 @@ impl Ui {
                 }
             }
         }
-        // positions, top-down
         let screen = Rect::new(0, 0, win[0], win[1]);
         for i in 0..n {
             let (pos, clip) = match self.els[i].parent {
@@ -655,7 +615,6 @@ impl Ui {
             e.pos = pos;
             e.rect = Rect::new(pos[0], pos[1], e.size[0], e.size[1]);
             e.clip = clip;
-            // lay the children out inside: along axis `a`, across axis `b`
             let kids = self.children(i);
             let e = &self.els[i];
             let (pad, gap, cross, size) = (e.layout.pad, e.layout.gap, e.layout.cross, e.size);
@@ -681,7 +640,6 @@ impl Ui {
             content[a] = (cursor - gap).max(0) + pad * 2;
             self.els[i].content = content;
         }
-        // remember for next frame's hit tests
         self.prev.clear();
         for e in &self.els {
             if let Some(id) = e.id {
@@ -691,11 +649,8 @@ impl Ui {
         self.last_mouse = self.input.mouse;
     }
 
-    /// Draw every element in order, layer 1 after layer 0.
     pub fn draw(&mut self, gfx: &mut Gfx, text_color: Color) {
         let els = std::mem::take(&mut self.els);
-        // floating elements are layer 1, and so is everything inside them; parents come before
-        // their children, so one forward pass carries a layer down the whole subtree
         let mut layers: Vec<(u8, Element)> = els
             .into_iter()
             .map(|e| (e.layout.floating.is_some() as u8, e))
@@ -751,7 +706,6 @@ impl Ui {
                 }
                 gfx.pop_clip();
             }
-            // scrollbars over this layer's clipped elements
             for (l, e) in layers.iter() {
                 if *l != layer || !e.layout.clip {
                     continue;
@@ -798,9 +752,9 @@ mod tests {
             Style::default(),
             None,
         );
-        ui.leaf(text("abc"), Layout::row(), Style::default(), Some(1)); // 24 wide
+        ui.leaf(text("abc"), Layout::row(), Style::default(), Some(1));
         ui.leaf(Kind::None, Layout::row().grow(), Style::default(), Some(2));
-        ui.leaf(text("de"), Layout::row(), Style::default(), Some(3)); // 16 wide
+        ui.leaf(text("de"), Layout::row(), Style::default(), Some(3));
         ui.close();
         ui.end(&mut Cells);
         let r = |id| ui.prev[&id].0;
@@ -813,7 +767,7 @@ mod tests {
     fn wrapped_text_takes_lines() {
         let mut ui = Ui::default();
         let mut input = Input::default();
-        input.size = (100, 100); // 12 columns at 8 px
+        input.size = (100, 100);
         ui.begin(&input);
         ui.open(Kind::None, Layout::col().grow(), Style::default(), None);
         ui.leaf(

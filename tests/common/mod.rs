@@ -1,7 +1,3 @@
-//! The fixture repo and the runners the integration tests share. Every run gets a PATH that
-//! finds jj and git and no language server, so every file is indexed by tree-sitter: output is
-//! the same on every machine and every run.
-
 #![expect(
     dead_code,
     reason = "each test binary uses its own part of the shared harness"
@@ -175,7 +171,6 @@ int sum_squares(int n) {
     ("data.bin", "\0\x01binary"),
 ];
 
-/// The agent's map of the fixture, as the CLI builds it.
 pub const MAP: &[&[&str]] = &[
     &[
         "path-new",
@@ -227,7 +222,6 @@ pub fn bin() -> PathBuf {
     PathBuf::from(env!("CARGO_BIN_EXE_codemap"))
 }
 
-/// Where `tool` is on this process's PATH.
 fn find_tool(tool: &str) -> Option<PathBuf> {
     let path = std::env::var_os("PATH").unwrap_or_default();
     let exe = if cfg!(windows) {
@@ -240,9 +234,6 @@ fn find_tool(tool: &str) -> Option<PathBuf> {
         .find(|f| f.is_file())
 }
 
-/// A PATH that finds jj and git and no language server. On Unix it is one directory of links
-/// to the two, since git's own directory can hold a server (`/usr/bin/clangd` on macOS); on
-/// Windows it is their directories, since a link to git.exe does not run there.
 fn tool_path() -> String {
     let tools: Vec<PathBuf> = ["jj", "git"].iter().filter_map(|t| find_tool(t)).collect();
     if cfg!(windows) {
@@ -260,28 +251,22 @@ fn tool_path() -> String {
         if std::fs::read_link(&link).ok().as_ref() != Some(t) {
             let _ = std::fs::remove_file(&link);
             #[cfg(unix)]
-            let _ = std::os::unix::fs::symlink(t, &link); // a test running beside this one may have made it
+            let _ = std::os::unix::fs::symlink(t, &link);
         }
     }
     dir.to_string_lossy().into_owned()
 }
 
-/// A tool a scenario needs that is not on PATH: the scenario is skipped, not compared.
 pub struct Missing(pub &'static str);
 
-/// `Err` when `tool` is not on PATH, for a scenario to return early with `?`.
 pub fn needs(tool: &'static str) -> Result<(), Missing> {
     find_tool(tool).map(|_| ()).ok_or(Missing(tool))
 }
 
-/// Says on stderr that scenario `name` did not run for want of a tool.
 pub fn skip(name: &str, Missing(tool): &Missing) {
     eprintln!("{name}: skipped, {tool} is not on PATH");
 }
 
-/// A scratch directory for `name`, outside any repository so a fixture finds no VCS of its
-/// own, and private to this process so concurrent runs do not share it; within the process it
-/// is fixed, so a scenario played by two binaries in turn sees the same absolute paths.
 pub fn scratch(name: &str) -> PathBuf {
     std::env::temp_dir()
         .join("codemap-tests")
@@ -289,7 +274,6 @@ pub fn scratch(name: &str) -> PathBuf {
         .join(name)
 }
 
-/// Replaces the first `from` in `root/path` with `to`; `from` must be there.
 pub fn edit_file(root: &Path, path: &str, from: &str, to: &str) {
     let p = root.join(path);
     let text = std::fs::read_to_string(&p).unwrap();
@@ -297,7 +281,6 @@ pub fn edit_file(root: &Path, path: &str, from: &str, to: &str) {
     std::fs::write(&p, text.replacen(from, to, 1)).unwrap();
 }
 
-/// A fresh fixture for `name`, with the map built when `map` is set.
 pub fn fixture(name: &str, bin: &Path, map: bool) -> PathBuf {
     let root = scratch(name).join("repo");
     let _ = std::fs::remove_dir_all(scratch(name));
@@ -329,7 +312,6 @@ pub fn codemap(bin: &Path, root: &Path, args: &[&str]) -> (String, String, i32) 
     )
 }
 
-/// `text` with Unix line ends and `root`, in either slash style, written as `<root>`.
 fn rooted(text: &str, root: &Path) -> String {
     let r = root.display().to_string();
     text.replace("\r\n", "\n")
@@ -337,7 +319,6 @@ fn rooted(text: &str, root: &Path) -> String {
         .replace(&r.replace('\\', "/"), "<root>")
 }
 
-/// A git repo at the fixture root with the current state committed as HEAD.
 pub fn git_commit(root: &Path, message: &str) {
     if !root.join(".git").exists() {
         git(root, &["init", "-q"]);
@@ -376,7 +357,6 @@ pub fn git(root: &Path, args: &[&str]) -> String {
     String::from_utf8_lossy(&out.stdout).into_owned()
 }
 
-/// A jj repo at the fixture root with the current state committed as the parent revision.
 pub fn jj_commit(root: &Path, message: &str) {
     jj(root, &["git", "init"]);
     jj(root, &["commit", "-m", message]);
@@ -404,7 +384,6 @@ pub fn jj(root: &Path, args: &[&str]) -> String {
     String::from_utf8_lossy(&out.stdout).into_owned()
 }
 
-/// A shell-like record of commands and what they printed, for a golden file.
 pub struct Transcript<'a> {
     pub bin: &'a Path,
     pub root: PathBuf,
@@ -441,8 +420,6 @@ impl Transcript<'_> {
     }
 }
 
-/// Compare a scenario's output with `tests/golden/<name>.txt`, or write it when
-/// CODEMAP_BLESS=1. A scenario missing a tool is skipped with the reason on stderr.
 pub fn golden(name: &str, played: Result<String, Missing>) {
     let actual = match played {
         Ok(a) => a.replace('\r', ""),
@@ -470,7 +447,6 @@ pub fn golden(name: &str, played: Result<String, Missing>) {
     }
 }
 
-/// The index of the first line where `a` and `b` differ.
 pub fn first_difference(a: &str, b: &str) -> usize {
     a.lines()
         .zip(b.lines())
@@ -478,9 +454,6 @@ pub fn first_difference(a: &str, b: &str) -> usize {
         .unwrap_or(a.lines().count().min(b.lines().count()))
 }
 
-/// Opens the GUI on `root` and plays `script` (see CLAUDE.md), `{shots}` standing for a
-/// directory the screenshots go to. `hook` sees every stderr line as it arrives, so a test can
-/// change files on disk at a point the script marks. Returns stderr.
 pub fn gui(
     bin: &Path,
     root: &Path,
@@ -537,8 +510,6 @@ pub fn gui(
     rooted(&out, root)
 }
 
-/// The lines of a GUI run that do not depend on the screen's size: selection, tooltip, peek,
-/// status, backend state, node and button names, and script errors.
 pub fn gui_state(stderr: &str) -> String {
     let mut out = String::new();
     for l in stderr.lines() {
@@ -564,8 +535,6 @@ pub fn gui_state(stderr: &str) -> String {
     out
 }
 
-/// Everything a GUI run printed that two builds of the same behaviour must agree on: all but
-/// frame timings and where screenshots were written.
 pub fn gui_parity(stderr: &str) -> String {
     stderr
         .lines()

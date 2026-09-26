@@ -1,10 +1,6 @@
-//! CLI scenarios: each runs commands against a fresh fixture and returns the transcript.
-
 use super::{Missing, Transcript, edit_file, fixture, git_commit, jj, jj_commit, needs};
 use std::path::Path;
 
-/// Every CLI scenario, handed to `$m` as `cli: <fn>, ...`. Each is a `fn(bin, name)` below,
-/// and its golden is `cli-<fn>`.
 #[macro_export]
 macro_rules! cli_scenarios {
     ($m:ident) => {
@@ -363,7 +359,6 @@ pub fn git(bin: &Path, name: &str) -> Result<String, Missing> {
     Ok(t.out)
 }
 
-/// The last change jj committed, by change id.
 fn committed(root: &Path) -> String {
     jj(root, &["log", "-r", "@-", "--no-graph", "-T", "change_id"])
 }

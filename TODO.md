@@ -74,10 +74,14 @@ Left open after the UX review of 2026-09-21 and the fixes that followed it.
    last: the server threads fail at once and are drained in HashMap order. Name every
    missing server in one line, in a fixed order.
 
+6. `index::build` reads the whole tree into memory on the main thread before the window
+   opens. Move it to a background thread with progress when startup on a big repo annoys.
+
 ## Tests
 
-1. The GUI goldens assume the owner's display (16 px rows at 100% scale): some script
-   clicks are pixel offsets from a dumped rectangle. Offsets in cells, or a script command
-   that aims at a line and column of a code block, would make them portable.
-2. The GUI scripts settle with `idle` and a save before their first dump only to hide GUI
+1. The GUI scripts settle with `idle` and a save before their first dump only to hide GUI
    item 5; drop the save once the status line is deterministic.
+2. GUI scenarios run one at a time in a real window; on Linux a hidden or unfocused window can
+   stop getting frames from the compositor and a script stalls. A private headless compositor
+   (weston --backend=headless) with software Vulkan runs them reliably, at about a minute per
+   scenario.

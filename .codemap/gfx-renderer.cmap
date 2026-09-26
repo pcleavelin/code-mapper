@@ -32,8 +32,8 @@ author ai
 file src/gfx.rs
 symbol read_back
 lines 0 79
-hash fbcf00108b79d302
-note The screenshot path: copy the frame to a buffer with rows padded as the API demands, block until the GPU is done, swap the channels when the surface is BGRA, and write a PNG. It is the only blocking call in the renderer and it only runs when the app asked for a shot.
+hash 50506ba85531abcb
+note The screenshot path: copy the frame to a buffer with rows padded to a multiple of 256 bytes as the API demands, block until the GPU is done, swap the channels when the surface is BGRA, and write a PNG. It is the only blocking call in the renderer and it only runs when the app asked for a shot.
 
 step 3pfwxr
 order 33
@@ -71,8 +71,8 @@ parent ont7tk
 author ai
 file src/gfx.rs
 symbol new
-lines 0 155
-hash 4807321fc86b123a
+lines 0 154
+hash a1e91aa3ffe071d8
 note One-time setup: adapter, device, surface. The surface is deliberately configured to a non-sRGB format when one is offered, because the colours in the app are already sRGB and a sRGB target would convert them twice; COPY_SRC is added so a frame can be read back as a screenshot.
 
 step 7q87vj
@@ -122,8 +122,8 @@ author ai
 file src/gfx.rs
 symbol Cmd
 lines 0 4
-hash ec9068b0e52be284
-note One scissor rectangle and the index the geometry under it ends at. The render pass walks these and draws a slice of the one index buffer per command.
+hash f65001d484ca073d
+note One scissor rectangle and the index range start..end drawn under it. The render pass walks these and draws a slice of the one index buffer per command.
 
 step 9tzzvn
 order 15
@@ -192,7 +192,7 @@ author ai
 file src/gfx.rs
 symbol Atlas
 lines 0 8
-hash 82b05fb5cab2aeea
+hash 1a4171e5cec3c4f7
 note The atlas: the coverage bytes in main memory, a shelf allocator's cursor, a dirty flag, and every glyph that has been rasterised keyed by (pixel size, character). A character that rasterises to nothing is cached as None so a space is not re-rasterised forever.
 
 step ggdzkj
@@ -231,8 +231,8 @@ parent 6my0c1
 author ai
 file src/gfx.rs
 symbol new
-lines 0 19
-hash ba016716bc9f8b25
+lines 0 18
+hash 5ee87c36f11dacc3
 note A fresh atlas starts with a 4x4 white block in the corner and the shelf cursor past it, so every solid fill has something to sample and the margin keeps filtering from reaching a neighbouring glyph.
 
 step mabgun
@@ -262,8 +262,8 @@ author ai
 file src/gfx.rs
 symbol Glyph
 lines 0 7
-hash 6b97f55d45302b0f
-note Where a glyph's bitmap sits in the atlas and how it hangs off the pen: the offsets are what turn a monospace cell into a correctly placed glyph without measuring anything at draw time.
+hash 5c0ad14361264815
+note Where a glyph's bitmap sits in the atlas and how it hangs off the pen: the offsets are what turn a monospace cell into a correctly placed glyph without measuring anything at draw time. dx is the bitmap's left edge relative to the pen x, dy its top relative to the baseline.
 
 step n1u4cy
 order 16
@@ -272,7 +272,7 @@ author ai
 file src/gfx.rs
 symbol cut
 lines 0 11
-hash 2656b12d45ae1235
+hash 6ee76feac9dc6486
 note Starts a new command at the current clip. A command is reused only while it holds no indices: after an element's quads land in it, a clip change must open a new one, or a later pop would repaint those quads under the outer clip.
 
 step nimce5
@@ -300,9 +300,9 @@ order 0
 author ai
 file src/gfx.rs
 symbol Gfx
-lines 0 27
-hash a4dba90efdf4b852
-note The context: the surface and the pipeline, the font and its atlas, and the three vectors a frame accumulates into - vertices, indices and the clip commands that slice them. Reused buffers hang off it so a steady frame allocates nothing on the GPU.
+lines 0 26
+hash 7a13528ce4765eb4
+note The context: the surface and the pipeline, the font and its atlas, and the three vectors a frame accumulates into - vertices, indices and the clip commands that slice them. The app sets shot to a file name to have the next frame also written there as a PNG. Reused buffers hang off it so a steady frame allocates nothing on the GPU.
 
 step opwule
 order 9
@@ -311,8 +311,8 @@ author ai
 file src/gfx.rs
 symbol alloc
 lines 0 14
-hash 675e86b32ad94438
-note Shelf allocation: fill a row left to right, start a new row when it does not fit, fail when the atlas is full. No packing, no freeing - a glyph is never evicted, and the whole atlas is thrown away instead when it fills.
+hash 258f81e5e731e913
+note Shelf allocation: fill a row left to right, start a new row when it does not fit, fail when the atlas is full. Every slot is one texel wider and taller than asked, a margin so filtering never bleeds into a neighbour. No packing, no freeing - a glyph is never evicted, and the whole atlas is thrown away instead when it fills.
 
 step pqukys
 order 27
@@ -320,8 +320,8 @@ parent ont7tk
 author ai
 file src/gfx.rs
 symbol render
-lines 0 107
-hash 4123c178cc633040
+lines 0 106
+hash f35b71ff004c9d5e
 note Present one frame: upload the atlas if it changed, the screen size, and the geometry into buffers that grow by powers of two and are then reused; then one render pass that sets the pipeline once and issues a draw per clip command. A lost or outdated surface reconfigures and skips the frame rather than failing.
 
 step rfhh3z
@@ -332,7 +332,7 @@ file src/gfx.rs
 symbol quad
 lines 0 25
 hash ba2fd9605e81d71c
-note Four corners, each paired with its atlas coordinate, become four vertices and six indices, then extend_cmd moves the current command's end past them. Rectangles, lines and glyphs all end up here.
+note Four corners clockwise from the one at atlas coordinate (u0, v0), with uv given as [u0, v0, u1, v1], become four vertices and six indices, then extend_cmd moves the current command's end past them. Rectangles, lines and glyphs all end up here.
 
 step sdbwac
 order 35
@@ -392,4 +392,4 @@ file src/gfx.rs
 symbol text
 lines 0 15
 hash d3faa415f2a36667
-note A run of text, one cell per character, returning the pen so runs of different colours chain along a line. Characters entirely outside the current clip are skipped and the run stops at its right edge, which is what makes a four-thousand-line file cheap to draw even before the caller virtualises it.
+note A run of text with its top-left at (x, y), one cell per character, returning the pen so runs of different colours chain along a line. Characters entirely outside the current clip are skipped and the run stops at its right edge, which is what makes a four-thousand-line file cheap to draw even before the caller virtualises it.
