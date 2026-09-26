@@ -155,6 +155,44 @@ fn sentinels_for_absence() {
 }
 
 #[test]
+fn string_literals_are_not_compared() {
+    let found = |text: &str| strict(&format!("fn main() {{ {text} }}"));
+    assert_eq!(
+        found("match name { \"x\" => {} _ => {} }"),
+        [Rule::Compared]
+    );
+    assert_eq!(
+        found("match name { \"x\" | \"y\" => {} _ => {} }"),
+        [Rule::Compared]
+    );
+    assert_eq!(found("if let Some(\"x\") = name {}"), [Rule::Compared]);
+    assert_eq!(found("if name == \"x\" {}"), [Rule::Compared]);
+    assert_eq!(found("if \"x\" != name {}"), [Rule::Compared]);
+    assert_eq!(
+        found("let end = name.starts_with(\"x\");"),
+        [Rule::Compared]
+    );
+    assert_eq!(
+        found("let end = name.split_once(r\"x\");"),
+        [Rule::Compared]
+    );
+    assert_eq!(
+        found("let end = matches!(name, \"x\" | \"y\");"),
+        [Rule::Compared]
+    );
+    assert_eq!(found("if name == Key::X.name().as_str() {}"), []);
+    assert_eq!(
+        found("let end = name.starts_with(Key::X.name().as_str());"),
+        []
+    );
+    assert_eq!(found("let end = format!(\"x {name}\");"), []);
+    assert_eq!(found("let end = matches!(\"x\", _);"), []);
+    assert_eq!(found("let end = Key::new(\"x\");"), []);
+    assert_eq!(found("match key { Key::X => \"x\", Key::Y => \"y\" };"), []);
+    assert_eq!(strict("#[test]\nfn test() { if name == \"x\" {} }"), []);
+}
+
+#[test]
 fn vocabulary_words_and_synonyms() {
     let files = [("crates/domain/src/line.rs", "fn get_line_number() {}")];
     assert_eq!(rules_hit(&files), []);

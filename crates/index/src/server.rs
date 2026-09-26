@@ -85,6 +85,30 @@ pub fn apply(index: &mut Index, answer: ServerFile) {
     file.set_readiness(Readiness::Ready);
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct Word(&'static str);
+
+impl Word {
+    const fn as_str(self) -> &'static str {
+        self.0
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ImplWord {
+    Impl,
+    On,
+}
+
+impl ImplWord {
+    fn word(self) -> Word {
+        Word(match self {
+            Self::Impl => "impl",
+            Self::On => " for ",
+        })
+    }
+}
+
 fn kind_name(kind: OutlineKind, name: &SymbolName) -> SymbolKind {
     let names = [
         "symbol",
@@ -115,7 +139,7 @@ fn kind_name(kind: OutlineKind, name: &SymbolName) -> SymbolKind {
         "operator",
         "type",
     ];
-    if kind.value() == 19 && name.as_str().starts_with("impl") {
+    if kind.value() == 19 && name.as_str().starts_with(ImplWord::Impl.word().as_str()) {
         return SymbolKind::new("impl");
     }
     let spelled = usize::try_from(kind.value())
@@ -129,10 +153,10 @@ fn kind_name(kind: OutlineKind, name: &SymbolName) -> SymbolKind {
 fn impl_type(name: &SymbolName) -> TypeName {
     let implemented = name
         .as_str()
-        .rsplit(" for ")
+        .rsplit(ImplWord::On.word().as_str())
         .next()
         .unwrap_or(name.as_str())
-        .trim_start_matches("impl")
+        .trim_start_matches(ImplWord::Impl.word().as_str())
         .trim();
     TypeName::new(&TypeText::new(implemented).bare())
 }

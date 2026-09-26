@@ -220,22 +220,22 @@ impl platform::App for App {
     }
 
     fn script(&mut self, line: &ScriptLine) -> Outcome {
-        match line.word(0).unwrap_or_default() {
-            "idle" => {
+        match AppCommand::named(line) {
+            Some(AppCommand::Idle) => {
                 if self.working() || self.model.work.unmerged().get() > 0 {
                     return Outcome::Retry;
                 }
             }
-            "rect" => {
+            Some(AppCommand::Rect) => {
                 let mut lines = DumpLines::default();
                 lines.rect(&self.ui, line);
                 lines.print();
             }
-            "tab" => {
+            Some(AppCommand::Tab) => {
                 let name = TabName::new(line.word(1).unwrap_or_default());
                 self.apply(Action::Tab(Tab::from_name(&name)));
             }
-            "scroll" => {
+            Some(AppCommand::Scroll) => {
                 if let (Some(name), Some(offset)) = (
                     line.word(1),
                     line.word(2).and_then(|value| value.parse::<i32>().ok()),
@@ -243,8 +243,8 @@ impl platform::App for App {
                     self.apply(Action::Scroll(Id::new(name), Px::new(offset)));
                 }
             }
-            "shot" => self.shot_next = line.word(1).map(PathBuf::from),
-            "open" => {
+            Some(AppCommand::Shot) => self.shot_next = line.word(1).map(PathBuf::from),
+            Some(AppCommand::Open) => {
                 if let Some(file) = line
                     .word(1)
                     .and_then(|path| self.model.index.find_file(&RelativePath::new(path)))
@@ -256,13 +256,64 @@ impl platform::App for App {
                     self.apply(Action::GoTo(file, Line::new(number)));
                 }
             }
-            "dump" => self.dump(),
-            _ => dump::report(format_args!("script: unknown command '{line}'")),
+            Some(AppCommand::Dump) => self.dump(),
+            None => dump::report(format_args!("script: unknown command '{line}'")),
         }
         Outcome::Done
     }
 
     fn locate(&mut self, id: Id) -> Option<Point> {
         self.ui.interaction(id).rect().map(Rect::center)
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct Literal(&'static str);
+
+impl Literal {
+    const fn as_str(self) -> &'static str {
+        self.0
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum AppCommand {
+    Idle,
+    Rect,
+    Tab,
+    Scroll,
+    Shot,
+    Open,
+    Dump,
+}
+
+impl AppCommand {
+    const ALL: [Self; 7] = [
+        Self::Idle,
+        Self::Rect,
+        Self::Tab,
+        Self::Scroll,
+        Self::Shot,
+        Self::Open,
+        Self::Dump,
+    ];
+
+    const fn name(self) -> Literal {
+        Literal(match self {
+            Self::Idle => "idle",
+            Self::Rect => "rect",
+            Self::Tab => "tab",
+            Self::Scroll => "scroll",
+            Self::Shot => "shot",
+            Self::Open => "open",
+            Self::Dump => "dump",
+        })
+    }
+
+    fn named(line: &ScriptLine) -> Option<Self> {
+        let word = line.word(0).unwrap_or_default();
+        Self::ALL
+            .into_iter()
+            .find(|command| command.name().as_str() == word)
     }
 }

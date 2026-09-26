@@ -22,7 +22,7 @@ author ai
 file xtask/src/source.rs
 symbol attributes
 lines 0 12
-hash 291b46a144f9ab3b
+hash ff0159ae50e458d3
 note The attributes before an item, skipping comments between them.
 
 step edyz8t
@@ -31,8 +31,8 @@ parent tzq7te
 author ai
 file xtask/src/source.rs
 symbol workspace_files
-lines 0 16
-hash 2084bc9d55cdfa3f
+lines 0 18
+hash 91428c5fc595126f
 note Every file of the workspace, sorted; also what the gate stamp hashes.
 
 step fr142w
@@ -79,7 +79,7 @@ author ai
 file xtask/src/source.rs
 symbol public
 lines 0 4
-hash 8f79d94f516052bb
+hash 441dc944078d1aba
 note Whether an item is pub (pub(crate) is not).
 
 step tzq7te
@@ -88,16 +88,26 @@ author ai
 file xtask/src/source.rs
 symbol rust_sources
 lines 0 10
-hash 37651fbe834d7524
+hash cc622cb10196f4af
 note Every .rs file under crates/ and xtask/.
+
+step uk5ggk
+order 15
+parent y1sybd
+author ai
+file xtask/src/source.rs
+symbol kind_map
+lines 0 13
+hash 2d9e9e46f2cdbcfd
+note The kind_id-to-NodeKind table, built once from the grammar: for each variant, asks tree-sitter for the id of its name and records the variant at that slot, so of after this is a slot lookup, not a string compare.
 
 step uus93t
 order 8
 author ai
 file xtask/src/source.rs
 symbol in_test_code
-lines 0 10
-hash 1769dd65c14ed4bd
+lines 0 16
+hash fa30e482e97094ff
 note Whether a node is inside a #[cfg(test)] module or a #[test] function, found from the attributes before each enclosing module or function.
 
 step v8sr91
@@ -108,6 +118,16 @@ symbol SourceFile
 lines 0 5
 hash dc2307f65781b1ad
 note A parsed file: path, text, syntax tree, zone.
+
+step vancak
+order 13
+parent 0npha0
+author ai
+file xtask/src/source.rs
+symbol NodeKind
+lines 0 50
+hash 893c83b71c8aeca9
+note Every tree-sitter-rust node kind a check names, one variant per grammar production it cares about.
 
 step w8w517
 order 4
@@ -128,3 +148,13 @@ symbol SourceText
 lines 0 0
 hash 90cdaa9b9863011a
 note The file's text; nodes are read from it by their byte range.
+
+step y1sybd
+order 14
+parent vancak
+author ai
+file xtask/src/source.rs
+symbol impl NodeKind
+lines 0 117
+hash 9d21f3e740d3fbe8
+note is compares a node's kind string against the variant's name, for a single check; of looks a node's numeric kind_id up in kind_map and gets the matching variant (or None for a kind no check names), which is what every match on a node's kind goes through.

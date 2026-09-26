@@ -92,6 +92,16 @@ lines 0 17
 hash 9aff1033a0044ff1
 note The hover's contents as text parts, whichever shape the server chose: a plain string, a MarkupContent or MarkedString object, or an array of strings and objects.
 
+step 88q1my
+order 46
+parent wjp490
+author ai
+file crates/io-lsp/src/wire.rs
+symbol Method
+lines 0 15
+hash 5bba49852dc2d9aa
+note Every JSON-RPC method this client sends or reads: the outgoing requests and notifications an Outgoing is built with, and the incoming ones notice sorts.
+
 step 8h8eat
 order 11
 parent urk25j
@@ -109,7 +119,7 @@ author ai
 file crates/io-lsp/src/wire.rs
 symbol initialize
 lines 0 22
-hash 7938a5ef22addbec
+hash b967e39f5d705d9d
 note The initialize request. Declares hierarchical symbols, call hierarchy, references, hover, definition, progress, configuration and rust-analyzer's server-status notification, and turns off rust-analyzer's cache priming and check on save, so a large workspace is ready once loaded and each answer is computed when asked.
 
 step 9j6a18
@@ -128,8 +138,8 @@ parent xwfud3
 author ai
 file crates/io-lsp/src/answer.rs
 symbol from_parts
-lines 0 16
-hash 9dfff40848ea069b
+lines 0 19
+hash cc09800aa3e21a09
 note Hover contents (a string, a markup object, or an array of either) joined into plain lines: code-fence lines dropped and runs of blank lines collapsed; None when nothing is left.
 
 step 9zii3n
@@ -315,7 +325,7 @@ author ai
 file crates/io-lsp/src/convert.rs
 symbol path
 lines 0 7
-hash b2be504428586f3d
+hash 748d770d9a979b82
 note URI to absolute path, the leading slash dropped on Windows; definition targets outside the repo need the path itself, not one relative to the root.
 
 step s8zh4t
@@ -401,8 +411,18 @@ author ai
 file crates/io-lsp/src/wire.rs
 symbol Outgoing
 lines 0 3
-hash 720d883805adc085
+hash bf1d77a744db25a8
 note A request or notification before it has an id: method plus params. Every message the client sends is built by one of its constructors.
+
+step wybt62
+order 47
+parent 88q1my
+author ai
+file crates/io-lsp/src/wire.rs
+symbol impl Method
+lines 0 42
+hash 765f777f02c34f50
+note name is the wire spelling notice.rs matches on to send an initialize request; named finds a variant whose name matches text, which is what notice uses to sort an incoming message by its method.
 
 step xiwank
 order 37
@@ -429,7 +449,7 @@ author ai
 file crates/io-lsp/src/wire.rs
 symbol read_message
 lines 0 21
-hash 468d245e169edaf8
+hash 944d696c75205c4f
 note The framing: Content-Length headers, a blank line, then that many bytes of JSON. Returning None ends the reader thread, which is how a server that died is noticed.
 
 step ykbsfb
@@ -438,6 +458,6 @@ parent iughfk
 author ai
 file crates/io-lsp/src/wire.rs
 symbol notice
-lines 0 32
-hash 8dbf2b3f4a3e1a45
+lines 0 33
+hash 01a1878d28265046
 note Sorts an incoming message that is not our answer: progress begin or end, rust-analyzer's quiescent status, a workspace/configuration request (answered with one null per item), any other request, or nothing to act on.

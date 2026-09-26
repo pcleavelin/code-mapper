@@ -6,7 +6,7 @@ use domain::{
 };
 
 use crate::error::{Fault, FieldKey, FieldValue, Located};
-use crate::wire::{self, CmapPath, CmapStep, WireFault};
+use crate::wire::{CmapPath, CmapStep, StepKey, WireFault};
 
 impl From<WireFault> for Located {
     fn from(fault: WireFault) -> Self {
@@ -23,16 +23,18 @@ fn name_fault(error: MapError) -> Fault {
 
 fn step_from_wire(step: &CmapStep, path: &PathName) -> Result<Step, Located> {
     let here = Line::new(step.line);
-    let missing = |key: &str| Located::at(here, Fault::MissingField(FieldKey::new(key)));
+    let missing = |key: StepKey| {
+        Located::at(
+            here,
+            Fault::MissingField(FieldKey::new(key.name().as_str())),
+        )
+    };
     let id = StepId::new(&step.id)
         .ok_or_else(|| Located::at(here, Fault::InvalidStepId(FieldValue::new(&step.id))))?;
-    let order = step.order.ok_or_else(|| missing(wire::ORDER_KEY))?;
-    let file = step
-        .file
-        .as_deref()
-        .ok_or_else(|| missing(wire::FILE_KEY))?;
-    let (start, end) = step.lines.ok_or_else(|| missing(wire::LINES_KEY))?;
-    let hash = step.hash.ok_or_else(|| missing(wire::HASH_KEY))?;
+    let order = step.order.ok_or_else(|| missing(StepKey::Order))?;
+    let file = step.file.as_deref().ok_or_else(|| missing(StepKey::File))?;
+    let (start, end) = step.lines.ok_or_else(|| missing(StepKey::Lines))?;
+    let hash = step.hash.ok_or_else(|| missing(StepKey::Hash))?;
     let parent = match &step.parent {
         None => None,
         Some((parent, line)) => Some(StepId::new(parent).ok_or_else(|| {

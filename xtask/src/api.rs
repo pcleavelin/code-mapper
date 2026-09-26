@@ -4,19 +4,32 @@ use tree_sitter::Node;
 
 use crate::files::write;
 use crate::manifest::Manifest;
-use crate::source::{SourceFile, public, rust_sources};
+use crate::source::{Extension, NodeKind, SourceFile, public, rust_sources};
 use crate::text::{CrateName, Literal, Message, RepoPath, Root};
 
-const ITEMS: [Literal; 8] = [
-    Literal::new("function_item"),
-    Literal::new("struct_item"),
-    Literal::new("enum_item"),
-    Literal::new("trait_item"),
-    Literal::new("const_item"),
-    Literal::new("static_item"),
-    Literal::new("mod_item"),
-    Literal::new("macro_definition"),
+const ITEM_KINDS: [NodeKind; 8] = [
+    NodeKind::Function,
+    NodeKind::Struct,
+    NodeKind::Enum,
+    NodeKind::Trait,
+    NodeKind::Constant,
+    NodeKind::Static,
+    NodeKind::Module,
+    NodeKind::MacroDefinition,
 ];
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ModuleStem {
+    Library,
+}
+
+impl ModuleStem {
+    const fn name(self) -> Literal {
+        match self {
+            Self::Library => Literal::new("lib"),
+        }
+    }
+}
 
 #[derive(Debug)]
 pub(crate) struct Surface {
@@ -46,7 +59,8 @@ pub(crate) fn surfaces(root: &Root) -> Result<Vec<Surface>, Message> {
             let module = module_of(&path, &source_prefix);
             let file = SourceFile::load(root, path)?;
             for node in file.nodes() {
-                if ITEMS.iter().any(|item| item.as_str() == node.kind()) && public(node, &file.text)
+                if NodeKind::of(node).is_some_and(|kind| ITEM_KINDS.contains(&kind))
+                    && public(node, &file.text)
                 {
                     listing.push_line(&format!("{module}{}", signature(node, &file)));
                 }
@@ -65,8 +79,8 @@ fn module_of(path: &RepoPath, source_prefix: &RepoPath) -> Message {
     let inner = path
         .as_str()
         .trim_start_matches(source_prefix.as_str())
-        .trim_end_matches(".rs")
-        .trim_end_matches("lib")
+        .trim_end_matches(Extension::Rust.name().as_str())
+        .trim_end_matches(ModuleStem::Library.name().as_str())
         .trim_end_matches('/')
         .replace('/', "::");
     if inner.is_empty() {
@@ -78,8 +92,8 @@ fn module_of(path: &RepoPath, source_prefix: &RepoPath) -> Message {
 
 fn signature(node: Node<'_>, file: &SourceFile) -> Message {
     let whole = file.text.of(node);
-    let text = match (node.kind(), node.child_by_field_name("body")) {
-        ("function_item" | "trait_item" | "mod_item", Some(body)) => whole
+    let text = match (NodeKind::of(node), node.child_by_field_name("body")) {
+        (Some(NodeKind::Function | NodeKind::Trait | NodeKind::Module), Some(body)) => whole
             .get(..body.start_byte().saturating_sub(node.start_byte()))
             .unwrap_or(whole),
         _ => whole,

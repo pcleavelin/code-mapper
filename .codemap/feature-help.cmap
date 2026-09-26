@@ -80,8 +80,8 @@ order 0
 author ai
 file crates/codemap/src/main.rs
 symbol main
-lines 0 19
-hash c460ac8edc2aabaa
+lines 0 23
+hash 7dc0a35815c9d98d
 note Checks the first argument before treating it as a root: help, --help or -h prints the help to stdout and exits 0 without indexing anything.
 
 step kp79kg

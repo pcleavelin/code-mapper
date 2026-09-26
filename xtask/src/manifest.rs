@@ -21,6 +21,61 @@ pub(crate) struct Manifest {
     sections: BTreeMap<Section, Vec<Message>>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Key {
+    Members,
+}
+
+impl Key {
+    const fn name(self) -> Literal {
+        match self {
+            Self::Members => Literal::new("members"),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Suffix {
+    Glob,
+}
+
+impl Suffix {
+    const fn name(self) -> Literal {
+        match self {
+            Self::Glob => Literal::new("/*"),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Header {
+    Workspace,
+    Lints,
+    Dependencies,
+    DevDependencies,
+    BuildDependencies,
+}
+
+impl Header {
+    const ALL: [Self; 5] = [
+        Self::Workspace,
+        Self::Lints,
+        Self::Dependencies,
+        Self::DevDependencies,
+        Self::BuildDependencies,
+    ];
+
+    const fn name(self) -> Literal {
+        match self {
+            Self::Workspace => Literal::new("[workspace"),
+            Self::Lints => Literal::new("[lints"),
+            Self::Dependencies => Literal::new("[dependencies"),
+            Self::DevDependencies => Literal::new("[dev-dependencies"),
+            Self::BuildDependencies => Literal::new("[build-dependencies"),
+        }
+    }
+}
+
 impl Manifest {
     pub(crate) fn parse(text: &Content) -> Self {
         let mut manifest = Self::default();
@@ -68,7 +123,7 @@ impl Manifest {
             .map(Message::as_str)
             .collect::<Vec<_>>()
             .join(" ");
-        let Some((_, list)) = joined.split_once("members") else {
+        let Some((_, list)) = joined.split_once(Key::Members.name().as_str()) else {
             return Vec::new();
         };
         let inside = list
@@ -82,7 +137,7 @@ impl Manifest {
             .map(|member| member.trim().trim_matches('"'))
             .filter(|member| !member.is_empty())
         {
-            match member.strip_suffix("/*") {
+            match member.strip_suffix(Suffix::Glob.name().as_str()) {
                 Some(folder) => out.extend(member_folders(root, &RepoPath::new(folder))),
                 None => out.push(RepoPath::new(member)),
             }
@@ -95,11 +150,9 @@ impl Manifest {
             .iter()
             .filter(|(section, _)| {
                 let name = section.as_str();
-                name.starts_with("[workspace")
-                    || name.starts_with("[lints")
-                    || name.starts_with("[dependencies")
-                    || name.starts_with("[dev-dependencies")
-                    || name.starts_with("[build-dependencies")
+                Header::ALL
+                    .iter()
+                    .any(|header| name.starts_with(header.name().as_str()))
             })
             .map(|(section, lines)| (section.clone(), lines.clone()))
             .collect()

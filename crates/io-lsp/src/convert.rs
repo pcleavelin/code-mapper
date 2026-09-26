@@ -3,7 +3,20 @@ use std::path::{Path, PathBuf};
 use domain::{Line, Location, RelativePath, SymbolName};
 
 use crate::answer::{Character, Definition, Outline, OutlineKind, Position, RangeEnd};
-use crate::wire::{WireDefinition, WireLocation, WireSymbol};
+use crate::wire::{WireDefinition, WireLocation, WireName, WireSymbol};
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum UriPrefix {
+    File,
+}
+
+impl UriPrefix {
+    fn name(self) -> WireName {
+        WireName::new(match self {
+            Self::File => "file://",
+        })
+    }
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Uri(String);
@@ -67,7 +80,7 @@ impl Uri {
     }
 
     pub(crate) fn path(&self) -> Option<PathBuf> {
-        let decoded = Self::decoded(self.0.strip_prefix("file://")?);
+        let decoded = Self::decoded(self.0.strip_prefix(UriPrefix::File.name().as_str())?);
         Some(PathBuf::from(if cfg!(windows) {
             decoded.trim_start_matches('/').to_owned()
         } else {

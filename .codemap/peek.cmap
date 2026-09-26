@@ -339,7 +339,7 @@ author ai
 file crates/gui/src/views/tooltip.rs
 symbol text_tip
 lines 0 43
-hash 3a51400285e9eb28
+hash 85df1f9efee876d8
 note For a server's text: up to 24 lines, a line starting with --- drawn as a rule, then the two gestures.
 
 step yhnzin

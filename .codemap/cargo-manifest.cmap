@@ -90,8 +90,8 @@ parent htrn18
 author ai
 file xtask/src/manifest.rs
 symbol guarded
-lines 0 13
-hash 5117c94bb5c886ff
+lines 0 11
+hash 74680715bc2bd6d6
 note The owner-only sections: [workspace*], [lints*] and every dependency table. Everything else in a manifest an agent may change.
 
 step trej4c
@@ -101,7 +101,7 @@ author ai
 file xtask/src/manifest.rs
 symbol members
 lines 0 29
-hash e18661f1732ba7ca
+hash ef6d99a755bb3675
 note The workspace members from members = [...], with a trailing /* expanded to every folder under it that holds a Cargo.toml.
 
 step wkz7yu

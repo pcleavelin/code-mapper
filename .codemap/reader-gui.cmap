@@ -612,6 +612,16 @@ lines 0 92
 hash 168996c3991031ae
 note Symbols: a filter box over every symbol in the index, matching name or file path, one row each with a '+' when a path covers it, dimmed while its file waits for its server. Only the rows on screen become elements, with a spacer above and below standing in for the rest, so the table is the same cost at ten symbols or ten thousand.
 
+step pjv3q6
+order 85
+parent uyj8fj
+author ai
+file crates/gui/src/app.rs
+symbol impl AppCommand
+lines 0 29
+hash bd4d469b35600b51
+note named finds the command whose name is the line's first word, which is what script's match reads instead of comparing the word against each command.
+
 step qbdax8
 order 75
 parent v6nay7
@@ -649,7 +659,7 @@ author ai
 file crates/gui/src/action.rs
 symbol run_command
 lines 0 41
-hash 1250bba1c8b75e9b
+hash b0f1a1d0d48f8f9e
 link cli-command
 note The command line's enter: 'clear' empties the log; anything else is parsed and run by cli::exec against the window's index and map, authored Human, with its output appended to the log. A command that changed the map marks it unsaved; the save stays the human's.
 
@@ -756,6 +766,16 @@ lines 0 18
 hash 0f51d2e9b985a8c8
 note The steps removed since the parent revision, with their notes, greyed.
 
+step uyj8fj
+order 84
+parent vc7u1p
+author ai
+file crates/gui/src/app.rs
+symbol AppCommand
+lines 0 8
+hash 1dba3977202970a2
+note Every app-side line word script matches: idle, rect, tab, scroll, shot, open and dump.
+
 step v6nay7
 order 73
 parent 3ziqv9
@@ -772,7 +792,7 @@ author ai
 file crates/gui/src/app.rs
 symbol script
 lines 0 41
-hash b0fdf3d14882c1e0
+hash 44d32e73260b5543
 note The script commands the loop hands down (platform::App::script): idle, which retries until no server request, batch, merge, re-index or link is outstanding; tab; scroll a panel by id; shot the next frame; open a file at a line in the listing; rect, one element's rectangle by id name; and dump. Gestures and waits are the platform's; these are the app's.
 
 step ve8uvy
@@ -852,6 +872,6 @@ parent vc7u1p
 author ai
 file crates/gui/src/model.rs
 symbol from_name
-lines 0 8
-hash 97f2c8215dd31bc5
+lines 0 5
+hash 117bba5ad2c04bee
 note A tab by its lower-case name, any other name meaning the path document. The script's tab command and CODEMAP_SHOT_TAB both go through it, so the two accept the same names.

@@ -54,14 +54,26 @@ pub(crate) enum Event {
 }
 
 impl Event {
-    pub(crate) fn parse(word: &Argument) -> Option<Self> {
-        match word.as_str() {
-            "pre-tool" => Some(Self::PreTool),
-            "post-tool" => Some(Self::PostTool),
-            "stop" => Some(Self::Stop),
-            "session-start" => Some(Self::SessionStart),
-            _ => None,
+    const ALL: [Self; 4] = [
+        Self::PreTool,
+        Self::PostTool,
+        Self::Stop,
+        Self::SessionStart,
+    ];
+
+    const fn name(self) -> Literal {
+        match self {
+            Self::PreTool => Literal::new("pre-tool"),
+            Self::PostTool => Literal::new("post-tool"),
+            Self::Stop => Literal::new("stop"),
+            Self::SessionStart => Literal::new("session-start"),
         }
+    }
+
+    pub(crate) fn parse(word: &Argument) -> Option<Self> {
+        Self::ALL
+            .into_iter()
+            .find(|event| event.name().as_str() == word.as_str())
     }
 }
 
@@ -70,6 +82,76 @@ enum Tool {
     Edit,
     Shell,
     Other,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ToolName {
+    Edit,
+    Write,
+    MultiEdit,
+    NotebookEdit,
+    Bash,
+}
+
+impl ToolName {
+    const ALL: [Self; 5] = [
+        Self::Edit,
+        Self::Write,
+        Self::MultiEdit,
+        Self::NotebookEdit,
+        Self::Bash,
+    ];
+
+    const fn name(self) -> Literal {
+        match self {
+            Self::Edit => Literal::new("Edit"),
+            Self::Write => Literal::new("Write"),
+            Self::MultiEdit => Literal::new("MultiEdit"),
+            Self::NotebookEdit => Literal::new("NotebookEdit"),
+            Self::Bash => Literal::new("Bash"),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ProtectedPath {
+    Map,
+    Golden,
+}
+
+impl ProtectedPath {
+    const fn name(self) -> Literal {
+        match self {
+            Self::Map => Literal::new(".codemap/"),
+            Self::Golden => Literal::new("crates/codemap/tests/golden/"),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Marker {
+    Codemap,
+}
+
+impl Marker {
+    const fn name(self) -> Literal {
+        match self {
+            Self::Codemap => Literal::new("codemap"),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Suffix {
+    Rust,
+}
+
+impl Suffix {
+    const fn name(self) -> Literal {
+        match self {
+            Self::Rust => Literal::new(".rs"),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -87,6 +169,8 @@ struct Input {
     file: Option<RepoPath>,
     command: Option<Message>,
     stop_active: StopActive,
+    stopping: Stopping,
+    background: Background,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -95,11 +179,40 @@ enum StopActive {
     Continued,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Stopping {
+    Session,
+    Agent,
+}
+
+impl Stopping {
+    const ALL: [Self; 2] = [Self::Session, Self::Agent];
+
+    const fn name(self) -> Literal {
+        match self {
+            Self::Session => Literal::new("Stop"),
+            Self::Agent => Literal::new("SubagentStop"),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Background {
+    Idle,
+    Busy,
+}
+
 fn convert(root: &Root, wire: wire::WireInput) -> Input {
-    let tool = match wire.tool_name.as_str() {
-        "Edit" | "Write" | "MultiEdit" | "NotebookEdit" => Tool::Edit,
-        "Bash" => Tool::Shell,
-        _ => Tool::Other,
+    let tool_name = wire.tool_name.as_str();
+    let tool = match ToolName::ALL
+        .into_iter()
+        .find(|tool| tool.name().as_str() == tool_name)
+    {
+        Some(ToolName::Edit | ToolName::Write | ToolName::MultiEdit | ToolName::NotebookEdit) => {
+            Tool::Edit
+        }
+        Some(ToolName::Bash) => Tool::Shell,
+        None => Tool::Other,
     };
     Input {
         tool,
@@ -112,6 +225,15 @@ fn convert(root: &Root, wire: wire::WireInput) -> Input {
             StopActive::Continued
         } else {
             StopActive::First
+        },
+        stopping: Stopping::ALL
+            .into_iter()
+            .find(|stopping| stopping.name().as_str() == wire.hook_event_name)
+            .unwrap_or(Stopping::Session),
+        background: if wire.background_tasks > 0 {
+            Background::Busy
+        } else {
+            Background::Idle
         },
     }
 }
@@ -155,7 +277,7 @@ fn guard_edit(root: &Root, path: &RepoPath) -> Decision {
             "{path} is part of the rulebook, which only the owner changes. Propose the change in your reply instead."
         )));
     }
-    if path.starts_with(".codemap/") {
+    if path.starts_with(ProtectedPath::Map.name().as_str()) {
         let current = fs::read_to_string(root.join(path)).unwrap_or_default();
         if CONFLICT_MARKERS
             .iter()
@@ -167,7 +289,7 @@ fn guard_edit(root: &Root, path: &RepoPath) -> Decision {
             "The map is written only through codemap commands (`codemap . help`): path-add, step-note, note-edit, path-pin, repin.",
         ));
     }
-    if path.starts_with("crates/codemap/tests/golden/") {
+    if path.starts_with(ProtectedPath::Golden.name().as_str()) {
         return Decision::Deny(Message::new(
             "Goldens are written only by the tests: CODEMAP_BLESS=1 cargo test --test <scenario file>.",
         ));
@@ -183,10 +305,11 @@ fn guard_command(root: &Root, command: &Message) -> Decision {
         .map(|guard| match guard {
             arch::Guard::File(file) | arch::Guard::Tree(file) => file.as_str(),
         })
-        .chain([".codemap/", "tests/golden/"])
+        .chain([ProtectedPath::Map.name().as_str(), "tests/golden/"])
         .find(|path| text.contains(path));
     if let (true, Some(path)) = (writes, protected)
-        && !(path == ".codemap/" && text.contains("codemap"))
+        && !(path == ProtectedPath::Map.name().as_str()
+            && text.contains(Marker::Codemap.name().as_str()))
     {
         return Decision::Deny(Message::new(format!(
             "This command looks like it writes {path}, which is written only by the owner, codemap commands, or the tests."
@@ -217,7 +340,7 @@ fn after_tool(root: &Root, input: &Input) -> Decision {
     let (Tool::Edit, Some(path)) = (input.tool, &input.file) else {
         return Decision::Allow;
     };
-    if !path.ends_with(".rs") {
+    if !path.ends_with(Suffix::Rust.name().as_str()) {
         return Decision::Allow;
     }
     let formatted = run(
@@ -244,6 +367,9 @@ fn after_tool(root: &Root, input: &Input) -> Decision {
 }
 
 fn stopping(root: &Root, input: &Input) -> Decision {
+    if input.stopping == Stopping::Agent || input.background == Background::Busy {
+        return Decision::Allow;
+    }
     match current_gate(root) {
         Ok(()) => Decision::Allow,
         Err(report) => {

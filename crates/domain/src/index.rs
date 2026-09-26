@@ -41,9 +41,34 @@ pub struct SymbolQuery {
     owner: Option<Scope>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct MarkName(&'static str);
+
+impl MarkName {
+    const fn as_str(self) -> &'static str {
+        self.0
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Mark {
+    Path,
+}
+
+impl Mark {
+    const fn name(self) -> MarkName {
+        MarkName(match self {
+            Self::Path => "::",
+        })
+    }
+}
+
 impl From<&str> for SymbolQuery {
     fn from(query: &str) -> Self {
-        let (qualifier, name) = match query.rsplit_once("::").or_else(|| query.rsplit_once(':')) {
+        let (qualifier, name) = match query
+            .rsplit_once(Mark::Path.name().as_str())
+            .or_else(|| query.rsplit_once(':'))
+        {
             Some((qualifier, name)) => (Some(qualifier.replace('\\', "/")), name),
             None => (None, query),
         };

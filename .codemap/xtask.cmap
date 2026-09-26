@@ -11,8 +11,8 @@ parent 8n4pmn
 author ai
 file xtask/src/main.rs
 symbol parse
-lines 0 24
-hash d7859834b89579fa
+lines 0 26
+hash e54a23318e9fb536
 note The argument grammar: the first word picks the task; gate takes --full (adds the CLI goldens) and --owner (skips the rulebook check, for the owner committing rulebook changes); hook takes its event name. Anything unrecognised is Usage.
 
 step 8n4pmn
@@ -72,8 +72,8 @@ parent 1me7il
 author ai
 file xtask/src/hook.rs
 symbol parse
-lines 0 8
-hash bf94b5dd2dba79ac
+lines 0 4
+hash f48c2242aa7861e6
 link claude-hooks
 note hook's event word.
 

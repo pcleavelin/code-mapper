@@ -2,8 +2,119 @@ use std::io::BufRead;
 
 use serde_json::{Value, json};
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct WireName(&'static str);
+
+impl WireName {
+    pub(crate) const fn new(value: &'static str) -> Self {
+        Self(value)
+    }
+
+    pub(crate) const fn as_str(self) -> &'static str {
+        self.0
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Header {
+    ContentLength,
+}
+
+impl Header {
+    const fn name(self) -> WireName {
+        WireName(match self {
+            Self::ContentLength => "Content-Length:",
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Method {
+    Initialize,
+    Initialized,
+    Shutdown,
+    Exit,
+    DocumentSymbol,
+    PrepareCallHierarchy,
+    OutgoingCalls,
+    IncomingCalls,
+    References,
+    Hover,
+    Definition,
+    Progress,
+    Status,
+    Configuration,
+}
+
+impl Method {
+    const ALL: [Self; 14] = [
+        Self::Initialize,
+        Self::Initialized,
+        Self::Shutdown,
+        Self::Exit,
+        Self::DocumentSymbol,
+        Self::PrepareCallHierarchy,
+        Self::OutgoingCalls,
+        Self::IncomingCalls,
+        Self::References,
+        Self::Hover,
+        Self::Definition,
+        Self::Progress,
+        Self::Status,
+        Self::Configuration,
+    ];
+
+    const fn name(self) -> WireName {
+        WireName(match self {
+            Self::Initialize => "initialize",
+            Self::Initialized => "initialized",
+            Self::Shutdown => "shutdown",
+            Self::Exit => "exit",
+            Self::DocumentSymbol => "textDocument/documentSymbol",
+            Self::PrepareCallHierarchy => "textDocument/prepareCallHierarchy",
+            Self::OutgoingCalls => "callHierarchy/outgoingCalls",
+            Self::IncomingCalls => "callHierarchy/incomingCalls",
+            Self::References => "textDocument/references",
+            Self::Hover => "textDocument/hover",
+            Self::Definition => "textDocument/definition",
+            Self::Progress => "$/progress",
+            Self::Status => "experimental/serverStatus",
+            Self::Configuration => "workspace/configuration",
+        })
+    }
+
+    fn named(text: &str) -> Option<Self> {
+        Self::ALL
+            .into_iter()
+            .find(|entry| entry.name().as_str() == text)
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ProgressWord {
+    Begin,
+    End,
+}
+
+impl ProgressWord {
+    const ALL: [Self; 2] = [Self::Begin, Self::End];
+
+    const fn name(self) -> WireName {
+        WireName(match self {
+            Self::Begin => "begin",
+            Self::End => "end",
+        })
+    }
+
+    fn named(text: &str) -> Option<Self> {
+        Self::ALL
+            .into_iter()
+            .find(|entry| entry.name().as_str() == text)
+    }
+}
+
 pub(crate) struct Outgoing {
-    method: &'static str,
+    method: Method,
     params: Value,
 }
 
@@ -14,7 +125,7 @@ fn at(uri: &str, line: u32, character: u32) -> Value {
 impl Outgoing {
     pub(crate) fn initialize(process: u32, uri: &str, name: &str) -> Self {
         Self {
-            method: "initialize",
+            method: Method::Initialize,
             params: json!({
                 "processId": process,
                 "rootUri": uri,
@@ -38,80 +149,80 @@ impl Outgoing {
 
     pub(crate) fn initialized() -> Self {
         Self {
-            method: "initialized",
+            method: Method::Initialized,
             params: json!({}),
         }
     }
 
     pub(crate) fn shutdown() -> Self {
         Self {
-            method: "shutdown",
+            method: Method::Shutdown,
             params: Value::Null,
         }
     }
 
     pub(crate) fn exit() -> Self {
         Self {
-            method: "exit",
+            method: Method::Exit,
             params: Value::Null,
         }
     }
 
     pub(crate) fn document_symbol(uri: &str) -> Self {
         Self {
-            method: "textDocument/documentSymbol",
+            method: Method::DocumentSymbol,
             params: json!({"textDocument": {"uri": uri}}),
         }
     }
 
     pub(crate) fn prepare_call_hierarchy(uri: &str, line: u32, character: u32) -> Self {
         Self {
-            method: "textDocument/prepareCallHierarchy",
+            method: Method::PrepareCallHierarchy,
             params: at(uri, line, character),
         }
     }
 
     pub(crate) fn outgoing_calls(item: &Value) -> Self {
         Self {
-            method: "callHierarchy/outgoingCalls",
+            method: Method::OutgoingCalls,
             params: json!({"item": item}),
         }
     }
 
     pub(crate) fn incoming_calls(item: &Value) -> Self {
         Self {
-            method: "callHierarchy/incomingCalls",
+            method: Method::IncomingCalls,
             params: json!({"item": item}),
         }
     }
 
     pub(crate) fn references(uri: &str, line: u32, character: u32) -> Self {
         Self {
-            method: "textDocument/references",
+            method: Method::References,
             params: json!({"textDocument": {"uri": uri}, "position": {"line": line, "character": character}, "context": {"includeDeclaration": false}}),
         }
     }
 
     pub(crate) fn hover(uri: &str, line: u32, character: u32) -> Self {
         Self {
-            method: "textDocument/hover",
+            method: Method::Hover,
             params: at(uri, line, character),
         }
     }
 
     pub(crate) fn definition(uri: &str, line: u32, character: u32) -> Self {
         Self {
-            method: "textDocument/definition",
+            method: Method::Definition,
             params: at(uri, line, character),
         }
     }
 
     pub(crate) fn request(self, id: u64) -> Value {
-        json!({"jsonrpc": "2.0", "id": id, "method": self.method, "params": self.params})
+        json!({"jsonrpc": "2.0", "id": id, "method": self.method.name().as_str(), "params": self.params})
     }
 
     pub(crate) fn notification(self) -> Value {
-        json!({"jsonrpc": "2.0", "method": self.method, "params": self.params})
+        json!({"jsonrpc": "2.0", "method": self.method.name().as_str(), "params": self.params})
     }
 }
 
@@ -138,7 +249,7 @@ pub(crate) fn read_message(reader: &mut impl BufRead) -> Option<Value> {
             }
             continue;
         }
-        if let Some(value) = line.strip_prefix("Content-Length:") {
+        if let Some(value) = line.strip_prefix(Header::ContentLength.name().as_str()) {
             length = value.trim().parse().ok()?;
         }
     }
@@ -185,23 +296,24 @@ pub(crate) fn notice(message: &Value) -> Notice {
         .and_then(Value::as_str)
         .unwrap_or_default();
     let id = || message.get("id").cloned().unwrap_or(Value::Null);
-    match method {
-        "$/progress" => Notice::Progress(
+    match Method::named(method) {
+        Some(Method::Progress) => Notice::Progress(
             match message
                 .pointer("/params/value/kind")
                 .and_then(Value::as_str)
+                .and_then(ProgressWord::named)
             {
-                Some("begin") => ProgressKind::Begin,
-                Some("end") => ProgressKind::End,
-                _ => ProgressKind::Other,
+                Some(ProgressWord::Begin) => ProgressKind::Begin,
+                Some(ProgressWord::End) => ProgressKind::End,
+                None => ProgressKind::Other,
             },
         ),
-        "experimental/serverStatus" => Notice::Status(
+        Some(Method::Status) => Notice::Status(
             message
                 .pointer("/params/quiescent")
                 .and_then(Value::as_bool),
         ),
-        "workspace/configuration" => Notice::Configuration {
+        Some(Method::Configuration) => Notice::Configuration {
             id: id(),
             count: message
                 .pointer("/params/items")

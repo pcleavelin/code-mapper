@@ -3,10 +3,200 @@ use tree_sitter::Node;
 use crate::arch;
 use crate::lint::{Finding, Rule, Workspace};
 use crate::source::{
-    SourceFile, SourceText, ancestors, descendants, in_test_code, line_of, named_children, public,
+    NodeKind, SourceFile, SourceText, TestAttribute, ancestors, descendants, in_test_code, line_of,
+    named_children, public,
 };
 use crate::text::{CrateName, LintName, Literal, Message, TypeName, Word};
 use crate::vocabulary::Verdict;
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Operator {
+    Equal,
+    Unequal,
+}
+
+impl Operator {
+    const fn name(self) -> Literal {
+        match self {
+            Self::Equal => Literal::new("=="),
+            Self::Unequal => Literal::new("!="),
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum TypeWord {
+    Boolean,
+    String,
+}
+
+impl TypeWord {
+    const fn name(self) -> Literal {
+        match self {
+            Self::Boolean => Literal::new("bool"),
+            Self::String => Literal::new("String"),
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Sentinel {
+    EmptyString,
+    NegativeOne,
+}
+
+impl Sentinel {
+    const fn name(self) -> Literal {
+        match self {
+            Self::EmptyString => Literal::new("\"\""),
+            Self::NegativeOne => Literal::new("-1"),
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum MacroName {
+    Matches,
+}
+
+impl MacroName {
+    const fn name(self) -> Literal {
+        match self {
+            Self::Matches => Literal::new("matches"),
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Punctuation {
+    Comma,
+}
+
+impl Punctuation {
+    const fn name(self) -> Literal {
+        match self {
+            Self::Comma => Literal::new(","),
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum SuppressionAttribute {
+    Allow,
+    Expect,
+    Reason,
+}
+
+impl SuppressionAttribute {
+    const fn name(self) -> Literal {
+        match self {
+            Self::Allow => Literal::new("allow"),
+            Self::Expect => Literal::new("expect"),
+            Self::Reason => Literal::new("reason"),
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum RepoArea {
+    WireFile,
+    WireDirectory,
+    CratesPrefix,
+    DomainCrate,
+    GuiCrateSource,
+}
+
+impl RepoArea {
+    const fn name(self) -> Literal {
+        match self {
+            Self::WireFile => Literal::new("/wire.rs"),
+            Self::WireDirectory => Literal::new("/wire/"),
+            Self::CratesPrefix => Literal::new("crates/"),
+            Self::DomainCrate => Literal::new("crates/domain/"),
+            Self::GuiCrateSource => Literal::new("crates/gui/src/"),
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum PatternMethod {
+    StartsWith,
+    EndsWith,
+    StripPrefix,
+    StripSuffix,
+    Contains,
+    Find,
+    ReverseFind,
+    Split,
+    ReverseSplit,
+    SplitCount,
+    ReverseSplitCount,
+    SplitOnce,
+    ReverseSplitOnce,
+    SplitTerminator,
+    Matches,
+    MatchIndices,
+    TrimMatches,
+    TrimStartMatches,
+    TrimEndMatches,
+    Replace,
+    ReplaceCount,
+    EqualIgnoreAsciiCase,
+}
+
+impl PatternMethod {
+    const ALL: [Self; 22] = [
+        Self::StartsWith,
+        Self::EndsWith,
+        Self::StripPrefix,
+        Self::StripSuffix,
+        Self::Contains,
+        Self::Find,
+        Self::ReverseFind,
+        Self::Split,
+        Self::ReverseSplit,
+        Self::SplitCount,
+        Self::ReverseSplitCount,
+        Self::SplitOnce,
+        Self::ReverseSplitOnce,
+        Self::SplitTerminator,
+        Self::Matches,
+        Self::MatchIndices,
+        Self::TrimMatches,
+        Self::TrimStartMatches,
+        Self::TrimEndMatches,
+        Self::Replace,
+        Self::ReplaceCount,
+        Self::EqualIgnoreAsciiCase,
+    ];
+
+    const fn name(self) -> Literal {
+        match self {
+            Self::StartsWith => Literal::new("starts_with"),
+            Self::EndsWith => Literal::new("ends_with"),
+            Self::StripPrefix => Literal::new("strip_prefix"),
+            Self::StripSuffix => Literal::new("strip_suffix"),
+            Self::Contains => Literal::new("contains"),
+            Self::Find => Literal::new("find"),
+            Self::ReverseFind => Literal::new("rfind"),
+            Self::Split => Literal::new("split"),
+            Self::ReverseSplit => Literal::new("rsplit"),
+            Self::SplitCount => Literal::new("splitn"),
+            Self::ReverseSplitCount => Literal::new("rsplitn"),
+            Self::SplitOnce => Literal::new("split_once"),
+            Self::ReverseSplitOnce => Literal::new("rsplit_once"),
+            Self::SplitTerminator => Literal::new("split_terminator"),
+            Self::Matches => Literal::new("matches"),
+            Self::MatchIndices => Literal::new("match_indices"),
+            Self::TrimMatches => Literal::new("trim_matches"),
+            Self::TrimStartMatches => Literal::new("trim_start_matches"),
+            Self::TrimEndMatches => Literal::new("trim_end_matches"),
+            Self::Replace => Literal::new("replace"),
+            Self::ReplaceCount => Literal::new("replacen"),
+            Self::EqualIgnoreAsciiCase => Literal::new("eq_ignore_ascii_case"),
+        }
+    }
+}
 
 const INTEGER_TYPES: [Literal; 12] = [
     Literal::new("u8"),
@@ -95,12 +285,13 @@ pub(super) fn check(
         Rule::Theme => gui_literals(file, &mut report, Literal::new("theme"), &THEME_CALLS),
         Rule::ElementId => gui_literals(file, &mut report, Literal::new("ids"), &ID_CALLS),
         Rule::KeyBinding => gui_paths(file, &mut report, Literal::new("keys"), &KEY_PATHS),
+        Rule::Compared => compared(file, &mut report),
     }
 }
 
 pub(super) fn collect_types(file: &SourceFile, workspace: &mut Workspace) {
     for node in file.nodes() {
-        if node.kind() != "struct_item" {
+        if !NodeKind::Struct.is(node) {
             continue;
         }
         let Some(name) = node.child_by_field_name("name") else {
@@ -120,7 +311,7 @@ pub(super) fn collect_types(file: &SourceFile, workspace: &mut Workspace) {
     }
     for node in file.nodes() {
         if is_wire(file)
-            && node.kind() == "enum_item"
+            && NodeKind::Enum.is(node)
             && let Some(name) = node.child_by_field_name("name")
         {
             workspace
@@ -136,18 +327,19 @@ fn package_of(file: &SourceFile) -> CrateName {
     let inside = file
         .path
         .as_str()
-        .strip_prefix("crates/")
+        .strip_prefix(RepoArea::CratesPrefix.name().as_str())
         .and_then(|rest| rest.split('/').next());
     CrateName::new(inside.unwrap_or_default())
 }
 
 fn is_wire(file: &SourceFile) -> bool {
-    file.path.ends_with("/wire.rs") || file.path.contains("/wire/")
+    file.path.ends_with(RepoArea::WireFile.name().as_str())
+        || file.path.contains(RepoArea::WireDirectory.name().as_str())
 }
 
 fn newtype_field(item: Node<'_>) -> Option<Node<'_>> {
     let body = item.child_by_field_name("body")?;
-    if body.kind() != "ordered_field_declaration_list" {
+    if !NodeKind::OrderedFieldDeclarationList.is(body) {
         return None;
     }
     let mut cursor = body.walk();
@@ -160,7 +352,10 @@ fn newtype_field(item: Node<'_>) -> Option<Node<'_>> {
 
 fn comments(file: &SourceFile, report: &mut Report<'_>) {
     for node in file.nodes() {
-        if matches!(node.kind(), "line_comment" | "block_comment") {
+        if matches!(
+            NodeKind::of(node),
+            Some(NodeKind::LineComment | NodeKind::BlockComment)
+        ) {
             let text = file.text.of(node).lines().next().unwrap_or_default();
             report.add(node, format!("`{}`", text.trim()));
         }
@@ -170,19 +365,19 @@ fn comments(file: &SourceFile, report: &mut Report<'_>) {
 fn offenders<'tree>(annotation: Node<'tree>, text: &'tree SourceText) -> Vec<Node<'tree>> {
     descendants(annotation)
         .into_iter()
-        .filter(|node| match node.kind() {
-            "primitive_type" => !returned_by_closure_bound(*node, text),
-            "tuple_type" => true,
-            "type_identifier" => text.of(*node) == "String",
+        .filter(|node| match NodeKind::of(*node) {
+            Some(NodeKind::PrimitiveType) => !returned_by_closure_bound(*node, text),
+            Some(NodeKind::TupleType) => true,
+            Some(NodeKind::TypeIdentifier) => text.of(*node) == TypeWord::String.name().as_str(),
             _ => false,
         })
         .collect()
 }
 
 fn returned_by_closure_bound(node: Node<'_>, text: &SourceText) -> bool {
-    text.of(node) == "bool"
+    text.of(node) == TypeWord::Boolean.name().as_str()
         && node.parent().is_some_and(|parent| {
-            parent.kind() == "function_type"
+            NodeKind::FunctionType.is(parent)
                 && parent
                     .child_by_field_name("return_type")
                     .is_some_and(|returned| returned.id() == node.id())
@@ -192,7 +387,7 @@ fn returned_by_closure_bound(node: Node<'_>, text: &SourceText) -> bool {
 fn exempt_function(workspace: &Workspace, file: &SourceFile, function: Node<'_>) -> bool {
     ancestors(function)
         .into_iter()
-        .filter(|node| node.kind() == "impl_item")
+        .filter(|node| NodeKind::Impl.is(*node))
         .any(|block| {
             block.child_by_field_name("trait").is_some()
                 || block.child_by_field_name("type").is_some_and(|name| {
@@ -212,8 +407,8 @@ fn primitives(workspace: &Workspace, file: &SourceFile, report: &mut Report<'_>)
             continue;
         }
         let mut types: Vec<Node<'_>> = Vec::new();
-        match node.kind() {
-            "function_item" | "function_signature_item" => {
+        match NodeKind::of(node) {
+            Some(NodeKind::Function | NodeKind::FunctionSignature) => {
                 if exempt_function(workspace, file, node) {
                     continue;
                 }
@@ -221,28 +416,28 @@ fn primitives(workspace: &Workspace, file: &SourceFile, report: &mut Report<'_>)
                     types.extend(
                         named_children(parameters)
                             .into_iter()
-                            .filter(|parameter| parameter.kind() == "parameter")
+                            .filter(|parameter| NodeKind::Parameter.is(*parameter))
                             .filter_map(|parameter| parameter.child_by_field_name("type")),
                     );
                 }
                 if let Some(returned) = node.child_by_field_name("return_type")
-                    && file.text.of(returned) != "bool"
+                    && file.text.of(returned) != TypeWord::Boolean.name().as_str()
                 {
                     types.push(returned);
                 }
             }
-            "field_declaration" => {
+            Some(NodeKind::FieldDeclaration) => {
                 types.extend(node.child_by_field_name("type"));
             }
-            "const_item" | "static_item" => {
+            Some(NodeKind::Constant | NodeKind::Static) => {
                 if !exempt_function(workspace, file, node) {
                     types.extend(node.child_by_field_name("type"));
                 }
             }
-            "ordered_field_declaration_list" => {
-                let newtype = node.parent().is_some_and(|item| {
-                    item.kind() == "struct_item" && newtype_field(item).is_some()
-                });
+            Some(NodeKind::OrderedFieldDeclarationList) => {
+                let newtype = node
+                    .parent()
+                    .is_some_and(|item| NodeKind::Struct.is(item) && newtype_field(item).is_some());
                 if !newtype {
                     let mut cursor = node.walk();
                     types.extend(node.children_by_field_name("type", &mut cursor));
@@ -267,7 +462,7 @@ fn primitives(workspace: &Workspace, file: &SourceFile, report: &mut Report<'_>)
 
 fn newtype_fields(file: &SourceFile, report: &mut Report<'_>) {
     for node in file.nodes() {
-        if node.kind() != "struct_item" || newtype_field(node).is_none() {
+        if !NodeKind::Struct.is(node) || newtype_field(node).is_none() {
             continue;
         }
         let Some(body) = node.child_by_field_name("body") else {
@@ -275,7 +470,7 @@ fn newtype_fields(file: &SourceFile, report: &mut Report<'_>) {
         };
         if named_children(body)
             .iter()
-            .any(|child| child.kind() == "visibility_modifier")
+            .any(|child| NodeKind::VisibilityModifier.is(*child))
         {
             report.add(body, format!("`{}`", file.text.of(body)));
         }
@@ -284,7 +479,7 @@ fn newtype_fields(file: &SourceFile, report: &mut Report<'_>) {
 
 fn indexing(file: &SourceFile, report: &mut Report<'_>) {
     for node in file.nodes() {
-        if node.kind() == "index_expression" && !in_test_code(node, &file.text) {
+        if NodeKind::IndexExpression.is(node) && !in_test_code(node, &file.text) {
             report.add(node, format!("`{}`", file.text.of(node)));
         }
     }
@@ -296,18 +491,22 @@ fn absence(file: &SourceFile, report: &mut Report<'_>) {
             continue;
         }
         let text = file.text.of(node);
-        let sentinel = match node.kind() {
-            "binary_expression" => node
-                .child_by_field_name("operator")
-                .is_some_and(|operator| {
-                    matches!(file.text.of(operator), "==" | "!=")
-                        && ["left", "right"].iter().any(|side| {
-                            node.child_by_field_name(side).is_some_and(|operand| {
-                                matches!(file.text.of(operand), "\"\"" | "-1")
+        let sentinel = match NodeKind::of(node) {
+            Some(NodeKind::BinaryExpression) => {
+                node.child_by_field_name("operator")
+                    .is_some_and(|operator| {
+                        (file.text.of(operator) == Operator::Equal.name().as_str()
+                            || file.text.of(operator) == Operator::Unequal.name().as_str())
+                            && ["left", "right"].iter().any(|side| {
+                                node.child_by_field_name(side).is_some_and(|operand| {
+                                    file.text.of(operand) == Sentinel::EmptyString.name().as_str()
+                                        || file.text.of(operand)
+                                            == Sentinel::NegativeOne.name().as_str()
+                                })
                             })
-                        })
-                }),
-            "scoped_identifier" => INTEGER_TYPES.iter().any(|integer| {
+                    })
+            }
+            Some(NodeKind::ScopedIdentifier) => INTEGER_TYPES.iter().any(|integer| {
                 text == format!("{integer}::MAX") || text == format!("{integer}::MIN")
             }),
             _ => false,
@@ -328,11 +527,11 @@ pub(crate) fn named_by_us(file: &SourceFile) -> Vec<Node<'_>> {
 
 fn chosen_names(node: Node<'_>) -> Vec<Node<'_>> {
     let dictated = matches!(
-        node.kind(),
-        "parameter" | "function_item" | "type_item" | "const_item"
+        NodeKind::of(node),
+        Some(NodeKind::Parameter | NodeKind::Function | NodeKind::TypeItem | NodeKind::Constant)
     ) && ancestors(node)
         .iter()
-        .any(|item| item.kind() == "impl_item" && item.child_by_field_name("trait").is_some());
+        .any(|item| NodeKind::Impl.is(*item) && item.child_by_field_name("trait").is_some());
     if dictated {
         Vec::new()
     } else {
@@ -341,21 +540,23 @@ fn chosen_names(node: Node<'_>) -> Vec<Node<'_>> {
 }
 
 fn defined_names(node: Node<'_>) -> Vec<Node<'_>> {
-    let field = match node.kind() {
-        "function_item"
-        | "function_signature_item"
-        | "struct_item"
-        | "enum_item"
-        | "trait_item"
-        | "type_item"
-        | "union_item"
-        | "enum_variant"
-        | "const_item"
-        | "static_item"
-        | "mod_item"
-        | "field_declaration"
-        | "macro_definition" => "name",
-        "parameter" | "let_declaration" => "pattern",
+    let field = match NodeKind::of(node) {
+        Some(
+            NodeKind::Function
+            | NodeKind::FunctionSignature
+            | NodeKind::Struct
+            | NodeKind::Enum
+            | NodeKind::Trait
+            | NodeKind::TypeItem
+            | NodeKind::Union
+            | NodeKind::EnumVariant
+            | NodeKind::Constant
+            | NodeKind::Static
+            | NodeKind::Module
+            | NodeKind::FieldDeclaration
+            | NodeKind::MacroDefinition,
+        ) => "name",
+        Some(NodeKind::Parameter | NodeKind::LetDeclaration) => "pattern",
         _ => return Vec::new(),
     };
     node.child_by_field_name(field)
@@ -364,8 +565,12 @@ fn defined_names(node: Node<'_>) -> Vec<Node<'_>> {
                 .into_iter()
                 .filter(|part| {
                     matches!(
-                        part.kind(),
-                        "identifier" | "type_identifier" | "field_identifier"
+                        NodeKind::of(*part),
+                        Some(
+                            NodeKind::Identifier
+                                | NodeKind::TypeIdentifier
+                                | NodeKind::FieldIdentifier
+                        )
                     )
                 })
                 .collect()
@@ -401,15 +606,20 @@ fn wire_leaks(workspace: &Workspace, file: &SourceFile, report: &mut Report<'_>)
     for node in file.nodes() {
         if !public(node, &file.text)
             || !matches!(
-                node.kind(),
-                "function_item" | "struct_item" | "enum_item" | "field_declaration"
+                NodeKind::of(node),
+                Some(
+                    NodeKind::Function
+                        | NodeKind::Struct
+                        | NodeKind::Enum
+                        | NodeKind::FieldDeclaration
+                )
             )
         {
             continue;
         }
         let signature = node.child_by_field_name("body").map_or(node, |_| node);
         for part in descendants(signature) {
-            if part.kind() == "type_identifier"
+            if NodeKind::TypeIdentifier.is(part)
                 && workspace
                     .wire_types
                     .get(&package_of(file))
@@ -422,20 +632,24 @@ fn wire_leaks(workspace: &Workspace, file: &SourceFile, report: &mut Report<'_>)
 }
 
 fn domain_io(file: &SourceFile, report: &mut Report<'_>) {
-    if !file.path.starts_with("crates/domain/") {
+    if !file.path.starts_with(RepoArea::DomainCrate.name().as_str()) {
         return;
     }
     for node in file.nodes() {
         let text = file.text.of(node);
-        let io = match node.kind() {
-            "use_declaration" | "scoped_identifier" => DOMAIN_IO.iter().any(|prefix| {
-                text.starts_with(prefix.as_str()) || text.starts_with(&format!("use {prefix}"))
-            }),
-            "macro_invocation" => node.child_by_field_name("macro").is_some_and(|name| {
-                PRINTING
-                    .iter()
-                    .any(|macro_name| macro_name.as_str() == file.text.of(name))
-            }),
+        let io = match NodeKind::of(node) {
+            Some(NodeKind::UseDeclaration | NodeKind::ScopedIdentifier) => {
+                DOMAIN_IO.iter().any(|prefix| {
+                    text.starts_with(prefix.as_str()) || text.starts_with(&format!("use {prefix}"))
+                })
+            }
+            Some(NodeKind::MacroInvocation) => {
+                node.child_by_field_name("macro").is_some_and(|name| {
+                    PRINTING
+                        .iter()
+                        .any(|macro_name| macro_name.as_str() == file.text.of(name))
+                })
+            }
             _ => false,
         };
         if io {
@@ -449,7 +663,10 @@ fn domain_io(file: &SourceFile, report: &mut Report<'_>) {
 
 fn suppressions(file: &SourceFile, report: &mut Report<'_>) {
     for node in file.nodes() {
-        if !matches!(node.kind(), "attribute_item" | "inner_attribute_item") {
+        if !matches!(
+            NodeKind::of(node),
+            Some(NodeKind::AttributeItem | NodeKind::InnerAttributeItem)
+        ) {
             continue;
         }
         let Some(attribute) = node.named_child(0) else {
@@ -463,19 +680,17 @@ fn suppressions(file: &SourceFile, report: &mut Report<'_>) {
             .child_by_field_name("arguments")
             .map(|arguments| file.text.of(arguments))
             .unwrap_or_default();
-        match name {
-            "allow" => report.add(node, format!("`{}`", file.text.of(node))),
-            "expect" => {
-                if !arguments.contains("reason") {
-                    report.add(node, "no reason given".to_owned());
-                }
-                for lint in LintName::list(arguments) {
-                    if !arch::expected(&file.path, &lint) {
-                        report.add(node, format!("`{lint}` is not listed for {}", file.path));
-                    }
+        if name == SuppressionAttribute::Allow.name().as_str() {
+            report.add(node, format!("`{}`", file.text.of(node)));
+        } else if name == SuppressionAttribute::Expect.name().as_str() {
+            if !arguments.contains(SuppressionAttribute::Reason.name().as_str()) {
+                report.add(node, "no reason given".to_owned());
+            }
+            for lint in LintName::list(arguments) {
+                if !arch::expected(&file.path, &lint) {
+                    report.add(node, format!("`{lint}` is not listed for {}", file.path));
                 }
             }
-            _ => {}
         }
     }
 }
@@ -485,7 +700,9 @@ fn test_registry(file: &SourceFile, report: &mut Report<'_>) {
         return;
     }
     for node in file.nodes() {
-        if node.kind() == "attribute_item" && file.text.of(node) == "#[test]" {
+        if NodeKind::AttributeItem.is(node)
+            && file.text.of(node) == TestAttribute::Test.name().as_str()
+        {
             report.add(node, "a hand-registered #[test]".to_owned());
         }
     }
@@ -495,8 +712,8 @@ fn aliases(file: &SourceFile, report: &mut Report<'_>) {
     for node in file.nodes() {
         let associated = ancestors(node)
             .iter()
-            .any(|item| matches!(item.kind(), "impl_item" | "trait_item"));
-        if node.kind() == "type_item" && !associated && !in_test_code(node, &file.text) {
+            .any(|item| matches!(NodeKind::of(*item), Some(NodeKind::Impl | NodeKind::Trait)));
+        if NodeKind::TypeItem.is(node) && !associated && !in_test_code(node, &file.text) {
             report.add(node, format!("`{}`", file.text.of(node)));
         }
     }
@@ -510,7 +727,10 @@ enum Place {
 }
 
 fn gui_module(file: &SourceFile, home: Literal) -> Place {
-    if !file.path.starts_with("crates/gui/src/") {
+    if !file
+        .path
+        .starts_with(RepoArea::GuiCrateSource.name().as_str())
+    {
         Place::Outside
     } else if file.path.ends_with(&format!("/{home}.rs"))
         || file.path.contains(&format!("/{home}/"))
@@ -526,12 +746,12 @@ fn gui_calls(file: &SourceFile, report: &mut Report<'_>, home: Literal, methods:
         return;
     }
     for node in file.nodes() {
-        if node.kind() != "call_expression" || in_test_code(node, &file.text) {
+        if !NodeKind::CallExpression.is(node) || in_test_code(node, &file.text) {
             continue;
         }
         let called = node
             .child_by_field_name("function")
-            .filter(|function| function.kind() == "field_expression")
+            .filter(|function| NodeKind::FieldExpression.is(*function))
             .and_then(|function| function.child_by_field_name("field"))
             .map(|field| file.text.of(field))
             .unwrap_or_default();
@@ -546,7 +766,7 @@ fn gui_literals(file: &SourceFile, report: &mut Report<'_>, home: Literal, calls
         return;
     }
     for node in file.nodes() {
-        if node.kind() != "call_expression" || in_test_code(node, &file.text) {
+        if !NodeKind::CallExpression.is(node) || in_test_code(node, &file.text) {
             continue;
         }
         let called = node
@@ -558,8 +778,13 @@ fn gui_literals(file: &SourceFile, report: &mut Report<'_>, home: Literal, calls
             .is_some_and(|arguments| {
                 named_children(arguments).iter().any(|argument| {
                     matches!(
-                        argument.kind(),
-                        "integer_literal" | "float_literal" | "string_literal" | "unary_expression"
+                        NodeKind::of(*argument),
+                        Some(
+                            NodeKind::IntegerLiteral
+                                | NodeKind::FloatLiteral
+                                | NodeKind::StringLiteral
+                                | NodeKind::UnaryExpression
+                        )
                     )
                 })
             });
@@ -574,7 +799,7 @@ fn gui_paths(file: &SourceFile, report: &mut Report<'_>, home: Literal, paths: &
         return;
     }
     for node in file.nodes() {
-        if node.kind() != "scoped_identifier" || in_test_code(node, &file.text) {
+        if !NodeKind::ScopedIdentifier.is(node) || in_test_code(node, &file.text) {
             continue;
         }
         let text = file.text.of(node);
@@ -582,4 +807,79 @@ fn gui_paths(file: &SourceFile, report: &mut Report<'_>, home: Literal, paths: &
             report.add(node, format!("`{text}`"));
         }
     }
+}
+
+fn compared(file: &SourceFile, report: &mut Report<'_>) {
+    for node in file.nodes() {
+        if !matches!(
+            NodeKind::of(node),
+            Some(NodeKind::StringLiteral | NodeKind::RawStringLiteral)
+        ) || in_test_code(node, &file.text)
+        {
+            continue;
+        }
+        if let Some(place) = compared_place(file, node) {
+            report.add(node, format!("`{}` {place}", file.text.of(node)));
+        }
+    }
+}
+
+fn compared_place(file: &SourceFile, literal: Node<'_>) -> Option<Message> {
+    let parent = literal.parent()?;
+    let pattern = matches!(
+        NodeKind::of(parent),
+        Some(
+            NodeKind::MatchPattern
+                | NodeKind::OrPattern
+                | NodeKind::TuplePattern
+                | NodeKind::SlicePattern
+                | NodeKind::TupleStructPattern
+                | NodeKind::FieldPattern
+                | NodeKind::ReferencePattern
+                | NodeKind::CapturedPattern
+        )
+    ) || parent
+        .child_by_field_name("pattern")
+        .is_some_and(|pattern| pattern.id() == literal.id());
+    if pattern {
+        return Some(Message::new("as a pattern"));
+    }
+    if NodeKind::BinaryExpression.is(parent) {
+        let operator = parent.child_by_field_name("operator")?;
+        let equality = file.text.of(operator) == Operator::Equal.name().as_str()
+            || file.text.of(operator) == Operator::Unequal.name().as_str();
+        return (equality && file.text.of(literal) != Sentinel::EmptyString.name().as_str())
+            .then(|| Message::new(format!("compared with {}", file.text.of(operator))));
+    }
+    if NodeKind::Arguments.is(parent) {
+        let first = named_children(parent).first().copied()?;
+        let function = parent.parent()?.child_by_field_name("function")?;
+        let method = function.child_by_field_name("field")?;
+        let pattern_method = PatternMethod::ALL
+            .iter()
+            .any(|name| file.text.of(method) == name.name().as_str());
+        return (first.id() == literal.id()
+            && NodeKind::FieldExpression.is(function)
+            && pattern_method)
+            .then(|| Message::new(format!("as the pattern of {}", file.text.of(method))));
+    }
+    in_matches_pattern(file, literal).then(|| Message::new("as a matches! pattern"))
+}
+
+fn in_matches_pattern(file: &SourceFile, literal: Node<'_>) -> bool {
+    let Some(tree) = ancestors(literal).into_iter().find(|node| {
+        node.parent()
+            .is_some_and(|parent| NodeKind::MacroInvocation.is(parent))
+    }) else {
+        return false;
+    };
+    let named_matches = tree
+        .parent()
+        .and_then(|invocation| invocation.child_by_field_name("macro"))
+        .is_some_and(|name| file.text.of(name) == MacroName::Matches.name().as_str());
+    let mut cursor = tree.walk();
+    let comma = tree
+        .children(&mut cursor)
+        .find(|child| file.text.of(*child) == Punctuation::Comma.name().as_str());
+    named_matches && comma.is_some_and(|comma| literal.start_byte() > comma.start_byte())
 }

@@ -18,6 +18,19 @@ pub(crate) enum Verdict {
     Synonym(Word),
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Arrow {
+    Points,
+}
+
+impl Arrow {
+    const fn name(self) -> Literal {
+        match self {
+            Self::Points => Literal::new("->"),
+        }
+    }
+}
+
 impl Vocabulary {
     pub(crate) fn load(root: &Root) -> Result<Self, Message> {
         let path = RepoPath::new(VOCABULARY_FILE.as_str());
@@ -34,7 +47,7 @@ impl Vocabulary {
             if line.is_empty() {
                 continue;
             }
-            match line.split_once("->") {
+            match line.split_once(Arrow::Points.name().as_str()) {
                 Some((synonym, canonical)) => {
                     vocabulary
                         .synonyms
@@ -76,7 +89,7 @@ impl Vocabulary {
     pub(crate) fn synonym_lines(text: &Content) -> BTreeSet<Message> {
         text.as_str()
             .lines()
-            .filter(|line| line.contains("->"))
+            .filter(|line| line.contains(Arrow::Points.name().as_str()))
             .map(|line| Message::new(line.trim()))
             .collect()
     }

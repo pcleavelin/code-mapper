@@ -32,7 +32,7 @@ author ai
 file crates/index/src/link.rs
 symbol resolve
 lines 0 98
-hash 89b88beee69a9128
+hash 4070e9289e511952
 note The tree-sitter half: no type information, so the qualifier decides. self/Self bind to the caller's own owner; an uppercase qualifier is a type's member, else a module (file stem or directory), else something the file imported; a lowercase qualifier is a variable, so it picks a member and never a free function; an unqualified name prefers the same file, then an import, then the same directory. Structs, enums and unions are filtered out first because Foo{..} parses as a call in several grammars. Candidates in the caller's own file win at every stage. An uppercase qualifier that is neither a type, a module nor an import is an external type (Regex::new) and resolves to nothing, and a qualifier naming an import that matches no file here is an external module (log.error) and resolves to nothing too. A variable receiver tries the caller's own type first. Only C falls back to any file for an unqualified name, because headers reach other files without naming them; elsewhere such a name is a builtin or a std call. The heuristic is wrong when two types share a method name and the receiver is a variable; getting that right needs per-language scope and type rules.
 
 step ck99zr

@@ -25,10 +25,11 @@ pub(crate) enum Rule {
     Theme,
     ElementId,
     KeyBinding,
+    Compared,
 }
 
 impl Rule {
-    pub(crate) const ALL: [Self; 15] = [
+    pub(crate) const ALL: [Self; 16] = [
         Self::Comment,
         Self::Primitive,
         Self::NewtypeField,
@@ -44,6 +45,7 @@ impl Rule {
         Self::Theme,
         Self::ElementId,
         Self::KeyBinding,
+        Self::Compared,
     ];
 
     pub(crate) const fn code(self) -> RuleCode {
@@ -62,6 +64,7 @@ impl Rule {
             Self::Widget | Self::Theme => "L12",
             Self::ElementId => "L13",
             Self::KeyBinding => "L15",
+            Self::Compared => "L17",
         })
     }
 
@@ -107,6 +110,9 @@ impl Rule {
             }
             Self::KeyBinding => {
                 "keys are bound in crates/gui/src/keys.rs from the feature registry's chords: add the trigger to crates/features"
+            }
+            Self::Compared => {
+                "a string literal is never matched or compared: name the spellings in an enum whose name() spells each one, and compare through it"
             }
         })
     }

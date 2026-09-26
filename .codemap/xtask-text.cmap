@@ -10,8 +10,8 @@ order 0
 author ai
 file xtask/src/text.rs
 symbol impl RepoPath
-lines 0 20
-hash d5196cece1766cf1
+lines 0 24
+hash 331ae7976203ba77
 note A path relative to the repo root, forward slashes, with the prefix and suffix tests the rules scope themselves with.
 
 step 66ro97
@@ -56,8 +56,8 @@ order 6
 author ai
 file xtask/src/text.rs
 symbol list
-lines 0 10
-hash 29a47228ab2fc70b
+lines 0 13
+hash 8d01a48ea4e1c489
 note The lint names inside an expect attribute's arguments, before its reason.
 
 step o54lzj

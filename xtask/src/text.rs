@@ -1,12 +1,29 @@
 use std::fmt;
 use std::path::{Path, PathBuf};
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Prefix {
+    Relative,
+}
+
+impl Prefix {
+    const fn name(self) -> Literal {
+        match self {
+            Self::Relative => Literal::new("./"),
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) struct RepoPath(String);
 
 impl RepoPath {
     pub(crate) fn new(text: &str) -> Self {
-        Self(text.replace('\\', "/").trim_start_matches("./").to_owned())
+        Self(
+            text.replace('\\', "/")
+                .trim_start_matches(Prefix::Relative.name().as_str())
+                .to_owned(),
+        )
     }
 
     pub(crate) fn as_str(&self) -> &str {
@@ -143,13 +160,32 @@ impl fmt::Display for RuleCode {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Scope {
+    Resolution,
+}
+
+impl Scope {
+    const fn name(self) -> Literal {
+        match self {
+            Self::Resolution => Literal::new("::"),
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) struct TypeName(String);
 
 impl TypeName {
     pub(crate) fn new(text: &str) -> Self {
         let bare = text.split('<').next().unwrap_or(text);
-        Self(bare.rsplit("::").next().unwrap_or(bare).trim().to_owned())
+        Self(
+            bare.rsplit(Scope::Resolution.name().as_str())
+                .next()
+                .unwrap_or(bare)
+                .trim()
+                .to_owned(),
+        )
     }
 }
 
@@ -187,16 +223,31 @@ impl Word {
 
     pub(crate) fn forms(&self) -> Vec<Self> {
         let mut forms = vec![self.clone()];
-        if let Some(stem) = self.0.strip_suffix("ies") {
+        if let Some(stem) = self.0.strip_suffix(PluralSuffix::Long.name().as_str()) {
             forms.push(Self(format!("{stem}y")));
         }
-        if let Some(stem) = self.0.strip_suffix("es") {
+        if let Some(stem) = self.0.strip_suffix(PluralSuffix::Short.name().as_str()) {
             forms.push(Self(stem.to_owned()));
         }
         if let Some(stem) = self.0.strip_suffix('s') {
             forms.push(Self(stem.to_owned()));
         }
         forms
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum PluralSuffix {
+    Long,
+    Short,
+}
+
+impl PluralSuffix {
+    const fn name(self) -> Literal {
+        match self {
+            Self::Long => Literal::new("ies"),
+            Self::Short => Literal::new("es"),
+        }
     }
 }
 
@@ -215,7 +266,10 @@ impl LintName {
     }
 
     pub(crate) fn list(arguments: &str) -> Vec<Self> {
-        let before_reason = arguments.split("reason").next().unwrap_or_default();
+        let before_reason = arguments
+            .split(Keyword::Reason.name().as_str())
+            .next()
+            .unwrap_or_default();
         before_reason
             .trim_start_matches('(')
             .trim_end_matches(')')
@@ -224,6 +278,19 @@ impl LintName {
             .filter(|part| !part.is_empty())
             .map(Self::new)
             .collect()
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Keyword {
+    Reason,
+}
+
+impl Keyword {
+    const fn name(self) -> Literal {
+        match self {
+            Self::Reason => Literal::new("reason"),
+        }
     }
 }
 

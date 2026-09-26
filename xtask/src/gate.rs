@@ -9,7 +9,7 @@ use crate::manifest::Manifest;
 use crate::process::{Outcome, run};
 use crate::source::{SourceFile, rust_sources};
 use crate::state::{GateState, Light, stamp};
-use crate::text::{Argument, Content, Count, Message, Program, RepoPath, Root};
+use crate::text::{Argument, Content, Count, Literal, Message, Program, RepoPath, Root};
 use crate::vcs::Vcs;
 use crate::vocabulary::{VOCABULARY_FILE, Vocabulary};
 
@@ -53,6 +53,32 @@ impl fmt::Display for Step {
             Self::Features => "feature coverage (crates/codemap/tests/features.rs)",
             Self::Goldens => "CLI goldens",
         })
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Member {
+    Root,
+}
+
+impl Member {
+    const fn name(self) -> Literal {
+        match self {
+            Self::Root => Literal::new("."),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum File {
+    Manifest,
+}
+
+impl File {
+    const fn name(self) -> Literal {
+        match self {
+            Self::Manifest => Literal::new("Cargo.toml"),
+        }
     }
 }
 
@@ -220,10 +246,10 @@ fn architecture(root: &Root) -> Result<(), Message> {
     let workspace = Manifest::load(root, &RepoPath::new("Cargo.toml"))?;
     let mut report = Message::default();
     for member in workspace.members(root) {
-        let path = if member.as_str() == "." {
-            RepoPath::new("Cargo.toml")
+        let path = if member.as_str() == Member::Root.name().as_str() {
+            RepoPath::new(File::Manifest.name().as_str())
         } else {
-            RepoPath::new(&format!("{member}/Cargo.toml"))
+            RepoPath::new(&format!("{member}/{}", File::Manifest.name()))
         };
         let manifest = Manifest::load(root, &path)?;
         let Some(package) = manifest.package() else {
@@ -254,7 +280,7 @@ fn rulebook(root: &Root) -> Result<(), Message> {
         let current = Content::new(fs::read_to_string(root.join(&path)).unwrap_or_default());
         let changed = if arch::guarded(&path) {
             true
-        } else if path.ends_with("Cargo.toml") {
+        } else if path.ends_with(File::Manifest.name().as_str()) {
             Manifest::parse(&parent).guarded() != Manifest::parse(&current).guarded()
         } else if path.as_str() == VOCABULARY_FILE.as_str() {
             let before: BTreeSet<Message> = Vocabulary::synonym_lines(&parent);

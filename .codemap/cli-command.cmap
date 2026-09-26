@@ -5,6 +5,16 @@ author ai
 group cli
 note How one command line becomes an Invocation and runs. The process arguments after the root and the GUI output panel's input line both go through cli::Invocation::parse, which is clap over wire.rs's Command enum, so help and argument errors read the same in both. convert.rs turns the parsed Command into a Request (a Query, an Edit or a repin) of domain values, and cli::exec runs it against the Index and Map through exec.rs's Run, writing its lines to an Output and returning whether the map changed or a Failure. The CLI saves through MapStore and exits with a status; the GUI marks the map unsaved and leaves saving to ctrl+s. The two front ends share everything but the argument splitting, which the shell does for the CLI, and the author they pass: Agent from the CLI, Human from the GUI.
 
+step 0s6eim
+order 25
+parent gejk1d
+author ai
+file crates/codemap/src/main.rs
+symbol HelpWord
+lines 0 4
+hash 4360ed9b5dc6abd7
+note The three spellings of a help request: the word, the flag and the letter.
+
 step 0s6x73
 order 13
 parent 9zzcig
@@ -54,6 +64,16 @@ symbol words
 lines 0 19
 hash 30613e826020bcf7
 note The GUI's argument splitting: whitespace, with double quotes holding a note together (the quotes themselves are dropped). The shell does this for the CLI, so this is the one thing the two front ends do not share.
+
+step bv3qiw
+order 26
+parent 0s6eim
+author ai
+file crates/codemap/src/main.rs
+symbol impl HelpWord
+lines 0 10
+hash 79d654861ae7d328
+note name spells one of the three; main checks the first argument against every one of ALL instead of matching each spelling in turn.
 
 step c8vrt4
 order 16
@@ -109,8 +129,8 @@ order 0
 author ai
 file crates/codemap/src/main.rs
 symbol main
-lines 0 19
-hash c460ac8edc2aabaa
+lines 0 23
+hash 7dc0a35815c9d98d
 note Entry. help, --help or -h as the first argument prints the help with exit 0, before a root is chosen, so help works in a directory that is not a repo. The first argument is the root (the current directory when there is none); a root alone opens the window, a root with more arguments runs one command.
 
 step gxv29t
@@ -171,7 +191,7 @@ author ai
 file crates/gui/src/action.rs
 symbol run_command
 lines 0 41
-hash 1250bba1c8b75e9b
+hash b0f1a1d0d48f8f9e
 note The GUI's side of the same parse then exec, reached when the command field returns a line. 'clear' empties the log without parsing. exec gets no servers here: the GUI's own threads index. A ParseFailure, help included, is printed into the log verbatim and its first line becomes the status; a Failure is logged as 'error: ...'; a change marks the map unsaved and logs a line saying ctrl+s saves it. The log is pinned to its end for the next two frames so the newest output shows.
 
 step uzpmmo

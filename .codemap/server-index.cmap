@@ -112,7 +112,7 @@ author ai
 file crates/index/src/server.rs
 symbol kind_name
 lines 0 39
-hash fdad8cc44fa8008e
+hash 9a40a9d6c7b8cf46
 note LSP SymbolKind is a number; this turns it into a word through a table of the protocol's kind names in order, 0 not being a kind and anything past the end reading as 'symbol'. Kind 19 (Object in the protocol) is where rust-analyzer reports an impl block, so a kind-19 name starting with 'impl' is kind impl.
 
 step f450us
@@ -300,7 +300,7 @@ author ai
 file crates/index/src/server.rs
 symbol impl_type
 lines 0 9
-hash e0c75ac751010adc
+hash c9d033962edf563e
 note An impl block's name arrives as its whole header text; this reduces it to the type it is about, which becomes the owner of every method inside and therefore what a qualified call binds to. impl Trait for Foo<T> and impl Foo both give Foo; a server's kind-19 name carries no generic parameters of the impl itself (see impl_name).
 
 step vwg30v

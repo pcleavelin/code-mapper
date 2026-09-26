@@ -8,19 +8,142 @@ const VERSION_KEY: &str = "codemap";
 
 const VERSION_VALUE: &str = "8";
 
-const CONFLICT_MARKS: [&str; 5] = ["<<<<<<<", "=======", ">>>>>>>", "%%%%%%%", "+++++++"];
-
 pub(crate) const MAP_EXTENSION: &str = "cmap";
 
 pub(crate) const MAP_DIRECTORY: &str = ".codemap";
 
-pub(crate) const ORDER_KEY: &str = "order";
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct KeyName(&'static str);
 
-pub(crate) const FILE_KEY: &str = "file";
+impl KeyName {
+    pub(crate) const fn as_str(self) -> &'static str {
+        self.0
+    }
+}
 
-pub(crate) const LINES_KEY: &str = "lines";
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ConflictMark {
+    Begin,
+    Middle,
+    End,
+    Diff,
+    Added,
+}
 
-pub(crate) const HASH_KEY: &str = "hash";
+impl ConflictMark {
+    const ALL: [Self; 5] = [
+        Self::Begin,
+        Self::Middle,
+        Self::End,
+        Self::Diff,
+        Self::Added,
+    ];
+
+    const fn name(self) -> KeyName {
+        KeyName(match self {
+            Self::Begin => "<<<<<<<",
+            Self::Middle => "=======",
+            Self::End => ">>>>>>>",
+            Self::Diff => "%%%%%%%",
+            Self::Added => "+++++++",
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum LineKey {
+    Step,
+}
+
+impl LineKey {
+    const fn name(self) -> KeyName {
+        KeyName(match self {
+            Self::Step => "step",
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum PathKey {
+    Path,
+    Kind,
+    Author,
+    Group,
+    Note,
+}
+
+impl PathKey {
+    const ALL: [Self; 5] = [
+        Self::Path,
+        Self::Kind,
+        Self::Author,
+        Self::Group,
+        Self::Note,
+    ];
+
+    const fn name(self) -> KeyName {
+        KeyName(match self {
+            Self::Path => "path",
+            Self::Kind => "kind",
+            Self::Author => "author",
+            Self::Group => "group",
+            Self::Note => "note",
+        })
+    }
+
+    fn named(key: &str) -> Option<Self> {
+        Self::ALL
+            .into_iter()
+            .find(|entry| entry.name().as_str() == key)
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum StepKey {
+    Parent,
+    Order,
+    Author,
+    File,
+    Symbol,
+    Lines,
+    Hash,
+    Link,
+    Note,
+}
+
+impl StepKey {
+    const ALL: [Self; 9] = [
+        Self::Parent,
+        Self::Order,
+        Self::Author,
+        Self::File,
+        Self::Symbol,
+        Self::Lines,
+        Self::Hash,
+        Self::Link,
+        Self::Note,
+    ];
+
+    pub(crate) const fn name(self) -> KeyName {
+        KeyName(match self {
+            Self::Parent => "parent",
+            Self::Order => "order",
+            Self::Author => "author",
+            Self::File => "file",
+            Self::Symbol => "symbol",
+            Self::Lines => "lines",
+            Self::Hash => "hash",
+            Self::Link => "link",
+            Self::Note => "note",
+        })
+    }
+
+    fn named(key: &str) -> Option<Self> {
+        Self::ALL
+            .into_iter()
+            .find(|entry| entry.name().as_str() == key)
+    }
+}
 
 pub(crate) struct CmapPath {
     pub(crate) name: Option<(String, u32)>,
@@ -50,36 +173,33 @@ pub(crate) struct WireFault {
     pub(crate) fault: Fault,
 }
 
-fn author_name(author: Author) -> &'static str {
-    match author {
+const AUTHORS: [Author; 2] = [Author::Human, Author::Agent];
+
+fn author_name(author: Author) -> KeyName {
+    KeyName(match author {
         Author::Human => "human",
         Author::Agent => "ai",
-    }
+    })
 }
 
 fn parse_author(value: &str) -> Option<Author> {
-    match value {
-        "human" => Some(Author::Human),
-        "ai" => Some(Author::Agent),
-        _ => None,
-    }
+    AUTHORS
+        .into_iter()
+        .find(|author| author_name(*author).as_str() == value)
 }
 
-fn kind_name(kind: PathKind) -> &'static str {
-    match kind {
+fn kind_name(kind: PathKind) -> KeyName {
+    KeyName(match kind {
         PathKind::Flow => "flow",
         PathKind::Layer => "layer",
         PathKind::Type => "type",
-    }
+    })
 }
 
 fn parse_kind(value: &str) -> Option<PathKind> {
-    match value {
-        "flow" => Some(PathKind::Flow),
-        "layer" => Some(PathKind::Layer),
-        "type" => Some(PathKind::Type),
-        _ => None,
-    }
+    PathKind::ALL
+        .into_iter()
+        .find(|kind| kind_name(*kind).as_str() == value)
 }
 
 fn escape(value: &str) -> String {
@@ -137,7 +257,10 @@ pub(crate) fn parse(text: &str) -> Result<Vec<CmapPath>, WireFault> {
     let mut in_step = false;
     for (line, raw_line) in (0u32..).zip(text.lines()) {
         let at = |fault: Fault| WireFault { line, fault };
-        if CONFLICT_MARKS.iter().any(|mark| raw_line.starts_with(mark)) {
+        if ConflictMark::ALL
+            .iter()
+            .any(|mark| raw_line.starts_with(mark.name().as_str()))
+        {
             return Err(at(Fault::Conflict));
         }
         if raw_line.is_empty() {
@@ -166,7 +289,7 @@ pub(crate) fn parse(text: &str) -> Result<Vec<CmapPath>, WireFault> {
         let author = |name: &str| {
             parse_author(name).ok_or_else(|| at(Fault::UnknownAuthor(FieldValue::new(name))))
         };
-        if key == "step" {
+        if key == LineKey::Step.name().as_str() {
             if path.steps.iter().any(|step| step.id == value) {
                 return Err(at(Fault::SecondStep(FieldValue::new(&value))));
             }
@@ -187,33 +310,39 @@ pub(crate) fn parse(text: &str) -> Result<Vec<CmapPath>, WireFault> {
             continue;
         }
         if !in_step {
-            match key {
-                "path" => path.name = Some((value, line)),
-                "kind" => {
+            match PathKey::named(key) {
+                Some(PathKey::Path) => path.name = Some((value, line)),
+                Some(PathKey::Kind) => {
                     path.kind = parse_kind(&value)
                         .ok_or_else(|| at(Fault::UnknownKind(FieldValue::new(&value))))?;
                 }
-                "author" => path.author = author(&value)?,
-                "group" => path.group = value,
-                "note" => path.note = value,
-                _ => return Err(at(Fault::UnknownPathField(FieldKey::new(key)))),
+                Some(PathKey::Author) => path.author = author(&value)?,
+                Some(PathKey::Group) => path.group = value,
+                Some(PathKey::Note) => path.note = value,
+                None => return Err(at(Fault::UnknownPathField(FieldKey::new(key)))),
             }
             continue;
         }
         let Some(step) = path.steps.last_mut() else {
             return Err(at(Fault::UnknownPathField(FieldKey::new(key))));
         };
-        match key {
-            "parent" => step.parent = Some((value, line)),
-            ORDER_KEY => step.order = Some(parse_order(&value).ok_or_else(|| at(Fault::Order))?),
-            "author" => step.author = author(&value)?,
-            FILE_KEY => step.file = Some(value),
-            "symbol" => step.symbol = value,
-            LINES_KEY => step.lines = Some(parse_lines(&value).ok_or_else(|| at(Fault::Lines))?),
-            HASH_KEY => step.hash = Some(parse_hash(&value).ok_or_else(|| at(Fault::Hash))?),
-            "link" => step.link = Some((value, line)),
-            "note" => step.note = value,
-            _ => return Err(at(Fault::UnknownStepField(FieldKey::new(key)))),
+        match StepKey::named(key) {
+            Some(StepKey::Parent) => step.parent = Some((value, line)),
+            Some(StepKey::Order) => {
+                step.order = Some(parse_order(&value).ok_or_else(|| at(Fault::Order))?);
+            }
+            Some(StepKey::Author) => step.author = author(&value)?,
+            Some(StepKey::File) => step.file = Some(value),
+            Some(StepKey::Symbol) => step.symbol = value,
+            Some(StepKey::Lines) => {
+                step.lines = Some(parse_lines(&value).ok_or_else(|| at(Fault::Lines))?);
+            }
+            Some(StepKey::Hash) => {
+                step.hash = Some(parse_hash(&value).ok_or_else(|| at(Fault::Hash))?);
+            }
+            Some(StepKey::Link) => step.link = Some((value, line)),
+            Some(StepKey::Note) => step.note = value,
+            None => return Err(at(Fault::UnknownStepField(FieldKey::new(key)))),
         }
     }
     Ok(paths)
@@ -244,30 +373,45 @@ pub(crate) fn render(path: &CmapPath) -> String {
     };
     out.field(VERSION_KEY, VERSION_VALUE);
     let name = path.name.as_ref().map_or("", |name| name.0.as_str());
-    out.field("path", name);
-    out.field("kind", kind_name(path.kind));
-    out.field("author", author_name(path.author));
-    out.optional("group", &path.group);
-    out.optional("note", &path.note);
+    out.field(PathKey::Path.name().as_str(), name);
+    out.field(PathKey::Kind.name().as_str(), kind_name(path.kind).as_str());
+    out.field(
+        PathKey::Author.name().as_str(),
+        author_name(path.author).as_str(),
+    );
+    out.optional(PathKey::Group.name().as_str(), &path.group);
+    out.optional(PathKey::Note.name().as_str(), &path.note);
     let mut by_id: Vec<&CmapStep> = path.steps.iter().collect();
     by_id.sort_by(|one, other| one.id.cmp(&other.id));
     for step in by_id {
         out.text.push('\n');
-        out.field("step", &step.id);
-        out.field(ORDER_KEY, &step.order.unwrap_or_default().to_string());
+        out.field(LineKey::Step.name().as_str(), &step.id);
+        out.field(
+            StepKey::Order.name().as_str(),
+            &step.order.unwrap_or_default().to_string(),
+        );
         if let Some((parent, _)) = &step.parent {
-            out.field("parent", parent);
+            out.field(StepKey::Parent.name().as_str(), parent);
         }
-        out.field("author", author_name(step.author));
-        out.field(FILE_KEY, step.file.as_deref().unwrap_or_default());
-        out.optional("symbol", &step.symbol);
+        out.field(
+            StepKey::Author.name().as_str(),
+            author_name(step.author).as_str(),
+        );
+        out.field(
+            StepKey::File.name().as_str(),
+            step.file.as_deref().unwrap_or_default(),
+        );
+        out.optional(StepKey::Symbol.name().as_str(), &step.symbol);
         let (start, end) = step.lines.unwrap_or_default();
-        out.field(LINES_KEY, &format!("{start} {end}"));
-        out.field(HASH_KEY, &format!("{:016x}", step.hash.unwrap_or_default()));
+        out.field(StepKey::Lines.name().as_str(), &format!("{start} {end}"));
+        out.field(
+            StepKey::Hash.name().as_str(),
+            &format!("{:016x}", step.hash.unwrap_or_default()),
+        );
         if let Some((link, _)) = &step.link {
-            out.optional("link", link);
+            out.optional(StepKey::Link.name().as_str(), link);
         }
-        out.optional("note", &step.note);
+        out.optional(StepKey::Note.name().as_str(), &step.note);
     }
     out.text
 }

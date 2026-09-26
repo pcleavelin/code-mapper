@@ -31,8 +31,8 @@ parent 42292h
 author ai
 file crates/io-map/src/wire.rs
 symbol parse_author
-lines 0 6
-hash e961ff1d3ae6fff9
+lines 0 4
+hash 37e733a694ddb904
 note The words the file writes, ai and human (author_name the other way); parse_author is the only way back, so an unknown word fails the read with UnknownAuthor.
 
 step 3jucfq
@@ -61,8 +61,8 @@ parent xcqxxp
 author ai
 file crates/io-map/src/wire.rs
 symbol render
-lines 0 32
-hash 2ea0dc8446304616
+lines 0 47
+hash bba1c78d9a40b084
 note The text of one path: the path's fields, then each step in id order. Deterministic, so saving an unchanged path changes no byte. Ids are hash-derived and look random, so the steps two branches add to one path land at unrelated places and merge. Empty optional fields are left out.
 
 step 8egzhr
@@ -111,8 +111,8 @@ parent m9tf0u
 author ai
 file crates/io-map/src/convert.rs
 symbol step_from_wire
-lines 0 49
-hash c61da195089a833b
+lines 0 51
+hash 66b16e51d00c42b0
 note One step block to a Step: a well-formed id, the required order, file, lines and hash (MissingField names the one absent), a parent that is a valid id, a link that is a valid path name. An empty symbol means absolute lines.
 
 step c7u7os
@@ -146,6 +146,16 @@ lines 0 5
 hash 962a22de53e2ead9
 note A value runs to the end of its line, so the three characters that would break a line are escaped.
 
+step e87lx5
+order 36
+parent z6vazq
+author ai
+file crates/io-map/src/wire.rs
+symbol impl StepKey
+lines 0 32
+hash e921303ef8261a9f
+note named finds the key whose name is the line's key word, which is what parse reads a step field by instead of comparing the word against each key in turn; render writes a field through the same name().
+
 step fi1a3u
 order 29
 parent tmbi85
@@ -170,8 +180,8 @@ step jn6vqv
 order 0
 author ai
 file crates/io-map/src/wire.rs
-lines 4 22
-hash fb63024f2c999752
+lines 4 145
+hash 2b399193bd0bd9dd
 note The directory name, the extension, the version line, the field keys and the conflict markers jj and git write, any of which at a line start stops a read. There is no schema anywhere else, so the layout is this: .codemap/ holds one file per path, <name>.cmap. One field per line as "key value", the value running to the end of the line, with backslash, newline and carriage return escaped as \\\\, \\n and \\r. A blank line ends the path block and each step block. The path block is "codemap 8", "path <name>", "kind flow|layer|type", "author ai|human", then the optional "group <group>" and "note <text>". Each step block is "step <id>", "order <n>" (its place in the step list, ties by id), the optional "parent <id>" (a root has none), "author ai|human", "file <path>", the optional "symbol <name>" (none means absolute lines), "lines <start> <end>" (0-based, from the symbol's first line or absolute), "hash <16 hex digits>", and the optional "link <path name>" and "note <text>". Optional fields are left out when empty and nothing counts anything; a step names its parent by id and holds its place in order, so adding a step changes no other line. Any other version line is rejected: an old map is regenerated, never migrated.
 
 step kzkkga
@@ -182,6 +192,16 @@ symbol Map
 lines 0 2
 hash c53f4fb138f2ee86
 note The whole manual layer: the list of paths, their names unique (new refuses a second path of one name). It holds no file text and does no I/O; MapStore keeps what is on disk. Paths come back from disk in file name order, which is the order the paths listing and the Paths tab follow.
+
+step l14276
+order 33
+parent jn6vqv
+author ai
+file crates/io-map/src/wire.rs
+symbol PathKey
+lines 0 6
+hash 7cd0786abe73fdf2
+note The path block's field keys: path, kind, author, group and note.
 
 step lgbdic
 order 30
@@ -273,6 +293,16 @@ lines 0 13
 hash e7c9f45809b128ab
 note Appends one key value line with the value escaped; optional skips an empty value, which is how absent fields stay out of the file.
 
+step sjqbqm
+order 35
+parent l14276
+author ai
+file crates/io-map/src/wire.rs
+symbol impl PathKey
+lines 0 24
+hash e42990a4e0350084
+note named finds the key whose name is the line's key word, which is what parse reads a path field by instead of comparing the word against each key in turn; render writes a field through the same name().
+
 step sn5cl0
 order 25
 parent jn6vqv
@@ -289,8 +319,8 @@ parent o1sf0n
 author ai
 file crates/io-map/src/wire.rs
 symbol parse
-lines 0 85
-hash 12b5824cf9a8cd11
+lines 0 94
+hash 5ce220dabc3cbb82
 note The reader, shared by the files on disk and the text jj or git hands back for a revision, which is several files one after another. Each codemap line starts a path; a conflict marker, an unknown key, author or kind, a malformed order, lines or hash, and a second step of one id each stop it with the line. Checks that need the whole path wait for convert.
 
 step uivdyq
@@ -331,3 +361,13 @@ symbol of
 lines 0 2
 hash 5627f3b9e9e32ef2
 note One path as its file's text: path_to_wire, then render.
+
+step z6vazq
+order 34
+parent jn6vqv
+author ai
+file crates/io-map/src/wire.rs
+symbol StepKey
+lines 0 10
+hash dbdf9784293acd56
+note The step block's field keys: parent, order, author, file, symbol, lines, hash, link and note.

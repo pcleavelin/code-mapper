@@ -78,17 +78,45 @@ impl TabName {
     pub(crate) fn new(name: &str) -> Self {
         Self(name.to_owned())
     }
+
+    pub(crate) fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct Literal(&'static str);
+
+impl Literal {
+    const fn as_str(self) -> &'static str {
+        self.0
+    }
 }
 
 impl Tab {
+    const ALL: [Self; 5] = [
+        Self::Path,
+        Self::Diff,
+        Self::Graph,
+        Self::Listing,
+        Self::Results,
+    ];
+
+    const fn name(self) -> Literal {
+        Literal(match self {
+            Self::Path => "path",
+            Self::Diff => "diff",
+            Self::Graph => "graph",
+            Self::Listing => "listing",
+            Self::Results => "results",
+        })
+    }
+
     pub(crate) fn from_name(name: &TabName) -> Self {
-        match name.0.as_str() {
-            "graph" => Self::Graph,
-            "listing" => Self::Listing,
-            "diff" => Self::Diff,
-            "results" => Self::Results,
-            _ => Self::Path,
-        }
+        Self::ALL
+            .into_iter()
+            .find(|tab| tab.name().as_str() == name.as_str())
+            .unwrap_or(Self::Path)
     }
 }
 

@@ -49,6 +49,38 @@ fn edges(index: &Index) -> Vec<Edge> {
     edges
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct SuffixName(&'static str);
+
+impl SuffixName {
+    const fn as_str(self) -> &'static str {
+        self.0
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Suffix {
+    Source,
+    Header,
+}
+
+impl Suffix {
+    const ALL: [Self; 2] = [Self::Source, Self::Header];
+
+    fn name(self) -> SuffixName {
+        SuffixName(match self {
+            Self::Source => ".c",
+            Self::Header => ".h",
+        })
+    }
+
+    fn matches(path: &RelativePath) -> bool {
+        Self::ALL
+            .into_iter()
+            .any(|suffix| path.ends_with(suffix.name().as_str()))
+    }
+}
+
 #[derive(Clone, Copy)]
 struct Word<'text>(&'text str);
 
@@ -199,7 +231,7 @@ impl Resolver<'_> {
                 )
             })
             .or_else(|| {
-                let clang = file.path().ends_with(".c") || file.path().ends_with(".h");
+                let clang = Suffix::matches(file.path());
                 if clang {
                     pick(&mut candidates.iter().filter(|id| self.free(**id)))
                         .or_else(|| pick(&mut candidates.iter()))

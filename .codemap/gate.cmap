@@ -12,7 +12,7 @@ author ai
 file xtask/src/gate.rs
 symbol rulebook
 lines 0 29
-hash 66fcb3377f850ea1
+hash 4c31af493bbbbab7
 note Lists the files the working copy changed against the parent revision (jj or git) and fails on any that is part of the rulebook. A whole guarded file or tree counts on any change; a Cargo.toml counts only when its guarded sections ([workspace*], [lints*], [*dependencies]) differ, since an agent may still bump a version or add a feature; vocabulary.txt counts only when its synonym lines differ, since an agent may add words but not decide which of two words is the canonical one. This is the back-stop for the pre-tool hook's guards, which a shell command can slip past. The message says to undo it and propose the change instead.
 
 step 1hpban
@@ -22,7 +22,7 @@ author ai
 file xtask/src/gate.rs
 symbol architecture
 lines 0 26
-hash da351e77ad514a3d
+hash f4273ea9294f95ef
 note Reads the workspace members from the root manifest and each member's [dependencies] keys, and reports every dependency that is not in arch.rs DEPENDENCIES for that package. The message names the file the graph lives in and that only the owner changes it, so the fix is to propose the edge, not to route around it. Layering is held by the compiler (a crate can only use what it depends on) and this check holds the dependency list itself.
 
 step 2teaf5
@@ -61,8 +61,8 @@ parent z9ah7m
 author ai
 file xtask/src/state.rs
 symbol load
-lines 0 24
-hash 0dfd97dce8215312
+lines 0 36
+hash b99a935300e4d447
 link gate-state
 note The previous run's state, read to count identical red runs.
 
@@ -165,8 +165,8 @@ parent z9ah7m
 author ai
 file xtask/src/state.rs
 symbol save
-lines 0 14
-hash 7f0ff94f6a598b6a
+lines 0 15
+hash 5bf2b8e03585ce81
 link gate-state
 note Records this run's stamp, light, repeat count and report.
 
@@ -229,7 +229,7 @@ author ai
 file xtask/src/vocabulary.rs
 symbol synonym_lines
 lines 0 6
-hash 72c2791845ae891f
+hash 1848149839fff353
 link vocabulary
 note The synonym lines of vocabulary.txt, compared before and after.
 
@@ -259,8 +259,8 @@ parent 0uqdxt
 author ai
 file xtask/src/manifest.rs
 symbol guarded
-lines 0 13
-hash 5117c94bb5c886ff
+lines 0 11
+hash 74680715bc2bd6d6
 link cargo-manifest
 note The guarded sections of a manifest, compared before and after.
 

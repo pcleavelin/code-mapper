@@ -21,7 +21,7 @@ author ai
 file crates/gui/src/action.rs
 symbol run_command
 lines 0 41
-hash 1250bba1c8b75e9b
+hash b0f1a1d0d48f8f9e
 link cli-command
 note The handler. Echoes the line into the log and pins the log to its end for two frames, parses it with the CLI's own parser (a parse error, help included, goes into the log and the status bar), and runs cli::exec with the human as author and no language servers. A changed map marks it dirty; a failure goes to the log and status.
 

@@ -23,17 +23,35 @@ enum Grammar {
 }
 
 impl Grammar {
+    const ALL: [Self; 7] = [
+        Self::Rust,
+        Self::Odin,
+        Self::Clang,
+        Self::Python,
+        Self::Javascript,
+        Self::Typescript,
+        Self::Tsx,
+    ];
+
+    fn suffixes(self) -> &'static [Word] {
+        match self {
+            Self::Rust => &[Word("rs")],
+            Self::Odin => &[Word("odin")],
+            Self::Clang => &[Word("c"), Word("h")],
+            Self::Python => &[Word("py")],
+            Self::Javascript => &[Word("js"), Word("mjs"), Word("cjs")],
+            Self::Typescript => &[Word("ts")],
+            Self::Tsx => &[Word("tsx")],
+        }
+    }
+
     fn of(path: &RelativePath) -> Option<Self> {
         let extension = Path::new(path.as_str()).extension()?.to_str()?;
-        Some(match extension {
-            "rs" => Self::Rust,
-            "odin" => Self::Odin,
-            "c" | "h" => Self::Clang,
-            "py" => Self::Python,
-            "js" | "mjs" | "cjs" => Self::Javascript,
-            "ts" => Self::Typescript,
-            "tsx" => Self::Tsx,
-            _ => return None,
+        Self::ALL.into_iter().find(|grammar| {
+            grammar
+                .suffixes()
+                .iter()
+                .any(|suffix| suffix.as_str() == extension)
         })
     }
 
@@ -141,23 +159,170 @@ impl<'text> Source<'text> {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct Word(&'static str);
+
+impl Word {
+    const fn as_str(self) -> &'static str {
+        self.0
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Capture {
+    Keyword,
+    Include,
+    Repeat,
+    Conditional,
+    StorageClass,
+    Storage,
+    Exception,
+    String,
+    Character,
+    Escape,
+    Comment,
+    Function,
+    Method,
+    Constructor,
+    Macro,
+    Type,
+    Namespace,
+    Module,
+    Number,
+    Constant,
+    Boolean,
+    Float,
+    Property,
+    Field,
+    Attribute,
+    Label,
+    Tag,
+    BuiltinVariable,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Modifier {
+    Builtin,
+}
+
+impl Modifier {
+    fn word(self) -> Word {
+        Word(match self {
+            Self::Builtin => "builtin",
+        })
+    }
+}
+
+impl Capture {
+    const ALL: [Self; 28] = [
+        Self::Keyword,
+        Self::Include,
+        Self::Repeat,
+        Self::Conditional,
+        Self::StorageClass,
+        Self::Storage,
+        Self::Exception,
+        Self::String,
+        Self::Character,
+        Self::Escape,
+        Self::Comment,
+        Self::Function,
+        Self::Method,
+        Self::Constructor,
+        Self::Macro,
+        Self::Type,
+        Self::Namespace,
+        Self::Module,
+        Self::Number,
+        Self::Constant,
+        Self::Boolean,
+        Self::Float,
+        Self::Property,
+        Self::Field,
+        Self::Attribute,
+        Self::Label,
+        Self::Tag,
+        Self::BuiltinVariable,
+    ];
+
+    fn word(self) -> Word {
+        Word(match self {
+            Self::Keyword => "keyword",
+            Self::Include => "include",
+            Self::Repeat => "repeat",
+            Self::Conditional => "conditional",
+            Self::StorageClass => "storageclass",
+            Self::Storage => "storage",
+            Self::Exception => "exception",
+            Self::String => "string",
+            Self::Character => "character",
+            Self::Escape => "escape",
+            Self::Comment => "comment",
+            Self::Function => "function",
+            Self::Method => "method",
+            Self::Constructor => "constructor",
+            Self::Macro => "macro",
+            Self::Type => "type",
+            Self::Namespace => "namespace",
+            Self::Module => "module",
+            Self::Number => "number",
+            Self::Constant => "constant",
+            Self::Boolean => "boolean",
+            Self::Float => "float",
+            Self::Property => "property",
+            Self::Field => "field",
+            Self::Attribute => "attribute",
+            Self::Label => "label",
+            Self::Tag => "tag",
+            Self::BuiltinVariable => "variable",
+        })
+    }
+
+    fn class(self) -> HighlightClass {
+        match self {
+            Self::Keyword
+            | Self::Include
+            | Self::Repeat
+            | Self::Conditional
+            | Self::StorageClass
+            | Self::Storage
+            | Self::Exception => HighlightClass::Keyword,
+            Self::String | Self::Character | Self::Escape => HighlightClass::String,
+            Self::Comment => HighlightClass::Comment,
+            Self::Function | Self::Method | Self::Constructor | Self::Macro => {
+                HighlightClass::Function
+            }
+            Self::Type | Self::Namespace | Self::Module => HighlightClass::Type,
+            Self::Number | Self::Constant | Self::Boolean | Self::Float | Self::BuiltinVariable => {
+                HighlightClass::Constant
+            }
+            Self::Property | Self::Field | Self::Attribute | Self::Label | Self::Tag => {
+                HighlightClass::Property
+            }
+        }
+    }
+
+    fn named(text: CaptureName<'_>) -> Option<Self> {
+        let prefix = text.0.split('.').next().unwrap_or_default();
+        if prefix == Self::BuiltinVariable.word().as_str() {
+            return text
+                .0
+                .contains(Modifier::Builtin.word().as_str())
+                .then_some(Self::BuiltinVariable);
+        }
+        Self::ALL
+            .into_iter()
+            .filter(|capture| *capture != Self::BuiltinVariable)
+            .find(|capture| capture.word().as_str() == prefix)
+    }
+}
+
 #[derive(Clone, Copy)]
 struct CaptureName<'query>(&'query str);
 
 impl CaptureName<'_> {
     fn class(self) -> HighlightClass {
-        match self.0.split('.').next().unwrap_or_default() {
-            "keyword" | "include" | "repeat" | "conditional" | "storageclass" | "storage"
-            | "exception" => HighlightClass::Keyword,
-            "string" | "character" | "escape" => HighlightClass::String,
-            "comment" => HighlightClass::Comment,
-            "function" | "method" | "constructor" | "macro" => HighlightClass::Function,
-            "type" | "namespace" | "module" => HighlightClass::Type,
-            "number" | "constant" | "boolean" | "float" => HighlightClass::Constant,
-            "property" | "field" | "attribute" | "label" | "tag" => HighlightClass::Property,
-            "variable" if self.0.contains("builtin") => HighlightClass::Constant,
-            _ => HighlightClass::Plain,
-        }
+        Capture::named(self).map_or(HighlightClass::Plain, Capture::class)
     }
 }
 
@@ -231,6 +396,137 @@ fn highlight(
     spans
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Split {
+    Path,
+    Alias,
+    PythonImport,
+}
+
+impl Split {
+    fn word(self) -> Word {
+        Word(match self {
+            Self::Path => "::",
+            Self::Alias => " as ",
+            Self::PythonImport => " import ",
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum TypePrefix {
+    Mut,
+}
+
+impl TypePrefix {
+    fn word(self) -> Word {
+        Word(match self {
+            Self::Mut => "mut ",
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ScriptSuffix {
+    Javascript,
+    Typescript,
+}
+
+impl ScriptSuffix {
+    const ALL: [Self; 2] = [Self::Javascript, Self::Typescript];
+
+    fn word(self) -> Word {
+        Word(match self {
+            Self::Javascript => ".js",
+            Self::Typescript => ".ts",
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ImportKeyword {
+    Import,
+    From,
+    As,
+    Type,
+    Default,
+}
+
+impl ImportKeyword {
+    const ALL: [Self; 5] = [
+        Self::Import,
+        Self::From,
+        Self::As,
+        Self::Type,
+        Self::Default,
+    ];
+
+    fn word(self) -> Word {
+        Word(match self {
+            Self::Import => "import",
+            Self::From => "from",
+            Self::As => "as",
+            Self::Type => "type",
+            Self::Default => "default",
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ImportPrefix {
+    Public,
+    RustImport,
+    From,
+    Import,
+}
+
+impl ImportPrefix {
+    const ALL: [Self; 4] = [Self::Public, Self::RustImport, Self::From, Self::Import];
+
+    fn word(self) -> Word {
+        Word(match self {
+            Self::Public => "pub ",
+            Self::RustImport => "use ",
+            Self::From => "from ",
+            Self::Import => "import ",
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ImportToken {
+    All,
+}
+
+impl ImportToken {
+    fn word(self) -> Word {
+        Word(match self {
+            Self::All => "*",
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum SelfWord {
+    Lower,
+    Type,
+    Instance,
+    Parent,
+}
+
+impl SelfWord {
+    const ALL: [Self; 4] = [Self::Lower, Self::Type, Self::Instance, Self::Parent];
+
+    fn word(self) -> Word {
+        Word(match self {
+            Self::Lower => "self",
+            Self::Type => "Self",
+            Self::Instance => "this",
+            Self::Parent => "super",
+        })
+    }
+}
+
 #[derive(Clone, Copy)]
 pub(crate) struct TypeText<'text>(&'text str);
 
@@ -246,9 +542,13 @@ impl<'text> TypeText<'text> {
             .next()
             .unwrap_or(self.0)
             .trim_start_matches(['&', '*', ' '])
-            .trim_start_matches("mut ")
+            .trim_start_matches(TypePrefix::Mut.word().as_str())
             .trim();
-        text.rsplit("::").next().unwrap_or(text).trim().to_owned()
+        text.rsplit(Split::Path.word().as_str())
+            .next()
+            .unwrap_or(text)
+            .trim()
+            .to_owned()
     }
 }
 
@@ -265,12 +565,12 @@ impl ImportText<'_> {
                 .chars()
                 .take_while(|character| *character != '"' && *character != '\'')
                 .collect();
-            let module = quoted
-                .rsplit(['/', ':', '\\'])
-                .next()
-                .unwrap_or(&quoted)
-                .trim_end_matches(".js")
-                .trim_end_matches(".ts")
+            let module = ScriptSuffix::ALL
+                .into_iter()
+                .fold(
+                    quoted.rsplit(['/', ':', '\\']).next().unwrap_or(&quoted),
+                    |name, suffix| name.trim_end_matches(suffix.word().as_str()),
+                )
                 .to_owned();
             let head = text.get(..quote).unwrap_or_default();
             let mut named = false;
@@ -278,7 +578,10 @@ impl ImportText<'_> {
                 .split(|character: char| !(character.is_alphanumeric() || character == '_'))
                 .filter(|token| !token.is_empty())
             {
-                if ["import", "from", "as", "type", "default"].contains(&token) {
+                if ImportKeyword::ALL
+                    .into_iter()
+                    .any(|keyword| keyword.word().as_str() == token)
+                {
                     continue;
                 }
                 imports.insert(token, &module);
@@ -289,25 +592,23 @@ impl ImportText<'_> {
             }
             return;
         }
-        let body = text
-            .trim_start_matches("pub ")
-            .trim_start_matches("use ")
-            .trim_start_matches("from ")
-            .trim_start_matches("import ");
-        let (path_part, items) = match body.split_once(" import ") {
+        let body = ImportPrefix::ALL.into_iter().fold(text, |body, prefix| {
+            body.trim_start_matches(prefix.word().as_str())
+        });
+        let (path_part, items) = match body.split_once(Split::PythonImport.word().as_str()) {
             Some((path_part, items)) => (path_part.trim(), items.trim()),
             None => match body.find('{') {
                 Some(brace) => (
                     body.get(..brace)
                         .unwrap_or_default()
                         .trim()
-                        .trim_end_matches("::"),
+                        .trim_end_matches(Split::Path.word().as_str()),
                     body.get(brace + 1..)
                         .unwrap_or_default()
                         .trim_end_matches('}'),
                 ),
                 None => body
-                    .rsplit_once("::")
+                    .rsplit_once(Split::Path.word().as_str())
                     .or_else(|| body.rsplit_once('.'))
                     .unwrap_or((body, body)),
             },
@@ -318,15 +619,19 @@ impl ImportText<'_> {
             .unwrap_or(path_part);
         for item in items.split(',') {
             let item = item.trim();
-            if item.is_empty() || item == "*" {
+            if item.is_empty() || item == ImportToken::All.word().as_str() {
                 continue;
             }
-            let (name, alias) = match item.split_once(" as ") {
+            let (name, alias) = match item.split_once(Split::Alias.word().as_str()) {
                 Some((name, alias)) => (name.trim(), Some(alias.trim())),
                 None => (item, None),
             };
-            let name = name.rsplit("::").next().unwrap_or(name).trim();
-            if name.is_empty() || name == "self" {
+            let name = name
+                .rsplit(Split::Path.word().as_str())
+                .next()
+                .unwrap_or(name)
+                .trim();
+            if name.is_empty() || name == SelfWord::Lower.word().as_str() {
                 continue;
             }
             imports.insert(alias.unwrap_or(name), module);
@@ -383,10 +688,67 @@ struct QualifierText<'text>(&'text str);
 
 impl QualifierText<'_> {
     fn qualifier(self) -> Qualifier {
-        match self.0 {
-            "self" | "Self" | "this" | "super" => Qualifier::SelfReference,
-            text => Qualifier::Named(Scope::new(&TypeText(text).bare())),
+        if SelfWord::ALL
+            .into_iter()
+            .any(|word| word.word().as_str() == self.0)
+        {
+            return Qualifier::SelfReference;
         }
+        Qualifier::Named(Scope::new(&TypeText(self.0).bare()))
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum NodeWord {
+    Import,
+    Comment,
+    Package,
+    Attribute,
+    Impl,
+    Module,
+    Spec,
+    Class,
+    Call,
+    Member,
+    Select,
+    Dotted,
+}
+
+impl NodeWord {
+    const CONTAINER: [Self; 4] = [Self::Impl, Self::Module, Self::Spec, Self::Class];
+
+    fn word(self) -> Word {
+        Word(match self {
+            Self::Import => "import",
+            Self::Comment => "comment",
+            Self::Package => "package",
+            Self::Attribute => "attribute",
+            Self::Impl => "impl",
+            Self::Module => "mod",
+            Self::Spec => "trait",
+            Self::Class => "class",
+            Self::Call => "call",
+            Self::Member => "member",
+            Self::Select => "selector",
+            Self::Dotted => "scoped",
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum NodeKindWord {
+    Import,
+    Module,
+    Impl,
+}
+
+impl NodeKindWord {
+    fn word(self) -> Word {
+        Word(match self {
+            Self::Import => "use_declaration",
+            Self::Module => "mod_item",
+            Self::Impl => "impl_item",
+        })
     }
 }
 
@@ -395,25 +757,27 @@ struct NodeKind<'tree>(&'tree str);
 
 impl NodeKind<'_> {
     fn imports(self) -> bool {
-        self.0.contains("import") || self.0 == "use_declaration"
+        self.mentions(NodeWord::Import) || self.named(NodeKindWord::Import)
     }
 
     fn skipped(self) -> bool {
-        self.0.contains("comment") || self.0.contains("package") || self.0.contains("attribute")
+        self.mentions(NodeWord::Comment)
+            || self.mentions(NodeWord::Package)
+            || self.mentions(NodeWord::Attribute)
     }
 
     fn container(self) -> bool {
-        ["impl", "mod", "trait", "class"]
-            .iter()
-            .any(|container| self.0.contains(container))
+        NodeWord::CONTAINER
+            .into_iter()
+            .any(|word| self.mentions(word))
     }
 
-    fn named(self, kind: &str) -> bool {
-        self.0 == kind
+    fn named(self, kind: NodeKindWord) -> bool {
+        self.0 == kind.word().as_str()
     }
 
-    fn mentions(self, word: &str) -> bool {
-        self.0.contains(word)
+    fn mentions(self, word: NodeWord) -> bool {
+        self.0.contains(word.word().as_str())
     }
 
     fn symbol_kind(self) -> SymbolKind {
@@ -481,7 +845,7 @@ impl Collector<'_> {
             if kind.skipped() {
                 continue;
             }
-            if kind.named("mod_item") && node.child_by_field_name("body").is_none() {
+            if kind.named(NodeKindWord::Module) && node.child_by_field_name("body").is_none() {
                 continue;
             }
             let start = Row(node.start_position().row);
@@ -503,13 +867,13 @@ impl Collector<'_> {
                 .unwrap_or_default();
             let named = match node.child_by_field_name("name") {
                 Some(name) => Some(SymbolName::new(self.source.of(name).unwrap_or_default())),
-                None if kind.named("impl_item") => self.impl_name(node),
+                None if kind.named(NodeKindWord::Impl) => self.impl_name(node),
                 None => {
                     let guessed = first
                         .split('{')
                         .next()
                         .unwrap_or(first)
-                        .split("::")
+                        .split(Split::Path.word().as_str())
                         .next()
                         .unwrap_or(first)
                         .trim();
@@ -530,7 +894,10 @@ impl Collector<'_> {
                 node.child_by_field_name("type")
                     .and_then(|child| self.source.of(child))
                     .map(|text| TypeName::new(&TypeText(text).bare()))
-                    .or_else(|| kind.mentions("class").then(|| TypeName::new(name.as_str())))
+                    .or_else(|| {
+                        kind.mentions(NodeWord::Class)
+                            .then(|| TypeName::new(name.as_str()))
+                    })
             } else {
                 None
             };
@@ -561,7 +928,7 @@ impl Collector<'_> {
     fn find_calls(&self, node: Node<'_>, calls: &mut Vec<Call>) {
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
-            if NodeKind(child.kind()).mentions("call") {
+            if NodeKind(child.kind()).mentions(NodeWord::Call) {
                 let callee = child
                     .child_by_field_name("function")
                     .or_else(|| child.named_child(0));
@@ -570,8 +937,8 @@ impl Collector<'_> {
                 {
                     if call.qualifier == Qualifier::Plain {
                         let parent = NodeKind(node.kind());
-                        if ["member", "selector", "scoped"]
-                            .iter()
+                        if [NodeWord::Member, NodeWord::Select, NodeWord::Dotted]
+                            .into_iter()
                             .any(|word| parent.mentions(word))
                             && let Some(first) =
                                 node.named_child(0).filter(|first| first.id() != child.id())

@@ -75,12 +75,12 @@ note The line's highlights become one colour per character in a grid: the line n
 
 step oy9py2
 order 1
-parent k0lp9q
+parent w8lonq
 author ai
 file crates/index/src/parse.rs
-symbol impl CaptureName<'_>
-lines 0 15
-hash 300ef75763e5f06d
+symbol impl Capture
+lines 0 102
+hash 064b989dfedf33a9
 note Collapses the grammar's capture names (dozens, and different per language) into the eight classes the renderer knows, by the name's first dotted segment. Anything unrecognised is Plain and is not stored at all.
 
 step s9wyjd
@@ -101,6 +101,16 @@ symbol HighlightClass
 lines 0 9
 hash f089930f35c103d9
 note The vocabulary: eight classes. Storing a class rather than a colour is what lets the cache outlive a theme change and keeps the table for a large file small; the cache writes a class as its position in ALL. is_quoted marks the classes (strings, comments) that SourceFile::call_site does not count as code.
+
+step w8lonq
+order 11
+parent k0lp9q
+author ai
+file crates/index/src/parse.rs
+symbol Capture
+lines 0 29
+hash 4933df239c66c2da
+note Every capture name the bundled highlight queries write, spelled by word() as the grammar spells its prefix (Self::BuiltinVariable's word is 'variable', modified by a 'builtin' segment elsewhere in the name); class groups them into the eight HighlightClass values the renderer knows.
 
 step ymeigk
 order 7

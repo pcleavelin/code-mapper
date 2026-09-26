@@ -16,6 +16,16 @@ hash 5df85eaca7dd12b0
 link rulebook
 note Whether the path is a guarded file or under a guarded tree.
 
+step 21x8i0
+order 32
+parent wmurmf
+author ai
+file xtask/src/hook.rs
+symbol ToolName
+lines 0 6
+hash d22fdffd7cb1feb8
+note The tool names convert recognises: Edit, Write, MultiEdit and NotebookEdit (all Tool::Edit) and Bash.
+
 step 27exqc
 order 6
 parent wmurmf
@@ -32,10 +42,20 @@ parent ky1r9m
 author ai
 file xtask/src/state.rs
 symbol load
-lines 0 24
-hash 0dfd97dce8215312
+lines 0 36
+hash b99a935300e4d447
 link gate-state
 note The recorded result.
+
+step 30v5b4
+order 34
+parent 21x8i0
+author ai
+file xtask/src/hook.rs
+symbol impl ToolName
+lines 0 18
+hash 90e05aaf8862d9a8
+note name is the tool_name field's exact spelling; convert finds the matching variant instead of comparing tool_name against each one in turn.
 
 step 3l608d
 order 9
@@ -63,9 +83,9 @@ parent q6kz2r
 author ai
 file xtask/src/hook.rs
 symbol stopping
-lines 0 16
-hash 4d53b33e5450d5ab
-note Stop: the gate must be green to stop; a red gate blocks with its failures. When the stop is already a continuation and the gate has failed identically REPEATS_BEFORE_RELEASE times in a row, the session is let go with a notice instead: the loop is stuck, and the red state carries over to the next session rather than burning turns.
+lines 0 19
+hash b429a1f694359a00
+note Stop: allowed at once when the event is a subagent's own stop or a background task is still running, since neither means the session is ending; otherwise the gate must be green to stop; a red gate blocks with its failures. When the stop is already a continuation and the gate has failed identically REPEATS_BEFORE_RELEASE times in a row, the session is let go with a notice instead: the loop is stuck, and the red state carries over to the next session rather than burning turns.
 
 step bz0nl5
 order 25
@@ -83,9 +103,9 @@ parent q6kz2r
 author ai
 file xtask/src/hook/wire.rs
 symbol read
-lines 0 21
-hash f471ef4397515b17
-note Parses the hook input with serde_json, taking only the fields the hooks use: the event name, the tool name, the tool's file_path (or notebook_path) and command, and stop_hook_active.
+lines 0 25
+hash 41ea6af84915ea80
+note Parses the hook input with serde_json, taking only the fields the hooks use: the event name, the tool name, the tool's file_path (or notebook_path), command, stop_hook_active and how many background_tasks there are.
 
 step delgwh
 order 5
@@ -107,6 +127,16 @@ lines 0 8
 hash f3e45e78d4ac18d3
 note SessionStart: when the recorded gate is red, its failures become the session's first context, so the next session starts by fixing what the last one left.
 
+step g4olwp
+order 33
+parent wmurmf
+author ai
+file xtask/src/hook.rs
+symbol Stopping
+lines 0 3
+hash d14d59aab721d18b
+note Which hook event is stopping: Session (Stop, the session ending) or Agent (SubagentStop, a subagent's own stop, which the session survives).
+
 step gksmef
 order 30
 parent q6kz2r
@@ -123,9 +153,9 @@ parent ck3whx
 author ai
 file xtask/src/hook/wire.rs
 symbol WireInput
-lines 0 6
-hash 10a67326354f8371
-note The wire shape of the input: plain strings and a bool, kept inside hook/ like every wire type.
+lines 0 7
+hash 4ce054b0e4a8833f
+note The wire shape of the input: plain strings, a bool and a count, kept inside hook/ like every wire type.
 
 step k4sg6z
 order 28
@@ -143,8 +173,8 @@ parent wmurmf
 author ai
 file xtask/src/hook.rs
 symbol Input
-lines 0 5
-hash d5a6cc4f117cdb94
+lines 0 7
+hash 75f14ebeffe8d378
 note What a decision needs from the input.
 
 step ky1r9m
@@ -175,7 +205,7 @@ author ai
 file xtask/src/hook.rs
 symbol guard_edit
 lines 0 24
-hash bde6d67629cea940
+hash 52d48e47276c77a0
 note An edit to a rulebook file is denied with 'propose the change in your reply'. An edit to .codemap/ is denied with the codemap commands to use instead, unless the file holds a merge conflict marker, since resolving a conflict in the map is an edit by hand. An edit to the goldens is denied with the bless command, because a golden is only ever what the tests produced.
 
 step ogsnht
@@ -185,7 +215,7 @@ author ai
 file xtask/src/hook.rs
 symbol after_tool
 lines 0 28
-hash 6e38501bfff29d17
+hash 678ca26708f88e48
 note PostToolUse: after an edit to a .rs file, rustfmt formats it in place and archlint checks it; a rustfmt error or any finding blocks with the report, which Claude Code shows the agent at once.
 
 step omcm6a
@@ -254,8 +284,8 @@ parent 3l608d
 author ai
 file xtask/src/hook.rs
 symbol guard_command
-lines 0 26
-hash a04cc6701c32118c
+lines 0 27
+hash 2846392adec70545
 note A shell command that contains a writing verb and names a rulebook path, the map or the goldens is denied (a codemap command naming .codemap/ passes). A committing or pushing command is refused while the gate is red, with the failures in the refusal.
 
 step unxrmc
@@ -264,8 +294,8 @@ parent qt0e9o
 author ai
 file xtask/src/hook.rs
 symbol impl Event
-lines 0 10
-hash c60cfa0846923f7c
+lines 0 22
+hash cab35aa5624122cd
 note The event name on the command line.
 
 step wmurmf
@@ -274,9 +304,9 @@ parent q6kz2r
 author ai
 file xtask/src/hook.rs
 symbol convert
-lines 0 19
-hash d58823ea9f7c57f5
-note Converts the wire input into the hook's own types: the tool as Edit (Edit, Write, MultiEdit, NotebookEdit), Shell (Bash) or Other, the file as a path relative to the repo (none when outside it), and whether this stop is a continuation of an earlier blocked stop.
+lines 0 34
+hash 6e77299a92c221ad
+note Converts the wire input into the hook's own types: the tool as Edit (Edit, Write, MultiEdit, NotebookEdit), Shell (Bash) or Other, the file as a path relative to the repo (none when outside it), whether this stop is a continuation of an earlier blocked stop, which event is stopping (session or a subagent's own) and whether a background task is still running.
 
 step xs7sll
 order 31
@@ -287,6 +317,16 @@ symbol notice
 lines 0 2
 hash dcb7c46bc2d8f312
 note A system message shown to the user, for the released stuck stop.
+
+step xydamp
+order 35
+parent g4olwp
+author ai
+file xtask/src/hook.rs
+symbol impl Stopping
+lines 0 9
+hash d19f74051489306f
+note name is the hook_event_name field's exact spelling; convert finds the matching variant, defaulting to Session, instead of comparing hook_event_name against each one in turn.
 
 step yxwobd
 order 20
@@ -315,8 +355,8 @@ parent tdvwx5
 author ai
 file xtask/src/arch.rs
 symbol RULEBOOK
-lines 0 10
-hash 42a5ba45833ae8ca
+lines 0 9
+hash 25db0d81dfcd0969
 link rulebook
 note The guarded paths the command is searched for.
 

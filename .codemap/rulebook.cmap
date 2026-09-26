@@ -20,8 +20,8 @@ order 13
 author ai
 file xtask/src/api.rs
 symbol surfaces
-lines 0 34
-hash deadd55411cdfac5
+lines 0 35
+hash d4460f276d5ec760
 note The API lock. For every workspace member with a lib.rs, lists every pub function, struct, enum, trait, const, static, module and macro in its src/, prefixed by module path, with the signature up to the body and whitespace collapsed, so the listing changes only when the surface does.
 
 step 6q6dw4
@@ -31,7 +31,7 @@ author ai
 file xtask/src/api.rs
 symbol signature
 lines 0 9
-hash 161fb80301084e89
+hash 19a3d2ac57480907
 note An item's signature: the text before its body for functions, traits and modules, the whole item otherwise.
 
 step 7khqpn
@@ -79,7 +79,7 @@ author ai
 file xtask/src/api.rs
 symbol module_of
 lines 0 13
-hash b4a4e64660286e79
+hash 1412b76f78ba4bd8
 note The module path of a file, from its path under src/.
 
 step mb4yru
@@ -125,9 +125,9 @@ order 15
 parent 5hvo01
 author ai
 file xtask/src/api.rs
-symbol ITEMS
+symbol ITEM_KINDS
 lines 0 9
-hash 0f23fbcee4a3165f
+hash 9058f4dde9b8aa8b
 note The item kinds that count as surface.
 
 step ssed1w
@@ -174,9 +174,9 @@ order 0
 author ai
 file xtask/src/arch.rs
 symbol RULEBOOK
-lines 0 10
-hash 42a5ba45833ae8ca
-note The owner-only files and trees: xtask/, clippy.toml, rustfmt.toml, .gitattributes, .cargo/config.toml, .claude/settings.json, .claude/skills/, the io crates' API files and CLAUDE.md. The guarded sections of every Cargo.toml and the synonym lines of vocabulary.txt are rulebook too, checked by the gate separately.
+lines 0 9
+hash 25db0d81dfcd0969
+note The owner-only files and trees: clippy.toml, rustfmt.toml, .gitattributes, .cargo/config.toml, .claude/settings.json, .claude/skills/, the io crates' API files and CLAUDE.md. The guarded sections of every Cargo.toml and the synonym lines of vocabulary.txt are rulebook too, checked by the gate separately.
 
 step wnqjal
 order 6

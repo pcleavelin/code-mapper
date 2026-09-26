@@ -30,8 +30,8 @@ parent adt563
 author ai
 file crates/index/src/parse.rs
 symbol qualifier
-lines 0 5
-hash 6a095fe11bb877dc
+lines 0 8
+hash 9fe9f6caa962b3b2
 note The qualifier a call names, shared by find_calls and CalleeText::call: self, Self, this and super mean the caller's own owner (Qualifier::SelfReference); anything else is Named with a bare type name.
 
 step 3oloto
@@ -40,9 +40,9 @@ parent a41e5v
 author ai
 file crates/index/src/parse.rs
 symbol impl NodeKind<'_>
-lines 0 26
-hash d3655ccbf724e7dc
-note What the walk asks of a node kind by substring: whether it is an import, skipped, a container, or mentions a word such as 'call' or 'class'. Substrings are what let one walk serve every grammar's naming.
+lines 0 28
+hash 2c0a329701a5b7e5
+note What the walk asks of a node kind by substring: whether it is an import, skipped, a container, or mentions a word such as 'call' or 'class', each word spelled once in NodeWord's name table. Substrings are what let one walk serve every grammar's naming.
 
 step 5g8ut6
 order 5
@@ -51,7 +51,7 @@ author ai
 file crates/index/src/parse.rs
 symbol find_calls
 lines 0 31
-hash 87ca1aad07b9c1c5
+hash 772fa1cdfc84dd09
 note Recursively collects the call sites inside one declaration. Anything whose node kind contains 'call' counts; the callee expression is its 'function' field or else its first named child. The extra work here is recovering a qualifier the grammar hid: some languages parse pkg.proc(x) as member(pkg, call(proc, x)), so the qualifier is the sibling before the call, not part of it.
 
 step 7arqxd
@@ -80,8 +80,8 @@ parent 0c73gq
 author ai
 file crates/index/src/parse.rs
 symbol collect
-lines 0 88
-hash 51a39112c928462b
+lines 0 91
+hash 27681f4712bb05f4
 note The walk that produces symbols. Named children of the root become symbols; imports go to ImportText::record; comments, package clauses, attributes and bodyless 'mod foo;' are skipped. Containers (impl, mod, trait, class) recurse exactly one level so methods appear with their owner type, which is what gives depth 1 symbols and what a qualified call later binds against; a container itself has no calls. A symbol's name is the grammar's name field, else impl_name for a Rust impl, else its first line up to a brace or '::' (Odin's foo :: proc), dropped past 80 characters because a bad guess is a whole line of code; Odin attributes such as @(test) are part of the declaration node, so that guess reads the line after them. A bodyless 'mod foo;' is a reference, and as a symbol it would pull every .map() call to 'mod map;'. A container's owner is its type field (Rust impl X for Y gives Y) or, for a class, its own name. A node ending at column 0 of a line ends on the line before.
 
 step adt563
@@ -94,14 +94,24 @@ lines 0 37
 hash 5e1b9b5ba4e103f1
 note Turns the callee's source text into a Call. Generics, argument lists and index brackets are stripped and a macro's '!' dropped, then the last dotted or scoped segment is the name and the one before it the qualifier. A name longer than 64 characters or not starting with a letter or underscore is no call. This is the whole of what the tree-sitter backend knows about a call.
 
+step f8j90d
+order 17
+parent nys6ci
+author ai
+file crates/index/src/parse.rs
+symbol impl NodeWord
+lines 0 19
+hash 8d1d241dea12bd2f
+note CONTAINER lists the four words that make a kind a container; word spells one, read by mentions and named against a node's raw kind string.
+
 step jnnl3s
 order 4
 parent a41e5v
 author ai
 file crates/index/src/parse.rs
 symbol record
-lines 0 75
-hash 95ca4e5652e7bfb8
+lines 0 80
+hash 0661663d60d2426e
 note Every import statement in the file, reduced to a map of name-or-alias to module stem. Deliberately string work rather than per-language parsing: it only has to be good enough for resolve to send an unqualified or aliased call to the right file. Two shapes: a quoted module (Odin import "core:fmt" or import alias "../pkg", JS import {a, b} from './mod') maps every identifier before the quote to the module's last path segment, or the module to itself when none is named; anything else is a path plus items (Rust use a::b::{c, d as e}, Python from a.b import c, d or import a.b), and each item or its alias maps to the last segment of the path.
 
 step k1m1hq
@@ -109,9 +119,9 @@ order 2
 parent 0c73gq
 author ai
 file crates/index/src/parse.rs
-symbol of
-lines 0 12
-hash 65f0bd4d79f0b99d
+symbol impl Grammar
+lines 11 31
+hash 9ca86ecd0e109828
 note The extension-to-grammar table: with compile, the only place a bundled tree-sitter grammar is named. A file this does not know parses to nothing, so it is listed and greppable but has no symbols.
 
 step kuh7fw
@@ -130,9 +140,19 @@ parent adt563
 author ai
 file crates/index/src/parse.rs
 symbol bare
-lines 0 10
-hash 64a232d540d4c669
+lines 0 14
+hash a98094268b342e16
 note Normalises a qualifier or an impl target to a plain type name, so 'Foo<T>', '&mut Foo' and 'crate::a::Foo' all resolve against the same owner.
+
+step nys6ci
+order 16
+parent 3oloto
+author ai
+file crates/index/src/parse.rs
+symbol NodeWord
+lines 0 13
+hash dacda8a092765c7d
+note The words a node kind is checked for: import, comment, package, attribute, the four container kinds (impl, mod, trait, class) and the four call shapes (call, member, selector, scoped).
 
 step re19of
 order 15

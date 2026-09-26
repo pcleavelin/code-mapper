@@ -12,7 +12,7 @@ author ai
 file xtask/src/vocabulary.rs
 symbol parse
 lines 0 28
-hash 325ec2cf29082524
+hash 60ab1b837eda7ffe
 note One lowercase word per line, or synonym -> word; anything else is an error naming the line.
 
 step 9j9rbx
@@ -70,7 +70,7 @@ author ai
 file xtask/src/text.rs
 symbol forms
 lines 0 12
-hash f6fbddbb37f65d98
+hash 4d5079f3eb1dc2e7
 note A word and its singular guesses (-ies to -y, -es, -s), so plurals of listed words pass without their own lines.
 
 step vmyvqv
@@ -99,5 +99,5 @@ author ai
 file xtask/src/vocabulary.rs
 symbol synonym_lines
 lines 0 6
-hash 72c2791845ae891f
+hash 1848149839fff353
 note The synonym lines alone, which the gate compares with the parent revision.

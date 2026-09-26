@@ -40,8 +40,8 @@ order 0
 author ai
 file crates/codemap/src/main.rs
 symbol main
-lines 0 19
-hash c460ac8edc2aabaa
+lines 0 23
+hash 7dc0a35815c9d98d
 note The branch: help, --help or -h prints cli's help text, a root with more arguments runs one command in text mode through run, and a bare root (or no argument, meaning the current directory) opens the window. App::new therefore runs before any window exists, on the calling thread.
 
 step 786j69

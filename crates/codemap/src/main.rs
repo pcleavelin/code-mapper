@@ -9,6 +9,34 @@ use domain::{Author, Root};
 use index::Servers;
 use io_map::MapStore;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct WordName(&'static str);
+
+impl WordName {
+    const fn as_str(self) -> &'static str {
+        self.0
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum HelpWord {
+    Word,
+    Flag,
+    Letter,
+}
+
+impl HelpWord {
+    const ALL: [Self; 3] = [Self::Word, Self::Flag, Self::Letter];
+
+    const fn name(self) -> WordName {
+        WordName(match self {
+            Self::Word => "help",
+            Self::Flag => "--help",
+            Self::Letter => "-h",
+        })
+    }
+}
+
 enum Status {
     Done,
     SaveFailed,
@@ -96,7 +124,11 @@ fn main() -> ExitCode {
         .map(|argument| Argument::new(&argument))
         .collect();
     let first = arguments.first();
-    if first.is_some_and(|first| matches!(first.as_str(), "help" | "--help" | "-h")) {
+    if first.is_some_and(|first| {
+        HelpWord::ALL
+            .iter()
+            .any(|entry| entry.name().as_str() == first.as_str())
+    }) {
         output::text(Channel::Stdout, &cli::help());
         return ExitCode::SUCCESS;
     }

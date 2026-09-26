@@ -41,11 +41,40 @@ enum Task {
     Usage,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum TaskKind {
+    Gate,
+    Lint,
+    Api,
+    Words,
+    Hook,
+}
+
+impl TaskKind {
+    const ALL: [Self; 5] = [Self::Gate, Self::Lint, Self::Api, Self::Words, Self::Hook];
+
+    const fn name(self) -> Literal {
+        match self {
+            Self::Gate => Literal::new("gate"),
+            Self::Lint => Literal::new("lint"),
+            Self::Api => Literal::new("api"),
+            Self::Words => Literal::new("words"),
+            Self::Hook => Literal::new("hook"),
+        }
+    }
+
+    fn named(word: &Argument) -> Option<Self> {
+        Self::ALL
+            .into_iter()
+            .find(|task| task.name().as_str() == word.as_str())
+    }
+}
+
 impl Task {
     fn parse(words: &[Argument]) -> Self {
         let rest: Vec<&str> = words.iter().skip(1).map(Argument::as_str).collect();
-        match words.first().map(Argument::as_str) {
-            Some("gate") => Self::Gate(
+        match words.first().and_then(TaskKind::named) {
+            Some(TaskKind::Gate) => Self::Gate(
                 if rest.contains(&"--full") {
                     Depth::Full
                 } else {
@@ -57,14 +86,16 @@ impl Task {
                     Ownership::Agent
                 },
             ),
-            Some("lint") => Self::Lint(rest.iter().map(|path| RepoPath::new(path)).collect()),
-            Some("api") => Self::Api,
-            Some("words") => Self::Words,
-            Some("hook") => words
+            Some(TaskKind::Lint) => {
+                Self::Lint(rest.iter().map(|path| RepoPath::new(path)).collect())
+            }
+            Some(TaskKind::Api) => Self::Api,
+            Some(TaskKind::Words) => Self::Words,
+            Some(TaskKind::Hook) => words
                 .get(1)
                 .and_then(Event::parse)
                 .map_or(Self::Usage, Self::Hook),
-            _ => Self::Usage,
+            None => Self::Usage,
         }
     }
 }

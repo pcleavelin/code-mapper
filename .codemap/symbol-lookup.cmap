@@ -31,8 +31,8 @@ parent l7lnjn
 author ai
 file crates/domain/src/index.rs
 symbol from
-lines 0 19
-hash 0ecf9916b07ef52f
+lines 0 22
+hash c3a28e62ea0053b2
 note The qualifier splits off on the last :: first, then on the last single colon, with backslashes read as slashes. A qualifier of the form file:Owner pins both; any other qualifier is tried as an owner and as a file, which is what makes every symbol addressable when a free function and a method share a name in one file.
 
 step l7lnjn

@@ -3,12 +3,42 @@ use std::path::PathBuf;
 
 use crate::files::write;
 use crate::source::workspace_files;
-use crate::text::{Count, Hasher, Message, Root, Stamp};
+use crate::text::{Count, Hasher, Literal, Message, Root, Stamp};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Light {
     Green,
     Red,
+}
+
+impl Light {
+    const ALL: [Self; 2] = [Self::Green, Self::Red];
+
+    const fn name(self) -> Literal {
+        match self {
+            Self::Green => Literal::new("green"),
+            Self::Red => Literal::new("red"),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Key {
+    Stamp,
+    Result,
+    Repeats,
+}
+
+impl Key {
+    const ALL: [Self; 3] = [Self::Stamp, Self::Result, Self::Repeats];
+
+    const fn name(self) -> Literal {
+        match self {
+            Self::Stamp => Literal::new("stamp"),
+            Self::Result => Literal::new("result"),
+            Self::Repeats => Literal::new("repeats"),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -43,14 +73,26 @@ impl GateState {
         let mut light = None;
         let mut repeats = Count::ZERO;
         for line in text.lines() {
-            match line.split_once(' ') {
-                Some(("stamp", value)) => stamp = Stamp::parse(value),
-                Some(("result", "green")) => light = Some(Light::Green),
-                Some(("result", "red")) => light = Some(Light::Red),
-                Some(("repeats", value)) => {
+            let Some((key_word, value)) = line.split_once(' ') else {
+                continue;
+            };
+            match Key::ALL
+                .into_iter()
+                .find(|key| key.name().as_str() == key_word)
+            {
+                Some(Key::Stamp) => stamp = Stamp::parse(value),
+                Some(Key::Result) => {
+                    if let Some(known) = Light::ALL
+                        .into_iter()
+                        .find(|candidate| candidate.name().as_str() == value)
+                    {
+                        light = Some(known);
+                    }
+                }
+                Some(Key::Repeats) => {
                     repeats = Count::new(value.trim().parse().unwrap_or_default());
                 }
-                _ => {}
+                None => {}
             }
         }
         let failures =
@@ -65,15 +107,16 @@ impl GateState {
 
     pub(crate) fn save(&self, root: &Root) -> Result<(), Message> {
         let folder = directory(root);
-        let light = match self.light {
-            Light::Green => "green",
-            Light::Red => "red",
-        };
         write(
             &folder.join("state"),
             &Message::new(format!(
-                "stamp {}\nresult {light}\nrepeats {}\n",
-                self.stamp, self.repeats
+                "{} {}\n{} {}\n{} {}\n",
+                Key::Stamp.name(),
+                self.stamp,
+                Key::Result.name(),
+                self.light.name(),
+                Key::Repeats.name(),
+                self.repeats,
             )),
         )?;
         write(&folder.join("failures"), &self.failures)

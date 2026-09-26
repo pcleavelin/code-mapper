@@ -9,6 +9,7 @@ pub(crate) struct WireInput {
     pub(crate) file_path: Option<String>,
     pub(crate) command: Option<String>,
     pub(crate) stop_hook_active: bool,
+    pub(crate) background_tasks: usize,
 }
 
 pub(crate) fn read(text: &str) -> Result<WireInput, Message> {
@@ -31,6 +32,10 @@ pub(crate) fn read(text: &str) -> Result<WireInput, Message> {
             .get("stop_hook_active")
             .and_then(Value::as_bool)
             .unwrap_or_default(),
+        background_tasks: value
+            .get("background_tasks")
+            .and_then(Value::as_array)
+            .map_or(0, Vec::len),
     })
 }
 

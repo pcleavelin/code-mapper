@@ -11,8 +11,8 @@ parent wna3ij
 author ai
 file xtask/src/state.rs
 symbol save
-lines 0 14
-hash 7f0ff94f6a598b6a
+lines 0 15
+hash 5bf2b8e03585ce81
 note Writes both files.
 
 step kgsluh
@@ -61,8 +61,8 @@ parent wna3ij
 author ai
 file xtask/src/state.rs
 symbol load
-lines 0 24
-hash 0dfd97dce8215312
+lines 0 36
+hash b99a935300e4d447
 note Reads the state file (stamp, result and repeats lines) and the failures file; a state without a stamp or result is no state.
 
 step wdua6h

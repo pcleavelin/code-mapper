@@ -4,6 +4,23 @@ use std::path::PathBuf;
 use domain::{Line, Program, RelativePath, SymbolName};
 use serde_json::Value;
 
+use crate::wire::WireName;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Mark {
+    CodeBlock,
+    Gap,
+}
+
+impl Mark {
+    fn name(self) -> WireName {
+        WireName::new(match self {
+            Self::CodeBlock => "```",
+            Self::Gap => "\n\n",
+        })
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Character(u32);
 
@@ -79,11 +96,14 @@ impl HoverText {
     pub(crate) fn from_parts(parts: &[String]) -> Option<Self> {
         let mut text = String::new();
         for part in parts {
-            for line in part
-                .lines()
-                .filter(|line| !line.trim_start().starts_with("```"))
-            {
-                if line.trim().is_empty() && (text.is_empty() || text.ends_with("\n\n")) {
+            for line in part.lines().filter(|line| {
+                !line
+                    .trim_start()
+                    .starts_with(Mark::CodeBlock.name().as_str())
+            }) {
+                if line.trim().is_empty()
+                    && (text.is_empty() || text.ends_with(Mark::Gap.name().as_str()))
+                {
                     continue;
                 }
                 text.push_str(line);

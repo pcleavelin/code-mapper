@@ -140,7 +140,7 @@ fn text_tip(frame: &mut Frame<'_>, at: Point, text: &Label, room: Count) -> Opti
             frame.start(Container::Tooltip { at: spot });
             for line in lines.iter().take(TEXT_LINES.get()) {
                 let line: String = line.chars().take(most).collect();
-                let rule = line.starts_with("---");
+                let rule = line.starts_with(Marker::Rule.name().as_str());
                 let run = if rule {
                     Run::new(
                         "\u{2500}".repeat(usize::try_from(TOOLTIP_RULE.get()).unwrap_or(0)),
@@ -164,5 +164,27 @@ fn text_tip(frame: &mut Frame<'_>, at: Point, text: &Label, room: Count) -> Opti
             frame.finish();
             lines.first().map(|line| Label::new(*line))
         }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct Literal(&'static str);
+
+impl Literal {
+    const fn as_str(self) -> &'static str {
+        self.0
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Marker {
+    Rule,
+}
+
+impl Marker {
+    const fn name(self) -> Literal {
+        Literal(match self {
+            Self::Rule => "---",
+        })
     }
 }

@@ -42,7 +42,7 @@ author ai
 file xtask/src/lint/checks.rs
 symbol primitives
 lines 0 60
-hash 79b97e76965e71a0
+hash 74f1c5b559fefb4a
 note L2: no primitive, String, &str or tuple in a function's parameters or return, a field, a const or static, or a tuple variant's payload, including inside generics. Exempt: wire modules (they mirror an external format), test code, a function returning plain bool, a newtype's own field, and functions inside a trait impl or inside the newtype's own impl block, which are where a value is wrapped and unwrapped.
 
 step 23201w
@@ -61,8 +61,8 @@ parent dbzwz0
 author ai
 file xtask/src/lint/checks.rs
 symbol gui_literals
-lines 0 26
-hash 575c114ccb2a386e
+lines 0 31
+hash 7373d05f81418584
 note L12 (theme) and L13 (element id): outside theme.rs or ids.rs, a Px::new, Color::rgba, FontSize::new or Id::new called with a literal argument. A computed argument passes; only a literal is a new constant.
 
 step 2dbizk
@@ -91,8 +91,8 @@ parent dbzwz0
 author ai
 file xtask/src/lint/checks.rs
 symbol domain_io
-lines 0 24
-hash e81a7d94cc5e37fc
+lines 0 28
+hash 5d7f35f554de2479
 note L9: the domain crate does no I/O: no std::fs, process, thread, net or io, and no print macros. I/O belongs to an io crate.
 
 step 3qrtf3
@@ -101,8 +101,8 @@ parent dbzwz0
 author ai
 file xtask/src/lint/checks.rs
 symbol absence
-lines 0 26
-hash 53431b6ead4079c7
+lines 0 30
+hash 3eb9e27a601fc0a2
 note L6: absence is Option: no comparison with an empty string or -1, and no integer MAX or MIN standing for none.
 
 step 3vr5mp
@@ -112,7 +112,7 @@ author ai
 file xtask/src/lint/checks.rs
 symbol returned_by_closure_bound
 lines 0 8
-hash a498dac9742faf05
+hash a5a496fc4a85f8fb
 note A bool returned by a closure bound (impl Fn(..) -> bool) is a predicate, not a value, and passes.
 
 step 5gd1gj
@@ -122,7 +122,7 @@ author ai
 file xtask/src/lint/checks.rs
 symbol chosen_names
 lines 0 12
-hash 49c0aa58c1dae03e
+hash b0d077a3b3134bb4
 note Drops names a trait dictates (a trait impl's functions, parameters, associated types and consts), since this code did not choose them.
 
 step 6imfg6
@@ -141,8 +141,8 @@ parent svdoyl
 author ai
 file xtask/src/lint.rs
 symbol Rule
-lines 0 16
-hash 5b64dcc2b771d94a
+lines 0 17
+hash ea6bb4f952570b19
 note The rules. A code is a stable id printed with every finding; Widget and Theme share L12. The feature coverage rule is a test (crates/codemap/tests/features.rs), not an archlint rule.
 
 step 7zl7if
@@ -152,8 +152,18 @@ author ai
 file xtask/src/lint/checks.rs
 symbol exempt_function
 lines 0 12
-hash 2d54d8032a9b577c
+hash 472b799851a88058
 note A function inside a trait impl (the trait dictates the signature) or inside an impl of a known newtype is exempt.
+
+step 8esieh
+order 63
+parent fe3mhk
+author ai
+file xtask/src/lint/checks.rs
+symbol compared_place
+lines 0 40
+hash 77fd4e0cffca7368
+note Where one literal falls foul, checked in order: a pattern position (including matches! by field name); an operand of a binary == or !=, unless it is the empty string; the first argument of a call whose method is one of PatternMethod's. Anything else falls through to in_matches_pattern.
 
 step 9xfykw
 order 17
@@ -161,8 +171,8 @@ parent dbzwz0
 author ai
 file xtask/src/lint/checks.rs
 symbol comments
-lines 0 7
-hash 417cfffe55a07f78
+lines 0 10
+hash a6bed0b4989ee9fe
 note L1: any line or block comment, doc comments included. What a comment would say goes in a type, a name, a test or a step note in the map, where it cannot drift silently.
 
 step brt4wc
@@ -201,8 +211,8 @@ parent dbzwz0
 author ai
 file xtask/src/lint/checks.rs
 symbol test_registry
-lines 0 9
-hash 7b62b584e5545f40
+lines 0 11
+hash 6392029e0dbbbc29
 note L11: a scenario file (the CLI and GUI golden tests) must not hand-register a #[test]; its table's macro generates them, so a scenario is added in one place.
 
 step dbzwz0
@@ -211,8 +221,8 @@ parent w2dj01
 author ai
 file xtask/src/lint/checks.rs
 symbol check
-lines 0 28
-hash 7f5473e235fd1c82
+lines 0 29
+hash 3aa9ab31b0b1fe32
 note Dispatches one rule to its check function. The GUI rules share three generic checks parameterised by their home module and the calls or paths they own.
 
 step dtblhv
@@ -232,7 +242,7 @@ author ai
 file xtask/src/lint/checks.rs
 symbol indexing
 lines 0 6
-hash db9f94a3244ff62a
+hash fe1ff5c557e2099d
 note L4: no indexing or slicing outside test code; a collection is read through get, iter or a typed id.
 
 step exfmz3
@@ -244,6 +254,16 @@ symbol Finding
 lines 0 5
 hash 4961614118555ebd
 note One finding: file, line, rule, and the offending text.
+
+step fe3mhk
+order 62
+parent dbzwz0
+author ai
+file xtask/src/lint/checks.rs
+symbol compared
+lines 0 13
+hash 033fee8928337bd7
+note L17: a string literal is never matched or compared: not as a pattern (a match arm or a matches! pattern), not as either operand of == or != except "" (L6 owns that one), and not as the pattern argument of a str search method named in PatternMethod. A literal used as a value - a name() match arm, a format string, a message, or a constructor argument - passes.
 
 step h10rsq
 order 50
@@ -271,8 +291,8 @@ parent m540eb
 author ai
 file xtask/src/lint/checks.rs
 symbol gui_module
-lines 0 10
-hash 92e9049b56c6cba7
+lines 0 13
+hash 24eb7683e3c2bee8
 note Where a file sits relative to a GUI rule's home module: the home itself, elsewhere in crates/gui/src, or outside the GUI (untouched).
 
 step h473rw
@@ -292,7 +312,7 @@ author ai
 file xtask/src/lint/checks.rs
 symbol newtype_field
 lines 0 11
-hash c0b6269dfe954ab9
+hash 0f2f70ad140baf45
 note A one-field tuple struct's field: what makes a struct a newtype.
 
 step ico231
@@ -332,7 +352,7 @@ author ai
 file xtask/src/lint/checks.rs
 symbol package_of
 lines 0 7
-hash 519664a459d6da9b
+hash f88a1ce144a5ce94
 note The crate a file is in, from its path under crates/.
 
 step lymc41
@@ -341,8 +361,8 @@ parent lz4s6g
 author ai
 file xtask/src/source.rs
 symbol impl Zone
-lines 0 8
-hash 9d3a1618a2f587a0
+lines 0 11
+hash 354c773285e34018
 link xtask-source
 note A file is test code under tests/, any /tests/ directory or a tests.rs module; everything else is strict.
 
@@ -357,6 +377,16 @@ hash 5d5d558899eea684
 link rulebook
 note The zone gate: in strict code every rule except test registration; in test code only suppressions, test registration and comments, because test code may use literals, indexing and plain types that production code may not.
 
+step m3akl9
+order 64
+parent 8esieh
+author ai
+file xtask/src/lint/checks.rs
+symbol in_matches_pattern
+lines 0 16
+hash 7cbdac60146eb642
+note Whether the literal sits after the comma in a matches! invocation, which is where that macro's pattern half begins.
+
 step m540eb
 order 37
 parent dbzwz0
@@ -364,7 +394,7 @@ author ai
 file xtask/src/lint/checks.rs
 symbol gui_calls
 lines 0 18
-hash 391c48156760f2c4
+hash 9e2064b3c4d21b4b
 note L12 (widget): outside crates/gui/src/widgets.rs, no .open( or .leaf( call: GUI elements are built by the widget helpers.
 
 step mfjas0
@@ -423,8 +453,8 @@ parent 734zq6
 author ai
 file xtask/src/lint.rs
 symbol one_way
-lines 0 44
-hash e5c6e5bada2cf932
+lines 0 47
+hash da2f990baf87d78f
 note The one way, as one sentence per rule: what to write instead, and where the sanctioned exception lives when there is one (convert.rs, arch.rs EXPECTS, widgets.rs, theme.rs, ids.rs, keys.rs, vocabulary.txt). This text is the rule's whole documentation.
 
 step orc9vn
@@ -434,7 +464,7 @@ author ai
 file xtask/src/lint/checks.rs
 symbol collect_types
 lines 0 32
-hash 6ca29a3a9993b765
+hash b42aa41ec9458cac
 note Collects newtypes from struct items and wire types from structs and enums declared in a wire.rs or a wire/ module, keyed by the crate they are in.
 
 step ozrjrt
@@ -472,8 +502,8 @@ parent 734zq6
 author ai
 file xtask/src/lint.rs
 symbol ALL
-lines 0 16
-hash bd091ffda94e9908
+lines 0 17
+hash 816cda6706930346
 note Every rule, in the order lint runs them.
 
 step qjtytc
@@ -482,8 +512,8 @@ parent dbzwz0
 author ai
 file xtask/src/lint/checks.rs
 symbol suppressions
-lines 0 31
-hash ff0daa2a28b345c9
+lines 0 32
+hash 588d454cc975ce4a
 note L10: allow is never used; expect needs a reason, and each lint it names must be listed for that file in arch.rs EXPECTS. Every suppression in the repo is therefore visible in one rulebook list the owner curates.
 
 step rngfnx
@@ -503,7 +533,7 @@ author ai
 file xtask/src/lint/checks.rs
 symbol gui_paths
 lines 0 13
-hash 3a0fdb671ae537ad
+hash 67c8bc3cbf7c9f5b
 note L15: outside keys.rs, no Key:: or Mods:: path: keys are bound in one place from the feature registry's chords.
 
 step svdoyl
@@ -531,9 +561,19 @@ parent dbzwz0
 author ai
 file xtask/src/lint/checks.rs
 symbol wire_leaks
-lines 0 25
-hash 8d9131cb5fdea37e
+lines 0 30
+hash 9e29602094a00734
 note L8: a pub item outside a wire module must not name its crate's wire types, so an external format never leaks past its crate's convert.
+
+step veu2dy
+order 65
+parent 8esieh
+author ai
+file xtask/src/lint/checks.rs
+symbol PatternMethod
+lines 0 23
+hash 5302be0b5331b53c
+note The str search methods whose pattern argument counts: starts_with, ends_with, strip_prefix, strip_suffix, contains, find, rfind, the split and splitn families both ways, matches, match_indices, the trim_matches family, replace, replacen and eq_ignore_ascii_case.
 
 step vhykv2
 order 36
@@ -542,7 +582,7 @@ author ai
 file xtask/src/lint/checks.rs
 symbol aliases
 lines 0 9
-hash c343504f016674fc
+hash 0ff0e76f79245b3f
 note L16: no type aliases outside impl or trait blocks; a new name for a type is a newtype.
 
 step vjvvmm
@@ -552,7 +592,7 @@ author ai
 file xtask/src/lint/checks.rs
 symbol offenders
 lines 0 10
-hash 56c6832ba2c59115
+hash b6c520a7ff05be0d
 note The offending nodes inside one type annotation: primitive types, tuple types and String.
 
 step w2dj01
@@ -581,8 +621,8 @@ parent orc9vn
 author ai
 file xtask/src/lint/checks.rs
 symbol is_wire
-lines 0 2
-hash 1edaa7cf59c6a55a
+lines 0 3
+hash fc53cfe443ca8a27
 note A wire module is wire.rs or anything under wire/: the one place a type mirrors an external format.
 
 step yezqq1
@@ -592,7 +632,7 @@ author ai
 file xtask/src/lint/checks.rs
 symbol newtype_fields
 lines 0 15
-hash e2ede1a0bd33a4f0
+hash ebc4e7ba61431668
 note L3: a newtype's field is private, so it is built only through its constructor and read only through its methods.
 
 step ytihk4
@@ -611,8 +651,8 @@ parent 5gd1gj
 author ai
 file xtask/src/lint/checks.rs
 symbol defined_names
-lines 0 31
-hash ab156a74e99cfc47
+lines 0 37
+hash 38036b94485a1adb
 note The name nodes an item, variant, field, parameter pattern or let pattern defines.
 
 step zbci01
@@ -621,6 +661,6 @@ parent 734zq6
 author ai
 file xtask/src/lint.rs
 symbol code
-lines 0 17
-hash 54a5f0031a3fc0d6
+lines 0 18
+hash 80218c2ae1726d88
 note The rule's code, printed in every finding.

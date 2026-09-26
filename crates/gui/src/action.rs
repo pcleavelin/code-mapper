@@ -460,7 +460,7 @@ impl App {
     fn run_command(&mut self, line: &FieldText) {
         let line = line.as_str();
         let model = &mut self.model;
-        if line.trim() == "clear" {
+        if line.trim() == OutputCommand::Clear.name().as_str() {
             model.output.clear();
             return;
         }
@@ -498,5 +498,27 @@ impl App {
                 model.output.failed(&text);
             }
         }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct Literal(&'static str);
+
+impl Literal {
+    const fn as_str(self) -> &'static str {
+        self.0
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum OutputCommand {
+    Clear,
+}
+
+impl OutputCommand {
+    const fn name(self) -> Literal {
+        Literal(match self {
+            Self::Clear => "clear",
+        })
     }
 }

@@ -11,8 +11,8 @@ parent jcl12n
 author ai
 file crates/platform/src/script.rs
 symbol run_line
-lines 0 71
-hash 4754191344bd6175
+lines 0 73
+hash 7a0af21d8c4fcd81
 note One line. Input commands write the Input directly - mouse moves the pointer, down presses and holds the left button (twice makes it a double click, carried on the press since that is the frame the app sees it on) with the modifiers named after it, up releases it, wheel adds to the wheel, pinch n adds a pinch of n percent, key pushes a Press, text appends typed text - and all but mouse yield, so each is a frame of its own. wait and pause yield for their duration. click, dblclick and drag queue their expansion; the -id forms aim first. quit ends the run. Anything else goes to the app.
 
 step 09hitd
@@ -44,14 +44,24 @@ lines 0 4
 hash e0f90ba51482d55a
 note The lines still to run, as a queue, the frames left to wait and the wall-clock time a pause runs until. Expanding a gesture pushes its lines onto the front, so they run next.
 
+step asgf8r
+order 19
+parent i1u3a4
+author ai
+file crates/platform/src/script.rs
+symbol impl ScriptCommand
+lines 0 47
+hash bb73ae01e172a355
+note named finds the command whose name is the line's first word, so run_line's match and the fallback to hand_to_app both go through one lookup instead of comparing the word against each command in turn.
+
 step dk4cd8
 order 8
 parent 09hitd
 author ai
 file crates/platform/src/script.rs
 symbol aimed
-lines 0 12
-hash 9cfaa97162643cf3
+lines 0 16
+hash 6163d7c591e89bf3
 note The plain form of an aimed line at a point: hover-id becomes a mouse move, the others drop the -id suffix, and the modifiers after the name carry over.
 
 step eeloah
@@ -73,6 +83,16 @@ symbol mods_from
 lines 0 7
 hash 172dbe19f2e686de
 note The modifiers named anywhere after a given word.
+
+step i1u3a4
+order 18
+parent 006u4m
+author ai
+file crates/platform/src/script.rs
+symbol ScriptCommand
+lines 0 17
+hash 58be1d6f2ba187f4
+note Every line word run_line and hand_to_app dispatch on: the input and timing commands, the click/drag/aim forms, and quit.
 
 step jcl12n
 order 0
@@ -150,7 +170,7 @@ author ai
 file crates/platform/src/script.rs
 symbol click
 lines 0 16
-hash cb858f9e3446a817
+hash ec42f470a4c9092d
 note click and dblclick as lines: move, press (twice for a double), wait a frame, release, wait a frame.
 
 step t81c5p
@@ -169,8 +189,8 @@ parent 006u4m
 author ai
 file crates/platform/src/script.rs
 symbol key
-lines 0 11
-hash 48f09bfc410cb9cf
+lines 0 17
+hash 339ecca1c82daf50
 note A key name to ui's Key: the few named keys a scenario uses, otherwise the first character.
 
 step wxv2lb
@@ -180,5 +200,5 @@ author ai
 file crates/platform/src/script.rs
 symbol hand_to_app
 lines 0 12
-hash db3f0afe483f8090
+hash 50d9638fc3eabc6a
 note An app command. A dump line first prints and resets the frame-time tally, so the app's dump that follows is measured from here. Retry puts the line back and yields, which is how idle waits for the language servers. A shot line yields so the screenshot is of the frame that follows, before the next command runs.
