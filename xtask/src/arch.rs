@@ -133,7 +133,9 @@ pub(crate) const RULEBOOK: [Guard; 10] = [
 
 const LEGACY_RULES: [Rule; 1] = [Rule::Suppression];
 
-const TEST_RULES: [Rule; 1] = [Rule::Suppression];
+const TEST_RULES: [Rule; 2] = [Rule::Suppression, Rule::TestRegistry];
+
+const SCENARIO_FILES: [Literal; 2] = [Literal::new("tests/cli.rs"), Literal::new("tests/gui.rs")];
 
 pub(crate) fn applies(rule: Rule, file: &SourceFile) -> bool {
     match file.zone {
@@ -141,6 +143,12 @@ pub(crate) fn applies(rule: Rule, file: &SourceFile) -> bool {
         Zone::Legacy => LEGACY_RULES.contains(&rule),
         Zone::Test => TEST_RULES.contains(&rule),
     }
+}
+
+pub(crate) fn scenario_file(path: &RepoPath) -> bool {
+    SCENARIO_FILES
+        .iter()
+        .any(|file| path.as_str() == file.as_str())
 }
 
 pub(crate) fn expected(path: &RepoPath, lint: &LintName) -> bool {

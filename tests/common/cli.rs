@@ -1,28 +1,21 @@
 //! CLI scenarios: each runs commands against a fresh fixture and returns the transcript.
 
-use super::{Transcript, fixture, git_commit, has_git, has_jj, jj, jj_commit};
+use super::{Missing, Transcript, edit_file, fixture, git_commit, jj, jj_commit, needs};
 use std::path::Path;
 
-pub const SCENARIOS: &[(&str, fn(&Path) -> String)] = &[
-    ("cli-read", read),
-    ("cli-edit", edit),
-    ("cli-stale", stale),
-    ("cli-vcs", vcs),
-    ("cli-git", git_vcs),
-    ("cli-merge", merge),
-];
-
-fn edit_file(root: &Path, path: &str, from: &str, to: &str) {
-    let p = root.join(path);
-    let text = std::fs::read_to_string(&p).unwrap();
-    assert!(text.contains(from), "{path} has no {from:?}");
-    std::fs::write(&p, text.replacen(from, to, 1)).unwrap();
+/// Every CLI scenario, handed to `$m` as `cli: <fn>, ...`. Each is a `fn(bin, name)` below,
+/// and its golden is `cli-<fn>`.
+#[macro_export]
+macro_rules! cli_scenarios {
+    ($m:ident) => {
+        $m! { cli: read, edit, stale, vcs, git, merge }
+    };
 }
 
-fn read(bin: &Path) -> String {
+pub fn read(bin: &Path, name: &str) -> Result<String, Missing> {
     let mut t = Transcript {
         bin,
-        root: fixture("cli-read", bin, true),
+        root: fixture(name, bin, true),
         out: String::new(),
     };
     for args in [
@@ -72,13 +65,13 @@ fn read(bin: &Path) -> String {
     ] {
         t.run(args);
     }
-    t.out
+    Ok(t.out)
 }
 
-fn edit(bin: &Path) -> String {
+pub fn edit(bin: &Path, name: &str) -> Result<String, Missing> {
     let mut t = Transcript {
         bin,
-        root: fixture("cli-edit", bin, true),
+        root: fixture(name, bin, true),
         out: String::new(),
     };
     for args in [
@@ -160,11 +153,11 @@ fn edit(bin: &Path) -> String {
     ] {
         t.run(args);
     }
-    t.out
+    Ok(t.out)
 }
 
-fn stale(bin: &Path) -> String {
-    let root = fixture("cli-stale", bin, true);
+pub fn stale(bin: &Path, name: &str) -> Result<String, Missing> {
+    let root = fixture(name, bin, true);
     let mut t = Transcript {
         bin,
         root: root.clone(),
@@ -225,14 +218,12 @@ fn stale(bin: &Path) -> String {
     t.run(&["stale"]);
     t.run(&["check"]);
     t.run(&["path", "startup"]);
-    t.out
+    Ok(t.out)
 }
 
-fn vcs(bin: &Path) -> String {
-    if !has_jj() {
-        return "jj not on PATH\n".into();
-    }
-    let root = fixture("cli-vcs", bin, true);
+pub fn vcs(bin: &Path, name: &str) -> Result<String, Missing> {
+    needs("jj")?;
+    let root = fixture(name, bin, true);
     let mut t = Transcript {
         bin,
         root: root.clone(),
@@ -332,14 +323,12 @@ def main():",
         &root,
         &["log", "-r", "@", "--no-graph", "-T", "description"],
     );
-    t.out
+    Ok(t.out)
 }
 
-fn git_vcs(bin: &Path) -> String {
-    if !has_git() {
-        return "git not on PATH\n".into();
-    }
-    let root = fixture("cli-git", bin, true);
+pub fn git(bin: &Path, name: &str) -> Result<String, Missing> {
+    needs("git")?;
+    let root = fixture(name, bin, true);
     let mut t = Transcript {
         bin,
         root: root.clone(),
@@ -371,7 +360,7 @@ fn git_vcs(bin: &Path) -> String {
     t.run(&["stale"]);
     t.run(&["repin"]);
     t.run(&["check"]);
-    t.out
+    Ok(t.out)
 }
 
 /// The last change jj committed, by change id.
@@ -379,11 +368,9 @@ fn committed(root: &Path) -> String {
     jj(root, &["log", "-r", "@-", "--no-graph", "-T", "change_id"])
 }
 
-fn merge(bin: &Path) -> String {
-    if !has_jj() {
-        return "jj not on PATH\n".into();
-    }
-    let root = fixture("cli-merge", bin, true);
+pub fn merge(bin: &Path, name: &str) -> Result<String, Missing> {
+    needs("jj")?;
+    let root = fixture(name, bin, true);
     let mut t = Transcript {
         bin,
         root: root.clone(),
@@ -425,5 +412,5 @@ fn merge(bin: &Path) -> String {
     jj(&root, &["new", &one, &four]);
     t.run(&["check"]);
     t.run(&["path-note", "startup", "Written over a conflict."]);
-    t.out
+    Ok(t.out)
 }

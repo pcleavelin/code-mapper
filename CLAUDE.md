@@ -100,7 +100,7 @@ Never claim a visual or interactive behaviour from reading the code; drive it an
 - `CODEMAP_SHOT=<file.png> [CODEMAP_SHOT_TAB=path|graph|listing|diff] [CODEMAP_SHOT_SCROLL=n]
   target\release\codemap.exe <root>` writes the first settled frame and quits.
 - `CODEMAP_SCRIPT=<file> target\release\codemap.exe <root>` plays a script, one command per
-  line, as real input: `wait n`, `mouse x y`, `down`, `up`, `click x y [ctrl|alt|shift]`,
+  line, as real input: `wait n` (frames), `pause ms` (wall time), `mouse x y`, `down`, `up`, `click x y [ctrl|alt|shift]`,
   `dblclick x y`, `drag x0 y0 x1 y1`, `wheel dy [ctrl|shift]`, `key <name> [ctrl] [alt]`,
   `text ...`, `quit`; app commands `tab <name>`, `open <file> [line]`, `scroll <panel> <n>`,
   `idle` (waits until every server request is answered, merged and re-indexed), `rect <id>` (an element's
@@ -109,6 +109,8 @@ Never claim a visual or interactive behaviour from reading the code; drive it an
   name passed to `ui::id`, `name/<n>` for `id_n`, `name@<suffix>` for `id_with` (tabs:
   `tab@Graph`, `left@Symbols`; document steps: `step/<n>`, `fold/<n>`, `hide/<n>`,
   `whole/<n>`, `del/<n>`, `ctx-a/<n>`, `ctx-b/<n>`; paths list: `paths/<n>`, `outline/<n>`;
+  text fields: `field@search`, `field@new-path`, `field@symbols`, `field@goto-line`; symbol rows:
+  `sym@<file index>:<symbol index>`;
   xrefs rows: `xto/<i>`, `xfrom/<i>`, `xref/<i>`; docked panels `panel@<p>`, their headers
   `grip@<p>` and splitters `split@<p>` for `nav`, `xrefs`, `output`). Rects come from the previous frame, so
   `wait 1` after anything that changes the layout. `dump` prints the selection, scroll
@@ -119,6 +121,7 @@ Never claim a visual or interactive behaviour from reading the code; drive it an
   frames built since the previous `dump`, so a script measures hitches, and
   `DUMP backend progress=... indexing=... unmerged=<n> reindexing=<bool> linking=<bool>` for how
   far the language servers have got and what is still running on a thread.
-  Coordinates are window pixels; the window opens maximised. Write script files
+  Coordinates are window pixels. A script or screenshot run opens a fixed 1600x1000 window at
+  scale 1 and ignores the real mouse and keyboard, so runs and goldens match on every machine. Write script files
   with the Write tool and forward-slash paths: a heredoc mangles backslashes.
 - Crop or scale a PNG with PowerShell's System.Drawing and Read it.

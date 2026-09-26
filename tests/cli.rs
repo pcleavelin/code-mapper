@@ -3,40 +3,14 @@
 
 mod common;
 
-fn scenario(name: &str) {
-    let (_, run) = common::cli::SCENARIOS
-        .iter()
-        .find(|(n, _)| *n == name)
-        .unwrap();
-    common::golden(name, &run(&common::bin()));
+macro_rules! tests {
+    ($kind:ident: $($s:ident),* $(,)?) => {$(
+        #[test]
+        fn $s() {
+            let name = concat!(stringify!($kind), "-", stringify!($s));
+            common::golden(name, common::cli::$s(&common::bin(), name));
+        }
+    )*};
 }
 
-#[test]
-fn read() {
-    scenario("cli-read");
-}
-
-#[test]
-fn edit() {
-    scenario("cli-edit");
-}
-
-#[test]
-fn stale() {
-    scenario("cli-stale");
-}
-
-#[test]
-fn vcs() {
-    scenario("cli-vcs");
-}
-
-#[test]
-fn git() {
-    scenario("cli-git");
-}
-
-#[test]
-fn merge() {
-    scenario("cli-merge");
-}
+cli_scenarios!(tests);

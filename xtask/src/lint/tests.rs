@@ -223,6 +223,21 @@ fn suppressions_are_expectations_with_reasons_on_the_list() {
 }
 
 #[test]
+fn scenario_tests_come_from_their_table() {
+    let by_hand = [("tests/cli.rs", "#[test]\nfn read() {}")];
+    assert_eq!(rules_hit(&by_hand), [Rule::TestRegistry]);
+    let generated = [(
+        "tests/cli.rs",
+        "macro_rules! tests { ($($name:ident),*) => { $( #[test] fn $name() {} )* } }",
+    )];
+    assert_eq!(rules_hit(&generated), []);
+    assert_eq!(
+        rules_hit(&[("tests/parity.rs", "#[test]\nfn old() {}")]),
+        []
+    );
+}
+
+#[test]
 fn aliases_are_newtypes() {
     assert_eq!(strict("type Line = u32;"), [Rule::Alias]);
     assert_eq!(strict("type Span = Line;"), [Rule::Alias]);

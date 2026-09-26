@@ -8,10 +8,12 @@
 //!
 //! With CODEMAP_PARITY_REV the repo itself at that revision (its real map included) is played
 //! as a second fixture; CODEMAP_PARITY_ONLY=<substring> plays only the scenarios whose name has
-//! it. Differences are written under the scratch directory `parity/`.
+//! it. Differences are written under the scratch directory `parity/`, printed on failure.
 
 mod common;
 
+use common::Missing;
+use common::gui::Scenario;
 use std::path::{Path, PathBuf};
 
 fn base() -> PathBuf {
@@ -32,14 +34,9 @@ fn same(what: &str, old: &str, new: &str, fails: &mut Vec<String>) {
         let d = out_dir(what);
         std::fs::write(d.join("old.txt"), old).unwrap();
         std::fs::write(d.join("new.txt"), new).unwrap();
-        let line = old
-            .lines()
-            .zip(new.lines())
-            .position(|(a, b)| a != b)
-            .unwrap_or(old.lines().count().min(new.lines().count()));
         fails.push(format!(
             "{what}: differs at line {} (see {})",
-            line + 1,
+            common::first_difference(old, new) + 1,
             d.display()
         ));
     }
@@ -64,40 +61,51 @@ fn pngs(dir: &Path) -> Vec<(String, Vec<u8>)> {
 
 fn play_gui(
     bin: &Path,
-    s: &common::gui::Scenario,
+    name: &str,
+    s: &Scenario,
     keep: &Path,
-) -> (String, Vec<(String, Vec<u8>)>) {
-    let (err, after) = common::gui::play(bin, s);
-    let shots = pngs(&common::gui::shots(s.name));
+) -> Result<(String, Vec<(String, Vec<u8>)>), Missing> {
+    let (err, after) = common::gui::play(bin, name, s)?;
+    let shots = pngs(&common::gui::shots(name));
     let _ = std::fs::remove_dir_all(keep);
     std::fs::create_dir_all(keep).unwrap();
     for (n, b) in &shots {
         std::fs::write(keep.join(n), b).unwrap();
     }
-    (common::gui_parity(&err) + &after, shots)
+    Ok((common::gui_parity(&err) + &after, shots))
 }
 
-fn compare_gui(s: &common::gui::Scenario, old: &Path, new: &Path, fails: &mut Vec<String>) {
-    let (o, oshots) = play_gui(old, s, &out_dir(s.name).join("old"));
-    let (n, nshots) = play_gui(new, s, &out_dir(s.name).join("new"));
-    same(s.name, &o, &n, fails);
+fn compare_gui(name: &str, s: &Scenario, old: &Path, new: &Path, fails: &mut Vec<String>) {
+    let played = play_gui(old, name, s, &out_dir(name).join("old"))
+        .and_then(|o| Ok((o, play_gui(new, name, s, &out_dir(name).join("new"))?)));
+    let ((o, oshots), (n, nshots)) = match played {
+        Ok(p) => p,
+        Err(m) => return common::skip(name, &m),
+    };
+    same(name, &o, &n, fails);
     if oshots.len() != nshots.len() || oshots.is_empty() && s.script.contains("shot ") {
         fails.push(format!(
-            "{}: {} screenshots old, {} new",
-            s.name,
+            "{name}: {} screenshots old, {} new",
             oshots.len(),
             nshots.len()
         ));
     }
-    for ((name, a), (_, b)) in oshots.iter().zip(&nshots) {
+    for ((shot, a), (_, b)) in oshots.iter().zip(&nshots) {
         if a != b {
             fails.push(format!(
-                "{}: {name} differs (both kept under {})",
-                s.name,
-                out_dir(s.name).display()
+                "{name}: {shot} differs (both kept under {})",
+                out_dir(name).display()
             ));
         }
     }
+}
+
+/// A scenario list from `common::cli::scenarios!` or `common::gui::scenarios!`: each golden
+/// name with its function.
+macro_rules! list {
+    ($kind:ident: $($s:ident),* $(,)?) => {
+        [$((concat!(stringify!($kind), "-", stringify!($s)), common::$kind::$s)),*]
+    };
 }
 
 #[test]
@@ -106,18 +114,16 @@ fn old_and_new_agree() {
     let (old, new) = (base(), common::bin());
     let mut fails = Vec::new();
     let only = std::env::var("CODEMAP_PARITY_ONLY").unwrap_or_default();
-    for (name, run) in common::cli::SCENARIOS
-        .iter()
-        .filter(|(n, _)| n.contains(&only))
-    {
-        let (o, n) = (run(&old), run(&new));
-        same(name, &o, &n, &mut fails);
+    let cli: &[(&str, fn(&Path, &str) -> Result<String, Missing>)] = &cli_scenarios!(list);
+    for (name, run) in cli.iter().filter(|(n, _)| n.contains(&only)) {
+        match run(&old, name).and_then(|o| Ok((o, run(&new, name)?))) {
+            Ok((o, n)) => same(name, &o, &n, &mut fails),
+            Err(m) => common::skip(name, &m),
+        }
     }
-    for s in common::gui::SCENARIOS
-        .iter()
-        .filter(|s| s.name.contains(&only))
-    {
-        compare_gui(s, &old, &new, &mut fails);
+    let gui: &[(&str, fn() -> Scenario)] = &gui_scenarios!(list);
+    for (name, s) in gui.iter().filter(|(n, _)| n.contains(&only)) {
+        compare_gui(name, &s(), &old, &new, &mut fails);
     }
     if let Some(rev) = std::env::var("CODEMAP_PARITY_REV")
         .ok()
@@ -196,14 +202,13 @@ fn repo_at(rev: &str, old: &Path, new: &Path, fails: &mut Vec<String>) {
         t.out
     };
     same("repo-cli", &transcript(old), &transcript(new), fails);
-    fn setup(_: &Path, _: &str) -> PathBuf {
-        snapshot(
+    fn setup(_: &Path, name: &str) -> Result<PathBuf, Missing> {
+        Ok(snapshot(
             &std::env::var("CODEMAP_PARITY_REV").unwrap(),
-            "parity-repo-gui",
-        )
+            name,
+        ))
     }
-    let s = common::gui::Scenario {
-        name: "parity-repo-gui",
+    let s = Scenario {
         setup,
         hook: |_, _, _| {},
         after: &[],
@@ -237,5 +242,5 @@ shot {shots}/listing.png
 quit
 ",
     };
-    compare_gui(&s, old, new, fails);
+    compare_gui("parity-repo-gui", &s, old, new, fails);
 }

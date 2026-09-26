@@ -9,12 +9,21 @@
 //! Every script settles with `idle` and a save before its first dump: with several servers
 //! missing, the status line otherwise says whichever failure arrived last.
 
-use super::{codemap, fixture, gui, has_jj, jj_commit, scratch};
+use super::{Missing, Transcript, codemap, edit_file, fixture, gui, jj_commit, needs, scratch};
 use std::path::{Path, PathBuf};
 
+/// Every GUI scenario, handed to `$m` as `gui: <fn>, ...`. Each is a `fn() -> Scenario` below,
+/// and its golden is `gui-<fn>`.
+#[macro_export]
+macro_rules! gui_scenarios {
+    ($m:ident) => {
+        $m! { gui: document, peek, listing, graph, panels, delete, diff, reload, dock }
+    };
+}
+
 pub struct Scenario {
-    pub name: &'static str,
-    pub setup: fn(&Path, &str) -> PathBuf,
+    /// Builds the fixture for a scenario name; `Err` when it needs a tool that is missing.
+    pub setup: fn(&Path, &str) -> Result<PathBuf, Missing>,
     pub script: &'static str,
     /// Sees every stderr line of the run; a `rect <marker>` line in the script is the cue.
     pub hook: fn(&Path, &Path, &str),
@@ -22,34 +31,27 @@ pub struct Scenario {
     pub after: &'static [&'static [&'static str]],
 }
 
-fn mapped(bin: &Path, name: &str) -> PathBuf {
-    fixture(name, bin, true)
+fn mapped(bin: &Path, name: &str) -> Result<PathBuf, Missing> {
+    Ok(fixture(name, bin, true))
 }
 
-fn with_parent(bin: &Path, name: &str) -> PathBuf {
+fn with_parent(bin: &Path, name: &str) -> Result<PathBuf, Missing> {
+    needs("jj")?;
     let root = fixture(name, bin, true);
-    if has_jj() {
-        jj_commit(&root, "base");
-        for args in [
-            &["step-note", "startup", "0", "A changed note."][..],
-            &["path-add", "startup", "describe", "-1"],
-            &["path-rm", "c-lib"],
-            &["path-new", "fresh", "layer", "New here."],
-            &["path-add", "fresh", "mean", "-1"],
-        ] {
-            codemap(bin, &root, args);
-        }
+    jj_commit(&root, "base");
+    for args in [
+        &["step-note", "startup", "0", "A changed note."][..],
+        &["path-add", "startup", "describe", "-1"],
+        &["path-rm", "c-lib"],
+        &["path-new", "fresh", "layer", "New here."],
+        &["path-add", "fresh", "mean", "-1"],
+    ] {
+        codemap(bin, &root, args);
     }
-    root
+    Ok(root)
 }
 
 fn no_hook(_: &Path, _: &Path, _: &str) {}
-
-fn edit_file(root: &Path, path: &str, from: &str, to: &str) {
-    let p = root.join(path);
-    let text = std::fs::read_to_string(&p).unwrap();
-    std::fs::write(&p, text.replacen(from, to, 1)).unwrap();
-}
 
 /// The reload scenario's cues: a source edit, then a map edit through the CLI.
 fn reload_hook(bin: &Path, root: &Path, line: &str) {
@@ -68,9 +70,8 @@ fn reload_hook(bin: &Path, root: &Path, line: &str) {
 // the scripts read startup, which is third in the paths list: c-lib, shapes, startup, stats
 const SETTLE: &str = "idle\nclick-id save\nclick-id paths/2\nwait 2\n";
 
-pub const SCENARIOS: &[Scenario] = &[
+pub fn document() -> Scenario {
     Scenario {
-        name: "gui-document",
         setup: mapped,
         hook: no_hook,
         after: &[],
@@ -133,9 +134,11 @@ wait 3
 dump
 quit
 ",
-    },
+    }
+}
+
+pub fn peek() -> Scenario {
     Scenario {
-        name: "gui-peek",
         setup: mapped,
         hook: no_hook,
         after: &[],
@@ -177,9 +180,11 @@ wait 3
 dump
 quit
 ",
-    },
+    }
+}
+
+pub fn listing() -> Scenario {
     Scenario {
-        name: "gui-listing",
         setup: mapped,
         hook: no_hook,
         after: &[&["paths", "startup"]],
@@ -198,7 +203,7 @@ shot {shots}/selected.png
 click-id pin
 wait 2
 dump
-click-id field@
+click-id field@goto-line
 text 30
 key enter
 wait 3
@@ -236,9 +241,11 @@ click-id save
 wait 2
 quit
 ",
-    },
+    }
+}
+
+pub fn graph() -> Scenario {
     Scenario {
-        name: "gui-graph",
         setup: mapped,
         hook: no_hook,
         after: &[],
@@ -279,9 +286,12 @@ shot {shots}/fit.png
 click-id graph-1to1
 wait 4
 dump
-drag <<DUMP graph zoom|100,1000>> <<DUMP graph zoom|300,1000>>
+drag <<DUMP graph zoom|100,300>> <<DUMP graph zoom|300,300>>
 hover-id graph-canvas
 wheel -200
+wait 4
+dump
+click-id graph-fit
 wait 4
 dump
 click <<DUMP button fill '▼>>
@@ -295,9 +305,11 @@ wait 4
 dump
 quit
 ",
-    },
+    }
+}
+
+pub fn panels() -> Scenario {
     Scenario {
-        name: "gui-panels",
         setup: mapped,
         hook: no_hook,
         after: &[&["paths"]],
@@ -305,12 +317,12 @@ quit
 click-id left@Symbols
 wait 3
 shot {shots}/symbols.png
-click-id field@filter
+click-id field@symbols
 text area
 wait 3
 dump
 shot {shots}/filtered.png
-click-id sym/500005
+click-id sym@5:5
 wait 3
 dump
 click-id left@Files
@@ -331,7 +343,7 @@ click-id paths/1
 wait 3
 dump
 shot {shots}/shapes.png
-click-id field@regex
+click-id field@search
 text self\\.\\w+
 key enter
 wait 3
@@ -357,7 +369,7 @@ dump
 text clear
 key enter
 wait 2
-click-id field@name
+click-id field@new-path
 text handmade
 key enter
 wait 3
@@ -374,9 +386,11 @@ dump
 shot {shots}/saved.png
 quit
 ",
-    },
+    }
+}
+
+pub fn delete() -> Scenario {
     Scenario {
-        name: "gui-delete",
         setup: mapped,
         hook: no_hook,
         after: &[&["paths"]],
@@ -400,9 +414,11 @@ wait 3
 dump
 quit
 ",
-    },
+    }
+}
+
+pub fn diff() -> Scenario {
     Scenario {
-        name: "gui-diff",
         setup: with_parent,
         hook: no_hook,
         after: &[],
@@ -431,31 +447,35 @@ wait 2
 dump
 quit
 ",
-    },
+    }
+}
+
+pub fn reload() -> Scenario {
     Scenario {
-        name: "gui-reload",
         setup: mapped,
         hook: reload_hook,
         after: &[],
         script: "SETTLE
 dump
 rect edit-source
-wait 300
+pause 2500
 idle
 wait 3
 dump
 shot {shots}/source-edited.png
 rect edit-map
-wait 300
+pause 2500
 idle
 wait 3
 dump
 shot {shots}/map-reloaded.png
 quit
 ",
-    },
+    }
+}
+
+pub fn dock() -> Scenario {
     Scenario {
-        name: "gui-dock",
         setup: mapped,
         hook: no_hook,
         after: &[],
@@ -509,12 +529,12 @@ wait 2
 dump
 quit
 ",
-    },
-];
+    }
+}
 
-/// Plays a scenario with `bin`: its stderr, and the output of its `after` commands. The
-/// screenshots land in `scratch(name)/shots`.
-pub fn play(bin: &Path, s: &Scenario) -> (String, String) {
+/// Plays scenario `name` with `bin`: its stderr, and the transcript of its `after` commands.
+/// The screenshots land in `shots(name)`.
+pub fn play(bin: &Path, name: &str, s: &Scenario) -> Result<(String, String), Missing> {
     let script = s.script.replace("SETTLE\n", SETTLE);
     let mut lines: Vec<String> = script.lines().map(str::to_owned).collect();
     for k in 0..lines.len() {
@@ -525,12 +545,11 @@ pub fn play(bin: &Path, s: &Scenario) -> (String, String) {
                 None => (lines[k][open + 2..close].to_owned(), None),
             };
             let probe = lines[..k].join("\n") + "\nquit\n";
-            let root = (s.setup)(bin, s.name);
-            let err = gui(bin, &root, s.name, &probe, &mut |l| (s.hook)(bin, &root, l));
+            let root = (s.setup)(bin, name)?;
+            let err = gui(bin, &root, name, &probe, &mut |l| (s.hook)(bin, &root, l));
             let (x, y, w, h) = last_rect(&err, &prefix).unwrap_or_else(|| {
                 panic!(
-                    "{}: no rectangle for '{prefix}' before line {}\n{err}",
-                    s.name,
+                    "{name}: no rectangle for '{prefix}' before line {}\n{err}",
                     k + 1
                 )
             });
@@ -547,19 +566,19 @@ pub fn play(bin: &Path, s: &Scenario) -> (String, String) {
             lines[k].replace_range(open..close + 2, &format!("{px} {py}"));
         }
     }
-    let root = (s.setup)(bin, s.name);
-    let err = gui(bin, &root, s.name, &(lines.join("\n") + "\n"), &mut |l| {
+    let root = (s.setup)(bin, name)?;
+    let err = gui(bin, &root, name, &(lines.join("\n") + "\n"), &mut |l| {
         (s.hook)(bin, &root, l)
     });
-    let mut after = String::new();
+    let mut after = Transcript {
+        bin,
+        root,
+        out: String::new(),
+    };
     for args in s.after {
-        let (out, e, code) = codemap(bin, &root, args);
-        after.push_str(&format!("$ codemap {}\n{out}", args.join(" ")));
-        if code != 0 {
-            after.push_str(&format!("{e}[exit {code}]\n"));
-        }
+        after.run(args);
     }
-    (err, after)
+    Ok((err, after.out))
 }
 
 /// The last rectangle printed on a line starting with `prefix`: (x, y, w, h).

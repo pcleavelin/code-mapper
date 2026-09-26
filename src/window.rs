@@ -33,12 +33,14 @@ pub trait App {
 /// mouse and keyboard had done it. `wait <n>` lets n frames pass; `mouse <x> <y>`, `down`, `up`,
 /// `click <x> <y>`, `dblclick <x> <y>`, `drag <x0> <y0> <x1> <y1>`, `wheel <dy> [ctrl|shift]`,
 /// `down [ctrl|shift|alt] [twice]` (`twice` makes the press a double-click),
-/// `key <name> [ctrl] [alt]`, `text <chars>`, `quit`; anything else goes to the app. Every
-/// input command is its own frame, so the app sees it exactly as a real event.
+/// `key <name> [ctrl] [alt]`, `text <chars>`, `pause <ms>` (frames keep coming for that much
+/// wall time), `quit`; anything else goes to the app. Every input command is its own frame, so
+/// the app sees it exactly as a real event.
 struct Script {
     lines: Vec<String>,
     pc: usize,
     wait: u32,
+    until: Option<Instant>,
 }
 
 impl Script {
@@ -53,6 +55,7 @@ impl Script {
                 .collect(),
             pc: 0,
             wait: 0,
+            until: None,
         })
     }
 }
@@ -69,6 +72,9 @@ struct Runner<A: App> {
     start: Instant,
     cursor: CursorIcon,
     script: Option<Script>,
+    // a script or a screenshot run: a fixed 1600x1000 window at scale 1 that ignores the real
+    // mouse and keyboard, so the run looks the same on every machine
+    fixed: bool,
     // frames built since the last `dump`, for the script harness's frame-time line
     frames: u32,
     frame_max: Duration,
@@ -86,6 +92,12 @@ impl<A: App> Runner<A> {
             sc.wait -= 1;
             return false;
         }
+        if let Some(until) = sc.until {
+            if Instant::now() < until {
+                return false;
+            }
+            sc.until = None;
+        }
         self.input.mods = self.mods;
         loop {
             let Some(line) = sc.lines.get(sc.pc).cloned() else {
@@ -102,6 +114,10 @@ impl<A: App> Runner<A> {
             match w[0] {
                 "wait" => {
                     sc.wait = (num(1).max(1) - 1) as u32;
+                    return false;
+                }
+                "pause" => {
+                    sc.until = Some(Instant::now() + Duration::from_millis(num(1).max(0) as u64));
                     return false;
                 }
                 "mouse" => self.input.mouse = (num(1), num(2)),
@@ -220,18 +236,39 @@ impl<A: App> ApplicationHandler for Runner<A> {
         if self.gfx.is_some() {
             return;
         }
-        let attrs = Window::default_attributes()
-            .with_title(&self.title)
-            .with_inner_size(winit::dpi::LogicalSize::new(1600.0, 1000.0))
-            .with_maximized(true);
+        let attrs = Window::default_attributes().with_title(&self.title);
+        let attrs = if self.fixed {
+            attrs
+                .with_inner_size(winit::dpi::PhysicalSize::new(1600, 1000))
+                .with_resizable(false)
+        } else {
+            attrs
+                .with_inner_size(winit::dpi::LogicalSize::new(1600.0, 1000.0))
+                .with_maximized(true)
+        };
         let window = Arc::new(event_loop.create_window(attrs).expect("window"));
-        let gfx = Gfx::new(window);
+        let mut gfx = Gfx::new(window);
+        if self.fixed {
+            gfx.scale = 1.0;
+        }
         self.input.size = gfx.size;
         self.gfx = Some(gfx);
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
         let Some(gfx) = self.gfx.as_mut() else { return };
+        let real_input = matches!(
+            event,
+            WindowEvent::ModifiersChanged(_)
+                | WindowEvent::CursorMoved { .. }
+                | WindowEvent::CursorLeft { .. }
+                | WindowEvent::MouseInput { .. }
+                | WindowEvent::MouseWheel { .. }
+                | WindowEvent::KeyboardInput { .. }
+        );
+        if self.script.is_some() && real_input {
+            return;
+        }
         match event {
             WindowEvent::CloseRequested => event_loop.exit(),
             WindowEvent::Resized(s) => {
@@ -240,7 +277,9 @@ impl<A: App> ApplicationHandler for Runner<A> {
                 self.pending = true;
             }
             WindowEvent::ScaleFactorChanged { scale_factor, .. } => {
-                gfx.scale = scale_factor as f32;
+                if !self.fixed {
+                    gfx.scale = scale_factor as f32;
+                }
                 self.pending = true;
             }
             WindowEvent::ModifiersChanged(m) => {
@@ -396,6 +435,8 @@ pub fn run(title: &str, app: impl App + 'static) {
         start: Instant::now(),
         cursor: CursorIcon::Default,
         script: Script::load(),
+        fixed: std::env::var_os("CODEMAP_SCRIPT").is_some()
+            || std::env::var_os("CODEMAP_SHOT").is_some(),
         frames: 0,
         frame_max: Duration::ZERO,
         frame_over: 0,

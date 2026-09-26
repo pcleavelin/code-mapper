@@ -190,6 +190,7 @@ rust
 rustfmt
 save
 say
+scenario
 section
 seen
 sentinel

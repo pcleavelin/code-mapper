@@ -253,7 +253,7 @@ fn tool_path() -> String {
             .map(|p| p.to_string_lossy().into_owned())
             .unwrap_or_default();
     }
-    let dir = std::env::temp_dir().join("codemap-tests").join("tools");
+    let dir = scratch("tools");
     std::fs::create_dir_all(&dir).unwrap();
     for t in &tools {
         let link = dir.join(t.file_name().unwrap());
@@ -266,18 +266,35 @@ fn tool_path() -> String {
     dir.to_string_lossy().into_owned()
 }
 
-pub fn has_jj() -> bool {
-    find_tool("jj").is_some()
+/// A tool a scenario needs that is not on PATH: the scenario is skipped, not compared.
+pub struct Missing(pub &'static str);
+
+/// `Err` when `tool` is not on PATH, for a scenario to return early with `?`.
+pub fn needs(tool: &'static str) -> Result<(), Missing> {
+    find_tool(tool).map(|_| ()).ok_or(Missing(tool))
 }
 
-pub fn has_git() -> bool {
-    find_tool("git").is_some()
+/// Says on stderr that scenario `name` did not run for want of a tool.
+pub fn skip(name: &str, Missing(tool): &Missing) {
+    eprintln!("{name}: skipped, {tool} is not on PATH");
 }
 
-/// A scratch directory for `name` at a fixed place, so two binaries run in turn see the same
-/// absolute paths.
+/// A scratch directory for `name`, outside any repository so a fixture finds no VCS of its
+/// own, and private to this process so concurrent runs do not share it; within the process it
+/// is fixed, so a scenario played by two binaries in turn sees the same absolute paths.
 pub fn scratch(name: &str) -> PathBuf {
-    std::env::temp_dir().join("codemap-tests").join(name)
+    std::env::temp_dir()
+        .join("codemap-tests")
+        .join(std::process::id().to_string())
+        .join(name)
+}
+
+/// Replaces the first `from` in `root/path` with `to`; `from` must be there.
+pub fn edit_file(root: &Path, path: &str, from: &str, to: &str) {
+    let p = root.join(path);
+    let text = std::fs::read_to_string(&p).unwrap();
+    assert!(text.contains(from), "{path} has no {from:?}");
+    std::fs::write(&p, text.replacen(from, to, 1)).unwrap();
 }
 
 /// A fresh fixture for `name`, with the map built when `map` is set.
@@ -305,16 +322,19 @@ pub fn codemap(bin: &Path, root: &Path, args: &[&str]) -> (String, String, i32) 
         .env("PATH", tool_path())
         .output()
         .expect("run codemap");
-    let norm = |b: &[u8]| {
-        let s = String::from_utf8_lossy(b).replace("\r\n", "\n");
-        s.replace(&root.display().to_string(), "<root>")
-            .replace(&root.display().to_string().replace('\\', "/"), "<root>")
-    };
     (
-        norm(&out.stdout),
-        norm(&out.stderr),
+        rooted(&String::from_utf8_lossy(&out.stdout), root),
+        rooted(&String::from_utf8_lossy(&out.stderr), root),
         out.status.code().unwrap_or(-1),
     )
+}
+
+/// `text` with Unix line ends and `root`, in either slash style, written as `<root>`.
+fn rooted(text: &str, root: &Path) -> String {
+    let r = root.display().to_string();
+    text.replace("\r\n", "\n")
+        .replace(&r, "<root>")
+        .replace(&r.replace('\\', "/"), "<root>")
 }
 
 /// A git repo at the fixture root with the current state committed as HEAD.
@@ -421,25 +441,26 @@ impl Transcript<'_> {
     }
 }
 
-/// Compare with `tests/golden/<name>.txt`, or write it when CODEMAP_BLESS is set.
-pub fn golden(name: &str, actual: &str) {
+/// Compare a scenario's output with `tests/golden/<name>.txt`, or write it when
+/// CODEMAP_BLESS=1. A scenario missing a tool is skipped with the reason on stderr.
+pub fn golden(name: &str, played: Result<String, Missing>) {
+    let actual = match played {
+        Ok(a) => a.replace('\r', ""),
+        Err(m) => return skip(name, &m),
+    };
     let path = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("tests/golden")
         .join(format!("{name}.txt"));
-    if std::env::var_os("CODEMAP_BLESS").is_some() {
+    if std::env::var("CODEMAP_BLESS").is_ok_and(|b| b == "1") {
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-        std::fs::write(&path, actual).unwrap();
+        std::fs::write(&path, &actual).unwrap();
         return;
     }
     let want = std::fs::read_to_string(&path)
         .unwrap_or_else(|_| panic!("no golden {}; run with CODEMAP_BLESS=1", path.display()))
         .replace("\r\n", "\n");
     if want != actual {
-        let first = want
-            .lines()
-            .zip(actual.lines())
-            .position(|(a, b)| a != b)
-            .unwrap_or(want.lines().count().min(actual.lines().count()));
+        let first = first_difference(&want, &actual);
         panic!(
             "{name} differs from its golden at line {}:\n  want: {:?}\n  got:  {:?}\n--- got in full ---\n{actual}",
             first + 1,
@@ -447,6 +468,14 @@ pub fn golden(name: &str, actual: &str) {
             actual.lines().nth(first)
         );
     }
+}
+
+/// The index of the first line where `a` and `b` differ.
+pub fn first_difference(a: &str, b: &str) -> usize {
+    a.lines()
+        .zip(b.lines())
+        .position(|(x, y)| x != y)
+        .unwrap_or(a.lines().count().min(b.lines().count()))
 }
 
 /// Opens the GUI on `root` and plays `script` (see CLAUDE.md), `{shots}` standing for a
@@ -505,8 +534,7 @@ pub fn gui(
     }
     let status = child.wait().unwrap();
     assert!(status.success(), "{name}: GUI exited with {status}\n{out}");
-    out.replace(&root.display().to_string(), "<root>")
-        .replace(&root.display().to_string().replace('\\', "/"), "<root>")
+    rooted(&out, root)
 }
 
 /// The lines of a GUI run that do not depend on the screen's size: selection, tooltip, peek,

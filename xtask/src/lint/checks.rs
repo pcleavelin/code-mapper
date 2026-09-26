@@ -431,6 +431,9 @@ fn suppressions(file: &SourceFile, report: &mut Report<'_>) {
 }
 
 fn test_registry(file: &SourceFile, report: &mut Report<'_>) {
+    if !arch::scenario_file(&file.path) {
+        return;
+    }
     for node in file.nodes() {
         if node.kind() == "attribute_item" && file.text.of(node) == "#[test]" {
             report.add(node, "a hand-registered #[test]".to_owned());
