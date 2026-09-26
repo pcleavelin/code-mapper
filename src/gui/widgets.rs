@@ -349,7 +349,7 @@ impl App {
     /// A text field; clicking it takes the keyboard. The text is clipped to the box and
     /// scrolled so the caret stays in view.
     pub(super) fn field(&mut self, which: Which, hint: &str, width: i32) {
-        let id = ui::id_with(ui::id("field"), hint);
+        let id = ui::id_with(ui::id("field"), which.name());
         let f = &self.fields[which as usize];
         let focused = f.focused;
         let caret = f.cursor as i32 + 1;

@@ -213,8 +213,9 @@ impl App {
                     if let Some(c) = c {
                         let a = &self.map.paths[pi].anchors[i];
                         let s = format!(
-                            "    {} [{i}] {} {}:{}-{}  {}",
+                            "    {} {} {} {}:{}-{}  {}",
                             if *c == StepChange::Added { "+" } else { "~" },
+                            self.step_label(pi, i),
                             a.symbol,
                             a.file,
                             a.line_start + 1,

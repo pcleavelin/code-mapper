@@ -241,12 +241,15 @@ impl App {
     }
 
     pub(super) fn poll_base(&mut self) {
-        if let Some(base) = self.work.base_rx.as_ref().and_then(|rx| rx.try_recv().ok()) {
+        if let Some(base) = landed(&mut self.work.base_rx) {
             (self.base, self.base_why) = match base {
-                Ok(m) => (Some(m), String::new()),
-                Err(e) => (None, e),
+                Some(Ok(m)) => (Some(m), String::new()),
+                Some(Err(e)) => (None, e),
+                None => (
+                    None,
+                    "the thread reading the parent revision's map failed".into(),
+                ),
             };
-            self.work.base_rx = None;
         }
     }
 
@@ -584,5 +587,23 @@ impl App {
             || self.work.base_rx.is_some()
             || self.work.reindex_rx.is_some()
             || self.work.link_rx.is_some()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_job_that_panics_lands_as_nothing() {
+        let mut rx = Some(bg(|| -> u32 { panic!("the job failed") }));
+        let landed_once = loop {
+            if let Some(got) = landed(&mut rx) {
+                break got;
+            }
+            std::thread::yield_now();
+        };
+        assert_eq!(landed_once, None);
+        assert!(rx.is_none());
     }
 }

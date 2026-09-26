@@ -144,7 +144,9 @@ impl Index {
                 w_locs(&mut b, &s.refs);
             }
             w_u32(&mut b, f.imports.len() as u32);
-            for (k, v) in &f.imports {
+            let mut imports: Vec<_> = f.imports.iter().collect();
+            imports.sort();
+            for (k, v) in imports {
                 w_str(&mut b, k);
                 w_str(&mut b, v);
             }
@@ -159,5 +161,47 @@ impl Index {
             }
         }
         let _ = write_retry(&self.root.join(CACHE), &b);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn index_at(root: &Path, imports: HashMap<String, String>) -> Index {
+        let file = File {
+            path: "a.rs".into(),
+            lines: vec!["fn a() {}".into()],
+            hl: vec![Vec::new()],
+            symbols: Vec::new(),
+            imports,
+            mtime: None,
+            hash: 1,
+            backend: Backend::TreeSitter,
+            pending: false,
+        };
+        Index {
+            root: root.to_path_buf(),
+            files: vec![file],
+        }
+    }
+
+    #[test]
+    fn the_same_index_writes_the_same_bytes() {
+        let names: Vec<(String, String)> = (0..32)
+            .map(|n| (format!("name{n}"), format!("module{n}")))
+            .collect();
+        let forward: HashMap<String, String> = names.iter().cloned().collect();
+        let backward: HashMap<String, String> = names.iter().rev().cloned().collect();
+        let base = std::env::temp_dir().join(format!("codemap_cache_bytes_{}", std::process::id()));
+        let (one, two) = (base.join("one"), base.join("two"));
+        for dir in [&one, &two] {
+            std::fs::create_dir_all(dir).unwrap();
+        }
+        index_at(&one, forward).save_cache();
+        index_at(&two, backward).save_cache();
+        let bytes = |dir: &Path| std::fs::read(dir.join(CACHE)).unwrap();
+        assert_eq!(bytes(&one), bytes(&two));
+        let _ = std::fs::remove_dir_all(&base);
     }
 }

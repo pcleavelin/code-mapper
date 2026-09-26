@@ -393,7 +393,7 @@ impl App {
             let pending = self.idx.files[r.file].pending;
             let it = self.row(
                 vec![(line, if pending { dim(WEAK, 120) } else { TEXT })],
-                ui::id_n(ui::id("sym"), r.file * 100_000 + r.sym),
+                ui::id_with(ui::id("sym"), &format!("{}:{}", r.file, r.sym)),
                 self.focus == Some(r),
             );
             if it.clicked {

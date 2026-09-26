@@ -332,11 +332,21 @@ impl App {
             .add_anchor(&self.idx, pi, fi, a.min(b), a.max(b), Author::Human, parent);
         self.sel_anchor = Some(ai);
         self.file.dirty = true;
+        let under = parent.map_or_else(|| "the top level".into(), |p| self.step_label(pi, p));
         self.status = format!(
-            "step [{ai}] added to '{}' under [{}]",
-            self.map.paths[pi].name,
-            cli::step_number(parent)
+            "step {} added to '{}' under {under}",
+            self.step_label(pi, ai),
+            self.map.paths[pi].name
         );
+    }
+
+    /// The step's hierarchical number (1.2.3), the way the document and outline show it.
+    fn step_label(&self, pi: usize, ai: usize) -> String {
+        self.map
+            .numbered(&self.idx, pi)
+            .into_iter()
+            .find(|(a, _, _)| *a == ai)
+            .map_or_else(String::new, |(_, _, number)| number)
     }
 
     fn apply(&mut self, a: Action) {
@@ -459,6 +469,19 @@ enum Which {
     Cmd,
     SymFilter,
     GotoLine,
+}
+
+impl Which {
+    /// The field's element id suffix, `field@<name>` in a script.
+    fn name(self) -> &'static str {
+        match self {
+            Which::Search => "search",
+            Which::NewPath => "new-path",
+            Which::Cmd => "command",
+            Which::SymFilter => "symbols",
+            Which::GotoLine => "goto-line",
+        }
+    }
 }
 
 impl App {

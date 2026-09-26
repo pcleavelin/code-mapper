@@ -15,48 +15,62 @@ use std::fmt::Write;
     override_usage = "codemap <root>                     open the GUI\n       codemap <root> <command> [args]    text mode (same commands work in the GUI output panel)"
 )]
 pub enum Command {
-    /// [filter]                         list indexed files (substring filter)
+    #[command(about = "[filter]                         list indexed files (substring filter)")]
     Files { filter: Option<String> },
-    /// [filter]                         list symbols: file:start-end kind name (calls/callers)
+    #[command(
+        about = "[filter]                         list symbols: file:start-end kind name (calls/callers)"
+    )]
     Symbols { filter: Option<String> },
-    /// <file> [start] [end]             print numbered lines (1-based, inclusive)
+    #[command(about = "<file> [start] [end]             print numbered lines (1-based, inclusive)")]
     Show {
         file: String,
         start: Option<usize>,
         end: Option<usize>,
     },
-    /// <regex>                          file:line: text
+    #[command(about = "<regex>                          file:line: text")]
     Grep { regex: String },
-    /// <regex>                          search path notes and step notes
+    #[command(about = "<regex>                          search path notes and step notes")]
     Notes { regex: String },
-    /// <symbol>                         who calls it (xrefs to)
+    #[command(about = "<symbol>                         who calls it (xrefs to)")]
     Callers { symbol: String },
-    /// <symbol>                         what it calls (xrefs from)
+    #[command(about = "<symbol>                         what it calls (xrefs from)")]
     Callees { symbol: String },
-    /// <symbol>                         every reference to it, file:line: text (asks the language's server)
+    #[command(
+        about = "<symbol>                         every reference to it, file:line: text (asks the language's server)"
+    )]
     Refs { symbol: String },
-    /// [filter]                         ask the language servers now for every file whose path contains filter (commands otherwise ask for the files they touch)
+    #[command(
+        about = "[filter]                         ask the language servers now for every file whose path contains filter (commands otherwise ask for the files they touch)"
+    )]
     Index { filter: Option<String> },
-    /// <symbol> [depth]                 call tree from a symbol (default depth 4)
+    #[command(about = "<symbol> [depth]                 call tree from a symbol (default depth 4)")]
     Tree {
         symbol: String,
         #[arg(default_value_t = 4)]
         depth: usize,
     },
-    /// [n]                              entry points: symbols nobody calls (default 30)
+    #[command(
+        about = "[n]                              entry points: symbols nobody calls (default 30)"
+    )]
     Roots {
         #[arg(default_value_t = 30)]
         n: usize,
     },
-    /// [name]                           the map: every path (or one) as a tree of steps (! = stale, (ai) = AI-authored, → = link)
+    #[command(
+        about = "[name]                           the map: every path (or one) as a tree of steps (! = stale, (ai) = AI-authored, → = link)"
+    )]
     Paths { name: Option<String> },
-    /// <name> [--expand]                print a path's note and every step's code, tree order; --expand prints linked paths inline
+    #[command(
+        about = "<name> [--expand]                print a path's note and every step's code, tree order; --expand prints linked paths inline"
+    )]
     Path {
         name: String,
         #[arg(long)]
         expand: bool,
     },
-    /// <name> <kind> [note] [--group g] create a path; kind = flow | layer | type (no-op if it exists)
+    #[command(
+        about = "<name> <kind> [note] [--group g] create a path; kind = flow | layer | type (no-op if it exists)"
+    )]
     PathNew {
         name: String,
         #[arg(value_parser = parse_kind)]
@@ -65,29 +79,37 @@ pub enum Command {
         #[arg(long)]
         group: Option<String>,
     },
-    /// <name> <group>                   put a path in a group; / nests groups (flows/http), "" = top level
+    #[command(
+        about = "<name> <group>                   put a path in a group; / nests groups (flows/http), \"\" = top level"
+    )]
     PathGroup { name: String, group: String },
-    /// every group with its paths, nested
+    #[command(about = "every group with its paths, nested")]
     Groups,
-    /// <old> <new>                      rename a group and every group inside it
+    #[command(about = "<old> <new>                      rename a group and every group inside it")]
     GroupRename { old: String, new: String },
-    /// <name> <note>                    set a path's note
+    #[command(about = "<name> <note>                    set a path's note")]
     PathNote { name: String, note: String },
-    /// <name> <index> <note>            set a note on one step (index as shown by `paths`)
+    #[command(
+        about = "<name> <index> <note>            set a note on one step (index as shown by `paths`)"
+    )]
     StepNote {
         name: String,
         index: usize,
         note: String,
     },
-    /// <name> <index> <target>          link a step to the path that documents what its lines call
+    #[command(
+        about = "<name> <index> <target>          link a step to the path that documents what its lines call"
+    )]
     StepLink {
         name: String,
         index: usize,
         target: String,
     },
-    /// <name> <index>                   remove a step's link
+    #[command(about = "<name> <index>                   remove a step's link")]
     StepUnlink { name: String, index: usize },
-    /// <name> <index> <old> <new>       replace the first `old` in a note with `new` (index -1 = the path note)
+    #[command(
+        about = "<name> <index> <old> <new>       replace the first `old` in a note with `new` (index -1 = the path note)"
+    )]
     #[command(allow_negative_numbers = true)]
     NoteEdit {
         name: String,
@@ -95,9 +117,11 @@ pub enum Command {
         old: String,
         new: String,
     },
-    /// <name> <new>                     rename a path
+    #[command(about = "<name> <new>                     rename a path")]
     PathRename { name: String, new: String },
-    /// <name> <sym|file start end> [under]  add a step under step `under` (default: the last step; -1 = root)
+    #[command(
+        about = "<name> <sym|file start end> [under]  add a step under step `under` (default: the last step; -1 = root)"
+    )]
     #[command(allow_negative_numbers = true)]
     PathAdd {
         name: String,
@@ -105,7 +129,9 @@ pub enum Command {
         #[arg(num_args = 0..=3)]
         nums: Vec<i64>,
     },
-    /// <name> <index> <file> <start> <end>  re-anchor a step; its note and place in the tree stay
+    #[command(
+        about = "<name> <index> <file> <start> <end>  re-anchor a step; its note and place in the tree stay"
+    )]
     PathPin {
         name: String,
         index: usize,
@@ -113,35 +139,45 @@ pub enum Command {
         start: usize,
         end: usize,
     },
-    /// <name> <index> <under>          move a step (with its subtree) under step `under` (-1 = root)
+    #[command(
+        about = "<name> <index> <under>          move a step (with its subtree) under step `under` (-1 = root)"
+    )]
     #[command(allow_negative_numbers = true)]
     PathMove {
         name: String,
         index: usize,
         under: i64,
     },
-    /// <name> <a> <b>                  swap two steps' places in the list, which orders siblings when the code does not
+    #[command(
+        about = "<name> <a> <b>                  swap two steps' places in the list, which orders siblings when the code does not"
+    )]
     PathSwap { name: String, a: usize, b: usize },
-    /// <name> [index]                   delete a step (its children move up) or the whole path
+    #[command(
+        about = "<name> [index]                   delete a step (its children move up) or the whole path"
+    )]
     PathRm { name: String, index: Option<usize> },
-    /// <symbol> [depth] [name]          create a path shaped like a symbol's call tree (default depth 1, named after the symbol)
+    #[command(
+        about = "<symbol> [depth] [name]          create a path shaped like a symbol's call tree (default depth 1, named after the symbol)"
+    )]
     Promote {
         symbol: String,
         #[arg(default_value_t = 1)]
         depth: usize,
         name: Option<String>,
     },
-    /// every step whose text no longer matches, or whose file or symbol is gone
+    #[command(about = "every step whose text no longer matches, or whose file or symbol is gone")]
     Stale,
-    /// exit non-zero if any step is stale
+    #[command(about = "exit non-zero if any step is stale")]
     Check,
-    /// [rev]                            re-pin every stale step by following its text from revision `rev` (default: the parent, @- in jj, HEAD in git); prints each change so its note gets reread
+    #[command(
+        about = "[rev]                            re-pin every stale step by following its text from revision `rev` (default: the parent, @- in jj, HEAD in git); prints each change so its note gets reread"
+    )]
     Repin { rev: Option<String> },
-    /// [filter]                         symbols in no path, largest first
+    #[command(about = "[filter]                         symbols in no path, largest first")]
     Uncovered { filter: Option<String> },
-    /// covered/total symbols per file
+    #[command(about = "covered/total symbols per file")]
     Coverage,
-    /// the map against the parent revision's (@- in jj, HEAD in git)
+    #[command(about = "the map against the parent revision's (@- in jj, HEAD in git)")]
     Diff,
 }
 
@@ -1005,7 +1041,7 @@ fn link_tag(a: &Anchor) -> String {
 }
 
 /// A step index the way the commands write one: -1 is the root.
-pub fn step_number(p: Option<usize>) -> i64 {
+fn step_number(p: Option<usize>) -> i64 {
     p.map_or(-1, |p| p as i64)
 }
 
