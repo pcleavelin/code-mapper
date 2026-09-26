@@ -17,7 +17,33 @@ pub struct ServerFile {
 
 /// LSP SymbolKind names, indexed by kind; 0 is not a kind.
 const KINDS: [&str; 27] = [
-    "symbol", "file", "module", "namespace", "package", "class", "method", "property", "field", "constructor", "enum", "interface", "function", "variable", "constant", "string", "number", "boolean", "array", "object", "key", "null", "enum-member", "struct", "event", "operator", "type",
+    "symbol",
+    "file",
+    "module",
+    "namespace",
+    "package",
+    "class",
+    "method",
+    "property",
+    "field",
+    "constructor",
+    "enum",
+    "interface",
+    "function",
+    "variable",
+    "constant",
+    "string",
+    "number",
+    "boolean",
+    "array",
+    "object",
+    "key",
+    "null",
+    "enum-member",
+    "struct",
+    "event",
+    "operator",
+    "type",
 ];
 
 fn symbol_kind_name(k: u64, name: &str) -> &'static str {
@@ -30,12 +56,24 @@ fn symbol_kind_name(k: u64, name: &str) -> &'static str {
 /// `impl Trait for Foo<T>` -> `Foo`; `impl Foo` -> `Foo`. Takes a server's kind-19 name,
 /// which carries no generic parameters of the impl itself (see `impl_name`).
 fn impl_type(name: &str) -> String {
-    bare_type(name.rsplit(" for ").next().unwrap_or(name).trim_start_matches("impl").trim())
+    bare_type(
+        name.rsplit(" for ")
+            .next()
+            .unwrap_or(name)
+            .trim_start_matches("impl")
+            .trim(),
+    )
 }
 
 /// One DocumentSymbol and, for a container, its direct children. Records where each symbol's
 /// name sits so call-hierarchy and reference requests can point at it.
-fn push_symbol(v: &Value, depth: u8, owner: Option<&str>, out: &mut Vec<Symbol>, sel: &mut Vec<(u64, u64)>) {
+fn push_symbol(
+    v: &Value,
+    depth: u8,
+    owner: Option<&str>,
+    out: &mut Vec<Symbol>,
+    sel: &mut Vec<(u64, u64)>,
+) {
     let name = v["name"].as_str().unwrap_or("").to_owned();
     if name.is_empty() {
         return;
@@ -51,9 +89,32 @@ fn push_symbol(v: &Value, depth: u8, owner: Option<&str>, out: &mut Vec<Symbol>,
         end -= 1;
     }
     let container = depth == 0 && matches!(k, 2 | 3 | 5 | 11 | 19);
-    let own: Option<String> = if container { Some(if k == 19 { impl_type(&name) } else { name.clone() }) } else { owner.map(str::to_owned) };
-    sel.push((p["line"].as_u64().unwrap_or(0), p["character"].as_u64().unwrap_or(0)));
-    out.push(Symbol { kind: symbol_kind_name(k, &name).to_owned(), name, start, end, depth, owner: own.clone(), calls: Vec::new(), targets: Vec::new(), refs: Vec::new(), callees: Vec::new(), callers: Vec::new() });
+    let own: Option<String> = if container {
+        Some(if k == 19 {
+            impl_type(&name)
+        } else {
+            name.clone()
+        })
+    } else {
+        owner.map(str::to_owned)
+    };
+    sel.push((
+        p["line"].as_u64().unwrap_or(0),
+        p["character"].as_u64().unwrap_or(0),
+    ));
+    out.push(Symbol {
+        kind: symbol_kind_name(k, &name).to_owned(),
+        name,
+        start,
+        end,
+        depth,
+        owner: own.clone(),
+        calls: Vec::new(),
+        targets: Vec::new(),
+        refs: Vec::new(),
+        callees: Vec::new(),
+        callers: Vec::new(),
+    });
     if container {
         for c in v["children"].as_array().into_iter().flatten() {
             push_symbol(c, 1, own.as_deref(), out, sel);
@@ -62,14 +123,21 @@ fn push_symbol(v: &Value, depth: u8, owner: Option<&str>, out: &mut Vec<Symbol>,
 }
 
 /// (file, line) for each element of a Location-like array, files outside the root dropped.
-fn locations(v: &Value, root: &Path, item: impl Fn(&Value) -> (&Value, &Value)) -> Vec<(String, u32)> {
+fn locations(
+    v: &Value,
+    root: &Path,
+    item: impl Fn(&Value) -> (&Value, &Value),
+) -> Vec<(String, u32)> {
     let mut out: Vec<(String, u32)> = v
         .as_array()
         .into_iter()
         .flatten()
         .filter_map(|l| {
             let (uri, pos) = item(l);
-            Some((lsp::relative(&lsp::uri_path(uri.as_str()?)?, root)?, pos["line"].as_u64()? as u32))
+            Some((
+                lsp::relative(&lsp::uri_path(uri.as_str()?)?, root)?,
+                pos["line"].as_u64()? as u32,
+            ))
         })
         .collect();
     out.sort();
@@ -81,9 +149,11 @@ fn locations(v: &Value, root: &Path, item: impl Fn(&Value) -> (&Value, &Value)) 
 /// Err when it is not on PATH or will not start. The returned root is absolute, which is
 /// what the server's URIs are compared against.
 pub fn start_server(root: &Path, lang: &Lang) -> Result<(lsp::Client, PathBuf), String> {
-    let exe = lsp::find_on_path(lang.server).ok_or_else(|| format!("{} not on PATH", lang.server))?;
+    let exe =
+        lsp::find_on_path(lang.server).ok_or_else(|| format!("{} not on PATH", lang.server))?;
     let root = std::path::absolute(root).map_err(|e| e.to_string())?;
-    let mut c = lsp::Client::start(&exe, lang.args, &root).ok_or_else(|| format!("{} would not start", lang.server))?;
+    let mut c = lsp::Client::start(&exe, lang.args, &root)
+        .ok_or_else(|| format!("{} would not start", lang.server))?;
     c.wait_ready(Duration::from_secs(300));
     Ok((c, root))
 }
@@ -92,8 +162,15 @@ pub fn start_server(root: &Path, lang: &Lang) -> Result<(lsp::Client, PathBuf), 
 /// files' symbols, every symbol's call-hierarchy item, every item's outgoing calls) is sent
 /// whole, so the server works on many requests at once.
 pub fn index_files(c: &mut lsp::Client, root: &Path, files: &[(String, u64)]) -> Vec<ServerFile> {
-    let docs: Vec<Value> = files.iter().map(|(p, _)| json!({"uri": lsp::to_uri(&root.join(p))})).collect();
-    let answers = c.request_all(docs.iter().map(|d| ("textDocument/documentSymbol", json!({"textDocument": d}))).collect());
+    let docs: Vec<Value> = files
+        .iter()
+        .map(|(p, _)| json!({"uri": lsp::to_uri(&root.join(p))}))
+        .collect();
+    let answers = c.request_all(
+        docs.iter()
+            .map(|d| ("textDocument/documentSymbol", json!({"textDocument": d})))
+            .collect(),
+    );
     let mut per_file: Vec<(Vec<Symbol>, Vec<(u64, u64)>)> = Vec::new();
     for a in answers {
         let (mut symbols, mut sel) = (Vec::new(), Vec::new());
@@ -108,7 +185,10 @@ pub fn index_files(c: &mut lsp::Client, root: &Path, files: &[(String, u64)]) ->
     for (fi, (_, sel)) in per_file.iter().enumerate() {
         for (si, (line, ch)) in sel.iter().enumerate() {
             who.push((fi, si));
-            reqs.push(("textDocument/prepareCallHierarchy", json!({"textDocument": docs[fi], "position": {"line": line, "character": ch}})));
+            reqs.push((
+                "textDocument/prepareCallHierarchy",
+                json!({"textDocument": docs[fi], "position": {"line": line, "character": ch}}),
+            ));
         }
     }
     let items = c.request_all(reqs);
@@ -121,7 +201,11 @@ pub fn index_files(c: &mut lsp::Client, root: &Path, files: &[(String, u64)]) ->
     }
     for ((fi, si), calls) in owner.into_iter().zip(c.request_all(reqs)) {
         let calls = calls.unwrap_or(Value::Null);
-        per_file[fi].0[si].targets.extend(locations(&calls, root, |call| (&call["to"]["uri"], &call["to"]["selectionRange"]["start"])));
+        per_file[fi].0[si]
+            .targets
+            .extend(locations(&calls, root, |call| {
+                (&call["to"]["uri"], &call["to"]["selectionRange"]["start"])
+            }));
     }
     files
         .iter()
@@ -131,7 +215,11 @@ pub fn index_files(c: &mut lsp::Client, root: &Path, files: &[(String, u64)]) ->
                 s.targets.sort();
                 s.targets.dedup();
             }
-            ServerFile { path: path.clone(), hash: *hash, symbols }
+            ServerFile {
+                path: path.clone(),
+                hash: *hash,
+                symbols,
+            }
         })
         .collect()
 }
@@ -142,7 +230,9 @@ pub fn index_files(c: &mut lsp::Client, root: &Path, files: &[(String, u64)]) ->
 pub fn name_position(idx: &Index, r: SymRef) -> (u32, u32) {
     let (f, s) = (&idx.files[r.file], idx.sym(r));
     let line = f.lines.get(s.start).map_or("", String::as_str);
-    let col = line.find(&s.name).map_or(0, |b| line[..b].encode_utf16().count());
+    let col = line
+        .find(&s.name)
+        .map_or(0, |b| line[..b].encode_utf16().count());
     (s.start as u32, col as u32)
 }
 
@@ -153,20 +243,51 @@ pub fn references(c: &mut lsp::Client, root: &Path, idx: &Index, r: SymRef) -> V
 }
 
 /// Every reference to the name at (`line`, `col`) of `path`, as (file, line) inside the root.
-pub fn references_at(c: &mut lsp::Client, root: &Path, path: &str, line: u32, col: u32) -> Vec<(String, u32)> {
+pub fn references_at(
+    c: &mut lsp::Client,
+    root: &Path,
+    path: &str,
+    line: u32,
+    col: u32,
+) -> Vec<(String, u32)> {
     let at = json!({"textDocument": {"uri": lsp::to_uri(&root.join(path))}, "position": {"line": line, "character": col}, "context": {"includeDeclaration": false}});
-    let refs = c.request("textDocument/references", at).unwrap_or(Value::Null);
+    let refs = c
+        .request("textDocument/references", at)
+        .unwrap_or(Value::Null);
     locations(&refs, root, |l| (&l["uri"], &l["range"]["start"]))
 }
 
 /// Every place that calls `r`, as the (file, line) of the caller's name inside the root, from
 /// a running server.
-pub fn incoming_calls(c: &mut lsp::Client, root: &Path, idx: &Index, r: SymRef) -> Vec<(String, u32)> {
+pub fn incoming_calls(
+    c: &mut lsp::Client,
+    root: &Path,
+    idx: &Index,
+    r: SymRef,
+) -> Vec<(String, u32)> {
     let (line, col) = name_position(idx, r);
     let at = json!({"textDocument": {"uri": lsp::to_uri(&root.join(&idx.files[r.file].path))}, "position": {"line": line, "character": col}});
-    let items = c.request("textDocument/prepareCallHierarchy", at).unwrap_or(Value::Null);
-    let reqs: Vec<(&str, Value)> = items.as_array().into_iter().flatten().map(|it| ("callHierarchy/incomingCalls", json!({"item": it}))).collect();
-    let mut out: Vec<(String, u32)> = c.request_all(reqs).into_iter().flat_map(|calls| locations(&calls.unwrap_or(Value::Null), root, |call| (&call["from"]["uri"], &call["from"]["selectionRange"]["start"]))).collect();
+    let items = c
+        .request("textDocument/prepareCallHierarchy", at)
+        .unwrap_or(Value::Null);
+    let reqs: Vec<(&str, Value)> = items
+        .as_array()
+        .into_iter()
+        .flatten()
+        .map(|it| ("callHierarchy/incomingCalls", json!({"item": it})))
+        .collect();
+    let mut out: Vec<(String, u32)> = c
+        .request_all(reqs)
+        .into_iter()
+        .flat_map(|calls| {
+            locations(&calls.unwrap_or(Value::Null), root, |call| {
+                (
+                    &call["from"]["uri"],
+                    &call["from"]["selectionRange"]["start"],
+                )
+            })
+        })
+        .collect();
     out.sort();
     out.dedup();
     out
@@ -182,7 +303,11 @@ pub struct Servers {
 
 impl Servers {
     pub fn new(root: &Path, report: impl FnMut(&str) + 'static) -> Servers {
-        Servers { root: root.to_owned(), live: Default::default(), report: Box::new(report) }
+        Servers {
+            root: root.to_owned(),
+            live: Default::default(),
+            report: Box::new(report),
+        }
     }
 
     /// The running server for `lang`, started now if it is not yet. None when it is not on
@@ -205,7 +330,10 @@ impl Servers {
         let want: std::collections::HashSet<&str> = paths.iter().map(String::as_str).collect();
         let mut answered = false;
         for (lang, files) in idx.pending() {
-            let files: Vec<(String, u64)> = files.into_iter().filter(|(p, _)| want.contains(p.as_str())).collect();
+            let files: Vec<(String, u64)> = files
+                .into_iter()
+                .filter(|(p, _)| want.contains(p.as_str()))
+                .collect();
             if files.is_empty() {
                 continue;
             }
@@ -260,7 +388,9 @@ impl Index {
     pub fn pending(&self) -> Vec<(&'static Lang, Vec<(String, u64)>)> {
         let mut out: Vec<(&'static Lang, Vec<(String, u64)>)> = Vec::new();
         for f in self.files.iter().filter(|f| f.pending) {
-            let Some(lang) = lang_for(&f.path) else { continue };
+            let Some(lang) = lang_for(&f.path) else {
+                continue;
+            };
             match out.iter_mut().find(|(l, _)| l.server == lang.server) {
                 Some((_, v)) => v.push((f.path.clone(), f.hash)),
                 None => out.push((lang, vec![(f.path.clone(), f.hash)])),
@@ -272,7 +402,9 @@ impl Index {
     /// Takes a server's answer for a file, unless the file changed since it was asked. The
     /// caller re-links afterwards.
     pub fn apply(&mut self, r: ServerFile) {
-        let Some(fi) = self.find_file(&r.path) else { return };
+        let Some(fi) = self.find_file(&r.path) else {
+            return;
+        };
         let f = &mut self.files[fi];
         if f.hash != r.hash {
             return;

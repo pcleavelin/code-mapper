@@ -21,8 +21,8 @@ parent nq4lui
 author ai
 file src/gui/work.rs
 symbol serve
-lines 0 66
-hash b1e1c27280eafe1f
+lines 0 89
+hash cefe8defa9dcb30f
 note The thread: one Client for the language, a queue of files to index, and hover, definition and reference requests answered between batches so the pointer never waits behind a batch. Definitions are resolved against the root here, and the lines around the target read from disk, parsed and drawn into a grid on this thread, which the peek shows when the file is outside the repo.
 
 step 3fy396
@@ -31,8 +31,8 @@ parent kaqitd
 author ai
 file src/gui/peek.rs
 symbol probe_def
-lines 0 16
-hash 07bb90728418c169
+lines 0 18
+hash 4399ab4785ef3090
 note Go-to and peek share this: the server is asked for the definition and the intent remembered until poll_backend gets the answer; a grammar-only file answers from the index at once.
 
 step 4yvy4t
@@ -41,8 +41,8 @@ parent 174e9e
 author ai
 file src/lsp.rs
 symbol definition
-lines 0 5
-hash 83d0fc3a07128168
+lines 0 19
+hash 52a4a932671923c2
 note textDocument/definition, first location only, as an absolute path and position; Location and LocationLink both handled.
 
 step 63ps8v
@@ -51,8 +51,8 @@ parent 174e9e
 author ai
 file src/lsp.rs
 symbol hover
-lines 0 19
-hash a87e4ecdef9d942f
+lines 0 23
+hash 0f6ab26d2734684d
 note textDocument/hover reduced to plain lines: code fences dropped, blank lines never doubled.
 
 step dqmrwj
@@ -71,8 +71,8 @@ parent jcccr7
 author ai
 file src/gui/peek.rs
 symbol word_at
-lines 0 9
-hash 2cb1d4776a2e1351
+lines 0 16
+hash 802510a3a498272d
 note Identifier boundaries around a character column.
 
 step jcccr7
@@ -81,8 +81,8 @@ parent dqmrwj
 author ai
 file src/gui/peek.rs
 symbol probe_for
-lines 0 6
-hash a6bae98b75aef7d1
+lines 0 19
+hash b4ab5e724e57092b
 note Decides who answers for a file: the language's server (a Probe with the UTF-16 column), the index by name (a grammar with no server), or nobody.
 
 step kaqitd
@@ -90,8 +90,8 @@ order 0
 author ai
 file src/gui/widgets.rs
 symbol code_block
-lines 0 55
-hash dd5ad37fceed403b
+lines 0 74
+hash bfa50cf0aa43d2b6
 note The one entry point for every code view: the line and text column under the pointer come from the block's rectangle and the cell size; hover asks probe, ctrl-click or double-click jumps, alt-click peeks.
 
 step nq4lui
@@ -110,8 +110,8 @@ parent dqmrwj
 author ai
 file src/gui/peek.rs
 symbol symbol_at
-lines 0 5
-hash 1deb64dfce6304f3
+lines 0 10
+hash af375dc9da17ae9b
 note The word under the pointer, resolved to a definition: one whose references include this line wins, then one in the same file, then any.
 
 step uee3m8
@@ -120,8 +120,8 @@ parent 174e9e
 author ai
 file src/gui/work.rs
 symbol poll_backend
-lines 29 61
-hash 958f8fb8105ff0e9
+lines 31 78
+hash 07766ce4cb8eca19
 note Where the answers land: a hover is cached under its Probe; references land on the symbol they were asked for when its file still has the text they were asked about; a definition is acted on only when it is the one still awaited, resolved to a symbol, a line inside one, or a place outside the repo.
 
 step v678nk
@@ -139,8 +139,8 @@ order 3
 author ai
 file src/gui/peek.rs
 symbol tooltip_element
-lines 0 55
-hash 64112941e0d5fdc5
+lines 0 121
+hash edfde7052456be6a
 note The tooltip itself: a floating element laid over everything, drawn from what the frame's code rows left in self.tooltip. Name, kind and place, the first lines of the definition, and the two gestures. It is skipped while the mouse button is down so dragging does not drag a tooltip along.
 
 step yhnzin
@@ -148,8 +148,8 @@ order 4
 author ai
 file src/gui/panels.rs
 symbol xrefs_panel
-lines 5 60
-hash 256251eac3842b8f
+lines 6 111
+hash 88f215218c4b6d96
 note The pinned half, at the top of the xrefs panel, at most half its height: the whole definition in scrollable code rows, with 'go' to select it and 'x' to close. It survives scrolling and clicking elsewhere, which is the difference from the tooltip.
 
 step yu4jg2
@@ -159,5 +159,5 @@ author ai
 file src/gui/peek.rs
 symbol Lookup
 lines 0 7
-hash bf3891f3601f9afb
+hash 8367be3b2908ed2b
 note The requests to the servers: every hover asked, with its answer once it came, the position under the pointer and since when, whether a hover is in flight, how many requests are unanswered, the definition whose answer is awaited with what to do with it, and the symbols whose references were asked for.

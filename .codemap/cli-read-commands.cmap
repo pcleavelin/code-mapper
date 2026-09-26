@@ -10,8 +10,8 @@ order 0
 author ai
 file src/cli.rs
 symbol exec
-lines 4 9
-hash c8f98484bdfd6123
+lines 11 22
+hash 0d837a88ab256313
 note files: every indexed file with its line and symbol count. A file with 0 symbols is one whose language has no grammar here, or is not code at all; it is still greppable and viewable.
 
 step 9mg3jn
@@ -19,7 +19,7 @@ order 2
 author ai
 file src/cli.rs
 symbol exec
-lines 29 34
+lines 46 51
 hash 5fec91b06ed690fc
 note show: numbered lines, the escape hatch for code no path covers. Start and end default to the whole file and are clamped rather than rejected.
 
@@ -38,8 +38,8 @@ order 1
 author ai
 file src/cli.rs
 symbol exec
-lines 10 28
-hash 3225ebb7ccfb726d
+lines 23 45
+hash 1b9773e8adf3635f
 note symbols: one row per symbol with kind, 1-based line range and its callee/caller counts. Depth-1 members are indented two spaces, which is the only hint of nesting in the output. The filter is a substring of either the name or the path.
 
 step wh8ip2
@@ -57,6 +57,6 @@ order 5
 author ai
 file src/cli.rs
 symbol exec
-lines 35 44
+lines 52 61
 hash 850cadb6a07c0573
 note grep: a Rust regex over the in-memory lines of every file, no threading and no ignore rules beyond the ones the walk already applied.

@@ -21,8 +21,8 @@ parent 0u8wp3
 author ai
 file src/map.rs
 symbol normal_group
-lines 0 2
-hash 108b720bd3a30208
+lines 0 6
+hash 3251566effe80d88
 note Trims each part and drops empty ones, so " /flows//http/ " and "flows/http" are the same group.
 
 step 77jjzt
@@ -31,8 +31,8 @@ parent zwkmx2
 author ai
 file src/map.rs
 symbol rename_group
-lines 0 16
-hash dd60d3485507d6a1
+lines 0 20
+hash e8ada6b3ce992ad3
 note Matches the group and its descendants by whole parts, so renaming flow leaves flows alone; renaming to "" lifts them one level.
 
 step bthmeg
@@ -40,8 +40,8 @@ order 8
 author ai
 file src/gui/panels.rs
 symbol paths_window
-lines 0 99
-hash 915a7d5767abc075
+lines 0 184
+hash b26feca1a4b38d78
 link reader-gui
 note The Paths tab walks the same rows(), skipping everything under a closed group.
 
@@ -51,8 +51,8 @@ parent p8bthl
 author ai
 file src/map.rs
 symbol rows
-lines 0 21
-hash b2f0189c956fe6c8
+lines 0 42
+hash 03fcad4599b65c06
 note The list order. Group rows carry the number of paths under them at any depth; path rows carry their depth for indenting.
 
 step gxaocm
@@ -60,8 +60,8 @@ order 7
 author ai
 file src/cli.rs
 symbol exec
-lines 192 198
-hash 10c7be7fad6fa0de
+lines 298 314
+hash 1cda8e6052171bac
 note groups: the group rows of rows() alone, indented by depth.
 
 step gzhf7a
@@ -69,7 +69,7 @@ order 0
 author ai
 file src/cli.rs
 symbol exec
-lines 182 191
+lines 288 297
 hash 8ab36039df19c5eb
 note path-group: moves one path; an empty group puts it back at the top level.
 
@@ -78,8 +78,8 @@ order 6
 author ai
 file src/cli.rs
 symbol exec
-lines 127 158
-hash c0b850c79f8b47d7
+lines 179 244
+hash cb5212e594a6d2e3
 note paths: the path rows of rows(), with a == line naming the group wherever it changes, (top level) included, so a flat listing still says where each path sits.
 
 step zwkmx2
@@ -87,6 +87,6 @@ order 3
 author ai
 file src/cli.rs
 symbol exec
-lines 199 203
+lines 315 319
 hash 117764014a7a096f
 note group-rename: moves every path of the group and of the groups inside it.

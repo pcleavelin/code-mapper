@@ -40,8 +40,8 @@ order 0
 author ai
 file src/main.rs
 symbol main
-lines 0 12
-hash 0314fda5b468af04
+lines 0 18
+hash b22e55e222e45faa
 note The branch: a help flag prints clap's help, a root with more arguments runs one command in text mode, a bare root builds the App and gives it to window::run. App::new therefore runs before any window exists, on the calling thread.
 
 step 786j69
@@ -60,8 +60,8 @@ parent 5nd6jr
 author ai
 file src/window.rs
 symbol run
-lines 0 4
-hash 4ead5735c3fc8de6
+lines 0 19
+hash 08da502749d2eb24
 note The handover: the event loop is created and owns the App from here. The window itself is not made until the loop resumes, which is the first thing gfx-loop does. Closing the window just exits the loop, so unsaved map edits are lost; the save button and ctrl+s are the only way out for them.
 
 step fwdacy
@@ -81,7 +81,7 @@ author ai
 file src/gui/work.rs
 symbol Work
 lines 0 14
-hash 3f0e36a97849ccdc
+hash 0efcdf7b8bbfa600
 note The threads the window keeps busy and what the frame knows of each: a server per language with its batch and progress, the answers waiting for the next merge, and the link, rebuild, watcher and parent-map channels. working() is true while any of it is in flight.
 
 step lhmt8w
@@ -91,7 +91,7 @@ author ai
 file src/gui/mod.rs
 symbol App
 lines 0 48
-hash e04d4fcc5ad54eee
+hash 91f739badd5cded8
 note Everything the GUI knows, in one struct: the index and the map, the background work (Work), the server lookups (Lookup), the map on disk (MapFile), the reader's selection and History, the step views, the panel state, the fields and the graph. There is no model layer under it - a panel is a method that takes &mut self, draws, and queues Actions.
 
 step mlmsu7
@@ -110,8 +110,8 @@ parent 5nd6jr
 author ai
 file src/gui/mod.rs
 symbol new
-lines 0 64
-hash b5d0d9fcb53bf8c4
+lines 0 71
+hash f94d14028c7788d8
 note Builds the whole application state before the first frame. The order matters: index first, then the map resolved against it, then the first path selected so the document, outline, listing, xrefs and graph all have something in them, then the two background threads.
 
 step t4wzoi
@@ -130,8 +130,8 @@ parent v49gqc
 author ai
 file src/index/cache.rs
 symbol load_cache
-lines 0 37
-hash ed49ce0a82a316e8
+lines 0 75
+hash ea9ad01c70e8188c
 note The cache read, before the walk begins. Entries come back without their text; the walk fills that in from disk and drops whatever no longer hashes the same.
 
 step v49gqc
@@ -140,8 +140,8 @@ parent pucdnk
 author ai
 file src/index/mod.rs
 symbol build
-lines 0 54
-hash dfe30521be00791d
+lines 0 74
+hash adc915988237f3ee
 note The walk. It blocks the startup, which is why the cache exists: a file whose text hash matches its cache entry is taken whole and never parsed.
 
 step yzu1mn
@@ -150,6 +150,6 @@ parent pucdnk
 author ai
 file src/map.rs
 symbol load
-lines 0 22
-hash 0b72b8a79a5feb7c
+lines 0 36
+hash 9aaaeab188897770
 note The map. One that does not read is reported in the status bar and the app starts with no paths, and saving is refused until the map on disk reads, since a save would rewrite the files that did not read.

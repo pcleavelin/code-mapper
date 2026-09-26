@@ -11,8 +11,8 @@ parent izqvt5
 author ai
 file src/index/mod.rs
 symbol sym_at
-lines 0 3
-hash 7b721b775fe232a7
+lines 0 9
+hash a892f4ace6e57e21
 note The innermost symbol spanning a line of a file already found by slot: what by_line does after its path lookup, and what link does for every server target once its path-to-slot map has found the file.
 
 step an8w7x
@@ -31,8 +31,8 @@ parent dsyzch
 author ai
 file src/index/link.rs
 symbol resolve
-lines 0 43
-hash 057892614486729d
+lines 0 80
+hash 6381aab007cea4b9
 note The tree-sitter half: no type information, so the qualifier decides. self/Self bind to the caller's own owner; an uppercase qualifier is a type's member, else a module (file stem or directory), else something the file imported; a lowercase qualifier is a variable, so it picks a member and never a free function; an unqualified name prefers the same file, then an import, then the same directory. Structs and enums are filtered out first because Foo{..} parses as a call in several grammars.
 
 step ck99zr
@@ -50,8 +50,8 @@ order 0
 author ai
 file src/index/link.rs
 symbol link
-lines 0 42
-hash eea2a6bbca6ad995
+lines 0 52
+hash f3927addb3ea0cdc
 note Rebuilds every edge in the index from scratch, so the GUI runs it on a thread over a text-free copy and the CLI once after all servers answered. Server targets resolve by (file, line) through a path-to-slot map; tree-sitter calls go through resolve. Its cost is call sites times same-named candidates, which is what makes a repo full of 'new' slow to link.
 
 step izqvt5

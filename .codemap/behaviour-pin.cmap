@@ -21,8 +21,8 @@ parent yagdfh
 author ai
 file tests/common/mod.rs
 symbol MAP
-lines 0 20
-hash 5cfb2e7f170cfc4c
+lines 0 45
+hash a75c563c5592247e
 note Four paths of every kind, with nested steps, a slice step and notes: enough for the document, the outline, the graph and the diff to have something to show.
 
 step 5wnr0m
@@ -30,8 +30,8 @@ order 10
 author ai
 file tests/common/mod.rs
 symbol gui_state
-lines 0 18
-hash 5da73437fc95c9c1
+lines 0 23
+hash 66cbb6d0d32e2bd7
 note What a GUI golden keeps: selection, tooltip, peek, status, backend state, graph node and button names, script errors, and each docked panel's edge and dragged size; only the size depends on the screen, since a script drags to absolute pixels.
 
 step 8wo2sa
@@ -40,8 +40,8 @@ parent hdfzdl
 author ai
 file tests/parity.rs
 symbol compare_gui
-lines 0 12
-hash ef851e7459925e31
+lines 0 21
+hash 012c031717c4a459
 note Dump lines except frame timings, and every screenshot, byte for byte. A scenario that should have written screenshots and wrote none fails too, so a broken shot path cannot pass as parity.
 
 step 9ci2st
@@ -50,8 +50,8 @@ parent ii6lor
 author ai
 file tests/common/cli.rs
 symbol merge
-lines 0 43
-hash fd983e22611d9ca4
+lines 0 47
+hash cd870b009c12e51e
 note Two branches edit different notes of one path, one adds a step to another path and a new path: the merge reads with every change. A third branch adding a step to the same path merges too, since the new steps sit apart in the file. A fourth editing the same note conflicts on that one line, and every command refuses the map until it is resolved.
 
 step 9ionsq
@@ -60,16 +60,16 @@ parent noqsg2
 author ai
 file tests/parity.rs
 symbol snapshot
-lines 0 11
-hash 768047e580092924
+lines 0 23
+hash 618b3066fcec7a30
 
 step dkjein
 order 7
 author ai
 file tests/common/gui.rs
 symbol play
-lines 0 35
-hash 9253015baf624728
+lines 0 46
+hash c3b11d53c8b6559c
 note Plays a GUI scenario. A script line aiming at <<prefix>> is resolved first by a probe run of the script up to that line, on a fresh fixture, reading the rectangle the probe's dump or rect printed; the final run then starts from the same state. Offsets are pixels, so the scripts assume the owner's display.
 
 step gal679
@@ -78,8 +78,8 @@ parent yagdfh
 author ai
 file tests/common/mod.rs
 symbol FILES
-lines 0 152
-hash d92fb77ef40aec69
+lines 0 158
+hash b542c10603c3c23f
 note The fixture: a small Rust program over three files, a Python pair, a C file and header, prose, an ignored build directory and a binary file, with a tab to exercise tab expansion.
 
 step hbyc72
@@ -87,8 +87,8 @@ order 6
 author ai
 file tests/common/mod.rs
 symbol golden
-lines 0 17
-hash 560dd65e8908277a
+lines 0 25
+hash 3ef0f068d69f4646
 note Compares with tests/golden/<name>.txt and reports the first line that differs; CODEMAP_BLESS=1 writes the golden instead.
 
 step hdfzdl
@@ -96,8 +96,8 @@ order 11
 author ai
 file tests/parity.rs
 symbol old_and_new_agree
-lines 0 15
-hash f5971eead3035fc9
+lines 0 29
+hash af328a9dcc62d981
 note The refactor's proof: every CLI and GUI scenario with CODEMAP_BASE_BIN and with this build, and with CODEMAP_PARITY_REV the repo itself at that revision, its real map included, as a second fixture. Differences are kept on disk for a diff tool.
 
 step ii6lor
@@ -106,8 +106,8 @@ parent vtkgzt
 author ai
 file tests/common/cli.rs
 symbol SCENARIOS
-lines 0 0
-hash 81e4605dac57bba7
+lines 0 7
+hash cacbe03a192dee85
 note The CLI scenarios: every read command and its error cases, every edit command, source edits that make steps stale and the re-pins that fix them, diff and repin in a jj repo and in a git repo, and merges of jj branches that change one path.
 
 step j8ntek
@@ -116,8 +116,8 @@ parent 8wo2sa
 author ai
 file tests/common/mod.rs
 symbol gui_parity
-lines 0 2
-hash 6f14fbb7f79d2099
+lines 0 6
+hash 6ee66187700fb7d9
 
 step k23duj
 order 9
@@ -125,8 +125,8 @@ parent dkjein
 author ai
 file tests/common/gui.rs
 symbol last_rect
-lines 0 5
-hash 05333f0ae1243e0c
+lines 0 12
+hash de382b987d3a09ee
 note The last rectangle printed on a line starting with the prefix, as x, y, width and height.
 
 step kasf6v
@@ -135,8 +135,8 @@ parent ii6lor
 author ai
 file tests/common/cli.rs
 symbol git_vcs
-lines 0 23
-hash 77c25f3ec20857fa
+lines 0 37
+hash 8faf8b49c0d94948
 note diff and repin against HEAD of a git repo, the same verdicts the jj scenario gets.
 
 step noqsg2
@@ -145,8 +145,8 @@ parent hdfzdl
 author ai
 file tests/parity.rs
 symbol repo_at
-lines 0 54
-hash e94a6dfd2c6d264e
+lines 0 79
+hash a1ef21f7bce6c8a0
 note The repo as a second fixture: its files, symbols, roots, coverage and every path printed, then the document, a long path scrolled, the graph fitted and the side panels photographed.
 
 step sz59zt
@@ -154,8 +154,8 @@ order 0
 author ai
 file tests/common/mod.rs
 symbol tool_path
-lines 0 17
-hash 0a3f142502724a77
+lines 0 21
+hash 6298e3735b9d1e9b
 note The PATH every child process gets: jj and git and no language server. On Unix a directory of links to the two, since git's own directory can hold a server (/usr/bin/clangd on macOS); on Windows their directories. Indexing is then tree-sitter's and deterministic, while diff and repin still reach jj and git.
 
 step vtkgzt
@@ -163,8 +163,8 @@ order 4
 author ai
 file tests/common/mod.rs
 symbol run
-lines 0 12
-hash 693db0b2fffd3965
+lines 0 22
+hash 88e80006aba6d27f
 note One CLI command into the transcript: the command line, stdout, stderr prefixed with '! ' and a non-zero exit code, the fixture root replaced by <root>.
 
 step xwqk4d
@@ -173,8 +173,8 @@ parent dkjein
 author ai
 file tests/common/mod.rs
 symbol gui
-lines 0 36
-hash dfe034c555b1c8ef
+lines 0 55
+hash 3bcd3bf33cf94701
 note Runs the window with CODEMAP_SCRIPT and reads stderr as it arrives, so a scenario's hook can edit files on disk at a line the script marks; that is how live reload is pinned.
 
 step yagdfh

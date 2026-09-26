@@ -2,7 +2,10 @@
 //! finds jj and git and no language server, so every file is indexed by tree-sitter: output is
 //! the same on every machine and every run.
 
-#![allow(dead_code)]
+#![expect(
+    dead_code,
+    reason = "each test binary uses its own part of the shared harness"
+)]
 
 pub mod cli;
 pub mod gui;
@@ -141,7 +144,10 @@ def main():
     Summary([1, 2, 3]).show()
 "#,
     ),
-    ("tools/helpers.py", "def mean(xs):\n    return sum(xs) / len(xs)\n"),
+    (
+        "tools/helpers.py",
+        "def mean(xs):\n    return sum(xs) / len(xs)\n",
+    ),
     (
         "c/lib.c",
         r#"#include "lib.h"
@@ -160,7 +166,10 @@ int sum_squares(int n) {
 "#,
     ),
     ("c/lib.h", "int sum_squares(int n);\n"),
-    ("README.md", "# shapes\n\nA store of shapes and the sum of their areas.\n"),
+    (
+        "README.md",
+        "# shapes\n\nA store of shapes and the sum of their areas.\n",
+    ),
     (".gitignore", "build/\n"),
     ("build/generated.rs", "fn ignored() {}\n"),
     ("data.bin", "\0\x01binary"),
@@ -168,7 +177,12 @@ int sum_squares(int n) {
 
 /// The agent's map of the fixture, as the CLI builds it.
 pub const MAP: &[&[&str]] = &[
-    &["path-new", "startup", "flow", "What running the program does: fill the store, then report its total area."],
+    &[
+        "path-new",
+        "startup",
+        "flow",
+        "What running the program does: fill the store, then report its total area.",
+    ],
     &["path-add", "startup", "src/main.rs:main", "-1"],
     &["path-add", "startup", "fill"],
     &["path-add", "startup", "Store::add"],
@@ -176,11 +190,31 @@ pub const MAP: &[&[&str]] = &[
     &["path-add", "startup", "report", "0"],
     &["path-add", "startup", "src/store.rs", "21", "25", "4"],
     &["path-add", "startup", "log_line", "4"],
-    &["step-note", "startup", "0", "Entry: builds the store and hands it to the two phases."],
+    &[
+        "step-note",
+        "startup",
+        "0",
+        "Entry: builds the store and hands it to the two phases.",
+    ],
     &["step-note", "startup", "1", "Adds one shape of each kind."],
-    &["step-note", "startup", "3", "Guards the size after every add."],
-    &["step-note", "startup", "5", "The sum over every shape's own area."],
-    &["path-new", "shapes", "type", "The Shape trait and the two shapes that implement it."],
+    &[
+        "step-note",
+        "startup",
+        "3",
+        "Guards the size after every add.",
+    ],
+    &[
+        "step-note",
+        "startup",
+        "5",
+        "The sum over every shape's own area.",
+    ],
+    &[
+        "path-new",
+        "shapes",
+        "type",
+        "The Shape trait and the two shapes that implement it.",
+    ],
     &["path-add", "shapes", "Shape", "-1"],
     &["path-add", "shapes", "impl Shape for Circle", "0"],
     &["path-add", "shapes", "impl Shape for Square", "0"],
@@ -196,8 +230,14 @@ pub fn bin() -> PathBuf {
 /// Where `tool` is on this process's PATH.
 fn find_tool(tool: &str) -> Option<PathBuf> {
     let path = std::env::var_os("PATH").unwrap_or_default();
-    let exe = if cfg!(windows) { format!("{tool}.exe") } else { tool.to_owned() };
-    std::env::split_paths(&path).map(|d| d.join(&exe)).find(|f| f.is_file())
+    let exe = if cfg!(windows) {
+        format!("{tool}.exe")
+    } else {
+        tool.to_owned()
+    };
+    std::env::split_paths(&path)
+        .map(|d| d.join(&exe))
+        .find(|f| f.is_file())
 }
 
 /// A PATH that finds jj and git and no language server. On Unix it is one directory of links
@@ -206,8 +246,12 @@ fn find_tool(tool: &str) -> Option<PathBuf> {
 fn tool_path() -> String {
     let tools: Vec<PathBuf> = ["jj", "git"].iter().filter_map(|t| find_tool(t)).collect();
     if cfg!(windows) {
-        let dirs = tools.iter().filter_map(|t| t.parent().map(Path::to_path_buf));
-        return std::env::join_paths(dirs).map(|p| p.to_string_lossy().into_owned()).unwrap_or_default();
+        let dirs = tools
+            .iter()
+            .filter_map(|t| t.parent().map(Path::to_path_buf));
+        return std::env::join_paths(dirs)
+            .map(|p| p.to_string_lossy().into_owned())
+            .unwrap_or_default();
     }
     let dir = std::env::temp_dir().join("codemap-tests").join("tools");
     std::fs::create_dir_all(&dir).unwrap();
@@ -255,12 +299,22 @@ pub fn fixture(name: &str, bin: &Path, map: bool) -> PathBuf {
 }
 
 pub fn codemap(bin: &Path, root: &Path, args: &[&str]) -> (String, String, i32) {
-    let out = Command::new(bin).arg(root).args(args).env("PATH", tool_path()).output().expect("run codemap");
+    let out = Command::new(bin)
+        .arg(root)
+        .args(args)
+        .env("PATH", tool_path())
+        .output()
+        .expect("run codemap");
     let norm = |b: &[u8]| {
         let s = String::from_utf8_lossy(b).replace("\r\n", "\n");
-        s.replace(&root.display().to_string(), "<root>").replace(&root.display().to_string().replace('\\', "/"), "<root>")
+        s.replace(&root.display().to_string(), "<root>")
+            .replace(&root.display().to_string().replace('\\', "/"), "<root>")
     };
-    (norm(&out.stdout), norm(&out.stderr), out.status.code().unwrap_or(-1))
+    (
+        norm(&out.stdout),
+        norm(&out.stderr),
+        out.status.code().unwrap_or(-1),
+    )
 }
 
 /// A git repo at the fixture root with the current state committed as HEAD.
@@ -274,15 +328,31 @@ pub fn git_commit(root: &Path, message: &str) {
 
 pub fn git(root: &Path, args: &[&str]) -> String {
     let out = Command::new("git")
-        .args(["-c", "user.name=test", "-c", "user.email=test@example.com", "-c", "commit.gpgsign=false", "-c", "init.defaultBranch=main"])
+        .args([
+            "-c",
+            "user.name=test",
+            "-c",
+            "user.email=test@example.com",
+            "-c",
+            "commit.gpgsign=false",
+            "-c",
+            "init.defaultBranch=main",
+        ])
         .args(args)
         .current_dir(root)
         .env("PATH", tool_path())
-        .env("GIT_CONFIG_GLOBAL", if cfg!(windows) { "NUL" } else { "/dev/null" })
+        .env(
+            "GIT_CONFIG_GLOBAL",
+            if cfg!(windows) { "NUL" } else { "/dev/null" },
+        )
         .env("GIT_CONFIG_NOSYSTEM", "1")
         .output()
         .expect("run git");
-    assert!(out.status.success(), "git {args:?}: {}", String::from_utf8_lossy(&out.stderr));
+    assert!(
+        out.status.success(),
+        "git {args:?}: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
     String::from_utf8_lossy(&out.stdout).into_owned()
 }
 
@@ -294,9 +364,23 @@ pub fn jj_commit(root: &Path, message: &str) {
 
 pub fn jj(root: &Path, args: &[&str]) -> String {
     let cfg = root.parent().unwrap().join("jj.toml");
-    std::fs::write(&cfg, "[user]\nname = \"test\"\nemail = \"test@example.com\"\n").unwrap();
-    let out = Command::new("jj").args(args).current_dir(root).env("PATH", tool_path()).env("JJ_CONFIG", &cfg).output().expect("run jj");
-    assert!(out.status.success() || args[0] == "git", "jj {args:?}: {}", String::from_utf8_lossy(&out.stderr));
+    std::fs::write(
+        &cfg,
+        "[user]\nname = \"test\"\nemail = \"test@example.com\"\n",
+    )
+    .unwrap();
+    let out = Command::new("jj")
+        .args(args)
+        .current_dir(root)
+        .env("PATH", tool_path())
+        .env("JJ_CONFIG", &cfg)
+        .output()
+        .expect("run jj");
+    assert!(
+        out.status.success() || args[0] == "git",
+        "jj {args:?}: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
     String::from_utf8_lossy(&out.stdout).into_owned()
 }
 
@@ -309,8 +393,18 @@ pub struct Transcript<'a> {
 
 impl Transcript<'_> {
     pub fn run(&mut self, args: &[&str]) -> i32 {
-        let shown: Vec<String> = args.iter().map(|a| if a.contains(' ') || a.is_empty() { format!("\"{a}\"") } else { a.to_string() }).collect();
-        self.out.push_str(&format!("$ codemap {}\n", shown.join(" ")));
+        let shown: Vec<String> = args
+            .iter()
+            .map(|a| {
+                if a.contains(' ') || a.is_empty() {
+                    format!("\"{a}\"")
+                } else {
+                    a.to_string()
+                }
+            })
+            .collect();
+        self.out
+            .push_str(&format!("$ codemap {}\n", shown.join(" ")));
         let (out, err, code) = codemap(self.bin, &self.root, args);
         self.out.push_str(&out);
         for l in err.lines() {
@@ -329,15 +423,23 @@ impl Transcript<'_> {
 
 /// Compare with `tests/golden/<name>.txt`, or write it when CODEMAP_BLESS is set.
 pub fn golden(name: &str, actual: &str) {
-    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/golden").join(format!("{name}.txt"));
+    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/golden")
+        .join(format!("{name}.txt"));
     if std::env::var_os("CODEMAP_BLESS").is_some() {
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
         std::fs::write(&path, actual).unwrap();
         return;
     }
-    let want = std::fs::read_to_string(&path).unwrap_or_else(|_| panic!("no golden {}; run with CODEMAP_BLESS=1", path.display())).replace("\r\n", "\n");
+    let want = std::fs::read_to_string(&path)
+        .unwrap_or_else(|_| panic!("no golden {}; run with CODEMAP_BLESS=1", path.display()))
+        .replace("\r\n", "\n");
     if want != actual {
-        let first = want.lines().zip(actual.lines()).position(|(a, b)| a != b).unwrap_or(want.lines().count().min(actual.lines().count()));
+        let first = want
+            .lines()
+            .zip(actual.lines())
+            .position(|(a, b)| a != b)
+            .unwrap_or(want.lines().count().min(actual.lines().count()));
         panic!(
             "{name} differs from its golden at line {}:\n  want: {:?}\n  got:  {:?}\n--- got in full ---\n{actual}",
             first + 1,
@@ -350,13 +452,31 @@ pub fn golden(name: &str, actual: &str) {
 /// Opens the GUI on `root` and plays `script` (see CLAUDE.md), `{shots}` standing for a
 /// directory the screenshots go to. `hook` sees every stderr line as it arrives, so a test can
 /// change files on disk at a point the script marks. Returns stderr.
-pub fn gui(bin: &Path, root: &Path, name: &str, script: &str, hook: &mut dyn FnMut(&str)) -> String {
+pub fn gui(
+    bin: &Path,
+    root: &Path,
+    name: &str,
+    script: &str,
+    hook: &mut dyn FnMut(&str),
+) -> String {
     let dir = root.parent().unwrap();
     let shots = dir.join("shots");
     std::fs::create_dir_all(&shots).unwrap();
     let file = dir.join("script.txt");
-    std::fs::write(&file, script.replace("{shots}", &shots.display().to_string().replace('\\', "/"))).unwrap();
-    let mut child = Command::new(bin).arg(root).env("PATH", tool_path()).env("CODEMAP_SCRIPT", &file).env("JJ_CONFIG", dir.join("jj.toml")).stdout(Stdio::null()).stderr(Stdio::piped()).spawn().expect("run codemap");
+    std::fs::write(
+        &file,
+        script.replace("{shots}", &shots.display().to_string().replace('\\', "/")),
+    )
+    .unwrap();
+    let mut child = Command::new(bin)
+        .arg(root)
+        .env("PATH", tool_path())
+        .env("CODEMAP_SCRIPT", &file)
+        .env("JJ_CONFIG", dir.join("jj.toml"))
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("run codemap");
     let (tx, rx) = std::sync::mpsc::channel();
     let err = child.stderr.take().unwrap();
     std::thread::spawn(move || {
@@ -385,7 +505,8 @@ pub fn gui(bin: &Path, root: &Path, name: &str, script: &str, hook: &mut dyn FnM
     }
     let status = child.wait().unwrap();
     assert!(status.success(), "{name}: GUI exited with {status}\n{out}");
-    out.replace(&root.display().to_string(), "<root>").replace(&root.display().to_string().replace('\\', "/"), "<root>")
+    out.replace(&root.display().to_string(), "<root>")
+        .replace(&root.display().to_string().replace('\\', "/"), "<root>")
 }
 
 /// The lines of a GUI run that do not depend on the screen's size: selection, tooltip, peek,
@@ -393,7 +514,12 @@ pub fn gui(bin: &Path, root: &Path, name: &str, script: &str, hook: &mut dyn FnM
 pub fn gui_state(stderr: &str) -> String {
     let mut out = String::new();
     for l in stderr.lines() {
-        let keep = if l.starts_with("DUMP tab=") || l.starts_with("DUMP dock") || l.starts_with("DUMP tip=") || l.starts_with("DUMP backend") || l.starts_with("script:") {
+        let keep = if l.starts_with("DUMP tab=")
+            || l.starts_with("DUMP dock")
+            || l.starts_with("DUMP tip=")
+            || l.starts_with("DUMP backend")
+            || l.starts_with("script:")
+        {
             Some(l.to_owned())
         } else if l.starts_with("DUMP node ") || l.starts_with("DUMP button ") {
             Some(l.split(" rect=").next().unwrap_or(l).to_owned())
@@ -413,5 +539,9 @@ pub fn gui_state(stderr: &str) -> String {
 /// Everything a GUI run printed that two builds of the same behaviour must agree on: all but
 /// frame timings and where screenshots were written.
 pub fn gui_parity(stderr: &str) -> String {
-    stderr.lines().filter(|l| !l.starts_with("DUMP frames") && !l.starts_with("screenshot:")).map(|l| format!("{l}\n")).collect()
+    stderr
+        .lines()
+        .filter(|l| !l.starts_with("DUMP frames") && !l.starts_with("screenshot:"))
+        .map(|l| format!("{l}\n"))
+        .collect()
 }

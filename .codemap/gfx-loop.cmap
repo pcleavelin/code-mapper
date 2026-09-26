@@ -51,8 +51,8 @@ parent fhtrrf
 author ai
 file src/gfx.rs
 symbol render
-lines 0 68
-hash 38a5b9ea644ced68
+lines 0 107
+hash 4123c178cc633040
 note The geometry the frame accumulated becomes one render pass and is presented.
 
 step c0mcs4
@@ -71,8 +71,8 @@ parent h41g96
 author ai
 file src/window.rs
 symbol resumed
-lines 0 9
-hash f551006109a9265a
+lines 0 12
+hash 318ad3f2f2954c92
 note The window is created here rather than before the loop, because that is what winit requires on every platform. Guarded against a second resume, which mobile platforms send.
 
 step exn9pk
@@ -91,8 +91,8 @@ parent o82jom
 author ai
 file src/window.rs
 symbol window_event
-lines 97 119
-hash 3dae1cd029396bdf
+lines 110 137
+hash 1606e1a72577551d
 note One frame: the elapsed time, begin, the app's frame, render, and then the Input is cleared of everything that was momentary. The frame is timed here and the count, the worst and how many went over 16 ms accumulate on the runner, which is the only measurement of smoothness the tool has. Whatever the frame asked for becomes the next redraw deadline, a cursor different from the last one is set on the window, and a frame that asked to quit exits the loop.
 
 step h41g96
@@ -100,8 +100,8 @@ order 0
 author ai
 file src/window.rs
 symbol run
-lines 0 4
-hash 4ead5735c3fc8de6
+lines 0 19
+hash 08da502749d2eb24
 note The entry: build the runner around the app and hand it to winit. It returns when the loop exits, which is when the window is closed or a frame asked to quit.
 
 step ioalrb
@@ -110,8 +110,8 @@ parent o82jom
 author ai
 file src/window.rs
 symbol window_event
-lines 26 60
-hash cd56d7a2a4c0c3d0
+lines 30 70
+hash 731c4170c3f2425c
 note Mouse buttons. Back and forward are turned into flags and returned early, so navigation reaches the app without being a button at all. Double-click is decided here - the same button, within 350ms, within four pixels - because winit does not report one; a double clears the memory so a third press starts over.
 
 step mqqkcp
@@ -140,8 +140,8 @@ parent h41g96
 author ai
 file src/window.rs
 symbol window_event
-lines 0 122
-hash 9d64d514a220b85a
+lines 0 140
+hash d48c0129e76f9177
 note Every event for the window. Almost all of them only write into the accumulated Input and set pending; the redraw is the one that does work.
 
 step pr08z4
@@ -160,8 +160,8 @@ parent fhtrrf
 author ai
 file src/window.rs
 symbol step_script
-lines 0 107
-hash fc2c9b2f374fd150
+lines 0 134
+hash ab6c36046d3eaf64
 note The test script: before each frame, lines run until one produces input or waits, and that input reaches the app exactly as a real event would. click, dblclick and drag expand into their own frames - a double click is a press carrying the count, since the press is the frame the app sees it on - and the -id forms look the element up by name first, hover landing on a bare mouse move. dump prints the frames since the previous dump - how many, the worst, how many over 16 ms - before the app adds its own state, so a script measures a hitch without the app knowing anything about time. Unknown lines are the app's own commands.
 
 step qrcphm
@@ -170,8 +170,8 @@ parent o82jom
 author ai
 file src/window.rs
 symbol window_event
-lines 70 96
-hash 586749835feae7b1
+lines 80 109
+hash be8891e37bfb828a
 note Keys. Named keys become the enum, a character key becomes Char, and the text the platform produced is taken separately and only without ctrl or alt - so typing is the text and a shortcut is the key, and the two never collide.
 
 step xv0ja1
@@ -180,6 +180,6 @@ parent cd4qwy
 author ai
 file src/gfx.rs
 symbol new
-lines 0 87
-hash 8bb9ced25ff05978
+lines 0 155
+hash 4807321fc86b123a
 note The GPU context is built around the window as soon as it exists, and its size seeds the first Input.

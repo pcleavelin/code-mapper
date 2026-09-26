@@ -61,8 +61,8 @@ parent tmbi85
 author ai
 file src/map.rs
 symbol check_name
-lines 0 5
-hash 7740a63c5186978a
+lines 0 12
+hash 08e804d33c374982
 note A path name is a file name: letters, digits, '.', '_' and '-', not starting with a dot.
 
 step d8rk5e
@@ -71,8 +71,8 @@ parent 53oc0t
 author ai
 file src/map.rs
 symbol escape
-lines 0 2
-hash d1123af89605178f
+lines 0 4
+hash d60720ef547556a9
 note A value runs to the end of its line, so the three characters that would break a line are escaped.
 
 step ha8wzu
@@ -81,15 +81,15 @@ parent kzkkga
 author ai
 file src/map.rs
 symbol load
-lines 0 22
-hash 0b72b8a79a5feb7c
+lines 0 36
+hash 9aaaeab188897770
 note Every .cmap file in name order, each file's text kept for save to compare against, each holding exactly one path under its own name. A directory that does not exist is an empty map; a .codemap that is a file is the old single-file format, and every read error, conflicts included, is an Err naming the file and line.
 
 step jn6vqv
 order 0
 author ai
 file src/map.rs
-lines 156 190
+lines 167 201
 hash 16ed1980ef63c486
 note The layout, written out as a comment because there is no schema anywhere else, with the directory name, the version line and the conflict markers that stop a read.
 
@@ -138,8 +138,8 @@ parent ha8wzu
 author ai
 file src/map.rs
 symbol parse
-lines 0 85
-hash bb7f4a6209e3f1e7
+lines 0 126
+hash 15d8ce6c3a930889
 note The reader, shared by the files on disk and the text jj or git hands back for a revision, which is several files one after another. Each codemap line starts a path. Steps are sorted by order, ties by id, and parent ids turned into indices; a parent that is not a step of the path fails the read. Steps come back stale; resolving them against the index clears it.
 
 step uivdyq

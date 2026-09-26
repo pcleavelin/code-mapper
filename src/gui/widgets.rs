@@ -36,15 +36,27 @@ pub fn hl_color(class: u8) -> Color {
 }
 
 pub(super) fn text(s: &str, px: u32, color: Color) -> Kind {
-    Kind::Text(Text { runs: vec![(s.to_owned(), color)], px, wrap: false })
+    Kind::Text(Text {
+        runs: vec![(s.to_owned(), color)],
+        px,
+        wrap: false,
+    })
 }
 
 pub(super) fn wrapped(s: &str, px: u32, color: Color) -> Kind {
-    Kind::Text(Text { runs: vec![(s.to_owned(), color)], px, wrap: true })
+    Kind::Text(Text {
+        runs: vec![(s.to_owned(), color)],
+        px,
+        wrap: true,
+    })
 }
 
 pub(super) fn runs(runs: Vec<(String, Color)>, px: u32) -> Kind {
-    Kind::Text(Text { runs, px, wrap: false })
+    Kind::Text(Text {
+        runs,
+        px,
+        wrap: false,
+    })
 }
 
 /// Columns of line number and a space in front of every code line.
@@ -53,7 +65,11 @@ pub const GUTTER: usize = 6;
 /// Lines `lo..=hi` of a file as a grid: the line number in the gutter, then the line with
 /// its syntax colours, one cell per character.
 pub fn build_grid(f: &index::File, lo: usize, hi: usize) -> Glyphs {
-    let w = (lo..=hi).map(|li| f.lines[li].chars().count()).max().unwrap_or(0) + GUTTER;
+    let w = (lo..=hi)
+        .map(|li| f.lines[li].chars().count())
+        .max()
+        .unwrap_or(0)
+        + GUTTER;
     let mut g = Glyphs::new(w, hi + 1 - lo);
     for (row, li) in (lo..=hi).enumerate() {
         for (x, c) in format!("{:5} ", li + 1).chars().enumerate() {
@@ -76,13 +92,26 @@ pub fn build_grid(f: &index::File, lo: usize, hi: usize) -> Glyphs {
 }
 
 pub(super) fn trunc(s: &str, n: usize) -> String {
-    if s.chars().count() <= n { s.to_owned() } else { s.chars().take(n.saturating_sub(1)).chain(std::iter::once('…')).collect() }
+    if s.chars().count() <= n {
+        s.to_owned()
+    } else {
+        s.chars()
+            .take(n.saturating_sub(1))
+            .chain(std::iter::once('…'))
+            .collect()
+    }
 }
 
 /// Cuts from the front, keeping the tail: what a path needs, since the file name is at the end.
 pub(super) fn trunc_left(s: &str, n: usize) -> String {
     let count = s.chars().count();
-    if count <= n { s.to_owned() } else { std::iter::once('…').chain(s.chars().skip(count + 1 - n.max(1))).collect() }
+    if count <= n {
+        s.to_owned()
+    } else {
+        std::iter::once('…')
+            .chain(s.chars().skip(count + 1 - n.max(1)))
+            .collect()
+    }
 }
 
 /// A single-line text field.
@@ -194,7 +223,11 @@ impl Field {
     }
 
     pub(super) fn byte_at(&self, ch: usize) -> usize {
-        self.text.char_indices().nth(ch).map(|(i, _)| i).unwrap_or(self.text.len())
+        self.text
+            .char_indices()
+            .nth(ch)
+            .map(|(i, _)| i)
+            .unwrap_or(self.text.len())
     }
 
     /// The text with the caret, as runs.
@@ -203,20 +236,44 @@ impl Field {
             return vec![(hint.to_owned(), WEAK)];
         }
         let i = self.byte_at(self.cursor);
-        let color = if self.selected && self.focused { ACCENT } else { TEXT };
-        vec![(self.text[..i].to_owned(), color), (if self.focused { "▏" } else { "" }.to_owned(), ACCENT), (self.text[i..].to_owned(), color)]
+        let color = if self.selected && self.focused {
+            ACCENT
+        } else {
+            TEXT
+        };
+        vec![
+            (self.text[..i].to_owned(), color),
+            (if self.focused { "▏" } else { "" }.to_owned(), ACCENT),
+            (self.text[i..].to_owned(), color),
+        ]
     }
 }
 
 impl App {
     pub fn label(&mut self, s: &str, color: Color) {
-        self.ui.leaf(text(s, self.px, color), Layout::row().pad(2), Style::default(), None);
+        self.ui.leaf(
+            text(s, self.px, color),
+            Layout::row().pad(2),
+            Style::default(),
+            None,
+        );
     }
 
     pub fn button(&mut self, s: &str, id: Id, selected: bool) -> Interaction {
         let it = self.ui.interaction_of(id);
-        let bg = if selected { SELECTED } else if it.hovered { HOVER } else { PANEL };
-        self.ui.leaf(text(s, self.px, if selected || it.hovered { TEXT } else { WEAK }), Layout::row().pad(4), Style::bg(bg).border(ui::BORDER_ALL, BORDER), Some(id))
+        let bg = if selected {
+            SELECTED
+        } else if it.hovered {
+            HOVER
+        } else {
+            PANEL
+        };
+        self.ui.leaf(
+            text(s, self.px, if selected || it.hovered { TEXT } else { WEAK }),
+            Layout::row().pad(4),
+            Style::bg(bg).border(ui::BORDER_ALL, BORDER),
+            Some(id),
+        )
     }
 
     pub fn small_button(&mut self, s: &str, id: Id) -> Interaction {
@@ -227,27 +284,66 @@ impl App {
     /// does not move the buttons beside it; 0 fits the label.
     pub fn small_button_w(&mut self, s: &str, cols: usize, id: Id) -> Interaction {
         let it = self.ui.interaction_of(id);
-        let layout = if cols > 0 { Layout::row().pad(2).w(cols as i32 * self.cell.0 + 4) } else { Layout::row().pad(2) };
-        self.ui.leaf(text(s, self.px, if it.hovered { TEXT } else { WEAK }), layout, Style::bg(if it.hovered { HOVER } else { FIELD }).border(ui::BORDER_ALL, BORDER), Some(id))
+        let layout = if cols > 0 {
+            Layout::row().pad(2).w(cols as i32 * self.cell.0 + 4)
+        } else {
+            Layout::row().pad(2)
+        };
+        self.ui.leaf(
+            text(s, self.px, if it.hovered { TEXT } else { WEAK }),
+            layout,
+            Style::bg(if it.hovered { HOVER } else { FIELD }).border(ui::BORDER_ALL, BORDER),
+            Some(id),
+        )
     }
 
     /// A navigation button three cells wide, dimmed when it has nowhere to go.
     pub(super) fn nav_button(&mut self, s: &str, id: Id, enabled: bool) -> Interaction {
         let it = self.ui.interaction_of(id);
-        let color = if !enabled { dim(WEAK, 90) } else if it.hovered { TEXT } else { WEAK };
-        self.ui.leaf(text(s, self.px, color), Layout::row().pad(4).w(3 * self.cell.0 + 8), Style::bg(if it.hovered && enabled { HOVER } else { PANEL }).border(ui::BORDER_ALL, BORDER), Some(id))
+        let color = if !enabled {
+            dim(WEAK, 90)
+        } else if it.hovered {
+            TEXT
+        } else {
+            WEAK
+        };
+        self.ui.leaf(
+            text(s, self.px, color),
+            Layout::row().pad(4).w(3 * self.cell.0 + 8),
+            Style::bg(if it.hovered && enabled { HOVER } else { PANEL })
+                .border(ui::BORDER_ALL, BORDER),
+            Some(id),
+        )
     }
 
     /// A selectable row: a full-width line of text with a hover and selection background.
-    pub(super) fn row(&mut self, runs_: Vec<(String, Color)>, id: Id, selected: bool) -> Interaction {
+    pub(super) fn row(
+        &mut self,
+        runs_: Vec<(String, Color)>,
+        id: Id,
+        selected: bool,
+    ) -> Interaction {
         self.row_bg(runs_, id, selected.then_some(SELECTED))
     }
 
     /// A row with its own background when it is marked; hover shows otherwise.
-    pub(super) fn row_bg(&mut self, runs_: Vec<(String, Color)>, id: Id, marked: Option<Color>) -> Interaction {
+    pub(super) fn row_bg(
+        &mut self,
+        runs_: Vec<(String, Color)>,
+        id: Id,
+        marked: Option<Color>,
+    ) -> Interaction {
         let it = self.ui.interaction_of(id);
         let bg = marked.or(if it.hovered { Some(HOVER) } else { None });
-        self.ui.leaf(runs(runs_, self.px), Layout::row().grow_x().pad(2), Style { bg, ..Default::default() }, Some(id))
+        self.ui.leaf(
+            runs(runs_, self.px),
+            Layout::row().grow_x().pad(2),
+            Style {
+                bg,
+                ..Default::default()
+            },
+            Some(id),
+        )
     }
 
     /// A text field; clicking it takes the keyboard. The text is clipped to the box and
@@ -259,8 +355,14 @@ impl App {
         let caret = f.cursor as i32 + 1;
         let r = f.runs(hint);
         let x = (caret * self.cell.0 - (width - 6)).max(0);
-        let it = self.ui.open(Kind::None, Layout::row().w(width).pad(3).scroll(x, 0), Style::bg(FIELD).border(ui::BORDER_ALL, if focused { ACCENT } else { BORDER }), Some(id));
-        self.ui.leaf(runs(r, self.px), Layout::row(), Style::default(), None);
+        let it = self.ui.open(
+            Kind::None,
+            Layout::row().w(width).pad(3).scroll(x, 0),
+            Style::bg(FIELD).border(ui::BORDER_ALL, if focused { ACCENT } else { BORDER }),
+            Some(id),
+        );
+        self.ui
+            .leaf(runs(r, self.px), Layout::row(), Style::default(), None);
         self.ui.close();
         if it.clicked {
             self.take_focus(which);
@@ -279,14 +381,22 @@ impl App {
         let mut off = self.scrolls.get(&id).copied().unwrap_or(0);
         let off = self.ui.scroll_by_wheel(id, &mut off);
         self.scrolls.insert(id, off);
-        self.ui.open(Kind::None, layout.scroll(0, off), style, Some(id))
+        self.ui
+            .open(Kind::None, layout.scroll(0, off), style, Some(id))
     }
 
     /// A virtual list of `n` rows `row_h` high in the scrolling column `id`, whose rectangle is
     /// `rect`: the first row in view and how many fit (`guess` before the column has a size).
     /// Only those rows are built. This emits the spacer standing for the rows above; the caller
     /// ends the list with a `spacer` for the rows below.
-    pub(super) fn rows_window(&mut self, id: Id, rect: Option<Rect>, n: usize, row_h: i32, guess: usize) -> (usize, usize) {
+    pub(super) fn rows_window(
+        &mut self,
+        id: Id,
+        rect: Option<Rect>,
+        n: usize,
+        row_h: i32,
+        guess: usize,
+    ) -> (usize, usize) {
         let off = self.scrolls.get(&id).copied().unwrap_or(0);
         let visible = rect.map_or(guess, |r| (r.h / row_h + 2) as usize);
         let first = ((off / row_h).max(0) as usize).min(n);
@@ -296,7 +406,8 @@ impl App {
 
     /// Empty space `h` pixels high.
     pub(super) fn spacer(&mut self, h: i32) {
-        self.ui.leaf(Kind::None, Layout::row().h(h), Style::default(), None);
+        self.ui
+            .leaf(Kind::None, Layout::row().h(h), Style::default(), None);
     }
 
     /// The drawn form of lines `lo..=hi` of a file, built once per (file text, range) and
@@ -320,7 +431,16 @@ impl App {
     /// peeks. `bg(line)` paints a row, `bar(line)` its left edge; `wide` takes the full width
     /// rather than the grid's. Returns the interaction and, under the pointer, the line and
     /// the text column (None in the gutter).
-    pub fn code_block(&mut self, fi: usize, lo: usize, hi: usize, id: Id, wide: bool, bg: &dyn Fn(usize) -> Option<Color>, bar: &dyn Fn(usize) -> Option<Color>) -> (Interaction, Option<(usize, Option<usize>)>) {
+    pub fn code_block(
+        &mut self,
+        fi: usize,
+        lo: usize,
+        hi: usize,
+        id: Id,
+        wide: bool,
+        bg: &dyn Fn(usize) -> Option<Color>,
+        bar: &dyn Fn(usize) -> Option<Color>,
+    ) -> (Interaction, Option<(usize, Option<usize>)>) {
         let hi = hi.min(self.idx.files[fi].lines.len().saturating_sub(1));
         if hi < lo || self.idx.files[fi].lines.is_empty() {
             return (Interaction::default(), None);
@@ -337,7 +457,8 @@ impl App {
         }
         hx = hx.clamp(0, prev.rect.map_or(0, |r| (w - r.w).max(0)));
         self.hscroll.insert(id, hx);
-        let rows: Vec<(Option<Color>, Option<Color>)> = (lo..=hi).map(|li| (bg(li), bar(li))).collect();
+        let rows: Vec<(Option<Color>, Option<Color>)> =
+            (lo..=hi).map(|li| (bg(li), bar(li))).collect();
         let draw = move |gfx: &mut Gfx, r: Rect| {
             for (k, (bg, bar)) in rows.iter().enumerate() {
                 let y = r.y + k as i32 * rh;
@@ -353,8 +474,17 @@ impl App {
                 gfx.rect(Rect::new(r.x, r.y, 2, r.h), WEAK); // the left edge is cut off
             }
         };
-        let layout = if wide { Layout::row().grow_x().h(h) } else { Layout::row().w(w).h(h) };
-        let it = self.ui.leaf(Kind::Custom(Box::new(draw)), layout, Style::default(), Some(id));
+        let layout = if wide {
+            Layout::row().grow_x().h(h)
+        } else {
+            Layout::row().w(w).h(h)
+        };
+        let it = self.ui.leaf(
+            Kind::Custom(Box::new(draw)),
+            layout,
+            Style::default(),
+            Some(id),
+        );
         let mut at = None;
         if let Some(rect) = it.rect.filter(|_| it.hovered) {
             let (mx, my) = self.ui.input.mouse;
@@ -368,10 +498,10 @@ impl App {
                 self.actions.push(Action::PeekAt(fi, li, col));
             } else if it.double_clicked || (it.clicked && mods.ctrl) {
                 self.actions.push(Action::Jump(fi, li, col));
-            } else if !self.ui.input.down[0] {
-                if let Some(t) = self.probe(fi, li, col) {
-                    self.tooltip = Some((t, self.ui.input.mouse));
-                }
+            } else if !self.ui.input.down[0]
+                && let Some(t) = self.probe(fi, li, col)
+            {
+                self.tooltip = Some((t, self.ui.input.mouse));
             }
         }
         (it, at)

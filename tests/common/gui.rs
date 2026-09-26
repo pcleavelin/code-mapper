@@ -30,7 +30,13 @@ fn with_parent(bin: &Path, name: &str) -> PathBuf {
     let root = fixture(name, bin, true);
     if has_jj() {
         jj_commit(&root, "base");
-        for args in [&["step-note", "startup", "0", "A changed note."][..], &["path-add", "startup", "describe", "-1"], &["path-rm", "c-lib"], &["path-new", "fresh", "layer", "New here."], &["path-add", "fresh", "mean", "-1"]] {
+        for args in [
+            &["step-note", "startup", "0", "A changed note."][..],
+            &["path-add", "startup", "describe", "-1"],
+            &["path-rm", "c-lib"],
+            &["path-new", "fresh", "layer", "New here."],
+            &["path-add", "fresh", "mean", "-1"],
+        ] {
             codemap(bin, &root, args);
         }
     }
@@ -51,7 +57,11 @@ fn reload_hook(bin: &Path, root: &Path, line: &str) {
         edit_file(root, "src/store.rs", "< 1000", "< 2000");
     }
     if line.starts_with("DUMP rect edit-map") {
-        codemap(bin, root, &["path-note", "shapes", "Edited while the window was open."]);
+        codemap(
+            bin,
+            root,
+            &["path-note", "shapes", "Edited while the window was open."],
+        );
     }
 }
 
@@ -517,11 +527,20 @@ pub fn play(bin: &Path, s: &Scenario) -> (String, String) {
             let probe = lines[..k].join("\n") + "\nquit\n";
             let root = (s.setup)(bin, s.name);
             let err = gui(bin, &root, s.name, &probe, &mut |l| (s.hook)(bin, &root, l));
-            let (x, y, w, h) = last_rect(&err, &prefix).unwrap_or_else(|| panic!("{}: no rectangle for '{prefix}' before line {}\n{err}", s.name, k + 1));
+            let (x, y, w, h) = last_rect(&err, &prefix).unwrap_or_else(|| {
+                panic!(
+                    "{}: no rectangle for '{prefix}' before line {}\n{err}",
+                    s.name,
+                    k + 1
+                )
+            });
             let (px, py) = match offset {
                 Some(o) => {
                     let (dx, dy) = o.split_once(',').expect("dx,dy");
-                    (x + dx.trim().parse::<i32>().unwrap(), y + dy.trim().parse::<i32>().unwrap())
+                    (
+                        x + dx.trim().parse::<i32>().unwrap(),
+                        y + dy.trim().parse::<i32>().unwrap(),
+                    )
                 }
                 None => (x + w / 2, y + h / 2),
             };
@@ -529,7 +548,9 @@ pub fn play(bin: &Path, s: &Scenario) -> (String, String) {
         }
     }
     let root = (s.setup)(bin, s.name);
-    let err = gui(bin, &root, s.name, &(lines.join("\n") + "\n"), &mut |l| (s.hook)(bin, &root, l));
+    let err = gui(bin, &root, s.name, &(lines.join("\n") + "\n"), &mut |l| {
+        (s.hook)(bin, &root, l)
+    });
     let mut after = String::new();
     for args in s.after {
         let (out, e, code) = codemap(bin, &root, args);
@@ -543,9 +564,16 @@ pub fn play(bin: &Path, s: &Scenario) -> (String, String) {
 
 /// The last rectangle printed on a line starting with `prefix`: (x, y, w, h).
 fn last_rect(stderr: &str, prefix: &str) -> Option<(i32, i32, i32, i32)> {
-    let l = stderr.lines().filter(|l| l.starts_with(prefix)).last()?;
+    let l = stderr.lines().rfind(|l| l.starts_with(prefix))?;
     let r = l.split("Rect { ").nth(1)?;
-    let num = |k: &str| -> Option<i32> { r.split(&format!("{k}: ")).nth(1)?.split([',', ' ', '}']).next()?.parse().ok() };
+    let num = |k: &str| -> Option<i32> {
+        r.split(&format!("{k}: "))
+            .nth(1)?
+            .split([',', ' ', '}'])
+            .next()?
+            .parse()
+            .ok()
+    };
     Some((num("x")?, num("y")?, num("w")?, num("h")?))
 }
 

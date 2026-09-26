@@ -30,8 +30,8 @@ order 2
 author ai
 file src/gui/widgets.rs
 symbol code_block
-lines 0 55
-hash dd5ad37fceed403b
+lines 0 74
+hash bfa50cf0aa43d2b6
 note The one code element in the GUI: a block of lines drawn from a cached grid by a custom element, with the hover, jump and peek gestures resolved to (line, column) from the pointer. Per-row backgrounds and bars come from two closures, so the listing's selection and anchor bars and the document's slice highlight all share it.
 
 step k0lp9q
@@ -39,8 +39,8 @@ order 0
 author ai
 file src/index/treesitter.rs
 symbol highlight
-lines 0 38
-hash 08cab73d49ecb388
+lines 0 40
+hash 225935de1d173cd8
 note Runs the grammar's bundled highlight query over the parsed tree and splits every capture into per-line spans. Captures can nest and overlap, so spans are sorted and the first one wins, which is the convention those queries are written to.
 
 step mzy6zv
@@ -49,8 +49,8 @@ parent jc79gh
 author ai
 file src/gui/widgets.rs
 symbol build_grid
-lines 0 21
-hash 59762d43cf871834
+lines 0 25
+hash 94ce9697426ba1ea
 note The line's cached spans become one colour per character in a grid: the line number in the gutter, then the text. Built once per (file text, range); every view of those lines shares the grid and drawing it allocates nothing.
 
 step oy9py2
@@ -59,8 +59,8 @@ parent k0lp9q
 author ai
 file src/index/treesitter.rs
 symbol class_of
-lines 0 12
-hash 74161f863db49081
+lines 0 13
+hash 457030dfdf5dd2f7
 note Collapses the grammar's capture names (dozens, and different per language) into the eight classes the renderer knows. Anything unrecognised is plain and is not stored at all.
 
 step s9wyjd
@@ -77,7 +77,7 @@ step uj81kd
 order 5
 author ai
 file src/index/mod.rs
-lines 84 94
+lines 104 114
 hash 18e4db0908b568e1
 note The vocabulary: a span is a byte range in one line plus a class, and there are eight classes. Storing a class byte rather than a colour is what lets the cache outlive a theme change, and keeps the whole highlight table for a large file small.
 

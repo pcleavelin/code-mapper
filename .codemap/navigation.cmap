@@ -11,8 +11,8 @@ parent gq28ix
 author ai
 file src/gui/nav.rs
 symbol step_removed
-lines 0 8
-hash a75bd6796caba98c
+lines 0 28
+hash 30ec55e7fd507daa
 note Removing a step shifts the indices of every step above it in that path: the step views and every history entry of the path follow, and the removed step's own entries go, so back never lands on the wrong step.
 
 step 447wu9
@@ -21,8 +21,8 @@ parent qab7b7
 author ai
 file src/gui/nav.rs
 symbol select_symbol
-lines 0 10
-hash ec3983baec471a40
+lines 0 14
+hash 07f9c73792db1f56
 note Selecting the symbol, which lands on a step instead when that symbol is a whole-symbol step of the path being read.
 
 step 4woh4j
@@ -31,8 +31,8 @@ parent 5hqfou
 author ai
 file src/gui/nav.rs
 symbol step_by
-lines 0 8
-hash 743dc303b9f24897
+lines 0 15
+hash b36fa2685a6cceb6
 note Up and down with no field focused: the selected step moves through the path in reading order, clamped at both ends; with nothing selected the first step.
 
 step 4wpg9r
@@ -49,8 +49,8 @@ order 12
 author ai
 file src/gui/mod.rs
 symbol frame
-lines 37 42
-hash 5f74ea311f570205
+lines 40 51
+hash 44032fd90fdfd78d
 note The keys, read in the frame before the tree is built: ctrl+s saves, alt+left and alt+right go back and forward, and the mouse's two side buttons do the same - the window turns those into flags on the input, so the app does not care which it was.
 
 step 5wentz
@@ -59,8 +59,8 @@ parent syqeay
 author ai
 file src/gui/nav.rs
 symbol here
-lines 0 2
-hash c332fc59ca93e446
+lines 0 9
+hash 2e5a933177519138
 note Snapshots the current place. Used for the comparison and for both stacks.
 
 step c5wt5k
@@ -79,8 +79,8 @@ parent ju7j2n
 author ai
 file src/gui/nav.rs
 symbol go
-lines 0 18
-hash a76b8cef0525ad60
+lines 0 20
+hash 651c017ac52104f2
 note Restoring a place without it counting as a new navigation - it overwrites the last-frame snapshot, so track_navigation sees no difference at the end of this frame. A path or symbol that disappeared since is dropped rather than restored.
 
 step hbxizr
@@ -89,8 +89,8 @@ parent gq28ix
 author ai
 file src/gui/nav.rs
 symbol path_removed
-lines 0 9
-hash 93dc1dc6c2a5062a
+lines 0 23
+hash 2609b1abe2e74d1e
 note Removing a path drops its records and history entries and shifts later paths down one, so nothing of another path is lost or reattached.
 
 step hdsnp8
@@ -99,8 +99,8 @@ parent 0tjy5k
 author ai
 file src/gui/document.rs
 symbol impl App
-lines 5 9
-hash bd8e938753667f4e
+lines 5 13
+hash 3eb19391a0886714
 note The one rewrite of the step views onto new (path, step) keys: the closure gives each key its new value or drops the view. Removing a step, removing a path and reloading the map each pass their own closure.
 
 step j5iweb
@@ -118,8 +118,8 @@ order 4
 author ai
 file src/gui/nav.rs
 symbol back
-lines 0 4
-hash 4f8e201e3c3b4040
+lines 0 6
+hash 1401962590e7a693
 note Back: pop the history, push where we are onto the forward stack, restore. Bound to alt+left and the mouse's back button.
 
 step kv8kwg
@@ -128,8 +128,8 @@ parent 4wpg9r
 author ai
 file src/gui/nav.rs
 symbol same_place
-lines 0 2
-hash f42e812af97d6796
+lines 0 6
+hash 5842259ecece6136
 note The comparison that decides whether something was a navigation. The line selection is deliberately left out: moving the caret in the listing is not a move.
 
 step loikda
@@ -137,8 +137,8 @@ order 8
 author ai
 file src/gui/nav.rs
 symbol forward
-lines 0 4
-hash 2c33cb3c8235fc3c
+lines 0 6
+hash 647647a28c8b2c15
 note Forward: the mirror image, valid only until the next real navigation clears the stack.
 
 step qab7b7
@@ -146,8 +146,8 @@ order 9
 author ai
 file src/gui/nav.rs
 symbol go_to_symbol
-lines 0 9
-hash a6739944cf374273
+lines 0 13
+hash 17e72c42f9045991
 note The usual way a symbol is opened from a list or an xref: select it, and open the listing unless the graph or a document is already showing it.
 
 step syqeay
@@ -156,7 +156,7 @@ author ai
 file src/gui/nav.rs
 symbol track_navigation
 lines 0 12
-hash d4deb6fe20aed2d8
+hash da5223d84139e9b7
 note Called once at the very end of the frame, after the frame's actions have been applied. A difference from last frame pushes the old place and drops the forward stack, exactly like a browser; the history is capped at two hundred entries.
 
 step t1zqws
@@ -164,8 +164,8 @@ order 11
 author ai
 file src/gui/peek.rs
 symbol probe_def
-lines 0 16
-hash 07bb90728418c169
+lines 0 18
+hash 4399ab4785ef3090
 note Go-to-definition: the identifier under the pointer is looked up by the language's server (or the index, for a grammar-only file) and, once the answer is in, selected or opened in the listing; a definition outside the repo is pinned in the peek panel instead, since there is no file to open.
 
 step w39a81

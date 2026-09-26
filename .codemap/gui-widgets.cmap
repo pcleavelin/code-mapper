@@ -10,8 +10,8 @@ order 1
 author ai
 file src/gui/widgets.rs
 symbol text
-lines 0 2
-hash afda823bd9ec0565
+lines 0 6
+hash 138b185a172a8fe5
 note The three ways text becomes an element, grouped here: this one is a single run of one colour on one line, and it is what every label is made of.
 
 step 2havd5
@@ -37,8 +37,8 @@ order 20
 author ai
 file src/gui/widgets.rs
 symbol row_bg
-lines 0 4
-hash 405970cbd9f3cc85
+lines 0 17
+hash faa3a713fedf8aaf
 note A row with its own mark colour: the outline uses a weaker tint for the step under the top of the document than for the selected step, so the two never merge.
 
 step 7mnsht
@@ -46,8 +46,8 @@ order 6
 author ai
 file src/gui/widgets.rs
 symbol field
-lines 0 13
-hash a295eac89a4ff758
+lines 0 19
+hash 674366e5662fd3ee
 note A text field: a fixed-width box that clips its text and scrolls it sideways so the caret stays visible; clicking takes the keyboard from the other fields.
 
 step aidqqn
@@ -55,8 +55,8 @@ order 2
 author ai
 file src/gui/widgets.rs
 symbol label
-lines 0 2
-hash d7e1047a2fa46467
+lines 0 7
+hash 6887dfd71312ff71
 note A line of text with a little padding and no interaction. The most-used thing in the file.
 
 step e2sdhm
@@ -65,8 +65,8 @@ parent 0tlkjk
 author ai
 file src/gui/widgets.rs
 symbol wrapped
-lines 0 2
-hash 83c4ff2f098fd1aa
+lines 0 6
+hash 34e295f280a8d824
 note The same, wrapped to whatever width the element ends up with. Path notes and step notes are the only things drawn this way, because they are the only prose in the app.
 
 step gjm6fk
@@ -83,8 +83,8 @@ order 21
 author ai
 file src/gui/widgets.rs
 symbol trunc_left
-lines 0 3
-hash 54d2e899fe96abaa
+lines 0 9
+hash 65b2a207258eb194
 note Cuts from the front and keeps the tail: paths are cut this way in the Symbols tab and the peek header, so the file name and line survive.
 
 step jb1qok
@@ -103,8 +103,8 @@ parent 0tlkjk
 author ai
 file src/gui/widgets.rs
 symbol runs
-lines 0 2
-hash 632b9f86ebe84fa7
+lines 0 6
+hash 8ae832d1bb3e3c0b
 note A prepared list of coloured runs as one element, for anything that is more than one colour on a line: a syntax-coloured code row, a row with a dimmed file name after it, a field with a caret in the middle.
 
 step pk9re7
@@ -112,8 +112,8 @@ order 15
 author ai
 file src/gui/widgets.rs
 symbol code_block
-lines 0 55
-hash dd5ad37fceed403b
+lines 0 74
+hash bfa50cf0aa43d2b6
 note The one code element in the GUI: a block of lines drawn from a cached grid by a custom element, with the hover, jump and peek gestures resolved to (line, column) from the pointer. Per-row backgrounds and bars come from two closures, so the listing's selection and anchor bars and the document's slice highlight all share it.
 
 step pwtsq2
@@ -121,8 +121,8 @@ order 18
 author ai
 file src/gui/widgets.rs
 symbol small_button_w
-lines 0 4
-hash d27a87c1b897c3da
+lines 0 13
+hash f19e3ace99038004
 note A small button of fixed width, or fitted to its label when the width is 0, which is what small_button passes: a toggle whose label changes ('hide code' to 'code') keeps its place, so the buttons beside it never slide under a pointer clicking twice.
 
 step qceo1l
@@ -130,8 +130,8 @@ order 19
 author ai
 file src/gui/widgets.rs
 symbol nav_button
-lines 0 4
-hash b91433d6b922c1c5
+lines 0 16
+hash 27ac24d4f4919063
 note Back and forward: three cells wide, dimmed when their stack is empty so the reader sees there is nowhere to go.
 
 step rs11uk
@@ -148,8 +148,8 @@ order 14
 author ai
 file src/gui/widgets.rs
 symbol scroll_open
-lines 0 5
-hash e437f447dcf49beb
+lines 0 6
+hash a215967502c0fff3
 note Opens a scrolling column and remembers its offset by id on the App. The tree clamps the offset against what the column showed last frame, so a panel that shrank cannot stay scrolled past its end.
 
 step tstdq3
@@ -168,8 +168,8 @@ parent ulzrgg
 author ai
 file src/gui/widgets.rs
 symbol byte_at
-lines 0 2
-hash 197ca01948eba0b9
+lines 0 6
+hash 9fc1c6b2ab0d4e91
 note The caret is counted in characters and the text is indexed in bytes; this is the one place the two meet, so a non-ASCII character cannot split a string.
 
 step ulzrgg
@@ -187,8 +187,8 @@ order 3
 author ai
 file src/gui/widgets.rs
 symbol button
-lines 0 4
-hash 8b89b490809e2ea3
+lines 0 15
+hash ce5c989dadb0f809
 note A framed button with three states. It asks the tree what its id learned before it builds the element, which is how it can colour itself for a hover that happened last frame.
 
 step wysgxw
@@ -196,8 +196,8 @@ order 5
 author ai
 file src/gui/widgets.rs
 symbol row
-lines 0 2
-hash 97054c4c13cdd6eb
+lines 0 7
+hash 5d24e4fbc81da6c1
 note A selectable full-width row: coloured runs, a hover background and a selection background. Every list in the app - paths, outline, symbols, files, xrefs, results, diff - is this one function in a loop.
 
 step zo7d1b
@@ -206,6 +206,6 @@ parent ulzrgg
 author ai
 file src/gui/widgets.rs
 symbol runs
-lines 0 2
-hash 632b9f86ebe84fa7
+lines 0 6
+hash 8ae832d1bb3e3c0b
 note The field as runs: text before the caret, the caret itself when focused, text after. An empty unfocused field shows its hint instead.

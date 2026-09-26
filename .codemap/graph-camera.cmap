@@ -11,8 +11,8 @@ parent gknv1n
 author ai
 file src/gui/graph.rs
 symbol bbox_cells
-lines 0 10
-hash abf85dc6907ce47b
+lines 0 12
+hash 79dfcc8ebb50877a
 note The tree's bounding box in cells and rows. No zoom changes it, which is what lets fit pick a font size and a pan in the same frame instead of guessing, re-laying out and guessing again.
 
 step gknv1n
@@ -20,8 +20,8 @@ order 0
 author ai
 file src/gui/graph.rs
 symbol graph_tab
-lines 118 142
-hash 952b6ca16f584001
+lines 150 180
+hash f40bff76e09f4901
 note The frame's two camera hooks, side by side. The fit runs here rather than inside the graph because it needs the font metrics: the layout is already done in cells, so it walks the font size down until the tree's cell box fits the canvas, sets the zoom to exactly that size over the UI size (so graph_px reproduces it), and pans to the tree's top-left. Everything else the camera does is move_camera, called once this frame's cell size is recorded, so rect_px can give it pixel rectangles.
 
 step v0z9ng
@@ -39,6 +39,6 @@ parent gknv1n
 author ai
 file src/gui/graph.rs
 symbol move_camera
-lines 0 16
-hash cb393837db5eae01
+lines 0 20
+hash 96cd2d474f18eee8
 note The one place a camera move is honoured, in priority order: a pending look at the focus, then a kept node. A node taller than the canvas is aligned to its top, because its header and its buttons are what the reader came for; centring it put them off screen. Nothing here runs unless a flag asked for it, so a rebuild or a re-index leaves pan and zoom alone.

@@ -45,7 +45,15 @@ impl Script {
     fn load() -> Option<Script> {
         let path = std::env::var_os("CODEMAP_SCRIPT")?;
         let text = std::fs::read_to_string(&path).ok()?;
-        Some(Script { lines: text.lines().map(|l| l.trim().to_owned()).filter(|l| !l.is_empty() && !l.starts_with('#')).collect(), pc: 0, wait: 0 })
+        Some(Script {
+            lines: text
+                .lines()
+                .map(|l| l.trim().to_owned())
+                .filter(|l| !l.is_empty() && !l.starts_with('#'))
+                .collect(),
+            pc: 0,
+            wait: 0,
+        })
     }
 }
 
@@ -71,18 +79,26 @@ impl<A: App> Runner<A> {
     /// Run the script up to and including the next input command or wait. Returns whether to
     /// quit.
     fn step_script(&mut self) -> bool {
-        let Some(sc) = self.script.as_mut() else { return false };
+        let Some(sc) = self.script.as_mut() else {
+            return false;
+        };
         if sc.wait > 0 {
             sc.wait -= 1;
             return false;
         }
         self.input.mods = self.mods;
         loop {
-            let Some(line) = sc.lines.get(sc.pc).cloned() else { return false };
+            let Some(line) = sc.lines.get(sc.pc).cloned() else {
+                return false;
+            };
             sc.pc += 1;
             let w: Vec<&str> = line.split_whitespace().collect();
             let num = |i: usize| w.get(i).and_then(|v| v.parse::<i32>().ok()).unwrap_or(0);
-            let mods = |from: usize| Mods { ctrl: w[from.min(w.len())..].contains(&"ctrl"), shift: w[from.min(w.len())..].contains(&"shift"), alt: w[from.min(w.len())..].contains(&"alt") };
+            let mods = |from: usize| Mods {
+                ctrl: w[from.min(w.len())..].contains(&"ctrl"),
+                shift: w[from.min(w.len())..].contains(&"shift"),
+                alt: w[from.min(w.len())..].contains(&"alt"),
+            };
             match w[0] {
                 "wait" => {
                     sc.wait = (num(1).max(1) - 1) as u32;
@@ -107,7 +123,16 @@ impl<A: App> Runner<A> {
                         rest.push_str(" twice");
                     }
                     let at = sc.pc;
-                    sc.lines.splice(at..at, [format!("mouse {} {}", w[1], w[2]), format!("down {rest}"), "wait 1".into(), "up".into(), "wait 1".into()]);
+                    sc.lines.splice(
+                        at..at,
+                        [
+                            format!("mouse {} {}", w[1], w[2]),
+                            format!("down {rest}"),
+                            "wait 1".into(),
+                            "up".into(),
+                            "wait 1".into(),
+                        ],
+                    );
                 }
                 "click-id" | "hover-id" | "dblclick-id" => {
                     // the element by name, then the plain form of the same gesture
@@ -130,7 +155,11 @@ impl<A: App> Runner<A> {
                     let n = 8;
                     let mut ins = vec![format!("mouse {x0} {y0}"), "down".into(), "wait 1".into()];
                     for i in 1..=n {
-                        ins.push(format!("mouse {} {}", x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n));
+                        ins.push(format!(
+                            "mouse {} {}",
+                            x0 + (x1 - x0) * i / n,
+                            y0 + (y1 - y0) * i / n
+                        ));
                         ins.push("wait 1".into());
                     }
                     ins.push("up".into());
@@ -164,7 +193,13 @@ impl<A: App> Runner<A> {
                 "quit" => return true,
                 _ => {
                     if line == "dump" {
-                        eprintln!("DUMP frames n={} max={:.1} over16={} t={:.1}", self.frames, self.frame_max.as_secs_f64() * 1000.0, self.frame_over, self.start.elapsed().as_secs_f64() * 1000.0);
+                        eprintln!(
+                            "DUMP frames n={} max={:.1} over16={} t={:.1}",
+                            self.frames,
+                            self.frame_max.as_secs_f64() * 1000.0,
+                            self.frame_over,
+                            self.start.elapsed().as_secs_f64() * 1000.0
+                        );
                         (self.frames, self.frame_max, self.frame_over) = (0, Duration::ZERO, 0);
                     }
                     if !self.app.script(&line) {
@@ -185,7 +220,10 @@ impl<A: App> ApplicationHandler for Runner<A> {
         if self.gfx.is_some() {
             return;
         }
-        let attrs = Window::default_attributes().with_title(&self.title).with_inner_size(winit::dpi::LogicalSize::new(1600.0, 1000.0)).with_maximized(true);
+        let attrs = Window::default_attributes()
+            .with_title(&self.title)
+            .with_inner_size(winit::dpi::LogicalSize::new(1600.0, 1000.0))
+            .with_maximized(true);
         let window = Arc::new(event_loop.create_window(attrs).expect("window"));
         let gfx = Gfx::new(window);
         self.input.size = gfx.size;
@@ -207,7 +245,11 @@ impl<A: App> ApplicationHandler for Runner<A> {
             }
             WindowEvent::ModifiersChanged(m) => {
                 let s = m.state();
-                self.mods = Mods { ctrl: s.control_key(), shift: s.shift_key(), alt: s.alt_key() };
+                self.mods = Mods {
+                    ctrl: s.control_key(),
+                    shift: s.shift_key(),
+                    alt: s.alt_key(),
+                };
                 self.input.mods = self.mods;
             }
             WindowEvent::CursorMoved { position, .. } => {
@@ -244,10 +286,16 @@ impl<A: App> ApplicationHandler for Runner<A> {
                         self.input.down[b] = true;
                         self.input.pressed[b] = true;
                         let now = Instant::now();
-                        let near = |a: (i32, i32), c: (i32, i32)| (a.0 - c.0).abs() < 4 && (a.1 - c.1).abs() < 4;
+                        let near = |a: (i32, i32), c: (i32, i32)| {
+                            (a.0 - c.0).abs() < 4 && (a.1 - c.1).abs() < 4
+                        };
                         let double = matches!(self.last_click, Some((t, lb, p)) if lb == b as u8 && now.duration_since(t) < Duration::from_millis(350) && near(p, self.input.mouse));
                         self.input.clicks[b] = if double { 2 } else { 1 };
-                        self.last_click = if double { None } else { Some((now, b as u8, self.input.mouse)) };
+                        self.last_click = if double {
+                            None
+                        } else {
+                            Some((now, b as u8, self.input.mouse))
+                        };
                     }
                     ElementState::Released => self.input.down[b] = false,
                 }
@@ -281,10 +329,13 @@ impl<A: App> ApplicationHandler for Runner<A> {
                     if let Some(k) = key {
                         self.input.keys.push((k, self.mods));
                     }
-                    if let Some(t) = &event.text {
-                        if !self.mods.ctrl && !self.mods.alt {
-                            self.input.text.extend(t.chars().filter(|c| !c.is_control()));
-                        }
+                    if let Some(t) = &event.text
+                        && !self.mods.ctrl
+                        && !self.mods.alt
+                    {
+                        self.input
+                            .text
+                            .extend(t.chars().filter(|c| !c.is_control()));
                     }
                 }
                 self.pending = true;
@@ -307,7 +358,12 @@ impl<A: App> ApplicationHandler for Runner<A> {
                 self.frame_over += (d > Duration::from_millis(16)) as u32;
                 self.input.end_frame();
                 self.pending = false;
-                self.next_redraw = Instant::now() + if self.script.is_some() { Duration::from_millis(8) } else { out.redraw_after };
+                self.next_redraw = Instant::now()
+                    + if self.script.is_some() {
+                        Duration::from_millis(8)
+                    } else {
+                        out.redraw_after
+                    };
                 if out.quit || scripted_quit {
                     event_loop.exit();
                 }
@@ -328,6 +384,21 @@ impl<A: App> ApplicationHandler for Runner<A> {
 
 pub fn run(title: &str, app: impl App + 'static) {
     let event_loop = EventLoop::new().expect("event loop");
-    let mut runner = Runner { app, title: title.to_owned(), gfx: None, input: Input::default(), mods: Mods::default(), last_click: None, pending: true, next_redraw: Instant::now(), start: Instant::now(), cursor: CursorIcon::Default, script: Script::load(), frames: 0, frame_max: Duration::ZERO, frame_over: 0 };
+    let mut runner = Runner {
+        app,
+        title: title.to_owned(),
+        gfx: None,
+        input: Input::default(),
+        mods: Mods::default(),
+        last_click: None,
+        pending: true,
+        next_redraw: Instant::now(),
+        start: Instant::now(),
+        cursor: CursorIcon::Default,
+        script: Script::load(),
+        frames: 0,
+        frame_max: Duration::ZERO,
+        frame_over: 0,
+    };
     event_loop.run_app(&mut runner).expect("run");
 }

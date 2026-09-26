@@ -10,8 +10,8 @@ order 1
 author ai
 file src/gui/views.rs
 symbol results_view
-lines 0 20
-hash d7c591189a131fe6
+lines 0 37
+hash 87a0b8c402345584
 note The Results tab: a hint when there is nothing to show, else one virtualised row per hit, file:line then the trimmed line, a click opens the listing there.
 
 step o1sh41
@@ -29,6 +29,6 @@ order 0
 author ai
 file src/gui/mod.rs
 symbol run_search
-lines 0 21
-hash 999fa55e4e577971
+lines 0 33
+hash 957dab6d023847d3
 note The search: the regex is compiled before the previous results are dropped, so a typo keeps the last hit list and only reports; the scan is over the lines already in memory.

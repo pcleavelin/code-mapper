@@ -41,8 +41,8 @@ parent 9pngy2
 author ai
 file src/index/mod.rs
 symbol LANGS
-lines 0 6
-hash 19ab4c42ef61fcbd
+lines 0 26
+hash 745046b56b50c38b
 note The whole language table. Adding a language is one row here plus a grammar in language_for.
 
 step 8cainq
@@ -70,8 +70,8 @@ parent nrox65
 author ai
 file src/index/mod.rs
 symbol by_key
-lines 0 4
-hash 31d84f58782406f9
+lines 0 7
+hash ac0a10b4f17e9bfb
 note The other direction: a key back to a SymRef, or None when the symbol is gone.
 
 step g02t1y
@@ -81,7 +81,7 @@ author ai
 file src/index/mod.rs
 symbol Symbol
 lines 0 12
-hash 4c88ac23448841dd
+hash 65ad1e6424ba5f27
 note A declaration. start/end are inclusive 0-based rows and are what anchors are measured against, so both backends deliberately start a symbol at the line its name is on. depth is 0 or 1 (a member of an impl, mod, trait or class body), owner is the type it belongs to. calls and targets are the two backends' raw xref material; callees and callers are what link derives from them.
 
 step iq9eyk

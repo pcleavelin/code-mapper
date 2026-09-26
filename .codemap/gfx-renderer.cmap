@@ -21,8 +21,8 @@ parent 6my0c1
 author ai
 file src/gfx.rs
 symbol make_texture
-lines 0 11
-hash 36ccfbfd56498bc7
+lines 0 15
+hash 5e202a97610ebe7f
 note The atlas texture: one byte per texel, sampled as the red channel. Rebuilt whenever the atlas grows.
 
 step 28wxi1
@@ -31,8 +31,8 @@ parent pqukys
 author ai
 file src/gfx.rs
 symbol read_back
-lines 0 38
-hash c5d0aee45049d620
+lines 0 79
+hash fbcf00108b79d302
 note The screenshot path: copy the frame to a buffer with rows padded as the API demands, block until the GPU is done, swap the channels when the surface is BGRA, and write a PNG. It is the only blocking call in the renderer and it only runs when the app asked for a shot.
 
 step 3pfwxr
@@ -51,8 +51,8 @@ parent ont7tk
 author ai
 file src/gfx.rs
 symbol line
-lines 0 9
-hash 9b414347142ad3fa
+lines 0 18
+hash 7ba7cfab550715ca
 note A segment of a given thickness, built as a quad offset along the segment's normal. Degenerate segments are dropped, which is what keeps a bezier's repeated points from producing NaNs.
 
 step 648zwu
@@ -71,8 +71,8 @@ parent ont7tk
 author ai
 file src/gfx.rs
 symbol new
-lines 0 87
-hash 8bb9ced25ff05978
+lines 0 155
+hash 4807321fc86b123a
 note One-time setup: adapter, device, surface. The surface is deliberately configured to a non-sRGB format when one is offered, because the colours in the app are already sRGB and a sRGB target would convert them twice; COPY_SRC is added so a frame can be read back as a screenshot.
 
 step 7q87vj
@@ -81,8 +81,8 @@ parent 6my0c1
 author ai
 file src/gfx.rs
 symbol make_bind_group
-lines 0 11
-hash f50afcc949d75c02
+lines 0 26
+hash 93837759291caaea
 note Uniforms, atlas view and sampler in one group. Remade with the texture, which is the only reason the layout and the sampler are kept around.
 
 step 82ju6u
@@ -91,8 +91,8 @@ parent ont7tk
 author ai
 file src/gfx.rs
 symbol glyph
-lines 0 27
-hash cd12b38495291c25
+lines 0 34
+hash 2dfb9e27107b8035
 note A glyph, rasterised on first use and cached: fontdue produces coverage, a shelf slot is allocated, the rows are copied into the CPU-side atlas and it is marked dirty so the next render uploads it.
 
 step 8y1r22
@@ -161,8 +161,8 @@ parent pqukys
 author ai
 file src/gfx.rs
 symbol fit_buffer
-lines 0 6
-hash 61afe2fac34cfc2a
+lines 0 17
+hash 9ddc46673dafd5fa
 note Makes a vertex or index buffer hold this frame's bytes: kept while it is big enough, otherwise replaced by a power of two of at least 64 KiB, so it is replaced rarely and a steady frame allocates nothing on the GPU.
 
 step fuieq8
@@ -171,8 +171,8 @@ parent ont7tk
 author ai
 file src/gfx.rs
 symbol font
-lines 0 11
-hash 4f438fc6fe9c6cd3
+lines 0 23
+hash 8b15f1ad242085f7
 note Cell width, row height and ascent at one pixel size, memoised. Everything is rounded to whole pixels here and nowhere else, which is what makes rows and columns tile exactly.
 
 step gcu80b
@@ -211,8 +211,8 @@ parent 82ju6u
 author ai
 file src/gfx.rs
 symbol grow_atlas
-lines 0 5
-hash 971c0ef87a5fe900
+lines 0 11
+hash 3f87846ca67763a6
 note A full atlas doubles, up to a cap, and everything is rasterised again on demand rather than being copied - it happens once or twice in a session. At the cap it starts over empty instead of refusing to draw text.
 
 step lbhh7l
@@ -221,8 +221,8 @@ parent ont7tk
 author ai
 file src/gfx.rs
 symbol circle
-lines 0 13
-hash 83a6a27cd447af53
+lines 0 22
+hash 681d50acad62708d
 note A twelve-sided fan, used for the dot at the end of a graph edge.
 
 step m8d9hc
@@ -231,8 +231,8 @@ parent 6my0c1
 author ai
 file src/gfx.rs
 symbol new
-lines 0 11
-hash 8ff9477fdbf2dbbd
+lines 0 19
+hash ba016716bc9f8b25
 note A fresh atlas starts with a 4x4 white block in the corner and the shelf cursor past it, so every solid fill has something to sample and the margin keeps filtering from reaching a neighbouring glyph.
 
 step mabgun
@@ -241,8 +241,8 @@ parent wjc7z8
 author ai
 file src/gfx.rs
 symbol put
-lines 0 8
-hash a322a35285dceadf
+lines 0 13
+hash 12abdd3051acf2b3
 note One glyph quad from the atlas at a pen and baseline; text and glyphs both go through it.
 
 step mdbfne
@@ -271,8 +271,8 @@ parent 9tzzvn
 author ai
 file src/gfx.rs
 symbol cut
-lines 0 7
-hash 013d702235fd7843
+lines 0 11
+hash 2656b12d45ae1235
 note Starts a new command at the current clip. A command is reused only while it holds no indices: after an element's quads land in it, a clip change must open a new one, or a later pop would repaint those quads under the outer clip.
 
 step nimce5
@@ -320,8 +320,8 @@ parent ont7tk
 author ai
 file src/gfx.rs
 symbol render
-lines 0 68
-hash 38a5b9ea644ced68
+lines 0 107
+hash 4123c178cc633040
 note Present one frame: upload the atlas if it changed, the screen size, and the geometry into buffers that grow by powers of two and are then reused; then one render pass that sets the pipeline once and issues a draw per clip command. A lost or outdated surface reconfigures and skips the frame rather than failing.
 
 step rfhh3z
@@ -330,8 +330,8 @@ parent ont7tk
 author ai
 file src/gfx.rs
 symbol quad
-lines 0 8
-hash 3847666479df6232
+lines 0 25
+hash ba2fd9605e81d71c
 note Four corners, each paired with its atlas coordinate, become four vertices and six indices, then extend_cmd moves the current command's end past them. Rectangles, lines and glyphs all end up here.
 
 step sdbwac
@@ -350,8 +350,8 @@ parent c5pt22
 author ai
 file src/gfx.rs
 symbol impl Rect
-lines 0 26
-hash 01f1bdbe2e6afbeb
+lines 0 36
+hash 6dca8fa2ac479437
 note Its whole vocabulary: edges, containment for hit tests, intersection for clips, shrink for insetting a border, and the emptiness test that skips a draw. Nothing here allocates or branches on anything but arithmetic.
 
 step ur740m
@@ -360,8 +360,8 @@ parent 3rc8fg
 author ai
 file src/gfx.rs
 symbol curve
-lines 0 10
-hash 2b18dd3a4866c8ea
+lines 0 18
+hash c6550df02499a932
 note A cubic bezier as twenty-four straight segments. Enough for the edge curves on the graph at any zoom this app allows, and it needs no new pipeline state.
 
 step v0v4jr

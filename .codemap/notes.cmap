@@ -10,6 +10,6 @@ order 0
 author ai
 file src/cli.rs
 symbol exec
-lines 45 57
-hash 54680248269195f8
+lines 62 80
+hash ab4bbc3a6aa995e4
 note Each matching line of a note prints once, with the path name, and for step notes the step index and file:line, so the output parses like grep.

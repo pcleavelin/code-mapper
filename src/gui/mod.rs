@@ -13,19 +13,22 @@ mod views;
 mod widgets;
 mod work;
 
+use self::{dock::*, document::*, nav::*, panels::*, peek::*, widgets::*, work::*};
 use crate::cli;
 use crate::gfx::{Color, Gfx, Glyphs, Rect};
-use crate::window;
 use crate::index::{self, Index, ServerFile, SymRef};
 use crate::lsp;
 use crate::map::{Author, Change, Kind as PathKind, Map, PathDiff, Row, StepChange};
-use crate::ui::{self, Align, Id, Interaction, Key, Kind, Layout, Measure, Style, Text, Ui, BORDER_BOTTOM, BORDER_LEFT, BORDER_RIGHT, BORDER_TOP};
+use crate::ui::{
+    self, Align, BORDER_BOTTOM, BORDER_LEFT, BORDER_RIGHT, BORDER_TOP, Id, Interaction, Key, Kind,
+    Layout, Measure, Style, Text, Ui,
+};
+use crate::window;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::mpsc::{Receiver, Sender, TryRecvError, channel};
 use std::time::{Duration, Instant, SystemTime};
-use self::{dock::*, document::*, nav::*, panels::*, peek::*, widgets::*, work::*};
 
 /// The tab of the centre panel.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -55,15 +58,15 @@ pub enum Action {
     Focus(SymRef),
     OpenPath(usize, Tab), // select the path unless it is the one being read, and show it in the tab
     SelectStep(usize, usize, bool), // (path, step, clicked inside the document)
-    ToggleWhole(usize, usize),      // show the whole symbol / just the slice in the document
-    ToggleCode(usize, usize),       // hide / show a step's code
-    ToggleFold(usize, usize),       // hide / show a step's subtree
-    ToggleLink(usize, usize),       // show / hide the path a step links to, inline under it
+    ToggleWhole(usize, usize), // show the whole symbol / just the slice in the document
+    ToggleCode(usize, usize), // hide / show a step's code
+    ToggleFold(usize, usize), // hide / show a step's subtree
+    ToggleLink(usize, usize), // show / hide the path a step links to, inline under it
     CollapseAll(usize, bool), // (path, hide): hide every step's code, or show all and unfold all
-    FoldAll(usize, bool),     // (path, fold): fold every step with children, or unfold all
+    FoldAll(usize, bool), // (path, fold): fold every step with children, or unfold all
     DeleteStep(usize, usize),
     DeletePath(usize),
-    GoTo(usize, usize),        // (file, line) in the listing
+    GoTo(usize, usize),          // (file, line) in the listing
     Jump(usize, usize, usize),   // (file, line, column): to the definition of the identifier there
     PeekAt(usize, usize, usize), // the same, pinned in the peek panel
     SelectLine(usize, bool),     // (line, extend) in the listing
@@ -84,8 +87,8 @@ pub struct App {
     lookup: Lookup, // hover and definition requests to the servers
     now: f64,       // the frame's time, seconds since the window opened
     grids: HashMap<(usize, u64, usize, usize), Rc<Glyphs>>, // (file, text hash, first line, last line) -> its drawn form
-    hscroll: HashMap<Id, i32>,                             // horizontal offset of each code block, in pixels
-    output_bottom: u8,                                     // frames left in which the log is pinned to its end
+    hscroll: HashMap<Id, i32>, // horizontal offset of each code block, in pixels
+    output_bottom: u8,         // frames left in which the log is pinned to its end
     pub map: Map,
     base: Option<Map>, // the map at the parent revision, for the diff
     base_why: String,  // why there is no base map, when there is none
@@ -96,16 +99,16 @@ pub struct App {
     pub sel_path: Option<usize>,   // the path being read: outline expanded, document shown
     pub sel_anchor: Option<usize>, // the selected step of it, when the selection came through the path
     pub cur_file: Option<usize>,
-    pub sel: Option<(usize, usize)>,     // (anchor line, active line) of the line selection
-    scroll_to: Option<usize>,            // the listing scrolls this line into view next frame
+    pub sel: Option<(usize, usize)>, // (anchor line, active line) of the line selection
+    scroll_to: Option<usize>,        // the listing scrolls this line into view next frame
     scroll_to_step: Option<(usize, u8)>, // the document scrolls this step's header to the top; tries left
-    top_step: Option<usize>,             // the step whose header is topmost in the document viewport
-    outline_shown: Option<usize>,        // the top step the outline last scrolled to keep in view
+    top_step: Option<usize>, // the step whose header is topmost in the document viewport
+    outline_shown: Option<usize>, // the top step the outline last scrolled to keep in view
 
     steps: HashMap<(usize, usize), StepView>, // (path, step) -> how the step shows, when not the default
-    dir_toggled: HashSet<String>,            // directories in the Files tab whose default open state is flipped
-    groups_open: HashMap<String, bool>,      // groups in the Paths tab the reader opened or closed
-    peek: Option<Peek>,                      // a definition pinned in the right panel
+    dir_toggled: HashSet<String>, // directories in the Files tab whose default open state is flipped
+    groups_open: HashMap<String, bool>, // groups in the Paths tab the reader opened or closed
+    peek: Option<Peek>,           // a definition pinned in the right panel
     history: History,
 
     pub ui: Ui,
@@ -118,7 +121,7 @@ pub struct App {
     pub actions: Vec<Action>,
     pub graph: graph::Graph,
     pub tooltip: Option<(Tip, (i32, i32))>, // what to show at the pointer this frame
-    pub tip_shown: Option<String>,         // the first line of last frame's tooltip, for dumps
+    pub tip_shown: Option<String>,          // the first line of last frame's tooltip, for dumps
 
     fields: [Field; 5],           // the text fields, indexed by `Which`
     results: Vec<(usize, usize)>, // (file, line)
@@ -149,7 +152,14 @@ impl App {
             map,
             base: None,
             base_why: String::new(),
-            file: MapFile { stamp: crate::map::stamp(&map_path), broken: unreadable.is_some(), path: map_path, dirty: false, last_poll: Instant::now(), warned: false },
+            file: MapFile {
+                stamp: crate::map::stamp(&map_path),
+                broken: unreadable.is_some(),
+                path: map_path,
+                dirty: false,
+                last_poll: Instant::now(),
+                warned: false,
+            },
             focus: None,
             sel_path: None,
             sel_anchor: None,
@@ -230,7 +240,14 @@ impl App {
                 return;
             }
         };
-        match cli::exec(&mut self.idx, &mut self.map, cmd, Author::Human, None, &mut self.output) {
+        match cli::exec(
+            &mut self.idx,
+            &mut self.map,
+            cmd,
+            Author::Human,
+            None,
+            &mut self.output,
+        ) {
             Ok(true) => {
                 self.file.dirty = true;
                 self.output.push_str("(map changed, ctrl+s to save)\n");
@@ -247,7 +264,10 @@ impl App {
         let re = match regex::Regex::new(&self.fields[Which::Search as usize].text) {
             Ok(re) => re,
             Err(e) => {
-                self.status = format!("bad regex: {}", e.to_string().lines().last().unwrap_or("").trim());
+                self.status = format!(
+                    "bad regex: {}",
+                    e.to_string().lines().last().unwrap_or("").trim()
+                );
                 return;
             }
         };
@@ -257,12 +277,21 @@ impl App {
             .files
             .iter()
             .enumerate()
-            .flat_map(|(fi, f)| f.lines.iter().enumerate().map(move |(li, line)| (fi, li, line)))
+            .flat_map(|(fi, f)| {
+                f.lines
+                    .iter()
+                    .enumerate()
+                    .map(move |(li, line)| (fi, li, line))
+            })
             .filter(|(_, _, line)| re.is_match(line))
             .map(|(fi, li, _)| (fi, li))
             .take(5000)
             .collect();
-        self.status = format!("{} hits for /{}/", self.results.len(), self.fields[Which::Search as usize].text);
+        self.status = format!(
+            "{} hits for /{}/",
+            self.results.len(),
+            self.fields[Which::Search as usize].text
+        );
         self.tab = Tab::Results;
     }
 
@@ -295,11 +324,19 @@ impl App {
             self.status = "select a path first".into();
             return;
         };
-        let parent = self.sel_anchor.filter(|&ai| ai < self.map.paths[pi].anchors.len());
-        let ai = self.map.add_anchor(&self.idx, pi, fi, a.min(b), a.max(b), Author::Human, parent);
+        let parent = self
+            .sel_anchor
+            .filter(|&ai| ai < self.map.paths[pi].anchors.len());
+        let ai = self
+            .map
+            .add_anchor(&self.idx, pi, fi, a.min(b), a.max(b), Author::Human, parent);
         self.sel_anchor = Some(ai);
         self.file.dirty = true;
-        self.status = format!("step [{ai}] added to '{}' under [{}]", self.map.paths[pi].name, cli::step_number(parent));
+        self.status = format!(
+            "step [{ai}] added to '{}' under [{}]",
+            self.map.paths[pi].name,
+            cli::step_number(parent)
+        );
     }
 
     fn apply(&mut self, a: Action) {
@@ -330,7 +367,9 @@ impl App {
             }
             Action::FoldAll(pi, fold) => {
                 let n = self.map.paths[pi].anchors.len();
-                let with_kids: Vec<bool> = (0..n).map(|ai| fold && self.map.descendants(pi, ai) > 0).collect();
+                let with_kids: Vec<bool> = (0..n)
+                    .map(|ai| fold && self.map.descendants(pi, ai) > 0)
+                    .collect();
                 for ai in 0..n {
                     self.steps.entry((pi, ai)).or_default();
                 }
@@ -342,9 +381,18 @@ impl App {
             }
             // ponytail: no undo
             Action::DeleteStep(pi, ai) => {
-                let number = self.map.numbered(&self.idx, pi).iter().find(|(a, _, _)| *a == ai).map(|(_, _, n)| n.clone()).unwrap_or_default();
+                let number = self
+                    .map
+                    .numbered(&self.idx, pi)
+                    .iter()
+                    .find(|(a, _, _)| *a == ai)
+                    .map(|(_, _, n)| n.clone())
+                    .unwrap_or_default();
                 let a = &self.map.paths[pi].anchors[ai];
-                self.status = format!("deleted step {number} {} ({}) from '{}'; unsaved", a.symbol, a.file, self.map.paths[pi].name);
+                self.status = format!(
+                    "deleted step {number} {} ({}) from '{}'; unsaved",
+                    a.symbol, a.file, self.map.paths[pi].name
+                );
                 self.map.remove_anchor(pi, ai);
                 self.sel_anchor = None;
                 self.step_removed(pi, ai);
@@ -358,7 +406,11 @@ impl App {
                         return;
                     }
                 };
-                self.status = format!("deleted path '{}' ({} steps); unsaved", p.name, p.anchors.len());
+                self.status = format!(
+                    "deleted path '{}' ({} steps); unsaved",
+                    p.name,
+                    p.anchors.len()
+                );
                 self.sel_path = None;
                 self.sel_anchor = None;
                 self.path_removed(pi);
@@ -435,12 +487,17 @@ impl window::App for App {
             "idle" => return !self.working() && self.work.merge_wait.is_empty(),
             "rect" => {
                 if let Some(name) = w.get(1) {
-                    eprintln!("DUMP rect {name} = {:?}", self.ui.interaction_of(Self::named_id(name)).rect);
+                    eprintln!(
+                        "DUMP rect {name} = {:?}",
+                        self.ui.interaction_of(Self::named_id(name)).rect
+                    );
                 }
             }
             "tab" => self.tab = Tab::from_name(w.get(1).copied().unwrap_or("")),
             "scroll" => {
-                if let (Some(name), Some(n)) = (w.get(1), w.get(2).and_then(|v| v.parse::<i32>().ok())) {
+                if let (Some(name), Some(n)) =
+                    (w.get(1), w.get(2).and_then(|v| v.parse::<i32>().ok()))
+                {
                     self.scrolls.insert(ui::id(name), n);
                 }
             }
@@ -451,18 +508,54 @@ impl window::App for App {
                 }
             }
             "dump" => {
-                eprintln!("DUMP tab={:?} path={:?} step={:?} focus={:?} file={:?} sel={:?}", self.tab, self.sel_path, self.sel_anchor, self.focus.map(|r| self.idx.sym(r).name.clone()), self.cur_file.map(|f| self.idx.files[f].path.clone()), self.sel);
+                eprintln!(
+                    "DUMP tab={:?} path={:?} step={:?} focus={:?} file={:?} sel={:?}",
+                    self.tab,
+                    self.sel_path,
+                    self.sel_anchor,
+                    self.focus.map(|r| self.idx.sym(r).name.clone()),
+                    self.cur_file.map(|f| self.idx.files[f].path.clone()),
+                    self.sel
+                );
                 for name in ["document", "listing", "paths", "output"] {
                     let id = ui::id(name);
                     if let Some((c, r)) = self.ui.content_of(id) {
-                        eprintln!("DUMP scroll {name} off={} rect={:?} content={:?}", self.scrolls.get(&id).copied().unwrap_or(0), r, c);
+                        eprintln!(
+                            "DUMP scroll {name} off={} rect={:?} content={:?}",
+                            self.scrolls.get(&id).copied().unwrap_or(0),
+                            r,
+                            c
+                        );
                     }
                 }
                 eprintln!("DUMP dock {}", self.dock.describe());
-                eprintln!("DUMP tip={:?} peek={:?} status={:?}", self.tip_shown, self.peek, self.status);
-                eprintln!("DUMP backend progress={:?} indexing={:?} unmerged={} reindexing={} linking={}", self.work.progress, self.work.indexing, self.work.merge_wait.len(), self.work.reindex_rx.is_some(), self.work.link_rx.is_some());
-                eprintln!("DUMP graph zoom={:.3} pan={:?} canvas={:?} camera={}", self.graph.zoom, self.graph.pan, self.ui.content_of(ui::id("graph-canvas")).map(|(_, r)| r), self.graph.camera_state());
-                eprintln!("DUMP input mouse={:?} down={:?} hot_is_canvas={} active_is_canvas={} drag={:?}", self.ui.input.mouse, self.ui.input.down, self.ui.hot() == Some(ui::id("graph-canvas")), self.ui.active() == Some(ui::id("graph-canvas")), self.graph.drag_state());
+                eprintln!(
+                    "DUMP tip={:?} peek={:?} status={:?}",
+                    self.tip_shown, self.peek, self.status
+                );
+                eprintln!(
+                    "DUMP backend progress={:?} indexing={:?} unmerged={} reindexing={} linking={}",
+                    self.work.progress,
+                    self.work.indexing,
+                    self.work.merge_wait.len(),
+                    self.work.reindex_rx.is_some(),
+                    self.work.link_rx.is_some()
+                );
+                eprintln!(
+                    "DUMP graph zoom={:.3} pan={:?} canvas={:?} camera={}",
+                    self.graph.zoom,
+                    self.graph.pan,
+                    self.ui.content_of(ui::id("graph-canvas")).map(|(_, r)| r),
+                    self.graph.camera_state()
+                );
+                eprintln!(
+                    "DUMP input mouse={:?} down={:?} hot_is_canvas={} active_is_canvas={} drag={:?}",
+                    self.ui.input.mouse,
+                    self.ui.input.down,
+                    self.ui.hot() == Some(ui::id("graph-canvas")),
+                    self.ui.active() == Some(ui::id("graph-canvas")),
+                    self.graph.drag_state()
+                );
                 for (name, r) in self.graph.node_rects(&self.idx) {
                     eprintln!("DUMP node {name} rect={r:?}");
                 }
@@ -476,7 +569,10 @@ impl window::App for App {
     }
 
     fn locate(&mut self, name: &str) -> Option<(i32, i32)> {
-        self.ui.interaction_of(Self::named_id(name)).rect.map(|r| (r.x + r.w / 2, r.y + r.h / 2))
+        self.ui
+            .interaction_of(Self::named_id(name))
+            .rect
+            .map(|r| (r.x + r.w / 2, r.y + r.h / 2))
     }
 
     fn frame(&mut self, gfx: &mut Gfx, input: &mut ui::Input) -> window::Frame {
@@ -487,13 +583,16 @@ impl window::App for App {
         // first frames have settled, and the app quits. CODEMAP_SHOT_TAB picks the centre tab.
         if let Some((path, frame)) = self.shot.as_mut() {
             *frame += 1;
-            if *frame == 6 {
-                if let Some(n) = std::env::var("CODEMAP_SHOT_SCROLL").ok().and_then(|v| v.parse::<i32>().ok()) {
-                    self.scrolls.insert(ui::id("document"), n);
-                }
+            if *frame == 6
+                && let Some(n) = std::env::var("CODEMAP_SHOT_SCROLL")
+                    .ok()
+                    .and_then(|v| v.parse::<i32>().ok())
+            {
+                self.scrolls.insert(ui::id("document"), n);
             }
             if *frame == 3 {
-                self.tab = Tab::from_name(std::env::var("CODEMAP_SHOT_TAB").as_deref().unwrap_or(""));
+                self.tab =
+                    Tab::from_name(std::env::var("CODEMAP_SHOT_TAB").as_deref().unwrap_or(""));
             }
             if *frame == 20 {
                 gfx.shot = Some(path.clone());
@@ -516,16 +615,25 @@ impl window::App for App {
         if input.key_with(Key::Char('s'), true, false) {
             self.save();
         }
-        if input.key_with(Key::Left, false, true) || input.key_with(Key::Left, true, false) || input.back {
+        if input.key_with(Key::Left, false, true)
+            || input.key_with(Key::Left, true, false)
+            || input.back
+        {
             self.back();
         }
-        if input.key_with(Key::Right, false, true) || input.key_with(Key::Right, true, false) || input.forward {
+        if input.key_with(Key::Right, false, true)
+            || input.key_with(Key::Right, true, false)
+            || input.forward
+        {
             self.forward();
         }
         if let Some(line) = self.fields[Which::Cmd as usize].handle(input, false) {
             self.run_cmd(line);
         }
-        if self.fields[Which::Search as usize].handle(input, true).is_some() {
+        if self.fields[Which::Search as usize]
+            .handle(input, true)
+            .is_some()
+        {
             self.run_search();
         }
         if let Some(name) = self.fields[Which::NewPath as usize].handle(input, false) {
@@ -561,13 +669,25 @@ impl window::App for App {
         self.ui.begin(input);
         self.dock.cursor = Default::default();
         self.dock_input();
-        self.ui.open(Kind::None, Layout::col().grow(), Style::bg(BG), None);
+        self.ui
+            .open(Kind::None, Layout::col().grow(), Style::bg(BG), None);
         self.top_bar();
-        self.ui.open(Kind::None, Layout::col().grow(), Style::default(), Some(ui::id("body")));
-        self.ui.open(Kind::None, Layout::row().grow(), Style::default(), Some(ui::id("dock-row")));
+        self.ui.open(
+            Kind::None,
+            Layout::col().grow(),
+            Style::default(),
+            Some(ui::id("body")),
+        );
+        self.ui.open(
+            Kind::None,
+            Layout::row().grow(),
+            Style::default(),
+            Some(ui::id("dock-row")),
+        );
         let sizes = self.dock.sizes(self.ui.size, self.cell);
         self.docked(Edge::Left, &sizes);
-        self.ui.open(Kind::None, Layout::col().grow(), Style::default(), None);
+        self.ui
+            .open(Kind::None, Layout::col().grow(), Style::default(), None);
         match self.tab {
             Tab::Path => self.path_document(),
             Tab::Diff => self.diff_view(),
@@ -592,6 +712,11 @@ impl window::App for App {
         }
         self.track_navigation();
         let busy = self.working() || self.shot.is_some();
-        window::Frame { redraw_after: Duration::from_millis(if busy { 50 } else { 1000 }), quit, clear: BG, cursor: self.dock.cursor }
+        window::Frame {
+            redraw_after: Duration::from_millis(if busy { 50 } else { 1000 }),
+            quit,
+            clear: BG,
+            cursor: self.dock.cursor,
+        }
     }
 }

@@ -11,8 +11,8 @@ parent nb45f6
 author ai
 file src/map.rs
 symbol covers
-lines 0 2
-hash df7b347490a82362
+lines 0 5
+hash 42c14483e9485334
 note The one definition of covered. Stale steps do not count: their text no longer matches the code, and check fails on them anyway.
 
 step nb45f6
@@ -20,8 +20,8 @@ order 1
 author ai
 file src/cli.rs
 symbol exec
-lines 395 410
-hash 32fe5d795bebc25c
+lines 594 619
+hash 661f758cd409c268
 note uncovered: every symbol at any depth that no step covers, sorted by line count descending. Filter is a substring of the name or the file.
 
 step w7dp4m
@@ -29,6 +29,6 @@ order 2
 author ai
 file src/cli.rs
 symbol exec
-lines 441 450
-hash 0605510cde5a7640
+lines 665 678
+hash 805149f0cfeb9aa8
 note coverage: per-file counts for files that have symbols, then a total.

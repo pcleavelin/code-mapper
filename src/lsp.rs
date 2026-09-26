@@ -23,7 +23,11 @@ pub struct Client {
 /// Full path of `name` on PATH. On Windows also tries PATHEXT, since npm installs `.cmd` shims.
 pub fn find_on_path(name: &str) -> Option<PathBuf> {
     let exts: Vec<String> = if cfg!(windows) {
-        std::env::var("PATHEXT").unwrap_or_else(|_| ".EXE;.CMD;.BAT".into()).split(';').map(str::to_lowercase).collect()
+        std::env::var("PATHEXT")
+            .unwrap_or_else(|_| ".EXE;.CMD;.BAT".into())
+            .split(';')
+            .map(str::to_lowercase)
+            .collect()
     } else {
         Vec::new()
     };
@@ -43,7 +47,9 @@ pub fn to_uri(p: &Path) -> String {
     let mut out = String::from("file:///");
     for b in s.trim_start_matches('/').bytes() {
         match b {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' | b'/' | b':' => out.push(b as char),
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' | b'/' | b':' => {
+                out.push(b as char)
+            }
             _ => out.push_str(&format!("%{b:02X}")),
         }
     }
@@ -55,12 +61,13 @@ fn percent_decode(s: &str) -> String {
     let mut out = Vec::with_capacity(b.len());
     let mut i = 0;
     while i < b.len() {
-        if b[i] == b'%' && i + 2 < b.len() {
-            if let Ok(v) = u8::from_str_radix(&s[i + 1..i + 3], 16) {
-                out.push(v);
-                i += 3;
-                continue;
-            }
+        if b[i] == b'%'
+            && i + 2 < b.len()
+            && let Ok(v) = u8::from_str_radix(&s[i + 1..i + 3], 16)
+        {
+            out.push(v);
+            i += 3;
+            continue;
         }
         out.push(b[i]);
         i += 1;
@@ -71,7 +78,11 @@ fn percent_decode(s: &str) -> String {
 /// The absolute path a `file:` URI names.
 pub fn uri_path(uri: &str) -> Option<PathBuf> {
     let d = percent_decode(uri.strip_prefix("file://")?);
-    Some(PathBuf::from(if cfg!(windows) { d.trim_start_matches('/').to_owned() } else { d }))
+    Some(PathBuf::from(if cfg!(windows) {
+        d.trim_start_matches('/').to_owned()
+    } else {
+        d
+    }))
 }
 
 /// `path` relative to `root` (forward slashes), or None when it lies outside. Both absolute.
@@ -79,7 +90,11 @@ pub fn uri_path(uri: &str) -> Option<PathBuf> {
 pub fn relative(path: &Path, root: &Path) -> Option<String> {
     let p = path.to_string_lossy().replace('\\', "/");
     let root = root.to_string_lossy().replace('\\', "/");
-    let (a, b) = if cfg!(windows) { (p.to_ascii_lowercase(), root.to_ascii_lowercase()) } else { (p.clone(), root) };
+    let (a, b) = if cfg!(windows) {
+        (p.to_ascii_lowercase(), root.to_ascii_lowercase())
+    } else {
+        (p.clone(), root)
+    };
     let tail = a.strip_prefix(&b)?.strip_prefix('/')?;
     Some(p[p.len() - tail.len()..].to_owned())
 }
@@ -110,7 +125,14 @@ fn read_message(r: &mut impl BufRead) -> Option<Value> {
 impl Client {
     /// Spawns `exe args` with `root` as the workspace and completes the initialize handshake.
     pub fn start(exe: &Path, args: &[&str], root: &Path) -> Option<Client> {
-        let mut child = Command::new(exe).args(args).current_dir(root).stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::null()).spawn().ok()?;
+        let mut child = Command::new(exe)
+            .args(args)
+            .current_dir(root)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .spawn()
+            .ok()?;
         let stdin = child.stdin.take()?;
         let stdout = child.stdout.take()?;
         let (tx, rx) = channel();
@@ -122,7 +144,15 @@ impl Client {
                 }
             }
         });
-        let mut c = Client { child, stdin, rx, next_id: 0, open_progress: 0, last_progress: Instant::now(), quiescent: None };
+        let mut c = Client {
+            child,
+            stdin,
+            rx,
+            next_id: 0,
+            open_progress: 0,
+            last_progress: Instant::now(),
+            quiescent: None,
+        };
         let uri = to_uri(root);
         let params = json!({
             "processId": std::process::id(),
@@ -169,7 +199,10 @@ impl Client {
         let id = self.next_id;
         self.send(json!({"jsonrpc": "2.0", "id": id, "method": method, "params": params}));
         loop {
-            let mut msg = self.rx.recv_timeout(Duration::from_secs(120)).map_err(|_| "server went away".to_string())?;
+            let mut msg = self
+                .rx
+                .recv_timeout(Duration::from_secs(120))
+                .map_err(|_| "server went away".to_string())?;
             if msg["id"] == id && msg.get("method").is_none() {
                 if let Some(e) = msg.get("error") {
                     return Err(e["message"].as_str().unwrap_or("error").to_owned());
@@ -198,20 +231,28 @@ impl Client {
                 self.send(json!({"jsonrpc": "2.0", "id": id, "method": method, "params": params}));
                 sent += 1;
             }
-            let Ok(mut msg) = self.rx.recv_timeout(Duration::from_secs(120)) else { break };
-            if msg.get("method").is_none() {
-                if let Some(i) = msg["id"].as_u64().and_then(|id| id.checked_sub(first)).map(|i| i as usize).filter(|&i| i < n && out[i].is_none()) {
-                    out[i] = Some(match msg.get("error") {
-                        Some(e) => Err(e["message"].as_str().unwrap_or("error").to_owned()),
-                        None => Ok(msg["result"].take()),
-                    });
-                    got += 1;
-                    continue;
-                }
+            let Ok(mut msg) = self.rx.recv_timeout(Duration::from_secs(120)) else {
+                break;
+            };
+            if msg.get("method").is_none()
+                && let Some(i) = msg["id"]
+                    .as_u64()
+                    .and_then(|id| id.checked_sub(first))
+                    .map(|i| i as usize)
+                    .filter(|&i| i < n && out[i].is_none())
+            {
+                out[i] = Some(match msg.get("error") {
+                    Some(e) => Err(e["message"].as_str().unwrap_or("error").to_owned()),
+                    None => Ok(msg["result"].take()),
+                });
+                got += 1;
+                continue;
             }
             self.handle(msg);
         }
-        out.into_iter().map(|r| r.unwrap_or_else(|| Err("server went away".into()))).collect()
+        out.into_iter()
+            .map(|r| r.unwrap_or_else(|| Err("server went away".into())))
+            .collect()
     }
 
     /// Notifications and server-to-client requests.
@@ -248,7 +289,8 @@ impl Client {
                 Err(RecvTimeoutError::Disconnected) => return,
             }
             seen_progress |= self.open_progress > 0;
-            let quiet = self.open_progress == 0 && self.last_progress.elapsed() > Duration::from_millis(500);
+            let quiet = self.open_progress == 0
+                && self.last_progress.elapsed() > Duration::from_millis(500);
             let done = match self.quiescent {
                 Some(q) => q && quiet,
                 None => quiet && (seen_progress || start.elapsed() > Duration::from_secs(3)),
@@ -267,7 +309,9 @@ impl Client {
     /// code fences are dropped and blank lines never repeat, everything else is kept. None
     /// when it knows nothing.
     pub fn hover(&mut self, path: &Path, line: u32, col: u32) -> Option<String> {
-        let v = self.request("textDocument/hover", Self::at(path, line, col)).ok()?;
+        let v = self
+            .request("textDocument/hover", Self::at(path, line, col))
+            .ok()?;
         let mut out = String::new();
         let mut push = |s: &str| {
             for l in s.lines().filter(|l| !l.trim_start().starts_with("```")) {
@@ -279,7 +323,9 @@ impl Client {
             }
         };
         match &v["contents"] {
-            Value::Array(a) => a.iter().for_each(|x| push(x.as_str().or_else(|| x["value"].as_str()).unwrap_or(""))),
+            Value::Array(a) => a
+                .iter()
+                .for_each(|x| push(x.as_str().or_else(|| x["value"].as_str()).unwrap_or(""))),
             Value::String(s) => push(s),
             o => push(o["value"].as_str().unwrap_or("")),
         }
@@ -290,10 +336,24 @@ impl Client {
     /// Where the thing at a position is defined: the first location the server names, as an
     /// absolute path and 0-based line and column.
     pub fn definition(&mut self, path: &Path, line: u32, col: u32) -> Option<(PathBuf, u32, u32)> {
-        let v = self.request("textDocument/definition", Self::at(path, line, col)).ok()?;
-        let l = if let Some(a) = v.as_array() { a.first()?.clone() } else { v };
-        let (uri, range) = if l.get("targetUri").is_some() { (&l["targetUri"], &l["targetSelectionRange"]) } else { (&l["uri"], &l["range"]) };
-        Some((uri_path(uri.as_str()?)?, range["start"]["line"].as_u64()? as u32, range["start"]["character"].as_u64()? as u32))
+        let v = self
+            .request("textDocument/definition", Self::at(path, line, col))
+            .ok()?;
+        let l = if let Some(a) = v.as_array() {
+            a.first()?.clone()
+        } else {
+            v
+        };
+        let (uri, range) = if l.get("targetUri").is_some() {
+            (&l["targetUri"], &l["targetSelectionRange"])
+        } else {
+            (&l["uri"], &l["range"])
+        };
+        Some((
+            uri_path(uri.as_str()?)?,
+            range["start"]["line"].as_u64()? as u32,
+            range["start"]["character"].as_u64()? as u32,
+        ))
     }
 
     pub fn shutdown(mut self) {
@@ -315,7 +375,11 @@ mod tests {
 
     #[test]
     fn uris_round_trip() {
-        let root = if cfg!(windows) { Path::new("C:\\Users\\me\\my repo") } else { Path::new("/home/me/my repo") };
+        let root = if cfg!(windows) {
+            Path::new("C:\\Users\\me\\my repo")
+        } else {
+            Path::new("/home/Me/my repo")
+        };
         let uri = to_uri(&root.join("src").join("a.rs"));
         assert!(uri.ends_with("/my%20repo/src/a.rs"), "{uri}");
         let rel = |uri: &str| -> Option<String> { relative(&uri_path(uri)?, root) };
@@ -333,8 +397,18 @@ mod tests {
         let mut c = Client::start(&exe, &[], &root).expect("start");
         c.wait_ready(Duration::from_secs(120));
         let uri = to_uri(&root.join("src/map.rs"));
-        let syms = c.request("textDocument/documentSymbol", json!({"textDocument": {"uri": uri}})).unwrap();
-        let names: Vec<&str> = syms.as_array().unwrap().iter().filter_map(|s| s["name"].as_str()).collect();
+        let syms = c
+            .request(
+                "textDocument/documentSymbol",
+                json!({"textDocument": {"uri": uri}}),
+            )
+            .unwrap();
+        let names: Vec<&str> = syms
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|s| s["name"].as_str())
+            .collect();
         assert!(names.contains(&"Map"), "{names:?}");
         c.shutdown();
     }

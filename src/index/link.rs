@@ -20,9 +20,23 @@ impl Index {
     /// an unqualified name picks a free function in the same file, then an imported one, then
     /// one in the same directory, then anywhere. Wrong when two types share a method name and
     /// the receiver is a variable; a real resolver needs per-language scope and type rules.
-    fn resolve(&self, from: SymRef, call: &Call, by_name: &HashMap<String, Vec<SymRef>>) -> Option<SymRef> {
+    fn resolve(
+        &self,
+        from: SymRef,
+        call: &Call,
+        by_name: &HashMap<String, Vec<SymRef>>,
+    ) -> Option<SymRef> {
         // a struct/enum/union is data, not a call target, even where `Foo{...}` parses as a call
-        let cands: Vec<SymRef> = by_name.get(&call.name)?.iter().copied().filter(|r| !["struct", "enum", "union"].iter().any(|k| self.sym(*r).kind.contains(k))).collect();
+        let cands: Vec<SymRef> = by_name
+            .get(&call.name)?
+            .iter()
+            .copied()
+            .filter(|r| {
+                !["struct", "enum", "union"]
+                    .iter()
+                    .any(|k| self.sym(*r).kind.contains(k))
+            })
+            .collect();
         let f = &self.files[from.file];
         let owner = self.sym(from).owner.as_deref();
         let same_file = |r: &&SymRef| r.file == from.file;
@@ -30,7 +44,10 @@ impl Index {
         let free = |r: &&SymRef| self.sym(**r).owner.is_none();
         let pick = |it: &mut dyn Iterator<Item = &SymRef>| -> Option<SymRef> {
             let v: Vec<SymRef> = it.copied().collect();
-            v.iter().find(|r| r.file == from.file).or(v.first()).copied()
+            v.iter()
+                .find(|r| r.file == from.file)
+                .or(v.first())
+                .copied()
         };
 
         match &call.qual {
@@ -45,22 +62,42 @@ impl Index {
                         // a known import that matched no file here is an external module (`log.error`)
                         return pick(&mut cands.iter().filter(|r| self.in_module(**r, m)));
                     }
-                    let lowercase = q.chars().next().is_some_and(|c| c.is_lowercase() || c == '_');
+                    let lowercase = q
+                        .chars()
+                        .next()
+                        .is_some_and(|c| c.is_lowercase() || c == '_');
                     if !lowercase {
                         return None; // `Regex::new`: a type this repo does not define
                     }
                     // a variable receiver: some type's member, the caller's own type first; a
                     // variable never calls a free function
-                    owner.and_then(|o| pick(&mut cands.iter().filter(|r| self.owner_is(**r, o)))).or_else(|| pick(&mut cands.iter().filter(member)))
+                    owner
+                        .and_then(|o| pick(&mut cands.iter().filter(|r| self.owner_is(**r, o))))
+                        .or_else(|| pick(&mut cands.iter().filter(member)))
                 }),
             Qual::None => pick(&mut cands.iter().filter(same_file).filter(free))
-                .or_else(|| f.imports.get(&call.name).and_then(|m| pick(&mut cands.iter().filter(|r| self.in_module(**r, m)))))
-                .or_else(|| pick(&mut cands.iter().filter(free).filter(|r| self.files[r.file].dir() == f.dir())))
+                .or_else(|| {
+                    f.imports
+                        .get(&call.name)
+                        .and_then(|m| pick(&mut cands.iter().filter(|r| self.in_module(**r, m))))
+                })
+                .or_else(|| {
+                    pick(
+                        &mut cands
+                            .iter()
+                            .filter(free)
+                            .filter(|r| self.files[r.file].dir() == f.dir()),
+                    )
+                })
                 .or_else(|| {
                     // only C reaches other files without naming them (headers); elsewhere an
                     // unqualified name that is not local or imported is a builtin or a std call
                     let c = f.path.ends_with(".c") || f.path.ends_with(".h");
-                    if c { pick(&mut cands.iter().filter(free)).or_else(|| pick(&mut cands.iter())) } else { None }
+                    if c {
+                        pick(&mut cands.iter().filter(free)).or_else(|| pick(&mut cands.iter()))
+                    } else {
+                        None
+                    }
                 }),
         }
     }
@@ -71,13 +108,21 @@ impl Index {
         let mut by_name: HashMap<String, Vec<SymRef>> = HashMap::new();
         for (file, f) in self.files.iter().enumerate() {
             for (sym, s) in f.symbols.iter().enumerate() {
-                by_name.entry(s.name.clone()).or_default().push(SymRef { file, sym });
+                by_name
+                    .entry(s.name.clone())
+                    .or_default()
+                    .push(SymRef { file, sym });
             }
         }
 
         // a server names its targets by path and line, once per call site, so the file lookup
         // is a map rather than `find_file`'s scan over every file
-        let file_of: HashMap<&str, usize> = self.files.iter().enumerate().map(|(i, f)| (f.path.as_str(), i)).collect();
+        let file_of: HashMap<&str, usize> = self
+            .files
+            .iter()
+            .enumerate()
+            .map(|(i, f)| (f.path.as_str(), i))
+            .collect();
 
         let mut edges = Vec::new();
         for (file, f) in self.files.iter().enumerate() {
@@ -89,7 +134,9 @@ impl Index {
                     }
                 }
                 for (path, line) in &s.targets {
-                    let Some(&tf) = file_of.get(path.as_str()) else { continue };
+                    let Some(&tf) = file_of.get(path.as_str()) else {
+                        continue;
+                    };
                     if let Some(to) = self.sym_at(tf, *line as usize) {
                         edges.push((from, to));
                     }
@@ -117,16 +164,35 @@ impl Index {
         let files = self
             .files
             .iter()
-            .map(|f| File { path: f.path.clone(), lines: Vec::new(), hl: Vec::new(), symbols: f.symbols.clone(), imports: f.imports.clone(), mtime: f.mtime, hash: f.hash, backend: f.backend, pending: f.pending })
+            .map(|f| File {
+                path: f.path.clone(),
+                lines: Vec::new(),
+                hl: Vec::new(),
+                symbols: f.symbols.clone(),
+                imports: f.imports.clone(),
+                mtime: f.mtime,
+                hash: f.hash,
+                backend: f.backend,
+                pending: f.pending,
+            })
             .collect();
-        Index { root: self.root.clone(), files }
+        Index {
+            root: self.root.clone(),
+            files,
+        }
     }
 
     /// Copy every symbol's callees and callers from `linked`, a `symbols_only` copy of this
     /// same index after `link`. Symbol tables must match; a mismatch means the index changed
     /// under the thread and the copy is stale.
     pub fn take_edges(&mut self, linked: &Index) {
-        let same = self.files.len() == linked.files.len() && self.files.iter().zip(&linked.files).all(|(a, b)| a.hash == b.hash && a.backend == b.backend && a.pending == b.pending && a.symbols.len() == b.symbols.len());
+        let same = self.files.len() == linked.files.len()
+            && self.files.iter().zip(&linked.files).all(|(a, b)| {
+                a.hash == b.hash
+                    && a.backend == b.backend
+                    && a.pending == b.pending
+                    && a.symbols.len() == b.symbols.len()
+            });
         if !same {
             return;
         }
@@ -146,28 +212,58 @@ mod tests {
 
     fn index(files: &[(&str, &str)]) -> Index {
         let mut p = Parsers::default();
-        let files = files.iter().map(|(path, src)| parse_file(&mut p, path.to_string(), src, path.rsplit('.').next().unwrap())).collect();
-        let mut idx = Index { root: ".".into(), files };
+        let files = files
+            .iter()
+            .map(|(path, src)| {
+                parse_file(
+                    &mut p,
+                    path.to_string(),
+                    src,
+                    path.rsplit('.').next().unwrap(),
+                )
+            })
+            .collect();
+        let mut idx = Index {
+            root: ".".into(),
+            files,
+        };
         idx.link();
         idx
     }
 
     fn callee_names(idx: &Index, name: &str, file: &str) -> Vec<String> {
         let fi = idx.find_file(file).unwrap();
-        let si = idx.files[fi].symbols.iter().position(|s| s.name == name).unwrap();
-        idx.sym(SymRef { file: fi, sym: si }).callees.iter().map(|r| format!("{}:{}", idx.files[r.file].path, idx.sym(*r).name)).collect()
+        let si = idx.files[fi]
+            .symbols
+            .iter()
+            .position(|s| s.name == name)
+            .unwrap();
+        idx.sym(SymRef { file: fi, sym: si })
+            .callees
+            .iter()
+            .map(|r| format!("{}:{}", idx.files[r.file].path, idx.sym(*r).name))
+            .collect()
     }
 
     #[test]
     fn links_calls_by_name() {
         let src = "fn a() { b(); c::d(); }\nfn b() {}\nstruct C;\nimpl C { fn d() { b() } }\n";
         let idx = index(&[("x.rs", src)]);
-        let names: Vec<&str> = idx.files[0].symbols.iter().map(|s| s.name.as_str()).collect();
+        let names: Vec<&str> = idx.files[0]
+            .symbols
+            .iter()
+            .map(|s| s.name.as_str())
+            .collect();
         assert_eq!(names, ["a", "b", "C", "impl C", "d"]);
         assert_eq!(idx.files[0].symbols[4].owner.as_deref(), Some("C"));
 
         let a = idx.find_symbols("a")[0];
-        let callees: Vec<&str> = idx.sym(a).callees.iter().map(|r| idx.sym(*r).name.as_str()).collect();
+        let callees: Vec<&str> = idx
+            .sym(a)
+            .callees
+            .iter()
+            .map(|r| idx.sym(*r).name.as_str())
+            .collect();
         assert_eq!(callees, ["b", "d"]);
         assert_eq!(idx.sym(idx.find_symbols("b")[0]).callers.len(), 2);
         assert_eq!(idx.roots(), [a]);
@@ -181,7 +277,10 @@ mod tests {
         let idx = index(&[("src/a.rs", a), ("src/b.rs", b)]);
 
         // self.step / Self::new bind to A's members, not B's
-        assert_eq!(callee_names(&idx, "go", "src/a.rs"), ["src/a.rs:new", "src/a.rs:step"]);
+        assert_eq!(
+            callee_names(&idx, "go", "src/a.rs"),
+            ["src/a.rs:new", "src/a.rs:step"]
+        );
         // A::new -> A's new, B::new -> B's new, x.step -> a member (same file wins), helper -> same-file free fn,
         // a::helper -> module a
         let run = callee_names(&idx, "run", "src/b.rs");
@@ -190,20 +289,45 @@ mod tests {
         assert!(run.contains(&"src/b.rs:step".to_string()), "{run:?}");
         assert!(run.contains(&"src/b.rs:helper".to_string()), "{run:?}");
         assert!(run.contains(&"src/a.rs:helper".to_string()), "{run:?}");
-        assert_eq!(idx.files[1].imports.get("helper").map(String::as_str), Some("a"));
+        assert_eq!(
+            idx.files[1].imports.get("helper").map(String::as_str),
+            Some("a")
+        );
     }
 
     #[test]
     fn odin_package_calls() {
         let main = "package main\nimport \"core\"\nimport \"util\"\nimport \"core:log\"\nS :: struct { commands: int }\nmain :: proc() {\n    core.init_bookmarks(nil)\n    util.make_static_list(int, 4)\n    helper()\n    make([]int, 4)\n    s := S{ commands = make(int) }\n    log.error(\"x\")\n}\nhelper :: proc() {}\n";
-        let core = "package core\ninit_bookmarks :: proc(b: rawptr) {}\nerror :: proc(msg: string) {}\n";
-        let util = "package util\nmake_static_list :: proc($T: typeid, n: int) {}\nmake :: proc() {}\n";
-        let idx = index(&[("src/main.odin", main), ("src/core/bookmarks.odin", core), ("src/util/list.odin", util)]);
+        let core =
+            "package core\ninit_bookmarks :: proc(b: rawptr) {}\nerror :: proc(msg: string) {}\n";
+        let util =
+            "package util\nmake_static_list :: proc($T: typeid, n: int) {}\nmake :: proc() {}\n";
+        let idx = index(&[
+            ("src/main.odin", main),
+            ("src/core/bookmarks.odin", core),
+            ("src/util/list.odin", util),
+        ]);
         let m = idx.find_symbols("main")[0];
-        let calls: Vec<String> = idx.sym(m).calls.iter().map(|c| format!("{}/{:?}", c.name, c.qual)).collect();
-        assert!(calls.iter().any(|c| c == "init_bookmarks/Some(\"core\")"), "{calls:?}");
+        let calls: Vec<String> = idx
+            .sym(m)
+            .calls
+            .iter()
+            .map(|c| format!("{}/{:?}", c.name, c.qual))
+            .collect();
+        assert!(
+            calls.iter().any(|c| c == "init_bookmarks/Some(\"core\")"),
+            "{calls:?}"
+        );
         let mut got = callee_names(&idx, "main", "src/main.odin");
         got.sort();
-        assert_eq!(got, ["src/core/bookmarks.odin:init_bookmarks", "src/main.odin:helper", "src/util/list.odin:make_static_list"], "{got:?}");
+        assert_eq!(
+            got,
+            [
+                "src/core/bookmarks.odin:init_bookmarks",
+                "src/main.odin:helper",
+                "src/util/list.odin:make_static_list"
+            ],
+            "{got:?}"
+        );
     }
 }

@@ -35,7 +35,10 @@ fn locs(r: &mut Reader) -> Option<Vec<(String, u32)>> {
 /// Cached files by path; their `lines` are empty until `build` fills them from disk.
 pub(super) fn load_cache(path: &Path) -> Option<HashMap<String, File>> {
     let data = std::fs::read(path).ok()?;
-    let mut r = Reader { data: &data, off: 0 };
+    let mut r = Reader {
+        data: &data,
+        off: 0,
+    };
     if r.bytes(4)? != CACHE_MAGIC || r.u32()? != CACHE_VERSION {
         return None;
     }
@@ -43,7 +46,11 @@ pub(super) fn load_cache(path: &Path) -> Option<HashMap<String, File>> {
     for _ in 0..r.u32()? {
         let path = r.str()?;
         let hash = r.u64()?;
-        let backend = if r.u8()? == 1 { Backend::Server } else { Backend::TreeSitter };
+        let backend = if r.u8()? == 1 {
+            Backend::Server
+        } else {
+            Backend::TreeSitter
+        };
         let mut symbols = Vec::new();
         for _ in 0..r.u32()? {
             let (name, kind) = (r.str()?, r.str()?);
@@ -60,14 +67,45 @@ pub(super) fn load_cache(path: &Path) -> Option<HashMap<String, File>> {
                 calls.push(Call { name, qual });
             }
             let (targets, refs) = (locs(&mut r)?, locs(&mut r)?);
-            symbols.push(Symbol { name, kind, start, end, depth, owner, calls, targets, refs, callees: Vec::new(), callers: Vec::new() });
+            symbols.push(Symbol {
+                name,
+                kind,
+                start,
+                end,
+                depth,
+                owner,
+                calls,
+                targets,
+                refs,
+                callees: Vec::new(),
+                callers: Vec::new(),
+            });
         }
-        let imports = (0..r.u32()?).map(|_| Some((r.str()?, r.str()?))).collect::<Option<HashMap<_, _>>>()?;
+        let imports = (0..r.u32()?)
+            .map(|_| Some((r.str()?, r.str()?)))
+            .collect::<Option<HashMap<_, _>>>()?;
         let mut hl = Vec::new();
         for _ in 0..r.u32()? {
-            hl.push((0..r.u32()?).map(|_| Some((r.u32()?, r.u32()?, r.u8()?))).collect::<Option<Vec<Span>>>()?);
+            hl.push(
+                (0..r.u32()?)
+                    .map(|_| Some((r.u32()?, r.u32()?, r.u8()?)))
+                    .collect::<Option<Vec<Span>>>()?,
+            );
         }
-        out.insert(path.clone(), File { path, lines: Vec::new(), hl, symbols, imports, mtime: None, hash, backend, pending: false });
+        out.insert(
+            path.clone(),
+            File {
+                path,
+                lines: Vec::new(),
+                hl,
+                symbols,
+                imports,
+                mtime: None,
+                hash,
+                backend,
+                pending: false,
+            },
+        );
     }
     Some(out)
 }

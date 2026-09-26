@@ -4,7 +4,10 @@
 mod common;
 
 fn scenario(name: &str) {
-    let (_, run) = common::cli::SCENARIOS.iter().find(|(n, _)| *n == name).unwrap();
+    let (_, run) = common::cli::SCENARIOS
+        .iter()
+        .find(|(n, _)| *n == name)
+        .unwrap();
     common::golden(name, &run(&common::bin()));
 }
 

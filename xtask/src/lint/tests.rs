@@ -1,0 +1,241 @@
+use crate::lint::{Rule, Workspace, lint};
+use crate::source::{SourceFile, SourceText};
+use crate::text::{Content, RepoPath};
+use crate::vocabulary::Vocabulary;
+
+const WORDS: &str = "
+line
+number
+get
+new
+count
+value
+span
+start
+end
+path
+text
+make
+read
+write
+store
+shape
+wire
+file
+test
+record
+rows
+first
+second
+item
+self
+main
+old
+here
+name
+point
+x
+y
+";
+
+fn rules_hit(files: &[(&str, &str)]) -> Vec<Rule> {
+    let parsed: Vec<SourceFile> = files
+        .iter()
+        .map(|(path, text)| SourceFile::parse(RepoPath::new(path), SourceText::new(*text)).unwrap())
+        .collect();
+    let workspace = Workspace::of(&parsed, Vocabulary::parse(&Content::new(WORDS)).unwrap());
+    let mut rules: Vec<Rule> = lint(&workspace, &parsed)
+        .into_iter()
+        .map(|finding| finding.rule)
+        .collect();
+    rules.dedup();
+    rules
+}
+
+fn strict(text: &str) -> Vec<Rule> {
+    rules_hit(&[("crates/domain/src/line.rs", text)])
+}
+
+#[test]
+fn comments_are_found_in_every_form() {
+    assert_eq!(strict("// line\nfn main() {}"), [Rule::Comment]);
+    assert_eq!(strict("/// line\nfn main() {}"), [Rule::Comment]);
+    assert_eq!(strict("//! line\nfn main() {}"), [Rule::Comment]);
+    assert_eq!(strict("fn main() { /* line */ }"), [Rule::Comment]);
+    assert_eq!(strict("fn main() { let text = \"// not a comment\"; }"), []);
+}
+
+#[test]
+fn primitives_in_signatures() {
+    assert_eq!(strict("fn get(line: u32) {}"), [Rule::Primitive]);
+    assert_eq!(strict("fn get() -> usize { 0 }"), [Rule::Primitive]);
+    assert_eq!(strict("fn get(text: &str) {}"), [Rule::Primitive]);
+    assert_eq!(strict("fn get(text: String) {}"), [Rule::Primitive]);
+    assert_eq!(strict("fn get(first: Vec<u8>) {}"), [Rule::Primitive]);
+    assert_eq!(strict("fn get(point: (Line, Line)) {}"), [Rule::Primitive]);
+    assert_eq!(strict("fn get(value: bool) {}"), [Rule::Primitive]);
+    assert_eq!(strict("struct Span { start: usize }"), [Rule::Primitive]);
+    assert_eq!(strict("enum Shape { Line(u32) }"), [Rule::Primitive]);
+    assert_eq!(strict("const COUNT: usize = 3;"), [Rule::Primitive]);
+    assert_eq!(strict("struct Span(Line, u32);"), [Rule::Primitive]);
+}
+
+#[test]
+fn named_types_newtypes_tests_and_trait_impls_pass() {
+    assert_eq!(strict("fn get(line: Line) -> Option<Span> { None }"), []);
+    assert_eq!(strict("fn get() -> bool { true }"), []);
+    assert_eq!(
+        strict(
+            "struct Line(u32);\nimpl Line { fn get(self) -> u32 { self.0 } fn new(value: u32) -> Self { Self(value) } }"
+        ),
+        []
+    );
+    assert_eq!(
+        strict("struct Line;\nimpl From<Line> for Count { fn from(value: Line) -> u32 { 0 } }"),
+        []
+    );
+    assert_eq!(
+        strict("#[cfg(test)]\nmod test { fn make(count: usize) {} }"),
+        []
+    );
+    assert_eq!(strict("fn main() { let rows = |count: usize| count; }"), []);
+    assert_eq!(
+        rules_hit(&[("tests/store.rs", "fn make(count: usize) {}")]),
+        []
+    );
+}
+
+#[test]
+fn newtype_fields_are_private() {
+    assert_eq!(strict("struct Line(pub u32);"), [Rule::NewtypeField]);
+    assert_eq!(strict("struct Line(u32);"), []);
+}
+
+#[test]
+fn indexing_and_slicing() {
+    assert_eq!(
+        strict("fn main() { let first = rows[0]; }"),
+        [Rule::Indexing]
+    );
+    assert_eq!(
+        strict("fn main() { let first = &text[1..]; }"),
+        [Rule::Indexing]
+    );
+    assert_eq!(strict("fn main() { let first = rows.get(0); }"), []);
+    assert_eq!(strict("#[test]\nfn test() { let first = rows[0]; }"), []);
+}
+
+#[test]
+fn sentinels_for_absence() {
+    assert_eq!(strict("fn main() { if name == \"\" {} }"), [Rule::Absence]);
+    assert_eq!(strict("fn main() { if count != -1 {} }"), [Rule::Absence]);
+    assert_eq!(
+        strict("fn main() { let end = usize::MAX; }"),
+        [Rule::Absence]
+    );
+    assert_eq!(strict("fn main() { if name.is_some() {} }"), []);
+}
+
+#[test]
+fn vocabulary_words_and_synonyms() {
+    let files = [("crates/domain/src/line.rs", "fn get_line_number() {}")];
+    assert_eq!(rules_hit(&files), []);
+    assert_eq!(strict("fn fetch_line() {}"), [Rule::Vocabulary]);
+    assert_eq!(strict("fn get_lines(entries: Rows) {}"), [Rule::Vocabulary]);
+    assert_eq!(strict("fn get_lines(numbers: Rows) {}"), []);
+    let parsed = [SourceFile::parse(
+        RepoPath::new("crates/domain/src/line.rs"),
+        SourceText::new("fn get_idx() {}"),
+    )
+    .unwrap()];
+    let workspace = Workspace::of(
+        &parsed,
+        Vocabulary::parse(&Content::new("get\nidx -> index\nindex")).unwrap(),
+    );
+    let findings = lint(&workspace, &parsed);
+    assert!(
+        findings
+            .iter()
+            .any(|finding| finding.detail.as_str().contains("is written `index`"))
+    );
+}
+
+#[test]
+fn wire_types_stay_in_their_crate() {
+    let files = [
+        (
+            "crates/io-map/src/wire.rs",
+            "pub struct Record { pub text: String }",
+        ),
+        (
+            "crates/io-map/src/store.rs",
+            "pub fn read() -> Record { todo() }",
+        ),
+    ];
+    assert_eq!(rules_hit(&files), [Rule::WireLeak]);
+    let private = [
+        (
+            "crates/io-map/src/wire.rs",
+            "pub struct Record { pub text: String }",
+        ),
+        (
+            "crates/io-map/src/store.rs",
+            "fn read() -> Record { todo() }",
+        ),
+    ];
+    assert_eq!(rules_hit(&private), []);
+}
+
+#[test]
+fn the_domain_does_no_io() {
+    assert_eq!(strict("use std::fs;"), [Rule::DomainIo]);
+    assert_eq!(strict("fn main() { println!(\"x\"); }"), [Rule::DomainIo]);
+    assert_eq!(
+        rules_hit(&[("crates/io-map/src/store.rs", "use std::fs;")]),
+        []
+    );
+}
+
+#[test]
+fn suppressions_are_expectations_with_reasons_on_the_list() {
+    assert_eq!(
+        strict("#[allow(dead_code)]\nfn main() {}"),
+        [Rule::Suppression]
+    );
+    assert_eq!(
+        strict("#[expect(dead_code)]\nfn main() {}"),
+        [Rule::Suppression]
+    );
+    assert_eq!(
+        strict("#[expect(dead_code, reason = \"x\")]\nfn main() {}"),
+        [Rule::Suppression]
+    );
+    let listed = [(
+        "xtask/src/process.rs",
+        "#[expect(clippy::disallowed_methods, reason = \"x\")]\nfn main() {}",
+    )];
+    assert_eq!(rules_hit(&listed), []);
+    let commas = [(
+        "xtask/src/process.rs",
+        "#[expect(clippy::disallowed_methods, reason = \"one, two, three\")]\nfn main() {}",
+    )];
+    assert_eq!(rules_hit(&commas), []);
+}
+
+#[test]
+fn aliases_are_newtypes() {
+    assert_eq!(strict("type Line = u32;"), [Rule::Alias]);
+    assert_eq!(strict("type Span = Line;"), [Rule::Alias]);
+}
+
+#[test]
+fn legacy_code_is_held_to_its_own_list() {
+    assert_eq!(
+        rules_hit(&[("src/main.rs", "// line\nfn get(line: u32) {}")]),
+        []
+    );
+    assert_eq!(
+        rules_hit(&[("src/main.rs", "#[allow(dead_code)]\nfn main() {}")]),
+        [Rule::Suppression]
+    );
+}

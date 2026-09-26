@@ -11,8 +11,8 @@ parent mkum0c
 author ai
 file src/map.rs
 symbol add_anchor
-lines 0 8
-hash 24707bc01c5194d6
+lines 0 30
+hash bba63eaf6c6e0086
 note Each step is anchored to the whole symbol; narrowing one to a slice is a later path-pin.
 
 step 712z8g
@@ -31,8 +31,8 @@ parent ia62kn
 author ai
 file src/map.rs
 symbol name_from
-lines 0 4
-hash 88cfc21416795ccf
+lines 0 17
+hash 877f8f098fd0d08d
 note A path named after its symbol takes the symbol's name with every character a file name cannot hold turned into '-'.
 
 step ggmy6f
@@ -40,8 +40,8 @@ order 0
 author ai
 file src/cli.rs
 symbol exec
-lines 328 333
-hash 3a73dba93be12fa2
+lines 476 496
+hash 91e3d5b130d0b762
 note The command: index the files the call tree reaches, resolve the symbol to exactly one, promote it, report how many steps the path now has.
 
 step i8jlm4
@@ -50,8 +50,8 @@ parent 6881s1
 author ai
 file src/map.rs
 symbol new
-lines 0 26
-hash dfec5162360ff8f5
+lines 0 32
+hash a8e6c557396ae989
 note Anchoring relative to the symbol itself, so a promoted step stays valid while everything around it moves.
 
 step ia62kn
@@ -60,8 +60,8 @@ parent ggmy6f
 author ai
 file src/map.rs
 symbol promote
-lines 0 16
-hash b2d91e751dc08562
+lines 0 35
+hash a36b40fa1374642e
 note Walks the call tree in pre-order and keeps a stack of the step index at each depth, so the step created at depth d becomes the parent of everything at depth d+1. The path is created as a flow, since a call tree is a workflow by construction.
 
 step mkum0c
@@ -70,6 +70,6 @@ parent ia62kn
 author ai
 file src/map.rs
 symbol promote
-lines 7 11
-hash 0741a1668b37098d
+lines 22 30
+hash 204abc7d2e71f0dd
 note Re-promoting reuses the step a symbol already has instead of adding a second one, which also means notes already written survive.

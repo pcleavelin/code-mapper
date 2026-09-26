@@ -37,18 +37,23 @@ fn cli_main(root: &Path, args: &[String]) -> i32 {
         let _ = std::io::Write::write_all(&mut std::io::stdout(), s.as_bytes());
     };
     let mut servers = index::Servers::new(root, |m| eprintln!("{m}"));
-    let done = cli::exec(&mut idx, &mut map, cmd, Author::Ai, Some(&mut servers), &mut out);
+    let done = cli::exec(
+        &mut idx,
+        &mut map,
+        cmd,
+        Author::Ai,
+        Some(&mut servers),
+        &mut out,
+    );
     drop(servers);
     match done {
         Ok(dirty) => {
             // the map is saved before the command's output is shown, so a line that says a
             // step was added is never printed for a change that did not reach the disk
-            if dirty {
-                if let Err(e) = map.save(&map_path) {
-                    emit(&out);
-                    eprintln!("save failed: {e}");
-                    return 1;
-                }
+            if dirty && let Err(e) = map.save(&map_path) {
+                emit(&out);
+                eprintln!("save failed: {e}");
+                return 1;
             }
             emit(&out);
             0
@@ -63,11 +68,17 @@ fn cli_main(root: &Path, args: &[String]) -> i32 {
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    if args.first().is_some_and(|a| a == "help" || a == "--help" || a == "-h") {
+    if args
+        .first()
+        .is_some_and(|a| a == "help" || a == "--help" || a == "-h")
+    {
         print!("{}", cli::help());
         return;
     }
-    let root = args.first().map(PathBuf::from).unwrap_or_else(|| std::env::current_dir().expect("cwd"));
+    let root = args
+        .first()
+        .map(PathBuf::from)
+        .unwrap_or_else(|| std::env::current_dir().expect("cwd"));
     if args.len() > 1 {
         std::process::exit(cli_main(&root, &args[1..]));
     }

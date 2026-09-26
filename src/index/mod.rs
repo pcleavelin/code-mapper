@@ -11,8 +11,8 @@ mod treesitter;
 pub use server::{ServerFile, Servers, index_files, name_position, references_at, start_server};
 pub use treesitter::{Parsers, parse_file};
 
-use cache::{CACHE, load_cache};
 use crate::codec::fnv1a;
+use cache::{CACHE, load_cache};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
@@ -45,10 +45,10 @@ pub struct Symbol {
     pub start: usize, // inclusive 0-based line rows
     pub end: usize,
     pub depth: u8,
-    pub owner: Option<String>,       // the type / class a member belongs to (impl Foo -> "Foo")
-    pub calls: Vec<Call>,            // tree-sitter backend: raw call sites, resolved by name in `link`
+    pub owner: Option<String>, // the type / class a member belongs to (impl Foo -> "Foo")
+    pub calls: Vec<Call>,      // tree-sitter backend: raw call sites, resolved by name in `link`
     pub targets: Vec<(String, u32)>, // server backend: (file, line) of each callee's definition, resolved in `link`
-    pub refs: Vec<(String, u32)>,    // (file, line) of every reference, once the GUI has asked the server for them
+    pub refs: Vec<(String, u32)>, // (file, line) of every reference, once the GUI has asked the server for them
     pub callees: Vec<SymRef>,
     pub callers: Vec<SymRef>,
 }
@@ -68,11 +68,31 @@ pub struct Lang {
 }
 
 pub const LANGS: [Lang; 5] = [
-    Lang { exts: &["rs"], server: "rust-analyzer", args: &[] },
-    Lang { exts: &["odin"], server: "ols", args: &[] },
-    Lang { exts: &["c", "h"], server: "clangd", args: &[] },
-    Lang { exts: &["py"], server: "pyright-langserver", args: &["--stdio"] },
-    Lang { exts: &["js", "mjs", "cjs", "ts", "tsx"], server: "typescript-language-server", args: &["--stdio"] },
+    Lang {
+        exts: &["rs"],
+        server: "rust-analyzer",
+        args: &[],
+    },
+    Lang {
+        exts: &["odin"],
+        server: "ols",
+        args: &[],
+    },
+    Lang {
+        exts: &["c", "h"],
+        server: "clangd",
+        args: &[],
+    },
+    Lang {
+        exts: &["py"],
+        server: "pyright-langserver",
+        args: &["--stdio"],
+    },
+    Lang {
+        exts: &["js", "mjs", "cjs", "ts", "tsx"],
+        server: "typescript-language-server",
+        args: &["--stdio"],
+    },
 ];
 
 /// The language of `path`, by extension. Each has a bundled grammar (`language_for`), so a
@@ -141,16 +161,26 @@ pub fn build(root: &Path) -> Index {
     let mut files = Vec::new();
 
     // require_git(false): honour .gitignore even when the root is not a git repo (target/ etc.)
-    for entry in ignore::WalkBuilder::new(root).require_git(false).build().flatten() {
+    for entry in ignore::WalkBuilder::new(root)
+        .require_git(false)
+        .build()
+        .flatten()
+    {
         if !entry.file_type().is_some_and(|t| t.is_file()) {
             continue;
         }
-        let Ok(raw) = std::fs::read(entry.path()) else { continue };
+        let Ok(raw) = std::fs::read(entry.path()) else {
+            continue;
+        };
         if raw.len() > MAX_FILE || raw[..raw.len().min(1024)].contains(&0) {
             continue; // too big or binary
         }
 
-        let ext = entry.path().extension().and_then(|e| e.to_str()).unwrap_or("");
+        let ext = entry
+            .path()
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("");
         let rel = entry
             .path()
             .strip_prefix(root)
@@ -176,13 +206,23 @@ pub fn build(root: &Path) -> Index {
         files.push(f);
     }
     for f in &mut files {
-        if f.backend == Backend::Server && f.symbols.iter().any(|s| s.targets.iter().chain(&s.refs).any(|(p, _)| changed.contains(p))) {
+        if f.backend == Backend::Server
+            && f.symbols.iter().any(|s| {
+                s.targets
+                    .iter()
+                    .chain(&s.refs)
+                    .any(|(p, _)| changed.contains(p))
+            })
+        {
             f.pending = true;
         }
     }
 
     files.sort_by(|a, b| a.path.cmp(&b.path));
-    let mut idx = Index { root: root.to_path_buf(), files };
+    let mut idx = Index {
+        root: root.to_path_buf(),
+        files,
+    };
     idx.link();
     if !changed.is_empty() || !cache.is_empty() {
         idx.save_cache(); // parsed something, or a cached file is gone
@@ -193,12 +233,17 @@ pub fn build(root: &Path) -> Index {
 /// `word` appears on line `li` of `f` as a whole identifier outside comments and strings: a
 /// place that names it in code.
 pub fn call_site(f: &File, li: usize, word: &str) -> bool {
-    let Some(line) = f.lines.get(li) else { return false };
+    let Some(line) = f.lines.get(li) else {
+        return false;
+    };
     let is_id = |c: char| c.is_alphanumeric() || c == '_';
     let spans = f.hl.get(li).map(Vec::as_slice).unwrap_or(&[]);
     line.match_indices(word).any(|(i, _)| {
-        let whole = !line[..i].chars().next_back().is_some_and(is_id) && !line[i + word.len()..].chars().next().is_some_and(is_id);
-        let quoted = spans.iter().any(|&(s, e, class)| (class == HL_COMMENT || class == HL_STRING) && (s as usize) <= i && i < e as usize);
+        let whole = !line[..i].chars().next_back().is_some_and(is_id)
+            && !line[i + word.len()..].chars().next().is_some_and(is_id);
+        let quoted = spans.iter().any(|&(s, e, class)| {
+            (class == HL_COMMENT || class == HL_STRING) && (s as usize) <= i && i < e as usize
+        });
         whole && !quoted
     })
 }
@@ -219,7 +264,10 @@ impl Index {
 
     pub fn by_key(&self, key: &(String, String)) -> Option<SymRef> {
         let file = self.find_file(&key.0)?;
-        let sym = self.files[file].symbols.iter().position(|s| s.name == key.1)?;
+        let sym = self.files[file]
+            .symbols
+            .iter()
+            .position(|s| s.name == key.1)?;
         Some(SymRef { file, sym })
     }
 
@@ -230,7 +278,13 @@ impl Index {
 
     /// The innermost symbol of file `file` spanning `line`.
     fn sym_at(&self, file: usize, line: usize) -> Option<SymRef> {
-        let sym = self.files[file].symbols.iter().enumerate().filter(|(_, s)| s.start <= line && line <= s.end).max_by_key(|(_, s)| s.depth)?.0;
+        let sym = self.files[file]
+            .symbols
+            .iter()
+            .enumerate()
+            .filter(|(_, s)| s.start <= line && line <= s.end)
+            .max_by_key(|(_, s)| s.depth)?
+            .0;
         Some(SymRef { file, sym })
     }
 
@@ -292,7 +346,14 @@ impl Index {
         out
     }
 
-    fn walk(&self, r: SymRef, depth: usize, max: usize, seen: &mut HashSet<SymRef>, out: &mut Vec<(SymRef, usize)>) {
+    fn walk(
+        &self,
+        r: SymRef,
+        depth: usize,
+        max: usize,
+        seen: &mut HashSet<SymRef>,
+        out: &mut Vec<(SymRef, usize)>,
+    ) {
         if !seen.insert(r) {
             return;
         }

@@ -11,8 +11,8 @@ parent 85mf2y
 author ai
 file src/gui/graph.rs
 symbol layout
-lines 38 63
-hash e68e02876542025c
+lines 57 92
+hash 6108ec6df105b494
 note Pass 1, bottom-up: a node's block is its own height or the stacked heights of its children's blocks, whichever is taller, with left and right children measured independently. The seen set stops a cycle in the call graph from recursing forever.
 
 step 4ksm9y
@@ -31,8 +31,8 @@ parent 85mf2y
 author ai
 file src/gui/graph.rs
 symbol layout
-lines 19 36
-hash 742fe5db94a5f7a2
+lines 22 55
+hash 41428c22fa23d234
 note The forest the vertical passes walk: a path step hangs off its parent step on the right, an expanded node off the node that revealed it, left for callers and right for callees. Each parent's right children are sorted by the line of its code that names them, so siblings sit in call order and the step order breaks ties.
 
 step 85mf2y
@@ -40,8 +40,8 @@ order 0
 author ai
 file src/gui/graph.rs
 symbol layout
-lines 0 102
-hash 244b3fef0f53bb93
+lines 0 146
+hash 37963ff5a94e91e7
 note One function, five passes, all of it in cells and rows. It reads the sizes measured just before it and writes one position per node.
 
 step kasgsj
@@ -50,8 +50,8 @@ parent 85mf2y
 author ai
 file src/gui/graph.rs
 symbol layout
-lines 4 18
-hash 57f54001a5492346
+lines 4 21
+hash eec2ff33d366f1a6
 note Pass x: group the nodes by column, give each column the width of its widest node, then walk outward from column 0 in both directions so the path's root keeps its place when an expansion opens to the left.
 
 step l634za
@@ -60,8 +60,8 @@ parent 85mf2y
 author ai
 file src/gui/graph.rs
 symbol layout
-lines 64 90
-hash ea8f7ce337f6298f
+lines 93 134
+hash a4ec6325d6700363
 note Pass 2, top-down: a node is centred vertically in its block and its children are stacked beside it, centred on the same block. Roots are stacked in step order with a double gap between them.
 
 step sfz63q
@@ -69,7 +69,7 @@ order 7
 author ai
 file src/gui/graph.rs
 symbol graph_tab
-lines 138 138
+lines 176 176
 hash bdd3b49a573433cf
 note The frame's cell size in pixels is recorded once per frame, after the layout and the dragged positions; rect_px turns a node's cells and rows into a pixel rectangle with it whenever the painter or the camera asks.
 
@@ -79,6 +79,6 @@ parent 85mf2y
 author ai
 file src/gui/graph.rs
 symbol layout
-lines 91 101
+lines 135 145
 hash ea7d7af2e9bd09c8
 note Pass 3: two different subtrees can still meet in one column - a caller's own callees come back to the focus column, for instance. Sort that column by y and push each node below the previous one.

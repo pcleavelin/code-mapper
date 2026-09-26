@@ -19,8 +19,8 @@ order 3
 author ai
 file src/vcs.rs
 symbol show_dir
-lines 0 15
-hash e78d68d47a6c24cd
+lines 0 28
+hash e4ec3992ffc18315
 note The map directory at a revision in one call: a glob for jj, ls-tree then one git show of every file for git. The files come out one after another, which parse reads as one text.
 
 step m3kg1y
@@ -38,8 +38,8 @@ parent rw4bei
 author ai
 file src/vcs.rs
 symbol run
-lines 0 3
-hash aeb1d8392564430e
+lines 0 7
+hash 4c55acd3f799fc08
 note The one place a program runs: its output when it succeeds, None otherwise.
 
 step rw4bei

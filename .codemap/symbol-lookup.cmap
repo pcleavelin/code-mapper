@@ -21,8 +21,8 @@ parent r89s9h
 author ai
 file src/cli.rs
 symbol find_symbols
-lines 0 3
-hash 4eb288e524592912
+lines 0 7
+hash d855054b82be699a
 note The reading commands stop here: every match is an answer, and an empty result is the error.
 
 step r89s9h
@@ -30,6 +30,6 @@ order 1
 author ai
 file src/cli.rs
 symbol find_symbol
-lines 0 7
-hash 9f81202e18c613f8
+lines 0 13
+hash c4985ae8d54c46c8
 note The single-match guard. The error lists each candidate under the shortest qualified name that selects it alone, checked by running the lookup, so nothing it offers is itself ambiguous.

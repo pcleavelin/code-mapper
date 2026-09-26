@@ -1,0 +1,14 @@
+absolute-paths-max-segments = 2
+allowed-idents-below-min-chars = []
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-indexing-slicing-in-tests = true
+allow-panic-in-tests = true
+allow-print-in-tests = true
+disallowed-methods = [
+    { path = "std::process::Command::new", reason = "a crate starts processes in one place: its process module" },
+    { path = "std::thread::spawn", reason = "a crate starts threads in one place: its runtime module" },
+    { path = "std::fs::write", reason = "a crate writes files in one place: its store module" },
+    { path = "std::fs::remove_file", reason = "a crate writes files in one place: its store module" },
+    { path = "std::fs::File::create", reason = "a crate writes files in one place: its store module" },
+]

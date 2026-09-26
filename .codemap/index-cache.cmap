@@ -19,8 +19,8 @@ parent 29a3aw
 author ai
 file src/index/cache.rs
 symbol load_cache
-lines 0 37
-hash ed49ce0a82a316e8
+lines 0 75
+hash ea9ad01c70e8188c
 note Files by path with empty lines; build fills the text from disk and drops entries whose hash no longer matches.
 
 step kb14yk
@@ -38,8 +38,8 @@ order 8
 author ai
 file src/codec.rs
 symbol write_retry
-lines 0 19
-hash fe830c975769481d
+lines 0 23
+hash 3a0b4d615c8a0c45
 note Every file the tool writes, the map and the cache alike, goes through here: the bytes land in a temporary file beside the target and are renamed over it, so a reader, or the second of two threads saving at once, never sees a half-written file. A sharing violation from an editor or scanner holding the file is retried a few times.
 
 step nre0yw

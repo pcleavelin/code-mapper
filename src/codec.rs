@@ -54,7 +54,11 @@ impl Reader<'_> {
 /// for a moment (errors 1224, 32 and 5, while another process or a scanner has it open).
 pub fn write_retry(path: &Path, data: &[u8]) -> std::io::Result<()> {
     static N: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
-    let tmp = path.with_extension(format!("tmp{}-{}", std::process::id(), N.fetch_add(1, std::sync::atomic::Ordering::Relaxed)));
+    let tmp = path.with_extension(format!(
+        "tmp{}-{}",
+        std::process::id(),
+        N.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+    ));
     let mut last = None;
     for _ in 0..6 {
         match std::fs::write(&tmp, data).and_then(|()| std::fs::rename(&tmp, path)) {

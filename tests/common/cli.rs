@@ -3,7 +3,14 @@
 use super::{Transcript, fixture, git_commit, has_git, has_jj, jj, jj_commit};
 use std::path::Path;
 
-pub const SCENARIOS: &[(&str, fn(&Path) -> String)] = &[("cli-read", read), ("cli-edit", edit), ("cli-stale", stale), ("cli-vcs", vcs), ("cli-git", git_vcs), ("cli-merge", merge)];
+pub const SCENARIOS: &[(&str, fn(&Path) -> String)] = &[
+    ("cli-read", read),
+    ("cli-edit", edit),
+    ("cli-stale", stale),
+    ("cli-vcs", vcs),
+    ("cli-git", git_vcs),
+    ("cli-merge", merge),
+];
 
 fn edit_file(root: &Path, path: &str, from: &str, to: &str) {
     let p = root.join(path);
@@ -13,7 +20,11 @@ fn edit_file(root: &Path, path: &str, from: &str, to: &str) {
 }
 
 fn read(bin: &Path) -> String {
-    let mut t = Transcript { bin, root: fixture("cli-read", bin, true), out: String::new() };
+    let mut t = Transcript {
+        bin,
+        root: fixture("cli-read", bin, true),
+        out: String::new(),
+    };
     for args in [
         &["help"][..],
         &["files"],
@@ -65,7 +76,11 @@ fn read(bin: &Path) -> String {
 }
 
 fn edit(bin: &Path) -> String {
-    let mut t = Transcript { bin, root: fixture("cli-edit", bin, true), out: String::new() };
+    let mut t = Transcript {
+        bin,
+        root: fixture("cli-edit", bin, true),
+        out: String::new(),
+    };
     for args in [
         &["path-new", "scratch", "flow"][..],
         &["path-new", "scratch", "layer"],
@@ -106,7 +121,14 @@ fn edit(bin: &Path) -> String {
         &["check"],
         &["path-group", "scratch", "flows/demo"],
         &["path-group", "startup", "flows"],
-        &["path-new", "grouped", "layer", "In a group.", "--group", " areas/ "],
+        &[
+            "path-new",
+            "grouped",
+            "layer",
+            "In a group.",
+            "--group",
+            " areas/ ",
+        ],
         &["path-group", "nope", "x"],
         &["groups"],
         &["paths"],
@@ -143,10 +165,19 @@ fn edit(bin: &Path) -> String {
 
 fn stale(bin: &Path) -> String {
     let root = fixture("cli-stale", bin, true);
-    let mut t = Transcript { bin, root: root.clone(), out: String::new() };
+    let mut t = Transcript {
+        bin,
+        root: root.clone(),
+        out: String::new(),
+    };
     t.run(&["check"]);
     t.note("two lines above impl Store: its steps move but stay current");
-    edit_file(&root, "src/store.rs", "pub struct Store {", "// a comment\n// another\npub struct Store {");
+    edit_file(
+        &root,
+        "src/store.rs",
+        "pub struct Store {",
+        "// a comment\n// another\npub struct Store {",
+    );
     t.run(&["stale"]);
     t.run(&["paths", "startup"]);
     t.note("check's body changes: its step goes stale");
@@ -156,15 +187,30 @@ fn stale(bin: &Path) -> String {
     t.run(&["path", "startup"]);
     t.run(&["uncovered", "check"]);
     t.note("a line inside the slice changes, and the absolute-lines step's lines move");
-    edit_file(&root, "src/store.rs", "let mut sum = 0.0;", "let mut sum: f64 = 0.0;");
+    edit_file(
+        &root,
+        "src/store.rs",
+        "let mut sum = 0.0;",
+        "let mut sum: f64 = 0.0;",
+    );
     t.run(&["stale"]);
     t.note("fill is renamed: the symbol is gone");
     edit_file(&root, "src/main.rs", "fn fill(", "fn fill_up(");
-    edit_file(&root, "src/main.rs", "    fill(&mut store);", "    fill_up(&mut store);");
+    edit_file(
+        &root,
+        "src/main.rs",
+        "    fill(&mut store);",
+        "    fill_up(&mut store);",
+    );
     t.run(&["stale"]);
     t.note("the text of report moves down unchanged in its file: stale lists where it went");
     t.run(&["path-add", "startup", "src/main.rs", "18", "19", "-1"]);
-    edit_file(&root, "src/main.rs", "fn report(store: &Store) {", "// moved\nfn report(store: &Store) {");
+    edit_file(
+        &root,
+        "src/main.rs",
+        "fn report(store: &Store) {",
+        "// moved\nfn report(store: &Store) {",
+    );
     t.run(&["stale"]);
     t.note("helpers.py is deleted: its file is gone");
     std::fs::remove_file(root.join("tools/helpers.py")).unwrap();
@@ -187,7 +233,11 @@ fn vcs(bin: &Path) -> String {
         return "jj not on PATH\n".into();
     }
     let root = fixture("cli-vcs", bin, true);
-    let mut t = Transcript { bin, root: root.clone(), out: String::new() };
+    let mut t = Transcript {
+        bin,
+        root: root.clone(),
+        out: String::new(),
+    };
     t.run(&["diff"]);
     t.note("the map and the source are committed as the parent revision");
     jj_commit(&root, "base");
@@ -201,39 +251,87 @@ fn vcs(bin: &Path) -> String {
     t.run(&["path-note", "stats", "Changed."]);
     t.run(&["step-link", "stats", "0", "startup"]);
     t.run(&["diff"]);
-    edit_file(&root, "tools/stats.py", "def main():", "def extra():
+    edit_file(
+        &root,
+        "tools/stats.py",
+        "def main():",
+        "def extra():
     return 1
 
 
-def main():");
+def main():",
+    );
     t.run(&["path-add", "fresh", "extra", "-1"]);
     t.note("source edits after the commit: repin follows each stale step from @-");
-    edit_file(&root, "src/store.rs", "    fn check(&self) {", "    fn unrelated(&self) {}\n\n    fn check(&self) {");
+    edit_file(
+        &root,
+        "src/store.rs",
+        "    fn check(&self) {",
+        "    fn unrelated(&self) {}\n\n    fn check(&self) {",
+    );
     edit_file(&root, "src/store.rs", "< 1000", "< 2000");
-    edit_file(&root, "src/store.rs", "        let mut sum = 0.0;\n", "        let mut sum = 0.0;\n        let extra = 0.0;\n");
-    edit_file(&root, "src/main.rs", "    log_line(\"done\");", "    log_line(\"done\");\n    log_line(\"really\");");
-    edit_file(&root, "src/main.rs", "fn fill(store: &mut Store) {\n    store.add(Box::new(Circle { r: 1.0 }));\n    store.add(Box::new(Square { side: 2.0 }));\n}", "fn fill(store: &mut Store) {\n    let _ = store;\n}");
+    edit_file(
+        &root,
+        "src/store.rs",
+        "        let mut sum = 0.0;\n",
+        "        let mut sum = 0.0;\n        let extra = 0.0;\n",
+    );
+    edit_file(
+        &root,
+        "src/main.rs",
+        "    log_line(\"done\");",
+        "    log_line(\"done\");\n    log_line(\"really\");",
+    );
+    edit_file(
+        &root,
+        "src/main.rs",
+        "fn fill(store: &mut Store) {\n    store.add(Box::new(Circle { r: 1.0 }));\n    store.add(Box::new(Square { side: 2.0 }));\n}",
+        "fn fill(store: &mut Store) {\n    let _ = store;\n}",
+    );
     std::fs::remove_file(root.join("tools/helpers.py")).unwrap();
-    edit_file(&root, "src/main.rs", "fn log_line(msg: &str) {
+    edit_file(
+        &root,
+        "src/main.rs",
+        "fn log_line(msg: &str) {
 	eprintln!(\"{msg}\");
 }
-", "");
-    edit_file(&root, "src/shapes.rs", "/// Nothing calls this.", "fn log_line(msg: &str) {
+",
+        "",
+    );
+    edit_file(
+        &root,
+        "src/shapes.rs",
+        "/// Nothing calls this.",
+        "fn log_line(msg: &str) {
 	eprintln!(\"{msg}\");
 }
 
-/// Nothing calls this.");
-    edit_file(&root, "src/shapes.rs", "pub fn describe(s: &dyn Shape) -> String {
-    format!(", "pub fn describe_shape(s: &dyn Shape) -> String {
-    format!(\"shape: \" + ");
-    edit_file(&root, "tools/stats.py", "def extra():", "def extra_renamed():");
+/// Nothing calls this.",
+    );
+    edit_file(
+        &root,
+        "src/shapes.rs",
+        "pub fn describe(s: &dyn Shape) -> String {
+    format!(",
+        "pub fn describe_shape(s: &dyn Shape) -> String {
+    format!(\"shape: \" + ",
+    );
+    edit_file(
+        &root,
+        "tools/stats.py",
+        "def extra():",
+        "def extra_renamed():",
+    );
     t.run(&["stale"]);
     t.run(&["repin"]);
     t.run(&["stale"]);
     t.run(&["repin", "@--"]);
     t.run(&["repin", "nonsense-rev"]);
     t.run(&["path", "startup"]);
-    let _ = jj(&root, &["log", "-r", "@", "--no-graph", "-T", "description"]);
+    let _ = jj(
+        &root,
+        &["log", "-r", "@", "--no-graph", "-T", "description"],
+    );
     t.out
 }
 
@@ -242,7 +340,11 @@ fn git_vcs(bin: &Path) -> String {
         return "git not on PATH\n".into();
     }
     let root = fixture("cli-git", bin, true);
-    let mut t = Transcript { bin, root: root.clone(), out: String::new() };
+    let mut t = Transcript {
+        bin,
+        root: root.clone(),
+        out: String::new(),
+    };
     t.run(&["diff"]);
     t.note("the map and the source are committed as HEAD of a git repo");
     git_commit(&root, "base");
@@ -254,8 +356,18 @@ fn git_vcs(bin: &Path) -> String {
     t.run(&["path-group", "c-lib", "native"]);
     t.run(&["diff"]);
     t.note("source edits after the commit: repin follows each stale step from HEAD");
-    edit_file(&root, "src/store.rs", "    fn check(&self) {", "    fn unrelated(&self) {}\n\n    fn check(&self) {");
-    edit_file(&root, "src/store.rs", "let mut sum = 0.0;", "let mut sum = 0.0_f64;");
+    edit_file(
+        &root,
+        "src/store.rs",
+        "    fn check(&self) {",
+        "    fn unrelated(&self) {}\n\n    fn check(&self) {",
+    );
+    edit_file(
+        &root,
+        "src/store.rs",
+        "let mut sum = 0.0;",
+        "let mut sum = 0.0_f64;",
+    );
     t.run(&["stale"]);
     t.run(&["repin"]);
     t.run(&["check"]);
@@ -272,7 +384,11 @@ fn merge(bin: &Path) -> String {
         return "jj not on PATH\n".into();
     }
     let root = fixture("cli-merge", bin, true);
-    let mut t = Transcript { bin, root: root.clone(), out: String::new() };
+    let mut t = Transcript {
+        bin,
+        root: root.clone(),
+        out: String::new(),
+    };
     jj_commit(&root, "base");
     let base = committed(&root);
     t.note("side one edits a note of startup and adds a step to it");

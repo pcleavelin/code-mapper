@@ -10,8 +10,8 @@ order 2
 author ai
 file src/gui/nav.rs
 symbol select_symbol
-lines 0 10
-hash ec3983baec471a40
+lines 0 14
+hash 07f9c73792db1f56
 note The symbol entry point: the Symbols tab, xrefs, jumps, off-path graph nodes. Clears the step, unless the symbol is a whole-symbol step of the path being read, in which case that step is selected instead.
 
 step ascpfh
@@ -29,8 +29,8 @@ parent ascpfh
 author ai
 file src/gui/graph.rs
 symbol rebuild
-lines 0 89
-hash 484d0c16623e3e4f
+lines 0 104
+hash 342d4508504deac7
 note The graph reads the same two fields and keeps nothing of its own: every frame it derives its node set from the selected path and the focused symbol, so it cannot disagree with the document or the outline. The path is drawn whenever one is selected, step or no step: selecting a symbol off the path adds it as another root beside the path rather than replacing it.
 
 step gjewkp

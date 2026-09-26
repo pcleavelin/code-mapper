@@ -1,0 +1,274 @@
+absence
+absolute
+active
+add
+after
+agent
+alias
+all
+allow
+allowance
+allowed
+ancestors
+annotation
+api
+applies
+arch
+architecture
+argument
+as
+attribute
+bare
+before
+block
+body
+by
+bytes
+cargo
+changed
+check
+children
+chosen
+clippy
+code
+collect
+command
+comment
+committing
+complain
+conflict
+contains
+content
+context
+continued
+convert
+count
+crate
+current
+cursor
+decision
+defined
+deny
+dependency
+depends
+depth
+descendants
+descending
+detail
+detect
+dictated
+directory
+domain
+dropped
+edit
+empty
+ends
+entry
+event
+every
+exempt
+expected
+expects
+failure
+fast
+feed
+field
+file
+finding
+finish
+first
+folder
+form
+format
+formatted
+found
+from
+full
+function
+gate
+git
+goldens
+green
+guard
+guarded
+handle
+hasher
+head
+header
+hook
+identifier
+in
+indexing
+inner
+input
+inside
+integer
+io
+is
+item
+jj
+join
+joined
+kept
+key
+known
+leak
+legacy
+library
+light
+line
+lint
+list
+listing
+literal
+load
+lower
+main
+manifest
+map
+markers
+members
+message
+module
+name
+named
+new
+newtype
+next
+node
+notice
+now
+number
+numeric
+of
+offenders
+on
+one
+other
+out
+outcome
+output
+owner
+ownership
+package
+parent
+parse
+parser
+part
+path
+perform
+post
+pre
+prefix
+previous
+primitive
+printing
+process
+program
+protected
+public
+push
+read
+reason
+record
+recorded
+red
+registry
+relative
+release
+repeats
+repo
+report
+rest
+result
+root
+row
+rule
+rulebook
+run
+rust
+rustfmt
+save
+say
+section
+seen
+sentinel
+session
+shell
+signature
+some
+source
+split
+stack
+stamp
+start
+starting
+state
+step
+stop
+stopping
+str
+strict
+success
+suffix
+suppression
+surface
+synonym
+target
+task
+terminal
+test
+text
+tool
+tree
+type
+unknown
+us
+usage
+value
+vcs
+verdict
+vocabulary
+way
+whole
+wire
+with
+word
+workspace
+write
+writing
+zero
+zone
+abs -> absolute
+ai -> author
+buf -> buffer
+cfg -> config
+cnt -> count
+ctx -> context
+def -> definition
+delete -> remove
+destroy -> remove
+dir -> directory
+erase -> remove
+err -> error
+fetch -> get
+fi -> file
+hi -> end
+idx -> index
+len -> length
+li -> line
+lo -> start
+lookup -> find
+msg -> message
+num -> number
+obtain -> get
+pi -> path
+pos -> position
+rel -> relative
+res -> result
+retrieve -> get
+sel -> selection
+si -> symbol
+sym -> symbol
+tmp -> temporary
+ty -> type

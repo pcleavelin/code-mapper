@@ -31,8 +31,8 @@ parent 4yhd4f
 author ai
 file src/gui/graph.rs
 symbol build_scene
-lines 0 97
-hash 88e64716d11d6b5a
+lines 0 174
+hash 3f64fde9753d4e9b
 note Turns the node set and its positions into a flat list of rectangles, text runs and curves in window pixels, and records the hit rectangles for next frame. It is the only part that knows about the pan and the zoom; the draw function that follows just paints what it is given.
 
 step 2mnh2a
@@ -41,8 +41,8 @@ parent 4yhd4f
 author ai
 file src/gui/graph.rs
 symbol graph_tab
-lines 144 162
-hash d434ab23bafbae75
+lines 182 218
+hash 9e752a226750c041
 note The toolbar: the gestures spelled out, '1:1' which resets the zoom and re-centres, 'auto layout' which drops every dragged position, 'fit' which zooms out until the whole tree is on the canvas, the legend for the edge colours when a path is being read, and the zoom percentage. There is no authoring control on the graph by design.
 
 step 4yhd4f
@@ -50,8 +50,8 @@ order 0
 author ai
 file src/gui/graph.rs
 symbol graph_tab
-lines 0 172
-hash d595c2da62e735fa
+lines 0 230
+hash fa811a4c10fe8420
 note The tab, in order: input against last frame's rectangles, then the tree rebuilt, measured and laid out, then the toolbar, then the scene handed to one custom element. Nothing is drawn until that element is drawn, so the whole tab is one draw call's worth of work.
 
 step 5ho1e1
@@ -70,8 +70,8 @@ parent 4yhd4f
 author ai
 file src/gui/graph.rs
 symbol draw_scene
-lines 0 40
-hash 6dbe7eb20415cdad
+lines 0 61
+hash aecd916cc3ee52ed
 note The painter, called from inside the custom element. Curves and a dot for the arrow head, then per node: fill, outline, a clip to the node, header, buttons, note, the tint behind a calling line, the code, and the 'more lines' footer.
 
 step ah9cdx
@@ -80,8 +80,8 @@ parent 4yhd4f
 author ai
 file src/gui/graph.rs
 symbol graph_tab
-lines 107 142
-hash 515a557fe48e1815
+lines 136 180
+hash c757c5590c352745
 note Rebuild, measure every node, lay them out, apply the dragged positions, then let the camera have its say once the canvas has a size (see the graph-camera flow). This is the whole of what the graph keeps between frames being turned back into positions.
 
 step k4pc6a
@@ -90,8 +90,8 @@ parent pi32um
 author ai
 file src/gui/widgets.rs
 symbol build_grid
-lines 0 21
-hash 59762d43cf871834
+lines 0 25
+hash 94ce9697426ba1ea
 note Node code is the same grid the document and the listing draw, taken from the shared cache, so a node reads like the document and costs nothing per frame.
 
 step lky9fy
@@ -111,7 +111,7 @@ author ai
 file src/gui/graph.rs
 symbol Btn
 lines 0 8
-hash bef830800aca7997
+hash 516a218470ab7e1f
 note The buttons a node header can carry: preview, listing, expansions, and context above, below and none.
 
 step ox9aid
@@ -120,8 +120,8 @@ parent 2a4qq2
 author ai
 file src/gui/graph.rs
 symbol build_scene
-lines 55 94
-hash 5471a78f32c60ec1
+lines 111 174
+hash a3993cbbd4805ec1
 note The edges. A call edge leaves level with the line that makes the call when that line is on screen, and from the header otherwise; a callee drawn to the left of its caller gets a short orange curve back instead of a wire across the canvas. Path edges are drawn last, thicker and green, parent step to child step, and carry no label - the node's number is the label.
 
 step pi32um
@@ -130,8 +130,8 @@ parent 2a4qq2
 author ai
 file src/gui/graph.rs
 symbol build_scene
-lines 6 54
-hash 05f8ae9f0f78597c
+lines 12 110
+hash 14e7fb7262891cd2
 note One node: the border says what it is (red when the step is stale, accent when focused, green on the path, plain off it), the header runs and buttons from header, then one hit rectangle per shown line. A line is tinted when an edge leaves it: it names any node on the canvas the symbol calls, or one of its child steps, however either was revealed, so an off-path caller shows the line that calls the node it hangs off.
 
 step qoartp
@@ -140,8 +140,8 @@ parent 4yhd4f
 author ai
 file src/gui/graph.rs
 symbol graph_tab
-lines 31 97
-hash a20cb5ed956ad1c0
+lines 37 125
+hash 371ce150d0aa22ec
 note Clicks and drags against last frame's hit rectangles: buttons act, a header click selects the step (holding the camera) and starts a node drag, a press on code or body starts a node drag without selecting, the background pans. Drag deltas are converted to cells and rows.
 
 step rgjxnq
@@ -160,8 +160,8 @@ parent 4yhd4f
 author ai
 file src/gui/graph.rs
 symbol graph_tab
-lines 8 30
-hash be4debed298ff7c1
+lines 8 36
+hash a7920b49954c1b4f
 note The camera: ctrl+wheel zooms and keeps the cell under the mouse still, computed from the old and new cell sizes rather than the zoom factor; the wheel pans three rows per notch and shift+wheel does the same sideways.
 
 step sj6fsf
@@ -180,6 +180,6 @@ parent qoartp
 author ai
 file src/gui/graph.rs
 symbol code_col
-lines 0 4
-hash 1b026e881e5b2a55
+lines 0 8
+hash 970c857effb760b3
 note The file column under the pointer for hover, ctrl-click and alt-click. A node's code is the same grid the document draws, gutter included, so the gutter width is the document's constant and a click on the gutter answers None rather than column zero.

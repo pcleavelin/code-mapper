@@ -82,7 +82,9 @@ impl Input {
     }
 
     pub fn key_with(&self, k: Key, ctrl: bool, alt: bool) -> bool {
-        self.keys.iter().any(|(kk, m)| *kk == k && m.ctrl == ctrl && m.alt == alt)
+        self.keys
+            .iter()
+            .any(|(kk, m)| *kk == k && m.ctrl == ctrl && m.alt == alt)
     }
 }
 
@@ -141,10 +143,22 @@ pub struct Layout {
 
 impl Layout {
     pub fn row() -> Layout {
-        Layout { dir: Dir::Row, size: [Size::Fit, Size::Fit], floating: None, pad: 0, gap: 0, cross: Align::Start, clip: false, scroll: (0, 0) }
+        Layout {
+            dir: Dir::Row,
+            size: [Size::Fit, Size::Fit],
+            floating: None,
+            pad: 0,
+            gap: 0,
+            cross: Align::Start,
+            clip: false,
+            scroll: (0, 0),
+        }
     }
     pub fn col() -> Layout {
-        Layout { dir: Dir::Col, ..Layout::row() }
+        Layout {
+            dir: Dir::Col,
+            ..Layout::row()
+        }
     }
     pub fn size(mut self, w: Size, h: Size) -> Layout {
         self.size = [w, h];
@@ -207,7 +221,10 @@ pub struct Style {
 
 impl Style {
     pub fn bg(c: Color) -> Style {
-        Style { bg: Some(c), ..Default::default() }
+        Style {
+            bg: Some(c),
+            ..Default::default()
+        }
     }
     pub fn border(mut self, sides: u8, c: Color) -> Style {
         self.border = sides;
@@ -241,7 +258,7 @@ pub struct Element {
     pub id: Option<Id>,
     size: [i32; 2],
     pos: [i32; 2],
-    content: [i32; 2], // extent of the children along the direction, for scrolling
+    content: [i32; 2],  // extent of the children along the direction, for scrolling
     lines: Vec<String>, // a wrapped text's lines, once the width is known
     pub rect: Rect,
     pub clip: Rect,
@@ -253,7 +270,7 @@ pub struct Interaction {
     pub hovered: bool,
     pub clicked: bool,
     pub double_clicked: bool,
-    pub down: bool,             // the mouse went down on it and is still down
+    pub down: bool,               // the mouse went down on it and is still down
     pub drag: Option<(i32, i32)>, // movement this frame while down on it
     pub wheel: (f32, f32),
     pub rect: Option<Rect>, // where it was last frame
@@ -289,7 +306,14 @@ impl Ui {
         self.els.clear();
         self.open = None;
         self.size = input.size;
-        self.input = InputView { mouse: input.mouse, pressed: input.pressed, down: input.down, clicks: input.clicks, wheel: input.wheel, mods: input.mods };
+        self.input = InputView {
+            mouse: input.mouse,
+            pressed: input.pressed,
+            down: input.down,
+            clicks: input.clicks,
+            wheel: input.wheel,
+            mods: input.mods,
+        };
         let (mx, my) = input.mouse;
         // the topmost element under the mouse: highest layer, then latest in draw order
         self.hot = self
@@ -298,7 +322,7 @@ impl Ui {
             .filter(|(_, (r, c, _))| r.contains(mx, my) && c.contains(mx, my))
             .max_by_key(|(id, (r, c, _))| {
                 let v = r.intersect(c); // smallest visible rect wins among nested ids
-                (v.w as i64 * v.h as i64 * -1, **id)
+                (-(v.w as i64 * v.h as i64), **id)
             })
             .map(|(id, _)| *id);
         if input.pressed[0] {
@@ -326,7 +350,11 @@ impl Ui {
             clicked: hovered && i.pressed[0],
             double_clicked: hovered && i.clicks[0] == 2,
             down: self.active == Some(id) && i.down[0],
-            drag: if self.active == Some(id) && i.down[0] && !i.pressed[0] { Some((i.mouse.0 - self.last_mouse.0, i.mouse.1 - self.last_mouse.1)) } else { None },
+            drag: if self.active == Some(id) && i.down[0] && !i.pressed[0] {
+                Some((i.mouse.0 - self.last_mouse.0, i.mouse.1 - self.last_mouse.1))
+            } else {
+                None
+            },
             wheel: if hovered { i.wheel } else { (0.0, 0.0) },
             rect: self.prev.get(&id).map(|(r, _, _)| *r),
         }
@@ -334,9 +362,31 @@ impl Ui {
 
     /// Open an element as the last child of the open one. Returns its interaction when it has
     /// an id.
-    pub fn open(&mut self, kind: Kind, layout: Layout, style: Style, id: Option<Id>) -> Interaction {
+    pub fn open(
+        &mut self,
+        kind: Kind,
+        layout: Layout,
+        style: Style,
+        id: Option<Id>,
+    ) -> Interaction {
         let i = self.els.len();
-        let mut e = Element { parent: self.open, first: None, last: None, next: None, prev: None, kind, layout, style, id, size: [0, 0], pos: [0, 0], content: [0, 0], lines: Vec::new(), rect: Rect::default(), clip: Rect::default() };
+        let mut e = Element {
+            parent: self.open,
+            first: None,
+            last: None,
+            next: None,
+            prev: None,
+            kind,
+            layout,
+            style,
+            id,
+            size: [0, 0],
+            pos: [0, 0],
+            content: [0, 0],
+            lines: Vec::new(),
+            rect: Rect::default(),
+            clip: Rect::default(),
+        };
         if let Some(p) = self.open {
             if let Some(last) = self.els[p].last {
                 e.prev = Some(last);
@@ -358,7 +408,13 @@ impl Ui {
     }
 
     /// A leaf: open and close at once.
-    pub fn leaf(&mut self, kind: Kind, layout: Layout, style: Style, id: Option<Id>) -> Interaction {
+    pub fn leaf(
+        &mut self,
+        kind: Kind,
+        layout: Layout,
+        style: Style,
+        id: Option<Id>,
+    ) -> Interaction {
         let r = self.open(kind, layout, style, id);
         self.close();
         r
@@ -378,7 +434,10 @@ impl Ui {
     /// showed last frame. Returns the clamped offset to build the element with.
     pub fn scroll_by_wheel(&mut self, id: Id, offset: &mut i32) -> i32 {
         let (mx, my) = self.input.mouse;
-        let inside = self.prev.get(&id).is_some_and(|(r, c, _)| r.contains(mx, my) && c.contains(mx, my));
+        let inside = self
+            .prev
+            .get(&id)
+            .is_some_and(|(r, c, _)| r.contains(mx, my) && c.contains(mx, my));
         if self.hot == Some(id) || inside {
             *offset -= self.input.wheel.1 as i32;
         }
@@ -390,14 +449,17 @@ impl Ui {
                     if thumb.contains(mx, my) {
                         self.scroll_drag = Some((id, my - thumb.y));
                     } else {
-                        *offset = ((my - r.y) as i64 * content[1] as i64 / r.h.max(1) as i64) as i32 - r.h / 2;
+                        *offset = ((my - r.y) as i64 * content[1] as i64 / r.h.max(1) as i64)
+                            as i32
+                            - r.h / 2;
                     }
                 }
-                if let Some((did, grab)) = self.scroll_drag {
-                    if did == id && self.input.down[0] {
-                        let span = (r.h - thumb.h).max(1);
-                        *offset = ((my - grab - r.y) as i64 * max as i64 / span as i64) as i32;
-                    }
+                if let Some((did, grab)) = self.scroll_drag
+                    && did == id
+                    && self.input.down[0]
+                {
+                    let span = (r.h - thumb.h).max(1);
+                    *offset = ((my - grab - r.y) as i64 * max as i64 / span as i64) as i32;
                 }
             }
             *offset = (*offset).min((content[1] - r.h).max(0)).max(0);
@@ -481,16 +543,32 @@ impl Ui {
                     Size::Grow => 0,
                     Size::Fit => {
                         if !kids.is_empty() {
-                            let sizes: Vec<i32> = kids.iter().map(|&k| self.els[k].size[axis]).collect();
-                            if along { sizes.iter().sum::<i32>() + e.layout.gap * (kids.len() as i32 - 1) + pad2 } else { sizes.into_iter().max().unwrap_or(0) + pad2 }
+                            let sizes: Vec<i32> =
+                                kids.iter().map(|&k| self.els[k].size[axis]).collect();
+                            if along {
+                                sizes.iter().sum::<i32>()
+                                    + e.layout.gap * (kids.len() as i32 - 1)
+                                    + pad2
+                            } else {
+                                sizes.into_iter().max().unwrap_or(0) + pad2
+                            }
                         } else {
                             match &e.kind {
                                 Kind::Text(t) => {
                                     let (cw, rh) = m.cell(t.px);
                                     if axis == 0 {
-                                        if t.wrap { 0 } else { Self::text_cols(t) * cw + pad2 }
+                                        if t.wrap {
+                                            0
+                                        } else {
+                                            Self::text_cols(t) * cw + pad2
+                                        }
                                     } else {
-                                        (if t.wrap { e.lines.len().max(1) as i32 } else { 1 }) * rh + pad2
+                                        (if t.wrap {
+                                            e.lines.len().max(1) as i32
+                                        } else {
+                                            1
+                                        }) * rh
+                                            + pad2
                                     }
                                 }
                                 _ => pad2,
@@ -502,10 +580,10 @@ impl Ui {
             }
             // grow, top-down
             for i in 0..n {
-                if self.els[i].parent.is_none() || self.els[i].layout.floating.is_some() {
-                    if self.els[i].layout.size[axis] == Size::Grow {
-                        self.els[i].size[axis] = win[axis];
-                    }
+                if (self.els[i].parent.is_none() || self.els[i].layout.floating.is_some())
+                    && self.els[i].layout.size[axis] == Size::Grow
+                {
+                    self.els[i].size[axis] = win[axis];
                 }
                 let kids = self.children(i);
                 if kids.is_empty() {
@@ -515,8 +593,13 @@ impl Ui {
                 let along = (e.layout.dir == Dir::Row) == (axis == 0);
                 let inner = e.size[axis] - e.layout.pad * 2;
                 if along {
-                    let growing: Vec<usize> = kids.iter().copied().filter(|&k| self.els[k].layout.size[axis] == Size::Grow).collect();
-                    let used: i32 = kids.iter().map(|&k| self.els[k].size[axis]).sum::<i32>() + e.layout.gap * (kids.len() as i32 - 1);
+                    let growing: Vec<usize> = kids
+                        .iter()
+                        .copied()
+                        .filter(|&k| self.els[k].layout.size[axis] == Size::Grow)
+                        .collect();
+                    let used: i32 = kids.iter().map(|&k| self.els[k].size[axis]).sum::<i32>()
+                        + e.layout.gap * (kids.len() as i32 - 1);
                     if !growing.is_empty() {
                         let each = ((inner - used).max(0)) / growing.len() as i32;
                         for &k in &growing {
@@ -535,13 +618,14 @@ impl Ui {
             if axis == 0 {
                 for i in 0..n {
                     let e = &self.els[i];
-                    if let Kind::Text(t) = &e.kind {
-                        if t.wrap {
-                            let (cw, _) = m.cell(t.px);
-                            let cols = ((e.size[0] - e.layout.pad * 2) / cw.max(1)).max(1) as usize;
-                            let lines = Self::wrap(&t.runs.first().map(|(s, _)| s.as_str()).unwrap_or(""), cols);
-                            self.els[i].lines = lines;
-                        }
+                    if let Kind::Text(t) = &e.kind
+                        && t.wrap
+                    {
+                        let (cw, _) = m.cell(t.px);
+                        let cols = ((e.size[0] - e.layout.pad * 2) / cw.max(1)).max(1) as usize;
+                        let lines =
+                            Self::wrap(t.runs.first().map(|(s, _)| s.as_str()).unwrap_or(""), cols);
+                        self.els[i].lines = lines;
                     }
                 }
             }
@@ -550,10 +634,17 @@ impl Ui {
         let screen = Rect::new(0, 0, win[0], win[1]);
         for i in 0..n {
             let (pos, clip) = match self.els[i].parent {
-                None => (self.els[i].layout.floating.map_or([0, 0], |(x, y)| [x, y]), screen),
+                None => (
+                    self.els[i].layout.floating.map_or([0, 0], |(x, y)| [x, y]),
+                    screen,
+                ),
                 Some(p) => {
                     let pe = &self.els[p];
-                    let clip = if pe.layout.clip { pe.clip.intersect(&pe.rect) } else { pe.clip };
+                    let clip = if pe.layout.clip {
+                        pe.clip.intersect(&pe.rect)
+                    } else {
+                        pe.clip
+                    };
                     match self.els[i].layout.floating {
                         Some((x, y)) => ([x, y], screen),
                         None => (self.els[i].pos, clip),
@@ -570,7 +661,10 @@ impl Ui {
             let (pad, gap, cross, size) = (e.layout.pad, e.layout.gap, e.layout.cross, e.size);
             let a = (e.layout.dir == Dir::Col) as usize;
             let b = 1 - a;
-            let origin = [e.rect.x + pad - e.layout.scroll.0, e.rect.y + pad - e.layout.scroll.1];
+            let origin = [
+                e.rect.x + pad - e.layout.scroll.0,
+                e.rect.y + pad - e.layout.scroll.1,
+            ];
             let mut cursor = 0;
             for &k in &kids {
                 let ks = self.els[k].size;
@@ -602,7 +696,10 @@ impl Ui {
         let els = std::mem::take(&mut self.els);
         // floating elements are layer 1, and so is everything inside them; parents come before
         // their children, so one forward pass carries a layer down the whole subtree
-        let mut layers: Vec<(u8, Element)> = els.into_iter().map(|e| (e.layout.floating.is_some() as u8, e)).collect();
+        let mut layers: Vec<(u8, Element)> = els
+            .into_iter()
+            .map(|e| (e.layout.floating.is_some() as u8, e))
+            .collect();
         for i in 0..layers.len() {
             if let Some(p) = layers[i].1.parent {
                 layers[i].0 = layers[i].0.max(layers[p].0);
@@ -682,7 +779,11 @@ mod tests {
     }
 
     fn text(s: &str) -> Kind {
-        Kind::Text(Text { runs: vec![(s.into(), [255; 4])], px: 14, wrap: false })
+        Kind::Text(Text {
+            runs: vec![(s.into(), [255; 4])],
+            px: 14,
+            wrap: false,
+        })
     }
 
     #[test]
@@ -691,7 +792,12 @@ mod tests {
         let mut input = Input::default();
         input.size = (200, 100);
         ui.begin(&input);
-        ui.open(Kind::None, Layout::row().grow().pad(2).gap(4), Style::default(), None);
+        ui.open(
+            Kind::None,
+            Layout::row().grow().pad(2).gap(4),
+            Style::default(),
+            None,
+        );
         ui.leaf(text("abc"), Layout::row(), Style::default(), Some(1)); // 24 wide
         ui.leaf(Kind::None, Layout::row().grow(), Style::default(), Some(2));
         ui.leaf(text("de"), Layout::row(), Style::default(), Some(3)); // 16 wide
@@ -710,10 +816,22 @@ mod tests {
         input.size = (100, 100); // 12 columns at 8 px
         ui.begin(&input);
         ui.open(Kind::None, Layout::col().grow(), Style::default(), None);
-        ui.leaf(Kind::Text(Text { runs: vec![("one two three four".into(), [255; 4])], px: 14, wrap: true }), Layout::row().grow_x(), Style::default(), Some(1));
+        ui.leaf(
+            Kind::Text(Text {
+                runs: vec![("one two three four".into(), [255; 4])],
+                px: 14,
+                wrap: true,
+            }),
+            Layout::row().grow_x(),
+            Style::default(),
+            Some(1),
+        );
         ui.close();
         ui.end(&mut Cells);
-        assert_eq!(Ui::wrap("one two three four", 12), ["one two", "three four"]);
+        assert_eq!(
+            Ui::wrap("one two three four", 12),
+            ["one two", "three four"]
+        );
         assert_eq!(ui.prev[&1].0.h, 32);
     }
 
@@ -724,11 +842,24 @@ mod tests {
         input.size = (100, 100);
         input.mouse = (10, 10);
         ui.begin(&input);
-        assert!(!ui.leaf(Kind::None, Layout::row().w(50).h(50), Style::default(), Some(7)).hovered);
+        assert!(
+            !ui.leaf(
+                Kind::None,
+                Layout::row().w(50).h(50),
+                Style::default(),
+                Some(7)
+            )
+            .hovered
+        );
         ui.end(&mut Cells);
         input.pressed[0] = true;
         ui.begin(&input);
-        let it = ui.leaf(Kind::None, Layout::row().w(50).h(50), Style::default(), Some(7));
+        let it = ui.leaf(
+            Kind::None,
+            Layout::row().w(50).h(50),
+            Style::default(),
+            Some(7),
+        );
         assert!(it.hovered && it.clicked);
     }
 }

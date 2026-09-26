@@ -11,8 +11,8 @@ parent ywvq6u
 author ai
 file src/map.rs
 symbol add_path
-lines 0 7
-hash 12650e95f1330532
+lines 0 14
+hash e1e87d39590af66a
 note The only constructor of a path, so every path has a kind from birth. The GUI creates flows.
 
 step up13ub
@@ -38,6 +38,6 @@ step ywvq6u
 order 2
 author ai
 file src/map.rs
-lines 156 185
+lines 167 196
 hash 430b6233ac38671d
 note The file layout: the kind is one line, kind flow, layer or type. One version; any other is rejected and the map regenerated, never migrated.

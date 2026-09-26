@@ -11,8 +11,8 @@ parent wn8zbh
 author ai
 file src/index/server.rs
 symbol name_position
-lines 0 5
-hash 09a69dfd8511ef94
+lines 0 7
+hash 923be396ba4b8dd4
 note Where a server wants to be pointed for a symbol: its first line, which is the line of its name, and the UTF-16 column of the name there.
 
 step 0xtjb7
@@ -21,8 +21,8 @@ parent mz27bi
 author ai
 file src/index/server.rs
 symbol locations
-lines 0 13
-hash 4649131014fc35a4
+lines 0 20
+hash b0b5d61a00965152
 note Turns a Location array into (file, line) pairs, dropping everything outside the root - which is how std and dependency hits are kept out of the index without asking the server to exclude them.
 
 step 0y6z15
@@ -49,8 +49,8 @@ parent wfyovg
 author ai
 file src/index/link.rs
 symbol link
-lines 0 42
-hash eea2a6bbca6ad995
+lines 0 52
+hash f3927addb3ea0cdc
 note Server targets resolve by (file, line) to the innermost symbol there; tree-sitter calls resolve by name. Callers are the inverse of callees. Rebuilt from scratch each time.
 
 step 2dbn8q
@@ -108,8 +108,8 @@ parent mz27bi
 author ai
 file src/index/server.rs
 symbol push_symbol
-lines 0 24
-hash 8bd8cf74112b9e31
+lines 0 53
+hash df86813965e934e7
 note DocumentSymbol to Symbol. One level of nesting into modules, classes, traits and impls, like the tree-sitter resolver. The symbol starts on the line of its name so both backends agree on the start that anchors are relative to.
 
 step h22r5f
@@ -118,8 +118,8 @@ parent wfyovg
 author ai
 file src/index/server.rs
 symbol apply
-lines 0 9
-hash 32dfc0eaa9468252
+lines 0 11
+hash f1bc7de0d578cfe9
 note Takes an answer only when the file still has the text it was asked about.
 
 step iend19
@@ -128,8 +128,8 @@ parent dq7ze6
 author ai
 file src/index/server.rs
 symbol KINDS
-lines 0 2
-hash 6cd5f771e49d6fa2
+lines 0 28
+hash 78301ae99e305dee
 note The LSP SymbolKind names in protocol order, so a kind number indexes straight into it; 0 is not a kind and anything past the end reads as 'symbol'.
 
 step kgcc66
@@ -148,8 +148,8 @@ parent vwg30v
 author ai
 file src/index/link.rs
 symbol symbols_only
-lines 0 7
-hash c42d05e8756e89c2
+lines 0 20
+hash aecc06db6d7f5ea4
 note The copy the link thread gets: paths, hashes, symbols and imports, no lines and no highlights, which is everything link and resolve read.
 
 step mz27bi
@@ -168,8 +168,8 @@ parent mz27bi
 author ai
 file src/index/server.rs
 symbol start_server
-lines 0 6
-hash 8a8522b412b3bc11
+lines 0 8
+hash bf75969d6ab0d6bf
 note Spawn and wait_ready, shared by the CLI's Servers and the GUI's live thread. The absolute root it returns is what the server's URIs are compared against.
 
 step orf66y
@@ -186,8 +186,8 @@ order 22
 author ai
 file src/gui/work.rs
 symbol poll_link
-lines 0 8
-hash 14338db79602063c
+lines 0 10
+hash 3127cfc7cd0e56db
 note Run from the top of every frame: takes the linked copy when the thread is done and copies its edges into the live index, or drops it when the index changed meanwhile, in which case the queued link replaces it. A thread that died just ends the link.
 
 step q81upm
@@ -196,8 +196,8 @@ parent p1e65r
 author ai
 file src/index/link.rs
 symbol take_edges
-lines 0 11
-hash 20f76e1c1e13efef
+lines 0 17
+hash d51574b3560a322b
 note Edges come back by position, so the copy is accepted only when every file still has the same hash, backend, pending flag and symbol count; anything else means a merge or a rebuild changed the tables under the thread and the edges would land on the wrong symbols.
 
 step tostpl
@@ -205,8 +205,8 @@ order 0
 author ai
 file src/index/mod.rs
 symbol build
-lines 0 54
-hash dfe30521be00791d
+lines 0 74
+hash adc915988237f3ee
 note The walk and the cache check. A cache hit skips parsing entirely. A cached server answer points at lines in other files, so it is asked again when any of those files changed.
 
 step tw86wt
@@ -214,8 +214,8 @@ order 8
 author ai
 file src/gui/work.rs
 symbol poll_backend
-lines 0 88
-hash 97aef6bc29156394
+lines 0 107
+hash 44c51ecc48e08d7e
 note Drains every server's channel each frame, but merges at most once a second and once more when the batch ends, since a merge re-resolves the map and drops every drawn grid. A merge applies the answers and starts a link on a thread; the status line's symbol count follows each merge. A batch's end saves the cache and runs the next batch if a rebuild asked for one meanwhile.
 
 step v9k2x1
@@ -224,8 +224,8 @@ parent gximva
 author ai
 file src/index/server.rs
 symbol impl_type
-lines 0 2
-hash 54dc8f772f188dfe
+lines 0 8
+hash 237007a3f125a694
 note An impl block's name arrives as its whole header text; this reduces it to the type it is about, which becomes the owner of every method inside and therefore what a qualified call binds to.
 
 step vut1b3
@@ -234,8 +234,8 @@ parent adehfw
 author ai
 file src/index/server.rs
 symbol references_at
-lines 0 4
-hash 5a83270162ce1305
+lines 0 12
+hash f14ba12f0f727785
 note The references request itself, shared with the GUI's thread, which asks it for the focused symbol.
 
 step vwg30v
@@ -253,8 +253,8 @@ order 6
 author ai
 file src/index/server.rs
 symbol index
-lines 0 27
-hash 9f4b1424b3b88d7a
+lines 0 30
+hash 103061e2e1708194
 note The CLI's driver: the pending files among the ones a command touches, grouped by language, asked 32 at a time of a server started once for the command, then one link and one cache save. A language whose server will not start gives its files up to the tree-sitter answer.
 
 step wn8zbh
@@ -263,8 +263,8 @@ parent 0y6z15
 author ai
 file src/index/server.rs
 symbol incoming_calls
-lines 0 9
-hash d3dc3cfcad6601fc
+lines 0 32
+hash 14f717085f3bb3de
 note The call-hierarchy item at the symbol's name, then its incoming calls, each as the (file, line) of the caller's name, which by_line turns into the calling symbol.
 
 step wpda6d
@@ -282,8 +282,8 @@ parent wfyovg
 author ai
 file src/index/server.rs
 symbol pending
-lines 0 10
-hash 0ed631df469984d7
+lines 0 12
+hash d9203ab53d55a2d0
 note Pending files grouped by language, with the hash each answer must match.
 
 step ybptin
@@ -292,8 +292,8 @@ parent mz27bi
 author ai
 file src/index/server.rs
 symbol index_files
-lines 0 43
-hash 0bce0c7890ee30b9
+lines 0 61
+hash 82acd0f546f48745
 note Three stages against a running server, each sent whole through request_all: the batch's document symbols, a call-hierarchy item for every symbol, the outgoing calls of every item. The answers come back in the order asked and are matched to their file and symbol by position.
 
 step ymvuc4
@@ -302,8 +302,8 @@ parent ywt3nh
 author ai
 file src/gui/work.rs
 symbol serve
-lines 0 66
-hash b1e1c27280eafe1f
+lines 0 89
+hash cefe8defa9dcb30f
 note A batch is queued and worked eight files at a time through index_files; progress and each finished file go back through the channel, Done when the queue empties. Hover, definition and reference requests are taken between batches, so the pointer waits behind eight files at most.
 
 step ywt3nh

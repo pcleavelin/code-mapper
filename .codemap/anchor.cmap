@@ -11,8 +11,8 @@ parent 9o0i08
 author ai
 file src/map.rs
 symbol new
-lines 0 26
-hash dfec5162360ff8f5
+lines 0 32
+hash a8e6c557396ae989
 note Creating an anchor records the author it is given and picks the innermost symbol whose range contains the slice and stores offsets from that symbol's first line. With no containing symbol the offsets are absolute and the anchor is as fragile as a line number, which is why whole-symbol steps are preferred.
 
 step 9o0i08
@@ -39,8 +39,8 @@ parent 9o0i08
 author ai
 file src/map.rs
 symbol resolve
-lines 0 33
-hash 7c5a4b1785ff1f8c
+lines 0 40
+hash ea2962bfa7b9eda7
 note The other direction, run on every load: find the file, find the symbol by name, add the offsets, bounds-check, rehash. Stale until proven current. A slice that resolved but changed keeps its lines so the reader can still see where the step was; a missing file or symbol leaves nothing to show.
 
 step qgd8vy
@@ -59,6 +59,6 @@ parent 4n20pa
 author ai
 file src/map.rs
 symbol slice_hash
-lines 0 2
-hash 88742ba4be931144
+lines 0 6
+hash fa8dc27f8f3eb9f0
 note The text fingerprint: FNV-1a over the anchored lines joined with newlines. Cheap, not cryptographic, and the only thing that decides whether a step still describes the code it points at.

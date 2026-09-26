@@ -10,8 +10,8 @@ order 10
 author ai
 file src/gui/document.rs
 symbol doc_steps
-lines 77 93
-hash a7b7da8dcc0cf923
+lines 162 188
+hash a09440c29bef3e01
 link reader-gui
 note The GUI side: the link controls on a step header, and below them the inline expansion.
 
@@ -20,8 +20,8 @@ order 9
 author ai
 file src/map.rs
 symbol dangling_links
-lines 0 2
-hash b9804d9d67f779c9
+lines 0 12
+hash a01d68729e4de871
 note Links to a missing path. Only a map edited outside these commands has any; stale and check list them.
 
 step 4lquiv
@@ -29,7 +29,7 @@ order 6
 author ai
 file src/cli.rs
 symbol exec
-lines 244 252
+lines 369 377
 hash 9f68e28c136c9518
 note path-rename: counts the links first so the output says how many now point at the new name.
 
@@ -38,8 +38,8 @@ order 3
 author ai
 file src/cli.rs
 symbol exec
-lines 159 171
-hash 809abec4d1911e13
+lines 245 272
+hash fbc90ca50c0493ad
 note path: the header lists the steps that link here; the steps print through print_steps, which expands links with --expand.
 
 step 7pnsug
@@ -48,8 +48,8 @@ parent 5i63u0
 author ai
 file src/cli.rs
 symbol print_steps
-lines 0 28
-hash a55b5048bf8bc125
+lines 0 63
+hash a0710fc64b2eb1a2
 note Recursive: a linked path prints under the step one level deeper, numbered after it (1.2 › 1), and ends with an end-of line. chain holds the paths printed around this one, so a cycle prints an expanded-above line once.
 
 step 8j5bux
@@ -58,8 +58,8 @@ parent 4lquiv
 author ai
 file src/map.rs
 symbol rename
-lines 0 7
-hash adcfe8a91aaaaee4
+lines 0 12
+hash ce840a9b944bbfa0
 note Renames the path and every link to it in one pass, so no rename leaves a link dangling.
 
 step bnpar9
@@ -67,8 +67,8 @@ order 8
 author ai
 file src/map.rs
 symbol remove_path
-lines 0 6
-hash 665b04fb7f994f56
+lines 0 15
+hash 3bcbac614185a676
 note Shared by path-rm and the GUI delete button: refuses while another path links here and names those steps.
 
 step cnqxg6
@@ -77,8 +77,8 @@ parent 5i63u0
 author ai
 file src/map.rs
 symbol links_to
-lines 0 2
-hash c0ffae73ff3664a8
+lines 0 12
+hash 49eb558b18275edc
 note Backlinks, in map order. The document header and path-rm use it too.
 
 step he08im
@@ -86,7 +86,7 @@ order 2
 author ai
 file src/cli.rs
 symbol exec
-lines 220 228
+lines 340 348
 hash 0276f03430f48fd2
 note step-unlink: refuses a step that has no link, so a typo in the index says so.
 
@@ -95,8 +95,8 @@ order 0
 author ai
 file src/cli.rs
 symbol exec
-lines 214 219
-hash b72aff6228ee2c76
+lines 330 339
+hash 2243792e3c788604
 note step-link: the step must exist, then set_link decides.
 
 step uj55ph

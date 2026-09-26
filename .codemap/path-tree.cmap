@@ -21,8 +21,8 @@ parent d43fmw
 author ai
 file src/map.rs
 symbol promote
-lines 7 11
-hash 0741a1668b37098d
+lines 22 30
+hash 204abc7d2e71f0dd
 note Is this symbol already a step of this path? The check that makes re-promoting add only what is missing instead of duplicating the tree.
 
 step 7gczkl
@@ -31,8 +31,8 @@ parent qhqkj9
 author ai
 file src/map.rs
 symbol tree_order_by
-lines 0 28
-hash c88acd713ecd32e4
+lines 0 41
+hash f0963fef3204948e
 note The walk: roots in list order, then each step's children sorted by the caller's key with list order breaking ties. The views pass the line of the parent's slice that names the child, so siblings read in the order the code calls them; the plain tree_order passes a constant.
 
 step d43fmw
@@ -41,8 +41,8 @@ parent qhqkj9
 author ai
 file src/map.rs
 symbol add_anchor
-lines 0 8
-hash 24707bc01c5194d6
+lines 0 30
+hash bba63eaf6c6e0086
 note Appending a step. The parent is stored as given, None for a root; every caller checks that an index exists in the path before calling this, so nothing here bounds-checks it.
 
 step d4h5zq
@@ -51,8 +51,8 @@ parent 7gczkl
 author ai
 file src/map.rs
 symbol numbered
-lines 0 23
-hash ba6597975f0a3426
+lines 0 35
+hash 678a2cfa8512be8d
 note The same walk with the hierarchical numbers attached: (step, depth, '1.2.3') in reading order. The outline, the document, the breadcrumb and the graph nodes all number steps through this one function, so a step carries the same number wherever it is shown.
 
 step peom6j
@@ -80,8 +80,8 @@ parent 7gczkl
 author ai
 file src/map.rs
 symbol parent_name
-lines 0 6
-hash b8e836b71dd68f76
+lines 0 9
+hash 20b8a61405700be0
 note The name of the step above this one, which is what the '-- back in X --' marker in a path document is made of. It is what lets a reader come back up a deep flow without counting indentation.
 
 step yu7ue7

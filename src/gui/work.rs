@@ -80,15 +80,38 @@ pub(super) fn serve(root: PathBuf, lang: &'static index::Lang, rx: Receiver<Req>
                 let _ = tx.send(Msg::Hover(p, t));
             }
             Some(Req::Def(p)) => {
-                let d = c.definition(&abs.join(&p.path), p.line, p.col).map(|(path, line, _)| {
-                    let line = line as usize;
-                    let text = std::fs::read_to_string(&path).unwrap_or_default().replace('\t', "    ");
-                    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_owned();
-                    let file = index::parse_file(&mut index::Parsers::default(), path.to_string_lossy().replace('\\', "/"), &text, &ext);
-                    let first = line.saturating_sub(6);
-                    let grid = if file.lines.is_empty() { Glyphs::new(0, 0) } else { build_grid(&file, first, (line + 24).min(file.lines.len() - 1)) };
-                    Def { rel: lsp::relative(&path, &abs), abs: path, line, first, grid }
-                });
+                let d = c
+                    .definition(&abs.join(&p.path), p.line, p.col)
+                    .map(|(path, line, _)| {
+                        let line = line as usize;
+                        let text = std::fs::read_to_string(&path)
+                            .unwrap_or_default()
+                            .replace('\t', "    ");
+                        let ext = path
+                            .extension()
+                            .and_then(|e| e.to_str())
+                            .unwrap_or("")
+                            .to_owned();
+                        let file = index::parse_file(
+                            &mut index::Parsers::default(),
+                            path.to_string_lossy().replace('\\', "/"),
+                            &text,
+                            &ext,
+                        );
+                        let first = line.saturating_sub(6);
+                        let grid = if file.lines.is_empty() {
+                            Glyphs::new(0, 0)
+                        } else {
+                            build_grid(&file, first, (line + 24).min(file.lines.len() - 1))
+                        };
+                        Def {
+                            rel: lsp::relative(&path, &abs),
+                            abs: path,
+                            line,
+                            first,
+                            grid,
+                        }
+                    });
                 let _ = tx.send(Msg::Def(p, d));
             }
             Some(Req::Refs(p)) => {
@@ -123,7 +146,11 @@ pub(super) fn mtime(p: &Path) -> Option<SystemTime> {
 /// thread. Each list the main thread sends is watched until a file differs from it, which is
 /// reported once; the thread then waits for the refreshed list the main thread sends after the
 /// re-index, so it never reports the same edit twice.
-pub(super) fn watch(root: PathBuf, rx: Receiver<Vec<(String, Option<SystemTime>)>>, tx: Sender<()>) {
+pub(super) fn watch(
+    root: PathBuf,
+    rx: Receiver<Vec<(String, Option<SystemTime>)>>,
+    tx: Sender<()>,
+) {
     while let Ok(list) = rx.recv() {
         while list.iter().all(|(p, mt)| mtime(&root.join(p)) == *mt) {
             std::thread::sleep(Duration::from_secs(1));
@@ -157,18 +184,18 @@ pub(super) fn landed<T>(rx: &mut Option<Receiver<T>>) -> Option<Option<T>> {
 /// The threads the window keeps busy, and what the frame knows of each.
 pub(super) struct Work {
     pub(super) servers: HashMap<&'static str, (Sender<Req>, Receiver<Msg>)>, // a live server thread per language, by server name
-    pub(super) no_server: HashSet<&'static str>,                             // servers that failed to start: not tried again
-    pub(super) indexing: HashSet<&'static str>,                              // servers with a batch of files in flight
-    pub(super) progress: String,                                             // the last progress line a server sent
-    pub(super) restart: bool,                // the index changed while a batch ran: send the next when it ends
-    pub(super) merge_wait: Vec<ServerFile>,  // server answers held back until the next merge
-    pub(super) last_merge: Instant,          // when the last batch of answers went into the index
+    pub(super) no_server: HashSet<&'static str>, // servers that failed to start: not tried again
+    pub(super) indexing: HashSet<&'static str>,  // servers with a batch of files in flight
+    pub(super) progress: String,                 // the last progress line a server sent
+    pub(super) restart: bool, // the index changed while a batch ran: send the next when it ends
+    pub(super) merge_wait: Vec<ServerFile>, // server answers held back until the next merge
+    pub(super) last_merge: Instant, // when the last batch of answers went into the index
     pub(super) link_rx: Option<Receiver<Index>>, // a link of the index running on a thread
-    pub(super) relink: bool,                     // the index changed while that link ran: link again when it lands
+    pub(super) relink: bool,  // the index changed while that link ran: link again when it lands
     pub(super) watch_tx: Sender<Vec<(String, Option<SystemTime>)>>, // the file list the watcher thread compares against
     pub(super) watch_rx: Receiver<()>,                              // a source file changed
-    pub(super) reindex_rx: Option<Receiver<Index>>,                 // a rebuild is running on a thread
-    pub(super) base_rx: Option<Receiver<Result<Map, String>>>,              // jj is being asked for the parent revision's map
+    pub(super) reindex_rx: Option<Receiver<Index>>, // a rebuild is running on a thread
+    pub(super) base_rx: Option<Receiver<Result<Map, String>>>, // jj is being asked for the parent revision's map
 }
 
 impl Work {
@@ -200,10 +227,10 @@ impl Work {
 pub(super) struct MapFile {
     pub(super) path: PathBuf,
     pub(super) stamp: Option<(SystemTime, usize)>, // the files' newest change and count when this window last read or wrote them
-    pub(super) broken: bool,              // the map on disk does not read, so it is not saved over
-    pub(super) dirty: bool,               // edits not saved
-    pub(super) last_poll: Instant,        // when the disk was last looked at
-    pub(super) warned: bool,              // the status said it changed under unsaved edits
+    pub(super) broken: bool, // the map on disk does not read, so it is not saved over
+    pub(super) dirty: bool,  // edits not saved
+    pub(super) last_poll: Instant, // when the disk was last looked at
+    pub(super) warned: bool, // the status said it changed under unsaved edits
 }
 
 impl App {
@@ -282,7 +309,9 @@ impl App {
                     self.lookup.hovers.clear();
                     self.lookup.asked = 0;
                     self.lookup.want_def = None;
-                    self.status = format!("{e}: its files keep the tree-sitter resolver, no hover or go-to for them");
+                    self.status = format!(
+                        "{e}: its files keep the tree-sitter resolver, no hover or go-to for them"
+                    );
                     batch_ended = true;
                 }
                 Msg::Done(lang) => {
@@ -296,8 +325,16 @@ impl App {
                 }
                 Msg::Refs(p, refs) => {
                     self.lookup.asked = self.lookup.asked.saturating_sub(1);
-                    let at = self.idx.find_file(&p.path).filter(|&fi| self.idx.files[fi].hash == p.hash);
-                    if let Some(s) = at.and_then(|fi| self.idx.files[fi].symbols.iter_mut().find(|s| s.start == p.line as usize)) {
+                    let at = self
+                        .idx
+                        .find_file(&p.path)
+                        .filter(|&fi| self.idx.files[fi].hash == p.hash);
+                    if let Some(s) = at.and_then(|fi| {
+                        self.idx.files[fi]
+                            .symbols
+                            .iter_mut()
+                            .find(|s| s.start == p.line as usize)
+                    }) {
                         s.refs = refs;
                     }
                 }
@@ -307,13 +344,20 @@ impl App {
                         let (_, intent) = self.lookup.want_def.take().unwrap();
                         match d {
                             Some(d) => {
-                                let found = match d.rel.as_deref().and_then(|r| self.idx.find_file(r)) {
-                                    Some(fi) => match self.idx.by_line(&self.idx.files[fi].path, d.line).filter(|r| self.idx.sym(*r).start == d.line) {
-                                        Some(r) => Peek::Sym(r),
-                                        None => Peek::Line(fi, d.line),
-                                    },
-                                    None => Peek::Outside(d.abs, d.line, d.first, Rc::new(d.grid)),
-                                };
+                                let found =
+                                    match d.rel.as_deref().and_then(|r| self.idx.find_file(r)) {
+                                        Some(fi) => match self
+                                            .idx
+                                            .by_line(&self.idx.files[fi].path, d.line)
+                                            .filter(|r| self.idx.sym(*r).start == d.line)
+                                        {
+                                            Some(r) => Peek::Sym(r),
+                                            None => Peek::Line(fi, d.line),
+                                        },
+                                        None => {
+                                            Peek::Outside(d.abs, d.line, d.first, Rc::new(d.grid))
+                                        }
+                                    };
                                 self.land(found, intent);
                             }
                             None => self.status = "no definition found".into(),
@@ -325,7 +369,9 @@ impl App {
         // Every answer costs a map re-resolve and every drawn grid, so they are merged at most
         // once a second and once more when the batch ends; the re-link runs on a thread.
         self.work.merge_wait.append(&mut files);
-        if !self.work.merge_wait.is_empty() && (batch_ended || self.work.last_merge.elapsed() >= Duration::from_secs(1)) {
+        if !self.work.merge_wait.is_empty()
+            && (batch_ended || self.work.last_merge.elapsed() >= Duration::from_secs(1))
+        {
             let files = std::mem::take(&mut self.work.merge_wait);
             self.with_index_change(|app| {
                 for f in files {
@@ -375,7 +421,9 @@ impl App {
                 self.file.stamp = mt;
                 if let Err(e) = self.reload_map() {
                     self.file.broken = true;
-                    self.status = format!("{e}; the map in memory is kept and cannot be saved until the one on disk reads");
+                    self.status = format!(
+                        "{e}; the map in memory is kept and cannot be saved until the one on disk reads"
+                    );
                     return;
                 }
                 self.file.broken = false;
@@ -390,7 +438,12 @@ impl App {
     /// of the same symbol, and a path's fold, collapse and context sets when its step count is
     /// unchanged. Paths are matched by name, so adding one does not shift another's state.
     pub(super) fn reload_map(&mut self) -> Result<(), String> {
-        let was: Vec<(String, usize)> = self.map.paths.iter().map(|p| (p.name.clone(), p.anchors.len())).collect();
+        let was: Vec<(String, usize)> = self
+            .map
+            .paths
+            .iter()
+            .map(|p| (p.name.clone(), p.anchors.len()))
+            .collect();
         let path_name = self.sel_path.map(|pi| self.map.paths[pi].name.clone());
         let step = self.sel_anchor.zip(self.sel_path).map(|(ai, pi)| {
             let a = &self.map.paths[pi].anchors[ai];
@@ -398,12 +451,15 @@ impl App {
         });
         self.map = Map::load(&self.file.path)?;
         self.map.resolve_all(&self.idx);
-        self.sel_path = path_name.and_then(|name| self.map.paths.iter().position(|p| p.name == name));
+        self.sel_path =
+            path_name.and_then(|name| self.map.paths.iter().position(|p| p.name == name));
         self.sel_anchor = match (self.sel_path, step) {
             (Some(pi), Some((ai, file, symbol, os, oe))) => self.map.paths[pi]
                 .anchors
                 .get(ai)
-                .filter(|a| a.file == file && a.symbol == symbol && (a.off_start, a.off_end) == (os, oe))
+                .filter(|a| {
+                    a.file == file && a.symbol == symbol && (a.off_start, a.off_end) == (os, oe)
+                })
                 .map(|_| ai),
             _ => None,
         };
@@ -411,7 +467,13 @@ impl App {
         let kept: HashMap<usize, usize> = was
             .iter()
             .enumerate()
-            .filter_map(|(old, (name, n))| self.map.paths.iter().position(|p| p.name == *name && p.anchors.len() == *n).map(|new| (old, new)))
+            .filter_map(|(old, (name, n))| {
+                self.map
+                    .paths
+                    .iter()
+                    .position(|p| p.name == *name && p.anchors.len() == *n)
+                    .map(|new| (old, new))
+            })
             .collect();
         self.remap_steps(|(pi, ai)| kept.get(&pi).map(|&p| (p, ai)));
         Ok(())
@@ -447,13 +509,21 @@ impl App {
 
     /// Give the watcher thread the indexed files' modification times so it starts looking.
     pub(super) fn watch_files(&self) {
-        let _ = self.work.watch_tx.send(self.idx.files.iter().map(|f| (f.path.clone(), f.mtime)).collect());
+        let _ = self.work.watch_tx.send(
+            self.idx
+                .files
+                .iter()
+                .map(|f| (f.path.clone(), f.mtime))
+                .collect(),
+        );
     }
 
     /// Take the rebuilt index, then ask the servers about what changed and give the watcher
     /// thread the new modification times so it starts looking again.
     pub(super) fn poll_reindex(&mut self) {
-        let Some(idx) = landed(&mut self.work.reindex_rx) else { return };
+        let Some(idx) = landed(&mut self.work.reindex_rx) else {
+            return;
+        };
         match idx {
             Some(idx) => {
                 self.with_index_change(|app| app.idx = idx);
@@ -483,7 +553,9 @@ impl App {
     /// Take a finished link. A copy whose symbol tables no longer match the index is dropped:
     /// the change that made it stale queued the link that replaces it.
     pub(super) fn poll_link(&mut self) {
-        let Some(done) = landed(&mut self.work.link_rx) else { return };
+        let Some(done) = landed(&mut self.work.link_rx) else {
+            return;
+        };
         if let Some(linked) = done {
             self.idx.take_edges(&linked);
         }
@@ -493,12 +565,24 @@ impl App {
     }
 
     pub(super) fn indexed_status(&self) -> String {
-        format!("{} files, {} symbols indexed", self.idx.files.len(), self.idx.files.iter().map(|f| f.symbols.len()).sum::<usize>())
+        format!(
+            "{} files, {} symbols indexed",
+            self.idx.files.len(),
+            self.idx
+                .files
+                .iter()
+                .map(|f| f.symbols.len())
+                .sum::<usize>()
+        )
     }
 
     /// Work in flight: a server request or batch of files, or the parent map, a re-index or a
     /// link on a thread.
     pub(super) fn working(&self) -> bool {
-        self.lookup.asked > 0 || !self.work.indexing.is_empty() || self.work.base_rx.is_some() || self.work.reindex_rx.is_some() || self.work.link_rx.is_some()
+        self.lookup.asked > 0
+            || !self.work.indexing.is_empty()
+            || self.work.base_rx.is_some()
+            || self.work.reindex_rx.is_some()
+            || self.work.link_rx.is_some()
     }
 }

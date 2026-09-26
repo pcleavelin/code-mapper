@@ -53,10 +53,23 @@ impl Vcs {
     /// another in file name order. None when `rev` has none.
     pub fn show_dir(self, root: &Path, rev: &str, dir: &str) -> Option<Vec<u8>> {
         match self {
-            Vcs::Jj => run(root, "jj", &["file", "show", "-r", rev, &format!("glob:{dir}/*.cmap")]).filter(|b| !b.is_empty()),
+            Vcs::Jj => run(
+                root,
+                "jj",
+                &["file", "show", "-r", rev, &format!("glob:{dir}/*.cmap")],
+            )
+            .filter(|b| !b.is_empty()),
             Vcs::Git => {
-                let list = run(root, "git", &["ls-tree", "--name-only", rev, "--", &format!("{dir}/")])?;
-                let mut files: Vec<String> = String::from_utf8_lossy(&list).lines().filter(|f| f.ends_with(".cmap")).map(|f| format!("{rev}:./{f}")).collect();
+                let list = run(
+                    root,
+                    "git",
+                    &["ls-tree", "--name-only", rev, "--", &format!("{dir}/")],
+                )?;
+                let mut files: Vec<String> = String::from_utf8_lossy(&list)
+                    .lines()
+                    .filter(|f| f.ends_with(".cmap"))
+                    .map(|f| format!("{rev}:./{f}"))
+                    .collect();
                 if files.is_empty() {
                     return None;
                 }
@@ -71,6 +84,10 @@ impl Vcs {
 
 /// `program args` in `root`: its output when it succeeds.
 fn run(root: &Path, program: &str, args: &[&str]) -> Option<Vec<u8>> {
-    let out = Command::new(program).args(args).current_dir(root).output().ok()?;
+    let out = Command::new(program)
+        .args(args)
+        .current_dir(root)
+        .output()
+        .ok()?;
     out.status.success().then_some(out.stdout)
 }

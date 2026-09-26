@@ -12,7 +12,7 @@ author ai
 file src/map.rs
 symbol PathDiff
 lines 0 6
-hash 1dbaa7a1341f6250
+hash 0f7144251350c470
 note One path's difference: whether the path itself is new, gone or changed, whether its note, kind or group moved, a per-step verdict, and the base steps that no longer exist.
 
 step 53qktx
@@ -30,8 +30,8 @@ order 3
 author ai
 file src/gui/views.rs
 symbol diff_view
-lines 0 66
-hash f301027d5faf6631
+lines 0 103
+hash 66d0d6c3ecfa8097
 note The Diff tab: every added, removed or changed path with a one-line summary, and under a changed one the per-step verdicts. Click a row to read that path's document. 'refresh' reads the parent revision again, which also happens on start and whenever the map reloads from disk; with no base map the tab says why.
 
 step c08ljl
@@ -69,8 +69,8 @@ order 2
 author ai
 file src/cli.rs
 symbol exec
-lines 411 440
-hash 702662ac5b4ad45b
+lines 620 664
+hash ef5ab07126cc4353
 note The text form: one line per changed path, then its changed steps indented with +, ~ or -.
 
 step nwxiya
@@ -79,8 +79,8 @@ parent 6xac32
 author ai
 file src/gui/views.rs
 symbol diffs
-lines 0 2
-hash f7a64764b23b4277
+lines 0 5
+hash 032afbfb09dd0a87
 note The diff is recomputed wherever it is shown rather than cached: it is cheap, and caching it would need invalidating on every note keystroke.
 
 step ovgsad
@@ -89,8 +89,8 @@ parent m6t8co
 author ai
 file src/map.rs
 symbol base_from_vcs
-lines 0 7
-hash 627f4c936fd4ff3b
+lines 0 15
+hash 9977965b94e1898f
 link vcs
 note The map at the parent revision, read through Vcs in one call and parsed like the files on disk. Err says why there is none (no repo, no committed map, or one that does not read), and the Diff tab shows it.
 
@@ -100,8 +100,8 @@ parent m6t8co
 author ai
 file src/map.rs
 symbol diff
-lines 0 37
-hash 04e1c0a8b195128d
+lines 0 78
+hash 22aa3a27318429ad
 note Path by name, step by id. A step whose file, symbol, lines or hash moved is re-pinned, one with only a different note is note edited, one with only a different link is link changed; an id on one side only is new here or removed there. A change of the path note, kind or group marks the path changed too.
 
 step vfghsy

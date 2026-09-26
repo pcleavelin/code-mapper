@@ -25,39 +25,54 @@ pub(super) struct Loc {
 impl Loc {
     /// Same place for history purposes: a changed line selection alone is not a navigation.
     pub(super) fn same_place(&self, o: &Loc) -> bool {
-        self.tab == o.tab && self.file == o.file && self.focus == o.focus && self.path == o.path && self.step == o.step
+        self.tab == o.tab
+            && self.file == o.file
+            && self.focus == o.focus
+            && self.path == o.path
+            && self.step == o.step
     }
 }
 
 impl App {
     pub(super) fn here(&self) -> Loc {
-        Loc { tab: self.tab, file: self.cur_file.map(|fi| self.idx.files[fi].path.clone()), sel: self.sel, focus: self.focus.map(|r| self.idx.key(r)), path: self.sel_path, step: self.sel_anchor }
+        Loc {
+            tab: self.tab,
+            file: self.cur_file.map(|fi| self.idx.files[fi].path.clone()),
+            sel: self.sel,
+            focus: self.focus.map(|r| self.idx.key(r)),
+            path: self.sel_path,
+            step: self.sel_anchor,
+        }
     }
 
     /// Once a frame: whatever moved the reader, the place they left goes into the history and
     /// the forward stack is dropped.
     pub(super) fn track_navigation(&mut self) {
         let now = self.here();
-        if let Some(prev) = self.history.last.take() {
-            if !prev.same_place(&now) {
-                self.history.back.push(prev);
-                self.history.forward.clear();
-                if self.history.back.len() > 200 {
-                    self.history.back.remove(0);
-                }
+        if let Some(prev) = self.history.last.take()
+            && !prev.same_place(&now)
+        {
+            self.history.back.push(prev);
+            self.history.forward.clear();
+            if self.history.back.len() > 200 {
+                self.history.back.remove(0);
             }
         }
         self.history.last = Some(now);
     }
 
     pub(super) fn back(&mut self) {
-        let Some(loc) = self.history.back.pop() else { return };
+        let Some(loc) = self.history.back.pop() else {
+            return;
+        };
         self.history.forward.push(self.here());
         self.go(loc);
     }
 
     pub(super) fn forward(&mut self) {
-        let Some(loc) = self.history.forward.pop() else { return };
+        let Some(loc) = self.history.forward.pop() else {
+            return;
+        };
         self.history.back.push(self.here());
         self.go(loc);
     }
@@ -67,7 +82,9 @@ impl App {
     pub(super) fn go(&mut self, loc: Loc) {
         self.sel_path = loc.path.filter(|&pi| pi < self.map.paths.len());
         match (self.sel_path, loc.step) {
-            (Some(pi), Some(ai)) if ai < self.map.paths[pi].anchors.len() => self.select_step(pi, ai, false),
+            (Some(pi), Some(ai)) if ai < self.map.paths[pi].anchors.len() => {
+                self.select_step(pi, ai, false)
+            }
             _ => {
                 self.sel_anchor = None;
                 if let Some(r) = loc.focus.and_then(|k| self.idx.by_key(&k)) {
@@ -88,9 +105,29 @@ impl App {
     /// entries go and the ones above it move down one, in the fold, code, whole-symbol and
     /// context sets and in the history.
     pub(super) fn step_removed(&mut self, pi: usize, ai: usize) {
-        let shift = |a: usize| if a == ai { None } else if a > ai { Some(a - 1) } else { Some(a) };
-        self.remap_steps(|(p, a)| if p == pi { shift(a).map(|a| (p, a)) } else { Some((p, a)) });
-        for loc in self.history.back.iter_mut().chain(self.history.forward.iter_mut()).chain(self.history.last.iter_mut()) {
+        let shift = |a: usize| {
+            if a == ai {
+                None
+            } else if a > ai {
+                Some(a - 1)
+            } else {
+                Some(a)
+            }
+        };
+        self.remap_steps(|(p, a)| {
+            if p == pi {
+                shift(a).map(|a| (p, a))
+            } else {
+                Some((p, a))
+            }
+        });
+        for loc in self
+            .history
+            .back
+            .iter_mut()
+            .chain(self.history.forward.iter_mut())
+            .chain(self.history.last.iter_mut())
+        {
             if loc.path == Some(pi) {
                 loc.step = loc.step.and_then(shift);
             }
@@ -99,11 +136,25 @@ impl App {
 
     /// The same after path `pi` was removed: its records go, later paths move down one.
     pub(super) fn path_removed(&mut self, pi: usize) {
-        let shift = |p: usize| if p == pi { None } else if p > pi { Some(p - 1) } else { Some(p) };
+        let shift = |p: usize| {
+            if p == pi {
+                None
+            } else if p > pi {
+                Some(p - 1)
+            } else {
+                Some(p)
+            }
+        };
         self.remap_steps(|(p, a)| shift(p).map(|p| (p, a)));
         self.history.back.retain(|l| l.path != Some(pi));
         self.history.forward.retain(|l| l.path != Some(pi));
-        for loc in self.history.back.iter_mut().chain(self.history.forward.iter_mut()).chain(self.history.last.iter_mut()) {
+        for loc in self
+            .history
+            .back
+            .iter_mut()
+            .chain(self.history.forward.iter_mut())
+            .chain(self.history.last.iter_mut())
+        {
             loc.path = loc.path.and_then(shift);
         }
         self.top_step = None;
@@ -111,12 +162,19 @@ impl App {
 
     /// Move the selected step through the path in reading order.
     pub(super) fn step_by(&mut self, d: i32) {
-        let Some(pi) = self.sel_path.filter(|&pi| pi < self.map.paths.len()) else { return };
+        let Some(pi) = self.sel_path.filter(|&pi| pi < self.map.paths.len()) else {
+            return;
+        };
         let order = self.map.tree_order(pi);
         if order.is_empty() {
             return;
         }
-        let at = self.sel_anchor.and_then(|ai| order.iter().position(|&(a, _)| a == ai)).map_or(0, |i| (i as i32 + d).clamp(0, order.len() as i32 - 1) as usize);
+        let at = self
+            .sel_anchor
+            .and_then(|ai| order.iter().position(|&(a, _)| a == ai))
+            .map_or(0, |i| {
+                (i as i32 + d).clamp(0, order.len() as i32 - 1) as usize
+            });
         self.select_step(pi, order[at].0, false);
     }
 
@@ -138,7 +196,11 @@ impl App {
     pub fn select_symbol(&mut self, r: SymRef) {
         if let Some(pi) = self.sel_path {
             let file = &self.idx.files[r.file].path;
-            if let Some(ai) = self.map.paths[pi].anchors.iter().position(|a| a.sym == Some(r.sym) && a.file == *file && a.off_start == 0) {
+            if let Some(ai) = self.map.paths[pi]
+                .anchors
+                .iter()
+                .position(|a| a.sym == Some(r.sym) && a.file == *file && a.off_start == 0)
+            {
                 self.select_step(pi, ai, false);
                 return;
             }
@@ -204,7 +266,11 @@ impl App {
             if !matches!(self.tab, Tab::Graph | Tab::Path) {
                 self.tab = Tab::Listing;
             } else if let Some(pi) = self.sel_path {
-                self.status = format!("{} selected; not a step of '{}'", self.idx.sym(r).name, self.map.paths[pi].name);
+                self.status = format!(
+                    "{} selected; not a step of '{}'",
+                    self.idx.sym(r).name,
+                    self.map.paths[pi].name
+                );
             }
         }
     }

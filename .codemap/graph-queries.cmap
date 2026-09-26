@@ -10,8 +10,8 @@ order 11
 author ai
 file src/cli.rs
 symbol exec
-lines 103 113
-hash c4a354ba226fe13d
+lines 142 160
+hash 3ad6b5769056132d
 note index: every pending file under a path asked for at once, how a session readies a crate before mapping it. The GUI refuses it, since it indexes everything in the background.
 
 step 0rubme
@@ -19,8 +19,8 @@ order 10
 author ai
 file src/cli.rs
 symbol need
-lines 0 8
-hash b0f5d167d1b78cb6
+lines 0 13
+hash 6c33c931f46f3d43
 note The one way a command asks for files: only the pending ones go to Servers, and the map's anchors are resolved again after, since a server's answer replaces a file's symbols and their indices.
 
 step 5xix2r
@@ -37,8 +37,8 @@ order 8
 author ai
 file src/cli.rs
 symbol exec
-lines 58 67
-hash d0e87466bc491f19
+lines 81 93
+hash 07e105c736b177f7
 note callees: the symbols' files are indexed first, since a file's calls are known only once its server answered, then every symbol of that name is printed with its callees.
 
 step 8yeqtb
@@ -47,7 +47,7 @@ parent d764ep
 author ai
 file src/cli.rs
 symbol exec
-lines 114 121
+lines 161 168
 hash 8fa39fe546ab7223
 note The tree command: need_tree indexes the files the tree reaches first, then the walk prints with its depth as indentation.
 
@@ -65,8 +65,8 @@ order 9
 author ai
 file src/cli.rs
 symbol need_tree
-lines 0 10
-hash ccc850de739d2915
+lines 0 23
+hash 03fe1ecae67feddf
 note One depth of the call tree at a time: the files the tree reaches and that still wait for a server are indexed, which can reveal deeper callees, until nothing new is reached. tree and promote share it.
 
 step jeuyyl
@@ -75,8 +75,8 @@ parent 5xix2r
 author ai
 file src/cli.rs
 symbol exec
-lines 122 126
-hash 2afdbc7c9237e967
+lines 169 178
+hash 4652d4ec9d26a8eb
 note The roots command, and the same list the GUI focuses on at startup.
 
 step m2d5xw
@@ -85,8 +85,8 @@ parent sry152
 author ai
 file src/cli.rs
 symbol describe
-lines 0 3
-hash 016c7a46d91999b6
+lines 0 9
+hash a102dd25f2803a24
 note The one line format every symbol is printed in: name, then file:start-end, so output pastes back into show or path-add.
 
 step nql372
@@ -95,8 +95,8 @@ parent d764ep
 author ai
 file src/index/mod.rs
 symbol walk
-lines 0 10
-hash 7a0371317ccb0ff4
+lines 0 17
+hash 441ca1acd70a4a3e
 note The recursion. The seen set is what stops a cycle and also what makes a shared callee appear under its first caller only.
 
 step sry152
@@ -104,8 +104,8 @@ order 5
 author ai
 file src/cli.rs
 symbol exec
-lines 68 84
-hash de9237b1cb7ef21e
+lines 94 116
+hash ed7afcaeebe386d4
 note callers: with a server, its incoming calls for the symbol, which cover files nothing has indexed; without one (the GUI's command line), the callers link derived. Every symbol of that name is answered, so an unqualified ambiguous name shows all of them.
 
 step vhx9tz
@@ -113,6 +113,6 @@ order 7
 author ai
 file src/cli.rs
 symbol exec
-lines 85 102
-hash b6fea613833e5675
+lines 117 141
+hash 4809d4de7d0ded81
 note refs: asked of the language's server for the one symbol; the GUI's command line, which has no servers, prints what the xrefs panel already asked for, and a file with no server says which one is missing.

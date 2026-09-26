@@ -10,7 +10,10 @@ static ONE_WINDOW: Mutex<()> = Mutex::new(());
 
 fn scenario(name: &str) {
     let _one = ONE_WINDOW.lock().unwrap_or_else(|e| e.into_inner());
-    let s = common::gui::SCENARIOS.iter().find(|s| s.name == name).unwrap();
+    let s = common::gui::SCENARIOS
+        .iter()
+        .find(|s| s.name == name)
+        .unwrap();
     let (err, after) = common::gui::play(&common::bin(), s);
     common::golden(name, &(common::gui_state(&err) + &after));
 }

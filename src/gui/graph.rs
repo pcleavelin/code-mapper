@@ -5,8 +5,11 @@
 //! zooming scales positions by exactly the factor the text grew by. Everything is drawn by one
 //! custom element; clicks are resolved against the rectangles the last frame recorded.
 
+use super::{
+    ACCENT, Action, App, BG, BORDER, CONTEXT_LINES, FIELD, GREEN, GUTTER, HOVER, ORANGE, PANEL,
+    RED, SELECTED, TEXT, WEAK, dim,
+};
 use crate::gfx::{Color, Gfx, Glyphs, Rect};
-use super::{dim, Action, App, ACCENT, BG, BORDER, CONTEXT_LINES, FIELD, GREEN, GUTTER, HOVER, ORANGE, PANEL, RED, SELECTED, TEXT, WEAK};
 use crate::index::{self, Index, SymRef};
 use crate::map::Map;
 use crate::ui::{self, Kind, Layout, Measure, Style};
@@ -54,8 +57,8 @@ enum Btn {
     Listing,
     Callees,
     Callers,
-    Above,   // more context above the slice
-    Below,   // more context below
+    Above, // more context above the slice
+    Below, // more context below
     NoContext,
 }
 
@@ -96,8 +99,8 @@ pub struct Graph {
 
     // The reader's: what they opened, cut, widened and dragged, and the camera.
     expansions: Vec<(Node, bool)>,
-    auto_open: Option<Node>,                // the off-path root whose callers and callees were opened for it
-    collapsed: HashSet<Node>,               // nodes cut to a preview
+    auto_open: Option<Node>, // the off-path root whose callers and callees were opened for it
+    collapsed: HashSet<Node>, // nodes cut to a preview
     context: HashMap<Node, (usize, usize)>, // extra lines shown above and below, asked for with the node's buttons
     manual: HashMap<Node, (f32, f32)>,      // dragged positions, in cells and rows
     drag: Option<Drag>,
@@ -111,7 +114,10 @@ pub struct Graph {
 
 impl Graph {
     pub fn new() -> Graph {
-        Graph { zoom: 1.0, ..Default::default() }
+        Graph {
+            zoom: 1.0,
+            ..Default::default()
+        }
     }
 
     /// Everything the reader built on top of the selection, keyed by symbol name instead of
@@ -131,16 +137,33 @@ impl Graph {
     /// not touched: a re-index is not a navigation.
     pub fn restore(&mut self, idx: &Index, s: Saved) {
         let node = |k: &NodeKey| idx.by_key(&k.0).map(|r| (r, k.1));
-        self.expansions = s.expansions.iter().filter_map(|(k, c)| Some((node(k)?, *c))).collect();
+        self.expansions = s
+            .expansions
+            .iter()
+            .filter_map(|(k, c)| Some((node(k)?, *c)))
+            .collect();
         self.collapsed = s.collapsed.iter().filter_map(node).collect();
-        self.context = s.context.iter().filter_map(|(k, v)| Some((node(k)?, *v))).collect();
-        self.manual = s.manual.iter().filter_map(|(k, v)| Some((node(k)?, *v))).collect();
+        self.context = s
+            .context
+            .iter()
+            .filter_map(|(k, v)| Some((node(k)?, *v)))
+            .collect();
+        self.manual = s
+            .manual
+            .iter()
+            .filter_map(|(k, v)| Some((node(k)?, *v)))
+            .collect();
         self.auto_open = s.auto_open.as_ref().and_then(node);
     }
 
     /// What the camera still owes the reader, for dumps: a pending fit, look or keep.
     pub fn camera_state(&self) -> String {
-        format!("fit={} look={} keep={}", self.want_fit, self.want_look, self.keep.is_some())
+        format!(
+            "fit={} look={} keep={}",
+            self.want_fit,
+            self.want_look,
+            self.keep.is_some()
+        )
     }
 
     pub fn drag_state(&self) -> String {
@@ -157,7 +180,12 @@ impl Graph {
             .iter()
             .filter_map(|(r, h)| match h {
                 Hit::Button(n, b) => {
-                    let label = self.header(idx, *n).1.into_iter().find(|(k, _)| k == b).map(|(_, l)| l)?;
+                    let label = self
+                        .header(idx, *n)
+                        .1
+                        .into_iter()
+                        .find(|(k, _)| k == b)
+                        .map(|(_, l)| l)?;
                     Some((idx.sym(n.0).name.clone(), label, *r))
                 }
                 _ => None,
@@ -170,7 +198,17 @@ impl Graph {
         self.hits
             .iter()
             .filter_map(|(r, h)| match h {
-                Hit::Body(n) => Some((format!("{}{}", self.step.get(n).map(|s| format!("{} ", s.2)).unwrap_or_default(), idx.sym(n.0).name), *r)),
+                Hit::Body(n) => Some((
+                    format!(
+                        "{}{}",
+                        self.step
+                            .get(n)
+                            .map(|s| format!("{} ", s.2))
+                            .unwrap_or_default(),
+                        idx.sym(n.0).name
+                    ),
+                    *r,
+                )),
                 _ => None,
             })
             .collect()
@@ -190,13 +228,24 @@ impl Graph {
     fn focus_node(&self, focus: Option<SymRef>, focus_step: Option<usize>) -> Option<Node> {
         let f = focus?;
         let stepped = (f, focus_step);
-        if self.col.contains_key(&stepped) { Some(stepped) } else { self.by_sym.get(&f).copied() }
+        if self.col.contains_key(&stepped) {
+            Some(stepped)
+        } else {
+            self.by_sym.get(&f).copied()
+        }
     }
 
     fn lines_shown(&self, n: Node) -> (usize, usize) {
         let (lo, hi) = self.view[&n];
         let total = hi - lo + 1;
-        (if self.collapsed.contains(&n) { total.min(PREVIEW_LINES) } else { total }, total)
+        (
+            if self.collapsed.contains(&n) {
+                total.min(PREVIEW_LINES)
+            } else {
+                total
+            },
+            total,
+        )
     }
 
     fn add(&mut self, idx: &Index, n: Node, col: i32, range: (usize, usize)) {
@@ -225,7 +274,11 @@ impl Graph {
         if self.range[&n] == (s.start, s.end) {
             return s.callees.clone();
         }
-        s.callees.iter().copied().filter(|c| self.call_line(idx, n, &idx.sym(*c).name).is_some()).collect()
+        s.callees
+            .iter()
+            .copied()
+            .filter(|c| self.call_line(idx, n, &idx.sym(*c).name).is_some())
+            .collect()
     }
 
     /// Derive the node set from the selection + expansions.
@@ -259,7 +312,11 @@ impl Graph {
                     Some(si) => Some(si),
                     // a lines-only anchor takes the symbol its first line is inside, else the
                     // file's first symbol; a file with no symbols at all has no node
-                    None if a.symbol.is_empty() => idx.by_line(&a.file, a.line_start).map(|r| r.sym).or(Some(0)).filter(|&si| si < idx.files[fi].symbols.len()),
+                    None if a.symbol.is_empty() => idx
+                        .by_line(&a.file, a.line_start)
+                        .map(|r| r.sym)
+                        .or(Some(0))
+                        .filter(|&si| si < idx.files[fi].symbols.len()),
                     None => None,
                 };
                 let Some(si) = si else {
@@ -278,25 +335,31 @@ impl Graph {
                 }
             }
         }
-        if let Some(f) = focus {
-            if !self.by_sym.contains_key(&f) {
-                let s = idx.sym(f);
-                self.add(idx, (f, None), 0, (s.start, s.end)); // an off-path selection is its own root
-                // it arrives with its neighbourhood open, once: closing them again sticks
-                if self.auto_open != Some((f, None)) {
-                    self.auto_open = Some((f, None));
-                    for callees in [true, false] {
-                        if !self.expansions.contains(&((f, None), callees)) {
-                            self.expansions.push(((f, None), callees));
-                        }
+        if let Some(f) = focus
+            && !self.by_sym.contains_key(&f)
+        {
+            let s = idx.sym(f);
+            self.add(idx, (f, None), 0, (s.start, s.end)); // an off-path selection is its own root
+            // it arrives with its neighbourhood open, once: closing them again sticks
+            if self.auto_open != Some((f, None)) {
+                self.auto_open = Some((f, None));
+                for callees in [true, false] {
+                    if !self.expansions.contains(&((f, None), callees)) {
+                        self.expansions.push(((f, None), callees));
                     }
                 }
             }
         }
         for (n, callees) in self.expansions.clone() {
-            let Some(&col) = self.col.get(&n) else { continue };
+            let Some(&col) = self.col.get(&n) else {
+                continue;
+            };
             let s = idx.sym(n.0);
-            let list = if callees { self.callees_of(idx, n) } else { s.callers.clone() };
+            let list = if callees {
+                self.callees_of(idx, n)
+            } else {
+                s.callers.clone()
+            };
             let dc = if callees { 1 } else { -1 };
             for r in list {
                 if self.by_sym.contains_key(&r) {
@@ -314,9 +377,14 @@ impl Graph {
         for &n in &self.nodes {
             let (lo, hi) = self.range[&n];
             // a preview is of the node's own lines: context waits until the node is opened
-            let (a, b) = if self.collapsed.contains(&n) { (0, 0) } else { self.context.get(&n).copied().unwrap_or((0, 0)) };
+            let (a, b) = if self.collapsed.contains(&n) {
+                (0, 0)
+            } else {
+                self.context.get(&n).copied().unwrap_or((0, 0))
+            };
             let last = idx.files[n.0.file].lines.len().saturating_sub(1);
-            self.view.insert(n, (lo.saturating_sub(a), (hi + b).min(last)));
+            self.view
+                .insert(n, (lo.saturating_sub(a), (hi + b).min(last)));
         }
     }
 
@@ -334,7 +402,11 @@ impl Graph {
     /// The column of the file line under the pointer, or None over the line-number gutter.
     /// The grid a node draws is the one `code_block` draws, so the gutter is the same width.
     fn code_col(&self, cell_w: i32, n: Node, li: usize, mouse: (i32, i32)) -> Option<usize> {
-        let rect = self.hits.iter().find(|(_, h)| matches!(h, Hit::Line(m, l) if *m == n && *l == li)).map(|(r, _)| *r)?;
+        let rect = self
+            .hits
+            .iter()
+            .find(|(_, h)| matches!(h, Hit::Line(m, l) if *m == n && *l == li))
+            .map(|(r, _)| *r)?;
         let col = ((mouse.0 - rect.x) / cell_w.max(1)).max(0) as usize;
         col.checked_sub(GUTTER)
     }
@@ -372,7 +444,14 @@ impl Graph {
         header.push((format!("  {}:{}-{}", f.path, rlo + 1, rhi + 1), WEAK));
         let mut labels: Vec<(Btn, String)> = Vec::new();
         if total > PREVIEW_LINES {
-            labels.push((Btn::Less, if shown < total { "more".into() } else { "less".into() }));
+            labels.push((
+                Btn::Less,
+                if shown < total {
+                    "more".into()
+                } else {
+                    "less".into()
+                },
+            ));
         }
         if !self.collapsed.contains(&n) {
             if lo > 0 {
@@ -417,8 +496,15 @@ impl Graph {
         let (lo, _) = self.view[&n];
         let (shown, total) = self.lines_shown(n);
         let f = &idx.files[n.0.file];
-        let longest = f.lines[lo..lo + shown].iter().map(|l| l.chars().count()).max().unwrap_or(0) as i32 + 6;
-        let cols = longest.clamp(MIN_COLS, MAX_COLS).max(self.header_cols(idx, n));
+        let longest = f.lines[lo..lo + shown]
+            .iter()
+            .map(|l| l.chars().count())
+            .max()
+            .unwrap_or(0) as i32
+            + 6;
+        let cols = longest
+            .clamp(MIN_COLS, MAX_COLS)
+            .max(self.header_cols(idx, n));
         let note_rows = i32::from(self.has_note.contains(&n));
         let rows = 1 + note_rows + shown as i32 + usize::from(shown < total) as i32;
         (cols + 1, rows + 1) // one cell and one row of padding
@@ -437,7 +523,10 @@ impl Graph {
         }
         let (first, last) = (*cols.keys().next().unwrap(), *cols.keys().last().unwrap());
         let anchor = 0.clamp(first, last);
-        let col_w: BTreeMap<i32, i32> = cols.iter().map(|(&c, ns)| (c, ns.iter().map(|&n| self.size[&n].0).max().unwrap_or(0))).collect();
+        let col_w: BTreeMap<i32, i32> = cols
+            .iter()
+            .map(|(&c, ns)| (c, ns.iter().map(|&n| self.size[&n].0).max().unwrap_or(0)))
+            .collect();
         let mut col_x: BTreeMap<i32, i32> = BTreeMap::new();
         col_x.insert(anchor, 0);
         for c in (anchor + 1)..=last {
@@ -455,23 +544,49 @@ impl Graph {
                 right.entry(p).or_default().push(n);
                 has_parent.insert(n);
             } else if let Some(&(o, callees)) = self.origin.get(&n) {
-                if callees { right.entry(o).or_default() } else { left.entry(o).or_default() }.push(n);
+                if callees {
+                    right.entry(o).or_default()
+                } else {
+                    left.entry(o).or_default()
+                }
+                .push(n);
                 has_parent.insert(n);
             }
         }
         for (&p, kids) in right.iter_mut() {
-            kids.sort_by_key(|k| (self.call_line(idx, p, &idx.sym(k.0).name).unwrap_or(usize::MAX), self.step.get(k).map_or(usize::MAX, |s| s.0)));
+            kids.sort_by_key(|k| {
+                (
+                    self.call_line(idx, p, &idx.sym(k.0).name)
+                        .unwrap_or(usize::MAX),
+                    self.step.get(k).map_or(usize::MAX, |s| s.0),
+                )
+            });
         }
-        let mut roots: Vec<Node> = self.nodes.iter().copied().filter(|n| !has_parent.contains(n)).collect();
+        let mut roots: Vec<Node> = self
+            .nodes
+            .iter()
+            .copied()
+            .filter(|n| !has_parent.contains(n))
+            .collect();
         roots.sort_by_key(|r| self.step.get(r).map_or(usize::MAX, |s| s.0));
 
         // block heights, bottom-up
         let mut height: HashMap<Node, i32> = HashMap::new();
-        fn measure(g: &Graph, r: Node, right: &HashMap<Node, Vec<Node>>, left: &HashMap<Node, Vec<Node>>, height: &mut HashMap<Node, i32>, seen: &mut HashSet<Node>) -> i32 {
+        fn measure(
+            g: &Graph,
+            r: Node,
+            right: &HashMap<Node, Vec<Node>>,
+            left: &HashMap<Node, Vec<Node>>,
+            height: &mut HashMap<Node, i32>,
+            seen: &mut HashSet<Node>,
+        ) -> i32 {
             if !seen.insert(r) {
                 return 0;
             }
-            let stack = |kids: Option<&Vec<Node>>, height: &mut HashMap<Node, i32>, seen: &mut HashSet<Node>| -> i32 {
+            let stack = |kids: Option<&Vec<Node>>,
+                         height: &mut HashMap<Node, i32>,
+                         seen: &mut HashSet<Node>|
+             -> i32 {
                 let mut h = 0;
                 for &k in kids.into_iter().flatten() {
                     let kh = measure(g, k, right, left, height, seen);
@@ -492,15 +607,30 @@ impl Graph {
             measure(self, r, &right, &left, &mut height, &mut seen);
         }
         // place, top-down
-        fn place(g: &mut Graph, r: Node, top: i32, col_x: &BTreeMap<i32, i32>, right: &HashMap<Node, Vec<Node>>, left: &HashMap<Node, Vec<Node>>, height: &HashMap<Node, i32>, done: &mut HashSet<Node>) {
+        fn place(
+            g: &mut Graph,
+            r: Node,
+            top: i32,
+            col_x: &BTreeMap<i32, i32>,
+            right: &HashMap<Node, Vec<Node>>,
+            left: &HashMap<Node, Vec<Node>>,
+            height: &HashMap<Node, i32>,
+            done: &mut HashSet<Node>,
+        ) {
             if !done.insert(r) {
                 return;
             }
             let block = height[&r];
             let own = g.size[&r].1;
-            g.pos.insert(r, (col_x[&g.col[&r]], top + (block - own) / 2));
+            g.pos
+                .insert(r, (col_x[&g.col[&r]], top + (block - own) / 2));
             for kids in [right.get(&r), left.get(&r)] {
-                let kids: Vec<Node> = kids.into_iter().flatten().copied().filter(|k| height.contains_key(k) && !done.contains(k)).collect();
+                let kids: Vec<Node> = kids
+                    .into_iter()
+                    .flatten()
+                    .copied()
+                    .filter(|k| height.contains_key(k) && !done.contains(k))
+                    .collect();
                 let stack_h: i32 = kids.iter().map(|k| height[k] + GAP_Y).sum::<i32>() - GAP_Y;
                 let mut cur = top + (block - stack_h.max(0)) / 2;
                 for k in kids {
@@ -537,7 +667,9 @@ impl Graph {
     fn bbox_cells(&self) -> Option<(i32, i32, i32, i32)> {
         let mut b: Option<(i32, i32, i32, i32)> = None;
         for n in &self.nodes {
-            let (Some(&(x, y)), Some(&(w, h))) = (self.pos.get(n), self.size.get(n)) else { continue };
+            let (Some(&(x, y)), Some(&(w, h))) = (self.pos.get(n), self.size.get(n)) else {
+                continue;
+            };
             b = Some(match b {
                 None => (x, y, x + w, y + h),
                 Some((l, t, r, bo)) => (l.min(x), t.min(y), r.max(x + w), bo.max(y + h)),
@@ -554,16 +686,20 @@ impl Graph {
             if let Some(Rect { x, y, w, h }) = focus_node.and_then(|f| self.rect_px(f, (0, 0))) {
                 // a node taller than the canvas is aligned to its top: its header and buttons
                 // are what the reader came for
-                let y = if h + MARGIN * 2 > canvas.h { MARGIN - y } else { canvas.h / 2 - y - h / 2 };
+                let y = if h + MARGIN * 2 > canvas.h {
+                    MARGIN - y
+                } else {
+                    canvas.h / 2 - y - h / 2
+                };
                 self.pan = (canvas.w / 2 - x - w / 2, y);
                 self.want_look = false;
             }
             return;
         }
-        if let Some((n, (ox, oy))) = self.keep.take() {
-            if let Some(Rect { x, y, .. }) = self.rect_px(n, (0, 0)) {
-                self.pan = (self.pan.0 + ox - x, self.pan.1 + oy - y);
-            }
+        if let Some((n, (ox, oy))) = self.keep.take()
+            && let Some(Rect { x, y, .. }) = self.rect_px(n, (0, 0))
+        {
+            self.pan = (self.pan.0 + ox - x, self.pan.1 + oy - y);
         }
     }
 }
@@ -613,8 +749,14 @@ impl App {
                 self.graph.zoom = new;
                 let (nc, nr) = gfx.cell(self.graph_px());
                 let (mx, my) = ((mouse.0 - canvas.x) as f32, (mouse.1 - canvas.y) as f32);
-                let (ux, uy) = ((mx - self.graph.pan.0 as f32) / oc as f32, (my - self.graph.pan.1 as f32) / or as f32);
-                self.graph.pan = ((mx - ux * nc as f32).round() as i32, (my - uy * nr as f32).round() as i32);
+                let (ux, uy) = (
+                    (mx - self.graph.pan.0 as f32) / oc as f32,
+                    (my - self.graph.pan.1 as f32) / or as f32,
+                );
+                self.graph.pan = (
+                    (mx - ux * nc as f32).round() as i32,
+                    (my - uy * nr as f32).round() as i32,
+                );
             } else {
                 let per_notch = (gfx.cell(self.graph_px()).1 * PAN_ROWS) as f32;
                 let step = |d: f32| (d / WHEEL_NOTCH * per_notch).round() as i32;
@@ -627,7 +769,13 @@ impl App {
             }
         }
         // clicks and drags against last frame's hit rectangles
-        let hit = self.graph.hits.iter().rev().find(|(r, _)| r.contains(mouse.0, mouse.1)).map(|(_, h)| *h);
+        let hit = self
+            .graph
+            .hits
+            .iter()
+            .rev()
+            .find(|(r, _)| r.contains(mouse.0, mouse.1))
+            .map(|(_, h)| *h);
         if it.clicked {
             match hit {
                 Some(Hit::Button(n, b)) => match b {
@@ -638,7 +786,9 @@ impl App {
                         }
                         self.graph.manual.remove(&n);
                     }
-                    Btn::Listing => self.actions.push(Action::GoTo(n.0.file, self.graph.range[&n].0)),
+                    Btn::Listing => self
+                        .actions
+                        .push(Action::GoTo(n.0.file, self.graph.range[&n].0)),
                     Btn::Callees => self.graph.toggle(n, true),
                     Btn::Callers => self.graph.toggle(n, false),
                     Btn::Above => {
@@ -664,7 +814,10 @@ impl App {
                 }
                 Some(Hit::Line(n, li)) => {
                     self.graph.drag = Some(Drag::Node(n)); // dragging code moves the node without selecting it
-                    if let Some(col) = self.graph.code_col(gfx.cell(self.graph_px()).0, n, li, mouse) {
+                    if let Some(col) =
+                        self.graph
+                            .code_col(gfx.cell(self.graph_px()).0, n, li, mouse)
+                    {
                         if mods.alt {
                             self.actions.push(Action::PeekAt(n.0.file, li, col));
                         } else if mods.ctrl || it.double_clicked {
@@ -685,8 +838,19 @@ impl App {
                 Some(Drag::Node(n)) => {
                     let (cw, rh) = gfx.cell(self.graph_px());
                     let base = self.graph.pos.get(&n).copied().unwrap_or((0, 0));
-                    let cur = self.graph.manual.get(&n).copied().unwrap_or((base.0 as f32, base.1 as f32));
-                    self.graph.manual.insert(n, (cur.0 + d.0 as f32 / cw.max(1) as f32, cur.1 + d.1 as f32 / rh.max(1) as f32));
+                    let cur = self
+                        .graph
+                        .manual
+                        .get(&n)
+                        .copied()
+                        .unwrap_or((base.0 as f32, base.1 as f32));
+                    self.graph.manual.insert(
+                        n,
+                        (
+                            cur.0 + d.0 as f32 / cw.max(1) as f32,
+                            cur.1 + d.1 as f32 / rh.max(1) as f32,
+                        ),
+                    );
                 }
                 None => {}
             }
@@ -694,16 +858,18 @@ impl App {
         if !it.down {
             self.graph.drag = None;
         }
-        if let Some(Hit::Line(n, li)) = hit.filter(|_| it.hovered && !self.ui.input.down[0]) {
-            if let Some(col) = self.graph.code_col(gfx.cell(self.graph_px()).0, n, li, mouse) {
-                if let Some(t) = self.probe(n.0.file, li, col) {
-                    self.tooltip = Some((t, mouse));
-                }
-            }
+        if let Some(Hit::Line(n, li)) = hit.filter(|_| it.hovered && !self.ui.input.down[0])
+            && let Some(col) = self
+                .graph
+                .code_col(gfx.cell(self.graph_px()).0, n, li, mouse)
+            && let Some(t) = self.probe(n.0.file, li, col)
+        {
+            self.tooltip = Some((t, mouse));
         }
 
         // the tree for this selection: the whole selected path, whatever is selected inside it
-        self.graph.rebuild(&self.idx, &self.map, self.sel_path, self.focus);
+        self.graph
+            .rebuild(&self.idx, &self.map, self.sel_path, self.focus);
         let px = self.graph_px();
         for &n in &self.graph.nodes.clone() {
             let s = self.graph.node_size(&self.idx, n);
@@ -711,7 +877,9 @@ impl App {
         }
         self.graph.layout(&self.idx);
         for (n, p) in self.graph.manual.clone() {
-            self.graph.pos.insert(n, (p.0.round() as i32, p.1.round() as i32));
+            self.graph
+                .pos
+                .insert(n, (p.0.round() as i32, p.1.round() as i32));
         }
         // fit: the layout is in cells, so the largest font at which the tree fits the canvas
         // settles both the zoom and the pan in one frame
@@ -721,7 +889,9 @@ impl App {
                 let smallest = ((self.px as f32) * 0.3).round().max(6.0) as u32;
                 let mut size = px;
                 let mut cell = gfx.cell(size);
-                while size > smallest && (w * cell.0 > canvas.w - MARGIN * 2 || h * cell.1 > canvas.h - MARGIN * 2) {
+                while size > smallest
+                    && (w * cell.0 > canvas.w - MARGIN * 2 || h * cell.1 > canvas.h - MARGIN * 2)
+                {
                     size -= 1;
                     cell = gfx.cell(size);
                 }
@@ -732,7 +902,11 @@ impl App {
         let px = self.graph_px();
         let (cell_w, row_h) = gfx.cell(px);
         let z = self.graph.zoom;
-        let m = Metrics { cell_w, row_h, pad: cell_w / 2 };
+        let m = Metrics {
+            cell_w,
+            row_h,
+            pad: cell_w / 2,
+        };
         self.graph.cell = (cell_w, row_h);
         let focus_node = self.graph.focus_node(self.focus, self.sel_anchor);
         if canvas_known {
@@ -740,20 +914,38 @@ impl App {
         }
 
         // toolbar
-        self.ui.open(Kind::None, Layout::row().grow_x().pad(4).gap(8).cross(ui::Align::Center), Style::default(), None);
-        self.label("drag the background to pan, ctrl+wheel to zoom, drag a node's title to move it", WEAK);
+        self.ui.open(
+            Kind::None,
+            Layout::row()
+                .grow_x()
+                .pad(4)
+                .gap(8)
+                .cross(ui::Align::Center),
+            Style::default(),
+            None,
+        );
+        self.label(
+            "drag the background to pan, ctrl+wheel to zoom, drag a node's title to move it",
+            WEAK,
+        );
         if self.small_button("1:1", ui::id("graph-1to1")).clicked {
             self.graph.zoom = 1.0;
             self.graph.want_look = true;
         }
-        if self.small_button("auto layout", ui::id("graph-auto")).clicked {
+        if self
+            .small_button("auto layout", ui::id("graph-auto"))
+            .clicked
+        {
             self.graph.manual.clear();
         }
         if self.small_button("fit", ui::id("graph-fit")).clicked {
             self.graph.want_fit = true;
         }
         if let Some(pi) = self.graph.path_id {
-            let s = format!("path '{}': green edges are its steps, grey ones expansions, orange a call back up the tree", self.map.paths[pi].name);
+            let s = format!(
+                "path '{}': green edges are its steps, grey ones expansions, orange a call back up the tree",
+                self.map.paths[pi].name
+            );
             self.label(&s, WEAK);
         }
         self.label(&format!("{:.0}%", z * 100.0), WEAK);
@@ -762,7 +954,9 @@ impl App {
         // the scene
         let scene = self.build_scene(canvas, focus_node, px, m);
         self.ui.leaf(
-            Kind::Custom(Box::new(move |gfx: &mut Gfx, _: Rect| draw_scene(gfx, &scene))),
+            Kind::Custom(Box::new(move |gfx: &mut Gfx, _: Rect| {
+                draw_scene(gfx, &scene)
+            })),
             Layout::col().grow(),
             Style::bg(BG),
             Some(canvas_id),
@@ -774,7 +968,13 @@ impl App {
         ((self.px as f32) * self.graph.zoom).round().max(6.0) as u32
     }
 
-    fn build_scene(&mut self, canvas: Rect, focus_node: Option<Node>, px: u32, m: Metrics) -> Scene {
+    fn build_scene(
+        &mut self,
+        canvas: Rect,
+        focus_node: Option<Node>,
+        px: u32,
+        m: Metrics,
+    ) -> Scene {
         let o = (canvas.x + self.graph.pan.0, canvas.y + self.graph.pan.1);
         let mouse = self.ui.input.mouse;
         let mut hits = Vec::new();
@@ -790,8 +990,18 @@ impl App {
             let on_path = self.graph.step.contains_key(&n);
             let off_path = self.graph.path_id.is_some() && !on_path;
             let focused = focus_node == Some(n);
-            let stale = n.1.zip(self.graph.path_id).is_some_and(|(ai, pi)| self.map.paths[pi].anchors[ai].stale);
-            let (border, border_w) = if stale { (RED, 2) } else if focused { (ACCENT, 2) } else if on_path { (step_color, 2) } else { (BORDER, 1) };
+            let stale =
+                n.1.zip(self.graph.path_id)
+                    .is_some_and(|(ai, pi)| self.map.paths[pi].anchors[ai].stale);
+            let (border, border_w) = if stale {
+                (RED, 2)
+            } else if focused {
+                (ACCENT, 2)
+            } else if on_path {
+                (step_color, 2)
+            } else {
+                (BORDER, 1)
+            };
             let node_hits_from = hits.len();
             let fill = if off_path { PANEL } else { FIELD };
             let (header, labels) = self.graph.header(&self.idx, n);
@@ -808,26 +1018,66 @@ impl App {
                 buttons.push((br, label, hovered));
             }
             let header_rect = Rect::new(rect.x, rect.y, (bx - rect.x).max(0), m.row_h + m.pad);
-            let note = n.1.and_then(|ai| self.graph.path_id.map(|pi| self.map.paths[pi].anchors[ai].note.clone())).filter(|s| !s.is_empty());
+            let note =
+                n.1.and_then(|ai| {
+                    self.graph
+                        .path_id
+                        .map(|pi| self.map.paths[pi].anchors[ai].note.clone())
+                })
+                .filter(|s| !s.is_empty());
             let code_top = rect.y + m.pad + m.row_h + if note.is_some() { m.row_h } else { 0 } + 4;
             self.graph.code_top.insert(n, code_top);
             for (k, li) in (lo..lo + shown).enumerate() {
-                let lr = Rect::new(rect.x + m.pad, code_top + k as i32 * m.row_h, rect.w - m.pad * 2, m.row_h);
+                let lr = Rect::new(
+                    rect.x + m.pad,
+                    code_top + k as i32 * m.row_h,
+                    rect.w - m.pad * 2,
+                    m.row_h,
+                );
                 hits.push((lr, Hit::Line(n, li)));
             }
             hits.extend(button_hits);
             // the lines an edge leaves from: every node on the canvas this one calls, plus its
             // child steps, whichever way either was revealed
-            let mut targets: Vec<SymRef> = self.graph.callees_of(&self.idx, n).into_iter().filter(|c| *c != n.0 && self.graph.by_sym.contains_key(c)).collect();
-            targets.extend(self.graph.step_parent.iter().filter(|(_, p)| **p == n).map(|(c, _)| c.0));
-            let tinted: HashSet<usize> = targets.iter().filter_map(|c| self.graph.call_line(&self.idx, n, &self.idx.sym(*c).name)).filter(|&li| li < lo + shown).collect();
+            let mut targets: Vec<SymRef> = self
+                .graph
+                .callees_of(&self.idx, n)
+                .into_iter()
+                .filter(|c| *c != n.0 && self.graph.by_sym.contains_key(c))
+                .collect();
+            targets.extend(
+                self.graph
+                    .step_parent
+                    .iter()
+                    .filter(|(_, p)| **p == n)
+                    .map(|(c, _)| c.0),
+            );
+            let tinted: HashSet<usize> = targets
+                .iter()
+                .filter_map(|c| self.graph.call_line(&self.idx, n, &self.idx.sym(*c).name))
+                .filter(|&li| li < lo + shown)
+                .collect();
             // later hits win: body, then the header, then lines, then the buttons
             let mut ordered = vec![(rect, Hit::Body(n)), (header_rect, Hit::Header(n))];
             ordered.extend(hits.drain(node_hits_from..));
             hits.extend(ordered);
             let (rlo, rhi) = self.graph.range[&n];
             let slice = ((lo, hi) != (rlo, rhi)).then_some((rlo, rhi));
-            nodes.push(SceneNode { rect, fill, border, border_w, header, buttons, note, code_top, code, lo, tinted, slice, more: (shown < total).then_some(total - shown) });
+            nodes.push(SceneNode {
+                rect,
+                fill,
+                border,
+                border_w,
+                header,
+                buttons,
+                note,
+                code_top,
+                code,
+                lo,
+                tinted,
+                slice,
+                more: (shown < total).then_some(total - shown),
+            });
         }
         // edges: where an edge leaves a node is level with the call line when it is shown
         let g = &self.graph;
@@ -836,7 +1086,10 @@ impl App {
             let (lo, _) = g.view[&n];
             let (shown, _) = g.lines_shown(n);
             match g.call_line(&self.idx, n, word) {
-                Some(li) if li < lo + shown => (r.right() as f32, (g.code_top[&n] + (li - lo) as i32 * m.row_h + m.row_h / 2) as f32),
+                Some(li) if li < lo + shown => (
+                    r.right() as f32,
+                    (g.code_top[&n] + (li - lo) as i32 * m.row_h + m.row_h / 2) as f32,
+                ),
                 _ => (r.right() as f32, (r.y + m.pad + m.row_h / 2) as f32),
             }
         };
@@ -850,7 +1103,9 @@ impl App {
         let hy = (m.pad + m.row_h / 2) as f32;
         for &a in &g.nodes {
             for bs in g.callees_of(&self.idx, a) {
-                let Some(&b) = g.by_sym.get(&bs) else { continue };
+                let Some(&b) = g.by_sym.get(&bs) else {
+                    continue;
+                };
                 if a.0 == bs || g.step_parent.get(&b) == Some(&a) {
                     continue;
                 }
@@ -860,17 +1115,33 @@ impl App {
                     edges.push((curve(p0, (rb.x as f32, rb.y as f32 + hy), 1.0), WEAK, 1.5));
                 } else {
                     let p0 = (ra.x as f32, ra.y as f32 + hy);
-                    edges.push((curve(p0, (rb.right() as f32, rb.y as f32 + hy), -1.0), ORANGE, 1.5));
+                    edges.push((
+                        curve(p0, (rb.right() as f32, rb.y as f32 + hy), -1.0),
+                        ORANGE,
+                        1.5,
+                    ));
                 }
             }
         }
         for (&child, &parent) in &g.step_parent {
             let rb = g.rect_px(child, o).unwrap();
             let p0 = edge_out(parent, &self.idx.sym(child.0).name);
-            edges.push((curve(p0, (rb.x as f32, rb.y as f32 + hy), 1.0), step_color, 3.0));
+            edges.push((
+                curve(p0, (rb.x as f32, rb.y as f32 + hy), 1.0),
+                step_color,
+                3.0,
+            ));
         }
-        self.graph.hits = hits.into_iter().map(|(r, h)| (r.intersect(&canvas), h)).collect();
-        Scene { px, m, edges, nodes }
+        self.graph.hits = hits
+            .into_iter()
+            .map(|(r, h)| (r.intersect(&canvas), h))
+            .collect();
+        Scene {
+            px,
+            m,
+            edges,
+            nodes,
+        }
     }
 }
 
@@ -892,25 +1163,46 @@ fn draw_scene(gfx: &mut Gfx, scene: &Scene) {
         for (br, label, hovered) in &n.buttons {
             gfx.rect(*br, if *hovered { HOVER } else { PANEL });
             gfx.rect_outline(*br, 1, BORDER);
-            gfx.text(br.x + m.cell_w, br.y, scene.px, label, if *hovered { TEXT } else { WEAK });
+            gfx.text(
+                br.x + m.cell_w,
+                br.y,
+                scene.px,
+                label,
+                if *hovered { TEXT } else { WEAK },
+            );
         }
         if let Some(note) = &n.note {
             gfx.text(n.rect.x + m.pad, y + m.row_h, scene.px, note, GREEN);
         }
-        gfx.rect(Rect::new(n.rect.x + m.pad, n.code_top - 2, n.rect.w - m.pad * 2, 1), BORDER);
+        gfx.rect(
+            Rect::new(n.rect.x + m.pad, n.code_top - 2, n.rect.w - m.pad * 2, 1),
+            BORDER,
+        );
         for k in 0..n.code.h {
             let li = n.lo + k;
             let ly = n.code_top + k as i32 * m.row_h;
             if n.slice.is_some_and(|(a, b)| li >= a && li <= b) {
-                gfx.rect(Rect::new(n.rect.x + m.pad, ly, n.rect.w - m.pad * 2, m.row_h), dim(SELECTED, 120));
+                gfx.rect(
+                    Rect::new(n.rect.x + m.pad, ly, n.rect.w - m.pad * 2, m.row_h),
+                    dim(SELECTED, 120),
+                );
             }
             if n.tinted.contains(&li) {
-                gfx.rect(Rect::new(n.rect.x + m.pad, ly, n.rect.w - m.pad * 2, m.row_h), dim(GREEN, 46));
+                gfx.rect(
+                    Rect::new(n.rect.x + m.pad, ly, n.rect.w - m.pad * 2, m.row_h),
+                    dim(GREEN, 46),
+                );
             }
         }
         gfx.glyphs(n.rect.x + m.pad, n.code_top, scene.px, &n.code);
         if let Some(more) = n.more {
-            gfx.text(n.rect.x + m.pad, n.code_top + n.code.h as i32 * m.row_h, scene.px, &format!("      … {more} more lines"), WEAK);
+            gfx.text(
+                n.rect.x + m.pad,
+                n.code_top + n.code.h as i32 * m.row_h,
+                scene.px,
+                &format!("      … {more} more lines"),
+                WEAK,
+            );
         }
         gfx.pop_clip();
     }
