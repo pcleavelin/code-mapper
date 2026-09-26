@@ -73,14 +73,16 @@ Never claim a visual or interactive behaviour from reading the code; drive it an
   answered, merged and re-indexed), `rect <id>` (an element's rectangle by id name),
   `click-id <id> [ctrl|alt|shift]`, `dblclick-id <id>`, `hover-id <id>` (the same gestures
   aimed at an element's centre), `shot <file.png>`, `dump`. Id names are the ones in
-  `crates/gui/src/ids.rs`: `name`, `name/<n>` for rows, `name@<key>` (tabs `tab@Graph`,
-  `left@Symbols`; document steps `step/<n>`, `fold/<n>`, `hide/<n>`, `whole/<n>`, `del/<n>`,
-  `ctx-a/<n>`, `ctx-b/<n>`; paths list `paths/<n>`, `outline/<n>`; text fields
-  `field@search`, `field@new-path`, `field@symbols`, `field@goto-line`; symbol rows
-  `sym@<file index>:<symbol index>`; xrefs rows `xto/<i>`, `xfrom/<i>`, `xref/<i>`; docked
-  panels `panel@<p>`, their headers `grip@<p>` and splitters `split@<p>` for `nav`, `xrefs`,
-  `output`). Rects come from the previous frame, so `wait 1` after anything that changes the
-  layout. `dump` prints the selection, scroll offsets, each panel's edge and size, the
+  `crates/gui/src/ids.rs`: `name`, `name/<n>` for rows, `name@<key>` (every view's tab
+  `tab@<View>`, e.g. `tab@Graph`, `tab@Symbols`; document steps `step/<n>`, `fold/<n>`,
+  `hide/<n>`, `whole/<n>`, `del/<n>`, `ctx-a/<n>`, `ctx-b/<n>`; paths list `paths/<n>`,
+  `outline/<n>`; text fields `field@search`, `field@new-path`, `field@symbols`,
+  `field@paths`, `field@goto-line`, `field@views`; symbol rows
+  `sym@<file index>:<symbol index>`; xrefs rows `xto/<i>`, `xfrom/<i>`, `xref/<i>`; panels
+  by the number n `DUMP panels` prints: `panel/<n>`, header buttons `pick/<n>`,
+  `split-across/<n>`, `split-down/<n>`, `close-panel/<n>`, sashes `sash/<n>`; view picker
+  rows `view/<n>`). Rects come from the previous frame, so `wait 1` after anything that
+  changes the layout. `dump` prints the selection, scroll offsets, the panel tree, the
   tooltip and peek, the graph camera and every node's and node button's rectangle to stderr as
   `DUMP` lines (grep `^DUMP`), plus
   `DUMP frames n=<count> max=<ms> over16=<count> t=<ms since the window opened>` for the

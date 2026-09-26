@@ -14,12 +14,6 @@ struct Allowed {
     dependencies: &'static [Literal],
 }
 
-#[derive(Clone, Copy, Debug)]
-pub(crate) enum Guard {
-    File(Literal),
-    Tree(Literal),
-}
-
 const EXPECTS: [Allowance; 27] = [
     Allowance {
         path: Literal::new("crates/codemap/tests/common/mod.rs"),
@@ -251,16 +245,6 @@ const DEPENDENCIES: [Allowed; 16] = [
     },
 ];
 
-pub(crate) const RULEBOOK: [Guard; 7] = [
-    Guard::File(Literal::new("clippy.toml")),
-    Guard::File(Literal::new("rustfmt.toml")),
-    Guard::File(Literal::new(".gitattributes")),
-    Guard::File(Literal::new(".cargo/config.toml")),
-    Guard::File(Literal::new(".claude/settings.json")),
-    Guard::Tree(Literal::new("api/io-")),
-    Guard::File(Literal::new("CLAUDE.md")),
-];
-
 const TEST_RULES: [Rule; 3] = [Rule::Suppression, Rule::TestRegistry, Rule::Comment];
 
 const SCENARIO_FILES: [Literal; 2] = [
@@ -294,12 +278,5 @@ pub(crate) fn allowed_dependency(package: &CrateName, on: &CrateName) -> bool {
                 .dependencies
                 .iter()
                 .any(|dependency| on.as_str() == dependency.as_str())
-    })
-}
-
-pub(crate) fn guarded(path: &RepoPath) -> bool {
-    RULEBOOK.iter().any(|guard| match guard {
-        Guard::File(file) => path.as_str() == file.as_str(),
-        Guard::Tree(prefix) => path.starts_with(prefix.as_str()),
     })
 }

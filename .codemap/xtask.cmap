@@ -3,7 +3,7 @@ path xtask
 kind layer
 author ai
 group tooling
-note The xtask binary: the owner's rulebook as a program. cargo xtask is an alias in .cargo/config.toml that runs this crate with its own target directory, so the gate never waits on the workspace's build lock and a broken workspace build cannot break the tool that reports it. Four tasks: gate (the gate path), lint (archlint over the workspace or named files), api (record the API lock) and hook (the Claude Code hooks). The whole directory is rulebook: an agent may run every task but change none of them, which is what makes the rules binding on the agent that is being checked. A task answers with a Message on success or failure; main prints the first to stdout and the second to stderr and exits non-zero on failure, so a hook or a shell sees the verdict in the exit code.
+note The xtask binary: the repo's rules as a program. cargo xtask is an alias in .cargo/config.toml that runs this crate with its own target directory, so the gate never waits on the workspace's build lock and a broken workspace build cannot break the tool that reports it. Four tasks: gate (the gate path), lint (archlint over the workspace or named files), api (record the API lock) and hook (the Claude Code hooks). A rule that is wrong is changed here openly, in the same change that needs it. A task answers with a Message on success or failure; main prints the first to stdout and the second to stderr and exits non-zero on failure, so a hook or a shell sees the verdict in the exit code.
 
 step 1me7il
 order 1
@@ -11,9 +11,9 @@ parent 8n4pmn
 author ai
 file xtask/src/main.rs
 symbol parse
-lines 0 25
-hash eb98e342b2c6fc25
-note The argument grammar: the first word picks the task; gate takes --full (adds the CLI goldens) and --owner (skips the rulebook check, for the owner committing rulebook changes); hook takes its event name. Anything unrecognised is Usage.
+lines 0 18
+hash 666300faf5aa804f
+note The argument grammar: the first word picks the task; gate takes --full (adds the CLI goldens); hook takes its event name. Anything unrecognised is Usage.
 
 step 8n4pmn
 order 0
@@ -31,9 +31,9 @@ author ai
 file xtask/src/gate.rs
 symbol run_gate
 lines 0 29
-hash ed2730e64f836e79
+hash 6891e5e03e21df60
 link gate
-note gate [--full] [--owner].
+note gate [--full].
 
 step cbj3zs
 order 4
@@ -42,7 +42,7 @@ author ai
 file xtask/src/main.rs
 symbol USAGE
 lines 0 6
-hash 265e4efafca1e2d2
+hash a2ff73c711b5e970
 note The usage text printed for an unknown task; it names what each gate step checks in one line, so the list of checks is discoverable from the tool itself.
 
 step e1h4v9
@@ -52,7 +52,7 @@ author ai
 file xtask/src/main.rs
 symbol Task
 lines 0 6
-hash 51c6720f179e1f59
+hash 4472cafaadf6f00a
 note One variant per task, carrying its already-parsed arguments, so perform never looks at a string.
 
 step f860cd
@@ -73,7 +73,7 @@ author ai
 file xtask/src/main.rs
 symbol perform
 lines 0 10
-hash 01bb2b5b968ee636
+hash eddd8ebd5d3afd96
 note Runs one task. Each arm maps the task's own result into the Message pair main prints: gate: green, archlint: clean, api: recorded, or nothing for a hook (whose output is the JSON it already printed).
 
 step j1bqii

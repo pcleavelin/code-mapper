@@ -484,7 +484,7 @@ file xtask/src/lint/checks.rs
 symbol suppressions
 lines 0 32
 hash 588d454cc975ce4a
-note L10: allow is never used; expect needs a reason, and each lint it names must be listed for that file in arch.rs EXPECTS. Every suppression in the repo is therefore visible in one rulebook list the owner curates.
+note L10: allow is never used; expect needs a reason, and each lint it names must be listed for that file in arch.rs EXPECTS. Every suppression in the repo is therefore visible in one list.
 
 step sg3sp8
 order 43

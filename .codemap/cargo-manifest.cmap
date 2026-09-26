@@ -3,7 +3,7 @@ path cargo-manifest
 kind type
 author ai
 group tooling
-note A Cargo.toml as the gate needs it: sections of trimmed lines, parsed by hand rather than with a TOML library because the gate only reads the package name, the dependency keys, the workspace members and which sections changed.
+note A Cargo.toml as the gate needs it: sections of trimmed lines, parsed by hand rather than with a TOML library because the gate only reads the package name, the dependency keys and the workspace members.
 
 step 00y53x
 order 5
@@ -83,16 +83,6 @@ symbol Manifest
 lines 0 2
 hash 58d19e690f535fd8
 note Each section header with its lines; lines before any header are under the empty section.
-
-step pah027
-order 10
-parent htrn18
-author ai
-file xtask/src/manifest.rs
-symbol guarded
-lines 0 11
-hash 74680715bc2bd6d6
-note The owner-only sections: [workspace*], [lints*] and every dependency table. Everything else in a manifest an agent may change.
 
 step trej4c
 order 8

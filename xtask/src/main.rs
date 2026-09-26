@@ -10,19 +10,18 @@ mod source;
 mod state;
 mod terminal;
 mod text;
-mod vcs;
 
 use std::env;
 use std::process::ExitCode;
 
-use crate::gate::{Depth, Ownership, lint_files, run_gate};
+use crate::gate::{Depth, lint_files, run_gate};
 use crate::hook::Event;
 use crate::terminal::{complain, say};
 use crate::text::{Argument, Literal, Message, RepoPath, Root};
 
 const USAGE: Literal = Literal::new(
     "cargo xtask <task>
-  gate [--full] [--owner]   format, archlint, crate graph, API lock, rulebook, clippy, unit tests, codemap check; --full adds the CLI goldens
+  gate [--full]             format, archlint, crate graph, API lock, clippy, unit tests, codemap check; --full adds the CLI goldens
   lint [file...]            archlint over the workspace or the given files
   api                       record every library crate's public API in api/<crate>.api
   hook <event>              a Claude Code hook: pre-tool, post-tool, stop, session-start",
@@ -30,7 +29,7 @@ const USAGE: Literal = Literal::new(
 
 #[derive(Debug)]
 enum Task {
-    Gate(Depth, Ownership),
+    Gate(Depth),
     Lint(Vec<RepoPath>),
     Api,
     Hook(Event),
@@ -67,14 +66,12 @@ impl TaskKind {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Flag {
     Full,
-    Owner,
 }
 
 impl Flag {
     const fn name(self) -> Literal {
         match self {
             Self::Full => Literal::new("--full"),
-            Self::Owner => Literal::new("--owner"),
         }
     }
 }
@@ -83,18 +80,11 @@ impl Task {
     fn parse(words: &[Argument]) -> Self {
         let rest: Vec<&str> = words.iter().skip(1).map(Argument::as_str).collect();
         match words.first().and_then(TaskKind::named) {
-            Some(TaskKind::Gate) => Self::Gate(
-                if rest.contains(&Flag::Full.name().as_str()) {
-                    Depth::Full
-                } else {
-                    Depth::Fast
-                },
-                if rest.contains(&Flag::Owner.name().as_str()) {
-                    Ownership::Owner
-                } else {
-                    Ownership::Agent
-                },
-            ),
+            Some(TaskKind::Gate) => Self::Gate(if rest.contains(&Flag::Full.name().as_str()) {
+                Depth::Full
+            } else {
+                Depth::Fast
+            }),
             Some(TaskKind::Lint) => {
                 Self::Lint(rest.iter().map(|path| RepoPath::new(path)).collect())
             }
@@ -110,7 +100,7 @@ impl Task {
 
 fn perform(root: &Root, task: Task) -> Result<Message, Message> {
     match task {
-        Task::Gate(depth, ownership) => run_gate(root, depth, ownership)
+        Task::Gate(depth) => run_gate(root, depth)
             .map(|()| Message::new("gate: green"))
             .map_err(|failure| Message::new(failure.to_string())),
         Task::Lint(paths) => lint_files(root, &paths).map(|()| Message::new("archlint: clean")),

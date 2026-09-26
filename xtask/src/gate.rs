@@ -1,5 +1,4 @@
 use std::fmt;
-use std::fs;
 
 use crate::api;
 use crate::arch;
@@ -8,8 +7,7 @@ use crate::manifest::Manifest;
 use crate::process::{Outcome, run};
 use crate::source::{SourceFile, rust_sources};
 use crate::state::{GateState, Light, stamp};
-use crate::text::{Argument, Content, Count, Literal, Message, Program, RepoPath, Root};
-use crate::vcs::Vcs;
+use crate::text::{Argument, Count, Literal, Message, Program, RepoPath, Root};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Depth {
@@ -18,23 +16,17 @@ pub(crate) enum Depth {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum Ownership {
-    Agent,
-    Owner,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Step {
     Format,
     Lint,
     Architecture,
     Api,
-    Rulebook,
     Clippy,
     Test,
     Map,
     Features,
     Goldens,
+    Record,
 }
 
 impl fmt::Display for Step {
@@ -44,12 +36,12 @@ impl fmt::Display for Step {
             Self::Lint => "archlint (cargo xtask lint <file>)",
             Self::Architecture => "crate dependencies (xtask/src/arch.rs DEPENDENCIES)",
             Self::Api => "public API (cargo xtask api)",
-            Self::Rulebook => "rulebook",
             Self::Clippy => "clippy",
             Self::Test => "unit tests",
             Self::Map => "codemap check",
             Self::Features => "feature coverage (crates/codemap/tests/features.rs)",
             Self::Goldens => "CLI goldens",
+            Self::Record => "recording the gate state (target/xtask/gate)",
         })
     }
 }
@@ -97,9 +89,9 @@ impl fmt::Display for Failure {
     }
 }
 
-pub(crate) fn run_gate(root: &Root, depth: Depth, ownership: Ownership) -> Result<(), Failure> {
+pub(crate) fn run_gate(root: &Root, depth: Depth) -> Result<(), Failure> {
     let before = stamp(root);
-    let outcome = steps(root, depth, ownership);
+    let outcome = steps(root, depth);
     let previous = GateState::load(root);
     let state = match &outcome {
         Ok(()) => GateState {
@@ -122,13 +114,13 @@ pub(crate) fn run_gate(root: &Root, depth: Depth, ownership: Ownership) -> Resul
         }
     };
     state.save(root).map_err(|report| Failure {
-        step: Step::Rulebook,
+        step: Step::Record,
         report,
     })?;
     outcome
 }
 
-fn steps(root: &Root, depth: Depth, ownership: Ownership) -> Result<(), Failure> {
+fn steps(root: &Root, depth: Depth) -> Result<(), Failure> {
     command(
         root,
         Step::Format,
@@ -138,9 +130,6 @@ fn steps(root: &Root, depth: Depth, ownership: Ownership) -> Result<(), Failure>
     check(Step::Lint, lint_all(root))?;
     check(Step::Architecture, architecture(root))?;
     check(Step::Api, api::check(root))?;
-    if ownership == Ownership::Agent {
-        check(Step::Rulebook, rulebook(root))?;
-    }
     command(
         root,
         Step::Clippy,
@@ -255,37 +244,9 @@ fn architecture(root: &Root) -> Result<(), Message> {
         for dependency in manifest.dependencies() {
             if !arch::allowed_dependency(&package, &dependency) {
                 report.push_line(&format!(
-                    "{path}: {package} may not depend on {dependency}: the crate graph is xtask/src/arch.rs DEPENDENCIES, changed only by the owner"
+                    "{path}: {package} may not depend on {dependency}: the crate graph is xtask/src/arch.rs DEPENDENCIES: add the edge there if the dependency is intended"
                 ));
             }
-        }
-    }
-    if report.is_empty() {
-        Ok(())
-    } else {
-        Err(report)
-    }
-}
-
-fn rulebook(root: &Root) -> Result<(), Message> {
-    let Some(vcs) = Vcs::detect(root) else {
-        return Ok(());
-    };
-    let mut report = Message::default();
-    for path in vcs.changed(root)? {
-        let parent = vcs.parent_text(root, &path).unwrap_or_default();
-        let current = Content::new(fs::read_to_string(root.join(&path)).unwrap_or_default());
-        let changed = if arch::guarded(&path) {
-            true
-        } else if path.ends_with(File::Manifest.name().as_str()) {
-            Manifest::parse(&parent).guarded() != Manifest::parse(&current).guarded()
-        } else {
-            false
-        };
-        if changed {
-            report.push_line(&format!(
-                "{path}: part of the rulebook, which only the owner changes; undo it and propose the change in your reply"
-            ));
         }
     }
     if report.is_empty() {

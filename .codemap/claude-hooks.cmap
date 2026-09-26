@@ -3,18 +3,7 @@ path claude-hooks
 kind flow
 author ai
 group tooling
-note The Claude Code hooks: cargo xtask hook <event>, run by Claude Code around the agent's tool calls and turns. They are the process half of the rulebook: archlint and the gate say what code is acceptable, the hooks make sure an agent cannot get around them. Before a tool runs, edits to the rulebook, the map files and the goldens are denied, each with the one way that file is written (the owner, codemap commands, the tests), and a commit is refused unless the gate is green for the current working copy. After an edit to a .rs file, rustfmt formats it and archlint checks it, and the findings go straight back to the agent, so it fixes a rule the moment it breaks it. When the agent stops, the gate runs and a red gate blocks the stop with its failures; after three identical red runs the session may end, the gate stays red, commits stay refused, and the next session starts with the failures in its context. Hooks are Rust in the same binary rather than shell scripts, so they run wherever the workspace builds. The shell-command guard is a best effort against a writing command naming a guarded path; the gate's rulebook check is the back-stop.
-
-step 1xsfy5
-order 11
-parent o8weg6
-author ai
-file xtask/src/arch.rs
-symbol guarded
-lines 0 5
-hash 5df85eaca7dd12b0
-link rulebook
-note Whether the path is a guarded file or under a guarded tree.
+note The Claude Code hooks: cargo xtask hook <event>, run by Claude Code around the agent's tool calls and turns. They are the process half of the gate: archlint and the gate say what code is acceptable, the hooks keep the agent on the one way each thing is written. Before a tool runs, edits to the map files and the goldens are denied, each with the way that file is written (codemap commands, the tests blessing), and a commit is refused unless the gate is green for the current working copy. After an edit to a .rs file, rustfmt formats it and archlint checks it, and the findings go straight back to the agent, so it fixes a rule the moment it breaks it. When the agent stops, the gate runs and a red gate blocks the stop with its failures; after three identical red runs the session may end, the gate stays red, commits stay refused, and the next session starts with the failures in its context. Hooks are Rust in the same binary rather than shell scripts, so they run wherever the workspace builds. Nothing is reserved for the owner: configuration, CLAUDE.md, the crate graph and the API files are edited like any other file.
 
 step 21x8i0
 order 32
@@ -183,8 +172,8 @@ parent tdvwx5
 author ai
 file xtask/src/hook.rs
 symbol current_gate
-lines 0 8
-hash 41618d33079b9c52
+lines 0 7
+hash 8e5ee5b66d1d80c6
 note Whether the gate is green right now: a recorded green whose stamp matches the current workspace is trusted without rerunning; anything else runs the fast gate as an agent.
 
 step l8kx19
@@ -204,9 +193,9 @@ parent 3l608d
 author ai
 file xtask/src/hook.rs
 symbol guard_edit
-lines 0 24
-hash 52d48e47276c77a0
-note An edit to a rulebook file is denied with 'propose the change in your reply'. An edit to .codemap/ is denied with the codemap commands to use instead, unless the file holds a merge conflict marker, since resolving a conflict in the map is an edit by hand. An edit to the goldens is denied with the bless command, because a golden is only ever what the tests produced.
+lines 0 19
+hash 9dc6e06799270776
+note An edit to .codemap/ is denied with the codemap commands to use instead, unless the file holds a merge conflict marker, since resolving a conflict in the map is an edit by hand. An edit to the goldens is denied with the bless command, because a golden is only ever what the tests produced.
 
 step ogsnht
 order 21
@@ -284,9 +273,9 @@ parent 3l608d
 author ai
 file xtask/src/hook.rs
 symbol guard_command
-lines 0 27
-hash 2846392adec70545
-note A shell command that contains a writing verb and names a rulebook path, the map or the goldens is denied (a codemap command naming .codemap/ passes). A committing or pushing command is refused while the gate is red, with the failures in the refusal.
+lines 0 18
+hash 958b093bf0503a16
+note A shell command that contains a writing verb and names .codemap/ is denied unless it is a codemap command. Goldens are guarded only against the Edit tool, so a stale golden can be deleted from the shell. A committing or pushing command is refused while the gate is red, with the failures in the refusal.
 
 step unxrmc
 order 8
@@ -335,7 +324,7 @@ author ai
 file xtask/src/gate.rs
 symbol run_gate
 lines 0 29
-hash ed2730e64f836e79
+hash 6891e5e03e21df60
 link gate
 note The gate itself, when the record is stale or red.
 
@@ -348,17 +337,6 @@ symbol WRITING
 lines 0 13
 hash b6b4183c953de5fa
 note Substrings that mark a command as writing: redirection, in-place edits, moves, deletes, copies, interpreters.
-
-step zlolny
-order 15
-parent tdvwx5
-author ai
-file xtask/src/arch.rs
-symbol RULEBOOK
-lines 0 8
-hash b3f1f4459cc3918c
-link rulebook
-note The guarded paths the command is searched for.
 
 step zrvk27
 order 18

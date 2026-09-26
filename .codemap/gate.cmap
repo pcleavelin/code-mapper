@@ -3,17 +3,7 @@ path gate
 kind flow
 author ai
 group tooling
-note cargo xtask gate: the single yes/no for whether the working copy is acceptable. Every rule the owner wants held is a step here, run in a fixed order, cheapest first, stopping at the first failure; nothing is done until it is green. It exists so an agent cannot finish or commit code shaped any other way than the one the rules allow: the Stop hook runs it before a session may end, the pre-tool hook runs it before any commit, and each failing step reports in the words of the check that failed, so the agent learns the rule at the moment it breaks it instead of from a document. The steps: rustfmt, archlint, the crate graph, the API lock, the rulebook (agents only), clippy with warnings denied, the unit tests (archlint's fixtures among them), codemap check, the feature coverage test, and with --full the CLI goldens. The GUI goldens need a display and stay out. Every run records its result in the gate state, which the hooks read.
-
-step 0uqdxt
-order 13
-parent 7su02d
-author ai
-file xtask/src/gate.rs
-symbol rulebook
-lines 0 26
-hash 5f89d45cd54a4328
-note Lists the files the working copy changed against the parent revision (jj or git) and fails on any that is part of the rulebook. A whole guarded file or tree counts on any change; a Cargo.toml counts only when its guarded sections ([workspace*], [lints*], [*dependencies]) differ, since an agent may still bump a version or add a feature. This is the back-stop for the pre-tool hook's guards, which a shell command can slip past. The message says to undo it and propose the change instead.
+note cargo xtask gate: the single yes/no for whether the working copy is acceptable. Every rule the repo holds is a step here, run in a fixed order, cheapest first, stopping at the first failure; nothing is done until it is green. It exists so an agent cannot finish or commit code shaped any other way than the one the rules allow: the Stop hook runs it before a session may end, the pre-tool hook runs it before any commit, and each failing step reports in the words of the check that failed, so the agent learns the rule at the moment it breaks it instead of from a document. The steps: rustfmt, archlint, the crate graph, the API lock, clippy with warnings denied, the unit tests (archlint's fixtures among them), codemap check, the feature coverage test, and with --full the CLI goldens. The GUI goldens need a display and stay out. Every run records its result in the gate state, which the hooks read.
 
 step 1hpban
 order 9
@@ -22,8 +12,8 @@ author ai
 file xtask/src/gate.rs
 symbol architecture
 lines 0 26
-hash f4273ea9294f95ef
-note Reads the workspace members from the root manifest and each member's [dependencies] keys, and reports every dependency that is not in arch.rs DEPENDENCIES for that package. The message names the file the graph lives in and that only the owner changes it, so the fix is to propose the edge, not to route around it. Layering is held by the compiler (a crate can only use what it depends on) and this check holds the dependency list itself.
+hash 1202ff4c0e6391b7
+note Reads the workspace members from the root manifest and each member's [dependencies] keys, and reports every dependency that is not in arch.rs DEPENDENCIES for that package. The message names the file the graph lives in, so an intended dependency is added there as an edge, in the same change, rather than routed around. Layering is held by the compiler (a crate can only use what it depends on) and this check holds the dependency list itself.
 
 step 2teaf5
 order 24
@@ -41,7 +31,7 @@ parent 9v0tx0
 author ai
 file xtask/src/gate.rs
 symbol steps
-lines 13 26
+lines 10 23
 hash 99877b623ee95d0a
 note clippy over every target with warnings denied. The workspace's [lints] and clippy.toml's disallowed methods live here: the forms clippy can see (unwrap, indexing, starting a process outside the sanctioned file) are clippy's, archlint takes only what clippy cannot express.
 
@@ -51,7 +41,7 @@ parent 9v0tx0
 author ai
 file xtask/src/gate.rs
 symbol steps
-lines 43 55
+lines 40 52
 hash eae5beaaa3361350
 note Feature coverage: crates/codemap/tests/features.rs checks that every Feature in the registry has its feature-<name> flow path with the handler as its one root, and that a golden scenario triggers it. It reads only the map and the test sources, so it runs in every gate.
 
@@ -77,16 +67,6 @@ hash 5a9a29f828464e9e
 link xtask-io
 note Runs a program in the workspace root and turns a non-zero exit into a Failure for this step, with the program's stdout and stderr as the report.
 
-step 7su02d
-order 12
-parent 9v0tx0
-author ai
-file xtask/src/gate.rs
-symbol steps
-lines 10 12
-hash 2da7f33088921237
-note The rulebook check, skipped with --owner so the owner can run the gate on their own rulebook edit before committing it.
-
 step 9djciy
 order 29
 parent z9ah7m
@@ -103,8 +83,8 @@ parent z9ah7m
 author ai
 file xtask/src/gate.rs
 symbol steps
-lines 0 65
-hash ade5459376e61faa
+lines 0 62
+hash 4bc0d1e7c20a3a3e
 note The steps, in order. Each is either an external command (a Failure carrying its output) or an in-process check (a Failure carrying its Message); the ? after each is what stops the gate at the first red step.
 
 step atfkui
@@ -134,20 +114,9 @@ parent 9v0tx0
 author ai
 file xtask/src/gate.rs
 symbol steps
-lines 37 42
+lines 34 39
 hash 780f594242d5e859
 note codemap check on this repo: the map must have no stale step and no link to a missing path, so code and its only prose stay in step.
-
-step btidx0
-order 15
-parent 0uqdxt
-author ai
-file xtask/src/vcs.rs
-symbol parent_text
-lines 0 14
-hash 714fe5526c88b8e4
-link xtask-io
-note The parent revision's text of one file, empty when it is new.
 
 step d62cya
 order 31
@@ -155,7 +124,7 @@ parent 9v0tx0
 author ai
 file xtask/src/gate.rs
 symbol steps
-lines 56 63
+lines 53 60
 hash e53cfa758a09edcc
 note With --full, the CLI golden transcripts; the finish skill runs this and the GUI scenarios.
 
@@ -177,7 +146,7 @@ author ai
 file xtask/src/gate.rs
 symbol Step
 lines 0 11
-hash fc51067a58a575fb
+hash 16628ae4bcf92fed
 note The gate's steps, one variant each.
 
 step mu0fxx
@@ -228,7 +197,7 @@ parent 9v0tx0
 author ai
 file xtask/src/gate.rs
 symbol steps
-lines 27 36
+lines 24 33
 hash 21fb92eb9978fb7f
 note The unit tests of every binary and library, which include archlint's own fixtures in xtask. --lib is only passed when some crate has a lib.rs, because cargo refuses it otherwise.
 
@@ -242,17 +211,6 @@ lines 0 3
 hash 143240251ee2c05a
 note What a red gate reports: the step it stopped at and that step's output.
 
-step v11pd8
-order 17
-parent 0uqdxt
-author ai
-file xtask/src/manifest.rs
-symbol guarded
-lines 0 11
-hash 74680715bc2bd6d6
-link cargo-manifest
-note The guarded sections of a manifest, compared before and after.
-
 step v72dlp
 order 26
 parent mgn3jd
@@ -260,7 +218,7 @@ author ai
 file xtask/src/gate.rs
 symbol impl fmt::Display for Step
 lines 0 15
-hash f334596f40a5b6d3
+hash 524c6a16252cfe88
 note Each step's description names the command that reproduces it (cargo fmt --all, cargo xtask lint <file>, cargo xtask api) or the file that holds its rule, so a failure says how to check the fix.
 
 step vunl8x
@@ -274,45 +232,13 @@ hash 0b258c76567c2cf7
 link rulebook
 note The API lock: every library crate's public items must match its recorded api/<crate>.api.
 
-step witbsf
-order 14
-parent 0uqdxt
-author ai
-file xtask/src/vcs.rs
-symbol changed
-lines 0 37
-hash 3c994f0def928002
-link xtask-io
-note The changed files: jj diff --name-only, or git diff against HEAD plus untracked files.
-
-step xptof3
-order 30
-parent z9ah7m
-author ai
-file xtask/src/gate.rs
-symbol Ownership
-lines 0 3
-hash b2a6a0b766a3fa60
-note Agent (the default, what the hooks run) or Owner, which skips the rulebook check.
-
-step xqhv5r
-order 16
-parent 0uqdxt
-author ai
-file xtask/src/arch.rs
-symbol guarded
-lines 0 5
-hash 5df85eaca7dd12b0
-link rulebook
-note Whether a path is a guarded file or under a guarded tree.
-
 step z9ah7m
 order 0
 author ai
 file xtask/src/gate.rs
 symbol run_gate
 lines 0 29
-hash ed2730e64f836e79
+hash 6891e5e03e21df60
 note Runs the steps and records the outcome. The workspace stamp is taken before the steps run, so an edit made while the gate runs makes the recorded green stale. A red result counts how many runs in a row failed with the identical report; the Stop hook uses that count to let a stuck session go. A failure to save the state is reported as a rulebook failure.
 
 step zakvb7
@@ -323,4 +249,4 @@ file xtask/src/gate.rs
 symbol steps
 lines 8 8
 hash e7bee9fed69386c5
-note The crate graph: every Cargo.toml dependency must be an edge the owner listed.
+note The crate graph: every Cargo.toml dependency must be an edge listed in arch.rs DEPENDENCIES.

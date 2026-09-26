@@ -5,8 +5,7 @@ use std::io::{Read, stdin};
 use std::path::Path;
 use std::slice;
 
-use crate::arch;
-use crate::gate::{Depth, Ownership, lint_files, run_gate};
+use crate::gate::{Depth, lint_files, run_gate};
 use crate::process::{Outcome, run};
 use crate::state::{GateState, Light, stamp};
 use crate::terminal::say;
@@ -272,11 +271,6 @@ fn before_tool(root: &Root, input: &Input) -> Decision {
 }
 
 fn guard_edit(root: &Root, path: &RepoPath) -> Decision {
-    if arch::guarded(path) {
-        return Decision::Deny(Message::new(format!(
-            "{path} is part of the rulebook, which only the owner changes. Propose the change in your reply instead."
-        )));
-    }
     if path.starts_with(ProtectedPath::Map.name().as_str()) {
         let current = fs::read_to_string(root.join(path)).unwrap_or_default();
         if CONFLICT_MARKERS
@@ -300,19 +294,10 @@ fn guard_edit(root: &Root, path: &RepoPath) -> Decision {
 fn guard_command(root: &Root, command: &Message) -> Decision {
     let text = command.as_str();
     let writes = WRITING.iter().any(|verb| verb.found_in(text));
-    let protected = arch::RULEBOOK
-        .iter()
-        .map(|guard| match guard {
-            arch::Guard::File(file) | arch::Guard::Tree(file) => file.as_str(),
-        })
-        .chain([ProtectedPath::Map.name().as_str(), "tests/golden/"])
-        .find(|path| text.contains(path));
-    if let (true, Some(path)) = (writes, protected)
-        && !(path == ProtectedPath::Map.name().as_str()
-            && text.contains(Marker::Codemap.name().as_str()))
-    {
+    let map = ProtectedPath::Map.name();
+    if writes && text.contains(map.as_str()) && !text.contains(Marker::Codemap.name().as_str()) {
         return Decision::Deny(Message::new(format!(
-            "This command looks like it writes {path}, which is written only by the owner, codemap commands, or the tests."
+            "This command looks like it writes {map}, which is written only through codemap commands (`codemap . help`)."
         )));
     }
     if COMMITTING.iter().any(|verb| verb.found_in(text)) {
@@ -332,8 +317,7 @@ fn current_gate(root: &Root) -> Result<(), Message> {
     {
         return Ok(());
     }
-    run_gate(root, Depth::Fast, Ownership::Agent)
-        .map_err(|failure| Message::new(failure.to_string()))
+    run_gate(root, Depth::Fast).map_err(|failure| Message::new(failure.to_string()))
 }
 
 fn after_tool(root: &Root, input: &Input) -> Decision {

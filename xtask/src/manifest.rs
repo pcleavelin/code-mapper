@@ -10,10 +10,6 @@ impl Section {
     fn new(header: &str) -> Self {
         Self(header.trim().to_owned())
     }
-
-    pub(crate) fn as_str(&self) -> &str {
-        &self.0
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -43,35 +39,6 @@ impl Suffix {
     const fn name(self) -> Literal {
         match self {
             Self::Glob => Literal::new("/*"),
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Header {
-    Workspace,
-    Lints,
-    Dependencies,
-    DevDependencies,
-    BuildDependencies,
-}
-
-impl Header {
-    const ALL: [Self; 5] = [
-        Self::Workspace,
-        Self::Lints,
-        Self::Dependencies,
-        Self::DevDependencies,
-        Self::BuildDependencies,
-    ];
-
-    const fn name(self) -> Literal {
-        match self {
-            Self::Workspace => Literal::new("[workspace"),
-            Self::Lints => Literal::new("[lints"),
-            Self::Dependencies => Literal::new("[dependencies"),
-            Self::DevDependencies => Literal::new("[dev-dependencies"),
-            Self::BuildDependencies => Literal::new("[build-dependencies"),
         }
     }
 }
@@ -143,19 +110,6 @@ impl Manifest {
             }
         }
         out
-    }
-
-    pub(crate) fn guarded(&self) -> BTreeMap<Section, Vec<Message>> {
-        self.sections
-            .iter()
-            .filter(|(section, _)| {
-                let name = section.as_str();
-                Header::ALL
-                    .iter()
-                    .any(|header| name.starts_with(header.name().as_str()))
-            })
-            .map(|(section, lines)| (section.clone(), lines.clone()))
-            .collect()
     }
 
     fn keys(&self, header: Literal) -> Vec<CrateName> {

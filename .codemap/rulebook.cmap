@@ -3,17 +3,7 @@ path rulebook
 kind type
 author ai
 group tooling
-note The rulebook as data: what only the owner decides, written as constants in xtask so every rule that depends on it reads the same list. The crate graph (DEPENDENCIES) is every dependency each package may have; the gate fails on any other, so layering is decided here and enforced by the compiler. The sanctioned exceptions (EXPECTS) are every lint suppression in the repo, by file and lint; archlint fails on a suppression that is not listed, so an exception is always one visible line the owner added. The owner-only files (RULEBOOK) are guarded three ways: the pre-tool hook denies edits and writing commands, and the gate fails on any change to them in the working copy. Also here: which rules run in test code, and which files are the scenario tables. The API lock (api.rs) records each library crate's public items in api/<crate>.api; the gate fails when the code's surface differs, so a change to a crate's API is always a visible diff, and the io crates' .api files are themselves rulebook, so a new way to reach outside the program needs the owner.
-
-step 3l32n9
-order 1
-parent vbuajw
-author ai
-file xtask/src/arch.rs
-symbol Guard
-lines 0 3
-hash ca8591676d1df1e2
-note A guard is one file or every file under a prefix.
+note The repo's rules as data, written as constants in xtask so every rule that depends on them reads the same list. The crate graph (DEPENDENCIES) is every dependency each package may have; the gate fails on any other, so layering is decided here and enforced by the compiler. The sanctioned exceptions (EXPECTS) are every lint suppression in the repo, by file and lint. The API lock records each library crate's public surface so a change to it shows in the diff.
 
 step 5hvo01
 order 13
@@ -150,16 +140,6 @@ lines 0 4
 hash 19bfb53d3c8a130b
 note Whether a file may expect a lint.
 
-step uus3q9
-order 2
-parent vbuajw
-author ai
-file xtask/src/arch.rs
-symbol guarded
-lines 0 5
-hash 5df85eaca7dd12b0
-note Whether a path is guarded.
-
 step v9spt4
 order 3
 author ai
@@ -168,15 +148,6 @@ symbol DEPENDENCIES
 lines 0 118
 hash e8d821fa7decb691
 note The crate graph: for each package, the crates it may depend on, workspace crates and external ones alike. domain, io-process, io-store, features and ui depend on nothing; each io crate on domain and at most one lower io crate and its one external library; index, cli, gui and codemap stack on top.
-
-step vbuajw
-order 0
-author ai
-file xtask/src/arch.rs
-symbol RULEBOOK
-lines 0 8
-hash b3f1f4459cc3918c
-note The owner-only files and trees: clippy.toml, rustfmt.toml, .gitattributes, .cargo/config.toml, .claude/settings.json, the io crates' API files and CLAUDE.md. The guarded sections of every Cargo.toml are rulebook too, checked by the gate separately.
 
 step wnqjal
 order 6
