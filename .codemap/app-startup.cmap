@@ -92,7 +92,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol select_path
 lines 0 9
-hash e026ad68c7ae2fbb
+hash 76ddeee19ae30401
 note The first path is opened and its first step selected, so the window lands on a document rather than on an empty frame.
 
 step jg0upl
@@ -181,8 +181,8 @@ parent pucdnk
 author ai
 file crates/gui/src/model.rs
 symbol new
-lines 0 36
-hash 3e19d04571abc081
+lines 0 38
+hash ecf82e51e0f7e260
 note The Model is built around the index, the map and its store, with every panel in its default state (Nav on the Path tab, the default panel tree, empty fields). The map's stamp is taken here, so the once-a-second disk poll starts out knowing the map as it was read.
 
 step yzu1mn

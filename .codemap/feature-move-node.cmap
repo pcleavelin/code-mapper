@@ -51,7 +51,7 @@ parent lv2myh
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_click
-lines 52 52
+lines 65 65
 hash 2579f41bd40a9db5
 note A press on a node's body grabs it without selecting.
 
@@ -61,6 +61,6 @@ parent lv2myh
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_click
-lines 26 35
+lines 39 48
 hash 85d668ed55b65115
 note A press on a node's header grabs the node, and defers selecting it: SelectStep for a step of the drawn path, Focus for any other node. HoldLook stops that selection from re-centring the camera on the node being dragged.

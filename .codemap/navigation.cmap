@@ -10,9 +10,9 @@ order 14
 author ai
 file crates/gui/src/nav.rs
 symbol step_removed
-lines 0 21
-hash 214878c7f891d903
-note Removing a step shifts the slot of every step after it in that path: the step views and every history entry of the path follow, and the removed step's own entries lose their step, so back never lands on the wrong step.
+lines 0 6
+hash f76e1f250dadf7bf
+note Removing a step shifts the slot of every step after it in that path. steps_moved does the remapping for any change of slots: the step views and every history entry of the path follow, and the removed step's own entries lose their step, so back never lands on the wrong step.
 
 step 3ig36u
 order 13
@@ -58,8 +58,8 @@ order 12
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 0 35
-hash 7e632512b7fef589
+lines 0 40
+hash 0443d40228100319
 note The keys, read in the frame before the tree is built and turned into actions: the Save chord, back and forward, every field fed the frame's edits and typed text, and up and down walking the path when no field has the keyboard. Which chord does what comes from the feature registry through keys.
 
 step 5wentz
@@ -88,8 +88,8 @@ parent gq28ix
 author ai
 file crates/gui/src/nav.rs
 symbol select_step
-lines 0 52
-hash 1b842c90bf50f8bc
+lines 0 53
+hash 4970f05ff13c3c88
 note A place that had a step is restored through the normal step selection, so the document scrolls and the graph follows exactly as if it had been clicked.
 
 step gq28ix

@@ -21,8 +21,8 @@ parent q1l62e
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 13 15
-hash e8d389049de09e7f
+lines 13 20
+hash d4da65bf6ddde953
 note Trigger: the keys phase hands the frame's edits and typed text to the search field among the others.
 
 step igzyv8
@@ -61,7 +61,7 @@ parent f1ux4a
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 18
-hash 807c20a6d2bfc6a0
+lines 0 21
+hash 74bf56c206047b3e
 link feature-new-path
 note The search field keeps its text on enter and marks it whole; a submitted line runs search.

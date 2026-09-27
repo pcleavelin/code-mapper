@@ -12,7 +12,7 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol gui_scenarios
 lines 0 4
-hash 66ae994909445bdd
+hash 7699eb0b2afdbb2e
 note The GUI scenarios, listed once in the gui_scenarios macro that gui.rs and parity.rs both expand. Each settles with SETTLE first; its golden gui-<fn> is the kept dump state followed by the output of its after commands.
 
 step 1wrmiq
@@ -72,8 +72,8 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol listing
 lines 0 59
-hash 1cada286cde9fb66
-note The listing: opening a file at a line, a shift-click range selection pinned into startup (checked by the after command), goto-line with good, past-the-end and non-numeric input, the tooltip, ctrl-click, and back and forward by button and by key.
+hash f3a217be432cbca0
+note The listing: opening a file at a line, a shift-click range selection added to startup with 'add step' (checked by the after command), goto-line with good, past-the-end and non-numeric input, the tooltip, ctrl-click, and back and forward by button and by key.
 
 step 5wnr0m
 order 30
@@ -179,8 +179,8 @@ parent h9vmup
 author ai
 file crates/codemap/tests/features.rs
 symbol graph_button
-lines 0 8
-hash 93d13d35f6449227
+lines 0 9
+hash 771448aced753e79
 note The graph node buttons, which scripts click by the label a dump prints rather than by id.
 
 step bqbhzd
@@ -501,8 +501,8 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol panels
 lines 0 88
-hash e4b1e5e6fef043b2
-note The side panels and command line: the symbol list and its filter, the file tree and a folder toggle, the paths list, search and a hit, commands typed into the command line (with a bad one and clear), a new path from the field, a pin from the listing, and ctrl-s to save.
+hash 4293415277ca4c91
+note The side panels and command line: the symbol list and its filter, the file tree and a folder toggle, the paths list, search and a hit, commands typed into the command line (with a bad one and clear), a new path from the Paths tab's form, an 'add step' from the listing, and ctrl-s to save.
 
 step rlmca4
 order 29
@@ -561,6 +561,16 @@ symbol reload
 lines 0 22
 hash 317c21afeb0c1ebf
 note Live reload: a source edit and a map edit made from outside while the window is open, each followed by the reloaded view.
+
+step wuv6gp
+order 63
+parent 1hmv7q
+author ai
+file crates/codemap/tests/common/gui.rs
+symbol authoring
+lines 0 101
+hash 57d19847dfc1dfbb
+note The GUI authoring gestures on a fresh path: the new-path form (an empty name refused, kind and group chosen), '+ step' from Symbols and Xrefs (a repeat refused), the target strip's 'top level', 'add step' from the listing, '+ step' on an off-path graph node, three outline drags (under, before, under), 'new path from it', and a save; the after command prints the resulting path.
 
 step wv4hxm
 order 17

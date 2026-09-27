@@ -11,7 +11,7 @@ parent f1nrga
 author ai
 file crates/gui/src/views/left.rs
 symbol paths_window
-lines 28 45
+lines 30 47
 hash ee2defe1363a7b0d
 note The effect in the list: a closed group sets closed_at to its depth and every following row deeper than that is skipped.
 

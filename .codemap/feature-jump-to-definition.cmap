@@ -131,7 +131,7 @@ parent 7x9zhl
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_click
-lines 36 51
+lines 49 64
 hash 69cc41c96fbf5f8a
 note Trigger on a graph node's code line: the same gestures, with the column computed from the node's line rectangle; the Definition action is deferred to the graph tab's frame.
 

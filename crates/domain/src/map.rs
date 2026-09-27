@@ -315,27 +315,38 @@ impl Map {
         other: &StepId,
     ) -> Result<Changed, MapError> {
         let path = self.path_mut(name)?;
-        let steps = path.steps_mut();
-        let first = steps
-            .iter()
-            .position(|step| step.id() == one)
-            .ok_or_else(|| missing_step(name, one))?;
-        let second = steps
-            .iter()
-            .position(|step| step.id() == other)
-            .ok_or_else(|| missing_step(name, other))?;
-        let orders = steps
-            .get(first)
-            .map(Step::order)
-            .zip(steps.get(second).map(Step::order));
-        steps.swap(first, second);
-        if let Some((first_order, second_order)) = orders {
-            if let Some(step) = steps.get_mut(first) {
-                step.set_order(first_order);
+        for id in [one, other] {
+            path.step(id).ok_or_else(|| missing_step(name, id))?;
+        }
+        swap_places(path.steps_mut(), one, other);
+        Ok(Changed)
+    }
+
+    pub fn place(
+        &mut self,
+        name: &PathName,
+        step: &StepId,
+        parent: Option<&StepId>,
+        before: Option<&StepId>,
+    ) -> Result<Changed, MapError> {
+        let _reparented = self.reparent(name, step, parent)?;
+        let steps = self.path_mut(name)?.steps_mut();
+        let position = |id: &StepId| steps.iter().position(|other| other.id() == id);
+        let mut at = position(step).ok_or_else(|| missing_step(name, step))?;
+        let wanted = match before.filter(|before| *before != step) {
+            Some(before) => {
+                let found = position(before).ok_or_else(|| missing_step(name, before))?;
+                if found > at { found - 1 } else { found }
             }
-            if let Some(step) = steps.get_mut(second) {
-                step.set_order(second_order);
-            }
+            None => steps.len().saturating_sub(1),
+        };
+        while at != wanted {
+            let next = if at < wanted { at + 1 } else { at - 1 };
+            let Some(neighbour) = steps.get(next).map(|other| other.id().clone()) else {
+                break;
+            };
+            swap_places(steps, step, &neighbour);
+            at = next;
         }
         Ok(Changed)
     }
@@ -502,6 +513,26 @@ fn missing_step(name: &PathName, step: &StepId) -> MapError {
         path: name.clone(),
         step: step.clone(),
     })
+}
+
+fn swap_places(steps: &mut [Step], one: &StepId, other: &StepId) {
+    let position = |id: &StepId| steps.iter().position(|step| step.id() == id);
+    let (Some(first), Some(second)) = (position(one), position(other)) else {
+        return;
+    };
+    let orders = steps
+        .get(first)
+        .map(Step::order)
+        .zip(steps.get(second).map(Step::order));
+    steps.swap(first, second);
+    if let Some((first_order, second_order)) = orders {
+        if let Some(step) = steps.get_mut(first) {
+            step.set_order(first_order);
+        }
+        if let Some(step) = steps.get_mut(second) {
+            step.set_order(second_order);
+        }
+    }
 }
 
 struct Pinned {

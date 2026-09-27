@@ -30,8 +30,8 @@ parent piucd2
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_click
-lines 12 25
-hash a9762fb126d87ae8
+lines 12 38
+hash 09637e6a41b8a2f4
 note Above, Below and NoContext buttons become Widen and Narrow; Preview becomes ToggleCollapsed.
 
 step hfol4v

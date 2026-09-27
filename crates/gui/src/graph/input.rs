@@ -8,7 +8,8 @@ use ui::{
 
 use crate::action::Action;
 use crate::app::App;
-use crate::graph::build::{self, Built, CellPoint};
+use crate::authoring::{Authoring, Hang};
+use crate::graph::build::{self, Built, CellPoint, Origin};
 use crate::graph::scene::{self, Drawn, Metrics, Scene, SceneInput};
 use crate::graph::{Button, Drag, Expansion, GraphState, Hit, HitRect, Node, Side, Wish};
 use crate::grid::GUTTER;
@@ -277,6 +278,19 @@ impl App {
                     if let Some(range) = self.model.graph.built.range(node) {
                         deferred.push(Action::GoTo(node.symbol.file(), range.start()));
                     }
+                }
+                Button::Add => {
+                    let hang = match self.model.graph.built.origin.get(&node) {
+                        Some(Origin {
+                            from:
+                                Node {
+                                    step: Some(step), ..
+                                },
+                            side: Side::Callees,
+                        }) => Hang::Under(*step),
+                        _ => Hang::Target,
+                    };
+                    deferred.push(Action::Authoring(Authoring::AddSymbol(node.symbol, hang)));
                 }
                 Button::Callees => self.graph(GraphAction::Toggle(node, Side::Callees)),
                 Button::Callers => self.graph(GraphAction::Toggle(node, Side::Callers)),

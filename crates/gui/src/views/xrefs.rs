@@ -1,9 +1,10 @@
 use std::rc::Rc;
 
-use domain::{Backend, Line, Location, SourceFile, Symbol};
+use domain::{Backend, Line, Location, SourceFile, Symbol, SymbolId};
 use ui::{Canvas, Color, Count, Extent, Grid, Icon, Label, Point, Px, Rect, Run, Size};
 
 use crate::action::Action;
+use crate::authoring::{Authoring, Hang};
 use crate::ids;
 use crate::model::Model;
 use crate::peek::{Peek, Probe};
@@ -13,7 +14,7 @@ use crate::theme::{
     CLOSE_BUTTON, FIELD, PEEK_EXTRA, PEEK_LEAST, PEEK_PLACE_ROOM, PEEK_TITLE, PENDING, PIXEL,
     SLICE, TEXT, WEAK,
 };
-use crate::widgets::{Chosen, CodeBlock, Container, Frame, Marks, Scroller, Width};
+use crate::widgets::{Chosen, CodeBlock, Container, Frame, Marks, RowAction, Scroller, Width};
 
 enum Body {
     Inside {
@@ -233,24 +234,69 @@ fn heading(frame: &mut Frame<'_>, symbol: &Symbol, file: &SourceFile) {
     frame.finish();
 }
 
+fn focus_actions(model: &Model, frame: &mut Frame<'_>, symbol: SymbolId) {
+    let on_step = model
+        .nav
+        .step_key()
+        .and_then(|key| model.step(key))
+        .and_then(domain::Step::resolved_symbol)
+        == Some(symbol);
+    frame.start(Container::ToolbarSmall);
+    if model.nav.path().is_some()
+        && !on_step
+        && frame
+            .small_button("add step", ids::ADD_FOCUS.target())
+            .clicked()
+    {
+        frame.push(Action::Authoring(Authoring::AddSymbol(
+            symbol,
+            Hang::Target,
+        )));
+    }
+    if frame
+        .small_button("new path from it", ids::PROMOTE_FOCUS.target())
+        .clicked()
+    {
+        frame.push(Action::Authoring(Authoring::Promote(symbol)));
+    }
+    frame.finish();
+}
+
 fn call_lists(model: &Model, frame: &mut Frame<'_>, symbol: &Symbol, dimmed: Color) {
     let pending = dimmed == PENDING;
-    for (title, list, id) in [
-        ("Xrefs to", symbol.callers(), ids::CALLER_ROW),
-        ("Xrefs from", symbol.callees(), ids::CALLEE_ROW),
+    let adding = model.nav.path().is_some();
+    for (title, list, id, add) in [
+        (
+            "Xrefs to",
+            symbol.callers(),
+            ids::CALLER_ROW,
+            ids::ADD_CALLER,
+        ),
+        (
+            "Xrefs from",
+            symbol.callees(),
+            ids::CALLEE_ROW,
+            ids::ADD_CALLEE,
+        ),
     ] {
         frame.label(format!("{title} ({})", list.len()), WEAK);
         for (position, other) in list.iter().enumerate() {
             let described = cli::symbol_label(&model.index, *other);
-            if frame
-                .row(
-                    vec![Run::new(described.as_str(), dimmed)],
-                    id.nth(Count::new(position)),
-                    Chosen::Plain,
-                )
-                .clicked()
-                && !pending
-            {
+            let clicks = frame.row_with_action(
+                vec![Run::new(described.as_str(), dimmed)],
+                id.nth(Count::new(position)),
+                None,
+                adding.then(|| RowAction::add_step(add.nth(Count::new(position)))),
+            );
+            if pending {
+                continue;
+            }
+            if clicks.acted() {
+                frame.push(Action::Authoring(Authoring::AddSymbol(
+                    *other,
+                    Hang::Target,
+                )));
+            } else if clicks.row.clicked() {
                 frame.push(Action::Focus(*other));
             }
         }
@@ -321,6 +367,7 @@ pub(super) fn xrefs_panel(model: &Model, frame: &mut Frame<'_>, area: Extent) {
         asked = true;
     }
     heading(frame, symbol, file);
+    focus_actions(model, frame, current);
     frame.scroll_column(
         ids::xrefs(),
         model.scrolls.get(ids::xrefs()),

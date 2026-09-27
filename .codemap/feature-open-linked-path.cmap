@@ -12,7 +12,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol select_path
 lines 0 9
-hash e026ad68c7ae2fbb
+hash 76ddeee19ae30401
 link selection
 note The linked path becomes current with its first step selected and scrolled to.
 

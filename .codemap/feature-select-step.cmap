@@ -30,9 +30,9 @@ order 0
 author ai
 file crates/gui/src/nav.rs
 symbol select_step
-lines 0 52
-hash 1b842c90bf50f8bc
-note The handler. Records the path and step, unfolds every folded ancestor so the step is visible, then points file, lines and focus at the step. A step whose symbol resolves focuses that symbol; a bare line slice focuses the symbol enclosing its first line. Scrolling::Scroll leaves a ticketed request that the document answers once the header is laid out.
+lines 0 53
+hash 4970f05ff13c3c88
+note The handler. Records the path and step and makes the step the target added steps hang under, unfolds every folded ancestor so the step is visible, then points file, lines and focus at the step. A step whose symbol resolves focuses that symbol; a bare line slice focuses the symbol enclosing its first line. Scrolling::Scroll leaves a ticketed request that the document answers once the header is laid out.
 
 step c1bc11
 order 3
@@ -50,9 +50,9 @@ parent 9c84zs
 author ai
 file crates/gui/src/views/left.rs
 symbol outline
-lines 51 60
-hash d7118878548ab4fa
-note Trigger in the outline: every row is an OUTLINE_ROW numbered by step slot, marked when it is the selection or the topmost step visible in the document. A click queues SelectStep with Scrolling::Scroll.
+lines 55 66
+hash d021d22448bafd2c
+note Trigger in the outline: every row is an OUTLINE_ROW numbered by step slot, marked when it is the selection or the topmost step visible in the document. A click queues SelectStep with Scrolling::Scroll and GrabStep, which becomes a drag when the pointer travels (feature-move-step).
 
 step moet1y
 order 2

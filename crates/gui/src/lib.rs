@@ -1,5 +1,6 @@
 mod action;
 mod app;
+mod authoring;
 mod dump;
 mod field;
 mod graph;

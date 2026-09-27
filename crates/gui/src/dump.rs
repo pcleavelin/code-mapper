@@ -13,6 +13,7 @@ use crate::nav::Nav;
 use crate::panels::Panels;
 use crate::peek::Peek;
 use crate::status::Status;
+use crate::text::Tag;
 use crate::work::{Services, WorkState};
 
 #[derive(Default)]
@@ -97,6 +98,22 @@ impl Dump for Nav {
             Optional(file),
             Optional(selection)
         ));
+        let model = context.model;
+        if self.target() != self.step() || model.step_grab.is_some() || model.new_path.is_some() {
+            let grab = model.step_grab.map(|grab| {
+                format!(
+                    "{}{}",
+                    grab.key.step,
+                    if grab.is_moving() { " moving" } else { "" }
+                )
+            });
+            lines.line(format_args!(
+                "authoring target={} grab={} new_path={}",
+                Optional(self.target()),
+                Optional(grab),
+                Optional(model.new_path.map(Tag::kind))
+            ));
+        }
     }
 }
 

@@ -180,6 +180,7 @@ map::pub fn pin( &mut self, index: &Index, name: &PathName, step: &StepId, file:
 map::pub fn set_link( &mut self, name: &PathName, step: &StepId, target: Option<PathName>, ) -> Result<Changed, MapError>
 map::pub fn reparent( &mut self, name: &PathName, step: &StepId, parent: Option<&StepId>, ) -> Result<Changed, MapError>
 map::pub fn swap( &mut self, name: &PathName, one: &StepId, other: &StepId, ) -> Result<Changed, MapError>
+map::pub fn place( &mut self, name: &PathName, step: &StepId, parent: Option<&StepId>, before: Option<&StepId>, ) -> Result<Changed, MapError>
 map::pub fn remove_step(&mut self, name: &PathName, step: &StepId) -> Result<Step, MapError>
 map::pub fn remove_path(&mut self, name: &PathName) -> Result<Path, MapError>
 map::pub fn promote( &mut self, index: &Index, root: SymbolId, depth: Depth, name: Option<PathName>, author: Author, ) -> Result<PathName, MapError>

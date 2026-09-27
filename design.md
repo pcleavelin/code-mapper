@@ -16,8 +16,9 @@ start of a session and by the owner when deciding what to build next.
   paths the change touched, what the new code is for, how the pieces relate. Its
   interface is the CLI.
 - **The human** reads the map to understand what was built, and uses the same tool to
-  browse the codebase in general (files, grep, symbols, xrefs). Hand-authoring paths is
-  possible but rare. Its interface is the GUI.
+  browse the codebase in general (files, grep, symbols, xrefs). The human also builds
+  paths by hand: where code is shown, it can be added to the path being read, and the
+  outline rearranges by dragging. Its interface is the GUI.
 
 ## 2. Goals
 
@@ -112,7 +113,7 @@ is in at most one panel. The default tree:
 
 | Panel | Views |
 |---|---|
-| Left, tabs | **Paths**: the groups as folders, each with the number of paths under it and red when one of them is stale, then the paths outside any group; every path with kind, author tag and stale count. A group is closed until the path being read is in it, and a click opens or closes it. The selected path expanded into its **outline**, one row per step with hierarchical number (1, 1.2, 1.2.3), symbol and file, a hidden count on folded subtrees. The topmost step visible in the document is highlighted and the outline scrolls to keep it in view. Clicking a row selects the step. **Symbols**: filterable table with kind, file, line, covered. **Files**: a tree of the indexed files with covered/total per file. |
+| Left, tabs | **Paths**: the groups as folders, each with the number of paths under it and red when one of them is stale, then the paths outside any group; every path with kind, author tag and stale count. A group is closed until the path being read is in it, and a click opens or closes it. The selected path expanded into its **outline**, one row per step with hierarchical number (1, 1.2, 1.2.3), symbol and file, a hidden count on folded subtrees. The topmost step visible in the document is highlighted and the outline scrolls to keep it in view. Clicking a row selects the step; dragging it moves the step (see Authoring). A 'new path' button beside the filter creates a path. **Symbols**: filterable table with kind, file, line, covered. **Files**: a tree of the indexed files with covered/total per file. |
 | Centre, tabs | **Path** document, below. **Diff**: the map against the parent revision's, every added, removed or changed path, click to read. **Graph**: the selection as a left-to-right tree, below. **Listing**: the file viewer with line numbers, anchor bars, and go-to-line. **Results**: grep output. In the document and the listing, double-click or ctrl-click an identifier to jump to its definition. |
 | Right | **Xrefs** for the selected symbol. |
 | Bottom | **Output**: runs the same commands as the CLI. |
@@ -183,9 +184,37 @@ derived, never accumulated: the selection plus an ordered list of expansions. La
 reruns every frame until the user drags a node. The camera moves only on explicit
 navigation, never on an edit.
 
-Editing in the GUI is limited to what a reader needs: delete a step or a path, and pin
-a selection from the listing when hand-authoring. `roots` and `promote`
-are CLI commands and run from the output panel.
+**Authoring.** The path being read is the one steps are added to, and the **target** says
+where in it: under the step last selected, or at the top level. Selecting a step sets the
+target; moving the selection off the path (a symbol in Symbols, Xrefs or the graph) leaves
+it, so a reader can collect several symbols under one step. The Listing and Symbols views
+show the target in a strip ("adds to startup under 1.2 fill") with a 'top level' button,
+and the outline marks the target row. Ways to add, all authored by the human:
+
+- The Listing's 'add step' adds the selected lines.
+- '+ step' on a Symbols row, on an Xrefs caller or callee row, or 'add step' under the
+  Xrefs heading adds that symbol whole.
+- '+ step' on an off-path graph node adds its symbol under the step it was revealed from
+  as a callee, else under the target.
+
+Adding the same lines under the same parent again is refused and names the step. Adding
+does not move the selection or the target, so the next add lands beside the last one.
+
+The Paths tab's 'new path' button opens a form: a name, the kind (flow, layer, type), the
+group (filled with the group of the path being read), and 'create' (or enter in either
+field). 'new path from it' under the Xrefs heading runs `promote` on the selected symbol
+at depth 1 and opens the result.
+
+Dragging an outline row moves the step with its subtree: onto the middle of another row
+hangs it under that step as its last child; onto the top or bottom quarter places it just
+before or after that step among its siblings. A band shows the drop while dragging;
+letting go outside a row cancels. Siblings called from the parent's lines keep the code's
+order whatever the list order says, so a drag reorders only siblings the parent does not
+call.
+
+Deleting a step or a path is in the document. Notes, links, kind and group changes are
+written through the command line in the Output view until the UI grows a text editor;
+`roots` also runs there.
 
 If a file in `.codemap/` changed on disk and there are no unsaved edits, it reloads. If any
 indexed source file changed, it re-indexes and carries the graph over by

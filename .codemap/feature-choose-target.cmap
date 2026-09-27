@@ -1,0 +1,65 @@
+codemap 8
+path feature-choose-target
+kind flow
+author ai
+group features/gui
+note Steps added from the Listing, Symbols or Xrefs hang under the target: the step last selected in the path being read. The Listing and Symbols views show it in a strip under their toolbars ('adds to startup under 1.2 fill') and the Paths outline marks its row '+ adds here'. Press 'top level' in the strip and added steps go at the top level of the path instead, until a step is selected again. Moving the selection off the path (a symbol in Symbols, Xrefs or the graph) leaves the target where it was, which is what lets a reader collect several symbols under one step.
+
+step 9wotic
+order 1
+parent dclwsq
+author ai
+file crates/gui/src/nav.rs
+symbol add_at_top_level
+lines 0 2
+hash ad004437d15bfa9d
+note The Nav's target is private to nav.rs; this is the one way to clear it besides a path change.
+
+step d50mxl
+order 3
+parent hrvwma
+author ai
+file crates/gui/src/authoring.rs
+symbol target_under
+lines 0 5
+hash 4cf6a29a21e44671
+note What the strip and every add read: the target while it is a step of the path being read.
+
+step dclwsq
+order 0
+author ai
+file crates/gui/src/authoring.rs
+symbol add_at_top_level
+lines 0 6
+hash df43a8dc1dd24f7a
+note The handler: the target goes to the top level, and the status says so for the path being read.
+
+step gcovuo
+order 4
+parent dclwsq
+author ai
+file crates/gui/src/nav.rs
+symbol select_step
+lines 0 4
+hash 2fd732e2ea2f45ce
+note Where the target is set: selecting a step makes it the target. select_path with no step, path_created and forget_path clear it; steps_moved shifts it with its step.
+
+step hrvwma
+order 2
+parent dclwsq
+author ai
+file crates/gui/src/views/authoring.rs
+symbol target_strip
+lines 0 34
+hash 052aea45446863f8
+note Trigger and display: the strip under the Listing and Symbols toolbars names the path and the target ('under 1.2 fill' or 'at the top level'), and its 'top level' button (target-top) queues AddAtTopLevel. With no path being read it says to open one.
+
+step nioly0
+order 5
+parent dclwsq
+author ai
+file crates/gui/src/views/authoring.rs
+symbol target_mark
+lines 0 2
+hash d61202146974db00
+note The outline's '+ adds here' after the target row.

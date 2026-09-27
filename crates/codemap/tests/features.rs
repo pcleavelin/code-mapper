@@ -115,6 +115,7 @@ fn graph_button(element: &str) -> Option<&'static str> {
         "node-context" => Some("'[more-below]"),
         "node-listing" => Some("'listing"),
         "node-preview" => Some("'less"),
+        "node-add" => Some("'+ step"),
         _ => None,
     }
 }

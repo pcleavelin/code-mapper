@@ -1,10 +1,8 @@
-use domain::{
-    Author, Column, FileId, GroupName, Language, Line, LineCount, PathKind, PathName, Span,
-    SymbolId,
-};
+use domain::{Author, Column, FileId, GroupName, Language, Line, LineCount, SymbolId};
 use ui::{Count, Id, Label, Point, Px, Typed};
 
 use crate::app::App;
+use crate::authoring::Authoring;
 use crate::field::{Edit, Enter, FieldText, Which};
 use crate::graph::GraphAction;
 use crate::keys::{Extend, Walk};
@@ -14,7 +12,7 @@ use crate::model::{
 use crate::nav::{Scrolling, Ticket, Tries};
 use crate::panels::{BranchId, Direction, DropTarget, Ratio, View};
 use crate::peek::{HoverStep, Intent, Peek, Probe, Probing, WantedDefinition};
-use crate::status::{Status, Under};
+use crate::status::Status;
 use crate::work::Request;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -56,7 +54,7 @@ pub(crate) enum Action {
     Back,
     Forward,
     Save,
-    PinSelection,
+    Authoring(Authoring),
     Scroll(Id, Px),
     ScrollAcross(Id, Px),
     ScrolledToLine(Ticket),
@@ -125,7 +123,7 @@ impl App {
             Action::Back => model.back(),
             Action::Forward => model.forward(),
             Action::Save => self.save(),
-            Action::PinSelection => self.pin_selection(),
+            Action::Authoring(action) => self.author(action),
             Action::Scroll(id, offset) => model.scrolls.set(id, offset),
             Action::ScrollAcross(id, offset) => model.across.set(id, offset),
             Action::ScrolledToLine(ticket) => model.scrolled_to_line(ticket),
@@ -321,65 +319,15 @@ impl App {
         }
     }
 
-    fn pin_selection(&mut self) {
-        let model = &mut self.model;
-        let (Tab::Listing, Some(file), Some(lines)) =
-            (model.nav.tab(), model.nav.file(), model.nav.lines())
-        else {
-            model.status = Status::SelectLinesFirst;
-            return;
-        };
-        let Some(path) = model.nav.path() else {
-            model.status = Status::SelectPathFirst;
-            return;
-        };
-        let Some(name) = model.path(path).map(|found| found.name().clone()) else {
-            return;
-        };
-        let parent = model
-            .nav
-            .step()
-            .filter(|step| step.get() < model.step_count(path).get());
-        let parent_id = parent.and_then(|step| model.step_id(StepKey { path, step }));
-        let Some(span) = Span::new(lines.low(), lines.high()) else {
-            return;
-        };
-        let added = model.map.add_step(
-            &model.index,
-            &name,
-            file,
-            span,
-            Author::Human,
-            parent_id.as_ref(),
-        );
-        let id = match added {
-            Ok(id) => id,
-            Err(error) => {
-                model.status = Status::refused(&model.map, error);
-                return;
-            }
-        };
-        let Some(step) = model.step_slot(path, &id) else {
-            return;
-        };
-        model.step_created(step);
-        model.disk.dirty = Dirty::Unsaved;
-        let under = parent.map_or(Under::TopLevel, |parent| {
-            Under::Step(model.number_of(StepKey { path, step: parent }))
-        });
-        model.status = Status::StepAdded {
-            number: model.number_of(StepKey { path, step }),
-            path: name,
-            under,
-        };
-    }
-
     fn typed(&mut self, which: Which, edits: &[Edit], typed: &Typed) {
         let enter = match which {
-            Which::Search | Which::SymbolFilter | Which::PathFilter | Which::GoToLine => {
-                Enter::Keep
-            }
-            Which::NewPath | Which::Command | Which::ViewSearch => Enter::Clear,
+            Which::Search
+            | Which::SymbolFilter
+            | Which::PathFilter
+            | Which::GoToLine
+            | Which::NewPath
+            | Which::NewGroup => Enter::Keep,
+            Which::Command | Which::ViewSearch => Enter::Clear,
         };
         let Some(line) = self.model.fields.handle(which, edits, typed, enter) else {
             return;
@@ -387,7 +335,7 @@ impl App {
         match which {
             Which::Command => self.run_command(&line),
             Which::Search => self.search(),
-            Which::NewPath => self.create_path(&line),
+            Which::NewPath | Which::NewGroup => self.create_path(),
             Which::GoToLine => self.go_to_line(&line),
             Which::ViewSearch => self.pick_first(&line),
             Which::SymbolFilter | Which::PathFilter => {}
@@ -430,32 +378,6 @@ impl App {
             pattern,
         };
         model.set_tab(Tab::Results);
-    }
-
-    fn create_path(&mut self, line: &FieldText) {
-        let name = line.as_str().trim();
-        if name.is_empty() {
-            return;
-        }
-        let model = &mut self.model;
-        let added = PathName::new(name).and_then(|valid| {
-            model
-                .map
-                .add_path(valid.clone(), PathKind::Flow, Author::Human)
-                .map(|_| valid)
-        });
-        let created = match added {
-            Ok(created) => created,
-            Err(error) => {
-                model.status = Status::refused(&model.map, error);
-                return;
-            }
-        };
-        if let Some(slot) = model.find_path(&created) {
-            model.path_created(slot);
-        }
-        model.status = Status::PathCreated(created);
-        model.disk.dirty = Dirty::Unsaved;
     }
 
     fn go_to_line(&mut self, line: &FieldText) {

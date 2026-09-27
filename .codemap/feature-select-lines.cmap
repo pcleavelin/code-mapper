@@ -3,7 +3,7 @@ path feature-select-lines
 kind flow
 author ai
 group features/gui
-note In the Listing, click a line to select it and shift-click another to extend the selection from the first; the selected lines are highlighted. A ctrl-, alt- or double-click is a definition gesture, not a selection. The selection is what pin selection pins and what back and forward remember.
+note In the Listing, click a line to select it and shift-click another to extend the selection from the first; the selected lines are highlighted. A ctrl-, alt- or double-click is a definition gesture, not a selection. The selection is what the Listing's 'add step' adds and what back and forward remember.
 
 step laekhp
 order 2
@@ -30,7 +30,7 @@ parent pvdi25
 author ai
 file crates/gui/src/views/center.rs
 symbol listing
-lines 66 70
+lines 70 74
 hash 29762266e34acca8
 note The effect: lines inside the selection get the LINES_SELECTED background.
 
@@ -40,7 +40,7 @@ parent pvdi25
 author ai
 file crates/gui/src/views/center.rs
 symbol listing
-lines 85 90
+lines 89 94
 hash fd19b1328cd15b25
 link listing-view
 note Trigger: the listing's code block reports the line under a click, and keys::selects_line decides whether the click selects and whether it extends. A selecting click queues SelectLine.

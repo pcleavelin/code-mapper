@@ -380,9 +380,9 @@ parent yxmrlu
 author ai
 file crates/gui/src/graph/build.rs
 symbol header
-lines 0 71
-hash 4cb2ed6facdf1d5f
-note The header runs and the button list, built here for both measuring and drawing: step number, name, off-path tag, file:lines; then more/less when the view is longer than PREVIEW_LINES, context above, below and none (never while cut to a preview, and above or below only when the file has more lines there), listing, and the two expansions. An expansion that is open says 'hide N' and closes on a click; a closed one is offered only when it would reveal something, so a button whose targets are all on the canvas already is not drawn at all rather than doing nothing when pressed.
+lines 0 74
+hash 3f484c39e96daa33
+note The header runs and the button list, built here for both measuring and drawing: step number, name, off-path tag, file:lines; then more/less when the view is longer than PREVIEW_LINES, context above, below and none (never while cut to a preview, and above or below only when the file has more lines there), listing, '+ step' on an off-path node while a path is read, and the two expansions. An expansion that is open says 'hide N' and closes on a click; a closed one is offered only when it would reveal something, so a button whose targets are all on the canvas already is not drawn at all rather than doing nothing when pressed.
 
 step wu5v06
 order 14

@@ -20,10 +20,20 @@ parent j766na
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 18
-hash 807c20a6d2bfc6a0
+lines 0 21
+hash 74bf56c206047b3e
 link feature-new-path
 note The symbol filter keeps its text on enter and has nothing to run; the field's text is all the filter needs.
+
+step a4zz2d
+order 5
+parent w6a3u3
+author ai
+file crates/gui/src/views/left.rs
+symbol symbol_row
+lines 0 54
+hash 6602edfdb26c16c5
+note One row: the covered mark, name, kind and place clipped to the room symbols_window gives it (less ADD_ROOM while a path is open, for the '+ step' action). A click on the row queues Focus; the action queues an AddSymbol instead (feature-add-step).
 
 step f2zu9r
 order 1
@@ -42,7 +52,7 @@ parent 0pe1eq
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 19 26
+lines 24 31
 hash de06bec86c783ce5
 note The typing: after the walks, the keys phase hands edits and typed text to the symbol filter, path filter and go-to-line fields.
 
@@ -52,6 +62,6 @@ parent 0pe1eq
 author ai
 file crates/gui/src/views/left.rs
 symbol symbols_window
-lines 0 92
-hash b3f18bc0354fbe07
-note Trigger and filter: the filter field's text is lower-cased and matched against each symbol's name and file path while the table is built, so there is no filter action to apply. Rows are virtualised to the visible window; a click on a SYMBOL_ROW queues Focus.
+lines 0 63
+hash 36d66addccbb1c54
+note Trigger and filter: the filter field's text is lower-cased and matched against each symbol's name and file path while the table is built, so there is no filter action to apply. Rows are virtualised to the visible window, each drawn by symbol_row.

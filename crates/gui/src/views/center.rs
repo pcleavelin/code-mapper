@@ -2,6 +2,7 @@ use domain::{Change, Line, PathDiff, StepChange, SymbolName};
 use ui::{Count, Label, Px, Run};
 
 use crate::action::Action;
+use crate::authoring::Authoring;
 use crate::field::Which;
 use crate::graph::{GraphAction, GraphFrame, draw_scene};
 use crate::ids;
@@ -13,6 +14,8 @@ use crate::theme::{
     FIELD, GREEN, LINE_FIELD, LINES_SELECTED, LISTING_GUESS, RED, ROW_EXTRA, TEXT, WEAK,
 };
 use crate::widgets::{Chosen, CodeBlock, Container, Frame, Marks, Scroller, Width};
+
+use super::authoring;
 
 pub(super) fn listing(model: &Model, frame: &mut Frame<'_>) {
     let Some(file) = model.nav.file() else {
@@ -40,7 +43,10 @@ pub(super) fn listing(model: &Model, frame: &mut Frame<'_>) {
     }
     frame.start(Container::Toolbar);
     frame.label(source.path().as_str(), TEXT);
-    frame.label("click a line, shift-click to extend, then 'pin selection'; double-click or ctrl-click an identifier to jump; alt-click to peek", WEAK);
+    if frame.control("add step", ids::ADD_LINES).clicked() {
+        frame.push(Action::Authoring(Authoring::AddLines));
+    }
+    frame.label("click a line, shift-click to extend, then 'add step'; double-click or ctrl-click an identifier to jump; alt-click to peek", WEAK);
     frame.grow();
     frame.label("line", WEAK);
     frame.field(
@@ -50,6 +56,7 @@ pub(super) fn listing(model: &Model, frame: &mut Frame<'_>) {
         LINE_FIELD,
     );
     frame.finish();
+    authoring::target_strip(model, frame);
     let scrolled = frame.scroll_column(id, offset, Scroller::Plain, Some(FIELD));
     let selection = model.nav.lines();
     let anchors: Vec<(domain::Span, bool)> = model

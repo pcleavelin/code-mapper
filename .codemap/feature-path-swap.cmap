@@ -20,10 +20,10 @@ parent 11glbd
 author ai
 file crates/domain/src/map.rs
 symbol swap
-lines 0 30
-hash 6bdc25d5c96c10f9
+lines 0 12
+hash a7b05bf6bc05a30a
 link path-tree
-note Swaps the two steps in the list; each list slot keeps its order value, so the two steps trade orders and the list stays sorted by order, which is the order the map file stores and a load restores.
+note Checks both steps exist, then swap_places exchanges their places in the list; each list slot keeps its order value, so the two steps trade orders and the list stays sorted by order, which is the order the map file stores and a load restores.
 
 step etir9f
 order 1

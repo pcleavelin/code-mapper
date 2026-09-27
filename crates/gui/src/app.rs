@@ -162,7 +162,12 @@ impl App {
         if keys::going(input, Going::Forward) {
             actions.push(Action::Forward);
         }
-        for which in [Which::Command, Which::Search, Which::NewPath] {
+        for which in [
+            Which::Command,
+            Which::Search,
+            Which::NewPath,
+            Which::NewGroup,
+        ] {
             actions.push(Action::Type(which, edits.clone(), typed.clone()));
         }
         for walk in keys::walks(input) {
@@ -227,6 +232,9 @@ impl platform::App for App {
         self.keys(input);
         self.ui.begin(input);
         for action in views::panel_input(&self.model, &self.ui) {
+            self.apply(action);
+        }
+        for action in views::outline_input(&self.model, &self.ui) {
             self.apply(action);
         }
         let graph = self

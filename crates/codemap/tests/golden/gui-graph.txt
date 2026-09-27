@@ -69,6 +69,7 @@ DUMP button total_area '[more-below]'
 DUMP button total_area '[more-above]'
 DUMP button log_line 'listing'
 DUMP button log_line '[more-above]'
+DUMP button new '+ step'
 DUMP button new 'listing'
 DUMP button new '[more-below]'
 DUMP button new '[more-above]'
@@ -109,6 +110,7 @@ DUMP button total_area '[more-above]'
 DUMP button log_line 'listing'
 DUMP button log_line '[more-above]'
 DUMP button new 'hide 1 callers'
+DUMP button new '+ step'
 DUMP button new 'listing'
 DUMP button new '[more-below]'
 DUMP button new '[more-above]'
@@ -148,6 +150,7 @@ DUMP button total_area '[more-above]'
 DUMP button log_line 'listing'
 DUMP button log_line '[more-above]'
 DUMP button new 'hide 1 callers'
+DUMP button new '+ step'
 DUMP button new 'listing'
 DUMP button new '[more-below]'
 DUMP button new '[more-above]'
@@ -186,6 +189,8 @@ DUMP button total_area '[more-below]'
 DUMP button total_area '[more-above]'
 DUMP button log_line 'listing'
 DUMP button log_line '[more-above]'
+DUMP button new 'hide 1 callers'
+DUMP button new '+ step'
 DUMP button new 'listing'
 DUMP button new '[more-below]'
 DUMP button new '[more-above]'
@@ -224,6 +229,8 @@ DUMP button total_area '[more-below]'
 DUMP button total_area '[more-above]'
 DUMP button log_line 'listing'
 DUMP button log_line '[more-above]'
+DUMP button new 'hide 1 callers'
+DUMP button new '+ step'
 DUMP button new 'listing'
 DUMP button new '[more-below]'
 DUMP button new '[more-above]'
@@ -262,6 +269,8 @@ DUMP button total_area '[more-below]'
 DUMP button total_area '[more-above]'
 DUMP button log_line 'listing'
 DUMP button log_line '[more-above]'
+DUMP button new 'hide 1 callers'
+DUMP button new '+ step'
 DUMP button new 'listing'
 DUMP button new '[more-below]'
 DUMP button new '[more-above]'
@@ -300,6 +309,8 @@ DUMP button total_area '[more-below]'
 DUMP button total_area '[more-above]'
 DUMP button log_line 'listing'
 DUMP button log_line '[more-above]'
+DUMP button new 'hide 1 callers'
+DUMP button new '+ step'
 DUMP button new 'listing'
 DUMP button new '[more-below]'
 DUMP button new '[more-above]'
@@ -308,7 +319,7 @@ DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path Dif
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
-DUMP graph zoom=0.357
+DUMP graph zoom=0.286
 DUMP node 1 main
 DUMP node 1.1 fill
 DUMP node 1.1.1 add
@@ -338,6 +349,8 @@ DUMP button total_area '[more-below]'
 DUMP button total_area '[more-above]'
 DUMP button log_line 'listing'
 DUMP button log_line '[more-above]'
+DUMP button new 'hide 1 callers'
+DUMP button new '+ step'
 DUMP button new 'listing'
 DUMP button new '[more-below]'
 DUMP button new '[more-above]'
@@ -376,6 +389,8 @@ DUMP button total_area '[more-below]'
 DUMP button total_area '[more-above]'
 DUMP button log_line 'listing'
 DUMP button log_line '[more-above]'
+DUMP button new 'hide 1 callers'
+DUMP button new '+ step'
 DUMP button new 'listing'
 DUMP button new '[more-below]'
 DUMP button new '[more-above]'
@@ -414,6 +429,8 @@ DUMP button total_area '[more-below]'
 DUMP button total_area '[more-above]'
 DUMP button log_line 'listing'
 DUMP button log_line '[more-above]'
+DUMP button new 'hide 1 callers'
+DUMP button new '+ step'
 DUMP button new 'listing'
 DUMP button new '[more-below]'
 DUMP button new '[more-above]'
@@ -422,7 +439,7 @@ DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path Dif
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
-DUMP graph zoom=0.357
+DUMP graph zoom=0.286
 DUMP node 1 main
 DUMP node 1.1 fill
 DUMP node 1.1.1 add
@@ -452,6 +469,8 @@ DUMP button total_area '[more-below]'
 DUMP button total_area '[more-above]'
 DUMP button log_line 'listing'
 DUMP button log_line '[more-above]'
+DUMP button new 'hide 1 callers'
+DUMP button new '+ step'
 DUMP button new 'listing'
 DUMP button new '[more-below]'
 DUMP button new '[more-above]'
@@ -460,7 +479,7 @@ DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path Dif
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
-DUMP graph zoom=0.357
+DUMP graph zoom=0.286
 DUMP node 1 main
 DUMP node 1.1 fill
 DUMP node 1.1.1 add
@@ -491,6 +510,8 @@ DUMP button total_area '[more-below]'
 DUMP button total_area '[more-above]'
 DUMP button log_line 'listing'
 DUMP button log_line '[more-above]'
+DUMP button new 'hide 1 callers'
+DUMP button new '+ step'
 DUMP button new 'listing'
 DUMP button new '[more-below]'
 DUMP button new '[more-above]'
@@ -499,7 +520,7 @@ DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path Dif
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"
 DUMP paths filter="" listed=4
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
-DUMP graph zoom=0.357
+DUMP graph zoom=0.286
 DUMP node 1 main
 DUMP node 1.1 fill
 DUMP node 1.1.1 add
@@ -529,6 +550,8 @@ DUMP button total_area '[more-below]'
 DUMP button total_area '[more-above]'
 DUMP button log_line 'listing'
 DUMP button log_line '[more-above]'
+DUMP button new 'hide 1 callers'
+DUMP button new '+ step'
 DUMP button new 'listing'
 DUMP button new '[more-below]'
 DUMP button new '[more-above]'

@@ -50,9 +50,9 @@ parent 56ca80
 author ai
 file crates/gui/src/views/xrefs.rs
 symbol call_lists
-lines 0 22
-hash 2738f044b7e232a0
-note Trigger: two lists, CALLER_ROW and CALLEE_ROW rows numbered by position, labelled the way the CLI labels a symbol. A click queues Focus unless the file is still pending.
+lines 0 39
+hash 35d0fb0dd510ef30
+note Trigger: two lists, CALLER_ROW and CALLEE_ROW rows numbered by position, labelled the way the CLI labels a symbol. A click queues Focus unless the file is still pending; a row's '+ step' (while a path is open) queues AddSymbol instead.
 
 step zdpboj
 order 1

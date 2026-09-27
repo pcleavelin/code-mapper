@@ -58,7 +58,10 @@ pub enum Feature {
     SwitchTab,
     GoBack,
     Save,
-    PinSelection,
+    AddStep,
+    ChooseTarget,
+    MoveStep,
+    PromoteSymbol,
     NewPath,
     Search,
     RunCommand,
@@ -90,7 +93,7 @@ pub enum Feature {
 }
 
 impl Feature {
-    pub const ALL: [Self; 83] = [
+    pub const ALL: [Self; 86] = [
         Self::Files,
         Self::Symbols,
         Self::Show,
@@ -145,7 +148,10 @@ impl Feature {
         Self::SwitchTab,
         Self::GoBack,
         Self::Save,
-        Self::PinSelection,
+        Self::AddStep,
+        Self::ChooseTarget,
+        Self::MoveStep,
+        Self::PromoteSymbol,
         Self::NewPath,
         Self::Search,
         Self::RunCommand,
@@ -602,17 +608,58 @@ impl Feature {
                     ]
                 },
             ),
-            Self::PinSelection => Spec::new(
-                Text::new("pin-selection"),
-                Text::new("pin the lines selected in the listing as a step of the path being read"),
+            Self::AddStep => Spec::new(
+                Text::new("add-step"),
+                Text::new(
+                    "add the lines selected in the listing, a symbol or a graph node as a step of the path being read",
+                ),
                 Surface::Window,
-                &const { [Trigger::Click(Element::new("pin"))] },
+                &const {
+                    [
+                        Trigger::Click(Element::new("add-lines")),
+                        Trigger::Click(Element::new("add-sym")),
+                        Trigger::Click(Element::new("add-focus")),
+                        Trigger::Click(Element::new("add-xto")),
+                        Trigger::Click(Element::new("add-xfrom")),
+                        Trigger::Click(Element::new("node-add")),
+                    ]
+                },
+            ),
+            Self::ChooseTarget => Spec::new(
+                Text::new("choose-target"),
+                Text::new(
+                    "add steps at the top level of the path being read instead of under the selected step",
+                ),
+                Surface::Window,
+                &const { [Trigger::Click(Element::new("target-top"))] },
+            ),
+            Self::MoveStep => Spec::new(
+                Text::new("move-step"),
+                Text::new(
+                    "drag a step in the outline onto another step to hang it there, or onto an edge to place it beside",
+                ),
+                Surface::Window,
+                &const { [Trigger::Gesture(Gesture::Drag, Element::new("outline"))] },
+            ),
+            Self::PromoteSymbol => Spec::new(
+                Text::new("promote-symbol"),
+                Text::new("create a flow path from the selected symbol and the symbols it calls"),
+                Surface::Window,
+                &const { [Trigger::Click(Element::new("promote-focus"))] },
             ),
             Self::NewPath => Spec::new(
                 Text::new("new-path"),
-                Text::new("create a flow path named in the new path field"),
+                Text::new("create a path from the Paths tab, with its name, kind and group"),
                 Surface::Window,
-                &const { [Trigger::Type(Element::new("field@new-path"))] },
+                &const {
+                    [
+                        Trigger::Click(Element::new("new-path")),
+                        Trigger::Click(Element::new("kind")),
+                        Trigger::Click(Element::new("create-path")),
+                        Trigger::Type(Element::new("field@new-path")),
+                        Trigger::Type(Element::new("field@new-group")),
+                    ]
+                },
             ),
             Self::Search => Spec::new(
                 Text::new("search"),

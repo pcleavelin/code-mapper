@@ -24,6 +24,7 @@ pub(crate) enum Edit {
 pub(crate) enum Which {
     Search,
     NewPath,
+    NewGroup,
     Command,
     SymbolFilter,
     PathFilter,
@@ -36,6 +37,7 @@ impl Which {
         match self {
             Self::Search => ids::SEARCH_FIELD,
             Self::NewPath => ids::NEW_PATH_FIELD,
+            Self::NewGroup => ids::NEW_GROUP_FIELD,
             Self::Command => ids::COMMAND_FIELD,
             Self::SymbolFilter => ids::FILTER_FIELD,
             Self::PathFilter => ids::PATH_FILTER_FIELD,
@@ -308,6 +310,7 @@ enum Focus {
 pub(crate) struct Fields {
     search: Field,
     new_path: Field,
+    new_group: Field,
     command: Field,
     filter: Field,
     path_filter: Field,
@@ -321,6 +324,7 @@ impl Fields {
         match which {
             Which::Search => &self.search,
             Which::NewPath => &self.new_path,
+            Which::NewGroup => &self.new_group,
             Which::Command => &self.command,
             Which::SymbolFilter => &self.filter,
             Which::PathFilter => &self.path_filter,
@@ -333,6 +337,7 @@ impl Fields {
         match which {
             Which::Search => &mut self.search,
             Which::NewPath => &mut self.new_path,
+            Which::NewGroup => &mut self.new_group,
             Which::Command => &mut self.command,
             Which::SymbolFilter => &mut self.filter,
             Which::PathFilter => &mut self.path_filter,
@@ -352,6 +357,14 @@ impl Fields {
     pub(crate) fn start_empty(&mut self, which: Which) {
         self.get_mut(which).clear();
         self.focused = Some(which);
+    }
+
+    pub(crate) fn fill(&mut self, which: Which, text: &Label) {
+        let field = self.get_mut(which);
+        field.clear();
+        field.marked = Marked::Nothing;
+        field.text.insert_at(0, text.as_str());
+        field.caret = Caret(field.text.characters());
     }
 
     pub(crate) fn release(&mut self, which: Which) {

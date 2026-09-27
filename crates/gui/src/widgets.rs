@@ -424,6 +424,57 @@ impl Frame<'_> {
         )
     }
 
+    pub(crate) fn row_with_action(
+        &mut self,
+        runs: Vec<Run>,
+        target: Target,
+        marked: Option<ui::Color>,
+        action: Option<RowAction>,
+    ) -> RowClicks {
+        let id = target.id();
+        let action_hovered = action
+            .as_ref()
+            .is_some_and(|action| self.ui.interaction(action.target.id()).hovered());
+        let hovered = self.ui.interaction(id).hovered() || action_hovered;
+        let background = marked.or(hovered.then_some(HOVER));
+        let size = self.metrics.font;
+        let row = self.ui.open(
+            Kind::None,
+            Layout::row().grow_width(),
+            Style {
+                background,
+                ..Style::NONE
+            },
+            Some(id),
+        );
+        self.ui.leaf(
+            text_kind(runs, size, Wrap::None),
+            Layout::row().grow_width().padding(ROW_PADDING),
+            Style::NONE,
+            None,
+        );
+        let action = action.map(|action| {
+            self.ui.leaf(
+                text_kind(
+                    vec![Run::new(
+                        action.label,
+                        if action_hovered { ACCENT } else { WEAK },
+                    )],
+                    size,
+                    Wrap::None,
+                ),
+                Layout::row().padding(ROW_PADDING),
+                Style {
+                    background: action_hovered.then_some(SELECTED),
+                    ..Style::NONE
+                },
+                Some(action.target.id()),
+            )
+        });
+        self.ui.close();
+        RowClicks { row, action }
+    }
+
     pub(crate) fn link_text(
         &mut self,
         runs: Vec<Run>,
@@ -693,6 +744,31 @@ impl Frame<'_> {
 
     pub(crate) const fn scrollbar_width() -> Px {
         Scrollbar::WIDTH
+    }
+}
+
+pub(crate) struct RowAction {
+    pub(crate) label: Label,
+    pub(crate) target: Target,
+}
+
+impl RowAction {
+    pub(crate) fn add_step(target: Target) -> Self {
+        Self {
+            label: Label::new("+ step"),
+            target,
+        }
+    }
+}
+
+pub(crate) struct RowClicks {
+    pub(crate) row: Interaction,
+    pub(crate) action: Option<Interaction>,
+}
+
+impl RowClicks {
+    pub(crate) fn acted(&self) -> bool {
+        self.action.is_some_and(Interaction::clicked)
     }
 }
 

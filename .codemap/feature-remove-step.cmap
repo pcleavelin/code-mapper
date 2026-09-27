@@ -60,6 +60,6 @@ parent k5svvz
 author ai
 file crates/gui/src/nav.rs
 symbol step_removed
-lines 0 21
-hash 214878c7f891d903
-note Slots after the removed one shift down by one: view flags and context are remapped so they stay with their steps, the removed step's own view is dropped, and history entries on this path are shifted the same way.
+lines 0 6
+hash f76e1f250dadf7bf
+note Slots after the removed one shift down by one, through steps_moved: view flags and context stay with their steps, the removed step's own view is dropped, history entries on this path shift the same way, and so do the selected step, the target and the top step.

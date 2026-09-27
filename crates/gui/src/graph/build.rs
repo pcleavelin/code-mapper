@@ -249,6 +249,9 @@ impl Built {
             }
         }
         label(Button::Listing, "listing".to_owned());
+        if off_path {
+            label(Button::Add, "+ step".to_owned());
+        }
         let hidden = |list: &[SymbolId]| {
             list.iter()
                 .filter(|listed| !self.by_symbol.contains_key(listed))

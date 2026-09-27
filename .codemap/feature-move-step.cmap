@@ -1,0 +1,115 @@
+codemap 8
+path feature-move-step
+kind flow
+author ai
+group features/gui
+note Drag a row of the Paths outline to move that step with everything under it. Dropped on the middle of another row, it hangs under that step as its last child; on the top or bottom quarter, it goes just before or after that step among that step's siblings. While dragging, a band shows where it will land (a box around the row, or a line on its edge) and the cursor is a grabbing hand; letting go outside a row, or onto the step itself, does nothing. Dropping a step under its own subtree is refused in the status bar. Siblings the parent's lines call keep the code's call order whatever the list says, so a drag reorders only siblings the parent does not call. The status names the step's new number and parent; selection, folds and history follow the step.
+
+step 0jxud1
+order 0
+author ai
+file crates/gui/src/authoring.rs
+symbol drop_step
+lines 0 62
+hash 6704d4d57ec97ad1
+note The handler, on the frame the button is let go. Nothing happens unless the grab moved and landed on another row. Under: the row's step is the new parent and the step goes to the end of the list. Before: the row's parent, placed ahead of the row. After: the row's parent, placed ahead of the next sibling after the row in list order, or at the end. The map moves it; every slot of the path is remapped by id, since a move changes list positions; the status names the new number and parent.
+
+step 2j4b87
+order 7
+parent 9al1u8
+author ai
+file crates/gui/src/authoring.rs
+symbol impl Zone
+lines 0 20
+hash e2b69e0021fb9e6b
+note Top quarter before, bottom quarter after, the rest under; the band is a line on the edge or the whole row.
+
+step 2pn03b
+order 5
+parent 0jxud1
+author ai
+file crates/gui/src/views/authoring.rs
+symbol outline_input
+lines 0 13
+hash 91070907c640b0a6
+note The input phase, after the panels': while a step is grabbed, each frame drags it to the mouse, and the frame the left button is up drops it on the row under the mouse, or on nothing if it never moved far enough.
+
+step 6yn86s
+order 1
+parent 0jxud1
+author ai
+file crates/domain/src/map.rs
+symbol place
+lines 0 27
+hash f75276769ead0caf
+note Reparent, then walk the step through the list one neighbour at a time until it sits just ahead of 'before' (or last). Only siblings' relative order is visible, so passing a non-sibling changes nothing a reader sees.
+
+step 7kjx3n
+order 2
+parent 6yn86s
+author ai
+file crates/domain/src/map.rs
+symbol swap_places
+lines 0 18
+hash 5ba490bf6ea44eb5
+note One exchange of two steps' places, each place keeping its order number, so the list stays sorted by order and only the steps passed get a new one. swap uses it too.
+
+step 9al1u8
+order 6
+parent 2pn03b
+author ai
+file crates/gui/src/views/authoring.rs
+symbol outline_drop
+lines 0 18
+hash b85a818c1dc9d921
+note The row under the mouse, from last frame's rectangles, and the zone within it.
+
+step 9obuar
+order 3
+parent 6yn86s
+author ai
+file crates/domain/src/map.rs
+symbol reparent
+lines 0 24
+hash 2455b1a0f612dd61
+note Refuses a parent inside the step's own subtree (UnderItself), which is what stops a drop onto a descendant.
+
+step f4dyru
+order 10
+parent 9al1u8
+author ai
+file crates/gui/src/views/authoring.rs
+symbol outline_band
+lines 0 8
+hash 2f317a481a90c642
+note While the grab is moving: the grabbing cursor and the drop band over the target row, drawn floating after the panels.
+
+step hmzmuk
+order 4
+parent 0jxud1
+author ai
+file crates/gui/src/nav.rs
+symbol steps_moved
+lines 0 26
+hash 909745513d7ba830
+note steps_moved: views, history, selection, target and top step follow a slot remapping; step_removed is the same with the removed slot mapped to nothing.
+
+step oet3q1
+order 9
+parent sy8rfy
+author ai
+file crates/gui/src/views/left.rs
+symbol outline
+lines 61 66
+hash 9437b35e3155bc73
+note Trigger: a press on an outline row selects the step and grabs it.
+
+step sy8rfy
+order 8
+parent 2pn03b
+author ai
+file crates/gui/src/authoring.rs
+symbol impl App
+lines 101 108
+hash 6182ad56391d22c9
+note grab_step records the step and where the press was; drag_step marks it moving once the mouse has gone GRAB_REACH from there, the same threshold a tab drag uses.

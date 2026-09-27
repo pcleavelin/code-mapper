@@ -105,15 +105,25 @@ lines 0 16
 hash 1007a5226b57c23b
 note A new step with no parent, order 0, no note and no link, current from birth; add_step then sets its order and parent.
 
+step gqd1bn
+order 21
+parent hx786i
+author ai
+file crates/domain/src/map.rs
+symbol swap_places
+lines 0 18
+hash 5ba490bf6ea44eb5
+note The one change of order values: two steps exchange places in the list and each position keeps its order, so the list stays sorted by order.
+
 step hx786i
 order 9
 parent qhqkj9
 author ai
 file crates/domain/src/map.rs
 symbol swap
-lines 0 30
-hash 6bdc25d5c96c10f9
-note Swapping two steps in list order, which is what orders siblings nothing else orders. The two steps trade places and order values, so the sequence of orders in the list stays where it was; parents name steps by id, so nothing else changes.
+lines 0 12
+hash a7b05bf6bc05a30a
+note Swapping two steps in list order, which is what orders siblings nothing else orders. swap_places exchanges their places and order values, so the sequence of orders in the list stays where it was; parents name steps by id, so nothing else changes.
 
 step mzyfei
 order 11
@@ -164,6 +174,16 @@ lines 0 7
 hash a15966eb08595b82
 note steps is the flat list, sorted by order with ties by id, which is the step list every index refers to. Map's methods are the only writers, each addressing a step by path name and StepId.
 
+step ru6fvm
+order 20
+parent hx786i
+author ai
+file crates/domain/src/map.rs
+symbol place
+lines 0 27
+hash f75276769ead0caf
+note Moving a step to another parent and place in the list, the GUI's outline drag: reparent, then swap_places it past its neighbours until it sits just before the given step (or at the end), so only the steps it passes change their order.
+
 step wbms9u
 order 2
 parent 7gczkl
@@ -192,7 +212,7 @@ file crates/domain/src/map/step.rs
 symbol impl StepOrder
 lines 0 13
 hash 3faf696146384e91
-note A step's place in the list, stored as order in the file. Set once to one past the highest in the path; only a swap changes it.
+note A step's place in the list, stored as order in the file. Set once to one past the highest in the path; only swap_places changes it, through a swap or a place.
 
 step yu7ue7
 order 7

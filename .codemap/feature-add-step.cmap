@@ -1,0 +1,126 @@
+codemap 8
+path feature-add-step
+kind flow
+author ai
+group features/gui
+note Add code to the path being read, from wherever it is shown. In the Listing, select lines (click, shift-click) and press 'add step'. On a Symbols row or an Xrefs caller or callee row, press '+ step' to add that symbol whole; 'add step' under the Xrefs heading adds the selected symbol. On an off-path graph node, '+ step' adds its symbol. The step is authored by the human and hangs under the target (see feature-choose-target), except a graph node revealed as a callee of a step, which hangs under that step. The same lines under the same parent again is refused with the step's number; adding moves neither the selection nor the target, so the next add lands beside this one. The status names the new step's number and parent.
+
+step 5dyo4y
+order 3
+parent 9kzjp8
+author ai
+file crates/gui/src/views/center.rs
+symbol listing
+lines 26 28
+hash edbeb3a6d1d57e71
+note Trigger: the Listing toolbar's 'add step' button queues AddLines.
+
+step 6qgteg
+order 7
+parent d1xozt
+author ai
+file crates/gui/src/views/left.rs
+symbol symbol_row
+lines 33 53
+hash 93b05af9e44cb2e0
+note Trigger: a Symbols row carries a '+ step' action while a path is being read; the action queues AddSymbol under the target, a click elsewhere on the row focuses the symbol.
+
+step 82hexj
+order 1
+parent zwrtqu
+author ai
+file crates/domain/src/map.rs
+symbol add_step
+lines 0 38
+hash d53744822dc161fe
+note The step in the map: the parent must exist, the span is pinned relative to its enclosing symbol, and the step gets a fresh id and the next order.
+
+step 9kzjp8
+order 5
+parent zwrtqu
+author ai
+file crates/gui/src/authoring.rs
+symbol add_lines
+lines 0 9
+hash 21f14249bdc80886
+note From the Listing: the file open there and its line selection, under the target. With no lines selected the status says to select some.
+
+step au5kh4
+order 4
+parent 9kzjp8
+author ai
+file crates/gui/src/views/center.rs
+symbol listing
+lines 89 94
+hash fd19b1328cd15b25
+link feature-select-lines
+note Where the lines come from: clicks in the listing set and extend the line selection.
+
+step c2ft8i
+order 2
+parent zwrtqu
+author ai
+file crates/gui/src/authoring.rs
+symbol target_under
+lines 0 5
+hash 4cf6a29a21e44671
+note Hang::Target resolves here: the Nav's target while it is still a step of the path being read, else the top level.
+
+step d1xozt
+order 6
+parent zwrtqu
+author ai
+file crates/gui/src/authoring.rs
+symbol add_symbol
+lines 0 4
+hash 0dc306915933068a
+note From a symbol: its whole span, in its own file. The Hang comes from the trigger.
+
+step g9sxbo
+order 10
+parent d1xozt
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_click
+lines 20 32
+hash 01ab33b91d4e59c5
+note Trigger: the graph's '+ step' node button. A node revealed through a step's callees expansion hangs under that step, which is where it sits in the drawing; anything else hangs under the target.
+
+step pcmyr1
+order 8
+parent d1xozt
+author ai
+file crates/gui/src/views/xrefs.rs
+symbol call_lists
+lines 20 37
+hash ef4bbbd1031984c7
+note Trigger: each Xrefs caller and callee row has the same '+ step' action (add-xto/<n>, add-xfrom/<n>). Rows of a file still waiting for its server take no clicks.
+
+step u849ck
+order 11
+parent zwrtqu
+author ai
+file crates/gui/src/authoring.rs
+symbol author
+lines 0 13
+hash 3a8091b9f7cd75b6
+note The route in: views push Action::Authoring(Authoring::AddLines or AddSymbol), apply hands it to author, and author calls add_lines or add_symbol, which both end in add_step.
+
+step ygjbuv
+order 9
+parent d1xozt
+author ai
+file crates/gui/src/views/xrefs.rs
+symbol focus_actions
+lines 8 18
+hash 5e8a086ae535a519
+note Trigger: 'add step' under the Xrefs heading adds the selected symbol; hidden when that symbol is the selected step itself.
+
+step zwrtqu
+order 0
+author ai
+file crates/gui/src/authoring.rs
+symbol add_step
+lines 0 58
+hash b2c50ca75023abdd
+note The handler every add goes through: needs a path being read, takes the parent from the Hang (the target, or a given step), refuses a step with the same file, span and parent, adds it through the map, marks the map dirty and words the status. It does not select the new step.

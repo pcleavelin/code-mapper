@@ -3,7 +3,7 @@ path listing-view
 kind flow
 author ai
 group gui
-note The file viewer, and the one place a human can author a step. Only the rows on screen become elements - a spacer stands in for everything above and below - which is what makes a four-thousand-line file scroll at the same cost as a short one. Each row is numbered, syntax coloured, and carries a coloured bar on the left where a step of the selected path is anchored, green when current and red when stale. Clicking selects a line and shift-clicking extends the selection, which the top bar's 'pin selection' then turns into a step; double-clicking or ctrl-clicking an identifier jumps to its definition instead, and alt-clicking pins it in the peek panel. The view only reads the Model: every click becomes an Action applied after the tree is built.
+note The file viewer, and where a human adds a range of lines as a step. Only the rows on screen become elements - a spacer stands in for everything above and below - which is what makes a four-thousand-line file scroll at the same cost as a short one. Each row is numbered, syntax coloured, and carries a coloured bar on the left where a step of the selected path is anchored, green when current and red when stale. Clicking selects a line and shift-clicking extends the selection, which the toolbar's 'add step' then turns into a step under the target the strip below the toolbar shows (gui-authoring); double-clicking or ctrl-clicking an identifier jumps to its definition instead, and alt-clicking pins it in the peek panel. The view only reads the Model: every click becomes an Action applied after the tree is built.
 
 step 1cxlr5
 order 7
@@ -21,7 +21,7 @@ parent azzv57
 author ai
 file crates/gui/src/views/center.rs
 symbol listing
-lines 36 93
+lines 40 97
 hash 6d0e7c73a13250d1
 note The rows. rows_window turns the scroll offset into the first visible line and emits the spacer for the lines above; then one code block of the visible lines, then a spacer for the rest plus a row of slack, so the scrollbar sees the whole file while only what shows is drawn. The bar closure marks the selected path's anchors in this file, the background closure the selected lines.
 
@@ -40,9 +40,9 @@ order 0
 author ai
 file crates/gui/src/views/center.rs
 symbol listing
-lines 0 94
-hash 0b0e481455790e0d
-note The whole viewer: the file name and a line of help, a go-to-line box, then the scrolling column of rows. With no current file it says so and draws nothing else.
+lines 0 98
+hash 63486641387f9e40
+note The whole viewer: the file name, 'add step', a line of help and a go-to-line box, the target strip, then the scrolling column of rows. With no current file it says so and draws nothing else.
 
 step ghy5uj
 order 6
@@ -57,11 +57,11 @@ note The code element: the rows drawn from a cached grid, the gutter, the marks,
 step mlu0tc
 order 5
 author ai
-file crates/gui/src/action.rs
-symbol pin_selection
-lines 0 51
-hash 4d00052c41179649
-note 'pin selection' in the top bar, the human's authoring gesture: in the Listing tab, the selected lines become a step of the selected path (Map::add_step, authored Human), under the selected step. The new step becomes the selected one, so pinning again puts the next step under it and a chain is built by clicking down the file. Without selected lines or a selected path it only says what is missing; a refusal from the map is worded by cli.
+file crates/gui/src/authoring.rs
+symbol add_lines
+lines 0 9
+hash 21f14249bdc80886
+note 'add step' in the Listing's toolbar, the human's authoring gesture from a file: the selected lines become a step of the path being read (add_step, authored Human), under the target the strip above the code shows. Without selected lines it only says what is missing.
 
 step qf86nv
 order 8

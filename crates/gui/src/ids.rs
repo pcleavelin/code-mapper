@@ -71,7 +71,20 @@ pub(crate) const COMMAND_FIELD: Control = Control::new(Feature::RunCommand, Elem
 pub(crate) const BACK: Control = Control::new(Feature::GoBack, Element::new("back"));
 pub(crate) const FORWARD: Control = Control::new(Feature::GoBack, Element::new("forward"));
 pub(crate) const TAB: Control = Control::new(Feature::SwitchTab, Element::new("tab"));
-pub(crate) const PIN: Control = Control::new(Feature::PinSelection, Element::new("pin"));
+pub(crate) const NEW_GROUP_FIELD: Control =
+    Control::new(Feature::NewPath, Element::new("field@new-group"));
+pub(crate) const NEW_PATH: Control = Control::new(Feature::NewPath, Element::new("new-path"));
+pub(crate) const KIND: Control = Control::new(Feature::NewPath, Element::new("kind"));
+pub(crate) const CREATE_PATH: Control = Control::new(Feature::NewPath, Element::new("create-path"));
+pub(crate) const ADD_LINES: Control = Control::new(Feature::AddStep, Element::new("add-lines"));
+pub(crate) const ADD_SYMBOL: Control = Control::new(Feature::AddStep, Element::new("add-sym"));
+pub(crate) const ADD_FOCUS: Control = Control::new(Feature::AddStep, Element::new("add-focus"));
+pub(crate) const ADD_CALLER: Control = Control::new(Feature::AddStep, Element::new("add-xto"));
+pub(crate) const ADD_CALLEE: Control = Control::new(Feature::AddStep, Element::new("add-xfrom"));
+pub(crate) const TARGET_TOP: Control =
+    Control::new(Feature::ChooseTarget, Element::new("target-top"));
+pub(crate) const PROMOTE_FOCUS: Control =
+    Control::new(Feature::PromoteSymbol, Element::new("promote-focus"));
 pub(crate) const SAVE: Control = Control::new(Feature::Save, Element::new("save"));
 pub(crate) const SASH: Control = Control::new(Feature::ResizePanel, Element::new("sash"));
 pub(crate) const SPLIT_ACROSS: Control =
@@ -140,7 +153,17 @@ pub(crate) const CONTROLS: &[Control] = &[
     BACK,
     FORWARD,
     TAB,
-    PIN,
+    NEW_GROUP_FIELD,
+    NEW_PATH,
+    KIND,
+    CREATE_PATH,
+    ADD_LINES,
+    ADD_SYMBOL,
+    ADD_FOCUS,
+    ADD_CALLER,
+    ADD_CALLEE,
+    TARGET_TOP,
+    PROMOTE_FOCUS,
     SAVE,
     SASH,
     SPLIT_ACROSS,

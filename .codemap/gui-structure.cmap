@@ -11,8 +11,8 @@ parent saeyu5
 author ai
 file crates/gui/src/status.rs
 symbol fmt
-lines 0 100
-hash 802b205cb0a76a02
+lines 0 91
+hash 6f18dd1e1941ce0f
 note The wording. Map refusals and load failures arrive already worded by cli, so the GUI and the CLI say the same thing.
 
 step 2e645j
@@ -79,8 +79,8 @@ order 2
 author ai
 file crates/gui/src/model.rs
 symbol Model
-lines 0 25
-hash d9260f0446a023fb
+lines 0 27
+hash 7785c477f9723b35
 note All the state a view can see, in one struct: the index and the map with its MapStore and disk state, the parent map for the Diff tab, Nav, the step views, the open directories and groups, the pinned peek, the server Queries, the panel tree, the scroll offsets (down and across), the graph's state, the fields, search results, the output log, the status, WorkState, the font metrics and the frame time. gui-model has its values and queries.
 
 step 622pjb
@@ -88,8 +88,8 @@ order 25
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 120 152
-hash b5ff7b1202508883
+lines 120 153
+hash a82bc081bb0cb44c
 note Every padding, gap and fixed pixel measure the widgets and views use, named by where it is used.
 
 step 63vlrl
@@ -155,8 +155,8 @@ order 6
 author ai
 file crates/gui/src/views.rs
 symbol build
-lines 0 12
-hash d8edc5c1ba245f7c
+lines 0 13
+hash e4590209fd23c9e9
 note Every view is a function of (&Model, &mut Frame): nothing a view does can change the Model, so the whole window is drawn from one consistent state, and a view that wants a change pushes an Action.
 
 step 98q001
@@ -183,8 +183,8 @@ order 26
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 173 207
-hash 00b6b11875de5984
+lines 174 209
+hash 4f283ee42db1ab24
 note Every measure counted in cells: button and field widths, column guesses before a panel has a size, the symbol table's columns, tooltip sizes, the panels' floors and the picker's width.
 
 step an1gef
@@ -193,9 +193,9 @@ parent 7579zm
 author ai
 file crates/gui/src/dump.rs
 symbol dump
-lines 0 22
-hash 9b09cec9aba515a3
-note tab, path, step, focus, file and selection.
+lines 0 38
+hash eaaf71ca2c9b8106
+note tab, path, step, focus, file and selection; then an authoring line (target, grab, the new-path form's kind) whenever the target differs from the step, a grab is held or the form is open.
 
 step c3z8pe
 order 62
@@ -292,7 +292,7 @@ author ai
 file crates/gui/src/action.rs
 symbol apply
 lines 0 96
-hash 84f676cba54b2687
+hash f46e86034342074d
 note The one place the Model changes during a frame. Each arm is a call into nav.rs, a field of the Model, or a method on the App for changes that need the Services (save, a server question, a command).
 
 step h4xmjq
@@ -421,14 +421,24 @@ lines 0 4
 hash f74fb5c952fb2f74
 note What a view decided this frame, for the views drawn after it: the field that took the keyboard, a status to show, and how many hovers were asked. The Model learns these when the queue is applied; the overlay makes the frame that had the click already show it.
 
+step lz9k89
+order 71
+parent 04jbr0
+author ai
+file crates/gui/src/status.rs
+symbol authoring
+lines 0 38
+hash 266ab483710f5f5c
+note The wording of path creation and step placement (new path, promote, add, move, the target), split out of fmt to keep it under the length limit; fmt hands every one of these variants here.
+
 step mch588
 order 33
 parent 9pik9m
 author ai
 file crates/gui/src/ids.rs
 symbol CONTROLS
-lines 0 57
-hash 70641133452bd1e0
+lines 0 67
+hash 0362a179c775021a
 note Every control, for the test that checks them against the registry.
 
 step mjhubp
@@ -485,8 +495,8 @@ order 9
 author ai
 file crates/gui/src/nav.rs
 symbol Nav
-lines 0 14
-hash 436360219dbe2a21
+lines 0 15
+hash 88d42f5e9347edb5
 note The selection and everything that moves with it (see selection). Its fields are private to nav.rs, so the selection only changes through Model's methods there.
 
 step o9w0e6
@@ -518,6 +528,16 @@ lines 0 18
 hash ee049f851f884648
 note Construction and arithmetic; of multiplies by the cell's width or height.
 
+step q9e3i7
+order 70
+parent saeyu5
+author ai
+file crates/gui/src/status.rs
+symbol impl fmt::Display for Under
+lines 0 7
+hash ec72434d8a94aaf7
+note Under words where an added or moved step went ('under 1.2', 'at the top level') for StepAdded and StepPlaced.
+
 step rf9o1s
 order 60
 parent 7579zm
@@ -533,8 +553,8 @@ order 52
 author ai
 file crates/gui/src/status.rs
 symbol Status
-lines 0 62
-hash e7cd3076b13eccb8
+lines 0 77
+hash 5184ae6327728827
 note Everything the status line can say, as data: each outcome of a save, a command, a search, an edit, a definition lookup, a server, a re-index or a disk change. Views and apply set one; nothing formats a message where it happens.
 
 step uhm8r4
@@ -632,7 +652,7 @@ author ai
 file crates/gui/src/action.rs
 symbol Action
 lines 0 47
-hash 59251f8fbdde8544
+hash 96be1f8b749a3b88
 note Every change a gesture, a key, a script line or a view's measurement can cause, as data. A view names the change; it never makes it.
 
 step xypoz6

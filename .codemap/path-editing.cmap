@@ -213,6 +213,6 @@ parent rmkp5m
 author ai
 file crates/domain/src/map.rs
 symbol swap
-lines 0 29
-hash 73d82d95a54cb1ae
-note Swaps the steps and keeps each position's order number, so the order field, which is what the file stores, follows the swap.
+lines 0 12
+hash a7b05bf6bc05a30a
+note Swaps the steps through swap_places, which keeps each position's order number, so the order field, which is what the file stores, follows the swap.

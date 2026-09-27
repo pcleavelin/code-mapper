@@ -29,9 +29,9 @@ order 2
 author ai
 file crates/gui/src/nav.rs
 symbol select_step
-lines 0 52
-hash 1b842c90bf50f8bc
-note The step entry point. Sets the path and step, unfolds every folded ancestor of the step so the document shows it, focuses the step's symbol and selects its lines, asks the document to scroll the header to the top unless the click was inside the document, and turns a Listing, Results or Diff tab into the Path tab. A step over lines with no symbol of their own focuses the symbol around those lines, so the xrefs panel still has something to show.
+lines 0 53
+hash 4970f05ff13c3c88
+note The step entry point. Sets the path and step (and the step as the target), unfolds every folded ancestor of the step so the document shows it, focuses the step's symbol and selects its lines, asks the document to scroll the header to the top unless the click was inside the document, and turns a Listing, Results or Diff tab into the Path tab. A step over lines with no symbol of their own focuses the symbol around those lines, so the xrefs panel still has something to show.
 
 step epz6w8
 order 6
@@ -57,9 +57,9 @@ order 0
 author ai
 file crates/gui/src/nav.rs
 symbol Nav
-lines 0 14
-hash 436360219dbe2a21
-note The selection and everything that moves with it: the centre tab and the ticket of the last request for it, the path and step (as slots in the map), the focused symbol, the open file and its line selection, the pending scrolls of the listing and the document (each with a ticket, so an older request cannot clear a newer one), the step at the top of the document and the one the outline last scrolled to, and the history. Views read it through accessors; only nav.rs writes it.
+lines 0 15
+hash 88d42f5e9347edb5
+note The selection and everything that moves with it: the centre tab and the ticket of the last request for it, the path and step (as slots in the map), the target step added steps hang under, the focused symbol, the open file and its line selection, the pending scrolls of the listing and the document (each with a ticket, so an older request cannot clear a newer one), the step at the top of the document and the one the outline last scrolled to, and the history. Views read it through accessors; only nav.rs writes it.
 
 step hot70l
 order 7
@@ -67,7 +67,7 @@ parent hb35a0
 author ai
 file crates/gui/src/nav.rs
 symbol impl Nav
-lines 56 69
+lines 60 73
 hash cb0318bccb898dd4
 note Every scroll request takes a fresh ticket, so the view that performs it can clear exactly that request.
 
@@ -77,5 +77,5 @@ author ai
 file crates/gui/src/nav.rs
 symbol select_path
 lines 0 9
-hash e026ad68c7ae2fbb
-note Opening a path selects its first step in tree order, so the outline, document and graph all have something to show at once; an empty path selects no step.
+hash 76ddeee19ae30401
+note Opening a path selects its first step in tree order, so the outline, document and graph all have something to show at once; an empty path selects no step and has no target.

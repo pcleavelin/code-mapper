@@ -31,9 +31,9 @@ parent z8ck9j
 author ai
 file crates/gui/src/nav.rs
 symbol forget_path
-lines 0 3
-hash c71bd75d8ce7199d
-note Neither the path nor a step of it is selected any more.
+lines 0 4
+hash 84bf0f3199f0587b
+note Neither the path nor a step of it is selected any more, and there is no target.
 
 step yphowf
 order 1

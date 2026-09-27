@@ -51,6 +51,7 @@ pub(crate) struct Around {
 pub(crate) enum Button {
     Preview,
     Listing,
+    Add,
     Callees,
     Callers,
     Above,
@@ -66,6 +67,7 @@ impl Button {
                 features::Feature::NodeContext
             }
             Self::Listing => features::Feature::NodeListing,
+            Self::Add => features::Feature::AddStep,
             Self::Callees | Self::Callers => features::Feature::ExpandNode,
         }
     }
@@ -75,6 +77,7 @@ impl Button {
         match self {
             Self::Preview => features::Element::new("node-preview"),
             Self::Listing => features::Element::new("node-listing"),
+            Self::Add => features::Element::new("node-add"),
             Self::Callees | Self::Callers => features::Element::new("node-button"),
             Self::Above | Self::Below | Self::NoContext => features::Element::new("node-context"),
         }

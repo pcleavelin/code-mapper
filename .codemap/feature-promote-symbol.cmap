@@ -1,0 +1,45 @@
+codemap 8
+path feature-promote-symbol
+kind flow
+author ai
+group features/gui
+note Under the Xrefs heading, 'new path from it' makes a flow path from the selected symbol: the symbol as the root step and the symbols it calls under it, one level deep, all authored by the human, named after the symbol. It is promote from the command line at depth 1. A path of that name already there is extended with whatever of those symbols it does not pin whole. The path opens on the Path tab with its first step selected, and the status gives its name and step count.
+
+step am8c85
+order 2
+parent miupsu
+author ai
+file crates/gui/src/views/xrefs.rs
+symbol focus_actions
+lines 19 24
+hash 332492c07f8d926c
+note Trigger: the 'new path from it' button (promote-focus) under the Xrefs heading queues Promote for the selected symbol.
+
+step f9ye7n
+order 3
+parent miupsu
+author ai
+file crates/gui/src/nav.rs
+symbol select_path
+lines 0 9
+hash 76ddeee19ae30401
+note Opening it selects the first step in tree order, which also makes it the target for further adds.
+
+step miupsu
+order 0
+author ai
+file crates/gui/src/authoring.rs
+symbol promote
+lines 0 21
+hash 9d38fe77442de552
+note The handler: promote at depth 1 with no name (the symbol's), authored by the human; a refusal becomes the status. The map is marked dirty and the path opened through select_path on the Path tab.
+
+step uesrbk
+order 1
+parent miupsu
+author ai
+file crates/domain/src/map.rs
+symbol promote
+lines 0 48
+hash 9b371b481fd7afe9
+note The same promote the CLI runs: the call tree to the depth, each symbol added under its caller unless the path already pins it whole.

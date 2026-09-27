@@ -44,6 +44,21 @@ pub(crate) enum Status {
     },
     MapRefused(Label),
     PathCreated(PathName),
+    NameThePath,
+    PathPromoted {
+        name: PathName,
+        steps: Count,
+    },
+    AlreadyStep {
+        number: Label,
+        path: PathName,
+    },
+    StepPlaced {
+        number: Label,
+        path: PathName,
+        under: Under,
+    },
+    TopLevelTarget(PathName),
     SelectLinesFirst,
     SelectPathFirst,
     StepAdded {
@@ -91,7 +106,56 @@ pub(crate) enum Status {
     },
 }
 
+impl fmt::Display for Under {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::TopLevel => formatter.write_str("at the top level"),
+            Self::Step(parent) => write!(formatter, "under {}", parent.as_str()),
+        }
+    }
+}
+
 impl Status {
+    fn authoring(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::PathCreated(name) => write!(formatter, "path '{name}' created (unsaved)"),
+            Self::NameThePath => formatter.write_str("type a name for the new path"),
+            Self::PathPromoted { name, steps } => write!(
+                formatter,
+                "path '{name}' made from the symbol and its calls, {steps} steps (unsaved)"
+            ),
+            Self::AlreadyStep { number, path } => write!(
+                formatter,
+                "already step {} of '{path}' in that place",
+                number.as_str()
+            ),
+            Self::SelectLinesFirst => formatter.write_str("select lines in the listing first"),
+            Self::SelectPathFirst => formatter.write_str("open a path to add steps to first"),
+            Self::StepAdded {
+                number,
+                path,
+                under,
+            } => write!(
+                formatter,
+                "step {} added to '{path}' {under}",
+                number.as_str()
+            ),
+            Self::StepPlaced {
+                number,
+                path,
+                under,
+            } => write!(
+                formatter,
+                "moved to step {} of '{path}' {under}",
+                number.as_str()
+            ),
+            Self::TopLevelTarget(path) => {
+                write!(formatter, "steps added to '{path}' now go at the top level")
+            }
+            _ => Ok(()),
+        }
+    }
+
     pub(crate) fn refused(map: &Map, error: MapError) -> Self {
         Self::MapRefused(Label::new(cli::map_failure(map, error).to_string()))
     }
@@ -140,24 +204,15 @@ impl fmt::Display for Status {
                 write!(formatter, "{count} hits for /{}/", pattern.as_str())
             }
             Self::MapRefused(error) => formatter.write_str(error.as_str()),
-            Self::PathCreated(name) => write!(formatter, "path '{name}' created (unsaved)"),
-            Self::SelectLinesFirst => formatter.write_str("select lines in the listing first"),
-            Self::SelectPathFirst => formatter.write_str("select a path first"),
-            Self::StepAdded {
-                number,
-                path,
-                under,
-            } => {
-                let under = match under {
-                    Under::TopLevel => "the top level",
-                    Under::Step(parent) => parent.as_str(),
-                };
-                write!(
-                    formatter,
-                    "step {} added to '{path}' under {under}",
-                    number.as_str()
-                )
-            }
+            Self::PathCreated(_)
+            | Self::NameThePath
+            | Self::PathPromoted { .. }
+            | Self::AlreadyStep { .. }
+            | Self::SelectLinesFirst
+            | Self::SelectPathFirst
+            | Self::StepAdded { .. }
+            | Self::StepPlaced { .. }
+            | Self::TopLevelTarget(_) => self.authoring(formatter),
             Self::StepRemoved {
                 number,
                 symbol,

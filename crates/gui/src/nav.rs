@@ -97,6 +97,7 @@ pub(crate) struct Nav {
     tab: Tab,
     path: Option<PathSlot>,
     step: Option<StepSlot>,
+    target: Option<StepSlot>,
     focus: Option<SymbolId>,
     file: Option<FileId>,
     lines: Option<LineSelection>,
@@ -115,6 +116,7 @@ impl Default for Nav {
             tab: Tab::Path,
             path: None,
             step: None,
+            target: None,
             focus: None,
             file: None,
             lines: None,
@@ -140,6 +142,10 @@ impl Nav {
 
     pub(crate) const fn step(&self) -> Option<StepSlot> {
         self.step
+    }
+
+    pub(crate) const fn target(&self) -> Option<StepSlot> {
+        self.target
     }
 
     pub(crate) fn step_key(&self) -> Option<StepKey> {
@@ -275,13 +281,20 @@ impl Model {
     }
 
     pub(crate) fn step_removed(&mut self, removed: StepKey) {
-        let shift = |step: StepSlot| match step.cmp(&removed.step) {
+        self.steps_moved(removed.path, |step| match step.cmp(&removed.step) {
             Ordering::Equal => None,
             Ordering::Greater => Some(StepSlot::new(step.get() - 1)),
             Ordering::Less => Some(step),
-        };
+        });
+    }
+
+    pub(crate) fn steps_moved(
+        &mut self,
+        path: PathSlot,
+        shift: impl Fn(StepSlot) -> Option<StepSlot>,
+    ) {
         self.views.remap(|key| {
-            if key.path == removed.path {
+            if key.path == path {
                 shift(key.step).map(|step| StepKey {
                     path: key.path,
                     step,
@@ -291,10 +304,20 @@ impl Model {
             }
         });
         for place in self.nav.history.places_mut() {
-            if place.path == Some(removed.path) {
-                place.step = place.step.and_then(shift);
+            if place.path == Some(path) {
+                place.step = place.step.and_then(&shift);
             }
         }
+        if self.nav.path == Some(path) {
+            self.nav.step = self.nav.step.and_then(&shift);
+            self.nav.target = self.nav.target.and_then(&shift);
+            self.nav.top_step = self.nav.top_step.and_then(&shift);
+            self.nav.outline_shown = None;
+        }
+    }
+
+    pub(crate) fn add_at_top_level(&mut self) {
+        self.nav.target = None;
     }
 
     pub(crate) fn path_removed(&mut self, removed: PathSlot) {
@@ -391,6 +414,7 @@ impl Model {
     pub(crate) fn select_step(&mut self, key: StepKey, scrolling: Scrolling) {
         self.nav.path = Some(key.path);
         self.nav.step = Some(key.step);
+        self.nav.target = Some(key.step);
         let mut seen = BTreeSet::new();
         let mut up = self.parent_of(key);
         while let Some(parent) = up.filter(|parent| seen.insert(*parent)) {
@@ -444,12 +468,12 @@ impl Model {
 
     pub(crate) fn select_path(&mut self, path: PathSlot) {
         self.nav.path = Some(path);
-        match self.tree_order(path).first() {
-            Some(placed) => {
-                let step = placed.step;
-                self.select_step(StepKey { path, step }, Scrolling::Scroll);
-            }
-            None => self.nav.step = None,
+        if let Some(placed) = self.tree_order(path).first() {
+            let step = placed.step;
+            self.select_step(StepKey { path, step }, Scrolling::Scroll);
+        } else {
+            self.nav.step = None;
+            self.nav.target = None;
         }
     }
 
@@ -533,11 +557,8 @@ impl Model {
     pub(crate) fn path_created(&mut self, path: PathSlot) {
         self.nav.path = Some(path);
         self.nav.step = None;
+        self.nav.target = None;
         self.nav.show(Tab::Path);
-    }
-
-    pub(crate) fn step_created(&mut self, step: StepSlot) {
-        self.nav.step = Some(step);
     }
 
     pub(crate) fn forget_step(&mut self) {
@@ -547,11 +568,13 @@ impl Model {
     pub(crate) fn forget_path(&mut self) {
         self.nav.path = None;
         self.nav.step = None;
+        self.nav.target = None;
     }
 
     pub(crate) fn reselect(&mut self, path: Option<PathSlot>, step: Option<StepSlot>) {
         self.nav.path = path;
         self.nav.step = step;
+        self.nav.target = step;
     }
 
     pub(crate) fn refocus(&mut self, focus: Option<SymbolId>, file: Option<FileId>) {

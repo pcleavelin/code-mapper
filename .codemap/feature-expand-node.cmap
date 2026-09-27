@@ -11,8 +11,8 @@ parent mi6y9f
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_click
-lines 12 25
-hash a9762fb126d87ae8
+lines 12 38
+hash 09637e6a41b8a2f4
 note A click on a node button: Callees and Callers become Toggle for that side.
 
 step 6yml7l
@@ -43,7 +43,7 @@ parent ohhidl
 author ai
 file crates/gui/src/graph/build.rs
 symbol header
-lines 53 69
+lines 56 72
 hash c2e4047aedcec306
 note Where the buttons come from: callees are the ones the node's lines name, callers the symbol's callers; each button shows the count still hidden, or 'hide n' once expanded, and is left out when there is nothing to reveal.
 

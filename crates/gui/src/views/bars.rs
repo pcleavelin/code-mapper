@@ -4,7 +4,7 @@ use crate::action::Action;
 use crate::field::Which;
 use crate::ids;
 use crate::model::{Dirty, Model};
-use crate::theme::{NEW_PATH_FIELD, SEARCH_FIELD, TEXT, WEAK};
+use crate::theme::{SEARCH_FIELD, TEXT, WEAK};
 use crate::widgets::{Container, Enabled, Frame};
 
 pub(super) fn top_bar(model: &Model, frame: &mut Frame<'_>) {
@@ -44,16 +44,6 @@ pub(super) fn top_bar(model: &Model, frame: &mut Frame<'_>) {
         frame.push(Action::Forward);
     }
     frame.grow();
-    frame.label("new path", WEAK);
-    frame.field(
-        &model.fields,
-        Which::NewPath,
-        &Label::new("name"),
-        NEW_PATH_FIELD,
-    );
-    if frame.control("pin selection", ids::PIN).clicked() {
-        frame.push(Action::PinSelection);
-    }
     let save = if model.disk.dirty == Dirty::Unsaved {
         "save *"
     } else {

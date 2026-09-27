@@ -422,6 +422,65 @@ fn swaps_trade_orders_and_keep_parents() {
 }
 
 #[test]
+fn place_hangs_a_step_and_puts_it_before_a_sibling() {
+    let index = one_file();
+    let mut map = Map::default();
+    let path = name("p");
+    let _added = map
+        .add_path(path.clone(), PathKind::Layer, Author::Agent)
+        .unwrap();
+    let mut add = |start: u32, parent: Option<&StepId>| {
+        map.add_step(
+            &index,
+            &path,
+            first_file(),
+            span(start, start),
+            Author::Human,
+            parent,
+        )
+        .unwrap()
+    };
+    let root = add(0, None);
+    let one = add(1, Some(&root));
+    let two = add(2, Some(&root));
+    let three = add(3, None);
+    let ids = |placed: &Map| -> Vec<StepId> {
+        placed
+            .path(&path)
+            .unwrap()
+            .steps()
+            .iter()
+            .map(|step| step.id().clone())
+            .collect()
+    };
+    let _placed = map.place(&path, &three, Some(&root), Some(&one)).unwrap();
+    assert_eq!(
+        ids(&map),
+        [root.clone(), three.clone(), one.clone(), two.clone()]
+    );
+    assert_eq!(map.step(&path, &three).unwrap().parent(), Some(&root));
+    let orders: Vec<u32> = map
+        .path(&path)
+        .unwrap()
+        .steps()
+        .iter()
+        .map(|step| step.order().value())
+        .collect();
+    assert_eq!(orders, [0, 1, 2, 3]);
+    let _hung = map.place(&path, &one, Some(&two), None).unwrap();
+    assert_eq!(
+        ids(&map),
+        [root.clone(), three.clone(), two.clone(), one.clone()]
+    );
+    assert_eq!(map.step(&path, &one).unwrap().parent(), Some(&two));
+    assert_eq!(
+        map.place(&path, &root, Some(&one), None),
+        Err(MapError::UnderItself)
+    );
+    assert_eq!(ids(&reloaded(&map)), ids(&map));
+}
+
+#[test]
 fn links_follow_renames_and_hold_removal() {
     let index = one_file();
     let mut map = Map::default();

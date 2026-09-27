@@ -1,0 +1,299 @@
+codemap 8
+path gui-authoring
+kind layer
+author ai
+group gui
+note How a human builds a path in the GUI. The path being read is the one steps go into; Nav's target is the step they hang under (None = top level). Selecting a step sets the target, moving the selection off the path keeps it, and the 'top level' button in the target strip clears it, so a reader can collect several symbols under one step. Every add goes through App::add_step: the Listing's 'add step' (selected lines), '+ step' on Symbols and Xrefs rows (Frame::row_with_action), 'add step' under the Xrefs heading, and '+ step' on an off-path graph node, which hangs under the step it was revealed from as a callee. Adding moves neither the selection nor the target. Rearranging is a drag in the Paths outline: a press grabs a row (StepGrab), travel past GRAB_REACH makes it a drag, and the release drops it onto a row's zone - top quarter before, bottom quarter after, the middle under - through Map::place; steps_moved then carries every slot-keyed thing (views, history, selection, target) to the steps' new slots. The Paths tab's 'new path' form and 'new path from it' (promote at depth 1) make paths. The feature-add-step, feature-choose-target, feature-move-step, feature-new-path and feature-promote-symbol paths follow each gesture.
+
+step 1ctrkp
+order 28
+author ai
+file crates/gui/src/authoring.rs
+symbol Authoring
+lines 0 11
+hash 7f0ef3816a618ba6
+note Every authoring gesture as data: the adds (AddLines, AddSymbol with its Hang), AddAtTopLevel, the outline drag (GrabStep, DragStep, DropStep), Promote, and the new-path form (ToggleNewPath, ChooseKind, CreatePath). Views push Action::Authoring(Authoring::X); apply routes it here.
+
+step 1yd8ve
+order 12
+parent emkll2
+author ai
+file crates/gui/src/views/authoring.rs
+symbol outline_drop
+lines 0 18
+hash b85a818c1dc9d921
+note Which outline row the pointer is over, from last frame's row rectangles (ids are OUTLINE_ROW numbered by step slot), with the zone and the band to draw.
+
+step 4b8wgj
+order 17
+parent 1yd8ve
+author ai
+file crates/gui/src/authoring.rs
+symbol StepDrop
+lines 0 4
+hash 5f434dbf6c1ad33e
+note A drop target: the step it lands on, the zone and the band.
+
+step 51pfgj
+order 3
+parent fsevck
+author ai
+file crates/gui/src/authoring.rs
+symbol under_label
+lines 0 4
+hash 1923cc6e8774fafc
+note A parent slot as the status words it: 'under 1.2' or 'at the top level'.
+
+step 522fu1
+order 19
+parent hskjme
+author ai
+file crates/gui/src/authoring.rs
+symbol step_ids
+lines 0 4
+hash 9cefc5bbd1c10a50
+note The path's step ids in list order, taken before and after the move to map old slots to new.
+
+step 54e1oq
+order 2
+parent fsevck
+author ai
+file crates/gui/src/authoring.rs
+symbol target_under
+lines 0 5
+hash 4cf6a29a21e44671
+note The target as a step of the path being read, or None when it is the top level or its slot no longer exists.
+
+step 5xtx4l
+order 26
+author ai
+file crates/gui/src/authoring.rs
+symbol promote
+lines 0 21
+hash 9d38fe77442de552
+note 'new path from it' under the Xrefs heading: Map::promote at depth 1 with no name, so the path is named after the symbol and holds it with its callees (an existing path of that name is extended). The result is opened on the Path tab.
+
+step 6llyda
+order 16
+parent 79p93f
+author ai
+file crates/gui/src/authoring.rs
+symbol impl Zone
+lines 0 20
+hash e2b69e0021fb9e6b
+note of picks the zone from the pointer's height in the row; band is the rectangle the drop band covers, a DROP_BAND_WIDTH bar on the edge or the whole row.
+
+step 79p93f
+order 15
+parent 1yd8ve
+author ai
+file crates/gui/src/authoring.rs
+symbol Zone
+lines 0 4
+hash 25e26d94dec37326
+note Before, under or after a row: the top and bottom quarters of the row place beside it, the middle hangs under it.
+
+step 7fo356
+order 20
+parent hskjme
+author ai
+file crates/gui/src/nav.rs
+symbol steps_moved
+lines 0 26
+hash 909745513d7ba830
+note Every slot-keyed thing on a path follows a change of slots: step views, history places, and on the path being read the selection, the target and the top step; the outline's last scroll is forgotten so it scrolls again. step_removed is this with one slot gone.
+
+step 8itbvj
+order 9
+parent nl1lcm
+author ai
+file crates/gui/src/widgets.rs
+symbol RowAction
+lines 0 3
+hash a27d2446ba674ba3
+note The trailing action: its label and id; add_step is the '+ step' every list uses.
+
+step bsaj7u
+order 6
+parent nxbjm2
+author ai
+file crates/gui/src/views/authoring.rs
+symbol target_strip
+lines 0 34
+hash 052aea45446863f8
+note The strip under the Listing's and Symbols' toolbars: 'adds to <path> under <n> <symbol>' with a 'top level' button, 'at the top level', or 'open a path to add steps to it'.
+
+step df8kp7
+order 13
+parent emkll2
+author ai
+file crates/gui/src/authoring.rs
+symbol StepGrab
+lines 0 4
+hash c7f8df4c4670cc88
+note A pressed outline row: the step, where the press was, and whether the pointer has travelled far enough to be a drag.
+
+step dmuimx
+order 7
+parent nxbjm2
+author ai
+file crates/gui/src/views/authoring.rs
+symbol target_mark
+lines 0 2
+hash d61202146974db00
+note The outline's marker on the target row, '+ adds here'.
+
+step emkll2
+order 11
+author ai
+file crates/gui/src/views/authoring.rs
+symbol outline_input
+lines 0 13
+hash 91070907c640b0a6
+note The outline's drag, run in the frame's input phase before the tree like panel_input: while a row is grabbed, every frame sends the mouse (DragStep), and when the left button is up, DropStep with the drop target, or None when the pointer never travelled far enough.
+
+step fsevck
+order 0
+author ai
+file crates/gui/src/authoring.rs
+symbol add_step
+lines 0 58
+hash b2c50ca75023abdd
+note The one way a step is added from the GUI. Needs a path being read; the parent is the target, or the step a graph node hangs from, dropped when its slot is gone. The same file and lines under the same parent are refused with that step's number (AlreadyStep); otherwise Map::add_step pins it, authored Human, the map is marked unsaved and the status names the new number and where it went. The selection and the target stay where they were.
+
+step gtqots
+order 29
+parent 1ctrkp
+author ai
+file crates/gui/src/authoring.rs
+symbol author
+lines 0 13
+hash 3a8091b9f7cd75b6
+note The dispatch from apply: one arm per Authoring variant, each a call to the App method below.
+
+step hjplhc
+order 5
+parent nxbjm2
+author ai
+file crates/gui/src/nav.rs
+symbol add_at_top_level
+lines 0 2
+hash ad004437d15bfa9d
+note The strip's 'top level' button: the target becomes None, so adds go at the top level until a step is selected again.
+
+step hskjme
+order 18
+parent emkll2
+author ai
+file crates/gui/src/authoring.rs
+symbol drop_step
+lines 0 62
+hash 6704d4d57ec97ad1
+note The release. A drop that is no drag, onto the grabbed step itself, or outside every row does nothing. Under hangs the step as the row's last child; before places it ahead of the row among the row's siblings; after places it ahead of the row's next sibling in list order, or at the end. Map::place refuses a step under its own subtree, which the status words. Slots change with the list order, so steps_moved remaps them by id before the status names the new number.
+
+step j9vn6t
+order 27
+parent fsevck
+author ai
+file crates/gui/src/authoring.rs
+symbol path_name
+lines 0 2
+hash 5c6530274008430b
+note The name of the path in a slot, for the map calls that take a PathName.
+
+step kfxngg
+order 21
+parent hskjme
+author ai
+file crates/domain/src/map.rs
+symbol place
+lines 0 27
+hash f75276769ead0caf
+note The map's move: reparent (which refuses a step under itself), then walk the step through the list with swap_places until it sits just before the given step, or at the end. Each swap_places exchanges two neighbours' places and orders, so only the steps it passes change their order lines.
+
+step l09zi9
+order 10
+parent nl1lcm
+author ai
+file crates/gui/src/widgets.rs
+symbol RowClicks
+lines 0 3
+hash 948d1062316a4013
+note What a row with an action reports: the row's interaction and the action's, if drawn; acted says the action was pressed.
+
+step mk6r1d
+order 22
+parent emkll2
+author ai
+file crates/gui/src/views/authoring.rs
+symbol outline_band
+lines 0 8
+hash 2f317a481a90c642
+note While a grab is a drag: the grabbing cursor and the drop band over the target row.
+
+step nl1lcm
+order 8
+author ai
+file crates/gui/src/widgets.rs
+symbol row_with_action
+lines 0 49
+hash 0824315972c84b1c
+note A clickable row with a trailing action (the '+ step' on Symbols and Xrefs rows): one row element holding the text and the action, the action lit when hovered and the whole row hovered with it. The action is its own id, and the smallest hovered element wins the hit, so pressing the action is not a click on the row.
+
+step nxbjm2
+order 4
+author ai
+file crates/gui/src/nav.rs
+symbol target
+lines 0 2
+hash a4dc07dbf39429e6
+note Nav's target: the step added steps hang under, None for the top level. select_step sets it, an empty path, path_created and forget_path clear it, reselect keeps it with the selection after a reload, and steps_moved shifts it with the slots. Moving the selection off the path leaves it alone.
+
+step p9kx6k
+order 25
+parent q09qk7
+author ai
+file crates/gui/src/field.rs
+symbol fill
+lines 0 6
+hash 9bf18e7db9d909ea
+note Sets a field's text without giving it the keyboard: the group field's starting value.
+
+step q09qk7
+order 23
+author ai
+file crates/gui/src/authoring.rs
+symbol toggle_new_path
+lines 0 16
+hash 857ecd22f0984d42
+note The Paths tab's 'new path' button opens or closes the form. Opening starts the kind at flow, fills the group field with the group of the path being read, and gives the name field the keyboard.
+
+step q9zitp
+order 14
+parent df8kp7
+author ai
+file crates/gui/src/authoring.rs
+symbol impl StepGrab
+lines 0 26
+hash 662415d885ac9353
+note dragged_to turns the grab into a drag once the pointer has moved GRAB_REACH from the press, the same threshold a tab drag uses.
+
+step uht1sg
+order 24
+parent q09qk7
+author ai
+file crates/gui/src/views/authoring.rs
+symbol new_path_form
+lines 0 38
+hash 15822d0fd3d9a3ad
+note The form under the Paths toolbar: the name field and the three kind buttons (kind@flow, kind@layer, kind@type), then the group field and 'create'.
+
+step vmoykv
+order 1
+parent fsevck
+author ai
+file crates/gui/src/authoring.rs
+symbol Hang
+lines 0 3
+hash 5b4d806881022189
+note Where an add hangs: the target, or under a given step (a graph node revealed as a callee of that step).

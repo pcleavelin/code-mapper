@@ -52,7 +52,7 @@ parent m5ym4f
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_click
-lines 53 53
+lines 66 66
 hash af99e67262ff84de
 note A press that hits no node grabs the background.
 

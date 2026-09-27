@@ -2,17 +2,20 @@ use domain::{Change, Depth, FileId, GroupName, PathCount, PathDiff, Row, Step, S
 use ui::{Count, Icon, Label, Px, Run};
 
 use crate::action::Action;
+use crate::authoring::{Authoring, Hang};
 use crate::field::Which;
 use crate::ids;
 use crate::model::{Model, Openness, PathSlot, StepKey, Tab, ViewFlag};
 use crate::nav::Scrolling;
 use crate::text::{Clipped, Tag};
 use crate::theme::{
-    Cells, FAINT, FILTER_FIELD, GREEN, OUTLINE_TOP, PANEL_TEXT_ROOM, PATHS_GUESS, PATHS_LEAST,
-    PENDING, PIXEL, RED, ROW_EXTRA, SELECTED, SYMBOL_FIXED, SYMBOL_KIND, SYMBOL_NAME,
+    ACCENT, ADD_ROOM, Cells, FAINT, FILTER_FIELD, GREEN, OUTLINE_TOP, PANEL_TEXT_ROOM, PATHS_GUESS,
+    PATHS_LEAST, PENDING, PIXEL, RED, ROW_EXTRA, SELECTED, SYMBOL_FIXED, SYMBOL_KIND, SYMBOL_NAME,
     SYMBOLS_GUESS, SYMBOLS_LEAST, TEXT, WEAK,
 };
-use crate::widgets::{Chosen, Container, Frame, Scroller};
+use crate::widgets::{Chosen, Container, Frame, RowAction, Scroller};
+
+use super::authoring;
 
 fn columns(frame: &Frame<'_>, rect: Option<ui::Rect>, guess: Cells, least: Cells) -> Count {
     let cell = frame.cell_width().max(PIXEL);
@@ -157,7 +160,9 @@ pub(super) fn paths_window(model: &Model, frame: &mut Frame<'_>) {
         &Label::new("filter"),
         FILTER_FIELD,
     );
+    authoring::new_path_button(frame);
     frame.finish();
+    authoring::new_path_form(model, frame);
     let forced = (!model
         .fields
         .get(Which::PathFilter)
@@ -273,15 +278,21 @@ fn outline(model: &Model, frame: &mut Frame<'_>, path: PathSlot, pad: &Label) {
         } else {
             WEAK
         };
+        let mut runs = vec![Run::new(line, color), Run::new(format!("  {file}"), FAINT)];
+        if let Some(mark) = authoring::target_mark(model, numbered.step) {
+            runs.push(Run::new(mark, ACCENT));
+        }
         if frame
             .marked_row(
-                vec![Run::new(line, color), Run::new(format!("  {file}"), FAINT)],
+                runs,
                 ids::OUTLINE_ROW.nth(Count::new(numbered.step.get())),
                 marked,
             )
             .clicked()
         {
+            let mouse = frame.ui.pointer().mouse;
             frame.push(Action::SelectStep(key, Scrolling::Scroll));
+            frame.push(Action::Authoring(Authoring::GrabStep(key, mouse)));
         }
     }
 }
@@ -296,6 +307,8 @@ pub(super) fn symbols_window(model: &Model, frame: &mut Frame<'_>) {
         FILTER_FIELD,
     );
     frame.finish();
+    authoring::target_strip(model, frame);
+    let adding = model.nav.path().is_some();
     let filter = model
         .fields
         .get(Which::SymbolFilter)
@@ -333,51 +346,76 @@ pub(super) fn symbols_window(model: &Model, frame: &mut Frame<'_>) {
         row_height,
         Count::new(40),
     );
+    let room = Count::new(columns.saturating_sub(if adding {
+        usize::try_from(ADD_ROOM.get()).unwrap_or(0)
+    } else {
+        0
+    }));
     for symbol_id in rows
         .iter()
         .skip(window.first.get())
         .take(window.visible.get())
     {
-        let (Some(symbol), Some(file)) = (index.symbol(*symbol_id), index.file(symbol_id.file()))
-        else {
-            continue;
-        };
-        let covered = if model.map.covers(file.path(), symbol.span()) {
-            "+"
-        } else {
-            " "
-        };
-        let indent = if symbol.depth().value() > 0 { "  " } else { "" };
-        let place = format!("{}:{}", file.path(), symbol.span().start().number());
-        let name_width = usize::try_from(SYMBOL_NAME.get()).unwrap_or(0);
-        let kind_width = usize::try_from(SYMBOL_KIND.get()).unwrap_or(0);
-        let fixed = usize::try_from(SYMBOL_FIXED.get()).unwrap_or(0);
-        let line = format!(
-            "{covered} {indent}{:<name_width$} {:<kind_width$} {}",
-            Clipped::right(symbol.name().as_str(), name_width).to_string(),
-            Clipped::right(symbol.kind().as_str(), kind_width).to_string(),
-            Clipped::left(&place, columns.saturating_sub(fixed + indent.len()))
-        );
-        let color = if file.is_pending() { PENDING } else { TEXT };
-        let chosen = if model.nav.focus() == Some(*symbol_id) {
-            Chosen::Chosen
-        } else {
-            Chosen::Plain
-        };
-        let row_id = ids::SYMBOL_ROW.with(&Label::new(format!(
-            "{}:{}",
-            symbol_id.file(),
-            symbol_id.symbol()
-        )));
-        if frame
-            .row(vec![Run::new(line, color)], row_id, chosen)
-            .clicked()
-        {
-            frame.push(Action::Focus(*symbol_id));
-        }
+        symbol_row(model, frame, *symbol_id, room);
     }
     frame.rows_after(count, &window, row_height, Px::ZERO);
     frame.finish();
+}
+
+fn symbol_row(model: &Model, frame: &mut Frame<'_>, symbol_id: domain::SymbolId, room: Count) {
+    let index = &model.index;
+    let adding = model.nav.path().is_some();
+    let (Some(symbol), Some(file)) = (index.symbol(symbol_id), index.file(symbol_id.file())) else {
+        return;
+    };
+    let covered = if model.map.covers(file.path(), symbol.span()) {
+        "+"
+    } else {
+        " "
+    };
+    let indent = if symbol.depth().value() > 0 { "  " } else { "" };
+    let place = format!("{}:{}", file.path(), symbol.span().start().number());
+    let name_width = usize::try_from(SYMBOL_NAME.get()).unwrap_or(0);
+    let kind_width = usize::try_from(SYMBOL_KIND.get()).unwrap_or(0);
+    let fixed = usize::try_from(SYMBOL_FIXED.get()).unwrap_or(0);
+    let line = format!(
+        "{covered} {indent}{:<name_width$} {:<kind_width$} {}",
+        Clipped::right(symbol.name().as_str(), name_width).to_string(),
+        Clipped::right(symbol.kind().as_str(), kind_width).to_string(),
+        Clipped::left(&place, room.get().saturating_sub(fixed + indent.len()))
+    );
+    let color = if file.is_pending() { PENDING } else { TEXT };
+    let chosen = if model.nav.focus() == Some(symbol_id) {
+        Chosen::Chosen
+    } else {
+        Chosen::Plain
+    };
+    let row_id = ids::SYMBOL_ROW.with(&Label::new(format!(
+        "{}:{}",
+        symbol_id.file(),
+        symbol_id.symbol()
+    )));
+    let add = adding.then(|| {
+        RowAction::add_step(ids::ADD_SYMBOL.with(&Label::new(format!(
+            "{}:{}",
+            symbol_id.file(),
+            symbol_id.symbol()
+        ))))
+    });
+    let clicks = frame.row_with_action(
+        vec![Run::new(line, color)],
+        row_id,
+        (chosen == Chosen::Chosen).then_some(SELECTED),
+        add,
+    );
+    if clicks.acted() {
+        frame.push(Action::Authoring(Authoring::AddSymbol(
+            symbol_id,
+            Hang::Target,
+        )));
+    } else if clicks.row.clicked() {
+        frame.push(Action::Focus(symbol_id));
+    }
 }
 
 struct Coverage {

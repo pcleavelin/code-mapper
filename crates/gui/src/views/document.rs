@@ -267,6 +267,13 @@ pub(super) fn path_document(model: &Model, frame: &mut Frame<'_>) {
     linked_from(model, frame, found);
     breadcrumb(model, frame, path, &numbered, top_step);
     frame.scroll_column(ids::document(), offset, Scroller::Document, None);
+    if found.steps().is_empty() {
+        frame.note(
+            "No steps yet. Select lines in the Listing and press 'add step', or press '+ step' on a row in Symbols or Xrefs, or on a node in the Graph. Drag steps in the Paths outline to rearrange them.",
+            WEAK,
+            Padding::Path,
+        );
+    }
     let mut walk = Walk {
         base: Count::ZERO,
         prefix: Label::default(),

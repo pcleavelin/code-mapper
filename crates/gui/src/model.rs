@@ -3,12 +3,13 @@ use std::fmt;
 use std::time::{Duration, Instant};
 
 use domain::{
-    Depth, FileId, GroupName, Index, Line, LineCount, Map, Path, PathDiff, PathName, Row, Step,
-    StepId,
+    Depth, FileId, GroupName, Index, Line, LineCount, Map, Path, PathDiff, PathKind, PathName, Row,
+    Step, StepId,
 };
 use io_map::{MapStore, Stamp};
 use ui::{Count, Extent, FontSize, Id, Label, Px};
 
+use crate::authoring::StepGrab;
 use crate::field::{Fields, Which};
 use crate::graph::GraphState;
 use crate::nav::Nav;
@@ -340,6 +341,8 @@ pub(crate) struct Model {
     pub(crate) graph: GraphState,
     pub(crate) tip_shown: Option<Label>,
     pub(crate) fields: Fields,
+    pub(crate) new_path: Option<PathKind>,
+    pub(crate) step_grab: Option<StepGrab>,
     pub(crate) results: Vec<Hit>,
     pub(crate) output: OutputLog,
     pub(crate) output_bottom: Count,
@@ -375,6 +378,8 @@ impl Model {
             graph: GraphState::default(),
             tip_shown: None,
             fields: Fields::default(),
+            new_path: None,
+            step_grab: None,
             results: Vec::new(),
             output: OutputLog::default(),
             output_bottom: Count::ZERO,

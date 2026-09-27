@@ -11,9 +11,9 @@ parent 7n3jq4
 author ai
 file crates/gui/src/views/xrefs.rs
 symbol xrefs_panel
-lines 0 57
-hash 40cbcf7ddf112181
-note The xrefs panel, on the right by default: the pinned peek on top when there is one, then the focused symbol's callers, callees and references, each row clickable. References are asked of the server the first time a symbol is shown, once per text of its file (the probe carries the file hash), and the heading says so while the answer is out.
+lines 0 58
+hash 939d7cce124e29c8
+note The xrefs panel, on the right by default: the pinned peek on top when there is one, then the focused symbol with 'add step' (unless it is the selected step) and 'new path from it', its callers, callees and references, each row clickable. References are asked of the server the first time a symbol is shown, once per text of its file (the probe carries the file hash), and the heading says so while the answer is out.
 
 step 0n6ve6
 order 29
@@ -102,9 +102,9 @@ parent 62vg11
 author ai
 file crates/gui/src/views/left.rs
 symbol outline
-lines 0 62
-hash 289fc00ae6a92093
-note The outline of the selected path: one row per step in tree order, indented by depth, with the hierarchical number, the symbol and file, the link as an arrow and a hidden count on a folded subtree, whose steps are left out. The selected step has the selection background and the step at the top of the document a weaker one, so the outline follows scrolling.
+lines 0 68
+hash 4f79be498dcc1731
+note The outline of the selected path: one row per step in tree order, indented by depth, with the hierarchical number, the symbol and file, the link as an arrow and a hidden count on a folded subtree, whose steps are left out. The selected step has the selection background and the step at the top of the document a weaker one, so the outline follows scrolling. The target row ends in '+ adds here', and a press on a row grabs it for dragging (gui-authoring).
 
 step 4uwoav
 order 57
@@ -121,9 +121,9 @@ order 0
 author ai
 file crates/gui/src/app.rs
 symbol frame
-lines 0 51
-hash a9c576189bbd32c2
-note The frame (platform::App::frame), in order: the font and cell size for this scale factor, the screenshot aid, the five polls, the keys, then panel_input and the graph's own input phase, the element tree, layout and draw, the action queue, the reveal of the centre view navigation asked for, saving the layout if it changed, and the history snapshot. It asks the loop to come back in 50 ms while any work is in flight and in a second otherwise, so an idle window costs one frame per second.
+lines 0 54
+hash 7ac612bfea517025
+note The frame (platform::App::frame), in order: the font and cell size for this scale factor, the screenshot aid, the five polls, the keys, then panel_input, the outline's drag (outline_input) and the graph's own input phase, the element tree, layout and draw, the action queue, the reveal of the centre view navigation asked for, saving the layout if it changed, and the history snapshot. It asks the loop to come back in 50 ms while any work is in flight and in a second otherwise, so an idle window costs one frame per second.
 
 step 5aljhx
 order 3
@@ -131,9 +131,9 @@ parent bg9t38
 author ai
 file crates/gui/src/views/bars.rs
 symbol top_bar
-lines 0 56
-hash aa1deae64945bacd
-note The top bar: search box, back and forward, then right-aligned the new-path box, 'pin selection' and 'save', which shows a star while the map has unsaved edits. Every button here only pushes an Action.
+lines 0 46
+hash 6a86ae43ae229ebd
+note The top bar: search box, back and forward, then right-aligned 'save', which shows a star while the map has unsaved edits. Every button here only pushes an Action. Authoring controls live where the code is shown: the Paths tab, the Listing, Symbols, Xrefs and the graph.
 
 step 5j9xn1
 order 40
@@ -162,8 +162,8 @@ parent bg9t38
 author ai
 file crates/gui/src/views/center.rs
 symbol listing
-lines 0 94
-hash 0b0e481455790e0d
+lines 0 98
+hash 63486641387f9e40
 link listing-view
 note The Listing tab: the current file.
 
@@ -173,9 +173,9 @@ parent myq0zo
 author ai
 file crates/gui/src/views/left.rs
 symbol paths_window
-lines 0 71
-hash ed8ad9ce38f5fd53
-note Paths: a filter field (feature-filter-paths), then the groups from Model::listed_rows as folders with their path counts, then one row per path, and the selected path expanded into its outline. Every row under a closed group is skipped. Paths removed since the parent revision are listed at the end, greyed.
+lines 0 73
+hash a50fea776167de4c
+note Paths: a filter field (feature-filter-paths) and the 'new path' button with its form (feature-new-path), then the groups from Model::listed_rows as folders with their path counts, then one row per path, and the selected path expanded into its outline. Every row under a closed group is skipped. Paths removed since the parent revision are listed at the end, greyed.
 
 step 7jhifk
 order 20
@@ -224,8 +224,8 @@ parent sn1cn1
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 18
-hash 807c20a6d2bfc6a0
+lines 0 21
+hash 74bf56c206047b3e
 note A field's keys: the edits and text go to the field, and a submitted line runs what that field is for.
 
 step a4si22
@@ -234,8 +234,8 @@ parent 50ozko
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 0 35
-hash 7e632512b7fef589
+lines 0 40
+hash 0443d40228100319
 note Everything the input says before a single element exists, as actions applied at once: the Save chord, back and forward, every field fed the frame's edits and typed text (only the focused one takes them; enter runs the command, the search, a new path or a line jump), and up and down walking the path when no field has the keyboard. The chords come from the feature registry through keys.
 
 step bdljdg
@@ -255,9 +255,9 @@ parent 50ozko
 author ai
 file crates/gui/src/views.rs
 symbol build
-lines 0 12
-hash d8edc5c1ba245f7c
-note The element tree for the whole window, from &Model into the Frame: the top bar, then the body holding the panel tree, then the status bar, then what floats over everything: the drop band of a tab being dragged, the view picker and the tooltip.
+lines 0 13
+hash e4590209fd23c9e9
+note The element tree for the whole window, from &Model into the Frame: the top bar, then the body holding the panel tree, then the status bar, then what floats over everything: the drop band of a tab or an outline row being dragged, the view picker and the tooltip.
 
 step brwp9e
 order 82
@@ -294,11 +294,11 @@ step cj7z2z
 order 17
 parent 9xbf1m
 author ai
-file crates/gui/src/action.rs
+file crates/gui/src/authoring.rs
 symbol create_path
-lines 0 24
-hash db86b4b3e1bd5435
-note The new-path box: enter creates an empty flow with the typed name, authored by the human, selects it and says so in the status line, so 'pin selection' lands in it.
+lines 0 42
+hash 4d9a695596648365
+note The Paths tab's new-path form: create reads the name, the chosen kind and the group field, refuses an existing name, adds the path authored by the human, selects it, closes the form and says so in the status line, so the next add lands in it.
 
 step cr3ty8
 order 51
@@ -326,9 +326,19 @@ parent bg9t38
 author ai
 file crates/gui/src/views/document.rs
 symbol path_document
-lines 0 43
-hash d4cd48a413ad9617
-note The document, the reader's landing view: the path header, the note, the steps that link here, and a sticky breadcrumb of the topmost visible step's ancestors, then the scrolling column of steps and the steps removed since the parent revision. With no path selected it says how to get one.
+lines 0 50
+hash 77d56eb87747e4b8
+note The document, the reader's landing view: the path header, the note, the steps that link here, and a sticky breadcrumb of the topmost visible step's ancestors, then the scrolling column of steps (an empty path says how to add some) and the steps removed since the parent revision. With no path selected it says how to get one.
+
+step dhyl4k
+order 87
+parent j7n739
+author ai
+file crates/gui/src/authoring.rs
+symbol Authoring
+lines 0 11
+hash 7f0ef3816a618ba6
+note The authoring gestures as their own enum, carried by the one Action::Authoring variant so Action stays a list of kinds of change rather than every authoring detail (gui-authoring).
 
 step dy5ddf
 order 67
@@ -387,9 +397,9 @@ parent 0ewdra
 author ai
 file crates/gui/src/views/xrefs.rs
 symbol call_lists
-lines 0 22
-hash 2738f044b7e232a0
-note Callers and callees, each row the symbol's label as the CLI prints it. While the file waits for its server the rows are dimmed and a click does nothing, since the lists are the tree-sitter resolver's and about to change.
+lines 0 39
+hash 35d0fb0dd510ef30
+note Callers and callees, each row the symbol's label as the CLI prints it, with a '+ step' action while a path is open (Frame::row_with_action). While the file waits for its server the rows are dimmed and a click does nothing, since the lists are the tree-sitter resolver's and about to change.
 
 step gy5tg5
 order 23
@@ -400,6 +410,17 @@ symbol from_name
 lines 0 8
 hash 192dbed4ec366a1f
 note How a script names an element: the id name, name/n for an nth id, name@suffix for a with id - the same spelling rect, click-id and hover-id take, and the element names ids gives every control.
+
+step h5x2ow
+order 88
+parent sn1cn1
+author ai
+file crates/gui/src/authoring.rs
+symbol author
+lines 0 13
+hash 3a8091b9f7cd75b6
+link gui-authoring
+note Action::Authoring's arm: author, in authoring.rs, dispatches to the add, target, drag, promote and new-path handlers.
 
 step ho9g6o
 order 80
@@ -438,8 +459,8 @@ author ai
 file crates/gui/src/action.rs
 symbol Action
 lines 0 47
-hash 59251f8fbdde8544
-note What a gesture can ask for. Selection and navigation, the per-step view toggles, the path-wide toggles, the two deletions, opening a line or a definition, tabs, the fields' input, scroll offsets and what a view measured (the top step, a scroll done), server questions, panel gestures and graph gestures. Adding a gesture means adding a variant here and an arm in apply, not threading a callback through the views. A StepKey is a (path, step) pair of slots in the map; Definition carries the intent, peek or jump; SelectLine says whether to extend; SelectStep whether to scroll the document; OpenPath selects the path unless it is the one being read and shows it in the given tab.
+hash 96be1f8b749a3b88
+note What a gesture can ask for. Selection and navigation, the per-step view toggles, the path-wide toggles, the two deletions, the authoring gestures as one Authoring variant (add lines or a symbol, the target, grabbing, dragging and dropping an outline row, promote, the new-path form), opening a line or a definition, tabs, the fields' input, scroll offsets and what a view measured (the top step, a scroll done), server questions, panel gestures and graph gestures. Adding a gesture means adding a variant here and an arm in apply, not threading a callback through the views. A StepKey is a (path, step) pair of slots in the map; Definition carries the intent, peek or jump; SelectLine says whether to extend; SelectStep whether to scroll the document; OpenPath selects the path unless it is the one being read and shows it in the given tab.
 
 step jd4cl1
 order 78
@@ -598,9 +619,9 @@ parent myq0zo
 author ai
 file crates/gui/src/views/left.rs
 symbol symbols_window
-lines 0 92
-hash b3f18bc0354fbe07
-note Symbols: a filter box over every symbol in the index, matching name or file path, one row each with a '+' when a path covers it, dimmed while its file waits for its server. Only the rows on screen become elements, with a spacer above and below standing in for the rest, so the table is the same cost at ten symbols or ten thousand.
+lines 0 63
+hash 36d66addccbb1c54
+note Symbols: a filter box over every symbol in the index, matching name or file path, one row each with a '+' when a path covers it, dimmed while its file waits for its server, and '+ step' on each row while a path is open, under the target strip. Only the rows on screen become elements, with a spacer above and below standing in for the rest, so the table is the same cost at ten symbols or ten thousand.
 
 step pjv3q6
 order 85
@@ -611,6 +632,16 @@ symbol impl AppCommand
 lines 0 29
 hash bd4d469b35600b51
 note named finds the command whose name is the line's first word, which is what script's match reads instead of comparing the word against each command.
+
+step q64nn9
+order 86
+parent pj8e6h
+author ai
+file crates/gui/src/views/left.rs
+symbol symbol_row
+lines 0 54
+hash 6602edfdb26c16c5
+note One Symbols row, with its '+' covered mark and, while a path is open, the '+ step' action (Frame::row_with_action).
 
 step qbdax8
 order 75
@@ -667,11 +698,12 @@ step rdm4l3
 order 26
 parent sn1cn1
 author ai
-file crates/gui/src/action.rs
-symbol pin_selection
-lines 0 51
-hash 4d00052c41179649
-note 'pin selection': the listing's selected lines become a step of the selected path, under the selected step. The new step becomes the selected one, so pinning repeatedly builds a chain rather than a fan.
+file crates/gui/src/authoring.rs
+symbol add_step
+lines 0 58
+hash b2c50ca75023abdd
+link gui-authoring
+note Adding a step, the human's authoring gesture behind 'add step' in the Listing and '+ step' in Symbols, Xrefs and the graph: the lines become a step of the path being read, under the target (or the step a graph node hangs from). The same lines under the same parent are refused with the existing step's number. Neither the selection nor the target moves, so repeated adds build a fan of siblings.
 
 step rq8lmj
 order 34
@@ -702,7 +734,7 @@ author ai
 file crates/gui/src/action.rs
 symbol apply
 lines 0 96
-hash 84f676cba54b2687
+hash f46e86034342074d
 note The action queue, drained once the tree is built; the keys and panel_input use it too, before the tree. apply is the only place the Model changes during a frame, which is what lets every view take the Model read-only. Most arms are one call into nav.rs or a Model field.
 
 step svoo3m

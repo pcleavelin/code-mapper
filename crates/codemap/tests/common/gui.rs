@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 #[macro_export]
 macro_rules! gui_scenarios {
     ($m:ident) => {
-        $m! { gui: document, peek, listing, graph, panels, delete, diff, reload, layout, links }
+        $m! { gui: document, peek, listing, graph, panels, delete, diff, reload, layout, links, authoring }
     };
 }
 
@@ -189,7 +189,7 @@ click <<DUMP rect lines|200,40>> shift
 wait 2
 dump
 shot {shots}/selected.png
-click-id pin
+click-id add-lines
 wait 2
 dump
 click-id field@goto-line
@@ -318,7 +318,6 @@ pub(crate) fn panels() -> Scenario {
         script: "SETTLE
 click-id tab@Symbols
 wait 3
-shot {shots}/symbols.png
 click-id field@symbols
 text area
 wait 3
@@ -380,14 +379,15 @@ dump
 text clear
 key enter
 wait 2
-click-id field@new-path
+click-id new-path
+wait 2
 text handmade
 key enter
 wait 3
 dump
 click-id tab@Listing
 wait 2
-click-id pin
+click-id add-lines
 wait 2
 dump
 key escape
@@ -395,6 +395,109 @@ key s ctrl
 wait 3
 dump
 shot {shots}/saved.png
+quit
+",
+    }
+}
+
+pub(crate) fn authoring() -> Scenario {
+    Scenario {
+        setup: |bin, name| Ok(mapped(bin, name)),
+        hook: no_hook,
+        after: &[&["paths", "handmade"]],
+        script: "SETTLE
+click-id new-path
+wait 2
+dump
+click-id create-path
+wait 2
+dump
+text handmade
+click-id kind@layer
+wait 2
+click-id field@new-group
+text hand
+wait 2
+shot {shots}/form.png
+key enter
+wait 3
+dump
+shot {shots}/empty.png
+click-id tab@Symbols
+wait 2
+click-id field@symbols
+text main
+wait 3
+click-id add-sym@3:0
+wait 2
+dump
+shot {shots}/symbols.png
+click-id tab@Paths
+wait 2
+click-id outline/0
+wait 3
+click-id add-xfrom/0
+wait 2
+click-id add-xfrom/1
+wait 2
+dump
+click-id add-xfrom/1
+wait 2
+dump
+open src/store.rs 12
+wait 3
+rect lines
+click <<DUMP rect lines|200,8>>
+wait 2
+click <<DUMP rect lines|200,40>> shift
+wait 2
+click-id target-top
+wait 2
+dump
+click-id add-lines
+wait 2
+dump
+shot {shots}/listing.png
+click-id outline/0
+wait 2
+click-id tab@Graph
+wait 4
+dump
+click <<DUMP button main 'callees>>
+wait 4
+dump
+click-id graph-fit
+wait 4
+dump
+shot {shots}/graph.png
+click <<DUMP button new '+ step>>
+wait 4
+dump
+click-id tab@Path
+wait 2
+rect outline/3
+rect outline/1
+drag <<DUMP rect outline/3|20,10>> <<DUMP rect outline/1|20,10>>
+wait 3
+dump
+shot {shots}/under.png
+rect outline/3
+rect outline/0
+drag <<DUMP rect outline/3|20,10>> <<DUMP rect outline/0|20,1>>
+wait 3
+dump
+rect outline/0
+rect outline/3
+drag <<DUMP rect outline/0|20,10>> <<DUMP rect outline/3|20,10>>
+wait 3
+dump
+shot {shots}/moved.png
+click-id promote-focus
+wait 3
+dump
+key s ctrl
+wait 3
+dump
 quit
 ",
     }

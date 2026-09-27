@@ -200,9 +200,9 @@ parent 20a8vh
 author ai
 file crates/gui/src/graph.rs
 symbol Button
-lines 0 8
-hash f2c4d3f0b91d5e80
-note The buttons a node header can carry: preview, listing, expansions, and context above, below and none.
+lines 0 9
+hash 1ec2e4f3f14d7a83
+note The buttons a node header can carry: preview, listing, '+ step' (off-path nodes), expansions, and context above, below and none.
 
 step osav6h
 order 21
@@ -261,9 +261,9 @@ parent 4yhd4f
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_click
-lines 0 55
-hash bed071a824716b96
-note A press against last frame's hit: a button sends its action (preview, callees, callers, context) or defers a GoTo for listing; a header click grabs the node, defers selecting its step (or focusing its symbol off the path) and sends HoldLook so the camera stays put; a press on a code line grabs the node and, with ctrl or alt, defers a definition jump or peek at the column under the pointer; a body press grabs the node; the background starts a pan.
+lines 0 68
+hash 6947499581bb912a
+note A press against last frame's hit: a button sends its action (preview, callees, callers, context) or defers a GoTo for listing, or an AddSymbol for '+ step' under the step the node was revealed from as a callee, else under the target; a header click grabs the node, defers selecting its step (or focusing its symbol off the path) and sends HoldLook so the camera stays put; a press on a code line grabs the node and, with ctrl or alt, defers a definition jump or peek at the column under the pointer; a body press grabs the node; the background starts a pan.
 
 step rgjxnq
 order 28

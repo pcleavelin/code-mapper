@@ -20,7 +20,7 @@ parent 17uw33
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 16 18
+lines 21 23
 hash c5dfbb5c9de2a66b
 note Trigger: every frame the keys phase asks keys::walks which arrow chords were pressed and queues one WalkWhenIdle per press.
 
@@ -30,8 +30,8 @@ parent 17uw33
 author ai
 file crates/gui/src/nav.rs
 symbol select_step
-lines 0 52
-hash 1b842c90bf50f8bc
+lines 0 53
+hash 4970f05ff13c3c88
 link feature-select-step
 note Selecting the neighbour is the same as clicking it in the outline.
 

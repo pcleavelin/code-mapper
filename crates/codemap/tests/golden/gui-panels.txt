@@ -70,13 +70,13 @@ DUMP tip=None peek=None status="path 'handmade' created (unsaved)"
 DUMP paths filter="" listed=6
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
-DUMP tab=Listing path=Some(5) step=Some(0) focus=Some("Shape") file=Some("src/store.rs") sel=Some((12, 12))
+DUMP tab=Listing path=Some(5) step=None focus=Some("Shape") file=Some("src/store.rs") sel=Some((12, 12))
 DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path Diff Graph Listing* Results] 2[Xrefs*])) 3[Output*])
-DUMP tip=None peek=None status="step 1 added to 'handmade' under the top level"
+DUMP tip=None peek=None status="step 1 added to 'handmade' at the top level"
 DUMP paths filter="" listed=6
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
-DUMP tab=Listing path=Some(5) step=Some(0) focus=Some("Shape") file=Some("src/store.rs") sel=Some((12, 12))
+DUMP tab=Listing path=Some(5) step=None focus=Some("Shape") file=Some("src/store.rs") sel=Some((12, 12))
 DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path Diff Graph Listing* Results] 2[Xrefs*])) 3[Output*])
 DUMP tip=None peek=None status="saved"
 DUMP paths filter="" listed=6

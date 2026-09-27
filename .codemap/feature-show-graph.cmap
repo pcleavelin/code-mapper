@@ -11,7 +11,7 @@ parent x7w987
 author ai
 file crates/gui/src/app.rs
 symbol frame
-lines 18 22
+lines 21 25
 hash 2e7e5b43c61ca4d0
 link graph-draw
 note The effect from the next frame on: while the Graph view is in front of some panel, each frame runs the graph phase (input, layout, fit, camera, scene) before the views are built, and that panel draws its scene.
@@ -33,7 +33,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol select_path
 lines 0 9
-hash e026ad68c7ae2fbb
+hash 76ddeee19ae30401
 link selection
 note Skipped when the path is the one being read; otherwise selects its first step.
 

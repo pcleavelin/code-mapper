@@ -150,6 +150,7 @@ pub(crate) const TOOLTIP_ROW_GAP: Px = Px::new(2);
 pub(crate) const TOOLTIP_MARGIN: Px = Px::new(40);
 pub(crate) const SPLIT_LEAST: Px = Px::new(5);
 pub(crate) const GRAB_REACH: Px = Px::new(8);
+pub(crate) const DROP_BAND_WIDTH: Px = Px::new(4);
 pub(crate) const LISTING_GUESS: Px = Px::new(600);
 pub(crate) const CANVAS_GUESS: Px = Px::new(100);
 
@@ -180,6 +181,7 @@ pub(crate) const EXPAND_BUTTON: Cells = Cells::new(8);
 pub(crate) const CLOSE_BUTTON: Cells = Cells::new(3);
 pub(crate) const SEARCH_FIELD: Cells = Cells::new(24);
 pub(crate) const NEW_PATH_FIELD: Cells = Cells::new(16);
+pub(crate) const ADD_ROOM: Cells = Cells::new(8);
 pub(crate) const FILTER_FIELD: Cells = Cells::new(16);
 pub(crate) const LINE_FIELD: Cells = Cells::new(8);
 pub(crate) const PATHS_GUESS: Cells = Cells::new(44);
