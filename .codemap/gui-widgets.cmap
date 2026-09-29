@@ -134,9 +134,9 @@ parent rcazsr
 author ai
 file crates/gui/src/widgets.rs
 symbol shape
-lines 0 98
-hash c934c32d01403444
-note The one match that turns a Container into its layout, style and fixed id: the paddings, gaps and colours from theme, the accent bar on the left of a selected step row or code column, the id body the panel tree is laid out from, the picker's id, and the id a StepColumn carries.
+lines 0 94
+hash 2e84119d9aeea50c
+note The one match that turns a Container into its layout, style and fixed id: the paddings, gaps and colours from theme, the accent bar on the left of a selected step row or code column, the panel header's TAB_STRIP background with no padding (its tabs carry their own), the id body the panel tree is laid out from, the picker's id, and the id a StepColumn carries.
 
 step aidqqn
 order 3
@@ -201,9 +201,9 @@ step gjm6fk
 order 0
 author ai
 file crates/gui/src/theme.rs
-lines 7 28
-hash 596868dba7d8ee08
-note The palette, in theme: a dozen colours named by role - background, panel, field, border, text, weak, accent, green, red, orange, hover, selected, and the red background a danger button takes under the pointer - and below them the tints made from those by alpha (disabled, selected lines, the slice, the outline's top step, faint, pending, the drop band, the call tint). A colour decision is made once, here, and every view names one.
+lines 8 36
+hash 650f512dcd958a59
+note The palette, in theme: a dozen colours named by role - background, panel, field, border, text, weak, accent, green, red, orange, hover, selected, and the red background a danger button takes under the pointer - and below them the tints made from those by alpha (disabled, selected lines, the slice, the outline's top step, faint, pending, the drop band, the call tint), the graph's colours (STEP_EDGE, EXPANSION_EDGE, BACK_EDGE, STEP_BORDER, SIBLINGS_FILL, SIBLINGS_BORDER) and the panel header's TAB_STRIP. A colour decision is made once, here, and every view names one.
 
 step hatq2a
 order 45

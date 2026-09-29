@@ -4,7 +4,7 @@ use ui::{Count, Id, Label, Point, Px, Typed};
 use crate::app::App;
 use crate::authoring::Authoring;
 use crate::field::{Edit, Enter, FieldText, Which};
-use crate::graph::GraphAction;
+use crate::graph::{GraphAction, Heading};
 use crate::ids;
 use crate::keys::{Extend, Walk};
 use crate::model::{
@@ -83,6 +83,7 @@ pub(crate) enum Action {
     ClosePicker,
     Type(Which, Vec<Edit>, Typed),
     WalkWhenIdle(Walk),
+    GraphWalk(Heading),
     Graph(GraphAction),
 }
 
@@ -182,6 +183,7 @@ impl App {
                     model.walk(walk);
                 }
             }
+            Action::GraphWalk(heading) => self.graph_walk(heading),
             Action::Graph(action) => model.graph.apply(action),
         }
     }

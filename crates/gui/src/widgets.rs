@@ -2,8 +2,8 @@ mod code;
 
 use platform::Cursor;
 use ui::{
-    Align, Canvas, Count, Draw, FontSize, Id, Interaction, Kind, Label, Layout, Point, Px, Rect,
-    Run, Scrollbar, Sides, Size, Style, Text, Ui, Wrap,
+    Align, Canvas, Count, Draw, FontSize, Icon, Id, Interaction, Kind, Label, Layout, Point, Px,
+    Rect, Run, Scrollbar, Sides, Size, Style, Text, Ui, Wrap,
 };
 
 use crate::action::Action;
@@ -16,10 +16,10 @@ use crate::peek::Tip;
 use crate::status::Status;
 use crate::theme::{
     self, ACCENT, BACKGROUND, BAR_PADDING, BORDER, BUTTON_PADDING, Cells, DANGER_HOVER,
-    DOCUMENT_PADDING, DROP_BAND, FIELD, FIELD_CARET_ROOM, FIELD_PADDING, GAP, HOVER, INDENT_EXTRA,
-    LABEL_PADDING, NAV_BUTTON, NAV_BUTTON_EXTRA, PANEL, PANEL_PADDING, RED, ROW_PADDING, SELECTED,
-    SMALL_BUTTON_EXTRA, SMALL_BUTTON_PADDING, SMALL_GAP, STATUS_GAP, STEP_SPACER, TEXT, TIGHT_GAP,
-    TOOLTIP_PADDING, WEAK, WIDE_GAP,
+    DOCUMENT_PADDING, DROP_BAND, FAINT, FIELD, FIELD_CARET_ROOM, FIELD_PADDING, GAP, HOVER,
+    INDENT_EXTRA, LABEL_PADDING, NAV_BUTTON, NAV_BUTTON_EXTRA, PANEL, PANEL_PADDING, RED,
+    ROW_PADDING, SELECTED, SMALL_BUTTON_EXTRA, SMALL_BUTTON_PADDING, SMALL_GAP, STATUS_GAP,
+    STEP_SPACER, TAB_PADDING, TAB_STRIP, TEXT, TIGHT_GAP, TOOLTIP_PADDING, WEAK, WIDE_GAP,
 };
 
 use crate::field::Fields;
@@ -187,12 +187,8 @@ impl Container {
                 Some(ids::picker()),
             ),
             Self::PanelHeader => Shape::new(
-                Layout::row()
-                    .grow_width()
-                    .padding(BAR_PADDING)
-                    .gap(SMALL_GAP)
-                    .cross(Align::Center),
-                Style::background(PANEL).border(Sides::BOTTOM, BORDER),
+                Layout::row().grow_width().cross(Align::Center),
+                Style::background(TAB_STRIP).border(Sides::BOTTOM, BORDER),
                 None,
             ),
         }
@@ -377,6 +373,69 @@ impl Frame<'_> {
 
     pub(crate) fn small_button(&mut self, text: impl Into<Label>, target: Target) -> Interaction {
         self.small_button_sized(text, None, target)
+    }
+
+    pub(crate) fn tab(
+        &mut self,
+        text: impl Into<Label>,
+        target: Target,
+        close: Target,
+        chosen: Chosen,
+    ) -> TabClicks {
+        let id = target.id();
+        let close_id = close.id();
+        let close_hovered = self.ui.interaction(close_id).hovered();
+        let hovered = self.ui.interaction(id).hovered() || close_hovered;
+        let active = chosen == Chosen::Chosen;
+        let background = if active {
+            Some(PANEL)
+        } else if hovered {
+            Some(HOVER)
+        } else {
+            None
+        };
+        let size = self.metrics.font;
+        let tab = self.ui.open(
+            Kind::None,
+            Layout::row()
+                .padding(TAB_PADDING)
+                .gap(SMALL_GAP)
+                .cross(Align::Center),
+            Style {
+                background,
+                border: if active { Sides::TOP } else { Sides::NONE },
+                border_color: ACCENT,
+            },
+            Some(id),
+        );
+        self.ui.leaf(
+            text_kind(
+                vec![Run::new(text, if active || hovered { TEXT } else { WEAK })],
+                size,
+                Wrap::None,
+            ),
+            Layout::row(),
+            Style::NONE,
+            None,
+        );
+        let close_color = if close_hovered {
+            TEXT
+        } else if active || hovered {
+            WEAK
+        } else {
+            FAINT
+        };
+        let closed = self.ui.leaf(
+            text_kind(vec![Run::new(Icon::Close, close_color)], size, Wrap::None),
+            Layout::row(),
+            Style {
+                background: close_hovered.then_some(HOVER),
+                ..Style::NONE
+            },
+            Some(close_id),
+        );
+        self.ui.close();
+        TabClicks { tab, close: closed }
     }
 
     pub(crate) fn danger_button(&mut self, text: impl Into<Label>, target: Target) -> Interaction {
@@ -835,4 +894,9 @@ pub(crate) enum Padding {
 pub(crate) enum Fill {
     Fit,
     Grow,
+}
+
+pub(crate) struct TabClicks {
+    pub(crate) tab: Interaction,
+    pub(crate) close: Interaction,
 }

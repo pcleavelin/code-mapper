@@ -144,6 +144,7 @@ pub(crate) const GRAPH_ONE_TO_ONE: Control =
 pub(crate) const GRAPH_AUTO: Control =
     Control::new(Feature::AutoLayout, Element::new("graph-auto"));
 pub(crate) const GRAPH_FIT: Control = Control::new(Feature::FitGraph, Element::new("graph-fit"));
+pub(crate) const GRAPH_TURN: Control = Control::new(Feature::TurnGraph, Element::new("graph-turn"));
 pub(crate) const GRAPH_CANVAS: Control =
     Control::new(Feature::PanGraph, Element::new("graph-canvas"));
 
@@ -217,6 +218,7 @@ pub(crate) const CONTROLS: &[Control] = &[
     GRAPH_ONE_TO_ONE,
     GRAPH_AUTO,
     GRAPH_FIT,
+    GRAPH_TURN,
     GRAPH_CANVAS,
 ];
 

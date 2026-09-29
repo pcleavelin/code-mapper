@@ -11,7 +11,7 @@ parent 149ydv
 author ai
 file crates/gui/src/graph/input.rs
 symbol apply
-lines 45 47
+lines 47 49
 hash f7f66bcd773e458f
 note Records the node's position in cells; it survives relayouts until auto layout or an expansion on that node clears it.
 
@@ -30,7 +30,7 @@ parent 149ydv
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 20 28
+lines 27 35
 hash adb08f9bef82fca4
 note Trigger: a click (a press) on the canvas goes to graph_click, a drag delta to graph_drag, and releasing the button clears the hold.
 
@@ -62,5 +62,5 @@ author ai
 file crates/gui/src/graph/input.rs
 symbol graph_click
 lines 39 48
-hash 85d668ed55b65115
-note A press on a node's header grabs the node, and defers selecting it: SelectStep for a step of the drawn path, Focus for any other node. HoldLook stops that selection from re-centring the camera on the node being dragged.
+hash 4cab36c1b63dd70a
+note A press on a node's header grabs the node, and defers selecting it: SelectStep for a step of the drawn path, Focus for any other node. Steer(Steering::Click) makes the next focus change keep the camera and the graph's root, so that selection neither re-centres the camera on the node being dragged nor re-roots the tree.

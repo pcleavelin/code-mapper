@@ -1,4 +1,5 @@
 use std::ops::{Add, AddAssign, Div, Mul, Sub};
+use std::time::Duration;
 
 use domain::HighlightClass;
 use ui::{Color, Coordinate, FontSize, Pinch, Px, Scale};
@@ -26,7 +27,14 @@ pub(crate) const OUTLINE_TOP: Color = SELECTED.with_alpha(110);
 pub(crate) const FAINT: Color = WEAK.with_alpha(140);
 pub(crate) const PENDING: Color = WEAK.with_alpha(120);
 pub(crate) const DROP_BAND: Color = ACCENT.with_alpha(70);
-pub(crate) const CALL_TINT: Color = GREEN.with_alpha(46);
+pub(crate) const CALL_TINT: Color = GREEN.with_alpha(30);
+pub(crate) const STEP_EDGE: Color = GREEN.with_alpha(120);
+pub(crate) const EXPANSION_EDGE: Color = WEAK.with_alpha(170);
+pub(crate) const BACK_EDGE: Color = ORANGE.with_alpha(190);
+pub(crate) const STEP_BORDER: Color = GREEN.with_alpha(80);
+pub(crate) const SIBLINGS_FILL: Color = Color::rgba(30, 30, 34, 255);
+pub(crate) const SIBLINGS_BORDER: Color = Color::rgba(52, 52, 58, 255);
+pub(crate) const TAB_STRIP: Color = Color::rgba(22, 22, 24, 255);
 
 const KEYWORD: Color = Color::rgba(197, 134, 192, 255);
 const STRING: Color = Color::rgba(206, 145, 120, 255);
@@ -121,6 +129,7 @@ impl Zoom {
 
 pub(crate) const LABEL_PADDING: Px = Px::new(2);
 pub(crate) const BUTTON_PADDING: Px = Px::new(4);
+pub(crate) const TAB_PADDING: Px = Px::new(6);
 pub(crate) const SMALL_BUTTON_PADDING: Px = Px::new(2);
 pub(crate) const SMALL_BUTTON_EXTRA: Px = Px::new(4);
 pub(crate) const NAV_BUTTON_EXTRA: Px = Px::new(8);
@@ -155,17 +164,24 @@ pub(crate) const DROP_BAND_WIDTH: Px = Px::new(4);
 pub(crate) const LISTING_GUESS: Px = Px::new(600);
 pub(crate) const CANVAS_GUESS: Px = Px::new(100);
 
-pub(crate) const GRAPH_GAP_ACROSS: Cells = Cells::new(12);
-pub(crate) const GRAPH_GAP_DOWN: Cells = Cells::new(2);
+pub(crate) const GRAPH_RANK_GAP_ACROSS: Cells = Cells::new(8);
+pub(crate) const GRAPH_RANK_GAP_DOWN: Cells = Cells::new(4);
+pub(crate) const GRAPH_SIBLING_GAP_ACROSS: Cells = Cells::new(2);
+pub(crate) const GRAPH_SIBLING_GAP_DOWN: Cells = Cells::new(1);
+pub(crate) const GRAPH_BOX_GAP_ACROSS: Cells = Cells::new(4);
+pub(crate) const GRAPH_BOX_GAP_DOWN: Cells = Cells::new(2);
+pub(crate) const GRAPH_PAD_ACROSS: Cells = Cells::new(1);
+pub(crate) const GRAPH_PAD_DOWN: Cells = Cells::new(1);
 pub(crate) const GRAPH_LEAST_COLUMNS: Cells = Cells::new(44);
 pub(crate) const GRAPH_MOST_COLUMNS: Cells = Cells::new(110);
 pub(crate) const GRAPH_MARGIN: Px = Px::new(8);
+pub(crate) const GLIDE_TIME: Duration = Duration::from_millis(180);
 pub(crate) const GRAPH_BUTTON_GAP: Px = Px::new(4);
 pub(crate) const GRAPH_CODE_GAP: Px = Px::new(4);
 pub(crate) const GRAPH_RULE_ABOVE: Px = Px::new(2);
 pub(crate) const GRAPH_RULE: Px = PIXEL;
 pub(crate) const GRAPH_EDGE: Coordinate = Coordinate::new(1.5);
-pub(crate) const GRAPH_STEP_EDGE: Coordinate = Coordinate::new(3.0);
+pub(crate) const GRAPH_STEP_EDGE: Coordinate = Coordinate::new(2.0);
 pub(crate) const GRAPH_EDGE_END: Coordinate = Coordinate::new(3.5);
 pub(crate) const GRAPH_BEND: Coordinate = Coordinate::new(0.8);
 pub(crate) const GRAPH_THIN_BORDER: Px = PIXEL;

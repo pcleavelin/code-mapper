@@ -10,7 +10,7 @@ order 0
 author ai
 file crates/gui/src/graph/input.rs
 symbol apply
-lines 83 83
+lines 88 88
 hash 0d3bbbf6ff9744c3
 note The handler: clears every dragged (and pinned) node position.
 

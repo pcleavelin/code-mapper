@@ -24,6 +24,16 @@ lines 0 11
 hash 2697e0c7893c244a
 note Removes the view from its panel (Panel::remove picks the next tab to show) and closes the panel if that left it empty and it is not the one to keep.
 
+step codli0
+order 6
+parent tozsoc
+author ai
+file crates/gui/src/widgets.rs
+symbol tab
+lines 0 61
+hash d45c460a6951077a
+note The widget: the close cross is a leaf inside the tab with the close id, hovered separately, so a click on it is its own interaction.
+
 step l9l742
 order 5
 parent 0wlosi
@@ -50,9 +60,9 @@ parent 0wlosi
 author ai
 file crates/gui/src/views/panel_tree.rs
 symbol tab
-lines 0 29
-hash e3f784f91633d4d4
-note The trigger: after each tab's button, a small close icon (close-tab@<View>) queues CloseView.
+lines 0 28
+hash 1ac43aaefc0cfa71
+note The trigger: each tab is drawn by Frame::tab with its close cross (close-tab@<View>) inside it; a click on the cross queues CloseView, and only a click on the rest of the tab shows and grabs the view.
 
 step y2bfva
 order 3

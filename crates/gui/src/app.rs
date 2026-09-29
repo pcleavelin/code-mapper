@@ -12,6 +12,7 @@ use ui::{Button, Count, Id, Input, Label, Measure, Point, Px, Rect, Ui};
 use crate::action::Action;
 use crate::dump::{self, Context, Dump, DumpLines};
 use crate::field::Which;
+use crate::graph::{GraphAction, Keyboard, Presence};
 use crate::grid::Grids;
 use crate::ids;
 use crate::keys::{self, Going};
@@ -47,6 +48,7 @@ struct KeptLayout {
 const SHOT_TAB_FRAME: Count = Count::new(3);
 const SHOT_SCROLL_FRAME: Count = Count::new(6);
 const SHOT_FRAME: Count = Count::new(20);
+const ANIMATING: Duration = Duration::from_millis(8);
 const BUSY: Duration = Duration::from_millis(50);
 const IDLE: Duration = Duration::from_millis(1000);
 
@@ -170,8 +172,16 @@ impl App {
         ] {
             actions.push(Action::Type(which, edits.clone(), typed.clone()));
         }
-        for walk in keys::walks(input) {
-            actions.push(Action::WalkWhenIdle(walk));
+        let on_graph = self.model.panels.is_shown(View::Graph)
+            && self.model.graph.keyboard() == Keyboard::Graph;
+        if on_graph {
+            for heading in keys::headings(input) {
+                actions.push(Action::GraphWalk(heading));
+            }
+        } else {
+            for walk in keys::walks(input) {
+                actions.push(Action::WalkWhenIdle(walk));
+            }
         }
         for which in [
             Which::SymbolFilter,
@@ -237,11 +247,13 @@ impl platform::App for App {
         for action in views::outline_input(&self.model, &self.ui) {
             self.apply(action);
         }
-        let graph = self
-            .model
-            .panels
-            .is_shown(View::Graph)
-            .then(|| self.graph_phase(renderer));
+        let graph = if self.model.panels.is_shown(View::Graph) {
+            Some(self.graph_phase(renderer))
+        } else {
+            self.apply(Action::Graph(GraphAction::Present(Presence::Hidden)));
+            self.apply(Action::Graph(GraphAction::Engage(Keyboard::Elsewhere)));
+            None
+        };
         let mut queue = Vec::new();
         let mut frame = Frame {
             ui: &mut self.ui,
@@ -264,7 +276,13 @@ impl platform::App for App {
         self.model.track_navigation();
         let busy = self.working() || self.shot.is_some();
         PlatformFrame {
-            redraw_after: if busy { BUSY } else { IDLE },
+            redraw_after: if self.model.graph.gliding() {
+                ANIMATING
+            } else if busy {
+                BUSY
+            } else {
+                IDLE
+            },
             exit,
             clear: BACKGROUND,
             cursor,

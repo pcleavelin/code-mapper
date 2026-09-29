@@ -30,8 +30,8 @@ parent 2rwmch
 author ai
 file crates/gui/src/views/panel_tree.rs
 symbol header
-lines 0 38
-hash cc9e7a94c61b609b
+lines 0 40
+hash 1d68e53d6d216517
 note Trigger: SPLIT_ACROSS (|) and SPLIT_DOWN (-) in each panel's header, split-across/<n> and split-down/<n>.
 
 step vk2qts

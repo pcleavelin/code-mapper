@@ -40,7 +40,7 @@ parent 1a0bgg
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 24 31
+lines 32 39
 hash de06bec86c783ce5
 note Trigger: the keys phase hands edits and typed text to the go-to-line field last.
 

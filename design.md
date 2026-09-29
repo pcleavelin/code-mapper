@@ -118,7 +118,7 @@ is in at most one panel. The default tree:
 | Right | **Xrefs** for the selected symbol: callers, callees, and references grouped under a row per file. |
 | Bottom | **Output**: runs the same commands as the CLI. |
 
-Each panel's header holds its tabs and four buttons: **+** opens a list of every view with a
+Each panel's header is a strip of tabs, the one in front lit with an accent edge and each with its own close cross, then four buttons: **+** opens a list of every view with a
 search field (typing narrows it, enter or a click puts that view in this panel, moving it from
 wherever it was), **|** and **-** split the panel side by side or one above the other and open
 the list on the new empty half, and **x** closes the panel, its sibling taking its place (the
@@ -160,7 +160,7 @@ one of those steps opens it in its own path. A link to a path already open furth
 is marked "expanded above" and does not expand again. Under the path note, "linked from"
 lists every step that links to this path, each clickable. The outline shows a link as
 `→ name` after the step. Path-wide
-hide all code, show all, fold all, unfold all. Up and down walk the steps when no field
+hide all code, show all, fold all, unfold all. Up and down walk the steps, in the order the outline numbers them, when no field
 has the keyboard. Stale steps are red. The selected step carries an accent
 bar; selecting it from outside the document scrolls its header to the top, selecting it
 inside does not scroll. Selecting an off-path symbol leaves the document and outline on
@@ -178,19 +178,29 @@ definition inside the repo lands on the symbol, or on the line when it is inside
 and cannot be jumped to. A language with a grammar but no server falls back to the
 symbol of that name; prose files have neither, so hovering a word in them shows nothing.
 
-**The graph.** The selected path drawn as a left-to-right tree: root left, children to
-the right, siblings stacked in call order, every node showing its code in full (a node
-can be cut to a preview, or widened with the same context buttons as the document, its
-own lines highlighted). Edges leave a node level with the line that makes the call,
-and that line is tinted; a slice node's callees are the ones its lines name. Callers and
-callees expansions per node reveal off-path nodes, drawn distinctly, hanging left or
-right of the step; a revealed symbol that is also a step is one node with an extra
-edge. Green step edges, grey expansion edges, orange back-edges, no edge labels. With no
-path selected the graph is the symbol and its expansions; a symbol selected off the path
-while one is being read joins the tree as its own root, callers and callees open. The graph is
-derived, never accumulated: the selection plus an ordered list of expansions. Layout
-reruns every frame until the user drags a node. The camera moves only on explicit
-navigation, never on an edit.
+**The graph.** The selected path drawn as a tree, left to right by default and top to
+bottom with the toolbar's direction button: root first, every node showing its code in full
+(a node can be cut to a preview, or widened with the same context buttons as the document,
+its own lines highlighted). The children of one node sit together, in call order, inside
+one box beside their parent (below it, top to bottom), the box's first child level with the
+parent; boxes of the same depth stack in their parents' order and never overlap, so
+siblings stay next to each other however deep their own subtrees run. Left to right, edges
+leave a node level with the line that makes the call, and that line is tinted; top to
+bottom they leave the node's bottom edge. A slice node's callees are the ones its lines
+name. Callers and callees expansions per node reveal off-path nodes, drawn distinctly, in
+their own box on the far or near side of the node; a revealed symbol that is also a step is
+one node with an extra edge. Muted green step edges, grey expansion edges, orange
+back-edges, no edge labels; a step node's border is a faint green, the focus's the accent.
+With no path selected the graph is the symbol and its expansions; a symbol selected off the
+path from outside the graph, while one is being read, joins the tree as its own root,
+callers and callees open, and stays the root while the reader moves around inside the
+graph. Clicking a node selects it and changes nothing else on the canvas. After a click in
+the graph the arrow keys move the selection between nodes: to the parent, a child or a
+sibling in that direction first, else the nearest node that way; the camera glides to each
+over a few frames instead of jumping. The graph is derived, never accumulated: the
+selection plus an ordered list of expansions. Layout reruns every frame until the user
+drags a node. The camera moves only on explicit navigation, never on an edit; 'fit' centres
+the whole tree.
 
 **Authoring.** The path being read is the one steps are added to, and the **target** says
 where in it: under the step last selected, or at the top level. Selecting a step sets the

@@ -98,8 +98,8 @@ order 25
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 121 154
-hash a82bc081bb0cb44c
+lines 129 163
+hash f0f597ff28aca244
 note Every padding, gap and fixed pixel measure the widgets and views use, named by where it is used.
 
 step 63vlrl
@@ -193,7 +193,7 @@ order 26
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 175 211
+lines 191 227
 hash 1a4665b18c6d61cf
 note Every measure counted in cells: button and field widths, column guesses before a panel has a size, the symbol table's columns, tooltip sizes, the gap before a danger button, the status bar's room for the map's place, the panels' floors and the picker's width.
 
@@ -301,8 +301,8 @@ parent xjz44n
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 0 97
-hash 65cdd8a6bc448360
+lines 0 98
+hash 6c5b10630df01802
 note The one place the Model changes during a frame. Each arm is a call into nav.rs, a field of the Model, or a method on the App for changes that need the Services (save, a server question, a command).
 
 step h4xmjq
@@ -447,8 +447,8 @@ parent 9pik9m
 author ai
 file crates/gui/src/ids.rs
 symbol CONTROLS
-lines 0 70
-hash a8f4b8e57aed517e
+lines 0 71
+hash 0bbe04c4b1289e02
 note Every control, for the test that checks them against the registry.
 
 step mjhubp
@@ -681,8 +681,8 @@ order 8
 author ai
 file crates/gui/src/action.rs
 symbol Action
-lines 0 48
-hash b3e6caf0155ea776
+lines 0 49
+hash 50be276c40623ece
 note Every change a gesture, a key, a script line or a view's measurement can cause, as data. A view names the change; it never makes it.
 
 step xypoz6

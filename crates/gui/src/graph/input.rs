@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::time::Duration;
 
 use domain::{Column, Line, LineCount};
 use ui::{
@@ -11,7 +12,10 @@ use crate::app::App;
 use crate::authoring::{Authoring, Hang};
 use crate::graph::build::{self, Built, CellPoint, Origin};
 use crate::graph::scene::{self, Drawn, Metrics, Scene, SceneInput};
-use crate::graph::{Button, Drag, Expansion, GraphState, Hit, HitRect, Node, Side, Wish};
+use crate::graph::{
+    Button, Drag, Expansion, Glide, GraphState, Hit, HitRect, Keyboard, Node, Presence, Side,
+    Steering, Wish,
+};
 use crate::grid::GUTTER;
 use crate::ids;
 use crate::keys::{self, CodeGesture, Wheeling};
@@ -19,7 +23,7 @@ use crate::model::{Context, StepKey};
 use crate::nav::Scrolling;
 use crate::peek::Hovering;
 use crate::peek::Intent;
-use crate::theme::{self, CANVAS_GUESS, Cells, GRAPH_MARGIN, PIXEL, Zoom};
+use crate::theme::{self, CANVAS_GUESS, Cells, GLIDE_TIME, GRAPH_MARGIN, PIXEL, Zoom};
 use crate::widgets::TipAt;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -40,10 +44,14 @@ pub(crate) enum GraphAction {
     Grab(Option<Drag>),
     Place(Node, Vector),
     Pan(Point),
-    HoldLook,
+    Steer(Steering),
+    Turn,
+    Engage(Keyboard),
+    Present(Presence),
+    GlideStep(Duration),
     AutoOpen(Node),
     Built(Box<Built>),
-    Look(Point),
+    Look(Point, Duration),
     Keep(Option<Point>),
     Fitted(Option<Fit>),
     Cell(Extent),
@@ -73,10 +81,12 @@ impl GraphState {
     pub(crate) fn apply(&mut self, action: GraphAction) {
         match action {
             GraphAction::Camera { zoom, pan } => {
+                self.glide = None;
                 self.zoom = zoom;
                 self.pan = pan;
             }
             GraphAction::Fitted(fit) => {
+                self.glide = None;
                 self.fit = Wish::Settled;
                 if let Some(fit) = fit {
                     self.zoom = fit.zoom;
@@ -119,14 +129,20 @@ impl GraphState {
                 self.manual.insert(node, at);
             }
             GraphAction::Pan(delta) => {
+                self.glide = None;
                 self.pan = Point::new(
                     self.pan.horizontal + delta.horizontal,
                     self.pan.vertical + delta.vertical,
                 );
             }
-            GraphAction::HoldLook => self.hold_look = Wish::Wanted,
+            GraphAction::Steer(steering) => self.steering = Some(steering),
+            GraphAction::Turn => self.turn(),
+            GraphAction::Engage(keyboard) => self.keyboard = keyboard,
+            GraphAction::Present(presence) => self.presence = presence,
+            GraphAction::GlideStep(now) => self.glide_step(now),
             GraphAction::AutoOpen(node) => {
                 self.auto_open = Some(node);
+                self.root = Some(node);
                 for side in [Side::Callees, Side::Callers] {
                     let expansion = Expansion { node, side };
                     if !self.expansions.contains(&expansion) {
@@ -139,10 +155,7 @@ impl GraphState {
                 self.context.retain(|node, _| built.rank.contains_key(node));
                 self.built = *built;
             }
-            GraphAction::Look(pan) => {
-                self.pan = pan;
-                self.look = Wish::Settled;
-            }
+            GraphAction::Look(pan, now) => self.look_at(pan, now),
             GraphAction::Keep(pan) => {
                 self.keep = None;
                 if let Some(pan) = pan {
@@ -160,6 +173,49 @@ impl GraphState {
                 self.code_top = code_top;
             }
         }
+    }
+
+    fn turn(&mut self) {
+        self.direction = self.direction.turned();
+        self.manual.clear();
+        self.look = Wish::Wanted;
+    }
+
+    fn look_at(&mut self, pan: Point, now: Duration) {
+        self.look = Wish::Settled;
+        match self.presence {
+            Presence::Shown => {
+                self.glide = Some(Glide {
+                    from: self.pan,
+                    to: pan,
+                    start: now,
+                });
+            }
+            Presence::Hidden => self.pan = pan,
+        }
+    }
+
+    fn glide_step(&mut self, now: Duration) {
+        let Some(glide) = self.glide else {
+            return;
+        };
+        let elapsed = now.saturating_sub(glide.start);
+        if elapsed >= GLIDE_TIME {
+            self.pan = glide.to;
+            self.glide = None;
+            return;
+        }
+        let done = elapsed.as_secs_f32() / GLIDE_TIME.as_secs_f32();
+        let eased = 1.0 - (1.0 - done).powi(3);
+        let between = |from: Px, to: Px| {
+            round(Coordinate::new(
+                from.float() + (to.float() - from.float()) * eased,
+            ))
+        };
+        self.pan = Point::new(
+            between(glide.from.horizontal, glide.to.horizontal),
+            between(glide.from.vertical, glide.to.vertical),
+        );
     }
 
     fn line_column(&self, cell_width: Px, node: Node, line: Line, mouse: Point) -> Option<Column> {
@@ -306,7 +362,7 @@ impl App {
                     }
                     _ => Action::Focus(node.symbol),
                 });
-                self.graph(GraphAction::HoldLook);
+                self.graph(GraphAction::Steer(Steering::Click));
             }
             Some(Hit::Line(node, line)) => {
                 self.graph(GraphAction::Grab(Some(Drag::Node(node))));
@@ -436,11 +492,14 @@ impl App {
                 size = FontSize::new(size.get() - 1);
                 cell = measure.cell(size);
             }
+            let spare = |extent: Px, used: Px| ((room(extent) - used) / 2).max(Px::ZERO);
             Fit {
                 zoom: Zoom::of_fonts(size, base),
                 pan: Point::new(
-                    GRAPH_MARGIN - bounds.left.of(cell.width),
-                    GRAPH_MARGIN - bounds.top.of(cell.height),
+                    GRAPH_MARGIN - bounds.left.of(cell.width)
+                        + spare(canvas.width, wide.of(cell.width)),
+                    GRAPH_MARGIN - bounds.top.of(cell.height)
+                        + spare(canvas.height, tall.of(cell.height)),
                 ),
             }
         });
@@ -467,6 +526,13 @@ impl App {
             .rev()
             .find(|hit| hit.rect.contains(mouse))
             .map(|hit| hit.hit);
+        if aim.pointer.pressed.contains(MouseButton::Left) {
+            self.graph(GraphAction::Engage(if interaction.hovered() {
+                Keyboard::Graph
+            } else {
+                Keyboard::Elsewhere
+            }));
+        }
         if interaction.clicked() {
             self.graph_click(measure, &aim, hit, &mut deferred);
         }
@@ -493,6 +559,7 @@ impl App {
         if placed.is_some() {
             self.move_camera(canvas, focus);
         }
+        self.graph(GraphAction::GlideStep(self.model.now));
         let zoom = self.model.graph.zoom;
         let Drawn {
             scene,
@@ -516,6 +583,11 @@ impl App {
             &mut self.grids,
         );
         self.graph(GraphAction::Drawn { hits, code_top });
+        self.graph(GraphAction::Present(if placed.is_some() {
+            Presence::Shown
+        } else {
+            Presence::Hidden
+        }));
         GraphFrame {
             scene,
             deferred,
@@ -534,7 +606,7 @@ impl App {
                     canvas.height / 2 - rect.top - rect.height / 2
                 };
                 let across = canvas.width / 2 - rect.left - rect.width / 2;
-                self.graph(GraphAction::Look(Point::new(across, down)));
+                self.graph(GraphAction::Look(Point::new(across, down), self.model.now));
             }
             return;
         }
@@ -548,5 +620,95 @@ impl App {
             )
         });
         self.graph(GraphAction::Keep(pan));
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Heading {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
+impl Heading {
+    fn along(self, from: Point, to: Point) -> Option<Px> {
+        let across = to.horizontal - from.horizontal;
+        let down = to.vertical - from.vertical;
+        let (along, aside) = match self {
+            Self::Up => (-down, across),
+            Self::Down => (down, across),
+            Self::Left => (-across, down),
+            Self::Right => (across, down),
+        };
+        (along > Px::ZERO).then(|| along + aside.max(-aside) * 3)
+    }
+}
+
+impl Built {
+    fn neighbours(&self, node: Node) -> Vec<Node> {
+        let parent = self
+            .step_parent
+            .get(&node)
+            .copied()
+            .or_else(|| self.origin.get(&node).map(|origin| origin.from));
+        let children = self.nodes.iter().copied().filter(|other| {
+            self.step_parent.get(other) == Some(&node)
+                || self
+                    .origin
+                    .get(other)
+                    .is_some_and(|origin| origin.from == node)
+        });
+        let siblings = self
+            .siblings
+            .iter()
+            .filter(|box_members| box_members.members.contains(&node))
+            .flat_map(|box_members| box_members.members.iter().copied());
+        parent
+            .into_iter()
+            .chain(children)
+            .chain(siblings)
+            .filter(|other| *other != node)
+            .collect()
+    }
+
+    fn toward(&self, from: Node, heading: Heading, cell: Extent) -> Option<Node> {
+        let anchor = |node: Node| {
+            self.rect_at(node, Point::default(), cell)
+                .map(|rect| Point::new(rect.left + cell.width * 4, rect.top + cell.height / 2))
+        };
+        let here = anchor(from)?;
+        let best = |candidates: &mut dyn Iterator<Item = Node>| {
+            candidates
+                .filter_map(|node| Some((heading.along(here, anchor(node)?)?, node)))
+                .min_by_key(|pair| pair.0)
+                .map(|pair| pair.1)
+        };
+        best(&mut self.neighbours(from).into_iter())
+            .or_else(|| best(&mut self.nodes.iter().copied().filter(|node| *node != from)))
+    }
+}
+
+impl App {
+    pub(crate) fn graph_walk(&mut self, heading: Heading) {
+        if self.model.fields.focused().is_some() {
+            return;
+        }
+        let graph = &self.model.graph;
+        let built = &graph.built;
+        let Some(from) = built.focus_node(self.model.nav.focus(), self.model.nav.step()) else {
+            return;
+        };
+        let Some(to) = built.toward(from, heading, graph.cell) else {
+            return;
+        };
+        let path = built.path;
+        self.graph(GraphAction::Steer(Steering::Keys));
+        match (to.step, path) {
+            (Some(step), Some(path)) => self
+                .model
+                .select_step(StepKey { path, step }, Scrolling::Scroll),
+            _ => self.model.go_to_symbol(to.symbol),
+        }
     }
 }

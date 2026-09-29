@@ -203,7 +203,7 @@ file crates/gui/src/model.rs
 symbol numbered
 lines 0 15
 hash e433ffa5b0d15e30
-note The path's steps in tree order with their depth and hierarchical number (1.2.3), in slots: the outline, the document and the graph all number steps through this.
+note The path's steps in tree order with their depth and hierarchical number (1.2.3), in slots: the outline, the document and the graph all number steps through this, and walking up and down follows it.
 
 step kh0he1
 order 24
@@ -352,4 +352,4 @@ file crates/gui/src/model.rs
 symbol tree_order
 lines 0 13
 hash 030cbed1e9f09c79
-note The path's steps in tree order, as slots: what walking up and down and opening a path follow.
+note The path's steps in tree order, as slots: what opening a path follows.

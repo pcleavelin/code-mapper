@@ -31,8 +31,8 @@ parent 9fzkv2
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 12 22
-hash 855d90a648f8916d
+lines 12 29
+hash 8a0f456930fac64e
 note Trigger: a click on the canvas goes to graph_click with the hit under the pointer.
 
 step z8e2sz

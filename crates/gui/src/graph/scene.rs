@@ -9,10 +9,12 @@ use crate::graph::{Hit, HitRect, Node};
 use crate::grid::Grids;
 use crate::model::Model;
 use crate::model::StepKey;
+use crate::panels::Direction;
 use crate::theme::{
-    ACCENT, BORDER, CALL_TINT, FIELD, GRAPH_BEND, GRAPH_BUTTON_GAP, GRAPH_CODE_GAP, GRAPH_EDGE,
-    GRAPH_EDGE_END, GRAPH_GAP_ACROSS, GRAPH_RULE, GRAPH_RULE_ABOVE, GRAPH_STEP_EDGE,
-    GRAPH_THICK_BORDER, GRAPH_THIN_BORDER, GREEN, HOVER, ORANGE, PANEL, PIXEL, RED, SLICE, TEXT,
+    ACCENT, BACK_EDGE, BORDER, CALL_TINT, EXPANSION_EDGE, FIELD, GRAPH_BEND, GRAPH_BUTTON_GAP,
+    GRAPH_CODE_GAP, GRAPH_EDGE, GRAPH_EDGE_END, GRAPH_RANK_GAP_ACROSS, GRAPH_RANK_GAP_DOWN,
+    GRAPH_RULE, GRAPH_RULE_ABOVE, GRAPH_STEP_EDGE, GRAPH_THICK_BORDER, GRAPH_THIN_BORDER, GREEN,
+    HOVER, PANEL, PIXEL, RED, SIBLINGS_BORDER, SIBLINGS_FILL, SLICE, STEP_BORDER, STEP_EDGE, TEXT,
     WEAK,
 };
 
@@ -60,6 +62,7 @@ struct SceneNode {
 pub(crate) struct Scene {
     size: FontSize,
     metrics: Metrics,
+    boxes: Vec<Rect>,
     edges: Vec<Edge>,
     nodes: Vec<SceneNode>,
 }
@@ -147,7 +150,7 @@ fn border(input: &SceneInput<'_>, node: Node) -> Outline {
     } else if input.focus == Some(node) {
         (ACCENT, GRAPH_THICK_BORDER)
     } else if on_path {
-        (GREEN, GRAPH_THICK_BORDER)
+        (STEP_BORDER, GRAPH_THIN_BORDER)
     } else {
         (BORDER, GRAPH_THIN_BORDER)
     };
@@ -284,6 +287,92 @@ fn scene_node(
     })
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Bend {
+    Ahead,
+    Back,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Router {
+    direction: Direction,
+    reach: Coordinate,
+    header_middle: Px,
+}
+
+impl Router {
+    fn of(direction: Direction, metrics: Metrics) -> Self {
+        let reach = match direction {
+            Direction::Across => GRAPH_RANK_GAP_ACROSS.of(metrics.cell_width),
+            Direction::Down => GRAPH_RANK_GAP_DOWN.of(metrics.row_height),
+        };
+        Self {
+            direction,
+            reach: Coordinate::new(reach.float() * GRAPH_BEND.get()),
+            header_middle: metrics.padding + metrics.row_height / 2,
+        }
+    }
+
+    fn curve(self, from: Vector, to: Vector, bend: Bend) -> [Vector; 4] {
+        let sign = match bend {
+            Bend::Ahead => 1.0,
+            Bend::Back => -1.0,
+        };
+        let span = |start: Coordinate, end: Coordinate| {
+            ((end.get() - start.get()).abs() * 0.5).max(self.reach.get()) * sign
+        };
+        match self.direction {
+            Direction::Across => {
+                let pull = span(from.horizontal, to.horizontal);
+                [
+                    from,
+                    Vector::new(Coordinate::new(from.horizontal.get() + pull), from.vertical),
+                    Vector::new(Coordinate::new(to.horizontal.get() - pull), to.vertical),
+                    to,
+                ]
+            }
+            Direction::Down => {
+                let pull = span(from.vertical, to.vertical);
+                [
+                    from,
+                    Vector::new(from.horizontal, Coordinate::new(from.vertical.get() + pull)),
+                    Vector::new(to.horizontal, Coordinate::new(to.vertical.get() - pull)),
+                    to,
+                ]
+            }
+        }
+    }
+
+    fn entry(self, rect: Rect) -> Vector {
+        match self.direction {
+            Direction::Across => vector(rect.left, rect.top + self.header_middle),
+            Direction::Down => vector(rect.left + rect.width / 2, rect.top),
+        }
+    }
+
+    fn ahead(self, from: Rect, to: Rect) -> bool {
+        match self.direction {
+            Direction::Across => to.left >= from.right(),
+            Direction::Down => to.top >= from.bottom(),
+        }
+    }
+
+    fn back(self, from: Rect, to: Rect) -> [Vector; 4] {
+        match self.direction {
+            Direction::Across => self.curve(
+                vector(from.left, from.top + self.header_middle),
+                vector(to.right(), to.top + self.header_middle),
+                Bend::Back,
+            ),
+            Direction::Down => self.curve(
+                vector(from.left + from.width / 2, from.top),
+                vector(to.left + to.width / 2, to.bottom()),
+                Bend::Back,
+            ),
+        }
+    }
+}
+
 fn edges(input: &SceneInput<'_>, origin: Point, code_top: &BTreeMap<Node, Px>) -> Vec<Edge> {
     let SceneInput {
         model,
@@ -294,8 +383,12 @@ fn edges(input: &SceneInput<'_>, origin: Point, code_top: &BTreeMap<Node, Px>) -
     } = *input;
     let graph = &model.graph;
     let index = &model.index;
+    let router = Router::of(built.direction, metrics);
     let edge_out = |node: Node, word: &SymbolName| -> Vector {
         let rect = built.rect_at(node, origin, cell).unwrap_or_default();
+        if built.direction == Direction::Down {
+            return vector(rect.left + rect.width / 2, rect.bottom());
+        }
         let shown_end = built.shown_span(graph, node).map(Span::end);
         let top = code_top.get(&node).copied().unwrap_or(Px::ZERO);
         let start = built.view(node).map_or(Line::new(0), Span::start);
@@ -304,29 +397,8 @@ fn edges(input: &SceneInput<'_>, origin: Point, code_top: &BTreeMap<Node, Px>) -
                 rect.right(),
                 top + line_top(line, start, metrics.row_height) + metrics.row_height / 2,
             ),
-            _ => vector(
-                rect.right(),
-                rect.top + metrics.padding + metrics.row_height / 2,
-            ),
+            _ => vector(rect.right(), rect.top + router.header_middle),
         }
-    };
-    let curve = |from: Vector, to: Vector, direction: f32| -> [Vector; 4] {
-        let reach = GRAPH_GAP_ACROSS.of(metrics.cell_width).float() * GRAPH_BEND.get();
-        let bend =
-            ((to.horizontal.get() - from.horizontal.get()).abs() * 0.5).max(reach) * direction;
-        [
-            from,
-            Vector::new(Coordinate::new(from.horizontal.get() + bend), from.vertical),
-            Vector::new(Coordinate::new(to.horizontal.get() - bend), to.vertical),
-            to,
-        ]
-    };
-    let header_middle = (metrics.padding + metrics.row_height / 2).float();
-    let beside = |rect: Rect, across: Px| {
-        Vector::new(
-            Coordinate::of_px(across),
-            Coordinate::new(rect.top.float() + header_middle),
-        )
     };
     let mut edges = Vec::new();
     for caller in &built.nodes {
@@ -344,16 +416,16 @@ fn edges(input: &SceneInput<'_>, origin: Point, code_top: &BTreeMap<Node, Px>) -
             ) else {
                 continue;
             };
-            edges.push(if to.left >= from.right() {
+            edges.push(if router.ahead(from, to) {
                 Edge {
-                    points: curve(edge_out(*caller, name), beside(to, to.left), 1.0),
-                    color: WEAK,
+                    points: router.curve(edge_out(*caller, name), router.entry(to), Bend::Ahead),
+                    color: EXPANSION_EDGE,
                     width: GRAPH_EDGE,
                 }
             } else {
                 Edge {
-                    points: curve(beside(from, from.left), beside(to, to.right()), -1.0),
-                    color: ORANGE,
+                    points: router.back(from, to),
+                    color: BACK_EDGE,
                     width: GRAPH_EDGE,
                 }
             });
@@ -367,12 +439,30 @@ fn edges(input: &SceneInput<'_>, origin: Point, code_top: &BTreeMap<Node, Px>) -
             continue;
         };
         edges.push(Edge {
-            points: curve(edge_out(*parent, name), beside(to, to.left), 1.0),
-            color: GREEN,
+            points: router.curve(edge_out(*parent, name), router.entry(to), Bend::Ahead),
+            color: STEP_EDGE,
             width: GRAPH_STEP_EDGE,
         });
     }
     edges
+}
+
+fn sibling_boxes(input: &SceneInput<'_>, origin: Point) -> Vec<Rect> {
+    let built = input.built;
+    let cell = input.cell;
+    built
+        .siblings
+        .iter()
+        .filter_map(|siblings| built.sibling_bounds(siblings))
+        .map(|bounds| {
+            Rect::new(
+                origin.horizontal + bounds.left.of(cell.width),
+                origin.vertical + bounds.top.of(cell.height),
+                (bounds.right - bounds.left).of(cell.width),
+                (bounds.bottom - bounds.top).of(cell.height),
+            )
+        })
+        .collect()
 }
 
 pub(crate) fn build_scene(input: &SceneInput<'_>, grids: &mut Grids) -> Drawn {
@@ -393,6 +483,7 @@ pub(crate) fn build_scene(input: &SceneInput<'_>, grids: &mut Grids) -> Drawn {
         .map(|(node, scene_node)| (*node, scene_node.code_top))
         .collect();
     let edges = edges(input, origin, &code_top);
+    let boxes = sibling_boxes(input, origin);
     let hits = hits
         .into_iter()
         .map(|hit| HitRect {
@@ -404,6 +495,7 @@ pub(crate) fn build_scene(input: &SceneInput<'_>, grids: &mut Grids) -> Drawn {
         scene: Scene {
             size: input.size,
             metrics: input.metrics,
+            boxes,
             edges,
             nodes: nodes.into_iter().map(|pair| pair.1).collect(),
         },
@@ -413,6 +505,10 @@ pub(crate) fn build_scene(input: &SceneInput<'_>, grids: &mut Grids) -> Drawn {
 }
 
 pub(crate) fn draw_scene(canvas: &mut Canvas<'_>, scene: &Scene) {
+    for sibling_box in &scene.boxes {
+        canvas.rect(*sibling_box, SIBLINGS_FILL);
+        canvas.outline(*sibling_box, GRAPH_THIN_BORDER, SIBLINGS_BORDER);
+    }
     let metrics = scene.metrics;
     for edge in &scene.edges {
         canvas.curve(edge.points, edge.width, edge.color);

@@ -21,10 +21,10 @@ parent du7vlm
 author ai
 file crates/gui/src/graph/input.rs
 symbol apply
-lines 2 5
-hash 3db3578daaa78c1d
+lines 2 6
+hash 90df5a483085c9cc
 link graph-camera
-note Stores zoom and pan together.
+note Stores zoom and pan together and drops any glide in progress.
 
 step 4j58dm
 order 1

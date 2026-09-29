@@ -5,17 +5,18 @@ mod scene;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
+use std::time::Duration;
 
 use domain::{Index, LineCount, SymbolId, SymbolKey};
 use ui::{Coordinate, Point, Px, Rect, Vector};
 
 use crate::model::StepSlot;
+use crate::panels::Direction;
 use crate::theme::Zoom;
 
 pub(crate) use build::Built;
-pub(crate) use input::{GraphAction, GraphFrame};
+pub(crate) use input::{GraphAction, GraphFrame, Heading};
 pub(crate) use scene::draw_scene;
-use std::mem;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) struct Node {
@@ -111,6 +112,31 @@ pub(crate) enum Wish {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Steering {
+    Click,
+    Keys,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Keyboard {
+    Graph,
+    Elsewhere,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Presence {
+    Shown,
+    Hidden,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct Glide {
+    from: Point,
+    to: Point,
+    start: Duration,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct Kept {
     node: Node,
     at: Point,
@@ -120,6 +146,7 @@ pub(crate) struct Kept {
 pub(crate) struct GraphState {
     expansions: Vec<Expansion>,
     auto_open: Option<Node>,
+    root: Option<Node>,
     collapsed: BTreeSet<Node>,
     context: BTreeMap<Node, Around>,
     manual: BTreeMap<Node, Vector>,
@@ -127,7 +154,11 @@ pub(crate) struct GraphState {
     pan: Point,
     zoom: Zoom,
     look: Wish,
-    hold_look: Wish,
+    steering: Option<Steering>,
+    glide: Option<Glide>,
+    direction: Direction,
+    keyboard: Keyboard,
+    presence: Presence,
     fit: Wish,
     keep: Option<Kept>,
     built: Built,
@@ -141,6 +172,7 @@ impl Default for GraphState {
         Self {
             expansions: Vec::new(),
             auto_open: None,
+            root: None,
             collapsed: BTreeSet::new(),
             context: BTreeMap::new(),
             manual: BTreeMap::new(),
@@ -148,7 +180,11 @@ impl Default for GraphState {
             pan: Point::default(),
             zoom: Zoom::ONE,
             look: Wish::Settled,
-            hold_look: Wish::Settled,
+            steering: None,
+            glide: None,
+            direction: Direction::Across,
+            keyboard: Keyboard::Elsewhere,
+            presence: Presence::Hidden,
             fit: Wish::Settled,
             keep: None,
             built: Built::default(),
@@ -190,6 +226,7 @@ pub(crate) struct Saved {
     context: Vec<SavedAround>,
     manual: Vec<SavedPlace>,
     auto_open: Option<KeyedNode>,
+    root: Option<KeyedNode>,
 }
 
 pub(crate) struct CameraText<'graph>(&'graph GraphState);
@@ -237,9 +274,26 @@ impl GraphState {
     }
 
     pub(crate) fn focused(&mut self) {
-        if mem::replace(&mut self.hold_look, Wish::Settled) == Wish::Settled {
-            self.look = Wish::Wanted;
+        match self.steering.take() {
+            Some(Steering::Click) => {}
+            Some(Steering::Keys) => self.look = Wish::Wanted,
+            None => {
+                self.look = Wish::Wanted;
+                self.root = None;
+            }
         }
+    }
+
+    pub(crate) const fn direction(&self) -> Direction {
+        self.direction
+    }
+
+    pub(crate) const fn keyboard(&self) -> Keyboard {
+        self.keyboard
+    }
+
+    pub(crate) const fn gliding(&self) -> bool {
+        self.glide.is_some()
     }
 
     pub(crate) const fn camera(&self) -> CameraText<'_> {
@@ -290,6 +344,7 @@ impl GraphState {
                 })
                 .collect(),
             auto_open: self.auto_open.as_ref().and_then(keyed),
+            root: self.root.as_ref().and_then(keyed),
         }
     }
 
@@ -322,6 +377,7 @@ impl GraphState {
             .filter_map(|saved| Some((node(&saved.node)?, saved.at)))
             .collect();
         self.auto_open = saved.auto_open.as_ref().and_then(node);
+        self.root = saved.root.as_ref().and_then(node);
     }
 
     fn rect_at(&self, node: Node, origin: Point) -> Option<Rect> {

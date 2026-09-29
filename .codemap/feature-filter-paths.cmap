@@ -31,7 +31,7 @@ parent z6m3sw
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 24 31
+lines 32 39
 hash de06bec86c783ce5
 note The typing: the keys phase hands edits and typed text to the path filter along with the symbol filter and go-to-line fields; only the focused field takes them.
 

@@ -1,0 +1,118 @@
+codemap 8
+path feature-turn-graph
+kind flow
+author ai
+group features/gui
+note The Graph toolbar's direction button (graph-turn) turns the tree between left to right, the default, and top to bottom. Its label names the direction it switches to. Turned, lanes become rows: a node's children sit in a box below it, side by side in call order, and edges leave a node's bottom edge and enter the next one's top. Every dragged position is dropped, since it was placed for the other direction, and the camera looks at the selected node again. The selection, the expansions and the zoom are untouched. The direction is not saved with the layout: a new window starts left to right.
+
+step 5mwf54
+order 10
+parent rcnclb
+author ai
+file crates/gui/src/graph/input.rs
+symbol move_camera
+lines 0 13
+hash bcd41fcbc7142b76
+link graph-camera
+note The wanted look, once the turned layout has placed the focus node: the camera centres it (gliding, since the graph is on screen).
+
+step aoqmq0
+order 2
+parent rcnclb
+author ai
+file crates/gui/src/graph/input.rs
+symbol apply
+lines 58 58
+hash a7098634eb677a2b
+note The apply arm for GraphAction::Turn.
+
+step cic9cq
+order 5
+parent rcnclb
+author ai
+file crates/gui/src/graph/place.rs
+symbol place_nodes
+lines 1 1
+hash a593c5ebf66c0095
+link graph-layout
+note The layout takes its gaps for the direction; the rest of place_nodes works in main and cross coordinates and never names across or down.
+
+step i00jgg
+order 8
+parent rcnclb
+author ai
+file crates/gui/src/graph/scene.rs
+symbol of
+lines 0 10
+hash 95ceecbae23865c3
+link graph-draw
+note The edges' Router for the direction: turned, a curve bows by a fraction of the rows between ranks and enters a node at the middle of its top edge.
+
+step jns6p9
+order 3
+parent rcnclb
+author ai
+file crates/gui/src/views/center.rs
+symbol graph_tab
+lines 35 42
+hash cfea367c71886f32
+note Trigger: GRAPH_TURN (graph-turn) in the graph toolbar, after 'fit', labelled 'top to bottom' while the tree runs left to right and 'left to right' while it runs top to bottom; a click queues Graph(Turn).
+
+step kfh6eq
+order 6
+parent cic9cq
+author ai
+file crates/gui/src/graph/place.rs
+symbol impl Spacing
+lines 0 19
+hash 96c68cb64c2b4846
+note Down swaps which constants run along the lanes: GRAPH_RANK_GAP_DOWN between rows of ranks, GRAPH_SIBLING_GAP_ACROSS and GRAPH_BOX_GAP_ACROSS between siblings and boxes side by side.
+
+step lniwp3
+order 4
+parent rcnclb
+author ai
+file crates/gui/src/graph/build.rs
+symbol rebuild
+lines 6 6
+hash c1ec29d029215bc2
+note The effect from the next frame: rebuild copies the direction into the Built, which is what the layout and the scene read.
+
+step nfuys9
+order 9
+parent i00jgg
+author ai
+file crates/gui/src/graph/scene.rs
+symbol edges
+lines 13 15
+hash bf6a2d04e08bdaa4
+note Turned, every edge leaves from the middle of the node's bottom edge instead of level with the line that makes the call.
+
+step r5bigg
+order 1
+parent rcnclb
+author ai
+file crates/gui/src/panels.rs
+symbol turned
+lines 0 5
+hash 52c4b76807c7a2e4
+note Across and Down swap; the graph shares the panel tree's Direction.
+
+step rcnclb
+order 0
+author ai
+file crates/gui/src/graph/input.rs
+symbol turn
+lines 0 4
+hash ea121e1d1a82bb46
+note The handler: the graph's direction becomes the other one, every manual (dragged or pinned) position is dropped because it was placed for the other direction, and a look is wanted so the selected node is brought into view in the turned tree.
+
+step v1loe9
+order 7
+parent cic9cq
+author ai
+file crates/gui/src/graph/place.rs
+symbol point
+lines 0 11
+hash c98de512de8f106a
+note Where main and cross become across and down: turned, the lane position is the row and the cross position the column.

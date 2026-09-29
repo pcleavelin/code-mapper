@@ -16,6 +16,7 @@ use crate::ids::CONTROLS;
 use crate::keys::Walk;
 use crate::model::{Model, PathSlot, Readable, StepKey, StepSlot, Tab, ViewFlag};
 use crate::nav::Scrolling;
+use crate::panels::Direction;
 use crate::theme::Cells;
 
 #[test]
@@ -316,7 +317,7 @@ fn built(model: &Model, sizes: &[(i32, i32)]) -> Built {
 }
 
 #[test]
-fn children_stack_right_of_their_parent_which_sits_centred_beside_them() {
+fn children_sit_together_in_one_box_beside_their_parent() {
     let model = model();
     let mut built = built(&model, &[(10, 4), (8, 3), (8, 3)]);
     built.place_nodes(&model.index);
@@ -324,9 +325,10 @@ fn children_stack_right_of_their_parent_which_sits_centred_beside_them() {
         let point = built.position(built.nodes[position]).unwrap();
         (point.across.get(), point.down.get())
     };
-    assert_eq!(at(0), (0, 2));
-    assert_eq!(at(1), (22, 0));
-    assert_eq!(at(2), (22, 5));
+    assert_eq!(at(0), (1, 1));
+    assert_eq!(at(1), (21, 1));
+    assert_eq!(at(2), (21, 5));
+    assert_eq!(built.siblings.len(), 1);
     let bounds = built.bounds().unwrap();
     assert_eq!(
         (
@@ -335,18 +337,23 @@ fn children_stack_right_of_their_parent_which_sits_centred_beside_them() {
             bounds.right.get(),
             bounds.bottom.get()
         ),
-        (0, 0, 30, 8)
+        (1, 0, 30, 9)
     );
 }
 
 #[test]
-fn a_tall_parent_pushes_its_children_down_to_its_middle() {
+fn turned_the_children_sit_below_their_parent_side_by_side() {
     let model = model();
-    let mut built = built(&model, &[(10, 12), (8, 3)]);
+    let mut built = built(&model, &[(10, 4), (8, 3), (8, 3)]);
+    built.direction = Direction::Down;
     built.place_nodes(&model.index);
-    let down = |position: usize| built.position(built.nodes[position]).unwrap().down.get();
-    assert_eq!(down(0), 0);
-    assert_eq!(down(1), 4);
+    let at = |position: usize| {
+        let point = built.position(built.nodes[position]).unwrap();
+        (point.across.get(), point.down.get())
+    };
+    assert_eq!(at(0), (1, 1));
+    assert_eq!(at(1), (1, 11));
+    assert_eq!(at(2), (11, 11));
 }
 
 #[test]

@@ -72,7 +72,7 @@ parent 0pe1eq
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 24 31
+lines 32 39
 hash de06bec86c783ce5
 note The typing: after the walks, the keys phase hands edits and typed text to the symbol filter, path filter and go-to-line fields.
 

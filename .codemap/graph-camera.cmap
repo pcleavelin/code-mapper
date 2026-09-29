@@ -3,7 +3,17 @@ path graph-camera
 kind flow
 author ai
 group gui/graph
-note When the graph's camera moves, and why it otherwise does not. Pan and zoom are two plain fields on GraphState, and like every graph field they change only through a GraphAction applied by GraphState::apply: the wheel sends Camera, dragging the background sends Pan, and the camera's own moves arrive as Look, Keep and Fitted. Nothing else writes them, so a rebuild, an edit or a re-index never slides the view out from under the reader. Two things ask for a move, each by setting a Wish to Wanted: a new focus (look: centre the node, or align its top when it is taller than the canvas) and the fit button (fit: the largest font at which the whole tree fits, then pan to its top-left; 1:1 resets the zoom and asks for a look). A node button that changes the tree's shape (callees, callers, more/less) instead keeps its node still: the pan follows the relayout so the button stays under the pointer and the new nodes appear beside it. The layout is in cells and rows, which no zoom changes, so fit settles both zoom and pan in one frame instead of converging over several. Both keep GRAPH_MARGIN pixels between the canvas edge and what they bring into view, and neither runs until the canvas element has a rectangle from last frame.
+note When the graph's camera moves, and why it otherwise does not. Pan and zoom are two plain fields on GraphState, and like every graph field they change only through a GraphAction applied by GraphState::apply: the wheel sends Camera, dragging the background sends Pan, and the camera's own moves arrive as Look, Keep and Fitted. Nothing else writes them, so a rebuild, an edit or a re-index never slides the view out from under the reader. Two things ask for a move, each by setting a Wish to Wanted: a focus change (look: centre the node, or align its top when it is taller than the canvas) and the fit button (fit: the largest font at which the whole tree fits, then pan so it sits centred; 1:1 resets the zoom and asks for a look). Who changed the focus decides whether it looks: a click on a node keeps the camera still, an arrow-key walk inside the graph and any navigation from outside it look. A look glides: while the graph was on screen last frame the pan eases to the target over GLIDE_TIME, and while it was hidden it jumps, since there is nothing to watch; the reader's own camera move, a fit or 1:1 drops a glide in progress. A node button that changes the tree's shape (callees, callers, more/less) instead keeps its node still: the pan follows the relayout so the button stays under the pointer and the new nodes appear beside it. The layout is in cells and rows, which no zoom changes, so fit settles both zoom and pan in one frame instead of converging over several. Both keep GRAPH_MARGIN pixels between the canvas edge and what they bring into view, and neither runs until the canvas element has a rectangle from last frame.
+
+step 1txvkk
+order 13
+parent gknv1n
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_phase
+lines 77 81
+hash dc3130dd559484b7
+note The end of the phase: Shown once the canvas element has a rectangle, Hidden before that.
 
 step 729kbs
 order 1
@@ -11,9 +21,9 @@ parent 7q8efh
 author ai
 file crates/gui/src/graph/place.rs
 symbol bounds
-lines 0 24
-hash 6f6e69580096d5b3
-note The tree's bounding box in cells and rows over every placed node. No zoom changes it, which is what lets fit pick a font size and a pan in the same frame instead of guessing, re-laying out and guessing again.
+lines 0 10
+hash dc30bd61c23dbe2e
+note The tree's bounding box in cells and rows over every placed node and every sibling box. No zoom changes it, which is what lets fit pick a font size and a pan in the same frame instead of guessing, re-laying out and guessing again.
 
 step 7q8efh
 order 2
@@ -21,9 +31,9 @@ parent gknv1n
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_fit
-lines 0 25
-hash 6e45835e6e56679a
-note Walks the font size down one pixel at a time from the current graph font until the tree's cell box, measured with that font's cell, fits the canvas less the margins, stopping at theme::smallest_fit_font. The zoom becomes exactly that size over the UI font (Zoom::of_fonts), so graph_font reproduces the same size next frame, and the pan puts the box's top-left at the margin. A Fitted action carries both and settles the wish; an empty graph settles it with no move.
+lines 0 28
+hash fd96e555eccd2755
+note Walks the font size down one pixel at a time from the current graph font until the tree's cell box, measured with that font's cell, fits the canvas less the margins, stopping at theme::smallest_fit_font. The zoom becomes exactly that size over the UI font (Zoom::of_fonts), so graph_font reproduces the same size next frame, and the pan centres the box in the room inside the margins (its top-left at the margin when it fills the room or overflows). A Fitted action carries both, drops any glide and settles the wish; an empty graph settles it with no move.
 
 step 8dlyo7
 order 7
@@ -33,16 +43,16 @@ file crates/gui/src/graph/place.rs
 symbol CellBounds
 lines 0 5
 hash 545228e35fd80a55
-note The box as four cell coordinates: left and top of the leftmost and topmost node, right and bottom of the furthest node edges.
+note The box as four cell coordinates: left and top of the leftmost and topmost node or sibling box, right and bottom of the furthest edges.
 
 step gknv1n
 order 0
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 31 45
-hash 8dd07c62ef51d14b
-note The frame's camera hooks in graph_phase, after the layout: the fit when one is wanted and the canvas has been placed, then this frame's cell size recorded with a Cell action so rect_at can give pixel rectangles, then the focus node looked up and move_camera. The fit runs here rather than inside GraphState because it needs the renderer's Measure for the font metrics.
+lines 38 53
+hash 67cc42f01fd6c340
+note The frame's camera hooks in graph_phase, after the layout: the fit when one is wanted and the canvas has been placed, then this frame's cell size recorded with a Cell action so rect_at can give pixel rectangles, then the focus node looked up and move_camera, then one GlideStep with the frame's time so a glide in progress advances. The fit runs here rather than inside GraphState because it needs the renderer's Measure for the font metrics.
 
 step hltvil
 order 10
@@ -52,7 +62,27 @@ file crates/gui/src/graph.rs
 symbol Wish
 lines 0 3
 hash 303eeb43ce2bff12
-note A camera request: Wanted until the move it asks for has been made, then Settled. look, hold_look and fit are each one of these, so a request made in one frame is honoured in the first frame that can honour it (the canvas placed, the node laid out) and not before.
+note A camera request: Wanted until the move it asks for has been made, then Settled. look and fit are each one of these, so a request made in one frame is honoured in the first frame that can honour it (the canvas placed, the node laid out) and not before.
+
+step l9wh9h
+order 12
+parent vkddzx
+author ai
+file crates/gui/src/graph.rs
+symbol Presence
+lines 0 3
+hash 6781d63d51cba87d
+note Whether the graph was drawn on a placed canvas last frame. graph_phase marks it at the end of each frame; App::frame marks it Hidden on a frame the Graph view is not shown.
+
+step lwfsr8
+order 16
+parent vn03h2
+author ai
+file crates/gui/src/graph.rs
+symbol Steering
+lines 0 3
+hash 9fd9d5bf3fd58652
+note Who inside the graph is about to change the focus, set with a Steer action just before the change: a click on a node, or the arrow keys.
 
 step v0z9ng
 order 3
@@ -63,14 +93,24 @@ lines 0 5
 hash 35617b35f5e0bf8d
 note The anchor a node button sets before its tree changes shape, from apply's ToggleCollapsed and Toggle arms: the node and its pixel position relative to the pan this frame. After the relayout move_camera shifts the pan by the node's displacement, so expanding or hiding its callees or callers, or cutting it to a preview, leaves it and the button under the pointer exactly where they were; the new nodes appear beside it and the reader pans if they run off the canvas.
 
+step vkddzx
+order 11
+parent x2p02r
+author ai
+file crates/gui/src/graph/input.rs
+symbol look_at
+lines 0 12
+hash d3c54c8e2b65919b
+note Where a Look lands, with the frame's time: it settles the look wish, then starts a Glide from the current pan to the target at that time while the graph is Shown, or sets the pan outright while it is Hidden (the Graph view was not on screen last frame, so there is nothing to animate).
+
 step vn03h2
 order 6
 author ai
 file crates/gui/src/graph.rs
 symbol focused
-lines 0 4
-hash 6be3c6f4e0305f31
-note Called when the navigation focus changes: it asks for a look unless the graph itself caused the change. A header click sends HoldLook before selecting its step, so selecting a node on the canvas does not re-centre the canvas under the pointer; hold_look is consumed by the next focus change either way.
+lines 0 9
+hash 3216e1d4c408d038
+note Called when the navigation focus changes, and what it does depends on the steering the graph set before causing the change: a header click (Steering::Click) keeps the camera and the root, so selecting a node on the canvas does not move the canvas under the pointer; an arrow-key walk (Steering::Keys) asks for a look and keeps the root; a change from outside the graph (no steering) asks for a look and drops the kept root. The steering is consumed by the change either way.
 
 step wjbikq
 order 8
@@ -89,8 +129,28 @@ author ai
 file crates/gui/src/graph/input.rs
 symbol move_camera
 lines 0 24
-hash 6297aca265163c31
-note The one place a camera move is honoured, in priority order: a wanted look at the focus node, then a kept node. A node taller than the canvas is aligned to its top, because its header and its buttons are what the reader came for; centring it would put them off screen. The result goes back as a Look or Keep action, which also settles the wish. Nothing here moves the camera unless a wish asked for it, so a rebuild or a re-index leaves pan and zoom alone.
+hash 218ddde5c10d54e0
+note The one place a camera move is honoured, in priority order: a wanted look at the focus node, then a kept node. A node taller than the canvas is aligned to its top, because its header and its buttons are what the reader came for; centring it would put them off screen. The result goes back as a Look (with the frame's time, for the glide) or Keep action, which also settles the wish. Nothing here moves the camera unless a wish asked for it, so a rebuild or a re-index leaves pan and zoom alone.
+
+step ypiyjw
+order 14
+parent gknv1n
+author ai
+file crates/gui/src/graph/input.rs
+symbol glide_step
+lines 0 21
+hash 3c4d8188d4fb1c99
+note A glide at the frame's time, from the GlideStep graph_phase sends every frame: the pan moves along an ease-out cubic from the start to the target by the share of GLIDE_TIME elapsed, and lands exactly on it once GLIDE_TIME has passed, when the glide ends. Being time-based, it takes the same time whatever the frame rate; while it is in progress App::frame asks for the next frame at the ANIMATING rate, so it plays out without input. Camera, Pan and Fitted drop it, so the reader's own move always wins.
+
+step znukmp
+order 15
+parent ypiyjw
+author ai
+file crates/gui/src/graph.rs
+symbol Glide
+lines 0 4
+hash 035b9e115e3578db
+note A pan in flight: where it started, where it ends, and the frame time it started at.
 
 step zwmsl2
 order 9

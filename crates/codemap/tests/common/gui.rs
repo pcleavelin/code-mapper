@@ -251,6 +251,18 @@ click <<DUMP node new|30,8>>
 wait 4
 dump
 shot {shots}/off-path.png
+key down
+pause 300
+wait 2
+dump
+key left
+pause 300
+wait 2
+dump
+key right
+pause 300
+wait 2
+dump
 click <<DUMP button main 'hide>>
 wait 4
 hover-id graph-canvas
@@ -305,6 +317,11 @@ wait 4
 click <<DUMP button fill 'listing>>
 wait 4
 dump
+click-id graph-turn
+pause 300
+wait 2
+dump
+shot {shots}/turned.png
 quit
 ",
     }

@@ -97,20 +97,20 @@ order 19
 parent kpixbm
 author ai
 file crates/gui/src/tests.rs
-symbol a_tall_parent_pushes_its_children_down_to_its_middle
-lines 0 7
-hash ac4f02972b99ae3a
-note A parent taller than its children pushes them down to its middle.
+symbol turned_the_children_sit_below_their_parent_side_by_side
+lines 0 12
+hash ab2728fb5e5e9497
+note Turned top to bottom, the same children sit one lane below their parent, side by side, the first level with the parent across.
 
 step ftd1u1
 order 18
 parent kpixbm
 author ai
 file crates/gui/src/tests.rs
-symbol children_stack_right_of_their_parent_which_sits_centred_beside_them
-lines 0 21
-hash 2fc24fb1193ec6dd
-note Children stack to the right of their parent, which sits centred beside them.
+symbol children_sit_together_in_one_box_beside_their_parent
+lines 0 22
+hash c50e49804ecd29a2
+note Left to right, a parent's two children sit stacked tightly in one sibling box one lane to its right, the first level with the parent; the bounds take in the box and its padding.
 
 step fyr34g
 order 4
@@ -130,13 +130,14 @@ file crates/gui/src/tests.rs
 symbol walking_follows_the_tree_and_stops_at_the_ends
 lines 0 11
 hash 8bd3a7291f0fd38b
-note walk follows tree order and stops at both ends.
+note walk follows the path's numbered order, the one the outline shows, and stops at both ends.
 
 step hvkk6w
 order 20
 author ai
 file crates/gui/src/panels.rs
-lines 854 854
+symbol tests
+lines 0 0
 hash b0307a5ca14bb937
 note The panel tree's arithmetic and edits: the default tree holds every view once, a split opens the picker and a pick moves the view, a panel emptied by a move closes, an edge drop splits (and a panel's only view on its own edge stays), closing hands the room to the sibling and never the root, navigation reveals a hidden view next to the last one shown once per ticket, a division keeps both halves above the floor, the nearest edge within a quarter picks the side, a grab moves only past its reach, and views are named in any case.
 

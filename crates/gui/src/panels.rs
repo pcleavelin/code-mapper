@@ -208,13 +208,21 @@ impl Panel {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(crate) enum Direction {
+    #[default]
     Across,
     Down,
 }
 
 impl Direction {
+    pub(crate) const fn turned(self) -> Self {
+        match self {
+            Self::Across => Self::Down,
+            Self::Down => Self::Across,
+        }
+    }
+
     const fn axis(self) -> Axis {
         match self {
             Self::Across => Axis::Horizontal,

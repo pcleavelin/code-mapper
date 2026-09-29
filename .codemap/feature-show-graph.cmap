@@ -3,7 +3,7 @@ path feature-show-graph
 kind flow
 author ai
 group features/gui
-note The document toolbar's 'graph' button switches the centre to the Graph tab with the path being read drawn as a left-to-right tree. The same happens from the Graph tab button, which only switches the tab; this button also selects the path first when it is not the one being read, which from the document it always is.
+note The document toolbar's 'graph' button switches the centre to the Graph tab with the path being read drawn as a tree, left to right unless the reader turned it top to bottom. The same happens from the Graph tab button, which only switches the tab; this button also selects the path first when it is not the one being read, which from the document it always is.
 
 step 1qheqh
 order 3
@@ -11,10 +11,10 @@ parent x7w987
 author ai
 file crates/gui/src/app.rs
 symbol frame
-lines 21 25
-hash 2e7e5b43c61ca4d0
+lines 21 27
+hash a8df20e3242f9745
 link graph-draw
-note The effect from the next frame on: while the Graph view is in front of some panel, each frame runs the graph phase (input, layout, fit, camera, scene) before the views are built, and that panel draws its scene.
+note The effect from the next frame on: while the Graph view is in front of some panel, each frame runs the graph phase (input, layout, fit, camera, scene) before the views are built, and that panel draws its scene; while it is not, the graph is marked hidden and gives up the keyboard.
 
 step 2arc3y
 order 2

@@ -3,17 +3,17 @@ path graph-layout
 kind flow
 author ai
 group gui/graph
-note Where every node on the canvas ends up. The layout is a forest of compact subtrees, recomputed from scratch every frame by Built::place_nodes; a node the reader dragged then has its position overwritten by the dragged one (App::graph_layout, in graph-draw). Horizontally a node's column is its Rank - its depth in the path tree, or one rank out from whatever expansion revealed it - and the columns are placed outward from rank 0 so the root of the path never moves. Vertically each node owns a block as tall as itself or as the stack of its children's blocks, whichever is more, and centres in it; sibling blocks never interleave, so a wide subtree only pushes its own siblings around. A final sweep separates the rare collisions between different subtrees that land in the same column. Everything is in cells and rows (theme::Cells), which no zoom changes; pixels appear only when a rectangle is asked for with this frame's cell size.
+note Where every node on the canvas ends up. The layout is recomputed from scratch every frame by Built::place_nodes; a node the reader dragged then has its position overwritten by the dragged one (App::graph_layout, in graph-draw). It works along two axes named by the graph's Direction: the main axis, across when the graph runs left to right and down when it is turned top to bottom, and the cross axis at right angles to it. Along the main axis a node sits in the lane of its Rank - its depth in the path tree, or one rank out from whatever expansion revealed it - and the lanes are laid out outward from rank 0 so the root of the path never moves. Along the cross axis the children of one node on one side are one Siblings box, stacked tightly in call order, with the box's first child level with the parent when that lane is free there and below the lane's last box otherwise; boxes in a lane never overlap and are placed breadth first, so siblings stay together however deep their own subtrees run. Each root starts a band below everything placed before it. Everything is in cells and rows (theme::Cells), which no zoom changes; pixels appear only when a rectangle is asked for with this frame's cell size.
 
 step 11m7he
 order 3
 parent 85mf2y
 author ai
 file crates/gui/src/graph/place.rs
-symbol measure_tree
+symbol place_siblings
 lines 0 22
-hash 2f89b29cf7c72523
-note Pass 1, bottom-up: a node's block is its own height or the stacked heights of its children's blocks, whichever is taller, with left and right children measured independently. The seen set stops a cycle in the call graph from recursing forever.
+hash 4b085c649001bd7c
+note One sibling box: the children of one parent on one side, all in the same lane. The box's top is level with the parent, less pad_cross, unless the lane is already used past that point, in which case it starts where the lane is free; the members then follow each other sibling_gap apart. The box is recorded in Built.siblings so the scene can draw it and the arrow keys can find siblings.
 
 step 398fv9
 order 11
@@ -23,17 +23,17 @@ file crates/gui/src/graph/build.rs
 symbol Rank
 lines 0 0
 hash 504ec3672efd7029
-note A column index, signed: path steps have their depth, callees one rank right of the node that revealed them, callers one rank left, and the off-path focus rank 0.
+note A lane index, signed: path steps have their depth, callees one rank further along the main axis than the node that revealed them, callers one rank back, and the off-path root rank 0. Left to right a rank is a column, top to bottom a row.
 
 step 3my22g
 order 10
-parent 11m7he
+parent 85mf2y
 author ai
 file crates/gui/src/graph/place.rs
-symbol tall
-lines 0 2
-hash 83cd0eac2263a5d0
-note A node's own height in rows, zero for a node that was never measured.
+symbol Lanes
+lines 0 3
+hash 8cdb6681df173b5f
+note Per rank, where its lane starts along the main axis (from lane_starts) and the next free position along the cross axis (grown by place_at).
 
 step 4ksm9y
 order 6
@@ -42,7 +42,7 @@ file crates/gui/src/graph/scene.rs
 symbol Metrics
 lines 0 4
 hash ee0d3408986baf63
-note The node font's cell width and row height at the current zoom and the pixel padding inside a node (half a cell). Layout happens in cells and rows; the scene turns it into pixels with these, so zooming scales positions by the factor the text really grew by, not by the nominal zoom. The spacing constants are in cells: GRAPH_GAP_ACROSS between columns, GRAPH_GAP_DOWN between stacked subtrees.
+note The node font's cell width and row height at the current zoom and the pixel padding inside a node (half a cell). Layout happens in cells and rows; the scene turns it into pixels with these, so zooming scales positions by the factor the text really grew by, not by the nominal zoom. The spacing constants are in cells too (Spacing).
 
 step 7esxz3
 order 2
@@ -50,18 +50,28 @@ parent 85mf2y
 author ai
 file crates/gui/src/graph/place.rs
 symbol trees
-lines 0 41
-hash 6c2649d1c2fd3145
-note The forest the vertical passes walk: a path step hangs off its parent step on the right, an expanded node off the node that revealed it, left for callers and right for callees. Each parent's right children are sorted by the line of its code that names them (Built::call_line), so siblings sit in call order and the step order breaks ties; the roots are the nodes with no parent, in step order.
+lines 0 40
+hash a414ff1de8039ba1
+note The forest place_nodes walks: a path step hangs off its parent step on the callee side, an expanded node off the node that revealed it, on the caller side for callers and the callee side for callees. Each parent's callee-side children are sorted by the line of its code that names them (Built::call_line), so siblings sit in call order and the step order breaks ties; the roots are the nodes with no parent, in step order.
 
 step 85mf2y
 order 0
 author ai
 file crates/gui/src/graph/place.rs
 symbol place_nodes
-lines 0 26
-hash a9265603a27c11ad
-note One function, four passes over the nodes grouped by rank: columns, the forest, block heights, positions, then the collision sweep. It reads the sizes Built::measure wrote just before it and writes one CellPoint per node into position. Roots are stacked in step order with a double GRAPH_GAP_DOWN between them.
+lines 0 38
+hash 86bc5170bdadee53
+note The one entry, called from App::graph_layout after Built::measure has written every size. It groups the nodes by rank, clears last frame's sibling boxes, lays out the lanes along the main axis, builds the forest, then for each root in step order: places it at the start of a band below everything placed so far (the furthest free cross position of any lane), and walks breadth first from it, each node's callee-side children and then its caller-side children that are not placed yet becoming one sibling box beside it (place_siblings). The done set places a node reachable from two parents only once, under the first. It writes one CellPoint per node into position and one Siblings per box into siblings.
+
+step aqe1ly
+order 18
+parent 11m7he
+author ai
+file crates/gui/src/graph/place.rs
+symbol Siblings
+lines 0 3
+hash 8dbdd5bbb1a2a2b7
+note A parent and the children placed beside it together, in order. Built.siblings holds this frame's boxes; the scene draws each behind its members (sibling_boxes) and Built::neighbours takes a node's siblings from them.
 
 step dola29
 order 8
@@ -71,7 +81,7 @@ file crates/gui/src/graph/place.rs
 symbol Forest
 lines 0 3
 hash f2104f8c8e0879bc
-note The forest: the two child maps and the roots in the order they are stacked.
+note The forest: the two child maps and the roots in the order their bands are placed.
 
 step glxgdt
 order 14
@@ -81,7 +91,7 @@ file crates/gui/src/graph/build.rs
 symbol impl Rank
 lines 0 14
 hash ffcaef55c90f137c
-note next and previous are one rank right and left, which is where an expansion's callees and callers go; of_depth turns a step's depth in the path tree into its rank.
+note next and previous are one rank further along and one back, which is where an expansion's callees and callers go; of_depth turns a step's depth in the path tree into its rank.
 
 step gxs2as
 order 9
@@ -89,29 +99,29 @@ parent 7esxz3
 author ai
 file crates/gui/src/graph/place.rs
 symbol Trees
-lines 0 4
-hash 78920d22441f0872
-note Right and left children per node, and the block height pass 1 computes for each node it reached. A node with no height was not reached from a root and is not placed by pass 2.
+lines 0 3
+hash 52e84a028dad3230
+note Callee-side (right) and caller-side (left) children per node; children(node, side) reads one side.
 
 step kasgsj
 order 1
 parent 85mf2y
 author ai
 file crates/gui/src/graph/place.rs
-symbol rank_across
+symbol lane_starts
 lines 0 40
-hash 7549fd34d79cf5f2
-note Pass x: give each rank the width of its widest node, then walk outward from rank 0 (clamped into the ranks present) in both directions, GRAPH_GAP_ACROSS cells apart, so the path's root keeps its place when an expansion opens to the left.
+hash df8a67624888296f
+note The lanes along the main axis: each rank's lane is as long as its longest node along that axis plus pad_main on both sides; walking outward from rank 0 (clamped into the ranks present) in both directions, each lane starts rank_gap after the one before, so the path's root keeps its place when an expansion opens a lane before it.
 
 step l634za
 order 4
-parent 85mf2y
+parent 11m7he
 author ai
 file crates/gui/src/graph/place.rs
-symbol place_tree
-lines 0 48
-hash 90b6c03ad6af891c
-note Pass 2, top-down: a node is centred vertically in its block at its rank's column, and each side's children are stacked beside it, centred on the same block. The done set places a node reachable from two parents only once.
+symbol place_at
+lines 0 13
+hash 4d36a56c940e7a45
+note Places one node: along the main axis at its lane's start plus pad_main, along the cross axis at the given position, turned into a CellPoint for the direction. It moves the lane's free position past the node, its padding and box_gap, so the next box in that lane starts clear of this one, and returns where the node ends.
 
 step l912gh
 order 13
@@ -123,14 +133,54 @@ lines 0 3
 hash 607dd8d529c690fa
 note A node's size in cells wide and rows tall, written by Built::measure.
 
+step ptljng
+order 16
+parent 85mf2y
+author ai
+file crates/gui/src/graph/place.rs
+symbol Spacing
+lines 0 6
+hash 09c322d7051f5b83
+note The gaps for one direction, in cells: rank_gap between lanes, sibling_gap between the members of a box, box_gap between boxes in a lane, and the padding of a box along each axis. Left to right the lanes are columns and the cross axis is rows, so the gaps come from the ACROSS and DOWN constants accordingly.
+
+step r9wn5d
+order 15
+parent 3my22g
+author ai
+file crates/gui/src/graph/place.rs
+symbol impl Lanes
+lines 0 12
+hash fe3c9677a21964df
+note free and start read a rank's entry, zero when it has none; lowest is the furthest free position over every lane, where the next root's band starts.
+
+step rqh9w9
+order 17
+parent ptljng
+author ai
+file crates/gui/src/graph/place.rs
+symbol impl Spacing
+lines 0 19
+hash 96c68cb64c2b4846
+note Spacing::of picks the theme constants for Across or Down: GRAPH_RANK_GAP_*, GRAPH_SIBLING_GAP_*, GRAPH_BOX_GAP_* and GRAPH_PAD_*, the across ones for whichever axis runs across.
+
 step sfz63q
 order 7
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 35 37
+lines 42 44
 hash 4c53a897b47fee8a
 note The frame's cell size in pixels is recorded once per frame, after the layout, the dragged positions and any fit, with a Cell action; GraphState::rect_at turns a node's cells and rows into a pixel rectangle with it whenever the camera or the next frame's input asks.
+
+step t0jdjo
+order 19
+parent l634za
+author ai
+file crates/gui/src/graph/place.rs
+symbol point
+lines 0 11
+hash c98de512de8f106a
+note Main and cross coordinates to a CellPoint: across and down left to right, the other way round top to bottom. main_size, cross_size and cross_of are the same mapping for sizes and points.
 
 step w18dsn
 order 12
@@ -147,7 +197,7 @@ order 5
 parent 85mf2y
 author ai
 file crates/gui/src/graph/place.rs
-symbol compact
-lines 0 15
-hash ec19bce97476369a
-note Pass 3: two different subtrees can still meet in one column - a caller's own callees come back to the focus column, for instance. Sort each column by y and push each node below the bottom of the previous one plus the gap.
+symbol sibling_bounds
+lines 0 12
+hash d8974a20f14f2c2f
+note A sibling box in cells: its members' bounds joined, padded by GRAPH_PAD_ACROSS and GRAPH_PAD_DOWN. The scene draws it and the camera's bounds include it, so fit never cuts a box.

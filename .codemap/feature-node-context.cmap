@@ -10,7 +10,7 @@ order 0
 author ai
 file crates/gui/src/graph/input.rs
 symbol apply
-lines 32 43
+lines 34 45
 hash 3923723680e2aa71
 note The handler: Widen adds Context::LINES to the node's above or below count, Narrow drops the node's context; both pin the node at its current computed position.
 
@@ -40,7 +40,7 @@ parent 4ok6o9
 author ai
 file crates/gui/src/graph/input.rs
 symbol apply
-lines 14 20
+lines 16 22
 hash c57d381711b1483c
 note The more/less button: toggles the node between preview and full text, keeping it under the pointer and returning it to the automatic layout.
 
@@ -50,8 +50,8 @@ parent 4ok6o9
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 12 22
-hash 855d90a648f8916d
+lines 12 29
+hash 8a0f456930fac64e
 note Trigger: a click on the canvas goes to graph_click with the hit under the pointer.
 
 step t6s7s4

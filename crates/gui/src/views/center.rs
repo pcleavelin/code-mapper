@@ -8,6 +8,7 @@ use crate::graph::{GraphAction, GraphFrame, draw_scene};
 use crate::ids;
 use crate::keys;
 use crate::model::{HIT_LIMIT, HitsShown, Model, PathSlot, StepKey, Tab};
+use crate::panels::Direction;
 use crate::status::Status;
 use crate::text::{Counted, Noun, Tag};
 use crate::theme::{
@@ -429,6 +430,13 @@ pub(super) fn graph_tab(model: &Model, frame: &mut Frame<'_>, graph: Option<Grap
     }
     if frame.small_button("fit", ids::GRAPH_FIT.target()).clicked() {
         frame.push(Action::Graph(GraphAction::WantFit));
+    }
+    let turn = match model.graph.direction() {
+        Direction::Across => "top to bottom",
+        Direction::Down => "left to right",
+    };
+    if frame.small_button(turn, ids::GRAPH_TURN.target()).clicked() {
+        frame.push(Action::Graph(GraphAction::Turn));
     }
     frame.label(format!("{:.0}%", zoom.get() * 100.0), WEAK);
     let mut runs = Vec::new();

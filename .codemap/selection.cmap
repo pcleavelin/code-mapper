@@ -20,9 +20,9 @@ parent gjewkp
 author ai
 file crates/gui/src/graph.rs
 symbol focused
-lines 0 4
-hash 6be3c6f4e0305f31
-note The graph's side: a focus from outside the graph asks for the camera to move to the node; one the graph made itself (hold_look) is consumed instead.
+lines 0 9
+hash 3216e1d4c408d038
+note The graph's side of a focus change, steered by who caused it: a click on a node (Steering::Click) keeps the camera and the root; an arrow-key walk (Steering::Keys) asks the camera to look at the node and keeps the root; a focus from outside the graph asks for a look and drops the kept root, so the new symbol can become the root. The steering is consumed either way.
 
 step ascpfh
 order 2
@@ -38,9 +38,9 @@ order 6
 author ai
 file crates/gui/src/graph/build.rs
 symbol rebuild
-lines 0 15
-hash fe5c910f99dd0976
-note The graph reads the same fields and keeps nothing of its own: every frame it derives its node set from the selected path and the focused symbol, so it cannot disagree with the document or the outline. The path is drawn whenever one is selected, step or no step: selecting a symbol off the path adds it as another root beside the path rather than replacing it.
+lines 0 24
+hash 4f10524eb36a1166
+note The graph reads the same fields and keeps no selection of its own: every frame it derives its node set from the selected path and the focused symbol, so it cannot disagree with the document or the outline. The path is drawn whenever one is selected, step or no step: selecting a symbol off the path from outside the graph adds it as another root beside the path rather than replacing it, and GraphState keeps it as the root while the reader moves inside the graph.
 
 step gjewkp
 order 1

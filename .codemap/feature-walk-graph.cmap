@@ -1,0 +1,157 @@
+codemap 8
+path feature-walk-graph
+kind flow
+author ai
+group features/gui
+note After a click inside the graph's canvas, the arrow keys move the selection between graph nodes instead of walking the path: Left and Right (this feature's keys) and Up and Down (walk-steps' keys, which the graph borrows while it holds the keyboard) go to the parent, a child or a sibling lying that way first, and to the nearest node that way when none of those does. A step node selects its step, an off-path node focuses its symbol; the tree keeps its root and the camera glides to the new node over a few frames. Nothing happens while a text field holds the keyboard or when no node lies that way. A press outside the canvas, or hiding the Graph view, gives the arrows back to walking the path (feature-walk-steps).
+
+step 86a5h4
+order 11
+parent ub828q
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_phase
+lines 20 26
+hash 4fab01b6ca13535c
+note What gives the graph the keyboard: any left press, in the graph phase, sends Engage - Keyboard::Graph when the pointer is over the canvas, Keyboard::Elsewhere when it is not - so a click on a node or the background turns the walk on and a click in another view turns it off.
+
+step 8tpd5x
+order 13
+parent h7oyei
+author ai
+file crates/gui/src/graph/input.rs
+symbol Heading
+lines 0 5
+hash de09c6837c98a963
+note The four arrow directions, as the keys name them.
+
+step b18wzk
+order 6
+parent ub828q
+author ai
+file crates/gui/src/graph.rs
+symbol focused
+lines 0 9
+hash 3216e1d4c408d038
+link graph-camera
+note The focus change reaches the graph here (from focus_symbol); Steering::Keys asks the camera to look at the new node and keeps the graph's root, so the tree does not re-root on an off-path node the walk lands on.
+
+step da529t
+order 4
+parent ub828q
+author ai
+file crates/gui/src/nav.rs
+symbol select_step
+lines 0 53
+hash 4970f05ff13c3c88
+link feature-select-step
+note A step node: the same selection as clicking the step in the outline, scrolled to.
+
+step h7oyei
+order 3
+parent ufb37d
+author ai
+file crates/gui/src/graph/input.rs
+symbol along
+lines 0 10
+hash 4a011497ac78ca3e
+note The score of a move from one anchor to another: None unless the target lies strictly that way, else the distance along the heading plus three times the distance off it, so a node straight ahead beats a nearer one far to the side.
+
+step lt0np5
+order 12
+parent ub828q
+author ai
+file crates/gui/src/app.rs
+symbol frame
+lines 21 27
+hash a8df20e3242f9745
+note And a frame with the Graph view hidden marks the graph Hidden and its keyboard Elsewhere, so the arrows go back to walking the path.
+
+step nfi0w4
+order 10
+parent ub828q
+author ai
+file crates/gui/src/action.rs
+symbol apply
+lines 95 95
+hash da347408f9b6ea7b
+note The apply arm.
+
+step oji5b6
+order 5
+parent ub828q
+author ai
+file crates/gui/src/nav.rs
+symbol go_to_symbol
+lines 0 14
+hash 84310461820f5965
+note An off-path node: its symbol becomes the focus with no step selected, the same as a Symbols row; in the Graph tab the tab stays.
+
+step rw4ydx
+order 14
+parent uq1wl5
+author ai
+file crates/gui/src/keys.rs
+symbol headings
+lines 0 15
+hash f74929e7e00bd3ad
+note Reads the chords from the registry: Up and Down from WalkSteps' triggers, Left and Right from WalkGraph's, so each key belongs to one feature and the graph reuses the step-walking keys for its vertical moves.
+
+step s2my1q
+order 8
+parent ub828q
+author ai
+file crates/gui/src/graph/input.rs
+symbol glide_step
+lines 0 21
+hash 3c4d8188d4fb1c99
+note The glide, stepped once per graph phase with the frame's time: an ease-out from the old pan to the new one over GLIDE_TIME, landing exactly on it; App::frame redraws quickly until it ends. A wheel, a background drag or a fit drops it.
+
+step ub828q
+order 0
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_walk
+lines 0 20
+hash 83900aabb81aeed1
+note The handler, one call per arrow press. Does nothing while a text field is focused or with no node under the selection (Built::focus_node); otherwise asks toward for the node that way from the focus node, sends Steer(Steering::Keys) so the focus change that follows glides the camera and keeps the root, then selects the node: its step when it is a step of the drawn path, else its symbol through go_to_symbol.
+
+step ufb37d
+order 1
+parent ub828q
+author ai
+file crates/gui/src/graph/input.rs
+symbol toward
+lines 0 14
+hash d03aecc9dd8debaa
+note Picks the node that way. Each node is anchored at a point four cells into its header, half a row down, in this frame's cell size; among the candidates with a positive score from Heading::along the lowest wins. The tree neighbours are tried first, so Right from a parent lands on its first child and Down within a sibling box on the next sibling; only when none lies that way does it search every node.
+
+step uq1wl5
+order 9
+parent ub828q
+author ai
+file crates/gui/src/app.rs
+symbol keys
+lines 21 30
+hash fc9a4dd80b236834
+note Trigger: the keys phase, while the Graph view is shown and the graph holds the keyboard, queues one GraphWalk per arrow pressed this frame; the path walk (WalkWhenIdle) gets no arrows then.
+
+step uxg9gz
+order 7
+parent ub828q
+author ai
+file crates/gui/src/graph/input.rs
+symbol look_at
+lines 0 12
+hash d3c54c8e2b65919b
+note The look, made by move_camera once the layout has placed the node: with the graph on screen it starts a glide from the current pan to the one that centres the node.
+
+step xi6orc
+order 2
+parent ufb37d
+author ai
+file crates/gui/src/graph/input.rs
+symbol neighbours
+lines 0 24
+hash 4f6ed895645aedbb
+note A node's tree neighbours: its parent (the parent step, or the node whose expansion revealed it), its children (steps under it and nodes it revealed) and the other members of any sibling box it sits in (Built.siblings, from the layout).

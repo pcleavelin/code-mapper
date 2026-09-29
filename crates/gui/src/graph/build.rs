@@ -3,8 +3,10 @@ use std::collections::{BTreeMap, BTreeSet};
 use domain::{Index, Line, Span, SymbolId, SymbolName};
 use ui::{Count, Extent, Icon, Label, Point, Rect, Run};
 
+use crate::graph::place::Siblings;
 use crate::graph::{Around, Button, Expansion, GraphState, Node, Side};
 use crate::model::{Model, PathSlot, StepKey, StepSlot};
+use crate::panels::Direction;
 use crate::theme::{Cells, GRAPH_LEAST_COLUMNS, GRAPH_MOST_COLUMNS, GREEN, TEXT, WEAK};
 
 pub(crate) const PREVIEW_LINES: Count = Count::new(12);
@@ -68,6 +70,8 @@ pub(crate) struct Built {
     pub(crate) origin: BTreeMap<Node, Origin>,
     pub(crate) has_note: BTreeSet<Node>,
     pub(crate) auto_open: Option<Node>,
+    pub(crate) direction: Direction,
+    pub(crate) siblings: Vec<Siblings>,
 }
 
 pub(crate) struct Shown {
@@ -337,13 +341,22 @@ pub(crate) fn rebuild(model: &Model) -> Built {
             .nav
             .path()
             .filter(|path| path.get() < model.path_count().get()),
+        direction: model.graph.direction,
         ..Built::default()
     };
     if let Some(path) = built.path {
         add_path_nodes(&mut built, model, path);
     }
-    let expansions = add_focus(&mut built, model);
-    add_expansions(&mut built, model, expansions);
+    if let Some(root) = model.graph.root
+        && !built.by_symbol.contains_key(&root.symbol)
+        && let Some(symbol) = model.index.symbol(root.symbol)
+    {
+        built.add(&model.index, root, Rank::ZERO, symbol.span());
+    }
+    add_expansions(&mut built, model, model.graph.expansions.clone());
+    if let Some(expansions) = add_focus(&mut built, model) {
+        add_expansions(&mut built, model, expansions);
+    }
     set_views(&mut built, model);
     built
 }
@@ -393,27 +406,27 @@ fn add_path_nodes(built: &mut Built, model: &Model, path: PathSlot) {
     }
 }
 
-fn add_focus(built: &mut Built, model: &Model) -> Vec<Expansion> {
+fn add_focus(built: &mut Built, model: &Model) -> Option<Vec<Expansion>> {
     let graph = &model.graph;
     let index = &model.index;
+    let focus = model.nav.focus()?;
+    if built.by_symbol.contains_key(&focus) {
+        return None;
+    }
+    let symbol = index.symbol(focus)?;
+    let node = Node::off_path(focus);
+    built.add(index, node, Rank::ZERO, symbol.span());
     let mut expansions = graph.expansions.clone();
-    if let Some(focus) = model.nav.focus()
-        && !built.by_symbol.contains_key(&focus)
-        && let Some(symbol) = index.symbol(focus)
-    {
-        let node = Node::off_path(focus);
-        built.add(index, node, Rank::ZERO, symbol.span());
-        if graph.auto_open != Some(node) {
-            built.auto_open = Some(node);
-            for side in [Side::Callees, Side::Callers] {
-                let expansion = Expansion { node, side };
-                if !expansions.contains(&expansion) {
-                    expansions.push(expansion);
-                }
+    if graph.auto_open != Some(node) {
+        built.auto_open = Some(node);
+        for side in [Side::Callees, Side::Callers] {
+            let expansion = Expansion { node, side };
+            if !expansions.contains(&expansion) {
+                expansions.push(expansion);
             }
         }
     }
-    expansions
+    Some(expansions)
 }
 
 fn add_expansions(built: &mut Built, model: &Model, expansions: Vec<Expansion>) {

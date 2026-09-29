@@ -83,6 +83,8 @@ pub enum Feature {
     FitGraph,
     PanGraph,
     ZoomGraph,
+    WalkGraph,
+    TurnGraph,
     MoveView,
     ResizePanel,
     SplitPanel,
@@ -93,7 +95,7 @@ pub enum Feature {
 }
 
 impl Feature {
-    pub const ALL: [Self; 86] = [
+    pub const ALL: [Self; 88] = [
         Self::Files,
         Self::Symbols,
         Self::Show,
@@ -173,6 +175,8 @@ impl Feature {
         Self::FitGraph,
         Self::PanGraph,
         Self::ZoomGraph,
+        Self::WalkGraph,
+        Self::TurnGraph,
         Self::MoveView,
         Self::ResizePanel,
         Self::SplitPanel,
@@ -474,7 +478,9 @@ impl Feature {
             ),
             Self::WalkSteps => Spec::new(
                 Text::new("walk-steps"),
-                Text::new("move to the next or previous step with the arrow keys"),
+                Text::new(
+                    "move to the next or previous step with the up and down arrow keys; after a click in the graph, to the node above or below",
+                ),
                 Surface::Window,
                 &const {
                     [
@@ -846,6 +852,25 @@ impl Feature {
                         Trigger::Gesture(Gesture::ControlWheel, Element::new("graph-canvas")),
                     ]
                 },
+            ),
+            Self::WalkGraph => Spec::new(
+                Text::new("walk-graph"),
+                Text::new(
+                    "after a click in the graph, move to the node left or right with the arrow keys; the camera glides to each node the arrows reach",
+                ),
+                Surface::Window,
+                &const {
+                    [
+                        Trigger::Key(Chord::plain(Key::Left)),
+                        Trigger::Key(Chord::plain(Key::Right)),
+                    ]
+                },
+            ),
+            Self::TurnGraph => Spec::new(
+                Text::new("turn-graph"),
+                Text::new("lay the graph out left to right or top to bottom"),
+                Surface::Window,
+                &const { [Trigger::Click(Element::new("graph-turn"))] },
             ),
             Self::MoveView => Spec::new(
                 Text::new("move-view"),

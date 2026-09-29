@@ -61,8 +61,8 @@ parent a40hff
 author ai
 file crates/gui/src/views/panel_tree.rs
 symbol tab
-lines 0 29
-hash e3f784f91633d4d4
+lines 0 28
+hash 1ac43aaefc0cfa71
 note Trigger: a press on a tab queues Grab with the pointer position (and ShowView). The cursor is a closed hand while a moving tab is held.
 
 step vwjg3u

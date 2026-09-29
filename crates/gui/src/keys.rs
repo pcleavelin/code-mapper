@@ -2,6 +2,7 @@ use features::{Chord, Feature, Gesture, Key as ChordKey, Modifiers, Trigger};
 use ui::{Button, Glyph, Input, Interaction, Key, Mods, Pointer, Press};
 
 use crate::field::Edit;
+use crate::graph::Heading;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Going {
@@ -92,6 +93,23 @@ pub(crate) fn going(input: &Input, going: Going) -> bool {
         .any(|chord| chord_pressed(input, chord))
         || (gestures(Feature::GoBack).any(|named| named == gesture)
             && input.pointer.pressed.contains(button))
+}
+
+pub(crate) fn headings(input: &Input) -> Vec<Heading> {
+    [
+        (Feature::WalkSteps, ChordKey::Up, Heading::Up),
+        (Feature::WalkSteps, ChordKey::Down, Heading::Down),
+        (Feature::WalkGraph, ChordKey::Left, Heading::Left),
+        (Feature::WalkGraph, ChordKey::Right, Heading::Right),
+    ]
+    .into_iter()
+    .filter(|(feature, wanted, _)| {
+        chords(*feature)
+            .filter(|chord| chord.key() == *wanted)
+            .any(|chord| chord_pressed(input, chord))
+    })
+    .map(|(_, _, heading)| heading)
+    .collect()
 }
 
 pub(crate) fn walks(input: &Input) -> Vec<Walk> {

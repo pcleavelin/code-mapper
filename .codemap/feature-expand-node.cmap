@@ -53,16 +53,16 @@ parent ohhidl
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 12 22
-hash 855d90a648f8916d
-note Trigger: the graph phase, run before the views each frame on the Graph tab, finds the topmost hit rectangle under the pointer from the last drawn frame and hands a click to graph_click.
+lines 12 29
+hash 8a0f456930fac64e
+note Trigger: the graph phase, run before the views each frame on the Graph tab, finds the topmost hit rectangle under the pointer from the last drawn frame, engages the graph's keyboard on a press inside the canvas (Keyboard::Elsewhere on one outside it), and hands a click to graph_click.
 
 step ohhidl
 order 0
 author ai
 file crates/gui/src/graph/input.rs
 symbol apply
-lines 21 31
+lines 23 33
 hash 89b72ff234159bfa
 note The handler: the Toggle arm adds the expansion (node, side) to the ordered list or removes it, after remembering where the node sits on screen, and drops any dragged position of the node.
 

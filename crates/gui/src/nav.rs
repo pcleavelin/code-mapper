@@ -349,7 +349,7 @@ impl Model {
         else {
             return;
         };
-        let order = self.tree_order(path);
+        let order = self.numbered(path);
         let Some(last) = order.len().checked_sub(1) else {
             return;
         };

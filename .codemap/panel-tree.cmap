@@ -65,6 +65,16 @@ lines 0 14
 hash 9888c0088c8fda12
 note A split: its box with the split's id (pair/<n>, which resizing reads back), the first branch, the sash, the second branch.
 
+step 267ikv
+order 55
+parent ae4vqc
+author ai
+file crates/gui/src/widgets.rs
+symbol tab
+lines 0 61
+hash d45c460a6951077a
+note The tab widget (Frame::tab): one row element with the tab's id holding the label and a close cross with its own id, padded by TAB_PADDING. The shown tab gets the panel background and an accent line along its top; a hovered one the hover background; the label is TEXT when shown or hovered, WEAK otherwise, and the cross is FAINT until its tab is shown or hovered and TEXT under the pointer. Hovering the cross counts as hovering the tab, so the tab does not flicker between the two.
+
 step 30tc7f
 order 33
 author ai
@@ -139,9 +149,9 @@ parent dxzju5
 author ai
 file crates/gui/src/views/panel_tree.rs
 symbol tab
-lines 0 29
-hash e3f784f91633d4d4
-note A tab is a button tab@<View>, labelled with the view's name; the Results tab adds its hit count, with a + when the hits were cut at HIT_LIMIT ('Results (5000+)'). A press both shows the view and takes hold of it for a drag; releasing without moving leaves only the show.
+lines 0 28
+hash 1ac43aaefc0cfa71
+note A tab is Frame::tab with the id tab@<View> and its close cross close-tab@<View>, labelled with the view's name; the Results tab adds its hit count, with a + when the hits were cut at HIT_LIMIT ('Results (5000+)'). A click on the cross closes the view; a press on the rest both shows the view and takes hold of it for a drag, and releasing without moving leaves only the show.
 
 step aebgap
 order 38
@@ -152,6 +162,16 @@ symbol pane
 lines 0 14
 hash 994000ab5deb09d7
 note A branch's box: exact width and height, a row for an Across split, a column otherwise, clipped.
+
+step aq57yc
+order 56
+parent 267ikv
+author ai
+file crates/gui/src/widgets.rs
+symbol TabClicks
+lines 0 3
+hash 28b3942744d45ee0
+note The two interactions a tab returns, the tab's and its close cross's, so the caller can tell a close from a show.
 
 step aql8s2
 order 18
@@ -209,9 +229,9 @@ parent dxzju5
 author ai
 file crates/gui/src/views/panel_tree.rs
 symbol header
-lines 0 38
-hash cc9e7a94c61b609b
-note One row per panel: a tab per view, then the add (picker), split-across, split-down and close icons, the last only when the panel is not the whole window.
+lines 0 40
+hash 1d68e53d6d216517
+note One row per panel: a tab per view, then a grow and a ToolbarSmall holding the add (picker), split-across, split-down and close icons, the last only when the panel is not the whole window, so the icons sit at the right end.
 
 step cxcwck
 order 22

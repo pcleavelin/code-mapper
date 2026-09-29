@@ -155,6 +155,7 @@ fn header(model: &Model, frame: &mut Frame<'_>, panel: &Panel) {
         };
         tab(model, frame, *view, chosen);
     }
+    frame.start(Container::ToolbarSmall);
     frame.grow();
     let id = panel.id();
     if frame
@@ -183,6 +184,7 @@ fn header(model: &Model, frame: &mut Frame<'_>, panel: &Panel) {
         frame.push(Action::ClosePanel(id));
     }
     frame.finish();
+    frame.finish();
 }
 
 fn tab(model: &Model, frame: &mut Frame<'_>, view: View, chosen: Chosen) {
@@ -197,15 +199,14 @@ fn tab(model: &Model, frame: &mut Frame<'_>, view: View, chosen: Chosen) {
     } else {
         view.name().to_string()
     };
-    let interaction = frame.button(label, target, chosen);
-    if interaction.clicked() {
+    let close = ids::CLOSE_TAB.with(&Label::new(view.name().as_str()));
+    let clicks = frame.tab(label, target, close, chosen);
+    if clicks.close.clicked() {
+        frame.push(Action::CloseView(view));
+    } else if clicks.tab.clicked() {
         let mouse = frame.ui.pointer().mouse;
         frame.push(Action::ShowView(view));
         frame.push(Action::Grab(view, mouse));
-    }
-    let close = ids::CLOSE_TAB.with(&Label::new(view.name().as_str()));
-    if frame.small_button(Icon::Close, close).clicked() {
-        frame.push(Action::CloseView(view));
     }
     if model
         .panels
