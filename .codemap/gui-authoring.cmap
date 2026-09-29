@@ -236,9 +236,9 @@ order 8
 author ai
 file crates/gui/src/widgets.rs
 symbol row_with_action
-lines 0 49
-hash 0824315972c84b1c
-note A clickable row with a trailing action (the '+ step' on Symbols and Xrefs rows): one row element holding the text and the action, the action lit when hovered and the whole row hovered with it. The action is its own id, and the smallest hovered element wins the hit, so pressing the action is not a click on the row.
+lines 0 50
+hash 4902d0c9ccb25b9c
+note A clickable row with a trailing action (the '+ step' on Symbols and Xrefs rows): one row element holding the text, clipped to the row, and the action, which is shown only while the row is hovered or marked and lit when hovered itself. The action is its own id, and the smallest hovered element wins the hit, so pressing the action is not a click on the row.
 
 step nxbjm2
 order 4
@@ -284,9 +284,9 @@ parent q09qk7
 author ai
 file crates/gui/src/views/authoring.rs
 symbol new_path_form
-lines 0 38
-hash 15822d0fd3d9a3ad
-note The form under the Paths toolbar: the name field and the three kind buttons (kind@flow, kind@layer, kind@type), then the group field and 'create'.
+lines 0 40
+hash c0d524b335ec7e32
+note The form under the Paths toolbar: a 'name' label, the name field (hinted 'e.g. startup') and the three kind buttons (kind@flow, kind@layer, kind@type), then a 'group' label, the group field (hinted '(none)') and 'create'.
 
 step vmoykv
 order 1

@@ -3,17 +3,17 @@ path feature-add-step
 kind flow
 author ai
 group features/gui
-note Add code to the path being read, from wherever it is shown. In the Listing, select lines (click, shift-click) and press 'add step'. On a Symbols row or an Xrefs caller or callee row, press '+ step' to add that symbol whole; 'add step' under the Xrefs heading adds the selected symbol. On an off-path graph node, '+ step' adds its symbol. The step is authored by the human and hangs under the target (see feature-choose-target), except a graph node revealed as a callee of a step, which hangs under that step. The same lines under the same parent again is refused with the step's number; adding moves neither the selection nor the target, so the next add lands beside this one. The status names the new step's number and parent.
+note Add code to the path being read, from wherever it is shown. In the Listing, select lines (click, shift-click) and press the toolbar's add button, which names them ('add lines 12-20 as a step'). On a Symbols row or an Xrefs caller or callee row, press '+ step', shown while the row is hovered, to add that symbol whole; 'add step' under the Xrefs heading adds the selected symbol. On an off-path graph node, '+ step' adds its symbol. The step is authored by the human and hangs under the target (see feature-choose-target), except a graph node revealed as a callee of a step, which hangs under that step. The same lines under the same parent again is refused with the step's number; adding moves neither the selection nor the target, so the next add lands beside this one. The status names the new step's number and parent.
 
 step 5dyo4y
 order 3
 parent 9kzjp8
 author ai
 file crates/gui/src/views/center.rs
-symbol listing
-lines 26 28
-hash edbeb3a6d1d57e71
-note Trigger: the Listing toolbar's 'add step' button queues AddLines.
+symbol listing_toolbar
+lines 3 16
+hash e855bbd2e5218110
+note Trigger: the Listing toolbar's add button queues AddLines. It names the lines it will add ('add line 12 as a step', 'add lines 12-20 as a step'), or reads 'add step' while nothing is selected.
 
 step 6qgteg
 order 7
@@ -21,9 +21,9 @@ parent d1xozt
 author ai
 file crates/gui/src/views/left.rs
 symbol symbol_row
-lines 33 53
-hash 93b05af9e44cb2e0
-note Trigger: a Symbols row carries a '+ step' action while a path is being read; the action queues AddSymbol under the target, a click elsewhere on the row focuses the symbol.
+lines 0 65
+hash 570a16900869e658
+note Trigger: a Symbols row carries a '+ step' action while a path is being read, shown on the hovered or selected row; the action queues AddSymbol under the target, a click elsewhere on the row focuses the symbol.
 
 step 82hexj
 order 1
@@ -51,7 +51,7 @@ parent 9kzjp8
 author ai
 file crates/gui/src/views/center.rs
 symbol listing
-lines 89 94
+lines 75 80
 hash fd19b1328cd15b25
 link feature-select-lines
 note Where the lines come from: clicks in the listing set and extend the line selection.
@@ -91,10 +91,10 @@ order 8
 parent d1xozt
 author ai
 file crates/gui/src/views/xrefs.rs
-symbol call_lists
-lines 20 37
-hash ef4bbbd1031984c7
-note Trigger: each Xrefs caller and callee row has the same '+ step' action (add-xto/<n>, add-xfrom/<n>). Rows of a file still waiting for its server take no clicks.
+symbol call_row
+lines 0 41
+hash 2acb408b06371956
+note Trigger: each Xrefs caller and callee row has the same '+ step' action (add-xto/<n>, add-xfrom/<n>), shown while the row is hovered. Rows of a file still waiting for its server take no clicks.
 
 step u849ck
 order 11

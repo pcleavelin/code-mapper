@@ -31,6 +31,6 @@ parent 1tdtjx
 author ai
 file crates/gui/src/views/left.rs
 symbol path_row
-lines 43 54
-hash 970f4bc4daab7c3d
-note The trigger: each row of the Paths list is a PATH_ROW numbered by the path's slot. A click queues OpenPath with the Path tab, which apply hands to open_path once the frame is built. The row is red when a step is stale and marked + or ~ when the map diff has the path as added or changed.
+lines 0 66
+hash 13b675c99cc1a14f
+note The trigger: each row of the Paths list is a PATH_ROW numbered by the path's slot. A click queues OpenPath with the Path tab, which apply hands to open_path once the frame is built. The row shows the name, then kind, author and step count dimmed; the name is red and 'n stale' follows when a step is stale, and marked + or ~ when the map diff has the path as added or changed.

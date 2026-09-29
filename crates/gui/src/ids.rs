@@ -103,11 +103,15 @@ pub(crate) const OUTLINE_ROW: Control = Control::new(Feature::SelectStep, Elemen
 pub(crate) const STEP_HEADER: Control = Control::new(Feature::SelectStep, Element::new("step"));
 pub(crate) const CRUMB: Control = Control::new(Feature::SelectStep, Element::new("crumb"));
 pub(crate) const SYMBOL_ROW: Control = Control::new(Feature::FilterSymbols, Element::new("sym"));
+pub(crate) const SYMBOL_FILE_ROW: Control =
+    Control::new(Feature::BrowseFiles, Element::new("symfile"));
 pub(crate) const DIRECTORY_ROW: Control = Control::new(Feature::BrowseFiles, Element::new("dir"));
 pub(crate) const FILE_ROW: Control = Control::new(Feature::BrowseFiles, Element::new("file"));
 pub(crate) const CALLER_ROW: Control = Control::new(Feature::FollowXref, Element::new("xto"));
 pub(crate) const CALLEE_ROW: Control = Control::new(Feature::FollowXref, Element::new("xfrom"));
 pub(crate) const REFERENCE_ROW: Control = Control::new(Feature::FollowXref, Element::new("xref"));
+pub(crate) const REFERENCE_FILE_ROW: Control =
+    Control::new(Feature::FollowXref, Element::new("xreffile"));
 pub(crate) const PEEK_GO: Control = Control::new(Feature::PeekDefinition, Element::new("peek-go"));
 pub(crate) const PEEK_CLOSE: Control =
     Control::new(Feature::PeekDefinition, Element::new("peek-x"));
@@ -131,6 +135,7 @@ pub(crate) const EXPAND: Control = Control::new(Feature::ExpandLink, Element::ne
 pub(crate) const REMOVE_STEP: Control = Control::new(Feature::RemoveStep, Element::new("del"));
 pub(crate) const LINES: Control = Control::new(Feature::SelectLines, Element::new("lines"));
 pub(crate) const HIT_ROW: Control = Control::new(Feature::Search, Element::new("hit"));
+pub(crate) const HIT_FILE_ROW: Control = Control::new(Feature::Search, Element::new("hitfile"));
 pub(crate) const DIFF_REFRESH: Control =
     Control::new(Feature::OpenDiffRow, Element::new("diff-refresh"));
 pub(crate) const DIFF_ROW: Control = Control::new(Feature::OpenDiffRow, Element::new("diffrow"));
@@ -179,11 +184,13 @@ pub(crate) const CONTROLS: &[Control] = &[
     STEP_HEADER,
     CRUMB,
     SYMBOL_ROW,
+    SYMBOL_FILE_ROW,
     DIRECTORY_ROW,
     FILE_ROW,
     CALLER_ROW,
     CALLEE_ROW,
     REFERENCE_ROW,
+    REFERENCE_FILE_ROW,
     PEEK_GO,
     PEEK_CLOSE,
     SHOW_GRAPH,
@@ -204,6 +211,7 @@ pub(crate) const CONTROLS: &[Control] = &[
     REMOVE_STEP,
     LINES,
     HIT_ROW,
+    HIT_FILE_ROW,
     DIFF_REFRESH,
     DIFF_ROW,
     GRAPH_ONE_TO_ONE,
@@ -273,6 +281,7 @@ pub(crate) fn diff() -> Id {
 }
 
 pub(crate) const DOCUMENT_CODE: Element = Element::new("doccode");
+pub(crate) const STEP_COLUMN: Element = Element::new("stepcolumn");
 
 pub(crate) fn linked() -> Id {
     Id::new("linked")

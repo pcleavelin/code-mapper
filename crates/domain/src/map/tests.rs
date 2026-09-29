@@ -176,7 +176,7 @@ fn resolve_follows_symbols_and_marks_stale_steps() {
     assert!(edited_step.is_stale());
     assert_eq!(edited_step.span(), span(6, 6));
     assert!(edited_step.resolved_symbol().is_some());
-    assert!(!loaded.covers(&file("a.rs"), span(6, 6)));
+    assert!(!loaded.coverage().covers(&file("a.rs"), span(6, 6)));
 
     let _pinned = loaded
         .pin(
@@ -193,8 +193,8 @@ fn resolve_follows_symbols_and_marks_stale_steps() {
     assert_eq!(pinned_step.note().unwrap().as_str(), "the middle");
     assert_eq!(pinned_step.author(), Author::Human);
     assert_eq!(pinned_step.id(), &id);
-    assert!(loaded.covers(&file("a.rs"), span(5, 7)));
-    assert!(!loaded.covers(&file("a.rs"), span(0, 2)));
+    assert!(loaded.coverage().covers(&file("a.rs"), span(5, 7)));
+    assert!(!loaded.coverage().covers(&file("a.rs"), span(0, 2)));
 
     let mut renamed = Index::new(Root::new(FsPath::new(".")));
     renamed.push(source(&edited, vec![symbol("a", 2, 4), symbol("c", 5, 7)]));

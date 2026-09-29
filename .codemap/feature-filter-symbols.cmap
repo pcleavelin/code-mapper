@@ -3,7 +3,7 @@ path feature-filter-symbols
 kind flow
 author ai
 group features/gui
-note In the Symbols tab, type in the filter field to narrow the table to symbols whose name or file path contains the text, case-insensitively; every keystroke re-filters. Each row shows + when a path covers the symbol, its name, kind and file:line. Clicking a row focuses that symbol: when it is a whole-symbol step of the path being read, that step is selected; otherwise the Listing opens on it, or, on the Path or Graph tab, the document stays and the status bar says the symbol is off the path.
+note In the Symbols tab, type in the filter field to narrow the list to symbols whose name contains the text, or every symbol of a file whose path contains it, ignoring case; every keystroke re-filters and scrolls the list back to its top. The toolbar shows 'n of m' while filtering. Symbols sit under a row per file with its covered/total count; each symbol row shows a check when a path covers the symbol, its name, line and kind. Clicking a symbol row focuses that symbol: when it is a whole-symbol step of the path being read, that step is selected; otherwise the Listing opens on it, or, on the Path or Graph tab, the document stays and the status bar says the symbol is off the path. Clicking a file row opens that file in the Listing.
 
 step 0pe1eq
 order 0
@@ -20,20 +20,30 @@ parent j766na
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 21
-hash 74bf56c206047b3e
+lines 0 30
+hash 6efdb8b3bc3f3335
 link feature-new-path
-note The symbol filter keeps its text on enter and has nothing to run; the field's text is all the filter needs.
+note An edit that changes the symbol filter's text scrolls the Symbols list back to its top, so the first match is in view. The filter keeps its text on enter and has nothing to run; the field's text is all the filter needs.
 
 step a4zz2d
-order 5
+order 8
 parent w6a3u3
 author ai
 file crates/gui/src/views/left.rs
 symbol symbol_row
-lines 0 54
-hash 6602edfdb26c16c5
-note One row: the covered mark, name, kind and place clipped to the room symbols_window gives it (less ADD_ROOM while a path is open, for the '+ step' action). A click on the row queues Focus; the action queues an AddSymbol instead (feature-add-step).
+lines 0 65
+hash 570a16900869e658
+note One symbol row: the check mark when covered, then name, line and kind, the name clipped to the room columns gives it. A click on the row queues Focus; the '+ step' action, shown on the hovered or selected row while a path is open, queues an AddSymbol instead (feature-add-step).
+
+step dectne
+order 5
+parent w6a3u3
+author ai
+file crates/gui/src/views/left.rs
+symbol symbol_lines
+lines 0 36
+hash f87d613630cd6ce5
+note Builds the list: a file line whenever the index's order enters a new file, then each of its symbols whose name matches, or all of them when the file's path matches. A file line left with nothing under it is dropped.
 
 step f2zu9r
 order 1
@@ -45,6 +55,16 @@ lines 0 20
 hash 478ce11e8427e2a2
 link selection
 note A symbol that is the root-anchored step of the path being read selects that step; any other symbol clears the step and focuses the symbol.
+
+step hxs4u8
+order 6
+parent w6a3u3
+author ai
+file crates/gui/src/views/left.rs
+symbol symbol_file_row
+lines 0 34
+hash ef4301384695e463
+note A file row: path, covered/total; a click queues GoTo the file's first line, which opens the Listing.
 
 step j766na
 order 3
@@ -62,6 +82,16 @@ parent 0pe1eq
 author ai
 file crates/gui/src/views/left.rs
 symbol symbols_window
-lines 0 63
-hash 36d66addccbb1c54
-note Trigger and filter: the filter field's text is lower-cased and matched against each symbol's name and file path while the table is built, so there is no filter action to apply. Rows are virtualised to the visible window, each drawn by symbol_row.
+lines 0 70
+hash 0d4f6e5108e3d998
+note Trigger and filter: the filter field's text becomes a Needle and symbol_lines matches it while the list is built, so there is no filter action to apply. The toolbar shows the count, 'n of m' while filtering, or says nothing matches. Rows are virtualised to the visible window; file lines are drawn by symbol_file_row, symbols by symbol_row.
+
+step xfe8cr
+order 7
+parent dectne
+author ai
+file crates/gui/src/text.rs
+symbol impl Needle
+lines 0 21
+hash 0eae6a7463e6326d
+note The match: a substring ignoring ASCII case; an empty filter matches everything.

@@ -106,6 +106,7 @@ impl Run {
 pub enum Wrap {
     None,
     Words,
+    Clip,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -118,6 +119,36 @@ pub struct Text {
 impl Text {
     pub(crate) fn columns(&self) -> Count {
         Count::new(self.runs.iter().map(|run| run.text.columns()).sum())
+    }
+
+    pub(crate) fn clipped(runs: Vec<Run>, columns: usize) -> Vec<Run> {
+        if runs.iter().map(|run| run.text.columns()).sum::<usize>() <= columns {
+            return runs;
+        }
+        let room = columns.saturating_sub(1);
+        let mut used = 0;
+        let mut out = Vec::new();
+        for run in runs {
+            let mut kept = String::new();
+            let mut cut = false;
+            for character in run.text.as_str().chars() {
+                let width = Glyph::new(character).columns();
+                if used + width > room {
+                    cut = true;
+                    break;
+                }
+                used += width;
+                kept.push(character);
+            }
+            if cut && columns > 0 {
+                kept.push('\u{2026}');
+            }
+            out.push(Run::new(kept, run.color));
+            if cut {
+                break;
+            }
+        }
+        out
     }
 }
 

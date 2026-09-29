@@ -6,7 +6,7 @@ group features/cli
 note coverage: covered/total symbols per file, then the total. Files without symbols are skipped. Coverage is derived from the map and the index on every run, never stored.
 
 step 9yar5s
-order 3
+order 4
 parent ype3gj
 author ai
 file crates/cli/src/wire.rs
@@ -20,14 +20,14 @@ order 1
 parent ype3gj
 author ai
 file crates/domain/src/map.rs
-symbol covers
-lines 0 5
-hash 285b67ff7daf1155
+symbol coverage
+lines 0 8
+hash b4612b85e433b734
 link coverage
-note Covered means a non-stale step in the same file overlaps the symbol's lines.
+note Map::coverage collects the spans of every non-stale step per file, once for the whole run.
 
 step wjn5iu
-order 2
+order 3
 parent ype3gj
 author ai
 file crates/cli/src/wire.rs
@@ -36,11 +36,21 @@ lines 0 2
 hash aa6c90db92906bc0
 note 'file: covered/total'.
 
+step ymc01m
+order 2
+parent ype3gj
+author ai
+file crates/domain/src/map.rs
+symbol covers
+lines 0 4
+hash 02b7094bc6f86da2
+note Coverage::covers: a symbol counts when one of its file's collected spans overlaps its lines.
+
 step ype3gj
 order 0
 author ai
 file crates/cli/src/exec.rs
 symbol coverage
-lines 0 18
-hash 15875cd94287ef57
+lines 0 19
+hash 12e60eb65ee675e9
 note Per file with symbols, counts those the map covers, prints the row and adds to the totals.

@@ -11,8 +11,8 @@ parent frf3py
 author ai
 file crates/gui/src/views/document.rs
 symbol header_bar
-lines 21 41
-hash a7018ca93efe3529
+lines 21 40
+hash d5a207ce3f66656d
 note Trigger: the toolbar is a table of label, control and action; HIDE_ALL queues HideAll with Hide::Hide and SHOW_ALL with Hide::Show.
 
 step cup7s2

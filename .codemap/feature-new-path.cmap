@@ -31,9 +31,9 @@ parent yqc4qv
 author ai
 file crates/gui/src/views/authoring.rs
 symbol new_path_form
-lines 0 38
-hash 15822d0fd3d9a3ad
-note The form, drawn under the toolbar only while it is open: name field, a button per kind (kind@flow, kind@layer, kind@type, the chosen one highlighted), then the group field and 'create' (create-path), which queues CreatePath.
+lines 0 40
+hash c0d524b335ec7e32
+note The form, drawn under the toolbar only while it is open: the labelled name field, a button per kind (kind@flow, kind@layer, kind@type, the chosen one highlighted), then the labelled group field and 'create' (create-path), which queues CreatePath.
 
 step 6bofi6
 order 3
@@ -100,8 +100,8 @@ parent 6bofi6
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 21
-hash 74bf56c206047b3e
+lines 0 30
+hash 6efdb8b3bc3f3335
 note Only the focused field takes the edits. Both form fields keep their text on enter, since create_path reads both; a line submitted from either goes to create_path. A blank enter submits nothing, so the group field's enter creates only when it holds a group.
 
 step v7jz7w

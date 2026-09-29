@@ -198,11 +198,12 @@ impl Element {
         let cell = measure.cell(text.size);
         match (axis, text.wrap) {
             (Axis::Horizontal, Wrap::Words) => Px::ZERO,
+            (Axis::Horizontal, Wrap::Clip) => padding,
             (Axis::Horizontal, Wrap::None) => cell.width * text.columns() + padding,
             (Axis::Vertical, Wrap::Words) => {
                 cell.height * Count::new(self.lines.len().max(1)) + padding
             }
-            (Axis::Vertical, Wrap::None) => cell.height + padding,
+            (Axis::Vertical, Wrap::None | Wrap::Clip) => cell.height + padding,
         }
     }
 
@@ -373,6 +374,16 @@ impl Element {
             Wrap::None => {
                 let mut pen = at.horizontal;
                 for run in text.runs {
+                    pen = canvas.text(Point::new(pen, at.vertical), text.size, run.text, run.color);
+                }
+            }
+            Wrap::Clip => {
+                let cell = canvas.cell(text.size).width.max(Px::new(1));
+                let room = (self.rect.width - self.layout.padding * 2)
+                    .ratio(cell)
+                    .max(0);
+                let mut pen = at.horizontal;
+                for run in Text::clipped(text.runs, usize::try_from(room).unwrap_or(0)) {
                     pen = canvas.text(Point::new(pen, at.vertical), text.size, run.text, run.color);
                 }
             }

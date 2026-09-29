@@ -10,7 +10,7 @@ order 0
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 62 68
+lines 63 69
 hash b8b73eaa6fa880a7
 link panel-tree
 note The handler: on release, a grab that had a drop target moves the view there; one without just lets go.
@@ -61,8 +61,8 @@ parent a40hff
 author ai
 file crates/gui/src/views/panel_tree.rs
 symbol tab
-lines 0 24
-hash f2ce2220203e3466
+lines 0 29
+hash e3f784f91633d4d4
 note Trigger: a press on a tab queues Grab with the pointer position (and ShowView). The cursor is a closed hand while a moving tab is held.
 
 step vwjg3u

@@ -3,7 +3,7 @@ path gui-widgets
 kind layer
 author ai
 group gui
-note The widgets the GUI is written in: methods on Frame in widgets.rs and widgets/code.rs, the text field's state in field.rs, and clipping in text.rs. There is no widget library under this: each widget opens an element or two with the theme's layout and colours, reads what the element tree says the mouse did to that id last frame, and returns the Interaction; the view that called it decides what Action to push. A widget never changes the Model. They exist because the same three lines were being written everywhere, not because anything needed abstracting, so a view that wants something else opens elements through Frame directly. Every clickable widget takes a Target from ids, so its element id is the name a script clicks it by. The only widget with state is the text field, since a caret and a history cannot be derived from anything.
+note The widgets the GUI is written in: methods on Frame in widgets.rs and widgets/code.rs, the text field's state in field.rs, and clipping, the list filter's Needle and counted nouns in text.rs. There is no widget library under this: each widget opens an element or two with the theme's layout and colours, reads what the element tree says the mouse did to that id last frame, and returns the Interaction; the view that called it decides what Action to push. A widget never changes the Model. They exist because the same three lines were being written everywhere, not because anything needed abstracting, so a view that wants something else opens elements through Frame directly. Every clickable widget takes a Target from ids, so its element id is the name a script clicks it by. The only widget with state is the text field, since a caret and a history cannot be derived from anything.
 
 step 0tlkjk
 order 2
@@ -13,6 +13,16 @@ symbol text_kind
 lines 0 2
 hash 5b4206159d5bea9d
 note The one way text becomes an element: a list of coloured runs at the frame's font size, wrapped or not. Every text widget below is this with a layout and a style.
+
+step 1fc2eu
+order 47
+parent kleb0l
+author ai
+file crates/gui/src/text.rs
+symbol Noun
+lines 0 5
+hash 04bf23c451aa5b6b
+note The nouns a count can take: step, path, hit, symbol.
 
 step 2havd5
 order 13
@@ -39,7 +49,7 @@ author ai
 file crates/gui/src/widgets.rs
 symbol marked_row
 lines 0 19
-hash 23afc7479ac9da41
+hash 90ffc9530c0a6fcd
 note A row with its own mark colour: the outline uses a weaker tint for the step at the top of the document than for the selected step, so the two never merge.
 
 step 5cq4dm
@@ -50,6 +60,15 @@ symbol custom
 lines 0 13
 hash 5649015e5135f30b
 note An element drawn by a closure on the Canvas, at a given width and height: the peek's grid of a file outside the repo.
+
+step 5jfhek
+order 44
+author ai
+file crates/gui/src/widgets.rs
+symbol reserve
+lines 0 7
+hash f7cedb2ab92c5d12
+note An empty full-width element of a given height with an id: what the document draws in place of a step far from the view, so the column keeps its height and its scroll offset without building the step.
 
 step 61fj7h
 order 40
@@ -115,9 +134,9 @@ parent rcazsr
 author ai
 file crates/gui/src/widgets.rs
 symbol shape
-lines 0 93
-hash 054da5b8ef06f752
-note The one match that turns a Container into its layout, style and fixed id: the paddings, gaps and colours from theme, the accent bar on the left of a selected step row or code column, and the id body the panel tree is laid out from, and the picker's id.
+lines 0 98
+hash c934c32d01403444
+note The one match that turns a Container into its layout, style and fixed id: the paddings, gaps and colours from theme, the accent bar on the left of a selected step row or code column, the id body the panel tree is laid out from, the picker's id, and the id a StepColumn carries.
 
 step aidqqn
 order 3
@@ -128,6 +147,16 @@ lines 0 8
 hash d4f95b65b299977d
 note A line of text in one colour with a little padding and no interaction; the most-used widget. plain_line is the same without the padding, and title the same at the title font.
 
+step bceb8i
+order 43
+parent 2yp2r2
+author ai
+file crates/gui/src/widgets.rs
+symbol danger_button
+lines 0 15
+hash 19610956da0a1a95
+note A small button for removing something (a path, a step): weak text on the field colour at rest, and a red border and dark red background under the pointer, so a destructive press looks different from the buttons beside it.
+
 step bwqb9z
 order 37
 parent hnzu9x
@@ -136,7 +165,7 @@ file crates/gui/src/text.rs
 symbol right
 lines 0 10
 hash 041e3507af985fb8
-note Cuts from the end with an ellipsis, so a name or a kind fits its column and the symbol table stays a table.
+note Cuts from the end with an ellipsis, so a symbol's name fits its column and the symbol table stays a table.
 
 step d4axwo
 order 38
@@ -172,9 +201,18 @@ step gjm6fk
 order 0
 author ai
 file crates/gui/src/theme.rs
-lines 7 27
-hash 6408bff5868596bb
-note The palette, in theme: a dozen colours named by role - background, panel, field, border, text, weak, accent, green, red, orange, hover, selected - and below them the tints made from those by alpha (disabled, selected lines, the slice, the outline's top step, faint, pending, the drop band, the call tint). A colour decision is made once, here, and every view names one.
+lines 7 28
+hash 596868dba7d8ee08
+note The palette, in theme: a dozen colours named by role - background, panel, field, border, text, weak, accent, green, red, orange, hover, selected, and the red background a danger button takes under the pointer - and below them the tints made from those by alpha (disabled, selected lines, the slice, the outline's top step, faint, pending, the drop band, the call tint). A colour decision is made once, here, and every view names one.
+
+step hatq2a
+order 45
+author ai
+file crates/gui/src/text.rs
+symbol impl Needle
+lines 0 21
+hash 0eae6a7463e6326d
+note The one text filter the lists share (the Symbols filter, the Paths filter): the text as typed, matched as a substring ignoring ASCII case, byte window by byte window, so nothing is lower-cased per row. An empty needle matches everything.
 
 step hnzu9x
 order 22
@@ -204,6 +242,15 @@ symbol shown
 lines 0 18
 hash fe9e3c175db7e1f7
 note What the field looks like for its focus: the hint when empty and unfocused, marked when the whole text is marked and it has the keyboard, plain otherwise, split at the caret.
+
+step kleb0l
+order 46
+author ai
+file crates/gui/src/text.rs
+symbol impl fmt::Display for Counted
+lines 0 15
+hash 355399abcd1c1a8b
+note A count with its noun, singular for one ('1 step', '3 paths'), so no view spells a plural by hand.
 
 step kn1cnd
 order 17
@@ -243,6 +290,16 @@ lines 0 25
 hash 5a9da7728b211a18
 note A small button of fixed width in cells, or fitted to its label when there is none, which is what small_button passes: a toggle whose label changes ('hide code' to 'code') keeps its place, so the buttons beside it never slide under a pointer clicking twice.
 
+step qc2ec2
+order 42
+parent aidqqn
+author ai
+file crates/gui/src/widgets.rs
+symbol row_text
+lines 0 8
+hash 5bb7f8d01c2097d9
+note The same clipped growing text with a row's padding, for a row whose text sits beside buttons of its own (an Xrefs reference row).
+
 step qceo1l
 order 19
 parent v1qf6b
@@ -252,6 +309,16 @@ symbol nav_button
 lines 0 26
 hash 7db00acc635312ac
 note Back and forward: three cells wide, greyed out when their stack is empty so the reader sees there is nowhere to go.
+
+step qs75tx
+order 41
+parent aidqqn
+author ai
+file crates/gui/src/widgets.rs
+symbol caption
+lines 0 8
+hash 5f0dc3304a617d27
+note Text that grows to the width it is given and is cut there with an ellipsis (Wrap::Clip), with a label's padding: toolbar notes and legends, the status bar's message, a heading, anything that must not widen its bar.
 
 step r5th9i
 order 39
@@ -278,9 +345,9 @@ order 1
 author ai
 file crates/gui/src/widgets.rs
 symbol Container
-lines 0 20
-hash 554ee9e40f0192cf
-note Every box that holds other elements is one of these: the window, the body, the centre, the bars, the toolbars, a panel column, a step row or code column (with its selected mark), a tooltip, a panel header, the floating view picker. A view opens one with Frame::start and closes it with finish; it never spells out a layout or a style.
+lines 0 21
+hash 95b68957924e48cd
+note Every box that holds other elements is one of these: the window, the body, the centre, the bars, the toolbars, a panel column, a step row or code column (with its selected mark), the column holding one step of the document (StepColumn, carrying that step's id so its height can be measured), a tooltip, a panel header, the floating view picker. A view opens one with Frame::start and closes it with finish; it never spells out a layout or a style.
 
 step rs11uk
 order 14
@@ -375,7 +442,7 @@ file crates/gui/src/widgets.rs
 symbol row
 lines 0 2
 hash 6927a95a29c20605
-note A selectable full-width row of coloured runs with a hover background and a selection background. Every list in the app - paths, outline, symbols, files, xrefs, results, diff - is this one function in a loop.
+note A selectable full-width row of coloured runs with a hover background and a selection background, its text cut with an ellipsis where the row ends (Wrap::Clip), so a long name never pushes a row wider than its panel. Every list in the app - paths, outline, symbols, files, xrefs, results, diff - is this one function in a loop.
 
 step z678b0
 order 31

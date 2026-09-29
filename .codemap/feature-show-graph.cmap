@@ -22,8 +22,8 @@ parent x7w987
 author ai
 file crates/gui/src/views/document.rs
 symbol header_bar
-lines 21 41
-hash a7018ca93efe3529
+lines 21 40
+hash d5a207ce3f66656d
 note Trigger: SHOW_GRAPH in the document toolbar queues OpenPath with Tab::Graph.
 
 step hbss9m

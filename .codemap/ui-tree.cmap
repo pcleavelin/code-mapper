@@ -371,9 +371,9 @@ parent u2u7pf
 author ai
 file crates/ui/src/tree.rs
 symbol paint_text
-lines 0 19
-hash c674e6175e87b82b
-note Text at the content origin: a wrapped text draws its lines a row apart in the first run's colour; an unwrapped one chains its coloured runs along the line, each starting where the last one's pen stopped.
+lines 0 29
+hash eb959c35562500e9
+note Text at the content origin: a wrapped text draws its lines a row apart in the first run's colour; an unwrapped one chains its coloured runs along the line, each starting where the last one's pen stopped; a clipped one does the same with the runs Text::clipped cut to the columns inside the element's padding.
 
 step yw3bj2
 order 26
@@ -391,9 +391,9 @@ parent inr7qd
 author ai
 file crates/ui/src/tree.rs
 symbol fit_leaf
-lines 0 13
-hash 559efd5d617813cc
-note A childless element's fitting size: nothing but padding unless it is text. A text line is its columns (characters, icons counting two) times the cell width - one monospace font is the whole reason a width is countable rather than measured per glyph - and a row high; a wrapped text contributes nothing on the width axis, because its width is whatever it is given, and its line count times the row height on the other.
+lines 0 14
+hash a69925c21d4c22da
+note A childless element's fitting size: nothing but padding unless it is text. A text line is its columns (characters, icons counting two) times the cell width - one monospace font is the whole reason a width is countable rather than measured per glyph - and a row high; a wrapped text contributes nothing on the width axis and a clipped one only its padding, because the width of either is whatever it is given; a wrapped text is its line count times the row height on the other axis, a clipped one a row.
 
 step zgba8d
 order 10

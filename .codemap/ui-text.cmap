@@ -3,7 +3,7 @@ path ui-text
 kind type
 author ai
 group render
-note Text as the tree and the canvas carry it. A Label is an owned string measured in columns: one per character, two per icon glyph (see icons), because one monospace font makes a width a count. A Run is a Label in one colour, and a Text element is a vector of runs at one font size, either on one line or wrapped at words to the element's width (only the first run's text and colour are used when wrapping). A Grid is a block of cells, each a glyph and a colour, built once per view and shared by Rc into the draw list, which is how a whole file of highlighted code is drawn without a text run per token.
+note Text as the tree and the canvas carry it. A Label is an owned string measured in columns: one per character, two per icon glyph (see icons), because one monospace font makes a width a count. A Run is a Label in one colour, and a Text element is a vector of runs at one font size, on one line, on one line cut to the element's width, or wrapped at words to the element's width (only the first run's text and colour are used when wrapping). A Grid is a block of cells, each a glyph and a colour, built once per view and shared by Rc into the draw list, which is how a whole file of highlighted code is drawn without a text run per token.
 
 step 3s7j3q
 order 8
@@ -31,7 +31,7 @@ file crates/ui/src/text.rs
 symbol Text
 lines 0 4
 hash 8ab6c3301decc48b
-note Text in one font size: coloured runs on one line, or one run wrapped to the element's width. A run is the unit of colour, which is why a syntax-coloured line is a vector of them.
+note Text in one font size: coloured runs on one line (whole or clipped), or one run wrapped to the element's width. A run is the unit of colour, which is why a syntax-coloured line is a vector of them.
 
 step b506p9
 order 1
@@ -59,9 +59,19 @@ parent 7jbn9o
 author ai
 file crates/ui/src/text.rs
 symbol Wrap
-lines 0 3
-hash 7aae30a6ebffcd48
-note None keeps the text on one line and makes it as wide as its characters; Words wraps it to whatever width layout gives it and makes it as tall as its lines.
+lines 0 4
+hash f8e328ffe705b7a8
+note None keeps the text on one line and makes it as wide as its characters; Words wraps it to whatever width layout gives it and makes it as tall as its lines; Clip keeps it on one line at whatever width layout gives it and cuts it there with an ellipsis (Text::clipped), so a row of a narrow panel stays one row.
+
+step u32zqf
+order 9
+parent 7jbn9o
+author ai
+file crates/ui/src/text.rs
+symbol clipped
+lines 0 28
+hash c68d3904c989f2e3
+note The runs cut to a column count: kept whole when they fit, otherwise filled glyph by glyph to one column short (icons counting two) and ended with an ellipsis in the colour of the run it cut; runs after the cut are dropped. paint_text calls it for Wrap::Clip with the element's inner width.
 
 step wncz7k
 order 0

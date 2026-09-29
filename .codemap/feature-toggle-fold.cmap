@@ -50,6 +50,6 @@ parent hmusxe
 author ai
 file crates/gui/src/views/document.rs
 symbol steps
-lines 51 54
+lines 53 56
 hash 548dab20f3fa5c4b
 note The effect on the next frame: a folded step sets hide_below to its depth, and the loop at the top of steps skips every following step deeper than that until one at the same depth or shallower.

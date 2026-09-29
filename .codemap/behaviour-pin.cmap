@@ -567,10 +567,10 @@ order 63
 parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
-symbol authoring
-lines 0 101
-hash 57d19847dfc1dfbb
-note The GUI authoring gestures on a fresh path: the new-path form (an empty name refused, kind and group chosen), '+ step' from Symbols and Xrefs (a repeat refused), the target strip's 'top level', 'add step' from the listing, '+ step' on an off-path graph node, three outline drags (under, before, under), 'new path from it', and a save; the after command prints the resulting path.
+symbol AUTHORING
+lines 0 102
+hash 9226ac47a7263a44
+note The GUI authoring gestures on a fresh path: the new-path form (an empty name refused, kind and group chosen), '+ step' from Symbols and Xrefs, each row hovered first since its action shows only then (a repeat refused), the target strip's 'top level', 'add step' from the listing, '+ step' on an off-path graph node, three outline drags (under, before, under), 'new path from it', and a save; the after command prints the resulting path.
 
 step wv4hxm
 order 17

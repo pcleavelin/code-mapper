@@ -40,7 +40,7 @@ parent e14fw6
 author ai
 file crates/gui/src/views/document.rs
 symbol steps
-lines 56 60
+lines 57 61
 hash 9be2e440af9f0ea4
 note The effect on the next frame: after drawing a step that is expanded, not folded, and not linking back into the chain, steps draws the target path under it.
 

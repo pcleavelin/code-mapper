@@ -14,6 +14,16 @@ lines 0 22
 hash 534c18a35e2f6aa3
 note The handler. Parses the field as a 1-based line; with a file open it clamps to the file's line count, warning when it had to, and moves the selection there.
 
+step aap9hh
+order 5
+parent zzv611
+author ai
+file crates/gui/src/views/center.rs
+symbol listing_toolbar
+lines 17 23
+hash f411dd88be92460c
+note The field itself: 'line' and the LINE_FIELD in the Listing's toolbar (listing_toolbar).
+
 step daaojy
 order 1
 parent 1a0bgg
@@ -40,8 +50,8 @@ parent urcirn
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 21
-hash 74bf56c206047b3e
+lines 0 30
+hash 6efdb8b3bc3f3335
 link feature-new-path
 note The line field keeps its text on enter; a submitted line goes to go_to_line.
 
@@ -51,7 +61,7 @@ parent 1a0bgg
 author ai
 file crates/gui/src/views/center.rs
 symbol listing
-lines 13 38
-hash 7842313bf26963bd
+lines 13 24
+hash d87e7cb02f31b0cc
 link listing-view
-note The effect in the listing, and the field: a pending scroll request puts the requested line three rows below the top, clamped to the end, and answers the ticket; the toolbar holds the LINE_FIELD.
+note The effect in the listing: a pending scroll request puts the requested line three rows below the top, clamped to the end, and answers the ticket.

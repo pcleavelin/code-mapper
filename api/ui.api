@@ -89,10 +89,10 @@ geometry::pub const fn new(value: u32) -> Self
 geometry::pub const fn get(self) -> u32
 geometry::pub fn scaled(base: u32, scale: Scale, minimum: u32) -> Self
 geometry::pub fn float(self) -> f32
-icon::pub enum Icon { Add, Close, SplitAcross, SplitDown, Back, Forward, Unfolded, Folded, MoreAbove, MoreBelow, }
+icon::pub enum Icon { Add, Close, SplitAcross, SplitDown, Back, Forward, Unfolded, Folded, MoreAbove, MoreBelow, Check, }
 icon::pub struct IconName(&'static str);
 icon::pub const fn as_str(self) -> &'static str
-icon::pub const ALL: [Self; 10] = [ Self::Add, Self::Close, Self::SplitAcross, Self::SplitDown, Self::Back, Self::Forward, Self::Unfolded, Self::Folded, Self::MoreAbove, Self::MoreBelow, ];
+icon::pub const ALL: [Self; 11] = [ Self::Add, Self::Close, Self::SplitAcross, Self::SplitDown, Self::Back, Self::Forward, Self::Unfolded, Self::Folded, Self::MoreAbove, Self::MoreBelow, Self::Check, ];
 icon::pub const fn glyph(self) -> Glyph
 icon::pub const fn name(self) -> IconName
 icon::pub fn of(glyph: Glyph) -> Option<Self>
@@ -188,7 +188,7 @@ text::pub fn columns(&self) -> usize
 text::pub fn wrap(&self, columns: usize) -> Vec<Self>
 text::pub struct Run { pub text: Label, pub color: Color, }
 text::pub fn new(text: impl Into<Label>, color: Color) -> Self
-text::pub enum Wrap { None, Words, }
+text::pub enum Wrap { None, Words, Clip, }
 text::pub struct Text { pub runs: Vec<Run>, pub size: FontSize, pub wrap: Wrap, }
 text::pub struct Cell { pub glyph: Glyph, pub color: Color, }
 text::pub struct Grid { columns: Count, rows: Count, cells: Vec<Option<Cell>>, }

@@ -3,7 +3,7 @@ path feature-filter-paths
 kind flow
 author ai
 group features/gui
-note Type in the filter field at the top of the Paths tab to narrow the list to paths whose name contains the text, case-insensitively; every keystroke re-filters. A group shows only when a path under it matches, its count is the number of matching paths, and every group is open while the filter holds text (clicks on group rows do nothing then). Removed paths from the map diff are filtered the same way. Clearing the field restores the full list with each group's openness as it was.
+note Type in the filter field at the top of the Paths tab to narrow the list to paths whose name contains the text, case-insensitively; every keystroke re-filters and scrolls the list to its top, and the toolbar shows how many of all the paths match. A group shows only when a path under it matches, its count is the number of matching paths, and every group is open while the filter holds text (clicks on group rows do nothing then). Removed paths from the map diff are filtered the same way. Clearing the field restores the full list with each group's openness as it was.
 
 step 4tvhu1
 order 1
@@ -55,14 +55,24 @@ lines 0 18
 hash febf3f0c2f4f1706
 note Groups paths by their next group segment under the prefix; a group row exists only when some member is inside it.
 
+step tldqqa
+order 10
+parent y3c46y
+author ai
+file crates/gui/src/text.rs
+symbol impl Needle
+lines 0 21
+hash 0eae6a7463e6326d
+note The match, shared with the Symbols filter: a substring ignoring ASCII case, compared byte window by byte window; an empty needle matches everything.
+
 step tuyi1n
 order 6
 parent z6m3sw
 author ai
 file crates/gui/src/views/left.rs
 symbol group_row
-lines 0 38
-hash 609a29322237fe56
+lines 0 53
+hash 95fb19551c540086
 note forced overrides the recorded and default openness; while it is set a click queues nothing, so a filter never records a group as closed.
 
 step wlbvu3
@@ -71,9 +81,9 @@ parent lhcomc
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 21
-hash 74bf56c206047b3e
-note The path filter keeps its text on enter and has nothing to run.
+lines 0 30
+hash 6efdb8b3bc3f3335
+note An edit that changes the path filter's text scrolls the Paths list back to its top, so the matches are in view. The filter keeps its text on enter and has nothing to run.
 
 step y3c46y
 order 4
@@ -81,15 +91,15 @@ parent 8j5rz8
 author ai
 file crates/gui/src/model.rs
 symbol lists
-lines 0 5
-hash 85eaffe95289771a
-note Whether a path name passes the Paths filter: case-insensitive substring; an empty filter passes everything.
+lines 0 2
+hash e6102eb60f88b6ea
+note Whether a path name passes the Paths filter: the field's text as a Needle, a substring ignoring ASCII case; an empty filter passes everything.
 
 step z6m3sw
 order 5
 author ai
 file crates/gui/src/views/left.rs
 symbol paths_window
-lines 0 31
-hash 1e522760b04c1404
-note Trigger and effect: the filter field sits in a toolbar above the list, beside the 'new path' button; its text is read while the list is built, so there is no filter action to apply. A non-empty filter forces every group open. The rows come from listed_rows instead of the whole map, and removed paths pass through lists.
+lines 0 86
+hash ea9801e43780b845
+note Trigger and effect: the filter field sits in a toolbar above the list, beside the 'new path' button; its text is read while the list is built, so there is no filter action to apply. While it holds text the toolbar shows 'n of m' paths, and an empty result says 'no path name matches'. A non-empty filter forces every group open. The rows come from listed_rows instead of the whole map, and removed paths pass through lists.

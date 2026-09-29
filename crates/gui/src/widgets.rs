@@ -15,11 +15,11 @@ use crate::panels::Direction;
 use crate::peek::Tip;
 use crate::status::Status;
 use crate::theme::{
-    self, ACCENT, BACKGROUND, BAR_PADDING, BORDER, BUTTON_PADDING, Cells, DOCUMENT_PADDING,
-    DROP_BAND, FIELD, FIELD_CARET_ROOM, FIELD_PADDING, GAP, HOVER, INDENT_EXTRA, LABEL_PADDING,
-    NAV_BUTTON, NAV_BUTTON_EXTRA, PANEL, PANEL_PADDING, ROW_PADDING, SELECTED, SMALL_BUTTON_EXTRA,
-    SMALL_BUTTON_PADDING, SMALL_GAP, STATUS_GAP, STEP_SPACER, TEXT, TIGHT_GAP, TOOLTIP_PADDING,
-    WEAK, WIDE_GAP,
+    self, ACCENT, BACKGROUND, BAR_PADDING, BORDER, BUTTON_PADDING, Cells, DANGER_HOVER,
+    DOCUMENT_PADDING, DROP_BAND, FIELD, FIELD_CARET_ROOM, FIELD_PADDING, GAP, HOVER, INDENT_EXTRA,
+    LABEL_PADDING, NAV_BUTTON, NAV_BUTTON_EXTRA, PANEL, PANEL_PADDING, RED, ROW_PADDING, SELECTED,
+    SMALL_BUTTON_EXTRA, SMALL_BUTTON_PADDING, SMALL_GAP, STATUS_GAP, STEP_SPACER, TEXT, TIGHT_GAP,
+    TOOLTIP_PADDING, WEAK, WIDE_GAP,
 };
 
 use crate::field::Fields;
@@ -78,6 +78,7 @@ pub(crate) enum Container {
     Stack,
     StepRow { selected: Chosen },
     CodeColumn { selected: Chosen },
+    StepColumn(Id),
     FillRow,
     Tooltip { at: Point },
     Picker { at: Point, width: Px },
@@ -162,6 +163,11 @@ impl Container {
             Self::CodeColumn { selected } => {
                 Shape::new(Layout::column().grow_width(), marked(selected), None)
             }
+            Self::StepColumn(id) => Shape::new(
+                Layout::column().grow_width().gap(TIGHT_GAP),
+                Style::NONE,
+                Some(id),
+            ),
             Self::FillRow => Shape::new(Layout::row().grow_width(), Style::NONE, None),
             Self::Tooltip { at } => Shape::new(
                 Layout::column()
@@ -247,6 +253,26 @@ impl Frame<'_> {
         );
     }
 
+    pub(crate) fn caption(&mut self, runs: Vec<Run>) {
+        let size = self.metrics.font;
+        self.ui.leaf(
+            text_kind(runs, size, Wrap::Clip),
+            Layout::row().grow_width().padding(LABEL_PADDING),
+            Style::NONE,
+            None,
+        );
+    }
+
+    pub(crate) fn row_text(&mut self, runs: Vec<Run>) {
+        let size = self.metrics.font;
+        self.ui.leaf(
+            text_kind(runs, size, Wrap::Clip),
+            Layout::row().grow_width().padding(ROW_PADDING),
+            Style::NONE,
+            None,
+        );
+    }
+
     pub(crate) fn plain_line(&mut self, text: impl Into<Label>, color: ui::Color) {
         let size = self.metrics.font;
         self.ui.leaf(
@@ -289,6 +315,15 @@ impl Frame<'_> {
     pub(crate) fn spacer(&mut self, height: Px) {
         self.ui
             .leaf(Kind::None, Layout::row().height(height), Style::NONE, None);
+    }
+
+    pub(crate) fn reserve(&mut self, id: Id, height: Px) {
+        self.ui.leaf(
+            Kind::None,
+            Layout::row().grow_width().height(height),
+            Style::NONE,
+            Some(id),
+        );
     }
 
     pub(crate) fn step_gap(&mut self) {
@@ -342,6 +377,23 @@ impl Frame<'_> {
 
     pub(crate) fn small_button(&mut self, text: impl Into<Label>, target: Target) -> Interaction {
         self.small_button_sized(text, None, target)
+    }
+
+    pub(crate) fn danger_button(&mut self, text: impl Into<Label>, target: Target) -> Interaction {
+        let id = target.id();
+        let hovered = self.ui.interaction(id).hovered();
+        let size = self.metrics.font;
+        self.ui.leaf(
+            text_kind(
+                vec![Run::new(text, if hovered { TEXT } else { WEAK })],
+                size,
+                Wrap::None,
+            ),
+            Layout::row().padding(SMALL_BUTTON_PADDING),
+            Style::background(if hovered { DANGER_HOVER } else { FIELD })
+                .border(Sides::ALL, if hovered { RED } else { BORDER }),
+            Some(id),
+        )
     }
 
     pub(crate) fn small_button_sized(
@@ -414,7 +466,7 @@ impl Frame<'_> {
         let background = marked.or(hovered.then_some(HOVER));
         let size = self.metrics.font;
         self.ui.leaf(
-            text_kind(runs, size, Wrap::None),
+            text_kind(runs, size, Wrap::Clip),
             Layout::row().grow_width().padding(ROW_PADDING),
             Style {
                 background,
@@ -448,12 +500,13 @@ impl Frame<'_> {
             Some(id),
         );
         self.ui.leaf(
-            text_kind(runs, size, Wrap::None),
+            text_kind(runs, size, Wrap::Clip),
             Layout::row().grow_width().padding(ROW_PADDING),
             Style::NONE,
             None,
         );
-        let action = action.map(|action| {
+        let shown = hovered || marked.is_some();
+        let action = action.filter(|_| shown).map(|action| {
             self.ui.leaf(
                 text_kind(
                     vec![Run::new(

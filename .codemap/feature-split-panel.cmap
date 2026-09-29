@@ -40,6 +40,6 @@ parent 2rwmch
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 69 72
+lines 70 73
 hash 78235238f5dbaca6
 note The arm: split, then the picker's search starts empty with the keyboard.

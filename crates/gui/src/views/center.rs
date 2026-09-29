@@ -1,4 +1,4 @@
-use domain::{Change, Line, PathDiff, StepChange, SymbolName};
+use domain::{Change, FileId, Line, PathDiff, RelativePath, StepChange, SymbolName};
 use ui::{Count, Label, Px, Run};
 
 use crate::action::Action;
@@ -7,15 +7,46 @@ use crate::field::Which;
 use crate::graph::{GraphAction, GraphFrame, draw_scene};
 use crate::ids;
 use crate::keys;
-use crate::model::{Model, PathSlot, StepKey, Tab};
+use crate::model::{HIT_LIMIT, HitsShown, Model, PathSlot, StepKey, Tab};
 use crate::status::Status;
-use crate::text::Tag;
+use crate::text::{Counted, Noun, Tag};
 use crate::theme::{
-    FIELD, GREEN, LINE_FIELD, LINES_SELECTED, LISTING_GUESS, RED, ROW_EXTRA, TEXT, WEAK,
+    FIELD, GREEN, LINE_FIELD, LINES_SELECTED, LISTING_GUESS, ORANGE, RED, ROW_EXTRA, TEXT, WEAK,
 };
 use crate::widgets::{Chosen, CodeBlock, Container, Frame, Marks, Scroller, Width};
 
 use super::authoring;
+
+fn listing_toolbar(model: &Model, frame: &mut Frame<'_>, path: &RelativePath) {
+    frame.start(Container::Toolbar);
+    frame.label(path.as_str(), TEXT);
+    let add = match model.nav.lines() {
+        Some(chosen) if chosen.low() == chosen.high() => {
+            format!("add line {} as a step", chosen.low().number())
+        }
+        Some(chosen) => format!(
+            "add lines {}-{} as a step",
+            chosen.low().number(),
+            chosen.high().number()
+        ),
+        None => "add step".to_owned(),
+    };
+    if frame.control(add, ids::ADD_LINES).clicked() {
+        frame.push(Action::Authoring(Authoring::AddLines));
+    }
+    frame.label("line", WEAK);
+    frame.field(
+        &model.fields,
+        Which::GoToLine,
+        &ui::Label::default(),
+        LINE_FIELD,
+    );
+    frame.caption(vec![Run::new(
+        "click a line, shift-click to extend; double-click or ctrl-click an identifier to jump, alt-click to peek",
+        WEAK,
+    )]);
+    frame.finish();
+}
 
 pub(super) fn listing(model: &Model, frame: &mut Frame<'_>) {
     let Some(file) = model.nav.file() else {
@@ -41,21 +72,7 @@ pub(super) fn listing(model: &Model, frame: &mut Frame<'_>) {
         offset = above.min((Px::new(lines.get() * row_height.get()) - height).max(Px::ZERO));
         frame.push(Action::ScrolledToLine(request.ticket));
     }
-    frame.start(Container::Toolbar);
-    frame.label(source.path().as_str(), TEXT);
-    if frame.control("add step", ids::ADD_LINES).clicked() {
-        frame.push(Action::Authoring(Authoring::AddLines));
-    }
-    frame.label("click a line, shift-click to extend, then 'add step'; double-click or ctrl-click an identifier to jump; alt-click to peek", WEAK);
-    frame.grow();
-    frame.label("line", WEAK);
-    frame.field(
-        &model.fields,
-        Which::GoToLine,
-        &ui::Label::default(),
-        LINE_FIELD,
-    );
-    frame.finish();
+    listing_toolbar(model, frame, source.path());
     authoring::target_strip(model, frame);
     let scrolled = frame.scroll_column(id, offset, Scroller::Plain, Some(FIELD));
     let selection = model.nav.lines();
@@ -117,6 +134,32 @@ pub(super) fn listing(model: &Model, frame: &mut Frame<'_>) {
     frame.finish();
 }
 
+enum HitLine {
+    File { file: FileId, hits: Count },
+    Hit(Count),
+}
+
+fn hit_lines(model: &Model) -> Vec<HitLine> {
+    let mut lines = Vec::with_capacity(model.results.len());
+    let mut header: Option<usize> = None;
+    for (position, hit) in model.results.iter().enumerate() {
+        match header.and_then(|at| lines.get_mut(at)) {
+            Some(HitLine::File { file, hits }) if *file == hit.file => {
+                *hits = Count::new(hits.get() + 1);
+            }
+            _ => {
+                header = Some(lines.len());
+                lines.push(HitLine::File {
+                    file: hit.file,
+                    hits: Count::new(1),
+                });
+            }
+        }
+        lines.push(HitLine::Hit(Count::new(position)));
+    }
+    lines
+}
+
 pub(super) fn results_view(model: &Model, frame: &mut Frame<'_>) {
     if model.results.is_empty() {
         let search = model.fields.get(Which::Search).text();
@@ -130,10 +173,21 @@ pub(super) fn results_view(model: &Model, frame: &mut Frame<'_>) {
         );
         return;
     }
+    if model.hits_shown == HitsShown::First {
+        frame.start(Container::Toolbar);
+        frame.caption(vec![Run::new(
+            format!(
+                "showing the first {HIT_LIMIT} hits; the search stops there, a narrower regex finds the rest",
+            ),
+            ORANGE,
+        )]);
+        frame.finish();
+    }
+    let lines = hit_lines(model);
     let id = ids::results();
     let row_height = frame.row_height() + ROW_EXTRA;
     let scrolled = frame.scroll_column(id, model.scrolls.get(id), Scroller::Plain, None);
-    let count = Count::new(model.results.len());
+    let count = Count::new(lines.len());
     let window = frame.rows_window(
         scrolled.offset,
         scrolled.interaction.rect(),
@@ -141,29 +195,57 @@ pub(super) fn results_view(model: &Model, frame: &mut Frame<'_>) {
         row_height,
         Count::new(60),
     );
-    for (position, hit) in model
+    let width = model
         .results
         .iter()
-        .enumerate()
+        .map(|hit| hit.line.number())
+        .max()
+        .map_or(1, |number| number.to_string().len());
+    for line in lines
+        .iter()
         .skip(window.first.get())
         .take(window.visible.get())
     {
-        let Some(source) = model.index.file(hit.file) else {
-            continue;
-        };
-        let text = source
-            .text()
-            .line(hit.line)
-            .map_or("", |line| line.as_str().trim());
-        let runs = vec![
-            Run::new(format!("{}:{}: ", source.path(), hit.line.number()), WEAK),
-            Run::new(text, TEXT),
-        ];
-        if frame
-            .row(runs, ids::HIT_ROW.nth(Count::new(position)), Chosen::Plain)
-            .clicked()
-        {
-            frame.push(Action::GoTo(hit.file, hit.line));
+        match line {
+            HitLine::File { file, hits } => {
+                let Some(source) = model.index.file(*file) else {
+                    continue;
+                };
+                let runs = vec![
+                    Run::new(source.path().as_str(), TEXT),
+                    Run::new(format!("  {}", Counted::new(*hits, Noun::Hit)), WEAK),
+                ];
+                if frame
+                    .row(
+                        runs,
+                        ids::HIT_FILE_ROW.nth(Count::new(file.number())),
+                        Chosen::Plain,
+                    )
+                    .clicked()
+                {
+                    frame.push(Action::GoTo(*file, Line::new(0)));
+                }
+            }
+            HitLine::Hit(position) => {
+                let Some(hit) = model.results.get(position.get()) else {
+                    continue;
+                };
+                let text = model
+                    .index
+                    .file(hit.file)
+                    .and_then(|source| source.text().line(hit.line))
+                    .map_or("", |shown| shown.as_str().trim());
+                let runs = vec![
+                    Run::new(format!("  {:>width$}  ", hit.line.number()), WEAK),
+                    Run::new(text, TEXT),
+                ];
+                if frame
+                    .row(runs, ids::HIT_ROW.nth(*position), Chosen::Plain)
+                    .clicked()
+                {
+                    frame.push(Action::GoTo(hit.file, hit.line));
+                }
+            }
         }
     }
     frame.rows_after(count, &window, row_height, Px::ZERO);
@@ -172,8 +254,8 @@ pub(super) fn results_view(model: &Model, frame: &mut Frame<'_>) {
 
 fn summary(diff: &PathDiff) -> Label {
     Label::new(match diff.change() {
-        Change::Added => format!("{} steps", diff.steps().len()),
-        Change::Removed => format!("{} steps", diff.removed().len()),
+        Change::Added => Counted::new(Count::new(diff.steps().len()), Noun::Step).to_string(),
+        Change::Removed => Counted::new(Count::new(diff.removed().len()), Noun::Step).to_string(),
         Change::Same | Change::Changed => {
             let count_of = |change: StepChange| {
                 diff.steps()
@@ -333,10 +415,6 @@ pub(super) fn graph_tab(model: &Model, frame: &mut Frame<'_>, graph: Option<Grap
         frame.tooltip = tooltip;
     }
     frame.start(Container::Toolbar);
-    frame.label(
-        "drag or scroll to pan, pinch or ctrl+wheel to zoom, drag a title to move a node",
-        WEAK,
-    );
     if frame
         .small_button("1:1", ids::GRAPH_ONE_TO_ONE.target())
         .clicked()
@@ -352,16 +430,21 @@ pub(super) fn graph_tab(model: &Model, frame: &mut Frame<'_>, graph: Option<Grap
     if frame.small_button("fit", ids::GRAPH_FIT.target()).clicked() {
         frame.push(Action::Graph(GraphAction::WantFit));
     }
-    if let Some(path) = model.graph.built().path.and_then(|path| model.path(path)) {
-        frame.label(
-            format!(
-                "path '{}': green edges are its steps, grey ones expansions, orange a call back up the tree",
-                path.name()
-            ),
-            WEAK,
-        );
-    }
     frame.label(format!("{:.0}%", zoom.get() * 100.0), WEAK);
+    let mut runs = Vec::new();
+    if let Some(path) = model.graph.built().path.and_then(|path| model.path(path)) {
+        runs.extend([
+            Run::new(format!("{}: ", path.name()), TEXT),
+            Run::new("\u{2500} step  ", GREEN),
+            Run::new("\u{2500} expansion  ", WEAK),
+            Run::new("\u{2500} call back up  ", ORANGE),
+        ]);
+    }
+    runs.push(Run::new(
+        "drag or scroll to pan, pinch or ctrl+wheel to zoom, drag a title to move a node",
+        WEAK,
+    ));
+    frame.caption(runs);
     frame.finish();
     frame.canvas(
         move |canvas, _| draw_scene(canvas, &scene),

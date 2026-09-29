@@ -59,10 +59,11 @@ pub(super) fn new_path_form(model: &Model, frame: &mut Frame<'_>) {
         return;
     };
     frame.start(Container::ToolbarSmall);
+    frame.label("name ", WEAK);
     frame.field(
         &model.fields,
         Which::NewPath,
-        &Label::new("name"),
+        &Label::new("e.g. startup"),
         NEW_PATH_FIELD,
     );
     for kind in PathKind::ALL {
@@ -79,10 +80,11 @@ pub(super) fn new_path_form(model: &Model, frame: &mut Frame<'_>) {
     }
     frame.finish();
     frame.start(Container::ToolbarSmall);
+    frame.label("group", WEAK);
     frame.field(
         &model.fields,
         Which::NewGroup,
-        &Label::new("group (none)"),
+        &Label::new("(none)"),
         NEW_PATH_FIELD,
     );
     if frame

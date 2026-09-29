@@ -5,9 +5,11 @@ use crate::app::App;
 use crate::authoring::Authoring;
 use crate::field::{Edit, Enter, FieldText, Which};
 use crate::graph::GraphAction;
+use crate::ids;
 use crate::keys::{Extend, Walk};
 use crate::model::{
-    Context, Dirty, Hit, Openness, PathSlot, Readable, StepKey, StepSlot, Tab, ViewFlag, Warned,
+    Context, Dirty, HIT_LIMIT, Hit, HitsShown, Measured, Openness, PathSlot, Readable, StepKey,
+    StepSlot, Tab, ViewFlag, Warned,
 };
 use crate::nav::{Scrolling, Ticket, Tries};
 use crate::panels::{BranchId, Direction, DropTarget, Ratio, View};
@@ -57,6 +59,7 @@ pub(crate) enum Action {
     Authoring(Authoring),
     Scroll(Id, Px),
     ScrollAcross(Id, Px),
+    Measured(Id, Measured),
     ScrolledToLine(Ticket),
     ScrolledToStep(Ticket, Option<Tries>),
     TopStep(Option<StepSlot>),
@@ -126,6 +129,7 @@ impl App {
             Action::Authoring(action) => self.author(action),
             Action::Scroll(id, offset) => model.scrolls.set(id, offset),
             Action::ScrollAcross(id, offset) => model.across.set(id, offset),
+            Action::Measured(id, measured) => model.measures.set(id, measured),
             Action::ScrolledToLine(ticket) => model.scrolled_to_line(ticket),
             Action::ScrolledToStep(ticket, retry) => model.scrolled_to_step(ticket, retry),
             Action::TopStep(step) => model.set_top_step(step),
@@ -329,7 +333,16 @@ impl App {
             | Which::NewGroup => Enter::Keep,
             Which::Command | Which::ViewSearch => Enter::Clear,
         };
-        let Some(line) = self.model.fields.handle(which, edits, typed, enter) else {
+        let before = self.model.fields.get(which).text().clone();
+        let entered = self.model.fields.handle(which, edits, typed, enter);
+        if *self.model.fields.get(which).text() != before {
+            match which {
+                Which::SymbolFilter => self.model.scrolls.set(ids::symbols(), Px::ZERO),
+                Which::PathFilter => self.model.scrolls.set(ids::paths(), Px::ZERO),
+                _ => {}
+            }
+        }
+        let Some(line) = entered else {
             return;
         };
         match which {
@@ -371,11 +384,18 @@ impl App {
                     })
                     .collect::<Vec<_>>()
             })
-            .take(5000)
+            .take(HIT_LIMIT.get() + 1)
             .collect();
+        model.hits_shown = if model.results.len() > HIT_LIMIT.get() {
+            model.results.truncate(HIT_LIMIT.get());
+            HitsShown::First
+        } else {
+            HitsShown::All
+        };
         model.status = Status::Hits {
             count: Count::new(model.results.len()),
             pattern,
+            shown: model.hits_shown,
         };
         model.set_tab(Tab::Results);
     }

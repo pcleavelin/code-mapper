@@ -1,4 +1,6 @@
-use domain::{Change, Depth, FileId, GroupName, PathCount, PathDiff, Row, Step, SymbolName};
+use domain::{
+    Change, Coverage, Depth, FileId, GroupName, PathCount, PathDiff, Row, Step, SymbolName,
+};
 use ui::{Count, Icon, Label, Px, Run};
 
 use crate::action::Action;
@@ -7,11 +9,11 @@ use crate::field::Which;
 use crate::ids;
 use crate::model::{Model, Openness, PathSlot, StepKey, Tab, ViewFlag};
 use crate::nav::Scrolling;
-use crate::text::{Clipped, Tag};
+use crate::text::{Clipped, Counted, Needle, Noun, Tag};
 use crate::theme::{
-    ACCENT, ADD_ROOM, Cells, FAINT, FILTER_FIELD, GREEN, OUTLINE_TOP, PANEL_TEXT_ROOM, PATHS_GUESS,
-    PATHS_LEAST, PENDING, PIXEL, RED, ROW_EXTRA, SELECTED, SYMBOL_FIXED, SYMBOL_KIND, SYMBOL_NAME,
-    SYMBOLS_GUESS, SYMBOLS_LEAST, TEXT, WEAK,
+    ACCENT, Cells, FAINT, FILTER_FIELD, GREEN, OUTLINE_TOP, PANEL_TEXT_ROOM, PATHS_GUESS,
+    PATHS_LEAST, PENDING, PIXEL, RED, ROW_EXTRA, SELECTED, SYMBOL_FIXED, SYMBOL_NAME,
+    SYMBOL_NAME_LEAST, SYMBOLS_GUESS, SYMBOLS_LEAST, TEXT, WEAK,
 };
 use crate::widgets::{Chosen, Container, Frame, RowAction, Scroller};
 
@@ -43,13 +45,19 @@ fn group_row(
         .or_else(|| model.groups.get(group).copied())
         .map_or(holds, |openness| openness == Openness::Open);
     let label = format!(
-        "{}{} {}/  {} paths",
+        "{}{} {}/",
         pad.as_str(),
         if open { Icon::Unfolded } else { Icon::Folded }
             .glyph()
             .get(),
         group.last_segment(),
-        paths.value()
+    );
+    let tally = format!(
+        "  {}",
+        Counted::new(
+            Count::new(usize::try_from(paths.value()).unwrap_or(0)),
+            Noun::Path
+        )
     );
     let stale = model.map.paths().iter().any(|path| {
         path.group().is_some_and(|inside| {
@@ -57,7 +65,10 @@ fn group_row(
         }) && path.steps().iter().any(Step::is_stale)
     });
     let id = ids::GROUP_ROW.with(&Label::new(full));
-    let runs = vec![Run::new(label, if stale { RED } else { TEXT })];
+    let runs = vec![
+        Run::new(label, if stale { RED } else { TEXT }),
+        Run::new(tally, WEAK),
+    ];
     if frame.row(runs, id, Chosen::Plain).clicked() && forced.is_none() {
         let openness = if open {
             Openness::Closed
@@ -109,18 +120,28 @@ fn path_row(
     } else {
         Chosen::Plain
     };
-    let rest = format!(
-        " [{}]{}  {steps} steps",
+    let tally = format!(
+        " [{}]{}  {}",
         Tag::kind(path.kind()),
-        Tag::author(path.author())
+        Tag::author(path.author()),
+        Counted::new(Count::new(steps), Noun::Step)
     );
+    let stale_note = if stale > 0 {
+        format!("  {stale} stale")
+    } else {
+        String::new()
+    };
     let room = columns
         .get()
-        .saturating_sub(pad.len() + mark.len() + rest.chars().count());
-    let line = format!("{pad}{mark}{}{rest}", Clipped::right(name.as_str(), room));
+        .saturating_sub(pad.len() + mark.len() + tally.chars().count() + stale_note.len());
+    let line = format!("{pad}{mark}{}", Clipped::right(name.as_str(), room));
     if frame
         .row(
-            vec![Run::new(line, color)],
+            vec![
+                Run::new(line, color),
+                Run::new(tally, WEAK),
+                Run::new(stale_note, RED),
+            ],
             ids::PATH_ROW.nth(Count::new(slot.get())),
             chosen,
         )
@@ -153,6 +174,8 @@ fn follow_outline(model: &Model, frame: &mut Frame<'_>, offset: Px) {
 }
 
 pub(super) fn paths_window(model: &Model, frame: &mut Frame<'_>) {
+    let filter = model.fields.get(Which::PathFilter).text().as_str();
+    let rows = model.listed_rows();
     frame.start(Container::ToolbarSmall);
     frame.field(
         &model.fields,
@@ -161,15 +184,26 @@ pub(super) fn paths_window(model: &Model, frame: &mut Frame<'_>) {
         FILTER_FIELD,
     );
     authoring::new_path_button(frame);
+    if !filter.is_empty() {
+        let shown = rows
+            .iter()
+            .filter(|row| matches!(row, Row::Path { .. }))
+            .count();
+        frame.label(format!("{shown} of {}", model.map.paths().len()), WEAK);
+    }
     frame.finish();
     authoring::new_path_form(model, frame);
-    let forced = (!model
-        .fields
-        .get(Which::PathFilter)
-        .text()
-        .as_str()
-        .is_empty())
-    .then_some(Openness::Open);
+    if rows.is_empty() {
+        frame.label(
+            if filter.is_empty() {
+                "no paths yet".to_owned()
+            } else {
+                format!("no path name matches '{filter}'")
+            },
+            WEAK,
+        );
+    }
+    let forced = (!filter.is_empty()).then_some(Openness::Open);
     let diffs = model.diffs();
     let base = ids::paths();
     let scrolled = frame.scroll_column(base, model.scrolls.get(base), Scroller::Plain, None);
@@ -183,7 +217,7 @@ pub(super) fn paths_window(model: &Model, frame: &mut Frame<'_>) {
             .map_or("", GroupName::as_str),
     );
     let mut closed_at: Option<Depth> = None;
-    for row in model.listed_rows() {
+    for row in rows {
         let depth = match &row {
             Row::Group { depth, .. } | Row::Path { depth, .. } => *depth,
         };
@@ -217,9 +251,9 @@ pub(super) fn paths_window(model: &Model, frame: &mut Frame<'_>) {
     {
         frame.label(
             format!(
-                "- {}  (removed, {} steps)",
+                "- {}  (removed, {})",
                 diff.name(),
-                diff.removed().len()
+                Counted::new(Count::new(diff.removed().len()), Noun::Step)
             ),
             WEAK,
         );
@@ -297,48 +331,93 @@ fn outline(model: &Model, frame: &mut Frame<'_>, path: PathSlot, pad: &Label) {
     }
 }
 
+enum SymbolLine {
+    File(FileId),
+    Symbol(domain::SymbolId),
+}
+
+fn symbol_lines(model: &Model, needle: &Needle) -> Vec<SymbolLine> {
+    let index = &model.index;
+    let mut lines = Vec::new();
+    let mut current: Option<(FileId, bool)> = None;
+    for symbol in index.symbol_ids() {
+        let file = symbol.file();
+        let file_found = match current {
+            Some((open, found)) if open == file => found,
+            _ => {
+                let found = index
+                    .file(file)
+                    .is_some_and(|source| needle.found_in(source.path().as_str()));
+                current = Some((file, found));
+                lines.push(SymbolLine::File(file));
+                found
+            }
+        };
+        if file_found
+            || index
+                .symbol(symbol)
+                .is_some_and(|found| needle.found_in(found.name().as_str()))
+        {
+            lines.push(SymbolLine::Symbol(symbol));
+        }
+    }
+    let mut kept: Vec<SymbolLine> = Vec::with_capacity(lines.len());
+    for line in lines {
+        if matches!(line, SymbolLine::File(_)) && matches!(kept.last(), Some(SymbolLine::File(_))) {
+            kept.pop();
+        }
+        kept.push(line);
+    }
+    if matches!(kept.last(), Some(SymbolLine::File(_))) {
+        kept.pop();
+    }
+    kept
+}
+
 pub(super) fn symbols_window(model: &Model, frame: &mut Frame<'_>) {
+    let needle = Needle::new(model.fields.get(Which::SymbolFilter).text().as_str());
+    let lines = symbol_lines(model, &needle);
+    let shown = lines
+        .iter()
+        .filter(|line| matches!(line, SymbolLine::Symbol(_)))
+        .count();
+    let total = model.index.symbol_ids().count();
     frame.start(Container::ToolbarSmall);
-    frame.label("+ = in a path", WEAK);
     frame.field(
         &model.fields,
         Which::SymbolFilter,
         &Label::new("filter"),
         FILTER_FIELD,
     );
+    frame.label(
+        if needle.is_empty() {
+            Counted::new(Count::new(total), Noun::Symbol).to_string()
+        } else {
+            format!("{shown} of {total}")
+        },
+        WEAK,
+    );
+    frame.caption(vec![
+        Run::new(Icon::Check, GREEN),
+        Run::new(" in a path", WEAK),
+    ]);
     frame.finish();
     authoring::target_strip(model, frame);
-    let adding = model.nav.path().is_some();
-    let filter = model
-        .fields
-        .get(Which::SymbolFilter)
-        .text()
-        .as_str()
-        .to_lowercase();
-    let index = &model.index;
-    let rows: Vec<domain::SymbolId> = index
-        .symbol_ids()
-        .filter(|symbol| {
-            filter.is_empty()
-                || index
-                    .symbol(*symbol)
-                    .is_some_and(|found| found.name().as_str().to_lowercase().contains(&filter))
-                || index
-                    .file(symbol.file())
-                    .is_some_and(|file| file.path().as_str().to_lowercase().contains(&filter))
-        })
-        .collect();
+    if lines.is_empty() {
+        frame.label(
+            if needle.is_empty() {
+                "no symbols indexed".to_owned()
+            } else {
+                format!("no symbol or file matches '{}'", needle.as_str())
+            },
+            WEAK,
+        );
+        return;
+    }
     let id = ids::symbols();
     let scrolled = frame.scroll_column(id, model.scrolls.get(id), Scroller::Plain, None);
     let row_height = frame.row_height() + ROW_EXTRA;
-    let columns = columns(
-        frame,
-        scrolled.interaction.rect(),
-        SYMBOLS_GUESS,
-        SYMBOLS_LEAST,
-    )
-    .get();
-    let count = Count::new(rows.len());
+    let count = Count::new(lines.len());
     let window = frame.rows_window(
         scrolled.offset,
         scrolled.interaction.rect(),
@@ -346,65 +425,117 @@ pub(super) fn symbols_window(model: &Model, frame: &mut Frame<'_>) {
         row_height,
         Count::new(40),
     );
-    let room = Count::new(columns.saturating_sub(if adding {
-        usize::try_from(ADD_ROOM.get()).unwrap_or(0)
-    } else {
-        0
-    }));
-    for symbol_id in rows
+    let coverage = model.map.coverage();
+    let columns = columns(
+        frame,
+        scrolled.interaction.rect(),
+        SYMBOLS_GUESS,
+        SYMBOLS_LEAST,
+    );
+    for line in lines
         .iter()
         .skip(window.first.get())
         .take(window.visible.get())
     {
-        symbol_row(model, frame, *symbol_id, room);
+        match line {
+            SymbolLine::File(file) => symbol_file_row(model, frame, *file, &coverage, columns),
+            SymbolLine::Symbol(symbol) => symbol_row(model, frame, *symbol, &coverage, columns),
+        }
     }
     frame.rows_after(count, &window, row_height, Px::ZERO);
     frame.finish();
 }
 
-fn symbol_row(model: &Model, frame: &mut Frame<'_>, symbol_id: domain::SymbolId, room: Count) {
+fn symbol_file_row(
+    model: &Model,
+    frame: &mut Frame<'_>,
+    file: FileId,
+    coverage: &Coverage<'_>,
+    columns: Count,
+) {
+    let Some(source) = model.index.file(file) else {
+        return;
+    };
+    let total = source.symbols().count();
+    let covered = source
+        .symbols()
+        .filter(|symbol| coverage.covers(source.path(), symbol.span()))
+        .count();
+    let tally = format!("  {covered}/{total}");
+    let room = columns.get().saturating_sub(tally.len());
+    let runs = vec![
+        Run::new(
+            Clipped::left(source.path().as_str(), room).to_string(),
+            if source.is_pending() { PENDING } else { TEXT },
+        ),
+        Run::new(tally, WEAK),
+    ];
+    if frame
+        .row(
+            runs,
+            ids::SYMBOL_FILE_ROW.nth(Count::new(file.number())),
+            Chosen::Plain,
+        )
+        .clicked()
+    {
+        frame.push(Action::GoTo(file, domain::Line::new(0)));
+    }
+}
+
+fn symbol_row(
+    model: &Model,
+    frame: &mut Frame<'_>,
+    symbol_id: domain::SymbolId,
+    coverage: &Coverage<'_>,
+    columns: Count,
+) {
     let index = &model.index;
     let adding = model.nav.path().is_some();
     let (Some(symbol), Some(file)) = (index.symbol(symbol_id), index.file(symbol_id.file())) else {
         return;
     };
-    let covered = if model.map.covers(file.path(), symbol.span()) {
-        "+"
+    let covered = coverage.covers(file.path(), symbol.span());
+    let mark = if covered {
+        Run::new(Icon::Check, GREEN)
     } else {
-        " "
+        Run::new("  ", WEAK)
     };
-    let indent = if symbol.depth().value() > 0 { "  " } else { "" };
-    let place = format!("{}:{}", file.path(), symbol.span().start().number());
-    let name_width = usize::try_from(SYMBOL_NAME.get()).unwrap_or(0);
-    let kind_width = usize::try_from(SYMBOL_KIND.get()).unwrap_or(0);
+    let indent = if symbol.depth().value() > 0 {
+        "    "
+    } else {
+        "  "
+    };
     let fixed = usize::try_from(SYMBOL_FIXED.get()).unwrap_or(0);
-    let line = format!(
-        "{covered} {indent}{:<name_width$} {:<kind_width$} {}",
-        Clipped::right(symbol.name().as_str(), name_width).to_string(),
-        Clipped::right(symbol.kind().as_str(), kind_width).to_string(),
-        Clipped::left(&place, room.get().saturating_sub(fixed + indent.len()))
+    let name_width = columns.get().saturating_sub(fixed).clamp(
+        usize::try_from(SYMBOL_NAME_LEAST.get()).unwrap_or(0),
+        usize::try_from(SYMBOL_NAME.get()).unwrap_or(0),
     );
-    let color = if file.is_pending() { PENDING } else { TEXT };
+    let name = format!(
+        "{indent}{:<name_width$} ",
+        Clipped::right(symbol.name().as_str(), name_width).to_string()
+    );
+    let place = format!(
+        "{:>5}  {}",
+        symbol.span().start().number(),
+        symbol.kind().as_str()
+    );
+    let pending = file.is_pending();
+    let runs = vec![
+        Run::new("  ", WEAK),
+        mark,
+        Run::new(name, if pending { PENDING } else { TEXT }),
+        Run::new(place, if pending { PENDING } else { WEAK }),
+    ];
     let chosen = if model.nav.focus() == Some(symbol_id) {
         Chosen::Chosen
     } else {
         Chosen::Plain
     };
-    let row_id = ids::SYMBOL_ROW.with(&Label::new(format!(
-        "{}:{}",
-        symbol_id.file(),
-        symbol_id.symbol()
-    )));
-    let add = adding.then(|| {
-        RowAction::add_step(ids::ADD_SYMBOL.with(&Label::new(format!(
-            "{}:{}",
-            symbol_id.file(),
-            symbol_id.symbol()
-        ))))
-    });
+    let key = Label::new(format!("{}:{}", symbol_id.file(), symbol_id.symbol()));
+    let add = adding.then(|| RowAction::add_step(ids::ADD_SYMBOL.with(&key)));
     let clicks = frame.row_with_action(
-        vec![Run::new(line, color)],
-        row_id,
+        runs,
+        ids::SYMBOL_ROW.with(&key),
         (chosen == Chosen::Chosen).then_some(SELECTED),
         add,
     );
@@ -418,31 +549,38 @@ fn symbol_row(model: &Model, frame: &mut Frame<'_>, symbol_id: domain::SymbolId,
     }
 }
 
-struct Coverage {
+struct Tally {
     covered: Count,
     total: Count,
 }
 
 pub(super) fn files_window(model: &Model, frame: &mut Frame<'_>) {
-    frame.start(Container::Header);
-    frame.label("covered/total symbols", WEAK);
-    frame.finish();
-    let coverage: Vec<Coverage> = model
+    let coverage = model.map.coverage();
+    let tallies: Vec<Tally> = model
         .index
         .files()
-        .map(|file| Coverage {
+        .map(|file| Tally {
             covered: Count::new(
                 file.symbols()
-                    .filter(|symbol| model.map.covers(file.path(), symbol.span()))
+                    .filter(|symbol| coverage.covers(file.path(), symbol.span()))
                     .count(),
             ),
             total: Count::new(file.symbols().count()),
         })
         .collect();
+    let (covered, total) = tallies.iter().fold((0, 0), |sums, tally| {
+        (sums.0 + tally.covered.get(), sums.1 + tally.total.get())
+    });
+    frame.start(Container::Header);
+    frame.label(
+        format!("{covered} of {total} symbols in a path; covered/total per file"),
+        WEAK,
+    );
+    frame.finish();
     let id = ids::files();
     frame.scroll_column(id, model.scrolls.get(id), Scroller::Plain, None);
     let all: Vec<FileId> = model.index.file_entries().map(|entry| entry.id).collect();
-    files_tree(model, frame, &all, Count::ZERO, &coverage);
+    files_tree(model, frame, &all, Count::ZERO, &tallies);
     frame.finish();
 }
 
@@ -463,13 +601,13 @@ fn is_file(model: &Model, file: FileId, depth: Count) -> bool {
         .is_some_and(|source| source.path().as_str().split('/').count() == depth.get() + 1)
 }
 
-fn coverage_of(coverage: &[Coverage], file: FileId) -> Coverage {
-    coverage.get(file.number()).map_or(
-        Coverage {
+fn tally_of(tallies: &[Tally], file: FileId) -> Tally {
+    tallies.get(file.number()).map_or(
+        Tally {
             covered: Count::ZERO,
             total: Count::ZERO,
         },
-        |found| Coverage {
+        |found| Tally {
             covered: found.covered,
             total: found.total,
         },
@@ -481,20 +619,20 @@ fn files_tree(
     frame: &mut Frame<'_>,
     files: &[FileId],
     depth: Count,
-    coverage: &[Coverage],
+    tallies: &[Tally],
 ) {
     let indent = "  ".repeat(depth.get());
     let mut rest = files;
     while let Some((first, _)) = rest.split_first() {
         let first = *first;
         if is_file(model, first, depth) {
-            let found = coverage_of(coverage, first);
+            let found = tally_of(tallies, first);
             let (covered, total) = (found.covered.get(), found.total.get());
             let name = component(model, first, depth);
-            let label = if total > 0 {
-                format!("{indent}{}  {covered}/{total}", name.as_str())
+            let tally = if total > 0 {
+                format!("  {covered}/{total}")
             } else {
-                format!("{indent}{}", name.as_str())
+                String::new()
             };
             let color = if total > 0 && covered == 0 {
                 WEAK
@@ -508,7 +646,10 @@ fn files_tree(
             };
             if frame
                 .row(
-                    vec![Run::new(label, color)],
+                    vec![
+                        Run::new(format!("{indent}{}", name.as_str()), color),
+                        Run::new(tally, WEAK),
+                    ],
                     ids::FILE_ROW.nth(Count::new(first.number())),
                     chosen,
                 )
@@ -528,7 +669,7 @@ fn files_tree(
             .count();
         let (group, after) = rest.split_at(inside);
         let (covered, total) = group.iter().fold((0, 0), |sums, file| {
-            let found = coverage_of(coverage, *file);
+            let found = tally_of(tallies, *file);
             (sums.0 + found.covered.get(), sums.1 + found.total.get())
         });
         let prefix = model
@@ -545,18 +686,26 @@ fn files_tree(
             })
             .unwrap_or_default();
         let open = (depth.get() == 0) ^ model.directories.contains(&Label::new(prefix.clone()));
+        let tally = if total > 0 {
+            format!("  {covered}/{total}")
+        } else {
+            String::new()
+        };
         if frame
             .row(
-                vec![Run::new(
-                    format!(
-                        "{indent}{} {}/  {covered}/{total}",
-                        if open { Icon::Unfolded } else { Icon::Folded }
-                            .glyph()
-                            .get(),
-                        directory.as_str()
+                vec![
+                    Run::new(
+                        format!(
+                            "{indent}{} {}/",
+                            if open { Icon::Unfolded } else { Icon::Folded }
+                                .glyph()
+                                .get(),
+                            directory.as_str()
+                        ),
+                        TEXT,
                     ),
-                    TEXT,
-                )],
+                    Run::new(tally, WEAK),
+                ],
                 ids::DIRECTORY_ROW.with(&Label::new(prefix.as_str())),
                 Chosen::Plain,
             )
@@ -565,7 +714,7 @@ fn files_tree(
             frame.push(Action::ToggleDirectory(Label::new(prefix)));
         }
         if open {
-            files_tree(model, frame, group, Count::new(depth.get() + 1), coverage);
+            files_tree(model, frame, group, Count::new(depth.get() + 1), tallies);
         }
         rest = after;
     }

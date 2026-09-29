@@ -51,7 +51,7 @@ parent 17uw33
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 89 93
+lines 90 94
 hash 547c8bd0901ef4e5
 note The gate: a walk is dropped while any field is focused, so the arrows move the caret or the field's history there instead.
 

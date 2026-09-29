@@ -669,6 +669,7 @@ impl Feature {
                     [
                         Trigger::Type(Element::new("field@search")),
                         Trigger::Click(Element::new("hit")),
+                        Trigger::Click(Element::new("hitfile")),
                     ]
                 },
             ),
@@ -697,12 +698,15 @@ impl Feature {
             ),
             Self::BrowseFiles => Spec::new(
                 Text::new("browse-files"),
-                Text::new("open a directory or a file in the Files tab"),
+                Text::new(
+                    "open a directory or a file in the Files tab, or a file from its row in Symbols",
+                ),
                 Surface::Window,
                 &const {
                     [
                         Trigger::Click(Element::new("dir")),
                         Trigger::Click(Element::new("file")),
+                        Trigger::Click(Element::new("symfile")),
                     ]
                 },
             ),
@@ -715,6 +719,7 @@ impl Feature {
                         Trigger::Click(Element::new("xto")),
                         Trigger::Click(Element::new("xfrom")),
                         Trigger::Click(Element::new("xref")),
+                        Trigger::Click(Element::new("xreffile")),
                     ]
                 },
             ),

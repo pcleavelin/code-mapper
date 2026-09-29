@@ -60,9 +60,9 @@ order 6
 author ai
 file crates/gui/src/views/center.rs
 symbol graph_tab
-lines 0 54
-hash 77a69fc56c4b11ea
-note The view: the deferred actions pushed (a hover through push_hover), the tooltip set, then the toolbar - the pan and zoom gestures spelled out, '1:1' which resets the zoom and re-centres, 'auto layout' which drops every dragged position, 'fit' which zooms out until the whole tree is on the canvas, the legend for the edge colours when a path is being read, and the zoom percentage - then the canvas element whose closure paints the scene. There is no authoring control on the graph by design.
+lines 0 55
+hash 76493cb9bf417d55
+note The view: the deferred actions pushed (a hover through push_hover), the tooltip set, then the toolbar - '1:1' which resets the zoom and re-centres, 'auto layout' which drops every dragged position, 'fit' which zooms out until the whole tree is on the canvas, the zoom percentage, and one clipped caption: while a path is being read, its name and a legend drawn in the edge colours themselves (green step, dim expansion, orange call back up), then the pan and zoom gestures spelled out - then the canvas element whose closure paints the scene. The toolbar holds no authoring control; '+ step' lives on off-path nodes.
 
 step 4yhd4f
 order 0

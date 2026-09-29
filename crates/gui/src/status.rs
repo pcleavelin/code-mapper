@@ -4,6 +4,9 @@ use std::path::PathBuf;
 use domain::{Line, LineCount, Map, MapError, PathName, Program, RelativePath, SymbolName};
 use ui::{Count, Label};
 
+use crate::model::HitsShown;
+use crate::text::{Counted, Noun};
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct IndexCounts {
     pub(crate) files: Count,
@@ -18,6 +21,14 @@ impl fmt::Display for IndexCounts {
             self.files, self.symbols
         )
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Tone {
+    Plain,
+    Done,
+    Warning,
+    Problem,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -41,6 +52,7 @@ pub(crate) enum Status {
     Hits {
         count: Count,
         pattern: Label,
+        shown: HitsShown,
     },
     MapRefused(Label),
     PathCreated(PathName),
@@ -156,8 +168,73 @@ impl Status {
         }
     }
 
+    fn hits(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Hits {
+                count,
+                pattern,
+                shown: HitsShown::All,
+            } => write!(
+                formatter,
+                "{} for /{}/",
+                Counted::new(*count, Noun::Hit),
+                pattern.as_str()
+            ),
+            Self::Hits {
+                count,
+                pattern,
+                shown: HitsShown::First,
+            } => write!(
+                formatter,
+                "the first {count} hits for /{}/; the search stops there, a narrower regex finds the rest",
+                pattern.as_str()
+            ),
+            _ => Ok(()),
+        }
+    }
+
     pub(crate) fn refused(map: &Map, error: MapError) -> Self {
         Self::MapRefused(Label::new(cli::map_failure(map, error).to_string()))
+    }
+
+    pub(crate) const fn tone(&self) -> Tone {
+        match self {
+            Self::Saved
+            | Self::PathCreated(_)
+            | Self::PathPromoted { .. }
+            | Self::StepAdded { .. }
+            | Self::StepPlaced { .. }
+            | Self::StepRemoved { .. }
+            | Self::PathRemoved { .. }
+            | Self::MapReloaded
+            | Self::Reindexed(_) => Tone::Done,
+            Self::Hits {
+                shown: HitsShown::First,
+                ..
+            }
+            | Self::NameThePath
+            | Self::AlreadyStep { .. }
+            | Self::SelectLinesFirst
+            | Self::SelectPathFirst
+            | Self::LineOutside { .. }
+            | Self::NoLineNumber(_)
+            | Self::NoFileOpen
+            | Self::NoDefinitionOf(_)
+            | Self::NoDefinition
+            | Self::DiskChanged => Tone::Warning,
+            Self::MapUnreadable(_)
+            | Self::SaveRefused
+            | Self::SaveFailed(_)
+            | Self::LayoutUnsaved(_)
+            | Self::CommandRejected(_)
+            | Self::CommandFailed(_)
+            | Self::RegexRefused(_)
+            | Self::MapRefused(_)
+            | Self::ServerFailed(_)
+            | Self::ReindexFailed
+            | Self::MapUnreadableKept(_) => Tone::Problem,
+            _ => Tone::Plain,
+        }
     }
 
     pub(crate) const fn is_indexed(&self) -> bool {
@@ -200,9 +277,7 @@ impl fmt::Display for Status {
             Self::CommandRejected(first) => formatter.write_str(first.as_str()),
             Self::CommandFailed(error) => write!(formatter, "error: {}", error.as_str()),
             Self::RegexRefused(reason) => write!(formatter, "bad regex: {}", reason.as_str()),
-            Self::Hits { count, pattern } => {
-                write!(formatter, "{count} hits for /{}/", pattern.as_str())
-            }
+            Self::Hits { .. } => self.hits(formatter),
             Self::MapRefused(error) => formatter.write_str(error.as_str()),
             Self::PathCreated(_)
             | Self::NameThePath

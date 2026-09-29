@@ -4,7 +4,7 @@ use std::time::{Duration, Instant};
 
 use domain::{
     Depth, FileId, GroupName, Index, Line, LineCount, Map, Path, PathDiff, PathKind, PathName, Row,
-    Step, StepId,
+    Span, Step, StepId,
 };
 use io_map::{MapStore, Stamp};
 use ui::{Count, Extent, FontSize, Id, Label, Px};
@@ -16,6 +16,7 @@ use crate::nav::Nav;
 use crate::panels::Panels;
 use crate::peek::{Peek, Queries};
 use crate::status::{OutputLog, Status};
+use crate::text::Needle;
 use crate::theme;
 use crate::work::WorkState;
 use std::mem;
@@ -239,6 +240,37 @@ impl StepViews {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct StepShape {
+    pub(crate) view: StepView,
+    pub(crate) span: Option<Span>,
+    pub(crate) note: Count,
+    pub(crate) width: Px,
+    pub(crate) row: Px,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct Measured {
+    pub(crate) shape: StepShape,
+    pub(crate) height: Px,
+}
+
+#[derive(Clone, Debug, Default)]
+pub(crate) struct Measures(BTreeMap<Id, Measured>);
+
+impl Measures {
+    pub(crate) fn height(&self, id: Id, shape: StepShape) -> Option<Px> {
+        self.0
+            .get(&id)
+            .filter(|measured| measured.shape == shape)
+            .map(|measured| measured.height)
+    }
+
+    pub(crate) fn set(&mut self, id: Id, measured: Measured) {
+        self.0.insert(id, measured);
+    }
+}
+
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Scrolls(BTreeMap<Id, Px>);
 
@@ -262,6 +294,14 @@ pub(crate) enum Openness {
 pub(crate) struct Hit {
     pub(crate) file: FileId,
     pub(crate) line: Line,
+}
+
+pub(crate) const HIT_LIMIT: Count = Count::new(5000);
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum HitsShown {
+    All,
+    First,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -338,12 +378,14 @@ pub(crate) struct Model {
     pub(crate) panels: Panels,
     pub(crate) scrolls: Scrolls,
     pub(crate) across: Scrolls,
+    pub(crate) measures: Measures,
     pub(crate) graph: GraphState,
     pub(crate) tip_shown: Option<Label>,
     pub(crate) fields: Fields,
     pub(crate) new_path: Option<PathKind>,
     pub(crate) step_grab: Option<StepGrab>,
     pub(crate) results: Vec<Hit>,
+    pub(crate) hits_shown: HitsShown,
     pub(crate) output: OutputLog,
     pub(crate) output_bottom: Count,
     pub(crate) status: Status,
@@ -375,12 +417,14 @@ impl Model {
             panels: Panels::default(),
             scrolls: Scrolls::default(),
             across: Scrolls::default(),
+            measures: Measures::default(),
             graph: GraphState::default(),
             tip_shown: None,
             fields: Fields::default(),
             new_path: None,
             step_grab: None,
             results: Vec::new(),
+            hits_shown: HitsShown::All,
             output: OutputLog::default(),
             output_bottom: Count::ZERO,
             status: Status::Nothing,
@@ -410,10 +454,7 @@ impl Model {
     }
 
     pub(crate) fn lists(&self, name: &PathName) -> bool {
-        let filter = self.fields.get(Which::PathFilter).text().as_str();
-        name.as_str()
-            .to_lowercase()
-            .contains(&filter.to_lowercase())
+        Needle::new(self.fields.get(Which::PathFilter).text().as_str()).found_in(name.as_str())
     }
 
     pub(crate) fn listed_rows(&self) -> Vec<Row> {

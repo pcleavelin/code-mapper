@@ -22,6 +22,19 @@ pub use step::{Anchor, Freshness, Resolution, Step, StepId, StepOrder};
 pub struct Changed;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Coverage<'map> {
+    spans: BTreeMap<&'map RelativePath, Vec<Span>>,
+}
+
+impl Coverage<'_> {
+    pub fn covers(&self, file: &RelativePath, span: Span) -> bool {
+        self.spans
+            .get(file)
+            .is_some_and(|spans| spans.iter().any(|pinned| pinned.overlaps(span)))
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Row {
     Group {
         group: GroupName,
@@ -482,11 +495,14 @@ impl Map {
             .collect()
     }
 
-    pub fn covers(&self, file: &RelativePath, span: Span) -> bool {
-        self.paths
-            .iter()
-            .flat_map(Path::steps)
-            .any(|step| !step.is_stale() && step.file() == file && step.span().overlaps(span))
+    pub fn coverage(&self) -> Coverage<'_> {
+        let mut spans: BTreeMap<&RelativePath, Vec<Span>> = BTreeMap::new();
+        for step in self.paths.iter().flat_map(Path::steps) {
+            if !step.is_stale() {
+                spans.entry(step.file()).or_default().push(step.span());
+            }
+        }
+        Coverage { spans }
     }
 
     pub fn diff(&self, base: &Self) -> Vec<PathDiff> {

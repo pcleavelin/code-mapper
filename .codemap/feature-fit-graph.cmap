@@ -62,7 +62,7 @@ parent uounwk
 author ai
 file crates/gui/src/views/center.rs
 symbol graph_tab
-lines 24 38
+lines 20 34
 hash 2edfa2260736694b
 note Trigger: GRAPH_ONE_TO_ONE and GRAPH_FIT in the graph toolbar queue OneToOne and WantFit.
 

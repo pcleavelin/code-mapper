@@ -1,11 +1,13 @@
-use ui::{Icon, Label};
+use ui::{Icon, Label, Run};
 
 use crate::action::Action;
 use crate::field::Which;
 use crate::ids;
 use crate::model::{Dirty, Model};
-use crate::theme::{SEARCH_FIELD, TEXT, WEAK};
-use crate::widgets::{Container, Enabled, Frame};
+use crate::status::Tone;
+use crate::text::Clipped;
+use crate::theme::{GREEN, MAP_PLACE, ORANGE, RED, SEARCH_FIELD, TEXT, WEAK};
+use crate::widgets::{Chosen, Container, Enabled, Frame};
 
 pub(super) fn top_bar(model: &Model, frame: &mut Frame<'_>) {
     frame.start(Container::TopBar);
@@ -44,12 +46,16 @@ pub(super) fn top_bar(model: &Model, frame: &mut Frame<'_>) {
         frame.push(Action::Forward);
     }
     frame.grow();
-    let save = if model.disk.dirty == Dirty::Unsaved {
-        "save *"
+    let unsaved = model.disk.dirty == Dirty::Unsaved;
+    if unsaved {
+        frame.label("unsaved changes", ORANGE);
+    }
+    let (save, chosen) = if unsaved {
+        ("save *", Chosen::Chosen)
     } else {
-        "save"
+        ("save", Chosen::Plain)
     };
-    if frame.control(save, ids::SAVE).clicked() {
+    if frame.button(save, ids::SAVE.target(), chosen).clicked() {
         frame.push(Action::Save);
     }
     frame.finish();
@@ -57,22 +63,29 @@ pub(super) fn top_bar(model: &Model, frame: &mut Frame<'_>) {
 
 pub(super) fn status_bar(model: &Model, frame: &mut Frame<'_>) {
     frame.start(Container::StatusBar);
+    let status = frame
+        .overlay
+        .status
+        .clone()
+        .unwrap_or_else(|| model.status.clone());
+    let color = match status.tone() {
+        Tone::Plain => TEXT,
+        Tone::Done => GREEN,
+        Tone::Warning => ORANGE,
+        Tone::Problem => RED,
+    };
+    frame.caption(vec![Run::new(status.line(), color)]);
+    let progress = model.work.progress();
+    if !progress.as_str().is_empty() {
+        frame.label(progress.clone(), WEAK);
+    }
     let place = model
         .store
         .directory()
         .display()
         .to_string()
         .replace('\\', "/");
-    frame.label(place, WEAK);
-    let status = frame
-        .overlay
-        .status
-        .clone()
-        .unwrap_or_else(|| model.status.clone());
-    frame.label(status.line(), TEXT);
-    let progress = model.work.progress();
-    if !progress.as_str().is_empty() {
-        frame.label(progress.clone(), WEAK);
-    }
+    let room = usize::try_from(MAP_PLACE.get()).unwrap_or(0);
+    frame.label(format!("map: {}", Clipped::left(&place, room)), WEAK);
     frame.finish();
 }

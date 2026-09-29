@@ -10,14 +10,24 @@ order 1
 parent vvnrjt
 author ai
 file crates/domain/src/map.rs
-symbol covers
-lines 0 5
-hash 285b67ff7daf1155
+symbol coverage
+lines 0 8
+hash b4612b85e433b734
 link coverage
-note Covered means a non-stale step in the same file overlaps the symbol's lines; a stale step covers nothing.
+note Map::coverage collects the spans of every non-stale step per file, once for the whole run; a stale step covers nothing.
+
+step nufr8x
+order 2
+parent vvnrjt
+author ai
+file crates/domain/src/map.rs
+symbol covers
+lines 0 4
+hash 02b7094bc6f86da2
+note Coverage::covers: a symbol is uncovered when none of its file's collected spans overlaps its lines.
 
 step nwhng3
-order 2
+order 3
 parent vvnrjt
 author ai
 file crates/cli/src/wire.rs
@@ -31,6 +41,6 @@ order 0
 author ai
 file crates/cli/src/exec.rs
 symbol uncovered
-lines 0 20
-hash c7b8080a0d2b7354
+lines 0 21
+hash 58f2233b4fcb9c3a
 note Collects every matching symbol the map does not cover with its line count, sorts by size descending and prints them.

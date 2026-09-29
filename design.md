@@ -44,7 +44,7 @@ Deferred items and their triggers are in section 11.
 |---|---|
 | **File** | A text file under the root, held in memory as lines. Tabs are expanded to 4 spaces on load, everywhere, so display and hashing agree. |
 | **Symbol** | A top-level declaration (functions, structs, consts, impl blocks), plus one level of nesting for members of impl / mod / trait / class bodies. Has a name, kind, inclusive line range, and depth 0 or 1. Found by the language's backend, section 7. |
-| **Xref** | Symbol A calls symbol B, or symbol A references symbol B. From the language's backend, section 7. "Xrefs to" = callers, "xrefs from" = callees. |
+| **Xref** | Symbol A calls symbol B, or symbol A references symbol B. From the language's backend, section 7. "Xrefs to" a symbol are its callers, "xrefs from" it its callees; the GUI says callers and callees. |
 | **Anchor** | A pinned slice of lines in one file, stored relative to the enclosing symbol so it follows the symbol when code above it moves. Carries a hash of its text; if the hash no longer matches, the anchor is **stale**. |
 | **Path** | A named tree of anchors (**steps**), with a **kind**, a path note, an author, and a step note per step. The one unit of the mental model. Siblings are shown in the order the parent's code names them. |
 | **Link** | A step can name another path that documents what the step's lines call: the call into shared code, or the write to a queue that another process reads. The step stays anchored at the call site; the linked path is read in place of repeating its steps. A path cannot link to itself. Renaming a path renames every link to it, and a path that something links to cannot be removed. |
@@ -113,9 +113,9 @@ is in at most one panel. The default tree:
 
 | Panel | Views |
 |---|---|
-| Left, tabs | **Paths**: the groups as folders, each with the number of paths under it and red when one of them is stale, then the paths outside any group; every path with kind, author tag and stale count. A group is closed until the path being read is in it, and a click opens or closes it. The selected path expanded into its **outline**, one row per step with hierarchical number (1, 1.2, 1.2.3), symbol and file, a hidden count on folded subtrees. The topmost step visible in the document is highlighted and the outline scrolls to keep it in view. Clicking a row selects the step; dragging it moves the step (see Authoring). A 'new path' button beside the filter creates a path. **Symbols**: filterable table with kind, file, line, covered. **Files**: a tree of the indexed files with covered/total per file. |
-| Centre, tabs | **Path** document, below. **Diff**: the map against the parent revision's, every added, removed or changed path, click to read. **Graph**: the selection as a left-to-right tree, below. **Listing**: the file viewer with line numbers, anchor bars, and go-to-line. **Results**: grep output. In the document and the listing, double-click or ctrl-click an identifier to jump to its definition. |
-| Right | **Xrefs** for the selected symbol. |
+| Left, tabs | **Paths**: the groups as folders, each with the number of paths under it and red when one of them is stale, then the paths outside any group; every path with kind, author tag and stale count. A group is closed until the path being read is in it, and a click opens or closes it. The selected path expanded into its **outline**, one row per step with hierarchical number (1, 1.2, 1.2.3), symbol and file, a hidden count on folded subtrees. The topmost step visible in the document is highlighted and the outline scrolls to keep it in view. Clicking a row selects the step; dragging it moves the step (see Authoring). A 'new path' button beside the filter creates a path. Filtering shows how many paths match. **Symbols**: filterable table grouped under a row per file (path and covered/total, a click opens it), each symbol with a check when covered, its line and kind; the header counts the matches. **Files**: a tree of the indexed files with covered/total per file and the total for the repo. |
+| Centre, tabs | **Path** document, below. **Diff**: the map against the parent revision's, every added, removed or changed path, click to read. **Graph**: the selection as a left-to-right tree, below. **Listing**: the file viewer with line numbers, anchor bars, and go-to-line; its add button names the lines it will add. **Results**: grep output grouped under a row per file, at most 5000 hits; when the search stops there the view, its tab (`5000+`) and the status line say so. In the document and the listing, double-click or ctrl-click an identifier to jump to its definition. |
+| Right | **Xrefs** for the selected symbol: callers, callees, and references grouped under a row per file. |
 | Bottom | **Output**: runs the same commands as the CLI. |
 
 Each panel's header holds its tabs and four buttons: **+** opens a list of every view with a
@@ -139,6 +139,12 @@ and from the default when it is missing or unreadable. The file is indented text
 line, `*` marking the tab in front. Script and screenshot runs use the file only when
 `CODEMAP_LAYOUT` names one, so goldens never depend on a user's layout.
 
+The status line under the panels answers the last thing done: green when it changed
+something, orange when it wants something first or stopped short, red when it failed; the
+map's directory sits at its right. While the map has edits not on disk, the top bar says
+"unsaved changes" beside the save button. Text that does not fit its row ends in `…`
+instead of running under its neighbour.
+
 **The document.** A sticky breadcrumb of the topmost visible step's ancestors, name and
 file per crumb, each clickable. Then the steps in tree order: a header with the
 hierarchical number, symbol, file:lines and tags; the note as text (editing notes is the
@@ -159,7 +165,9 @@ has the keyboard. Stale steps are red. The selected step carries an accent
 bar; selecting it from outside the document scrolls its header to the top, selecting it
 inside does not scroll. Selecting an off-path symbol leaves the document and outline on
 the path with no step highlighted; back returns to the step. The flat step index the
-CLI uses is not shown.
+CLI uses is not shown. A step more than a screen away from the view is laid out as empty
+space of the height it last measured, so a path of hundreds of steps scrolls as fast as a
+short one; it is drawn again as it comes near.
 
 **Peek.** In any code view, hovering an identifier shows what the language's server
 knows about it: signature, type, docs, for anything the server resolves, a local, a
@@ -193,7 +201,8 @@ and the outline marks the target row. Ways to add, all authored by the human:
 
 - The Listing's 'add step' adds the selected lines.
 - '+ step' on a Symbols row, on an Xrefs caller or callee row, or 'add step' under the
-  Xrefs heading adds that symbol whole.
+  Xrefs heading adds that symbol whole. A row shows its '+ step' while the pointer is on
+  it or it is selected.
 - '+ step' on an off-path graph node adds its symbol under the step it was revealed from
   as a callee, else under the target.
 

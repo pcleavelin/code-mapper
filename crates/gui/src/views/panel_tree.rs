@@ -5,7 +5,7 @@ use crate::action::Action;
 use crate::field::Which;
 use crate::graph::GraphFrame;
 use crate::ids::{self, Target};
-use crate::model::Model;
+use crate::model::{HitsShown, Model};
 use crate::panels::{
     self, Branch, BranchId, Direction, DropTarget, Grab, Panel, Panels, Split, View,
 };
@@ -188,7 +188,12 @@ fn header(model: &Model, frame: &mut Frame<'_>, panel: &Panel) {
 fn tab(model: &Model, frame: &mut Frame<'_>, view: View, chosen: Chosen) {
     let target = tab_target(view);
     let label = if view == View::Results {
-        format!("{} ({})", view.name(), model.results.len())
+        let more = if model.hits_shown == HitsShown::First {
+            "+"
+        } else {
+            ""
+        };
+        format!("{} ({}{more})", view.name(), model.results.len())
     } else {
         view.name().to_string()
     };

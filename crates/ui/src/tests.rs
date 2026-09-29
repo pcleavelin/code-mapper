@@ -523,3 +523,33 @@ fn wrapping_counts_an_icon_as_two_columns() {
         [Label::new(format!("{icon}{icon}{icon}")), Label::new("ab")]
     );
 }
+
+#[test]
+fn clipped_text_fits_its_rect_and_ends_in_an_ellipsis() {
+    let white = Color::rgba(255, 255, 255, 255);
+    let grey = Color::rgba(128, 128, 128, 255);
+    let mut ui = Ui::default();
+    ui.begin(&input(100, 100));
+    ui.open(Kind::None, Layout::row().width(px(48)), Style::NONE, None);
+    ui.leaf(
+        Kind::Text(Text {
+            runs: vec![Run::new("name", white), Run::new(" src/lib.rs", grey)],
+            size: FontSize::new(14),
+            wrap: Wrap::Clip,
+        }),
+        Layout::row().grow_width(),
+        Style::NONE,
+        None,
+    );
+    ui.close();
+    ui.end(&mut Cells);
+    let drawn = ui.draw(&mut Cells, white);
+    let texts: Vec<String> = drawn
+        .commands()
+        .filter_map(|command| match command {
+            Command::Text { at, text, .. } => Some(format!("{at:?} {}", text.as_str())),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(texts, ["(0, 0) name", "(32, 0)  \u{2026}"]);
+}

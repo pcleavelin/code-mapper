@@ -139,9 +139,9 @@ parent dxzju5
 author ai
 file crates/gui/src/views/panel_tree.rs
 symbol tab
-lines 0 24
-hash f2ce2220203e3466
-note A tab is a button tab@<View>. A press both shows the view and takes hold of it for a drag; releasing without moving leaves only the show.
+lines 0 29
+hash e3f784f91633d4d4
+note A tab is a button tab@<View>, labelled with the view's name; the Results tab adds its hit count, with a + when the hits were cut at HIT_LIMIT ('Results (5000+)'). A press both shows the view and takes hold of it for a drag; releasing without moving leaves only the show.
 
 step aebgap
 order 38
@@ -473,7 +473,7 @@ order 21
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 59 88
+lines 60 89
 hash d3d2ab03866daec9
 note The panel arms of apply: grab, resize, drag and release; split, close; the picker opened, closed or picked from. Opening the picker, by + or by a split, empties its search field and gives it the keyboard.
 

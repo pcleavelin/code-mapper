@@ -6,13 +6,14 @@ use ui::{Count, Icon, Id, Label, Px, Run};
 use crate::action::{Action, ContextChange, Fold, Hide};
 use crate::ids::{self, Control, Target};
 use crate::model::{
-    Context, Model, Numbered, PathSlot, StepKey, StepSlot, StepView, Tab, ViewFlag,
+    Context, Measured, Model, Numbered, PathSlot, StepKey, StepShape, StepSlot, StepView, Tab,
+    ViewFlag,
 };
 use crate::nav::Scrolling;
-use crate::text::Tag;
+use crate::text::{Counted, Noun, Tag};
 use crate::theme::{
-    ACCENT, EXPAND_BUTTON, FAINT, FOLD_ROOM, GREEN, HIDE_BUTTON, INDENT, PENDING, PIXEL, RED,
-    SLICE, TEXT, WEAK, WHOLE_BUTTON,
+    ACCENT, DANGER_GAP, EXPAND_BUTTON, FAINT, FOLD_ROOM, GREEN, HIDE_BUTTON, INDENT, PENDING,
+    PIXEL, RED, SLICE, TEXT, WEAK, WHOLE_BUTTON,
 };
 use crate::widgets::{Chosen, CodeBlock, Container, Frame, Marks, Padding, Scroller, Width};
 use std::mem;
@@ -98,10 +99,10 @@ fn header_bar(frame: &mut Frame<'_>, path: PathSlot, found: &Path, diff: Option<
     frame.title(found.name().as_str());
     frame.label(
         format!(
-            "[{}]{}  {} steps",
+            "[{}]{}  {}",
             Tag::kind(found.kind()),
             Tag::author(found.author()),
-            found.steps().len()
+            Counted::new(Count::new(found.steps().len()), Noun::Step)
         ),
         WEAK,
     );
@@ -128,12 +129,18 @@ fn header_bar(frame: &mut Frame<'_>, path: PathSlot, found: &Path, diff: Option<
             ids::UNFOLD_ALL,
             Action::FoldAll(path, Fold::Unfold),
         ),
-        ("delete path", ids::REMOVE_PATH, Action::RemovePath(path)),
     ];
     for (label, control, action) in buttons {
         if frame.small_button(label, control.target()).clicked() {
             frame.push(action);
         }
+    }
+    frame.cells_gap(DANGER_GAP);
+    if frame
+        .danger_button("delete path", ids::REMOVE_PATH.target())
+        .clicked()
+    {
+        frame.push(Action::RemovePath(path));
     }
     frame.finish();
 }
@@ -488,7 +495,7 @@ fn step_header(
     frame.grow();
     if row.occurrence.is_none()
         && frame
-            .small_button("delete", row.target(ids::REMOVE_STEP))
+            .danger_button("delete", row.target(ids::REMOVE_STEP))
             .clicked()
     {
         frame.push(Action::RemoveStep(key));
@@ -557,10 +564,88 @@ fn step_code(model: &Model, frame: &mut Frame<'_>, row: &Row<'_>) {
     frame.finish();
 }
 
+fn step_column(occurrence: Option<Occurrence>, step: StepSlot) -> Id {
+    let name = ids::STEP_COLUMN.as_str();
+    match occurrence {
+        None => Id::from_name(name).nth(step.get()),
+        Some(Occurrence(nested)) => ids::linked().nth(nested).with(name).nth(step.get()),
+    }
+}
+
+fn near(last: Option<ui::Rect>, view: Option<ui::Rect>) -> bool {
+    match (last, view) {
+        (Some(rect), Some(view)) => {
+            rect.bottom() >= view.top - view.height && rect.top <= view.bottom() + view.height
+        }
+        _ => true,
+    }
+}
+
+fn step_or_reserve(
+    model: &Model,
+    frame: &mut Frame<'_>,
+    row: &Row<'_>,
+    walk: &Walk<'_>,
+    first: &mut First,
+    view: Option<ui::Rect>,
+) -> Option<PathSlot> {
+    let id = step_column(row.occurrence, row.key.step);
+    let shape = StepShape {
+        view: row.view,
+        span: row.gone.is_none().then(|| row.step.span()),
+        note: Count::new(
+            row.step
+                .note()
+                .map_or(0, |note| note.as_str().chars().count()),
+        ),
+        width: view.map_or(Px::ZERO, |view| view.width),
+        row: frame.row_height(),
+    };
+    let last = frame.ui.interaction(id).rect();
+    let pinned = row.chosen == Chosen::Chosen
+        || (row.occurrence.is_none()
+            && model
+                .nav
+                .scroll_to_step()
+                .is_some_and(|request| request.step == row.key.step));
+    let culled = model
+        .measures
+        .height(id, shape)
+        .filter(|_| !pinned && !near(last, view));
+    if let Some(height) = culled {
+        frame.reserve(id, height);
+        if row.occurrence.is_some() {
+            *first = First::Done;
+        }
+        row.step.link().and_then(|link| model.find_path(link))
+    } else {
+        frame.start(Container::StepColumn(id));
+        let target = step_header(model, frame, row, walk, first);
+        step_note(frame, row);
+        step_code(model, frame, row);
+        frame.step_gap();
+        frame.finish();
+        if let Some(rect) = last {
+            frame.push(Action::Measured(
+                id,
+                Measured {
+                    shape,
+                    height: rect.height,
+                },
+            ));
+        }
+        target
+    }
+}
+
 fn steps(model: &Model, frame: &mut Frame<'_>, path: PathSlot, walk: &mut Walk<'_>) {
     let occurrence = walk.occurrence;
     let mut hide_below: Option<Depth> = None;
     let mut first = First::Pending;
+    let view = frame
+        .ui
+        .placement(ids::document())
+        .map(|placement| placement.rect);
     for numbered in model.numbered(path) {
         if hide_below.is_some_and(|depth| numbered.depth > depth) {
             continue;
@@ -605,14 +690,11 @@ fn steps(model: &Model, frame: &mut Frame<'_>, path: PathSlot, walk: &mut Walk<'
                 _ => None,
             },
         };
-        let target = step_header(model, frame, &row, walk, &mut first);
-        step_note(frame, &row);
-        step_code(model, frame, &row);
+        let target = step_or_reserve(model, frame, &row, walk, &mut first, view);
         let folded = row.has(ViewFlag::Folded);
         if folded {
             hide_below = Some(numbered.depth);
         }
-        frame.step_gap();
         if let Some(target) = target
             .filter(|target| row.has(ViewFlag::Expanded) && !folded && !walk.chain.contains(target))
         {

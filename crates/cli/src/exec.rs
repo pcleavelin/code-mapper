@@ -451,6 +451,7 @@ impl Run<'_> {
 
     fn uncovered(&mut self, filter: &Filter) {
         let mut found: Vec<(LineCount, SymbolId)> = Vec::new();
+        let coverage = self.map.coverage();
         for id in self.index.symbol_ids() {
             let (Some(file), Some(symbol)) = (self.index.file(id.file()), self.index.symbol(id))
             else {
@@ -458,7 +459,7 @@ impl Run<'_> {
             };
             let matched =
                 filter.matches(symbol.name().as_str()) || filter.matches(file.path().as_str());
-            if matched && !self.map.covers(file.path(), symbol.span()) {
+            if matched && !coverage.covers(file.path(), symbol.span()) {
                 found.push((symbol.span().count(), id));
             }
         }
@@ -473,6 +474,7 @@ impl Run<'_> {
 
     fn coverage(&mut self) {
         let (mut covered, mut symbols) = (Count::default(), Count::default());
+        let coverage = self.map.coverage();
         for file in self
             .index
             .files()
@@ -480,7 +482,7 @@ impl Run<'_> {
         {
             let here = Count::new(
                 file.symbols()
-                    .filter(|symbol| self.map.covers(file.path(), symbol.span()))
+                    .filter(|symbol| coverage.covers(file.path(), symbol.span()))
                     .count(),
             );
             let all = Count::new(file.symbols().count());

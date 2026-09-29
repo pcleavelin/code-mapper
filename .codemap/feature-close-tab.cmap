@@ -30,7 +30,7 @@ parent 0wlosi
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 83 83
+lines 84 84
 hash 79bb258c8ad23a49
 note The apply arm.
 
@@ -50,8 +50,8 @@ parent 0wlosi
 author ai
 file crates/gui/src/views/panel_tree.rs
 symbol tab
-lines 0 24
-hash f2ce2220203e3466
+lines 0 29
+hash e3f784f91633d4d4
 note The trigger: after each tab's button, a small close icon (close-tab@<View>) queues CloseView.
 
 step y2bfva

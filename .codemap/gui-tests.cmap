@@ -39,9 +39,9 @@ order 22
 author ai
 file crates/gui/src/text.rs
 symbol tests
-lines 0 16
-hash 16155a8ca0d77db8
-note Clipping keeps short text and marks cut text with an ellipsis, from the right or the left.
+lines 0 37
+hash 52a747ad75028d9e
+note Clipping keeps short text and marks cut text with an ellipsis, from the right or the left; a Needle matches ignoring ASCII case; a count of one takes the singular noun.
 
 step 6eirab
 order 7

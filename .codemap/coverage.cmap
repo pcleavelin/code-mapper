@@ -5,23 +5,43 @@ author ai
 group map
 note How the human audits what the agent mapped. A symbol is covered when a current step overlaps its line range. uncovered lists the rest largest first, so what is left after a session is either pre-existing or something the agent judged trivial, and size says which. coverage prints covered/total per file. Derived every time, never stored, and never a check failure.
 
+step dzuxp7
+order 4
+parent gib7y2
+author ai
+file crates/domain/src/map.rs
+symbol Coverage
+lines 0 2
+hash 13f37d92f956993d
+note What coverage returns: the spans of the current steps, borrowed from the map and keyed by file, so asking about every symbol of the index is a lookup per file and a scan of that file's steps rather than a walk over every path. The GUI's Symbols and Files tabs build one per frame the same way.
+
+step e5btrm
+order 3
+parent nb45f6
+author ai
+file crates/domain/src/map.rs
+symbol covers
+lines 0 4
+hash 02b7094bc6f86da2
+note Coverage::covers answers per symbol: true when one of the file's collected spans overlaps the symbol's lines. uncovered and coverage ask it for every symbol against the one Coverage they built.
+
 step gib7y2
 order 0
 parent nb45f6
 author ai
 file crates/domain/src/map.rs
-symbol covers
-lines 0 5
-hash 285b67ff7daf1155
-note The one definition of covered. Stale steps do not count: their text no longer matches the code, and check fails on them anyway.
+symbol coverage
+lines 0 8
+hash b4612b85e433b734
+note The one definition of covered: Map::coverage collects the span of every non-stale step, grouped by file, once per command. Stale steps do not count: their text no longer matches the code, and check fails on them anyway.
 
 step nb45f6
 order 1
 author ai
 file crates/cli/src/exec.rs
 symbol uncovered
-lines 0 20
-hash c7b8080a0d2b7354
+lines 0 21
+hash 58f2233b4fcb9c3a
 note uncovered: every symbol at any depth that no step covers, sorted by line count descending (Run::uncovered in cli). The filter is a substring of the name or the file.
 
 step w7dp4m
@@ -29,6 +49,6 @@ order 2
 author ai
 file crates/cli/src/exec.rs
 symbol coverage
-lines 0 18
-hash 15875cd94287ef57
+lines 0 19
+hash 12e60eb65ee675e9
 note coverage: per-file counts for files that have symbols, then a total (Run::coverage in cli).

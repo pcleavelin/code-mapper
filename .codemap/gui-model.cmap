@@ -141,8 +141,8 @@ parent w41rnw
 author ai
 file crates/gui/src/model.rs
 symbol new
-lines 0 38
-hash ecf82e51e0f7e260
+lines 0 40
+hash dbb9334fec4aec92
 note Every panel in its default state, the map's stamp taken from the store, the metrics at the starting font until the first frame measures the real one.
 
 step erlcdz
@@ -171,7 +171,7 @@ parent 8ftts9
 author ai
 file crates/gui/src/model.rs
 symbol impl Model
-lines 68 82
+lines 67 81
 hash 38073dd51f7f9c09
 note Name to slot and StepId to slot: how a slot is found again after the map changed.
 
@@ -184,6 +184,16 @@ symbol impl StepViews
 lines 0 31
 hash a8ab68174605d55f
 note Read with the default, write through entry, change only existing entries (so unfolding ancestors creates nothing), change every view of one path, and remap every key when steps or paths shift.
+
+step i9wqui
+order 35
+parent oourai
+author ai
+file crates/gui/src/model.rs
+symbol StepShape
+lines 0 6
+hash b8c07582d3730efd
+note Everything a step's height depends on: its StepView (flags and context), its span (None when its file or symbol is gone), its note's length, the document's width and the row height. Two equal shapes lay out to the same height.
 
 step jrjkms
 order 30
@@ -205,6 +215,26 @@ lines 0 3
 hash 0bb52b06d9063355
 note The font size and the cell it measures to, set by the frame from the renderer before anything is built.
 
+step lnee1v
+order 31
+parent xu6ld0
+author ai
+file crates/gui/src/model.rs
+symbol HitsShown
+lines 0 3
+hash 40a758de613bfb6d
+note Whether the stored hits are all of them or the first HIT_LIMIT, set with them by search.
+
+step oourai
+order 34
+parent y4jba3
+author ai
+file crates/gui/src/model.rs
+symbol Measured
+lines 0 3
+hash 88ccb4e99294580c
+note One measurement: the shape the step had and the height its column took.
+
 step s3wp0h
 order 3
 parent 8ftts9
@@ -221,7 +251,7 @@ parent 8ftts9
 author ai
 file crates/gui/src/model.rs
 symbol impl Model
-lines 41 47
+lines 43 49
 hash 4e552f3b17adea7d
 note Slot to Path and to Step, None past the end.
 
@@ -245,13 +275,23 @@ lines 0 4
 hash c413607fc95327a7
 note One numbered step: slot, depth, number.
 
+step uuttuc
+order 33
+parent y4jba3
+author ai
+file crates/gui/src/model.rs
+symbol impl Measures
+lines 0 11
+hash 79222c99d9ce456e
+note set records a measurement (Action::Measured); height gives it back only while the step's shape is the one it was measured at, so a step whose code, note, view or width changed is built again rather than reserved at a stale height.
+
 step w41rnw
 order 0
 author ai
 file crates/gui/src/model.rs
 symbol Model
-lines 0 27
-hash 7785c477f9723b35
+lines 0 29
+hash a381b21a27ecc432
 note All the state a view can see (gui-structure lists the fields). Views get &Model; apply gets &mut.
 
 step x5fqsj
@@ -293,6 +333,16 @@ symbol StepSlot
 lines 0 0
 hash d5b6dfd947bdb991
 note A step's position in its path's step list: the n of step/n, fold/n and the other per-step element ids.
+
+step y4jba3
+order 32
+parent w41rnw
+author ai
+file crates/gui/src/model.rs
+symbol Measures
+lines 0 0
+hash 8d0cdfeb6897e0f1
+note The last measured height of each document step's column, by the column's id. The document reads it to stand in for a step it does not build this frame.
 
 step yvqfvc
 order 8

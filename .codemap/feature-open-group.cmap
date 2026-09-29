@@ -11,8 +11,8 @@ parent f1nrga
 author ai
 file crates/gui/src/views/left.rs
 symbol paths_window
-lines 30 47
-hash ee2defe1363a7b0d
+lines 43 60
+hash 8f17df24c0718c87
 note The effect in the list: a closed group sets closed_at to its depth and every following row deeper than that is skipped.
 
 step 71087f
@@ -21,8 +21,8 @@ parent f1nrga
 author ai
 file crates/gui/src/views/left.rs
 symbol group_row
-lines 0 44
-hash 33633ee24efd2183
+lines 0 53
+hash 95fb19551c540086
 note Trigger and effect: the row's openness is the recorded one or, failing that, whether the path being read is in this group or below it. A click on the GROUP_ROW queues OpenGroup with the opposite openness. The returned openness tells paths_window whether to draw what is inside.
 
 step f1nrga

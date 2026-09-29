@@ -400,12 +400,7 @@ quit
     }
 }
 
-pub(crate) fn authoring() -> Scenario {
-    Scenario {
-        setup: |bin, name| Ok(mapped(bin, name)),
-        hook: no_hook,
-        after: &[&["paths", "handmade"]],
-        script: "SETTLE
+const AUTHORING: &str = "SETTLE
 click-id new-path
 wait 2
 dump
@@ -428,6 +423,8 @@ wait 2
 click-id field@symbols
 text main
 wait 3
+hover-id sym@3:0
+wait 1
 click-id add-sym@3:0
 wait 2
 dump
@@ -436,11 +433,17 @@ click-id tab@Paths
 wait 2
 click-id outline/0
 wait 3
+hover-id xfrom/0
+wait 1
 click-id add-xfrom/0
 wait 2
+hover-id xfrom/1
+wait 1
 click-id add-xfrom/1
 wait 2
 dump
+hover-id xfrom/1
+wait 1
 click-id add-xfrom/1
 wait 2
 dump
@@ -499,7 +502,14 @@ key s ctrl
 wait 3
 dump
 quit
-",
+";
+
+pub(crate) fn authoring() -> Scenario {
+    Scenario {
+        setup: |bin, name| Ok(mapped(bin, name)),
+        hook: no_hook,
+        after: &[&["paths", "handmade"]],
+        script: AUTHORING,
     }
 }
 

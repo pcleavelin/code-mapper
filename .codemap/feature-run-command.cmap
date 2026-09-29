@@ -31,8 +31,8 @@ parent t1jwoo
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 21
-hash 74bf56c206047b3e
+lines 0 30
+hash 6efdb8b3bc3f3335
 link feature-new-path
 note The command field clears on enter; a submitted line goes to run_command.
 

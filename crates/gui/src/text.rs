@@ -2,6 +2,7 @@ use std::fmt;
 
 use domain::{Author, PathKind, StepChange};
 use std::iter;
+use ui::Count;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Clipped(String);
@@ -35,6 +36,69 @@ impl Clipped {
 impl fmt::Display for Clipped {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str(&self.0)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct Needle(String);
+
+impl Needle {
+    pub(crate) fn new(text: &str) -> Self {
+        Self(text.to_owned())
+    }
+
+    pub(crate) fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub(crate) fn as_str(&self) -> &str {
+        &self.0
+    }
+
+    pub(crate) fn found_in(&self, text: &str) -> bool {
+        let needle = self.0.as_bytes();
+        needle.is_empty()
+            || text
+                .as_bytes()
+                .windows(needle.len())
+                .any(|window| window.eq_ignore_ascii_case(needle))
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Noun {
+    Step,
+    Path,
+    Hit,
+    Symbol,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct Counted {
+    count: Count,
+    noun: Noun,
+}
+
+impl Counted {
+    pub(crate) const fn new(count: Count, noun: Noun) -> Self {
+        Self { count, noun }
+    }
+}
+
+impl fmt::Display for Counted {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let one = self.count.get() == 1;
+        let word = match self.noun {
+            Noun::Step if one => "step",
+            Noun::Step => "steps",
+            Noun::Path if one => "path",
+            Noun::Path => "paths",
+            Noun::Hit if one => "hit",
+            Noun::Hit => "hits",
+            Noun::Symbol if one => "symbol",
+            Noun::Symbol => "symbols",
+        };
+        write!(formatter, "{} {word}", self.count)
     }
 }
 
@@ -89,5 +153,26 @@ mod tests {
             "\u{2026}n.rs:12"
         );
         assert_eq!(Clipped::left("abc", 0).to_string(), "\u{2026}");
+    }
+
+    #[test]
+    fn a_needle_matches_ignoring_ascii_case() {
+        let needle = Needle::new("count");
+        assert!(needle.found_in("IndexCounts"));
+        assert!(!needle.found_in("Coun"));
+        assert!(Needle::new("").found_in("anything"));
+    }
+
+    #[test]
+    fn a_count_of_one_takes_the_singular() {
+        assert_eq!(
+            Counted::new(Count::new(1), Noun::Step).to_string(),
+            "1 step"
+        );
+        assert_eq!(Counted::new(Count::ZERO, Noun::Step).to_string(), "0 steps");
+        assert_eq!(
+            Counted::new(Count::new(3), Noun::Path).to_string(),
+            "3 paths"
+        );
     }
 }

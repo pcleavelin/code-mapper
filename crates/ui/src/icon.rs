@@ -15,6 +15,7 @@ pub enum Icon {
     Folded,
     MoreAbove,
     MoreBelow,
+    Check,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -33,7 +34,7 @@ impl fmt::Display for IconName {
 }
 
 impl Icon {
-    pub const ALL: [Self; 10] = [
+    pub const ALL: [Self; 11] = [
         Self::Add,
         Self::Close,
         Self::SplitAcross,
@@ -44,6 +45,7 @@ impl Icon {
         Self::Folded,
         Self::MoreAbove,
         Self::MoreBelow,
+        Self::Check,
     ];
 
     pub const fn glyph(self) -> Glyph {
@@ -58,6 +60,7 @@ impl Icon {
             Self::Folded => '\u{EAB6}',
             Self::MoreAbove => '\u{EAF4}',
             Self::MoreBelow => '\u{EAF3}',
+            Self::Check => '\u{EAB2}',
         })
     }
 
@@ -73,6 +76,7 @@ impl Icon {
             Self::Folded => "folded",
             Self::MoreAbove => "more-above",
             Self::MoreBelow => "more-below",
+            Self::Check => "check",
         })
     }
 

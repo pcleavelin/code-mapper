@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use domain::{Backend, Line, Location, SourceFile, Symbol, SymbolId};
+use domain::{Backend, FileId, Line, SourceFile, Symbol, SymbolId};
 use ui::{Canvas, Color, Count, Extent, Grid, Icon, Label, Point, Px, Rect, Run, Size};
 
 use crate::action::Action;
@@ -11,8 +11,8 @@ use crate::peek::{Peek, Probe};
 use crate::status::Status;
 use crate::text::Clipped;
 use crate::theme::{
-    CLOSE_BUTTON, FIELD, PEEK_EXTRA, PEEK_LEAST, PEEK_PLACE_ROOM, PEEK_TITLE, PENDING, PIXEL,
-    SLICE, TEXT, WEAK,
+    CLOSE_BUTTON, FIELD, ORANGE, PEEK_EXTRA, PEEK_LEAST, PEEK_PLACE_ROOM, PEEK_TITLE, PENDING,
+    PIXEL, ROW_EXTRA, SLICE, TEXT, WEAK,
 };
 use crate::widgets::{Chosen, CodeBlock, Container, Frame, Marks, RowAction, Scroller, Width};
 
@@ -212,28 +212,36 @@ fn peek_body(model: &Model, frame: &mut Frame<'_>, body: Body, area: Extent) {
     frame.finish();
 }
 
-fn heading(frame: &mut Frame<'_>, symbol: &Symbol, file: &SourceFile) {
+fn heading(frame: &mut Frame<'_>, symbol: &Symbol, file: &SourceFile, area: Extent) {
     let span = symbol.span();
+    let columns = usize::try_from(area.width.ratio(frame.cell_width().max(PIXEL))).unwrap_or(0);
+    let kind = format!("{} ", symbol.kind());
     let place = format!(
-        "{} {}:{}-{}",
-        symbol.kind(),
+        "{}:{}-{}",
         file.path(),
         span.start().number(),
         span.end().number()
     );
+    let room = columns
+        .saturating_sub(kind.len() + usize::try_from(PEEK_PLACE_ROOM.get()).unwrap_or(0) / 2);
     frame.start(Container::Stack);
-    frame.label(symbol.name().as_str(), TEXT);
-    frame.label(place, WEAK);
+    frame.title(symbol.name().as_str());
+    frame.caption(vec![
+        Run::new(kind, WEAK),
+        Run::new(Clipped::left(&place, room).to_string(), WEAK),
+    ]);
     if file.is_pending() {
         let server = file.language().map_or_else(
             || "the server".to_owned(),
             |language| language.program().to_string(),
         );
-        frame.label(format!("waiting for {server}"), WEAK);
+        frame.label(
+            format!("waiting for {server}; callers and callees may be incomplete"),
+            ORANGE,
+        );
     }
     frame.finish();
 }
-
 fn focus_actions(model: &Model, frame: &mut Frame<'_>, symbol: SymbolId) {
     let on_step = model
         .nav
@@ -262,73 +270,171 @@ fn focus_actions(model: &Model, frame: &mut Frame<'_>, symbol: SymbolId) {
     frame.finish();
 }
 
-fn call_lists(model: &Model, frame: &mut Frame<'_>, symbol: &Symbol, dimmed: Color) {
-    let pending = dimmed == PENDING;
-    let adding = model.nav.path().is_some();
-    for (title, list, id, add) in [
-        (
-            "Xrefs to",
-            symbol.callers(),
-            ids::CALLER_ROW,
-            ids::ADD_CALLER,
-        ),
-        (
-            "Xrefs from",
-            symbol.callees(),
-            ids::CALLEE_ROW,
-            ids::ADD_CALLEE,
-        ),
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Calls {
+    Callers,
+    Callees,
+}
+
+enum XrefLine {
+    Title(Label),
+    Call {
+        calls: Calls,
+        position: Count,
+        symbol: SymbolId,
+    },
+    File {
+        file: FileId,
+        references: Count,
+    },
+    Reference {
+        position: Count,
+        file: FileId,
+        line: Line,
+    },
+}
+
+fn xref_lines(model: &Model, symbol: &Symbol, reference_title: Label) -> Vec<XrefLine> {
+    let mut lines = Vec::new();
+    for (calls, title, list) in [
+        (Calls::Callers, "Callers", symbol.callers()),
+        (Calls::Callees, "Callees", symbol.callees()),
     ] {
-        frame.label(format!("{title} ({})", list.len()), WEAK);
-        for (position, other) in list.iter().enumerate() {
-            let described = cli::symbol_label(&model.index, *other);
-            let clicks = frame.row_with_action(
-                vec![Run::new(described.as_str(), dimmed)],
-                id.nth(Count::new(position)),
-                None,
-                adding.then(|| RowAction::add_step(add.nth(Count::new(position)))),
-            );
-            if pending {
-                continue;
-            }
-            if clicks.acted() {
-                frame.push(Action::Authoring(Authoring::AddSymbol(
-                    *other,
-                    Hang::Target,
-                )));
-            } else if clicks.row.clicked() {
-                frame.push(Action::Focus(*other));
+        lines.push(XrefLine::Title(Label::new(format!(
+            "{title} ({})",
+            list.len()
+        ))));
+        lines.extend(
+            list.iter()
+                .enumerate()
+                .map(|(position, other)| XrefLine::Call {
+                    calls,
+                    position: Count::new(position),
+                    symbol: *other,
+                }),
+        );
+    }
+    lines.push(XrefLine::Title(reference_title));
+    let mut header: Option<usize> = None;
+    for (position, location) in symbol.references().iter().enumerate() {
+        let Some(file) = model.index.find_file(&location.file) else {
+            continue;
+        };
+        match header.and_then(|at| lines.get_mut(at)) {
+            Some(XrefLine::File {
+                file: open,
+                references,
+            }) if *open == file => *references = Count::new(references.get() + 1),
+            _ => {
+                header = Some(lines.len());
+                lines.push(XrefLine::File {
+                    file,
+                    references: Count::new(1),
+                });
             }
         }
+        lines.push(XrefLine::Reference {
+            position: Count::new(position),
+            file,
+            line: location.line,
+        });
+    }
+    lines
+}
+
+fn call_row(
+    model: &Model,
+    frame: &mut Frame<'_>,
+    calls: Calls,
+    position: Count,
+    other: SymbolId,
+    dimmed: Color,
+) {
+    let index = &model.index;
+    let (Some(found), Some(file)) = (index.symbol(other), index.file(other.file())) else {
+        return;
+    };
+    let (row, add) = match calls {
+        Calls::Callers => (ids::CALLER_ROW, ids::ADD_CALLER),
+        Calls::Callees => (ids::CALLEE_ROW, ids::ADD_CALLEE),
+    };
+    let runs = vec![
+        Run::new(format!("  {}", found.name()), dimmed),
+        Run::new(
+            format!("  {}:{}", file.path(), found.span().start().number()),
+            WEAK,
+        ),
+    ];
+    let clicks = frame.row_with_action(
+        runs,
+        row.nth(position),
+        None,
+        model
+            .nav
+            .path()
+            .is_some()
+            .then(|| RowAction::add_step(add.nth(position))),
+    );
+    if dimmed == PENDING {
+        return;
+    }
+    if clicks.acted() {
+        frame.push(Action::Authoring(Authoring::AddSymbol(other, Hang::Target)));
+    } else if clicks.row.clicked() {
+        frame.push(Action::Focus(other));
     }
 }
 
-fn reference_rows(model: &Model, frame: &mut Frame<'_>, references: &[Location], dimmed: Color) {
-    let index = &model.index;
-    for (position, location) in references.iter().enumerate() {
-        let Some(found) = index.find_file(&location.file) else {
-            continue;
-        };
-        let text = index
-            .file(found)
-            .and_then(|source| source.text().line(location.line))
-            .map_or("", |line| line.as_str().trim());
-        let runs = vec![
-            Run::new(
-                format!("{}:{}: ", location.file, location.line.number()),
-                WEAK,
-            ),
-            Run::new(text, dimmed),
-        ];
-        if frame
-            .row(
-                runs,
-                ids::REFERENCE_ROW.nth(Count::new(position)),
-                Chosen::Plain,
-            )
-            .clicked()
-        {
-            frame.push(Action::GoTo(found, location.line));
+fn xref_row(model: &Model, frame: &mut Frame<'_>, line: &XrefLine, dimmed: Color, width: Count) {
+    match line {
+        XrefLine::Title(title) => frame.row_text(vec![Run::new(title.clone(), WEAK)]),
+        XrefLine::Call {
+            calls,
+            position,
+            symbol,
+        } => call_row(model, frame, *calls, *position, *symbol, dimmed),
+        XrefLine::File { file, references } => {
+            let Some(source) = model.index.file(*file) else {
+                return;
+            };
+            let runs = vec![
+                Run::new(format!("  {}", source.path()), TEXT),
+                Run::new(format!("  {references}"), WEAK),
+            ];
+            if frame
+                .row(
+                    runs,
+                    ids::REFERENCE_FILE_ROW.nth(Count::new(file.number())),
+                    Chosen::Plain,
+                )
+                .clicked()
+            {
+                frame.push(Action::GoTo(*file, Line::new(0)));
+            }
+        }
+        XrefLine::Reference {
+            position,
+            file,
+            line,
+        } => {
+            let text = model
+                .index
+                .file(*file)
+                .and_then(|source| source.text().line(*line))
+                .map_or("", |shown| shown.as_str().trim());
+            let runs = vec![
+                Run::new(
+                    format!("    {:>digits$}  ", line.number(), digits = width.get()),
+                    WEAK,
+                ),
+                Run::new(text, dimmed),
+            ];
+            if frame
+                .row(runs, ids::REFERENCE_ROW.nth(*position), Chosen::Plain)
+                .clicked()
+            {
+                frame.push(Action::GoTo(*file, *line));
+            }
         }
     }
 }
@@ -342,7 +448,10 @@ pub(super) fn xrefs_panel(model: &Model, frame: &mut Frame<'_>, area: Extent) {
         .focus()
         .and_then(|current| Some((current, index.symbol(current)?, index.file(current.file())?)))
     else {
-        frame.label("no symbol selected", WEAK);
+        frame.label(
+            "no symbol selected: click one in Symbols, a path, or the listing",
+            WEAK,
+        );
         frame.finish();
         return;
     };
@@ -366,29 +475,43 @@ pub(super) fn xrefs_panel(model: &Model, frame: &mut Frame<'_>, area: Extent) {
         frame.push(Action::AskReferences(language, probe));
         asked = true;
     }
-    heading(frame, symbol, file);
+    heading(frame, symbol, file, area);
     focus_actions(model, frame, current);
-    frame.scroll_column(
-        ids::xrefs(),
-        model.scrolls.get(ids::xrefs()),
-        Scroller::Plain,
-        None,
-    );
-    let dimmed = if file.is_pending() { PENDING } else { TEXT };
-    call_lists(model, frame, symbol, dimmed);
     let shown = references
         .iter()
         .filter(|location| index.find_file(&location.file).is_some())
         .count();
-    frame.label(
-        if asking && asked {
-            "References (asking the server)".to_owned()
-        } else {
-            format!("References ({shown})")
-        },
-        WEAK,
+    let title = Label::new(if asking && asked {
+        "References (asking the server)".to_owned()
+    } else {
+        format!("References ({shown})")
+    });
+    let lines = xref_lines(model, symbol, title);
+    let width = references
+        .iter()
+        .map(|location| location.line.number())
+        .max()
+        .map_or(Count::new(1), |number| Count::new(number.to_string().len()));
+    let dimmed = if file.is_pending() { PENDING } else { TEXT };
+    let id = ids::xrefs();
+    let scrolled = frame.scroll_column(id, model.scrolls.get(id), Scroller::Plain, None);
+    let row_height = frame.row_height() + ROW_EXTRA;
+    let count = Count::new(lines.len());
+    let window = frame.rows_window(
+        scrolled.offset,
+        scrolled.interaction.rect(),
+        count,
+        row_height,
+        Count::new(40),
     );
-    reference_rows(model, frame, references, dimmed);
+    for line in lines
+        .iter()
+        .skip(window.first.get())
+        .take(window.visible.get())
+    {
+        xref_row(model, frame, line, dimmed, width);
+    }
+    frame.rows_after(count, &window, row_height, Px::ZERO);
     frame.finish();
     frame.finish();
 }

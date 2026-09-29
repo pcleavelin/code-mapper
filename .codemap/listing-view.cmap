@@ -3,7 +3,7 @@ path listing-view
 kind flow
 author ai
 group gui
-note The file viewer, and where a human adds a range of lines as a step. Only the rows on screen become elements - a spacer stands in for everything above and below - which is what makes a four-thousand-line file scroll at the same cost as a short one. Each row is numbered, syntax coloured, and carries a coloured bar on the left where a step of the selected path is anchored, green when current and red when stale. Clicking selects a line and shift-clicking extends the selection, which the toolbar's 'add step' then turns into a step under the target the strip below the toolbar shows (gui-authoring); double-clicking or ctrl-clicking an identifier jumps to its definition instead, and alt-clicking pins it in the peek panel. The view only reads the Model: every click becomes an Action applied after the tree is built.
+note The file viewer, and where a human adds a range of lines as a step. Only the rows on screen become elements - a spacer stands in for everything above and below - which is what makes a four-thousand-line file scroll at the same cost as a short one. Each row is numbered, syntax coloured, and carries a coloured bar on the left where a step of the selected path is anchored, green when current and red when stale. Clicking selects a line and shift-clicking extends the selection, which the toolbar's add button, named for the selected lines, then turns into a step under the target the strip below the toolbar shows (gui-authoring); double-clicking or ctrl-clicking an identifier jumps to its definition instead, and alt-clicking pins it in the peek panel. The view only reads the Model: every click becomes an Action applied after the tree is built.
 
 step 1cxlr5
 order 7
@@ -21,7 +21,7 @@ parent azzv57
 author ai
 file crates/gui/src/views/center.rs
 symbol listing
-lines 40 97
+lines 26 83
 hash 6d0e7c73a13250d1
 note The rows. rows_window turns the scroll offset into the first visible line and emits the spacer for the lines above; then one code block of the visible lines, then a spacer for the rest plus a row of slack, so the scrollbar sees the whole file while only what shows is drawn. The bar closure marks the selected path's anchors in this file, the background closure the selected lines.
 
@@ -40,9 +40,9 @@ order 0
 author ai
 file crates/gui/src/views/center.rs
 symbol listing
-lines 0 98
-hash 63486641387f9e40
-note The whole viewer: the file name, 'add step', a line of help and a go-to-line box, the target strip, then the scrolling column of rows. With no current file it says so and draws nothing else.
+lines 0 84
+hash fd622701603595ad
+note The whole viewer: the toolbar (listing_toolbar), the target strip, then the scrolling column of rows. With no current file it says so and draws nothing else.
 
 step ghy5uj
 order 6
@@ -103,6 +103,16 @@ symbol rows_window
 lines 0 18
 hash 4390877ad0b25c47
 note The virtual-list arithmetic every long list in the GUI shares: from the column's scroll offset and last frame's height, the first row in view and how many fit (two extra, or a guess before the column has a size). It emits the spacer for the rows above; the caller builds only the visible rows and ends with rows_after.
+
+step ur5k1m
+order 11
+parent azzv57
+author ai
+file crates/gui/src/views/center.rs
+symbol listing_toolbar
+lines 0 29
+hash 7599f80764dd588f
+note The toolbar: the file name, the add button named for what it will add ('add line 12 as a step', 'add lines 12-20 as a step', or 'add step' with nothing selected), the 'line' go-to-line box, and a line of help clipped to what is left of the bar.
 
 step yfetc7
 order 1
