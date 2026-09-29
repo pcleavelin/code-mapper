@@ -16,6 +16,8 @@ use crate::theme::Zoom;
 
 pub(crate) use build::Built;
 pub(crate) use input::{GraphAction, GraphFrame, Heading};
+#[cfg(test)]
+pub(crate) use place::Parentage;
 pub(crate) use scene::draw_scene;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -89,6 +91,7 @@ impl Button {
 pub(crate) enum Hit {
     Header(Node),
     Button(Node, Button),
+    Parent(Node),
     Line(Node, domain::Line),
     Body(Node),
 }

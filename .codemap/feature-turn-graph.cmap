@@ -64,8 +64,8 @@ parent cic9cq
 author ai
 file crates/gui/src/graph/place.rs
 symbol impl Spacing
-lines 0 19
-hash 96c68cb64c2b4846
+lines 0 23
+hash 7d514e5345c0034a
 note Down swaps which constants run along the lanes: GRAPH_RANK_GAP_DOWN between rows of ranks, GRAPH_SIBLING_GAP_ACROSS and GRAPH_BOX_GAP_ACROSS between siblings and boxes side by side.
 
 step lniwp3

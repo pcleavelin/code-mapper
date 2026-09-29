@@ -51,7 +51,7 @@ parent lv2myh
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_click
-lines 65 65
+lines 64 64
 hash 2579f41bd40a9db5
 note A press on a node's body grabs it without selecting.
 
@@ -61,6 +61,6 @@ parent lv2myh
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_click
-lines 39 48
-hash 4cab36c1b63dd70a
-note A press on a node's header grabs the node, and defers selecting it: SelectStep for a step of the drawn path, Focus for any other node. Steer(Steering::Click) makes the next focus change keep the camera and the graph's root, so that selection neither re-centres the camera on the node being dragged nor re-roots the tree.
+lines 39 43
+hash 8f9977085eb07d4d
+note A press on a node's header grabs the node, and defers selecting it with Built::select: SelectStep for a step of the drawn path, Focus for any other node. Steer(Steering::Click) makes the next focus change keep the camera and the graph's root, so that selection neither re-centres the camera on the node being dragged nor re-roots the tree.

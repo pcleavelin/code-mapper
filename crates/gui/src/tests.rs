@@ -10,6 +10,7 @@ use ui::{Count, Label};
 
 use crate::action::{Action, Fold, Hide};
 use crate::app::App;
+use crate::graph::Parentage;
 use crate::graph::build::{Built, CellSize, Rank, StepInfo};
 use crate::graph::{Button, Node};
 use crate::ids::CONTROLS;
@@ -325,10 +326,18 @@ fn children_sit_together_in_one_box_beside_their_parent() {
         let point = built.position(built.nodes[position]).unwrap();
         (point.across.get(), point.down.get())
     };
-    assert_eq!(at(0), (1, 1));
-    assert_eq!(at(1), (21, 1));
-    assert_eq!(at(2), (21, 5));
-    assert_eq!(built.siblings.len(), 1);
+    assert_eq!(at(0), (1, 2));
+    assert_eq!(at(1), (21, 2));
+    assert_eq!(at(2), (21, 6));
+    let parentages: Vec<Parentage> = built
+        .siblings
+        .iter()
+        .map(|siblings| siblings.parentage)
+        .collect();
+    assert_eq!(
+        parentages,
+        [Parentage::Path, Parentage::Callees(built.nodes[0])]
+    );
     let bounds = built.bounds().unwrap();
     assert_eq!(
         (
@@ -337,7 +346,7 @@ fn children_sit_together_in_one_box_beside_their_parent() {
             bounds.right.get(),
             bounds.bottom.get()
         ),
-        (1, 0, 30, 9)
+        (0, 0, 30, 10)
     );
 }
 
@@ -351,9 +360,9 @@ fn turned_the_children_sit_below_their_parent_side_by_side() {
         let point = built.position(built.nodes[position]).unwrap();
         (point.across.get(), point.down.get())
     };
-    assert_eq!(at(0), (1, 1));
-    assert_eq!(at(1), (1, 11));
-    assert_eq!(at(2), (11, 11));
+    assert_eq!(at(0), (1, 2));
+    assert_eq!(at(1), (1, 13));
+    assert_eq!(at(2), (11, 13));
 }
 
 #[test]

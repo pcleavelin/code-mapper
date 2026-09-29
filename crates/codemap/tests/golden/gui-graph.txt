@@ -312,6 +312,45 @@ DUMP button new '+ step'
 DUMP button new 'listing'
 DUMP button new '[more-below]'
 DUMP button new '[more-above]'
+DUMP tab=Graph path=Some(2) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
+DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path Diff Graph* Listing Results] 2[Xrefs*])) 3[Output*])
+DUMP tip=None peek=None status="new selected; not a step of 'startup'"
+DUMP paths filter="" listed=4
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP node 1 main
+DUMP node 1.1 fill
+DUMP node 1.1.1 add
+DUMP node 1.1.1.1 check
+DUMP node 1.2 report
+DUMP node 1.2.1 total_area
+DUMP node 1.2.2 log_line
+DUMP node new
+DUMP button main 'listing'
+DUMP button main '[more-below]'
+DUMP button main '[more-above]'
+DUMP button fill 'listing'
+DUMP button fill '[more-below]'
+DUMP button fill '[more-above]'
+DUMP button add 'listing'
+DUMP button add '[more-below]'
+DUMP button add '[more-above]'
+DUMP button check 'listing'
+DUMP button check '[more-below]'
+DUMP button check '[more-above]'
+DUMP button report 'listing'
+DUMP button report '[more-below]'
+DUMP button report '[more-above]'
+DUMP button total_area 'callees > 1'
+DUMP button total_area 'listing'
+DUMP button total_area '[more-below]'
+DUMP button total_area '[more-above]'
+DUMP button log_line 'listing'
+DUMP button log_line '[more-above]'
+DUMP button new '+ step'
+DUMP button new 'listing'
+DUMP button new '[more-below]'
+DUMP button new '[more-above]'
 DUMP tab=Graph path=Some(2) step=Some(4) focus=Some("report") file=Some("src/main.rs") sel=Some((17, 21))
 DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path Diff Graph* Listing Results] 2[Xrefs*])) 3[Output*])
 DUMP tip=None peek=None status="new selected; not a step of 'startup'"

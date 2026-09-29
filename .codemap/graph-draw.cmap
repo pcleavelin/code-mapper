@@ -32,7 +32,7 @@ author ai
 file crates/gui/src/graph/scene.rs
 symbol Scene
 lines 0 6
-hash bedf999ac195ae87
+hash f3abcfd82d37ed90
 note The whole frame of the canvas as plain data: font size, metrics, sibling boxes, edges and nodes, all in window pixels. It is moved into the draw closure, so nothing the painter touches can still be borrowed from the app.
 
 step 20a8vh
@@ -51,8 +51,8 @@ parent 4yhd4f
 author ai
 file crates/gui/src/graph/scene.rs
 symbol build_scene
-lines 0 37
-hash 188199d9ee0a9de9
+lines 0 49
+hash 46830ecef629e56d
 note Turns the node set and its positions into a flat list of rectangles, text runs and curves in window pixels, at the canvas origin plus the pan: the sibling boxes, the edges and the nodes. It records the hit rectangles, clipped to the canvas, and each node's code top for the next frame. It is the only part that knows about the pan; draw_scene just paints what it is given.
 
 step 2mnh2a
@@ -83,14 +83,24 @@ lines 0 2
 hash 12a899611704bf18
 note The node font: the UI size times the zoom, rounded to a whole pixel and never below SMALLEST_GRAPH_FONT, so every zoom level is a real font size in the atlas rather than a scaled bitmap. App::graph_font asks it with the model's font and the graph's zoom.
 
+step 60in9p
+order 38
+parent 7dr3sk
+author ai
+file crates/gui/src/graph/scene.rs
+symbol draw_box
+lines 0 17
+hash d3540c40e56a91f4
+note Fills and outlines one box, then draws its header text and parent button clipped to it. draw_scene draws every box before any edge or node.
+
 step 7dr3sk
 order 13
 parent 2mnh2a
 author ai
 file crates/gui/src/graph/scene.rs
 symbol draw_scene
-lines 0 89
-hash d17d32a71077ee04
+lines 0 80
+hash 587f5ccce3d512c8
 note The painter, called with ui's Canvas when the tree draws the custom element: the sibling boxes (SIBLINGS_FILL with a thin SIBLINGS_BORDER), curves and a dot for the arrow head, then per node: fill, outline, a clip to the node, header, buttons, note, the rule above the code, the slice and call tints behind their rows, the code grid, and the 'more lines' footer.
 
 step 8wgusc
@@ -103,16 +113,6 @@ lines 0 31
 hash 5893a7d775f13fb2
 note Hovering a code line with no button down: the column under the pointer becomes a tooltip from the model's hover cache, or a deferred Hover request to the language server when the answer is not cached yet.
 
-step 9r7v4d
-order 35
-parent 2a4qq2
-author ai
-file crates/gui/src/graph/scene.rs
-symbol sibling_boxes
-lines 0 16
-hash ae27f1837cd1ce7b
-note Each of Built's sibling boxes as a pixel rectangle at the scene's origin, from Built::sibling_bounds; the painter fills and outlines them behind everything else.
-
 step ah9cdx
 order 20
 parent 4yhd4f
@@ -124,6 +124,16 @@ hash 457dec97263ffbda
 link graph-layout
 note Rebuild, recording and rebuilding once more when the rebuild auto-opened the focus's neighbourhood, measure every node, lay them out, then overwrite the positions of the nodes the reader dragged, and store the result with a Built action (graph-model has the rebuild, graph-layout the placement).
 
+step b2c7s6
+order 41
+parent xav3yc
+author ai
+file crates/gui/src/graph/scene.rs
+symbol toward_parent
+lines 0 7
+hash dd6e5683960a76eb
+note The arrow icon for the parent button by box side and direction.
+
 step bg1dgf
 order 33
 parent ff83ex
@@ -133,6 +143,16 @@ symbol impl Router
 lines 0 71
 hash 9175ab4aa93bf6bf
 note curve bends a cubic from one point to another along the main axis, forward for Bend::Ahead and backward for Bend::Back, by half the distance or reach, whichever is more; entry is where an edge enters a node (the header's left end left to right, the top middle top to bottom); ahead says whether the target lies past the source along the direction; back is the whole curve for a call to a node behind its caller, from the caller's near side to the callee's far side.
+
+step cwr1zr
+order 42
+parent q6d4as
+author ai
+file crates/gui/src/graph/scene.rs
+symbol ParentButton
+lines 0 3
+hash 4dfabe4690d3018c
+note The parent node a box header's button selects, with the button's rectangle, label and hover state.
 
 step ff83ex
 order 32
@@ -285,6 +305,26 @@ lines 0 102
 hash 8185ceceb226cc4a
 note One node: its rectangle, code grid, border, fill (panel for an off-path node while a path is shown), header runs and buttons, the step's note, then one hit rectangle per shown line. A node's hits are recorded body, header, lines, buttons, and the later one wins, so a button beats the header under it.
 
+step q4uqvf
+order 35
+parent 2a4qq2
+author ai
+file crates/gui/src/graph/scene.rs
+symbol sibling_box
+lines 0 47
+hash 1fdc30acffa3d10e
+note One sibling box for the painter: its pixel rectangle from Built::sibling_bounds at the scene's origin, its header text (box_header) centred in the GRAPH_BOX_HEADER rows at its top, and, for a box with a parent, a ParentButton just after the text. build_scene turns each ParentButton into a Hit::Parent, which graph_click answers by selecting the parent with Steering::Keys so the camera glides to it. A path box has the step border colour.
+
+step q6d4as
+order 37
+parent q4uqvf
+author ai
+file crates/gui/src/graph/scene.rs
+symbol SceneBox
+lines 0 6
+hash c071c9b98be4b800
+note A box as the painter needs it: rectangle, border colour, header runs and their top, the optional parent button.
+
 step qhsbdk
 order 30
 parent ox9aid
@@ -295,14 +335,24 @@ lines 0 4
 hash 8816f66ad0c1e37f
 note The pixel offset of a file line from the top of a node's code, given the first line shown.
 
+step qig4rc
+order 39
+parent 7dr3sk
+author ai
+file crates/gui/src/graph/scene.rs
+symbol draw_button
+lines 0 10
+hash c3921497b8eb4794
+note One bordered text button, lit when hovered; node header buttons and box parent buttons both go through it.
+
 step qoartp
 order 14
 parent 4yhd4f
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_click
-lines 0 68
-hash cfd109943282ced9
+lines 0 67
+hash a5017feab3db021c
 note A press against last frame's hit: a button sends its action (preview, callees, callers, context) or defers a GoTo for listing, or an AddSymbol for '+ step' under the step the node was revealed from as a callee, else under the target; a header click grabs the node, defers selecting its step (or focusing its symbol off the path) and sends Steer(Steering::Click) so the camera stays put and the tree keeps its root; a press on a code line grabs the node and, with ctrl or alt, defers a definition jump or peek at the column under the pointer; a body press grabs the node; the background starts a pan.
 
 step rgjxnq
@@ -331,8 +381,8 @@ parent qoartp
 author ai
 file crates/gui/src/graph.rs
 symbol Hit
-lines 0 5
-hash 6a45f40f12e87fc1
+lines 0 6
+hash 50210302c8cc3b3c
 note The four things the mouse can land on in a node. HitRect keeps each with its rectangle in window pixels, which is what makes the custom element clickable at all. A Line hit carries the file line of the code row.
 
 step tf24q4
@@ -344,6 +394,36 @@ symbol line_column
 lines 0 13
 hash 4c76d58f7235cd5c
 note The file column under the pointer on a code line, for hover, ctrl-click and alt-click. A node's code is the same grid the document draws, gutter included, so the gutter width is grid::GUTTER and a point on the gutter answers None rather than column zero.
+
+step twkoyk
+order 36
+parent q4uqvf
+author ai
+file crates/gui/src/graph/scene.rs
+symbol box_header
+lines 0 16
+hash 3adcc5385b83a3be
+note What a box's members are: 'path <name>' for the path's top-level steps, 'not in the path' (or 'no path open') for roots off the path, 'callees of' or 'callers of' for a parent's children, which the parent's button then names.
+
+step wyzcd5
+order 43
+parent qoartp
+author ai
+file crates/gui/src/graph/input.rs
+symbol select
+lines 0 7
+hash d6f8c4dbf08ace7d
+note A node to the Action that selects it: SelectStep for a step of the drawn path, Focus for anything else. graph_click uses it for a header press (with Steering::Click, camera kept) and for a box's parent button (with Steering::Keys, camera glides).
+
+step xav3yc
+order 40
+parent q4uqvf
+author ai
+file crates/gui/src/graph/scene.rs
+symbol parent_label
+lines 0 14
+hash 41472badd6ace626
+note The parent button's text: an arrow pointing where the parent sits (toward_parent: back or up for callees, forward or down for callers), its step number when it is a step, and its name.
 
 step xaxlex
 order 31

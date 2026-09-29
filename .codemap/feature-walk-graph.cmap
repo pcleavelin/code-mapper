@@ -5,6 +5,16 @@ author ai
 group features/gui
 note After a click inside the graph's canvas, the arrow keys move the selection between graph nodes instead of walking the path: Left and Right (this feature's keys) and Up and Down (walk-steps' keys, which the graph borrows while it holds the keyboard) go to the parent, a child or a sibling lying that way first, and to the nearest node that way when none of those does. A step node selects its step, an off-path node focuses its symbol; the tree keeps its root and the camera glides to the new node over a few frames. Nothing happens while a text field holds the keyboard or when no node lies that way. A press outside the canvas, or hiding the Graph view, gives the arrows back to walking the path (feature-walk-steps).
 
+step 04ic65
+order 15
+parent ub828q
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_click
+lines 44 47
+hash efcd413da575cdd9
+note The other way to move: a sibling box's header names its parent on a button (graph-draw sibling_box); the click selects the parent through Built::select with Steering::Keys, so the camera glides there as it does for the arrow keys.
+
 step 86a5h4
 order 11
 parent ub828q

@@ -75,7 +75,7 @@ fn exercised(trigger: Trigger, goldens: &str, scripts: &str) -> bool {
             }) || graph_button(name).is_some_and(|label| {
                 lines
                     .iter()
-                    .any(|line| line.starts_with("click <<DUMP button") && line.contains(label))
+                    .any(|line| line.starts_with("click <<DUMP ") && line.contains(label))
             })
         }
         Trigger::Key(chord) => {
@@ -116,6 +116,7 @@ fn graph_button(element: &str) -> Option<&'static str> {
         "node-listing" => Some("'listing"),
         "node-preview" => Some("'less"),
         "node-add" => Some("'+ step"),
+        "box-parent" => Some("DUMP parent "),
         _ => None,
     }
 }

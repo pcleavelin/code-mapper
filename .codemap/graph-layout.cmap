@@ -3,7 +3,7 @@ path graph-layout
 kind flow
 author ai
 group gui/graph
-note Where every node on the canvas ends up. The layout is recomputed from scratch every frame by Built::place_nodes; a node the reader dragged then has its position overwritten by the dragged one (App::graph_layout, in graph-draw). It works along two axes named by the graph's Direction: the main axis, across when the graph runs left to right and down when it is turned top to bottom, and the cross axis at right angles to it. Along the main axis a node sits in the lane of its Rank - its depth in the path tree, or one rank out from whatever expansion revealed it - and the lanes are laid out outward from rank 0 so the root of the path never moves. Along the cross axis the children of one node on one side are one Siblings box, stacked tightly in call order, with the box's first child level with the parent when that lane is free there and below the lane's last box otherwise; boxes in a lane never overlap and are placed breadth first, so siblings stay together however deep their own subtrees run. Each root starts a band below everything placed before it. Everything is in cells and rows (theme::Cells), which no zoom changes; pixels appear only when a rectangle is asked for with this frame's cell size.
+note Where every node on the canvas ends up. The layout is recomputed from scratch every frame by Built::place_nodes; a node the reader dragged then has its position overwritten by the dragged one (App::graph_layout, in graph-draw). It works along two axes named by the graph's Direction: the main axis, across when the graph runs left to right and down when it is turned top to bottom, and the cross axis at right angles to it. Along the main axis a node sits in the lane of its Rank - its depth in the path tree, or one rank out from whatever expansion revealed it - and the lanes are laid out outward from rank 0 so the root of the path never moves. Along the cross axis the children of one node on one side are one Siblings box, stacked tightly in call order, with the box's first child level with the parent when that lane is free there and below the lane's last box otherwise; boxes in a lane never overlap and are placed breadth first, so siblings stay together however deep their own subtrees run. The roots are boxes too: the path's top-level steps in one, roots off the path in another below it. Everything is in cells and rows (theme::Cells), which no zoom changes; pixels appear only when a rectangle is asked for with this frame's cell size.
 
 step 11m7he
 order 3
@@ -11,9 +11,9 @@ parent 85mf2y
 author ai
 file crates/gui/src/graph/place.rs
 symbol place_siblings
-lines 0 22
-hash 4b085c649001bd7c
-note One sibling box: the children of one parent on one side, all in the same lane. The box's top is level with the parent, less pad_cross, unless the lane is already used past that point, in which case it starts where the lane is free; the members then follow each other sibling_gap apart. The box is recorded in Built.siblings so the scene can draw it and the arrow keys can find siblings.
+lines 0 17
+hash 6cb0c6ca22c1e161
+note One sibling box, all its members in the same lane. The box's top is level with its parent less lead_cross (so the first child is level with the parent) unless the lane is already used past that point, in which case it starts where the lane is free; top-level boxes have no parent and start where their lane is free. The members follow each other sibling_gap apart. The box is recorded in Built.siblings so the scene can draw it and the arrow keys can find siblings.
 
 step 398fv9
 order 11
@@ -60,8 +60,18 @@ author ai
 file crates/gui/src/graph/place.rs
 symbol place_nodes
 lines 0 38
-hash 86bc5170bdadee53
-note The one entry, called from App::graph_layout after Built::measure has written every size. It groups the nodes by rank, clears last frame's sibling boxes, lays out the lanes along the main axis, builds the forest, then for each root in step order: places it at the start of a band below everything placed so far (the furthest free cross position of any lane), and walks breadth first from it, each node's callee-side children and then its caller-side children that are not placed yet becoming one sibling box beside it (place_siblings). The done set places a node reachable from two parents only once, under the first. It writes one CellPoint per node into position and one Siblings per box into siblings.
+hash 93e8107b4d3cbd52
+note The one entry, called from App::graph_layout after Built::measure has written every size. It groups the nodes by rank, clears last frame's sibling boxes, lays out the lanes along the main axis, builds the forest, then places the roots as their top-level boxes (top_siblings) and walks breadth first from all of them together, each node's callee-side children and then its caller-side children that are not placed yet becoming one sibling box beside it (place_siblings). The done set places a node reachable from two parents only once, under the first. It writes one CellPoint per node into position and one Siblings per box into siblings.
+
+step 923eqd
+order 20
+parent 85mf2y
+author ai
+file crates/gui/src/graph/place.rs
+symbol top_siblings
+lines 0 17
+hash 50025a8c857767a8
+note The roots grouped into top-level boxes by Parentage and rank: the path's steps in a Path box, anything else in an OffPath box. BTreeMap order puts the path box first.
 
 step aqe1ly
 order 18
@@ -70,7 +80,7 @@ author ai
 file crates/gui/src/graph/place.rs
 symbol Siblings
 lines 0 3
-hash 8dbdd5bbb1a2a2b7
+hash 735dca9126853bc9
 note A parent and the children placed beside it together, in order. Built.siblings holds this frame's boxes; the scene draws each behind its members (sibling_boxes) and Built::neighbours takes a node's siblings from them.
 
 step dola29
@@ -109,9 +119,9 @@ parent 85mf2y
 author ai
 file crates/gui/src/graph/place.rs
 symbol lane_starts
-lines 0 40
-hash df8a67624888296f
-note The lanes along the main axis: each rank's lane is as long as its longest node along that axis plus pad_main on both sides; walking outward from rank 0 (clamped into the ranks present) in both directions, each lane starts rank_gap after the one before, so the path's root keeps its place when an expansion opens a lane before it.
+lines 0 41
+hash 54439d31b70fb761
+note The lanes along the main axis: each rank's lane is as long as its longest node along that axis plus lead_main and pad_main; walking outward from rank 0 (clamped into the ranks present) in both directions, each lane starts rank_gap after the one before, so the path's root keeps its place when an expansion opens a lane before it.
 
 step l634za
 order 4
@@ -120,8 +130,8 @@ author ai
 file crates/gui/src/graph/place.rs
 symbol place_at
 lines 0 13
-hash 4d36a56c940e7a45
-note Places one node: along the main axis at its lane's start plus pad_main, along the cross axis at the given position, turned into a CellPoint for the direction. It moves the lane's free position past the node, its padding and box_gap, so the next box in that lane starts clear of this one, and returns where the node ends.
+hash 024687315221647c
+note Places one node: along the main axis at its lane's start plus lead_main, along the cross axis at the given position, turned into a CellPoint for the direction. It moves the lane's free position past the node, its padding and box_gap, so the next box in that lane starts clear of this one, and returns where the node ends.
 
 step l912gh
 order 13
@@ -139,9 +149,9 @@ parent 85mf2y
 author ai
 file crates/gui/src/graph/place.rs
 symbol Spacing
-lines 0 6
-hash 09c322d7051f5b83
-note The gaps for one direction, in cells: rank_gap between lanes, sibling_gap between the members of a box, box_gap between boxes in a lane, and the padding of a box along each axis. Left to right the lanes are columns and the cross axis is rows, so the gaps come from the ACROSS and DOWN constants accordingly.
+lines 0 8
+hash 3c3324b0d4974a28
+note The gaps for one direction, in cells: rank_gap between lanes, sibling_gap between the members of a box, box_gap between boxes in a lane, the lead before a box's first member along each axis (lead_main, lead_cross: the box header's rows on whichever axis runs down, the padding on the other) and the padding after it (pad_main, pad_cross). Left to right the lanes are columns and the cross axis is rows, so the gaps come from the ACROSS and DOWN constants accordingly.
 
 step r9wn5d
 order 15
@@ -149,9 +159,9 @@ parent 3my22g
 author ai
 file crates/gui/src/graph/place.rs
 symbol impl Lanes
-lines 0 12
-hash fe3c9677a21964df
-note free and start read a rank's entry, zero when it has none; lowest is the furthest free position over every lane, where the next root's band starts.
+lines 0 8
+hash b9f0494891ab7a8a
+note free and start read a rank's entry, zero when it has none.
 
 step rqh9w9
 order 17
@@ -159,8 +169,8 @@ parent ptljng
 author ai
 file crates/gui/src/graph/place.rs
 symbol impl Spacing
-lines 0 19
-hash 96c68cb64c2b4846
+lines 0 23
+hash 7d514e5345c0034a
 note Spacing::of picks the theme constants for Across or Down: GRAPH_RANK_GAP_*, GRAPH_SIBLING_GAP_*, GRAPH_BOX_GAP_* and GRAPH_PAD_*, the across ones for whichever axis runs across.
 
 step sfz63q
@@ -192,6 +202,16 @@ lines 0 3
 hash c93c3021b56cefe2
 note A node's top-left in cells across and rows down.
 
+step w9sam9
+order 21
+parent aqe1ly
+author ai
+file crates/gui/src/graph/place.rs
+symbol Parentage
+lines 0 5
+hash 6c6b83bc01afc804
+note What a box's members share: the path (its top-level steps), being off the path (other roots), or being the callees or callers of one parent node. parent() is that node when there is one; place_siblings levels the box with it and the scene names it in the header.
+
 step xkn1l0
 order 5
 parent 85mf2y
@@ -199,5 +219,5 @@ author ai
 file crates/gui/src/graph/place.rs
 symbol sibling_bounds
 lines 0 12
-hash d8974a20f14f2c2f
-note A sibling box in cells: its members' bounds joined, padded by GRAPH_PAD_ACROSS and GRAPH_PAD_DOWN. The scene draws it and the camera's bounds include it, so fit never cuts a box.
+hash fbb2d5d89f85f940
+note A sibling box in cells: its members' bounds joined, padded by GRAPH_PAD_ACROSS and GRAPH_PAD_DOWN, with GRAPH_BOX_HEADER rows above for the header. The scene draws it and the camera's bounds include it, so fit never cuts a box.

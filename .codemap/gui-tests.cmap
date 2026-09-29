@@ -99,7 +99,7 @@ author ai
 file crates/gui/src/tests.rs
 symbol turned_the_children_sit_below_their_parent_side_by_side
 lines 0 12
-hash ab2728fb5e5e9497
+hash bdf5132a1f5b1f94
 note Turned top to bottom, the same children sit one lane below their parent, side by side, the first level with the parent across.
 
 step ftd1u1
@@ -108,8 +108,8 @@ parent kpixbm
 author ai
 file crates/gui/src/tests.rs
 symbol children_sit_together_in_one_box_beside_their_parent
-lines 0 22
-hash c50e49804ecd29a2
+lines 0 30
+hash 5adb14107ee161b7
 note Left to right, a parent's two children sit stacked tightly in one sibling box one lane to its right, the first level with the parent; the bounds take in the box and its padding.
 
 step fyr34g

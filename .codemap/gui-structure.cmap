@@ -175,8 +175,8 @@ parent 7579zm
 author ai
 file crates/gui/src/dump.rs
 symbol dump
-lines 0 50
-hash b21acf8de732bcaa
+lines 0 59
+hash d22a29df8494da8d
 note The graph: zoom, pan, the canvas rectangle and the camera, the pointer and drag state, then every node's and node button's rectangle by name.
 
 step 9pik9m
@@ -193,7 +193,7 @@ order 26
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 191 227
+lines 192 228
 hash 1a4665b18c6d61cf
 note Every measure counted in cells: button and field widths, column guesses before a panel has a size, the symbol table's columns, tooltip sizes, the gap before a danger button, the status bar's room for the map's place, the panels' floors and the picker's width.
 

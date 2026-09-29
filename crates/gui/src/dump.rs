@@ -277,5 +277,14 @@ impl Dump for GraphState {
                 hit.rect
             ));
         }
+        for hit in self.hits() {
+            if let Hit::Parent(node) = hit.hit {
+                lines.line(format_args!(
+                    "parent {} rect={:?}",
+                    node_name(model, node).as_str(),
+                    hit.rect
+                ));
+            }
+        }
     }
 }

@@ -356,13 +356,12 @@ impl App {
             },
             Some(Hit::Header(node)) => {
                 self.graph(GraphAction::Grab(Some(Drag::Node(node))));
-                deferred.push(match (node.step, self.model.graph.built.path) {
-                    (Some(step), Some(path)) => {
-                        Action::SelectStep(StepKey { path, step }, Scrolling::Scroll)
-                    }
-                    _ => Action::Focus(node.symbol),
-                });
+                deferred.push(self.model.graph.built.select(node));
                 self.graph(GraphAction::Steer(Steering::Click));
+            }
+            Some(Hit::Parent(node)) => {
+                deferred.push(self.model.graph.built.select(node));
+                self.graph(GraphAction::Steer(Steering::Keys));
             }
             Some(Hit::Line(node, line)) => {
                 self.graph(GraphAction::Grab(Some(Drag::Node(node))));
@@ -646,6 +645,15 @@ impl Heading {
 }
 
 impl Built {
+    fn select(&self, node: Node) -> Action {
+        match (node.step, self.path) {
+            (Some(step), Some(path)) => {
+                Action::SelectStep(StepKey { path, step }, Scrolling::Scroll)
+            }
+            _ => Action::Focus(node.symbol),
+        }
+    }
+
     fn neighbours(&self, node: Node) -> Vec<Node> {
         let parent = self
             .step_parent

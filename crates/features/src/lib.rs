@@ -856,13 +856,14 @@ impl Feature {
             Self::WalkGraph => Spec::new(
                 Text::new("walk-graph"),
                 Text::new(
-                    "after a click in the graph, move to the node left or right with the arrow keys; the camera glides to each node the arrows reach",
+                    "after a click in the graph, move to the node left or right with the arrow keys, or to a box's parent with the button in the box's header; the camera glides to each node reached",
                 ),
                 Surface::Window,
                 &const {
                     [
                         Trigger::Key(Chord::plain(Key::Left)),
                         Trigger::Key(Chord::plain(Key::Right)),
+                        Trigger::Click(Element::new("box-parent")),
                     ]
                 },
             ),

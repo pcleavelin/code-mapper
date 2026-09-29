@@ -172,6 +172,7 @@ pub(crate) const GRAPH_BOX_GAP_ACROSS: Cells = Cells::new(4);
 pub(crate) const GRAPH_BOX_GAP_DOWN: Cells = Cells::new(2);
 pub(crate) const GRAPH_PAD_ACROSS: Cells = Cells::new(1);
 pub(crate) const GRAPH_PAD_DOWN: Cells = Cells::new(1);
+pub(crate) const GRAPH_BOX_HEADER: Cells = Cells::new(2);
 pub(crate) const GRAPH_LEAST_COLUMNS: Cells = Cells::new(44);
 pub(crate) const GRAPH_MOST_COLUMNS: Cells = Cells::new(110);
 pub(crate) const GRAPH_MARGIN: Px = Px::new(8);

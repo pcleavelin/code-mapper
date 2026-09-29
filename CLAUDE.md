@@ -8,6 +8,30 @@ what to do. The other skills (`add-feature`, `add-cli-command`, `add-gui-element
 `add-domain-type`, `add-data-source`, `add-test-scenario`, `refactor`, `tripped`) are the
 steps for each kind of change.
 
+## Axioms
+
+Nothing tells an agent ahead of time how code must be shaped: a lint or a type rejects every
+other shape and its message names the one way, and a skill carries every multi-step
+procedure. An agent learns a rule by breaking it and reading the error, at the moment the
+rule applies.
+
+1. **One way.** Each piece of data has exactly one function that reads it from outside the
+   program and one that writes it out, and each concept has exactly one type. A second way to
+   get or send the same data does not compile or does not pass the gate.
+2. **The architecture is checked, not described.** Layering, data ownership and the I/O
+   boundary are enforced by the compiler where it can (crates, privacy) and by the
+   architecture linter (`cargo xtask lint`) where it cannot. Nothing about the shape of
+   the code is left to reading.
+3. **No comments.** What a comment would say goes into a type, a name, a test, or the map.
+   A comment is text the compiler does not check; when it drifts from the code, a reader
+   trusts the wrong one.
+4. **Types carry meaning.** Every value that means something has its own type, even when it
+   is one integer. Data cannot be handed to a parameter that was not shaped for it.
+5. **One description.** Each concept has one name in code, CLI, GUI and docs, and each kind of
+   knowledge has one home.
+6. **Nothing is done until the gate is green.** The rules are enforced after every agent
+   turn and before every commit.
+
 ## Explore codebases through codemap, not grep
 
 When you need to understand any repo (this one included), use the tool instead of

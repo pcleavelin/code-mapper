@@ -2,20 +2,23 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::rc::Rc;
 
 use domain::{Line, Span, Step, Symbol, SymbolId, SymbolName};
-use ui::{Canvas, Color, Coordinate, Count, FontSize, Grid, Label, Point, Px, Rect, Run, Vector};
+use ui::{
+    Canvas, Color, Coordinate, Count, FontSize, Grid, Icon, Label, Point, Px, Rect, Run, Vector,
+};
 
 use crate::graph::build::{Built, Header, Labelled, Shown};
+use crate::graph::place::{Parentage, Siblings};
 use crate::graph::{Hit, HitRect, Node};
 use crate::grid::Grids;
 use crate::model::Model;
 use crate::model::StepKey;
 use crate::panels::Direction;
 use crate::theme::{
-    ACCENT, BACK_EDGE, BORDER, CALL_TINT, EXPANSION_EDGE, FIELD, GRAPH_BEND, GRAPH_BUTTON_GAP,
-    GRAPH_CODE_GAP, GRAPH_EDGE, GRAPH_EDGE_END, GRAPH_RANK_GAP_ACROSS, GRAPH_RANK_GAP_DOWN,
-    GRAPH_RULE, GRAPH_RULE_ABOVE, GRAPH_STEP_EDGE, GRAPH_THICK_BORDER, GRAPH_THIN_BORDER, GREEN,
-    HOVER, PANEL, PIXEL, RED, SIBLINGS_BORDER, SIBLINGS_FILL, SLICE, STEP_BORDER, STEP_EDGE, TEXT,
-    WEAK,
+    ACCENT, BACK_EDGE, BORDER, CALL_TINT, EXPANSION_EDGE, FIELD, GRAPH_BEND, GRAPH_BOX_HEADER,
+    GRAPH_BUTTON_GAP, GRAPH_CODE_GAP, GRAPH_EDGE, GRAPH_EDGE_END, GRAPH_RANK_GAP_ACROSS,
+    GRAPH_RANK_GAP_DOWN, GRAPH_RULE, GRAPH_RULE_ABOVE, GRAPH_STEP_EDGE, GRAPH_THICK_BORDER,
+    GRAPH_THIN_BORDER, GREEN, HOVER, PANEL, PIXEL, RED, SIBLINGS_BORDER, SIBLINGS_FILL, SLICE,
+    STEP_BORDER, STEP_EDGE, TEXT, WEAK,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -59,10 +62,23 @@ struct SceneNode {
     more: Option<ui::Count>,
 }
 
+struct SceneBox {
+    rect: Rect,
+    border: Color,
+    header: Vec<Run>,
+    header_top: Px,
+    parent: Option<ParentButton>,
+}
+
+struct ParentButton {
+    node: Node,
+    button: SceneButton,
+}
+
 pub(crate) struct Scene {
     size: FontSize,
     metrics: Metrics,
-    boxes: Vec<Rect>,
+    boxes: Vec<SceneBox>,
     edges: Vec<Edge>,
     nodes: Vec<SceneNode>,
 }
@@ -447,22 +463,96 @@ fn edges(input: &SceneInput<'_>, origin: Point, code_top: &BTreeMap<Node, Px>) -
     edges
 }
 
-fn sibling_boxes(input: &SceneInput<'_>, origin: Point) -> Vec<Rect> {
+fn toward_parent(parentage: Parentage, direction: Direction) -> Icon {
+    match (parentage, direction) {
+        (Parentage::Callers(_), Direction::Across) => Icon::Forward,
+        (Parentage::Callers(_), Direction::Down) => Icon::Down,
+        (_, Direction::Across) => Icon::Back,
+        (_, Direction::Down) => Icon::Up,
+    }
+}
+
+fn box_header(input: &SceneInput<'_>, parentage: Parentage) -> Vec<Run> {
+    let model = input.model;
     let built = input.built;
-    let cell = input.cell;
-    built
-        .siblings
-        .iter()
-        .filter_map(|siblings| built.sibling_bounds(siblings))
-        .map(|bounds| {
-            Rect::new(
-                origin.horizontal + bounds.left.of(cell.width),
-                origin.vertical + bounds.top.of(cell.height),
-                (bounds.right - bounds.left).of(cell.width),
-                (bounds.bottom - bounds.top).of(cell.height),
-            )
-        })
-        .collect()
+    match parentage {
+        Parentage::Path => {
+            let name = built
+                .path
+                .and_then(|path| model.path(path))
+                .map_or("", |path| path.name().as_str());
+            vec![Run::new("path ", WEAK), Run::new(name, TEXT)]
+        }
+        Parentage::OffPath if built.path.is_some() => vec![Run::new("not in the path", WEAK)],
+        Parentage::OffPath => vec![Run::new("no path open", WEAK)],
+        Parentage::Callees(_) => vec![Run::new("callees of", WEAK)],
+        Parentage::Callers(_) => vec![Run::new("callers of", WEAK)],
+    }
+}
+
+fn parent_label(input: &SceneInput<'_>, parentage: Parentage, parent: Node) -> Label {
+    let built = input.built;
+    let icon = toward_parent(parentage, built.direction).glyph().get();
+    let number = built
+        .step
+        .get(&parent)
+        .map(|step| format!("{} ", step.number.as_str()))
+        .unwrap_or_default();
+    let name = input
+        .model
+        .index
+        .symbol(parent.symbol)
+        .map_or("", |symbol| symbol.name().as_str());
+    Label::new(format!("{icon} {number}{name}"))
+}
+
+fn sibling_box(input: &SceneInput<'_>, origin: Point, siblings: &Siblings) -> Option<SceneBox> {
+    let SceneInput {
+        built,
+        cell,
+        metrics,
+        ..
+    } = *input;
+    let bounds = built.sibling_bounds(siblings)?;
+    let rect = Rect::new(
+        origin.horizontal + bounds.left.of(cell.width),
+        origin.vertical + bounds.top.of(cell.height),
+        (bounds.right - bounds.left).of(cell.width),
+        (bounds.bottom - bounds.top).of(cell.height),
+    );
+    let header = box_header(input, siblings.parentage);
+    let header_top = rect.top + (GRAPH_BOX_HEADER.of(cell.height) - metrics.row_height) / 2;
+    let columns: usize = header.iter().map(|run| run.text.columns()).sum();
+    let parent = siblings.parentage.parent().map(|parent| {
+        let label = parent_label(input, siblings.parentage, parent);
+        let left = rect.left + metrics.padding + metrics.cell_width * Count::new(columns + 1);
+        let width = metrics.cell_width * Count::new(label.columns() + 2);
+        let area = Rect::new(left, header_top, width, metrics.row_height);
+        let lit = if area.contains(input.mouse) {
+            Lit::Hovered
+        } else {
+            Lit::Plain
+        };
+        ParentButton {
+            node: parent,
+            button: SceneButton {
+                rect: area,
+                label,
+                lit,
+            },
+        }
+    });
+    Some(SceneBox {
+        rect,
+        border: if siblings.parentage == Parentage::Path {
+            STEP_BORDER
+        } else {
+            SIBLINGS_BORDER
+        },
+        header,
+        header_top,
+        parent,
+    })
 }
 
 pub(crate) fn build_scene(input: &SceneInput<'_>, grids: &mut Grids) -> Drawn {
@@ -471,7 +561,20 @@ pub(crate) fn build_scene(input: &SceneInput<'_>, grids: &mut Grids) -> Drawn {
         input.canvas.left + pan.horizontal,
         input.canvas.top + pan.vertical,
     );
-    let mut hits: Vec<HitRect> = Vec::new();
+    let boxes: Vec<SceneBox> = input
+        .built
+        .siblings
+        .iter()
+        .filter_map(|siblings| sibling_box(input, origin, siblings))
+        .collect();
+    let mut hits: Vec<HitRect> = boxes
+        .iter()
+        .filter_map(|scene_box| scene_box.parent.as_ref())
+        .map(|parent| HitRect {
+            rect: parent.button.rect,
+            hit: Hit::Parent(parent.node),
+        })
+        .collect();
     let mut nodes = Vec::new();
     for node in &input.built.nodes {
         if let Some(scene_node) = scene_node(input, origin, *node, grids, &mut hits) {
@@ -483,7 +586,6 @@ pub(crate) fn build_scene(input: &SceneInput<'_>, grids: &mut Grids) -> Drawn {
         .map(|(node, scene_node)| (*node, scene_node.code_top))
         .collect();
     let edges = edges(input, origin, &code_top);
-    let boxes = sibling_boxes(input, origin);
     let hits = hits
         .into_iter()
         .map(|hit| HitRect {
@@ -504,10 +606,40 @@ pub(crate) fn build_scene(input: &SceneInput<'_>, grids: &mut Grids) -> Drawn {
     }
 }
 
+fn draw_button(canvas: &mut Canvas<'_>, scene: &Scene, button: &SceneButton) {
+    let hovered = button.lit == Lit::Hovered;
+    canvas.rect(button.rect, if hovered { HOVER } else { PANEL });
+    canvas.outline(button.rect, GRAPH_RULE, BORDER);
+    canvas.text(
+        Point::new(button.rect.left + scene.metrics.cell_width, button.rect.top),
+        scene.size,
+        button.label.clone(),
+        if hovered { TEXT } else { WEAK },
+    );
+}
+
+fn draw_box(canvas: &mut Canvas<'_>, scene: &Scene, scene_box: &SceneBox) {
+    canvas.rect(scene_box.rect, SIBLINGS_FILL);
+    canvas.outline(scene_box.rect, GRAPH_THIN_BORDER, scene_box.border);
+    canvas.push_clip(scene_box.rect.shrink(PIXEL));
+    let mut pen = scene_box.rect.left + scene.metrics.padding;
+    for run in &scene_box.header {
+        pen = canvas.text(
+            Point::new(pen, scene_box.header_top),
+            scene.size,
+            run.text.clone(),
+            run.color,
+        );
+    }
+    if let Some(parent) = &scene_box.parent {
+        draw_button(canvas, scene, &parent.button);
+    }
+    canvas.pop_clip();
+}
+
 pub(crate) fn draw_scene(canvas: &mut Canvas<'_>, scene: &Scene) {
-    for sibling_box in &scene.boxes {
-        canvas.rect(*sibling_box, SIBLINGS_FILL);
-        canvas.outline(*sibling_box, GRAPH_THIN_BORDER, SIBLINGS_BORDER);
+    for scene_box in &scene.boxes {
+        draw_box(canvas, scene, scene_box);
     }
     let metrics = scene.metrics;
     for edge in &scene.edges {
@@ -530,15 +662,7 @@ pub(crate) fn draw_scene(canvas: &mut Canvas<'_>, scene: &Scene) {
             );
         }
         for button in &node.buttons {
-            let hovered = button.lit == Lit::Hovered;
-            canvas.rect(button.rect, if hovered { HOVER } else { PANEL });
-            canvas.outline(button.rect, GRAPH_RULE, BORDER);
-            canvas.text(
-                Point::new(button.rect.left + metrics.cell_width, button.rect.top),
-                scene.size,
-                button.label.clone(),
-                if hovered { TEXT } else { WEAK },
-            );
+            draw_button(canvas, scene, button);
         }
         if let Some(note) = &node.note {
             canvas.text(

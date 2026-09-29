@@ -184,7 +184,10 @@ bottom with the toolbar's direction button: root first, every node showing its c
 its own lines highlighted). The children of one node sit together, in call order, inside
 one box beside their parent (below it, top to bottom), the box's first child level with the
 parent; boxes of the same depth stack in their parents' order and never overlap, so
-siblings stay next to each other however deep their own subtrees run. Left to right, edges
+siblings stay next to each other however deep their own subtrees run. A box's header says
+what its members are (callees of, callers of) and names the parent on a button that selects
+it. The top-level steps share one box headed by the path's name, and a root off the path
+sits in its own box below it. Left to right, edges
 leave a node level with the line that makes the call, and that line is tinted; top to
 bottom they leave the node's bottom edge. A slice node's callees are the ones its lines
 name. Callers and callees expansions per node reveal off-path nodes, drawn distinctly, in

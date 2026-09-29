@@ -89,10 +89,10 @@ geometry::pub const fn new(value: u32) -> Self
 geometry::pub const fn get(self) -> u32
 geometry::pub fn scaled(base: u32, scale: Scale, minimum: u32) -> Self
 geometry::pub fn float(self) -> f32
-icon::pub enum Icon { Add, Close, SplitAcross, SplitDown, Back, Forward, Unfolded, Folded, MoreAbove, MoreBelow, Check, }
+icon::pub enum Icon { Add, Close, SplitAcross, SplitDown, Back, Forward, Unfolded, Folded, MoreAbove, MoreBelow, Check, Up, Down, }
 icon::pub struct IconName(&'static str);
 icon::pub const fn as_str(self) -> &'static str
-icon::pub const ALL: [Self; 11] = [ Self::Add, Self::Close, Self::SplitAcross, Self::SplitDown, Self::Back, Self::Forward, Self::Unfolded, Self::Folded, Self::MoreAbove, Self::MoreBelow, Self::Check, ];
+icon::pub const ALL: [Self; 13] = [ Self::Add, Self::Close, Self::SplitAcross, Self::SplitDown, Self::Back, Self::Forward, Self::Unfolded, Self::Folded, Self::MoreAbove, Self::MoreBelow, Self::Check, Self::Up, Self::Down, ];
 icon::pub const fn glyph(self) -> Glyph
 icon::pub const fn name(self) -> IconName
 icon::pub fn of(glyph: Glyph) -> Option<Self>

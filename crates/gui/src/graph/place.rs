@@ -6,8 +6,9 @@ use crate::graph::build::{Built, CellPoint, CellSize, Rank};
 use crate::graph::{Node, Side};
 use crate::panels::Direction;
 use crate::theme::{
-    Cells, GRAPH_BOX_GAP_ACROSS, GRAPH_BOX_GAP_DOWN, GRAPH_PAD_ACROSS, GRAPH_PAD_DOWN,
-    GRAPH_RANK_GAP_ACROSS, GRAPH_RANK_GAP_DOWN, GRAPH_SIBLING_GAP_ACROSS, GRAPH_SIBLING_GAP_DOWN,
+    Cells, GRAPH_BOX_GAP_ACROSS, GRAPH_BOX_GAP_DOWN, GRAPH_BOX_HEADER, GRAPH_PAD_ACROSS,
+    GRAPH_PAD_DOWN, GRAPH_RANK_GAP_ACROSS, GRAPH_RANK_GAP_DOWN, GRAPH_SIBLING_GAP_ACROSS,
+    GRAPH_SIBLING_GAP_DOWN,
 };
 
 struct Trees {
@@ -35,6 +36,8 @@ struct Spacing {
     rank_gap: Cells,
     sibling_gap: Cells,
     box_gap: Cells,
+    lead_main: Cells,
+    lead_cross: Cells,
     pad_main: Cells,
     pad_cross: Cells,
 }
@@ -46,6 +49,8 @@ impl Spacing {
                 rank_gap: GRAPH_RANK_GAP_ACROSS,
                 sibling_gap: GRAPH_SIBLING_GAP_DOWN,
                 box_gap: GRAPH_BOX_GAP_DOWN,
+                lead_main: GRAPH_PAD_ACROSS,
+                lead_cross: GRAPH_BOX_HEADER,
                 pad_main: GRAPH_PAD_ACROSS,
                 pad_cross: GRAPH_PAD_DOWN,
             },
@@ -53,6 +58,8 @@ impl Spacing {
                 rank_gap: GRAPH_RANK_GAP_DOWN,
                 sibling_gap: GRAPH_SIBLING_GAP_ACROSS,
                 box_gap: GRAPH_BOX_GAP_ACROSS,
+                lead_main: GRAPH_BOX_HEADER,
+                lead_cross: GRAPH_PAD_ACROSS,
                 pad_main: GRAPH_PAD_DOWN,
                 pad_cross: GRAPH_PAD_ACROSS,
             },
@@ -60,9 +67,26 @@ impl Spacing {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) enum Parentage {
+    Path,
+    OffPath,
+    Callees(Node),
+    Callers(Node),
+}
+
+impl Parentage {
+    pub(crate) const fn parent(self) -> Option<Node> {
+        match self {
+            Self::Path | Self::OffPath => None,
+            Self::Callees(node) | Self::Callers(node) => Some(node),
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Siblings {
-    pub(crate) parent: Node,
+    pub(crate) parentage: Parentage,
     pub(crate) members: Vec<Node>,
 }
 
@@ -132,10 +156,6 @@ impl Lanes {
     fn start(&self, rank: Rank) -> Cells {
         self.start.get(&rank).copied().unwrap_or(Cells::ZERO)
     }
-
-    fn lowest(&self) -> Cells {
-        self.free.values().copied().max().unwrap_or(Cells::ZERO)
-    }
 }
 
 impl Built {
@@ -167,7 +187,8 @@ impl Built {
                     .map(|node| main_size(self.direction, self.size_of(*node)))
                     .max()
                     .unwrap_or(Cells::ZERO)
-            }) + spacing.pad_main * 2
+            }) + spacing.lead_main
+                + spacing.pad_main
         };
         start.insert(anchor, Cells::ZERO);
         let mut outward = anchor;
@@ -236,7 +257,7 @@ impl Built {
         let size = self.size_of(node);
         self.position.insert(
             node,
-            point(self.direction, lanes.start(rank) + spacing.pad_main, cross),
+            point(self.direction, lanes.start(rank) + spacing.lead_main, cross),
         );
         let end = cross + cross_size(self.direction, size);
         let free = lanes
@@ -246,28 +267,42 @@ impl Built {
         end
     }
 
-    fn place_siblings(
-        &mut self,
-        parent: Node,
-        members: Vec<Node>,
-        lanes: &mut Lanes,
-        spacing: Spacing,
-    ) {
-        let Some(first) = members.first().copied() else {
+    fn place_siblings(&mut self, siblings: Siblings, lanes: &mut Lanes, spacing: Spacing) {
+        let Some(first) = siblings.members.first().copied() else {
             return;
         };
         let lane = self.rank_of(first);
-        let parent_cross = self
-            .position
-            .get(&parent)
+        let parent_cross = siblings
+            .parentage
+            .parent()
+            .and_then(|parent| self.position.get(&parent))
             .map_or(Cells::ZERO, |at| cross_of(self.direction, *at));
-        let top = (parent_cross - spacing.pad_cross).max(lanes.free(lane));
-        let mut cursor = top + spacing.pad_cross;
-        for member in &members {
+        let top = (parent_cross - spacing.lead_cross).max(lanes.free(lane));
+        let mut cursor = top + spacing.lead_cross;
+        for member in &siblings.members {
             let end = self.place_at(*member, lanes, cursor, spacing);
             cursor = end + spacing.sibling_gap;
         }
-        self.siblings.push(Siblings { parent, members });
+        self.siblings.push(siblings);
+    }
+
+    fn top_siblings(&self, roots: Vec<Node>) -> Vec<Siblings> {
+        let mut grouped: BTreeMap<(Parentage, Rank), Vec<Node>> = BTreeMap::new();
+        for root in roots {
+            let parentage = if self.step.contains_key(&root) {
+                Parentage::Path
+            } else {
+                Parentage::OffPath
+            };
+            grouped
+                .entry((parentage, self.rank_of(root)))
+                .or_default()
+                .push(root);
+        }
+        grouped
+            .into_iter()
+            .map(|((parentage, _), members)| Siblings { parentage, members })
+            .collect()
     }
 
     pub(crate) fn place_nodes(&mut self, index: &Index) {
@@ -287,25 +322,25 @@ impl Built {
             free: BTreeMap::new(),
         };
         let Forest { trees, roots } = self.trees(index);
-        let mut done: BTreeSet<Node> = BTreeSet::new();
-        for root in roots {
-            if !done.insert(root) {
-                continue;
-            }
-            let top = lanes.lowest() + spacing.pad_cross;
-            self.place_at(root, &mut lanes, top, spacing);
-            let mut queue = VecDeque::from([root]);
-            while let Some(parent) = queue.pop_front() {
-                for side in [Side::Callees, Side::Callers] {
-                    let members: Vec<Node> = trees
-                        .children(parent, side)
-                        .iter()
-                        .copied()
-                        .filter(|child| done.insert(*child))
-                        .collect();
-                    queue.extend(members.iter().copied());
-                    self.place_siblings(parent, members, &mut lanes, spacing);
-                }
+        let mut done: BTreeSet<Node> = roots.iter().copied().collect();
+        let mut queue = VecDeque::from(roots.clone());
+        for siblings in self.top_siblings(roots) {
+            self.place_siblings(siblings, &mut lanes, spacing);
+        }
+        while let Some(parent) = queue.pop_front() {
+            for side in [Side::Callees, Side::Callers] {
+                let members: Vec<Node> = trees
+                    .children(parent, side)
+                    .iter()
+                    .copied()
+                    .filter(|child| done.insert(*child))
+                    .collect();
+                queue.extend(members.iter().copied());
+                let parentage = match side {
+                    Side::Callees => Parentage::Callees(parent),
+                    Side::Callers => Parentage::Callers(parent),
+                };
+                self.place_siblings(Siblings { parentage, members }, &mut lanes, spacing);
             }
         }
     }
@@ -328,7 +363,7 @@ impl Built {
             .reduce(CellBounds::joined)?;
         Some(CellBounds {
             left: inner.left - GRAPH_PAD_ACROSS,
-            top: inner.top - GRAPH_PAD_DOWN,
+            top: inner.top - GRAPH_BOX_HEADER,
             right: inner.right + GRAPH_PAD_ACROSS,
             bottom: inner.bottom + GRAPH_PAD_DOWN,
         })

@@ -279,6 +279,10 @@ wait 4
 mouse 5 5
 wait 2
 dump
+click <<DUMP parent 1 main>>
+pause 300
+wait 2
+dump
 drag <<DUMP node 1.2 report|30,8>> <<DUMP node 1.2 report|130,108>>
 wait 4
 dump
