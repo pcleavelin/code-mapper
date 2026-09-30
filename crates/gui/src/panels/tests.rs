@@ -8,7 +8,7 @@ fn rect(left: i32, top: i32, width: i32, height: i32) -> Rect {
     Rect::new(Px::new(left), Px::new(top), Px::new(width), Px::new(height))
 }
 
-const DEFAULT: &str = "down6(820 right5(220 0[Paths* Symbols Files] right4(740 1[Path* Diff Graph Source Search] 2[References*])) 3[Console*])";
+const DEFAULT: &str = "down6(820 right5(220 0[Tours* Symbols Files] right4(740 1[Tour* Diff Graph Source Search] 2[References*])) 3[Console*])";
 
 #[test]
 fn the_default_tree_holds_every_view_once() {
@@ -36,7 +36,7 @@ fn a_split_opens_the_picker_on_an_empty_panel_and_a_pick_moves_the_view() {
     assert_eq!(panels.picker(), None);
     assert_eq!(
         panels.to_string(),
-        "down6(820 right5(220 0[Paths* Symbols Files] right4(740 right8(500 1[Path* Diff Graph Search] 7[Source*]) 2[References*])) 3[Console*])"
+        "down6(820 right5(220 0[Tours* Symbols Files] right4(740 right8(500 1[Tour* Diff Graph Search] 7[Source*]) 2[References*])) 3[Console*])"
     );
 }
 
@@ -46,7 +46,7 @@ fn taking_the_last_view_from_a_panel_closes_it() {
     panels.put(View::References, BranchId(0));
     assert_eq!(
         panels.to_string(),
-        "down6(820 right5(220 0[Paths Symbols Files References*] 1[Path* Diff Graph Source Search]) 3[Console*])"
+        "down6(820 right5(220 0[Tours Symbols Files References*] 1[Tour* Diff Graph Source Search]) 3[Console*])"
     );
 }
 
@@ -61,7 +61,7 @@ fn a_drop_on_an_edge_splits_the_panel_on_that_side() {
     panels.drop_view(View::Console, target);
     assert_eq!(
         panels.to_string(),
-        "right5(220 down8(500 0[Paths* Symbols Files] 7[Console*]) right4(740 1[Path* Diff Graph Source Search] 2[References*]))"
+        "right5(220 down8(500 0[Tours* Symbols Files] 7[Console*]) right4(740 1[Tour* Diff Graph Source Search] 2[References*]))"
     );
     let alone = DropTarget {
         panel: BranchId(7),
@@ -80,7 +80,7 @@ fn closing_a_panel_hands_its_place_to_its_sibling() {
     panels.close(BranchId(2));
     assert_eq!(
         panels.to_string(),
-        "right5(220 0[Paths* Symbols Files] 1[Path* Diff Graph Source Search])"
+        "right5(220 0[Tours* Symbols Files] 1[Tour* Diff Graph Source Search])"
     );
     panels.close(BranchId(0));
     assert!(panels.is_single());
@@ -99,9 +99,9 @@ fn navigation_reveals_a_hidden_view_next_to_the_last_one_it_showed() {
     panels.reveal(Tab::Source, asked);
     assert_eq!(panels.holder(View::Source), Some(BranchId(0)));
     assert!(panels.is_shown(View::Source));
-    panels.activate(View::Paths);
+    panels.activate(View::Tours);
     panels.reveal(Tab::Source, asked);
-    assert!(panels.is_shown(View::Paths));
+    assert!(panels.is_shown(View::Tours));
     panels.reveal(Tab::Source, asked.next());
     assert!(panels.is_shown(View::Source));
 }
@@ -138,7 +138,7 @@ fn the_nearest_edge_within_a_quarter_picks_the_side() {
 #[test]
 fn a_grab_moves_once_the_pointer_leaves_its_reach() {
     let mut panels = Panels::default();
-    panels.take_hold(View::Paths, at(10, 10));
+    panels.take_hold(View::Tours, at(10, 10));
     panels.drag_to(at(14, 14));
     assert!(!panels.grab().unwrap().is_moving());
     panels.drag_to(at(15, 14));
@@ -165,7 +165,7 @@ fn a_tree_survives_its_saved_layout() {
     assert_eq!(restored.layout(), panels.layout());
     assert_eq!(
         restored.to_string(),
-        "down8(700 right6(220 0[Paths* Symbols Files] right5(740 down3(500 1[Path* Diff Source Search] 2[Graph*]) 4[References*])) 7[Console*])"
+        "down8(700 right6(220 0[Tours* Symbols Files] right5(740 down3(500 1[Tour* Diff Source Search] 2[Graph*]) 4[References*])) 7[Console*])"
     );
 }
 
@@ -176,14 +176,14 @@ fn a_saved_layout_drops_unknown_and_repeated_views() {
         SplitDirection::Right,
         Share::permille(300).unwrap(),
         LayoutTree::Panel(LayoutPanel::new(
-            vec![key("Paths"), key("Gone"), key("Graph")],
+            vec![key("Tours"), key("Gone"), key("Graph")],
             Some(key("Graph")),
         )),
-        LayoutTree::Panel(LayoutPanel::new(vec![key("Paths"), key("Console")], None)),
+        LayoutTree::Panel(LayoutPanel::new(vec![key("Tours"), key("Console")], None)),
     ));
     assert_eq!(
         Panels::from_layout(&saved).to_string(),
-        "right2(300 0[Paths Graph*] 1[Console*])"
+        "right2(300 0[Tours Graph*] 1[Console*])"
     );
 }
 
@@ -194,7 +194,7 @@ fn closing_a_panels_last_tab_closes_the_panel_but_never_the_last_panel() {
     panels.close_view(View::References);
     assert_eq!(
         panels.to_string(),
-        "down6(820 right5(220 0[Paths* Symbols Files] 1[Path* Graph Source Search]) 3[Console*])"
+        "down6(820 right5(220 0[Tours* Symbols Files] 1[Tour* Graph Source Search]) 3[Console*])"
     );
     for view in View::VARIANTS {
         panels.close_view(*view);

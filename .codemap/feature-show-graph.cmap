@@ -1,9 +1,9 @@
-codemap 8
-path feature-show-graph
+codemap 9
+tour feature-show-graph
 kind flow
 author ai
 group features/gui
-note The document toolbar's 'graph' button switches the centre to the Graph tab with the path being read drawn as a tree, left to right unless the reader turned it top to bottom. The reader reaches for it to see the path being read as a call tree instead of a linear document. The same happens from the Graph tab button, which only switches the tab; this button also selects the path first when it is not the one being read, which from the document it always is.
+note The document toolbar's 'graph' button switches the centre to the Graph tab with the tour being read drawn as a tree, left to right unless the reader turned it top to bottom. The reader reaches for it to see the tour being read as a call tree instead of a linear document. The same happens from the Graph tab button, which only switches the tab; this button also selects the tour first when it is not the one being read, which from the document it always is.
 
 step 1qheqh
 order 3
@@ -23,25 +23,25 @@ author ai
 file crates/gui/src/views/document.rs
 symbol header_bar
 lines 21 48
-hash c93d9e106df17d9c
-note Trigger: SHOW_GRAPH in the document toolbar queues OpenPath with Tab::Graph.
+hash b9363cab30ef804a
+note Trigger: SHOW_GRAPH in the document toolbar queues OpenTour with Tab::Graph.
 
 step hbss9m
 order 1
 parent x7w987
 author ai
 file crates/gui/src/nav.rs
-symbol select_path
+symbol select_tour
 lines 0 9
-hash 76ddeee19ae30401
+hash 7a595d2881b1892a
 link selection
-note Skipped when the path is the one being read; otherwise selects its first step.
+note Skipped when the tour is the one being read; otherwise selects its first step.
 
 step x7w987
 order 0
 author ai
 file crates/gui/src/nav.rs
-symbol open_path
+symbol open_tour
 lines 0 5
-hash 6009b8aa2be3f88c
-note The handler: open_path with Tab::Graph. The path is already current, so only the tab changes.
+hash 5214b39f2a008c2b
+note The handler: open_tour with Tab::Graph. The tour is already current, so only the tab changes.

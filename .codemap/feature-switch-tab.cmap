@@ -1,9 +1,9 @@
-codemap 8
-path feature-switch-tab
+codemap 9
+tour feature-switch-tab
 kind flow
 author ai
 group features/gui
-note Each panel's header has a tab per view it holds (Search shows its hit count); clicking one brings that view to front in its panel. The reader reaches for it to bring an open view to front without picking it again or splitting the panel. Switching changes only what is shown: the selection, the path being read and the file stay. Other features switch the centre view on their own (opening a line shows the Source view, searching shows the Search tab): that brings the view to front wherever it is, and puts it back next to the last one shown if it was in no panel.
+note Each panel's header has a tab per view it holds (Search shows its hit count); clicking one brings that view to front in its panel. The reader reaches for it to bring an open view to front without picking it again or splitting the panel. Switching changes only what is shown: the selection, the tour being read and the file stay. Other features switch the centre view on their own (opening a line shows the Source view, searching shows the Search tab): that brings the view to front wherever it is, and puts it back next to the last one shown if it was in no panel.
 
 step 0omynn
 order 0

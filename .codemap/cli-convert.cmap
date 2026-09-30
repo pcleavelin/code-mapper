@@ -1,9 +1,9 @@
-codemap 8
-path cli-convert
+codemap 9
+tour cli-convert
 kind layer
 author ai
 group cli
-note convert.rs: the cli crate's values and the conversion from clap's Command into them. A Request is a Query (the reading commands), an Edit (the map edits) or a repin, each variant holding domain values (PathName, TextFragment, SymbolName, RelativePath, Note, GroupName) or the crate's own small types for what the user typed as numbers: StepIndex (a position in the step list, as paths shows it), Under (a parent index where -1 is the root), LineNumber (1-based as typed), Levels (a depth), Count. Conversion never fails: a value that does not validate, such as a path name with a bad character, is carried as the MapError it produced and reported by exec, so the refusal wording stays in wire.rs. step_id, step_index and line_range are where the user's indices and 1-based lines meet the domain's StepId and 0-based Span.
+note convert.rs: the cli crate's values and the conversion from clap's Command into them. A Request is a Query (the reading commands), an Edit (the map edits) or a repin, each variant holding domain values (TourName, TextFragment, SymbolName, RelativePath, Note, GroupName) or the crate's own small types for what the user typed as numbers: StepIndex (a position in the step list, as tours shows it), Under (a parent index where -1 is the root), LineNumber (1-based as typed), Levels (a depth), Count. Conversion never fails: a value that does not validate, such as a tour name with a bad character, is carried as the MapError it produced and reported by exec, so the refusal wording stays in wire.rs. step_id, step_index and line_range are where the user's indices and 1-based lines meet the domain's StepId and 0-based Span.
 
 step 06py9p
 order 2
@@ -12,7 +12,7 @@ author ai
 file crates/cli/src/convert.rs
 symbol Query
 lines 0 30
-hash 8c97343ad6e6e9b5
+hash ed8da1ca0b1fe463
 note The reading commands, each with the arguments it needs as domain values. None of them can change the map.
 
 step 1u3vma
@@ -23,7 +23,7 @@ file crates/cli/src/convert.rs
 symbol Placement
 lines 0 4
 hash 26379847d28ed50b
-note path-add's target and trailing numbers read: the symbol or file, the line range when two numbers were given, and the parent when one or three were.
+note tour-add's target and trailing numbers read: the symbol or file, the line range when two numbers were given, and the parent when one or three were.
 
 step 21hyny
 order 10
@@ -53,7 +53,7 @@ file crates/cli/src/convert.rs
 symbol line_range
 lines 0 6
 hash 6e6ad28c3bf3dc4b
-note path-add's and path-pin's range: out of the file or backwards is None (Failure::LineRange) rather than clamped, since a step must pin real lines.
+note tour-add's and tour-pin's range: out of the file or backwards is None (Failure::LineRange) rather than clamped, since a step must pin real lines.
 
 step 7hovbj
 order 25
@@ -73,7 +73,7 @@ file crates/cli/src/convert.rs
 symbol GroupPlacement
 lines 0 3
 hash d881e09c06cf399f
-note Keep leaves the path's group alone; At(None) moves it to the top level.
+note Keep leaves the tour's group alone; At(None) moves it to the top level.
 
 step 999xiq
 order 18
@@ -82,7 +82,7 @@ file crates/cli/src/convert.rs
 symbol Count
 lines 0 0
 hash 136c100d03a147b2
-note A number of things, printed in reports and failures; also the step count path-add defaults its parent from.
+note A number of things, printed in reports and failures; also the step count tour-add defaults its parent from.
 
 step ai6efw
 order 3
@@ -91,8 +91,8 @@ author ai
 file crates/cli/src/convert.rs
 symbol Edit
 lines 0 73
-hash 006b4998ddcad22b
-note The map edits. Names of paths to find are TextFragments, looked up by exec, while names to create are Result<PathName, MapError>, so a bad name reaches exec and is reported there like any other refusal.
+hash b2beae13fc324918
+note The map edits. Names of tours to find are TextFragments, looked up by exec, while names to create are Result<TourName, MapError>, so a bad name reaches exec and is reported there like any other refusal.
 
 step ba8nwl
 order 21
@@ -111,8 +111,8 @@ author ai
 file crates/cli/src/convert.rs
 symbol from
 lines 0 19
-hash c6d16e17b4eaf9fb
-note Reads path-add's trailing numbers by count: [under], [start end] or [start end under]; none is a whole symbol under the default parent.
+hash 2b2ae96cda96b5c7
+note Reads tour-add's trailing numbers by count: [under], [start end] or [start end under]; none is a whole symbol under the default parent.
 
 step bj22qf
 order 13
@@ -121,8 +121,8 @@ author ai
 file crates/cli/src/convert.rs
 symbol step_id
 lines 0 4
-hash 489ec63efb65e873
-note Position to StepId, or None when the path has fewer steps.
+hash 30548ed330a6a0c0
+note Position to StepId, or None when the tour has fewer steps.
 
 step brorqo
 order 0
@@ -150,7 +150,7 @@ author ai
 file crates/cli/src/convert.rs
 symbol from
 lines 0 42
-hash 35abf751bce2b9c2
+hash 07cef3a2582f59bc
 note One arm per command. Each argument struct converts through its own From, so this match only says which kind of request a command is.
 
 step kuueng
@@ -161,7 +161,7 @@ file crates/cli/src/convert.rs
 symbol LinkView
 lines 0 3
 hash c3134ca624d4be23
-note path --inline: whether linked paths print inline.
+note tour --inline: whether linked tours print inline.
 
 step ma3ca0
 order 12
@@ -170,7 +170,7 @@ file crates/cli/src/convert.rs
 symbol StepIndex
 lines 0 0
 hash a49033236bebb9ed
-note A step's position in the path's step list, the number paths prints in square brackets. Positions shift when a step is removed; the map itself refers to steps by StepId.
+note A step's position in the tour's step list, the number tours prints in square brackets. Positions shift when a step is removed; the map itself refers to steps by StepId.
 
 step meki6m
 order 15
@@ -217,7 +217,7 @@ author ai
 file crates/cli/src/convert.rs
 symbol step_index
 lines 0 5
-hash cee0432e53d06aac
+hash 2528687cb4f1562f
 note StepId to position, for printing a step the map named by id.
 
 step x88qf5
@@ -227,8 +227,8 @@ author ai
 file crates/cli/src/convert.rs
 symbol from
 lines 0 12
-hash 0c9d2eb6a625e243
-note path-new: the name validated, the note dropped when empty, and the group kept apart from no group at all, so re-running path-new without --group leaves the group as it is.
+hash 5f1ecbbfdd00d1f4
+note tour-new: the name validated, the note dropped when empty, and the group kept apart from no group at all, so re-running tour-new without --group leaves the group as it is.
 
 step xzu2w0
 order 24
@@ -247,7 +247,7 @@ file crates/cli/src/convert.rs
 symbol last
 lines 0 2
 hash 247f88d14f80ae15
-note The last step as a parent, or the root when the path is empty: path-add's default parent.
+note The last step as a parent, or the root when the tour is empty: tour-add's default parent.
 
 step zjm9mu
 order 6

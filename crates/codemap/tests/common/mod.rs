@@ -196,18 +196,18 @@ int sum_squares(int n) {
 
 pub(crate) const MAP: &[&[&str]] = &[
     &[
-        "path-new",
+        "tour-new",
         "startup",
         "flow",
         "What running the program does: fill the store, then report its total area.",
     ],
-    &["path-add", "startup", "src/main.rs:main", "-1"],
-    &["path-add", "startup", "fill"],
-    &["path-add", "startup", "Store::add"],
-    &["path-add", "startup", "check"],
-    &["path-add", "startup", "report", "0"],
-    &["path-add", "startup", "src/store.rs", "21", "25", "4"],
-    &["path-add", "startup", "log_line", "4"],
+    &["tour-add", "startup", "src/main.rs:main", "-1"],
+    &["tour-add", "startup", "fill"],
+    &["tour-add", "startup", "Store::add"],
+    &["tour-add", "startup", "check"],
+    &["tour-add", "startup", "report", "0"],
+    &["tour-add", "startup", "src/store.rs", "21", "25", "4"],
+    &["tour-add", "startup", "log_line", "4"],
     &[
         "step-note",
         "startup",
@@ -228,17 +228,17 @@ pub(crate) const MAP: &[&[&str]] = &[
         "The sum over every shape's own area.",
     ],
     &[
-        "path-new",
+        "tour-new",
         "shapes",
-        "type",
+        "data",
         "The Shape trait and the two shapes that implement it.",
     ],
-    &["path-add", "shapes", "Shape", "-1"],
-    &["path-add", "shapes", "impl Shape for Circle", "0"],
-    &["path-add", "shapes", "impl Shape for Square", "0"],
+    &["tour-add", "shapes", "Shape", "-1"],
+    &["tour-add", "shapes", "impl Shape for Circle", "0"],
+    &["tour-add", "shapes", "impl Shape for Square", "0"],
     &["promote", "spread", "1", "stats"],
-    &["path-new", "c-lib", "layer", "The C library's surface."],
-    &["path-add", "c-lib", "c/lib.c", "7", "13", "-1"],
+    &["tour-new", "c-lib", "layer", "The C library's surface."],
+    &["tour-add", "c-lib", "c/lib.c", "7", "13", "-1"],
 ];
 
 pub(crate) fn bin() -> PathBuf {

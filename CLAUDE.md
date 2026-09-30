@@ -7,15 +7,15 @@ codemap moves the building of that mental model from the human to the tool: the 
 the map as a side effect of writing the code, and the human reads the map instead of the
 diff.
 
-- **The agent** writes code and, in the same session, the map: which paths the change
+- **The agent** writes code and, in the same session, the map: which tours the change
   touched, what the new code is for, how the pieces relate. Its interface is the CLI.
 - **The human** reads the map, browses the codebase through the same tool (files, search,
-  symbols, references), and builds paths by hand where code is shown. Its interface is the GUI.
+  symbols, references), and builds tours by hand where code is shown. Its interface is the GUI.
 
 Goals: understanding an unfamiliar codebase, or a change you did not write, takes less
 friction through codemap than through an editor with an LSP; the map is a second channel
 beside the source, prose about workflows that overlap in the code they touch, grepped the way
-source is; code no path covers is visible, so the human can audit what the agent mapped; a
+source is; code no tour covers is visible, so the human can audit what the agent mapped; a
 small, snappy native app.
 
 Never: editing source from codemap (it reads code, it does not write it), any web or remote
@@ -51,7 +51,7 @@ rule applies.
    is one integer. Data cannot be handed to a parameter that was not shaped for it.
 5. **One description.** Each concept has one name in code, CLI, GUI and docs, and each kind of
    knowledge has one home: what a feature does and why is the note of its `feature-<name>`
-   path, what a layer or type is for is its path's note, the vocabulary and the reasons
+   tour, what a layer or data is for is its tour's note, the vocabulary and the reasons
    behind the design are below.
 6. **Every test can fail.** A test names a mistake in the code it would catch. One whose
    expected value comes from the code under test, or that asserts what a type already
@@ -66,27 +66,27 @@ rule applies.
 | **Symbol** | A top-level declaration, plus one level of members of impl / mod / trait / class bodies. Name, kind, inclusive line range, depth 0 or 1. |
 | **Xref** | Symbol A calls or references symbol B. Xrefs to a symbol are its callers, xrefs from it its callees. |
 | **Anchor** | A pinned slice of lines in one file, stored relative to the innermost enclosing symbol (absolute when none), so it follows the symbol when code above it moves. Carries a hash of its text; when the hash no longer matches, it is **stale**. |
-| **Path** | A named tree of anchors (**steps**) with a kind, a group, a note, an author, and a note per step. The one unit of the mental model. Siblings show in the order the parent's code names them. |
-| **Link** | A step naming another path that documents what its lines call (shared code, or a queue another process reads). The step stays at the call site; the linked path is read instead of copying its steps. |
-| **Group** | Where a path sits in the paths list, `/` nesting (`flows/http`). Orders the list, changes nothing else. |
-| **Kind** | `flow`: what happens when X. `layer`: an abstraction boundary and the functions forming its surface (a module is a layer rooted at its file). `type`: a data structure and what mutates it. A tag only. |
+| **Tour** | A named tree of anchors (**steps**) with a kind, a group, a note, an author, and a note per step. The one unit of the mental model. Siblings show in the order the parent's code names them. |
+| **Link** | A step naming another tour that documents what its lines call (shared code, or a queue another process reads). The step stays at the call site; the linked tour is read instead of copying its steps. |
+| **Group** | Where a tour sits in the tours list, `/` nesting (`flows/http`). Orders the list, changes nothing else. |
+| **Kind** | `flow`: what happens when X. `layer`: an abstraction boundary and the functions forming its surface (a module is a layer rooted at its file). `data`: a data structure and what mutates it. A tag only. |
 | **Coverage** | A symbol is covered when a step's anchor overlaps it. Derived, never stored. |
-| **Map** | All paths for one root: `.codemap/`, one text file per path, committed with the code. The only thing persisted (the manual layer). Everything derived from source (files, symbols, xrefs, roots, call trees, coverage) is the auto layer, cached in `.codemap-cache`, never committed. |
+| **Map** | All tours for one root: `.codemap/`, one text file per tour, committed with the code. The only thing persisted (the manual layer). Everything derived from source (files, symbols, xrefs, roots, call trees, coverage) is the auto layer, cached in `.codemap-cache`, never committed. |
 
-A path note describes the workflow as a whole; a step note says what the step does for this
-path. What is true of the code in every path goes in the note of the `layer` or `type` path
+A tour note describes the workflow as a whole; a step note says what the step does for this
+tour. What is true of the code in every tour goes in the note of the `layer` or `data` tour
 covering it: the code has no comments, so the map is the only prose about it.
 
 ## Why it is built this way
 
-- **The map merges.** One file per path, groups a field rather than directories or name
+- **The map merges.** One file per tour, groups a field rather than directories or name
   prefixes, step ids a hash of what the step first pinned and never changed, steps written in
-  id order, a stored `order` only `path-swap` changes, no counts in the file: two branches that
-  change different paths touch different files, two that change one path touch different
+  id order, a stored `order` only `tour-swap` changes, no counts in the file: two branches that
+  change different tours touch different files, two that change one tour touch different
   lines. The format has no version compatibility; the reader rejects any version it does not
   write and an old map is regenerated.
 - **Nothing re-anchors on load.** The agent that changed the code has the diff and re-pins
-  (`stale`, `repin`, `path-pin`); the human never does. `repin` aligns the old slice against
+  (`stale`, `repin`, `tour-pin`); the human never does. `repin` aligns the old slice against
   each symbol of the step's name with a patience diff and pins only when half the lines
   survive; it never vouches for a note.
 - **One backend per language.** The language's server when on PATH, else a tree-sitter
@@ -97,13 +97,13 @@ covering it: the code has no comments, so the map is the only prose about it.
   asks the server only about the files a command touches. The GUI merges server answers
   about once a second, since a merge re-resolves the map and drops every drawn grid.
 - **Links go through a step**, not text in a note, so they are checked, renamed with their
-  path, and inlined. A path that is linked to cannot be removed.
+  tour, and inlined. A tour that is linked to cannot be removed.
 - **Roots are strictly "no callers".** **`promote` prunes by measured rules** (depth 2; tests,
   accessors and trivial bodies left out; shared, other-package and mapped callees kept as
-  leaves), chosen by scoring against this repo's hand-written feature paths; it is still a
+  leaves), chosen by scoring against this repo's hand-written feature tours; it is still a
   scaffold the agent trims and annotates. **Coverage is observable, never a `check` failure.**
-  **No review state on paths.**
-- **The GUI is one selection** (a symbol, with a step behind it when reached through a path);
+  **No review state on tours.**
+- **The GUI is one selection** (a symbol, with a step behind it when reached through a tour);
   every view shows it, and the document, steps list and graph are three views of one thing that
   never disagree. The graph is derived (the selection plus an ordered list of reveals) and
   its camera moves only on explicit navigation.
@@ -132,19 +132,19 @@ cargo build --release -p codemap
 target/release/codemap <root> <command> [args]
 ```
 
-1. `paths` to see what is already named. `path <name>` to read a code path as one
-   document instead of opening files (`--inline` reads linked paths inline). `notes <regex>`
+1. `tours` to see what is already named. `tour <name>` to read a code tour as one
+   document instead of opening files (`--inline` reads linked tours inline). `notes <regex>`
    to search what earlier sessions wrote. The `features/` groups hold one flow per thing a
    user can do; `tooling` explains the gate.
 2. `tree <sym>`, `callers <sym>`, `callees <sym>` to move along the graph, `refs <sym>`
    for every reference. `roots` for entry points. `show <file> [start] [end]` only for
-   lines no path covers. `uncovered` lists symbols in no path, largest first.
+   lines no tour covers. `uncovered` lists symbols in no tour, largest first.
 
-`codemap help` prints the full command list. A save writes only the paths its command
-changed, so sessions working on different paths at once keep each other's work; on one path
+`codemap help` prints the full command list. A save writes only the tours its command
+changed, so sessions working on different tours at once keep each other's work; on one tour
 the last writer wins. The same contract belongs in the `CLAUDE.md` of every mapped repo, with
 the map upkeep the `finish` skill does here: `stale`, `repin`, every new non-trivial symbol
-into a path, `check` clean.
+into a tour, `check` clean.
 
 ## Indexing
 
@@ -163,7 +163,7 @@ framework underneath.
 
 `crates/codemap/tests` holds `cli.rs` (every command against a generated fixture), `gui.rs`
 (scripted scenarios in real windows, one at a time), `features.rs` (every feature has its map
-path and a scenario that triggers it) and `parity.rs`. A scenario fails when codemap crashes or
+tour and a scenario that triggers it) and `parity.rs`. A scenario fails when codemap crashes or
 a GUI script reports an error; nothing records its output in the repo. What a change does to
 output is shown by `cargo xtask parity [scenario]`: it builds the parent revision (cached under
 `target/parity`), plays every scenario on both builds, and lists each one whose transcript, GUI
@@ -176,7 +176,7 @@ build.
 
 Never claim a visual or interactive behaviour from reading the code; drive it and look.
 
-- `CODEMAP_SHOT=<file.png> [CODEMAP_SHOT_TAB=path|graph|source|diff] [CODEMAP_SHOT_SCROLL=n]
+- `CODEMAP_SHOT=<file.png> [CODEMAP_SHOT_TAB=tour|graph|source|diff] [CODEMAP_SHOT_SCROLL=n]
   target/release/codemap <root>` writes the first settled frame and quits.
 - `CODEMAP_SCRIPT=<file> target/release/codemap <root>` plays a script, one command per
   line, as real input, on a clock of its own (8 ms a frame, plus each pause), so animations land
@@ -193,9 +193,9 @@ Never claim a visual or interactive behaviour from reading the code; drive it an
   `dump`. A `script:` line on stderr fails the scenario. Id names are the ones in
   `crates/gui/src/ids.rs`: `name`, `name/<n>` for rows, `name@<key>` (every view's tab
   `tab@<View>`, e.g. `tab@Graph`, `tab@Symbols`; document steps `step/<n>`, `collapse/<n>`,
-  `inline/<n>`, `hide/<n>`, `whole/<n>`, `del/<n>`, `ctx-a/<n>`, `ctx-b/<n>`; paths list `paths/<n>`,
-  `steps/<n>`; text fields `field@search`, `field@new-path`, `field@symbols`,
-  `field@paths`, `field@goto-line`, `field@views`; symbol rows
+  `inline/<n>`, `hide/<n>`, `whole/<n>`, `del/<n>`, `ctx-a/<n>`, `ctx-b/<n>`; tours list `tours/<n>`,
+  `steps/<n>`; text fields `field@search`, `field@new-tour`, `field@symbols`,
+  `field@tours`, `field@goto-line`, `field@views`; symbol rows
   `sym@<file index>:<symbol index>`; references rows `xto/<i>`, `xfrom/<i>`, `xref/<i>`; panels
   by the number n `DUMP panels` prints: `panel/<n>`, header buttons `pick/<n>`,
   `split-right/<n>`, `split-down/<n>`, `close-panel/<n>`, dividers `divider/<n>`, tab close

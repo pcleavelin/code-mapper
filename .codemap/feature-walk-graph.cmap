@@ -1,9 +1,9 @@
-codemap 8
-path feature-walk-graph
+codemap 9
+tour feature-walk-graph
 kind flow
 author ai
 group features/gui
-note After a click inside the graph's canvas, the arrow keys move the selection between graph nodes instead of walking the path: Left and Right (this feature's keys) and Up and Down (walk-steps' keys, which the graph borrows while it holds the keyboard) go to the parent, a child or a sibling lying that way first, and to the nearest node that way when none of those does. The reader reaches for it to explore the graph node by node from the keyboard instead of clicking each node (commit ad88590). A step node selects its step, an off-path node focuses its symbol; the tree keeps its root and the camera glides to the new node over a few frames. Nothing happens while a text field holds the keyboard or when no node lies that way. A press outside the canvas, or hiding the Graph view, gives the arrows back to walking the path (feature-walk-steps).
+note After a click inside the graph's canvas, the arrow keys move the selection between graph nodes instead of walking the tour: Left and Right (this feature's keys) and Up and Down (walk-steps' keys, which the graph borrows while it holds the keyboard) go to the parent, a child or a sibling lying that way first, and to the nearest node that way when none of those does. The reader reaches for it to explore the graph node by node from the keyboard instead of clicking each node (commit ad88590). A step node selects its step, an off-tour node focuses its symbol; the tree keeps its root and the camera glides to the new node over a few frames. Nothing happens while a text field holds the keyboard or when no node lies that way. A press outside the canvas, or hiding the Graph view, gives the arrows back to walking the tour (feature-walk-steps).
 
 step 04ic65
 order 15
@@ -44,7 +44,7 @@ symbol focused
 lines 0 9
 hash 3216e1d4c408d038
 link graph-camera
-note The focus change reaches the graph here (from focus_symbol); Steering::Keys asks the camera to look at the new node and keeps the graph's root, so the tree does not re-root on an off-path node the walk lands on.
+note The focus change reaches the graph here (from focus_symbol); Steering::Keys asks the camera to look at the new node and keeps the graph's root, so the tree does not re-root on an off-tour node the walk lands on.
 
 step da529t
 order 4
@@ -53,7 +53,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol select_step
 lines 0 53
-hash c309ed71b85c827e
+hash d8e961f7c6c62ddd
 link feature-select-step
 note A step node: the same selection as clicking the step in the steps list, scrolled to.
 
@@ -75,7 +75,7 @@ file crates/gui/src/app.rs
 symbol frame
 lines 22 28
 hash a8df20e3242f9745
-note And a frame with the Graph view hidden marks the graph Hidden and its keyboard Elsewhere, so the arrows go back to walking the path.
+note And a frame with the Graph view hidden marks the graph Hidden and its keyboard Elsewhere, so the arrows go back to walking the tour.
 
 step nfi0w4
 order 10
@@ -94,8 +94,8 @@ author ai
 file crates/gui/src/nav.rs
 symbol go_to_symbol
 lines 0 14
-hash 44cd199b2a7a836e
-note An off-path node: its symbol becomes the focus with no step selected, the same as a Symbols row; in the Graph tab the tab stays.
+hash 2431deb63e24562e
+note An off-tour node: its symbol becomes the focus with no step selected, the same as a Symbols row; in the Graph tab the tab stays.
 
 step rw4ydx
 order 14
@@ -123,8 +123,8 @@ author ai
 file crates/gui/src/graph/input.rs
 symbol graph_walk
 lines 0 20
-hash 83900aabb81aeed1
-note The handler, one call per arrow press. Does nothing while a text field is focused or with no node under the selection (Built::focus_node); otherwise asks toward for the node that way from the focus node, sends Steer(Steering::Keys) so the focus change that follows glides the camera and keeps the root, then selects the node: its step when it is a step of the drawn path, else its symbol through go_to_symbol.
+hash 51c070f1f62d3630
+note The handler, one call per arrow press. Does nothing while a text field is focused or with no node under the selection (Built::focus_node); otherwise asks toward for the node that way from the focus node, sends Steer(Steering::Keys) so the focus change that follows glides the camera and keeps the root, then selects the node: its step when it is a step of the drawn tour, else its symbol through go_to_symbol.
 
 step ufb37d
 order 1
@@ -144,7 +144,7 @@ file crates/gui/src/app.rs
 symbol keys
 lines 32 41
 hash fc9a4dd80b236834
-note Trigger: the keys phase, while the Graph view is shown and the graph holds the keyboard, queues one GraphWalk per arrow pressed this frame; the path walk (WalkWhenIdle) gets no arrows then.
+note Trigger: the keys phase, while the Graph view is shown and the graph holds the keyboard, queues one GraphWalk per arrow pressed this frame; the tour walk (WalkWhenIdle) gets no arrows then.
 
 step uxg9gz
 order 7

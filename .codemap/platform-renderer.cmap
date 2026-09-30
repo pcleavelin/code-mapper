@@ -1,5 +1,5 @@
-codemap 8
-path platform-renderer
+codemap 9
+tour platform-renderer
 kind layer
 author ai
 group render

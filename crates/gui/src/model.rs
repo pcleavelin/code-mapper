@@ -3,8 +3,8 @@ use std::fmt;
 use std::time::{Duration, Instant};
 
 use domain::{
-    Depth, FileId, GroupName, Index, Line, LineCount, Map, Path, PathDiff, PathKind, PathName, Row,
-    Span, Step, StepId,
+    Depth, FileId, GroupName, Index, Line, LineCount, Map, Row, Span, Step, StepId, Tour, TourDiff,
+    TourKind, TourName,
 };
 use io_map::{MapStore, Stamp};
 use strum::VariantArray;
@@ -24,9 +24,9 @@ use crate::work::WorkState;
 use std::mem;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) struct PathSlot(usize);
+pub(crate) struct TourSlot(usize);
 
-impl PathSlot {
+impl TourSlot {
     pub(crate) const fn new(position: usize) -> Self {
         Self(position)
     }
@@ -36,7 +36,7 @@ impl PathSlot {
     }
 }
 
-impl fmt::Display for PathSlot {
+impl fmt::Display for TourSlot {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(formatter, "{}", self.0)
     }
@@ -63,13 +63,13 @@ impl fmt::Display for StepSlot {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) struct StepKey {
-    pub(crate) path: PathSlot,
+    pub(crate) tour: TourSlot,
     pub(crate) step: StepSlot,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
 pub(crate) enum Tab {
-    Path,
+    Tour,
     Diff,
     Graph,
     Source,
@@ -101,7 +101,7 @@ impl Literal {
 impl Tab {
     const fn name(self) -> Literal {
         Literal(match self {
-            Self::Path => "path",
+            Self::Tour => "tour",
             Self::Diff => "diff",
             Self::Graph => "graph",
             Self::Source => "source",
@@ -114,7 +114,7 @@ impl Tab {
             .iter()
             .copied()
             .find(|tab| tab.name().as_str() == name.as_str())
-            .unwrap_or(Self::Path)
+            .unwrap_or(Self::Tour)
     }
 }
 
@@ -222,13 +222,13 @@ impl StepViews {
             .map(|(key, view)| (*key, *view))
     }
 
-    pub(crate) fn each_of_path(
+    pub(crate) fn each_of_tour(
         &mut self,
-        path: PathSlot,
+        tour: TourSlot,
         mut change: impl FnMut(StepSlot, &mut StepView),
     ) {
         for (key, view) in &mut self.0 {
-            if key.path == path {
+            if key.tour == tour {
                 change(key.step, view);
             }
         }
@@ -385,7 +385,7 @@ pub(crate) struct Model {
     pub(crate) tip_shown: Option<Label>,
     pub(crate) fields: Fields,
     pub(crate) palette: Option<Palette>,
-    pub(crate) new_path: Option<PathKind>,
+    pub(crate) new_tour: Option<TourKind>,
     pub(crate) step_grab: Option<StepGrab>,
     pub(crate) hits: Vec<Hit>,
     pub(crate) hits_shown: HitsShown,
@@ -425,7 +425,7 @@ impl Model {
             tip_shown: None,
             fields: Fields::default(),
             palette: None,
-            new_path: None,
+            new_tour: None,
             step_grab: None,
             hits: Vec::new(),
             hits_shown: HitsShown::All,
@@ -441,28 +441,28 @@ impl Model {
         }
     }
 
-    pub(crate) fn path(&self, slot: PathSlot) -> Option<&Path> {
-        self.map.paths().get(slot.get())
+    pub(crate) fn tour(&self, slot: TourSlot) -> Option<&Tour> {
+        self.map.tours().get(slot.get())
     }
 
     pub(crate) fn step(&self, key: StepKey) -> Option<&Step> {
-        self.path(key.path)?.steps().get(key.step.get())
+        self.tour(key.tour)?.steps().get(key.step.get())
     }
 
-    pub(crate) fn path_count(&self) -> Count {
-        Count::new(self.map.paths().len())
+    pub(crate) fn tour_count(&self) -> Count {
+        Count::new(self.map.tours().len())
     }
 
-    pub(crate) fn step_count(&self, path: PathSlot) -> Count {
-        Count::new(self.path(path).map_or(0, |found| found.steps().len()))
+    pub(crate) fn step_count(&self, tour: TourSlot) -> Count {
+        Count::new(self.tour(tour).map_or(0, |found| found.steps().len()))
     }
 
-    fn path_filter(&self) -> Needle {
-        Needle::new(self.fields.get(Which::PathFilter).text().as_str())
+    fn tour_filter(&self) -> Needle {
+        Needle::new(self.fields.get(Which::TourFilter).text().as_str())
     }
 
-    pub(crate) fn lists(&self, name: &PathName) -> bool {
-        self.path_filter().found_in(name.as_str())
+    pub(crate) fn lists(&self, name: &TourName) -> bool {
+        self.tour_filter().found_in(name.as_str())
     }
 
     fn step_found(needle: &Needle, step: &Step) -> bool {
@@ -472,44 +472,44 @@ impl Model {
     }
 
     pub(crate) fn listed_rows(&self) -> Vec<Row> {
-        let needle = self.path_filter();
-        self.map.rows_where(|path| {
-            needle.found_in(path.name().as_str())
-                || path
+        let needle = self.tour_filter();
+        self.map.rows_where(|tour| {
+            needle.found_in(tour.name().as_str())
+                || tour
                     .steps()
                     .iter()
                     .any(|step| Self::step_found(&needle, step))
         })
     }
 
-    pub(crate) fn found_steps(&self, slot: PathSlot) -> Vec<Numbered> {
-        let needle = self.path_filter();
-        let Some(path) = self.path(slot) else {
+    pub(crate) fn found_steps(&self, slot: TourSlot) -> Vec<Numbered> {
+        let needle = self.tour_filter();
+        let Some(tour) = self.tour(slot) else {
             return Vec::new();
         };
-        if needle.is_empty() || needle.found_in(path.name().as_str()) {
+        if needle.is_empty() || needle.found_in(tour.name().as_str()) {
             return Vec::new();
         }
         self.numbered(slot)
             .into_iter()
             .filter(|numbered| {
-                path.steps()
+                tour.steps()
                     .get(numbered.step.get())
                     .is_some_and(|step| Self::step_found(&needle, step))
             })
             .collect()
     }
 
-    pub(crate) fn find_path(&self, name: &PathName) -> Option<PathSlot> {
+    pub(crate) fn find_tour(&self, name: &TourName) -> Option<TourSlot> {
         self.map
-            .paths()
+            .tours()
             .iter()
-            .position(|path| path.name() == name)
-            .map(PathSlot::new)
+            .position(|tour| tour.name() == name)
+            .map(TourSlot::new)
     }
 
-    pub(crate) fn step_slot(&self, path: PathSlot, id: &StepId) -> Option<StepSlot> {
-        self.path(path)?
+    pub(crate) fn step_slot(&self, tour: TourSlot, id: &StepId) -> Option<StepSlot> {
+        self.tour(tour)?
             .steps()
             .iter()
             .position(|step| step.id() == id)
@@ -520,8 +520,8 @@ impl Model {
         self.step(key).map(|step| step.id().clone())
     }
 
-    pub(crate) fn numbered(&self, path: PathSlot) -> Vec<Numbered> {
-        let Some(found) = self.path(path) else {
+    pub(crate) fn numbered(&self, tour: TourSlot) -> Vec<Numbered> {
+        let Some(found) = self.tour(tour) else {
             return Vec::new();
         };
         found
@@ -529,7 +529,7 @@ impl Model {
             .into_iter()
             .filter_map(|numbered| {
                 Some(Numbered {
-                    step: self.step_slot(path, &numbered.step)?,
+                    step: self.step_slot(tour, &numbered.step)?,
                     depth: numbered.depth,
                     number: Label::new(numbered.number.to_string()),
                 })
@@ -537,8 +537,8 @@ impl Model {
             .collect()
     }
 
-    pub(crate) fn tree_order(&self, path: PathSlot) -> Vec<Placed> {
-        let Some(found) = self.path(path) else {
+    pub(crate) fn tree_order(&self, tour: TourSlot) -> Vec<Placed> {
+        let Some(found) = self.tour(tour) else {
             return Vec::new();
         };
         found
@@ -546,7 +546,7 @@ impl Model {
             .into_iter()
             .filter_map(|placed| {
                 Some(Placed {
-                    step: self.step_slot(path, &placed.step)?,
+                    step: self.step_slot(tour, &placed.step)?,
                 })
             })
             .collect()
@@ -557,13 +557,13 @@ impl Model {
             return Count::ZERO;
         };
         Count::new(
-            self.path(key.path)
+            self.tour(key.tour)
                 .map_or(0, |found| found.descendants(&id).len()),
         )
     }
 
     pub(crate) fn number_of(&self, key: StepKey) -> Label {
-        self.numbered(key.path)
+        self.numbered(key.tour)
             .into_iter()
             .find(|numbered| numbered.step == key.step)
             .map_or_else(Label::default, |numbered| numbered.number)
@@ -571,10 +571,10 @@ impl Model {
 
     pub(crate) fn parent_of(&self, key: StepKey) -> Option<StepSlot> {
         let parent = self.step(key)?.parent()?;
-        self.step_slot(key.path, parent)
+        self.step_slot(key.tour, parent)
     }
 
-    pub(crate) fn diffs(&self) -> Vec<PathDiff> {
+    pub(crate) fn diffs(&self) -> Vec<TourDiff> {
         self.base
             .map
             .as_ref()

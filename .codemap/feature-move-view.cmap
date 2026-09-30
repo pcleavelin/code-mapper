@@ -1,5 +1,5 @@
-codemap 8
-path feature-move-view
+codemap 9
+tour feature-move-view
 kind flow
 author ai
 group features/gui

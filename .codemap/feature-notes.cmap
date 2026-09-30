@@ -1,9 +1,9 @@
-codemap 8
-path feature-notes
+codemap 9
+tour feature-notes
 kind flow
 author ai
 group features/cli
-note notes <regex>: search what earlier sessions wrote. The agent reaches for it so a session does not re-investigate what an earlier session already understood and wrote down. Matches the regex against every line of every path note and step note and prints each matching line with where it lives, so a session can find prior explanation before reading code.
+note notes <regex>: search what earlier sessions wrote. The agent reaches for it so a session does not re-investigate what an earlier session already understood and wrote down. Matches the regex against every line of every tour note and step note and prints each matching line with where it lives, so a session can find prior explanation before reading code.
 
 step 6csat1
 order 2
@@ -12,8 +12,8 @@ author ai
 file crates/cli/src/wire.rs
 symbol step_note_line
 lines 0 14
-hash 08fe9760017ec26c
-note A step-note match: '<path> [i] <file>:<line>: <text>', pointing at the step's first line so the code can be opened from it.
+hash e5941c0f35cf3c0b
+note A step-note match: '<tour> [i] <file>:<line>: <text>', pointing at the step's first line so the code can be opened from it.
 
 step 9z8urg
 order 0
@@ -21,16 +21,16 @@ author ai
 file crates/cli/src/exec.rs
 symbol notes
 lines 0 22
-hash e03c25d42f3b307d
+hash 0219ef3ceea4dafa
 link notes
-note For each path, the path note's matching lines first, then each step's matching note lines with the step's index.
+note For each tour, the tour note's matching lines first, then each step's matching note lines with the step's index.
 
 step gthqgv
 order 1
 parent 9z8urg
 author ai
 file crates/cli/src/wire.rs
-symbol path_note_line
+symbol tour_note_line
 lines 0 2
-hash 6dc6e1f777a28bc3
-note A path-note match: '<path>: <line>'.
+hash 39f56dee92b107f7
+note A tour-note match: '<tour>: <line>'.

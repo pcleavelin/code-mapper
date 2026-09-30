@@ -2,8 +2,8 @@ use std::collections::BTreeSet;
 
 use clap::CommandFactory;
 use domain::{
-    Depth, FileText, Imports, Line, MapError, PathName, RelativePath, SourceFile, Span,
-    StepAddress, StepId, SymbolName, TextFragment,
+    Depth, FileText, Imports, Line, MapError, RelativePath, SourceFile, Span, StepAddress, StepId,
+    SymbolName, TextFragment, TourName,
 };
 use features::{Feature, Surface};
 use io_map::{Fault, FieldKey, FieldValue, Origin, ParseError};
@@ -111,7 +111,7 @@ fn help_is_the_usage_and_one_line_per_command() {
     let text = help.as_str();
     assert!(text.starts_with("Usage: codemap <root>"));
     assert!(text.contains(
-        "  path-group    <name> <group>                   put a path in a group; / nests groups (flows/http), \"\" = top level\n"
+        "  tour-group    <name> <group>                   put a tour in a group; / nests groups (flows/http), \"\" = top level\n"
     ));
     assert!(
         text.ends_with(
@@ -130,9 +130,9 @@ fn a_parse_failure_goes_to_stderr_and_help_to_stdout() {
             .as_str()
             .starts_with("error: unrecognized subcommand 'bogus'")
     );
-    let invalid = Invocation::parse(&arguments(&["path-new", "x", "kinda"])).unwrap_err();
+    let invalid = Invocation::parse(&arguments(&["tour-new", "x", "kinda"])).unwrap_err();
     assert!(invalid.text().as_str().starts_with(
-        "error: invalid value 'kinda' for '<KIND>': expected one of flow, layer, type"
+        "error: invalid value 'kinda' for '<KIND>': expected one of flow, layer, data"
     ));
     let help = Invocation::parse(&arguments(&["help"])).unwrap_err();
     assert_eq!(help.channel(), Channel::Stdout);
@@ -142,8 +142,8 @@ fn a_parse_failure_goes_to_stderr_and_help_to_stdout() {
 fn negative_numbers_reach_the_commands_that_take_them() {
     for words in [
         &["note-edit", "p", "-1", "a", "b"][..],
-        &["path-add", "p", "sym", "-1"],
-        &["path-move", "p", "0", "-1"],
+        &["tour-add", "p", "sym", "-1"],
+        &["tour-move", "p", "0", "-1"],
     ] {
         Invocation::parse(&arguments(words)).unwrap();
     }
@@ -151,37 +151,37 @@ fn negative_numbers_reach_the_commands_that_take_them() {
 
 #[test]
 fn a_command_line_splits_on_spaces_outside_quotes() {
-    let line = CommandLine::new("path-note  startup \"the first path\" x");
+    let line = CommandLine::new("tour-note  startup \"the first tour\" x");
     let words: Vec<String> = line
         .arguments()
         .iter()
         .map(|argument| argument.as_str().to_owned())
         .collect();
-    assert_eq!(words, ["path-note", "startup", "the first path", "x"]);
+    assert_eq!(words, ["tour-note", "startup", "the first tour", "x"]);
 }
 
 #[test]
 fn failures_read_as_the_legacy_messages() {
-    let name = PathName::new("startup").unwrap();
+    let name = TourName::new("startup").unwrap();
     let cases: Vec<(Failure, &str)> = vec![
         (
             Failure::Map(MapError::NameTaken(name.clone())),
-            "a path named 'startup' already exists",
+            "a tour named 'startup' already exists",
         ),
         (
             Failure::Map(MapError::InvalidName(domain::InvalidName::new(".x"))),
-            "'.x' cannot name a path: use letters, digits, '.', '_' and '-', not starting with '.'",
+            "'.x' cannot name a tour: use letters, digits, '.', '_' and '-', not starting with '.'",
         ),
         (
             Failure::Map(MapError::CaseClash {
-                name: PathName::new("Startup").unwrap(),
+                name: TourName::new("Startup").unwrap(),
                 other: name.clone(),
             }),
-            "'Startup' differs from the path 'startup' only in letter case",
+            "'Startup' differs from the tour 'startup' only in letter case",
         ),
         (
             Failure::Map(MapError::NoSuchStep(StepAddress {
-                path: name.clone(),
+                tour: name.clone(),
                 step: StepId::new("abc123").unwrap(),
             })),
             "no such step",
@@ -196,9 +196,9 @@ fn failures_read_as_the_legacy_messages() {
         ),
         (
             Failure::LinkedFrom {
-                path: name.clone(),
+                tour: name.clone(),
                 steps: vec![StepPlace {
-                    path: PathName::new("scratch").unwrap(),
+                    tour: TourName::new("scratch").unwrap(),
                     index: StepIndex::new(1),
                 }],
             },
@@ -209,7 +209,7 @@ fn failures_read_as_the_legacy_messages() {
                 under: Under::new(9),
                 steps: Count::new(4),
             },
-            "no step [9] to go under: the path has 4 steps (-1 = root)",
+            "no step [9] to go under: the tour has 4 steps (-1 = root)",
         ),
         (Failure::NoLink(StepIndex::new(2)), "step [2] has no link"),
         (
@@ -268,20 +268,20 @@ fn a_parse_error_names_its_origin_and_line() {
     let at_revision = ParseError {
         origin: Origin::Revision(domain::Revision::new("@-")),
         line: None,
-        fault: Fault::NoPathLine,
+        fault: Fault::NoTourLine,
     };
     assert_eq!(
         Failure::Parse(at_revision).to_string(),
-        ".codemap at @-: a path with no 'path' line"
+        ".codemap at @-: a tour with no 'tour' line"
     );
     let version = ParseError {
         origin: Origin::Revision(domain::Revision::new("HEAD")),
         line: Some(Line::new(0)),
-        fault: Fault::Version(FieldValue::new("codemap 7")),
+        fault: Fault::Version(FieldValue::new("codemap 8")),
     };
     assert_eq!(
         Failure::Parse(version).to_string(),
-        ".codemap at HEAD:1: 'codemap 7' is not 'codemap 8'; regenerate this map"
+        ".codemap at HEAD:1: 'codemap 8' is not 'codemap 9'; regenerate this map"
     );
     let field = ParseError {
         origin: Origin::Revision(domain::Revision::new("HEAD")),

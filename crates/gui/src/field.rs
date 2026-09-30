@@ -23,11 +23,11 @@ pub(crate) enum Edit {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum Which {
     Search,
-    NewPath,
+    NewTour,
     NewGroup,
     Command,
     SymbolFilter,
-    PathFilter,
+    TourFilter,
     ViewSearch,
     GoToLine,
     Palette,
@@ -37,11 +37,11 @@ impl Which {
     pub(crate) const fn control(self) -> Control {
         match self {
             Self::Search => ids::SEARCH_FIELD,
-            Self::NewPath => ids::NEW_PATH_FIELD,
+            Self::NewTour => ids::NEW_TOUR_FIELD,
             Self::NewGroup => ids::NEW_GROUP_FIELD,
             Self::Command => ids::COMMAND_FIELD,
             Self::SymbolFilter => ids::FILTER_FIELD,
-            Self::PathFilter => ids::PATH_FILTER_FIELD,
+            Self::TourFilter => ids::TOUR_FILTER_FIELD,
             Self::ViewSearch => ids::VIEW_FIELD,
             Self::GoToLine => ids::LINE_FIELD,
             Self::Palette => ids::PALETTE_FIELD,
@@ -311,11 +311,11 @@ enum Focus {
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Fields {
     search: Field,
-    new_path: Field,
+    new_tour: Field,
     new_group: Field,
     command: Field,
     filter: Field,
-    path_filter: Field,
+    tour_filter: Field,
     view_search: Field,
     line: Field,
     palette: Field,
@@ -326,11 +326,11 @@ impl Fields {
     pub(crate) fn get(&self, which: Which) -> &Field {
         match which {
             Which::Search => &self.search,
-            Which::NewPath => &self.new_path,
+            Which::NewTour => &self.new_tour,
             Which::NewGroup => &self.new_group,
             Which::Command => &self.command,
             Which::SymbolFilter => &self.filter,
-            Which::PathFilter => &self.path_filter,
+            Which::TourFilter => &self.tour_filter,
             Which::ViewSearch => &self.view_search,
             Which::GoToLine => &self.line,
             Which::Palette => &self.palette,
@@ -340,11 +340,11 @@ impl Fields {
     fn get_mut(&mut self, which: Which) -> &mut Field {
         match which {
             Which::Search => &mut self.search,
-            Which::NewPath => &mut self.new_path,
+            Which::NewTour => &mut self.new_tour,
             Which::NewGroup => &mut self.new_group,
             Which::Command => &mut self.command,
             Which::SymbolFilter => &mut self.filter,
-            Which::PathFilter => &mut self.path_filter,
+            Which::TourFilter => &mut self.tour_filter,
             Which::ViewSearch => &mut self.view_search,
             Which::GoToLine => &mut self.line,
             Which::Palette => &mut self.palette,

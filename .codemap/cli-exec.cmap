@@ -1,9 +1,9 @@
-codemap 8
-path cli-exec
+codemap 9
+tour cli-exec
 kind layer
 author ai
 group cli
-note exec.rs: where a Request does its work. Run holds what one command may touch (the Index, the Map, the author to record, the language servers when the CLI has them, the Output to write) and has one method per command; each finds what the user named, calls Index and Map methods, and hands values to wire.rs to print. Nothing here formats text or touches a file except through a store it is given (MapStore for diff's parent map, Vcs for repin's old text), and every refusal is a Failure value. The feature-<name> paths follow each command's method; this path holds what the methods share: the lookups that turn typed names into ids, and the one way a command asks the servers for files.
+note exec.rs: where a Request does its work. Run holds what one command may touch (the Index, the Map, the author to record, the language servers when the CLI has them, the Output to write) and has one method per command; each finds what the user named, calls Index and Map methods, and hands values to wire.rs to print. Nothing here formats text or touches a file except through a store it is given (MapStore for diff's parent map, Vcs for repin's old text), and every refusal is a Failure value. The feature-<name> tours follow each command's method; this tour holds what the methods share: the lookups that turn typed names into ids, and the one way a command asks the servers for files.
 
 step 1geiq9
 order 5
@@ -41,8 +41,8 @@ author ai
 file crates/cli/src/exec.rs
 symbol find_step
 lines 0 7
-hash fe848f2c971eee7d
-note Path and position to a StepAddress, or Failure::NoSuchStep past the last step; every command taking a step index goes through it.
+hash b3c00b8fc9bad614
+note Tour and position to a StepAddress, or Failure::NoSuchStep past the last step; every command taking a step index goes through it.
 
 step 580okp
 order 9
@@ -50,7 +50,7 @@ author ai
 file crates/cli/src/exec.rs
 symbol map_failure
 lines 0 8
-hash c5ace51071db7c9f
+hash f8a5867dea7f1761
 note MapError to Failure for the GUI; LinkedFrom's StepAddresses become name[index] places.
 
 step 5te0k4
@@ -80,17 +80,17 @@ author ai
 file crates/cli/src/exec.rs
 symbol places
 lines 0 13
-hash 4c48075ffc852990
+hash b49b29cd39d228d2
 note StepAddresses to the name[index] form a user types, dropping any that no longer resolve.
 
 step gnf4jp
 order 3
 author ai
 file crates/cli/src/exec.rs
-symbol find_path
+symbol find_tour
 lines 0 5
-hash 63e1a3b28d250aa6
-note A typed path name to the PathName of an existing path, or Failure::NoSuchPath with the text as typed; an invalid name is simply not found.
+hash 0d594859f978d957
+note A typed tour name to the TourName of an existing tour, or Failure::NoSuchTour with the text as typed; an invalid name is simply not found.
 
 step hgcj70
 order 2
@@ -108,7 +108,7 @@ author ai
 file crates/cli/src/exec.rs
 symbol Repin
 lines 0 6
-hash 678cefc65d6d920c
+hash 2469cc596ad65f60
 link stale-and-pin
 note One stale step being followed from the revision's text: where it was, which file, and its place for the report.
 
@@ -118,9 +118,9 @@ author ai
 file crates/cli/src/exec.rs
 symbol Document
 lines 0 5
-hash 1ac99abe1ccb3e0b
-link path-links
-note The path command's printer state. inlined is None without --inline; with it, the chain of paths being inlined, so a path already on the chain prints a pointer back instead of looping, and each inlined path ends with an end-of line.
+hash 2c6cda8e2d83f1a2
+link tour-links
+note The tour command's printer state. inlined is None without --inline; with it, the chain of tours being inlined, so a tour already on the chain prints a pointer back instead of looping, and each inlined tour ends with an end-of line.
 
 step lwzwqw
 order 0

@@ -1,9 +1,9 @@
-codemap 8
-path selection
+codemap 9
+tour selection
 kind flow
 author ai
 group gui
-note One selection for the whole app: a symbol, with a step behind it when it was reached through a path. Every view reads the same fields of Nav - the focused symbol, the path being read and the selected step - and none keeps a copy: the graph derives its whole node set from them every frame, and the document and steps list read them directly, so they cannot disagree. Nav's fields are private to nav.rs, so every change of selection goes through these functions, called from apply. Two entry points: select_step for anything path-shaped, select_symbol for anything else; select_symbol turns into select_step when the symbol is a whole-symbol step of the path being read, so an xref click onto a step lands on the step. Every view shows the selection; with nothing selected every view is empty.
+note One selection for the whole app: a symbol, with a step behind it when it was reached through a tour. Every view reads the same fields of Nav - the focused symbol, the tour being read and the selected step - and none keeps a copy: the graph derives its whole node set from them every frame, and the document and steps list read them directly, so they cannot disagree. Nav's fields are private to nav.rs, so every change of selection goes through these functions, called from apply. Two entry points: select_step for anything tour-shaped, select_symbol for anything else; select_symbol turns into select_step when the symbol is a whole-symbol step of the tour being read, so an xref click onto a step lands on the step. Every view shows the selection; with nothing selected every view is empty.
 
 step 0gu816
 order 3
@@ -11,8 +11,8 @@ author ai
 file crates/gui/src/nav.rs
 symbol select_symbol
 lines 0 20
-hash 478ce11e8427e2a2
-note The symbol entry point: the Symbols tab, References, jumps, off-path graph nodes. Clears the step, unless the symbol is a whole-symbol step of the path being read, in which case that step is selected instead.
+hash 3559d143e999ed53
+note The symbol entry point: the Symbols tab, References, jumps, off-tour graph nodes. Clears the step, unless the symbol is a whole-symbol step of the tour being read, in which case that step is selected instead.
 
 step 5gb1f3
 order 5
@@ -30,8 +30,8 @@ author ai
 file crates/gui/src/nav.rs
 symbol select_step
 lines 0 53
-hash c309ed71b85c827e
-note The step entry point. Sets the path and step (and the step as the target), expands every collapsed ancestor of the step so the document shows it, focuses the step's symbol and selects its lines, asks the document to scroll the header to the top unless the click was inside the document, and turns a Source, Search or Diff tab into the Path tab. A step over lines with no symbol of their own focuses the symbol around those lines, so the References panel still has something to show.
+hash d8e961f7c6c62ddd
+note The step entry point. Sets the tour and step (and the step as the target), expands every collapsed ancestor of the step so the document shows it, focuses the step's symbol and selects its lines, asks the document to scroll the header to the top unless the click was inside the document, and turns a Source, Search or Diff tab into the Tour tab. A step over lines with no symbol of their own focuses the symbol around those lines, so the References panel still has something to show.
 
 step epz6w8
 order 6
@@ -39,8 +39,8 @@ author ai
 file crates/gui/src/graph/build.rs
 symbol rebuild
 lines 0 24
-hash cf30fa07b8d48df4
-note The graph reads the same fields and keeps no selection of its own: every frame it derives its node set from the selected path and the focused symbol, so it cannot disagree with the document or the steps list. The path is drawn whenever one is selected, step or no step: selecting a symbol off the path from outside the graph adds it as another root beside the path rather than replacing it, and GraphState keeps it as the root while the reader moves inside the graph.
+hash ef068320f4f5ed6f
+note The graph reads the same fields and keeps no selection of its own: every frame it derives its node set from the selected tour and the focused symbol, so it cannot disagree with the document or the steps list. The tour is drawn whenever one is selected, step or no step: selecting a symbol off the tour from outside the graph adds it as another root beside the tour rather than replacing it, and GraphState keeps it as the root while the reader moves inside the graph.
 
 step gjewkp
 order 1
@@ -58,8 +58,8 @@ author ai
 file crates/gui/src/nav.rs
 symbol Nav
 lines 0 15
-hash 634a2b281ea0b8d6
-note The selection and everything that moves with it: the centre tab and the ticket of the last request for it, the path and step (as slots in the map), the target step added steps hang under, the focused symbol, the open file and its line selection, the pending scrolls of the Source view and the document (each with a ticket, so an older request cannot clear a newer one), the step at the top of the document and the one the steps list last scrolled to, and the history. Views read it through accessors; only nav.rs writes it.
+hash 20dc4d474ba59098
+note The selection and everything that moves with it: the centre tab and the ticket of the last request for it, the tour and step (as slots in the map), the target step added steps hang under, the focused symbol, the open file and its line selection, the pending scrolls of the Source view and the document (each with a ticket, so an older request cannot clear a newer one), the step at the top of the document and the one the steps list last scrolled to, and the history. Views read it through accessors; only nav.rs writes it.
 
 step hot70l
 order 7
@@ -75,7 +75,7 @@ step n6l1xb
 order 4
 author ai
 file crates/gui/src/nav.rs
-symbol select_path
+symbol select_tour
 lines 0 9
-hash 76ddeee19ae30401
-note Opening a path selects its first step in tree order, so the steps list, document and graph all have something to show at once; an empty path selects no step and has no target.
+hash 7a595d2881b1892a
+note Opening a tour selects its first step in tree order, so the steps list, document and graph all have something to show at once; an empty tour selects no step and has no target.

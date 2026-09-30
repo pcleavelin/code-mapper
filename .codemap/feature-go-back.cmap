@@ -1,9 +1,9 @@
-codemap 8
-path feature-go-back
+codemap 9
+tour feature-go-back
 kind flow
 author ai
 group features/gui
-note The back and forward arrow icons in the top bar, alt+left and alt+right, ctrl+left and ctrl+right, and the mouse's back and forward buttons move back and forward through the places visited, the way a browser does: tab, file, selected lines, focused symbol, path and step. The reader reaches for it to return to where a jump, an xref or a search started instead of finding the place again by hand, as an editor with an LSP allows. Nothing records a place explicitly; the end of every frame compares where the reader is with where they were. The arrow keys with a modifier are left to a focused text field, where they move the caret.
+note The back and forward arrow icons in the top bar, alt+left and alt+right, ctrl+left and ctrl+right, and the mouse's back and forward buttons move back and forward through the places visited, the way a browser does: tab, file, selected lines, focused symbol, tour and step. The reader reaches for it to return to where a jump, an xref or a search started instead of finding the place again by hand, as an editor with an LSP allows. Nothing records a place explicitly; the end of every frame compares where the reader is with where they were. The arrow keys with a modifier are left to a focused text field, where they move the caret.
 
 step 1wvo6m
 order 6
@@ -22,8 +22,8 @@ author ai
 file crates/gui/src/nav.rs
 symbol go
 lines 0 22
-hash 2905cac6d6a95cb3
-note Restores a place: the path if it still exists, the step through select_step (scrolled to) when it still exists, otherwise the focused symbol found again by its key; then file, lines with a scroll request, and the tab. It records the restored place as the last one so the frame end does not push it again.
+hash 790c196df450f7c2
+note Restores a place: the tour if it still exists, the step through select_step (scrolled to) when it still exists, otherwise the focused symbol found again by its key; then file, lines with a scroll request, and the tab. It records the restored place as the last one so the frame end does not push it again.
 
 step 7ygu48
 order 2

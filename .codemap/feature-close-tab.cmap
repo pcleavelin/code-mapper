@@ -1,9 +1,9 @@
-codemap 8
-path feature-close-tab
+codemap 9
+tour feature-close-tab
 kind flow
 author ai
 group features/gui
-note Each tab in a panel's header has a close icon after its name. The reader reaches for it to drop one view from a panel's tab strip while keeping the rest. Pressed, that view leaves the layout: the panel shows its next tab (or the one before, at the end), and a panel left with no tabs closes, its sibling taking the room, the same as dragging its last tab away. The last panel of the window never closes; it stays empty with the hint to press +. A closed view comes back through + or when navigation needs it (opening a path brings back Path, searching brings back Search). The change is saved with the layout.
+note Each tab in a panel's header has a close icon after its name. The reader reaches for it to drop one view from a panel's tab strip while keeping the rest. Pressed, that view leaves the layout: the panel shows its next tab (or the one before, at the end), and a panel left with no tabs closes, its sibling taking the room, the same as dragging its last tab away. The last panel of the window never closes; it stays empty with the hint to press +. A closed view comes back through + or when navigation needs it (opening a tour brings back Tour, searching brings back Search). The change is saved with the layout.
 
 step 0wlosi
 order 0

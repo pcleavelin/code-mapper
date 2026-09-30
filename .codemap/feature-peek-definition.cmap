@@ -1,5 +1,5 @@
-codemap 8
-path feature-peek-definition
+codemap 9
+tour feature-peek-definition
 kind flow
 author ai
 group features/gui

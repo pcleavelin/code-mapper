@@ -1,9 +1,9 @@
-codemap 8
-path feature-group-rename
+codemap 9
+tour feature-group-rename
 kind flow
 author ai
 group features/cli
-note group-rename <old> <new>: move every path in group old, and in every group nested inside it, to the same place under new. The agent reaches for it to reorganise a whole branch of the map in one move instead of regrouping every path in it (commit 10dc7e690b8b). An empty new moves them to the top level. Since a group exists only as a name on its paths, renaming is rewriting that name on each path; it fails when no path is in old.
+note group-rename <old> <new>: move every tour in group old, and in every group nested inside it, to the same place under new. The agent reaches for it to reorganise a whole branch of the map in one move instead of regrouping every tour in it (commit 10dc7e690b8b). An empty new moves them to the top level. Since a group exists only as a name on its tours, renaming is rewriting that name on each tour; it fails when no tour is in old.
 
 step 11k04p
 order 1
@@ -12,19 +12,19 @@ author ai
 file crates/domain/src/map.rs
 symbol rename_group
 lines 0 17
-hash 71082228c009f3fc
-link path-groups
-note Rewrites the group of every path whose group is old or under it, keeping the nested part; no match is an error.
+hash 2d048b71c9c55b20
+link tour-groups
+note Rewrites the group of every tour whose group is old or under it, keeping the nested part; no match is an error.
 
 step o5fdcx
 order 2
 parent yi1k3n
 author ai
 file crates/cli/src/wire.rs
-symbol paths_moved
+symbol tours_moved
 lines 0 2
-hash c8da59704c039950
-note 'n paths moved'.
+hash b5a33159e773285f
+note 'n tours moved'.
 
 step yi1k3n
 order 0
@@ -32,5 +32,5 @@ author ai
 file crates/cli/src/exec.rs
 symbol group_rename
 lines 0 8
-hash 0225cff605be5e96
-note Run::group_rename: renames the group and prints how many paths moved.
+hash ca6b615c05ede1e5
+note Run::group_rename: renames the group and prints how many tours moved.

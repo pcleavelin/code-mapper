@@ -165,45 +165,45 @@ layout::pub enum LayoutTree { Split(LayoutSplit), Panel(LayoutPanel), }
 map::pub struct Changed;
 map::pub struct Coverage<'map> { spans: BTreeMap<&'map RelativePath, Vec<Span>>, }
 map::pub fn covers(&self, file: &RelativePath, span: Span) -> bool
-map::pub enum Row { Group { group: GroupName, depth: Depth, paths: PathCount, }, Path { name: PathName, depth: Depth, }, }
+map::pub enum Row { Group { group: GroupName, depth: Depth, tours: TourCount, }, Tour { name: TourName, depth: Depth, }, }
 map::pub enum Pruning { Pruned, All, }
-map::pub struct LinkCandidate { pub step: StepId, pub target: PathName, }
-map::pub struct Promoted { pub name: PathName, pub cut: BTreeMap<SymbolId, Cut>, pub stopped: BTreeMap<SymbolId, Stop>, pub links: Vec<LinkCandidate>, }
-map::pub struct Map { paths: Vec<Path>, }
+map::pub struct LinkCandidate { pub step: StepId, pub target: TourName, }
+map::pub struct Promoted { pub name: TourName, pub cut: BTreeMap<SymbolId, Cut>, pub stopped: BTreeMap<SymbolId, Stop>, pub links: Vec<LinkCandidate>, }
+map::pub struct Map { tours: Vec<Tour>, }
 map::pub const PROMOTE_DEPTH: Depth = Depth::new(2);
-map::pub fn new(paths: Vec<Path>) -> Result<Self, MapError>
-map::pub fn paths(&self) -> &[Path]
-map::pub fn path(&self, name: &PathName) -> Option<&Path>
-map::pub fn step(&self, name: &PathName, step: &StepId) -> Option<&Step>
-map::pub fn add_path( &mut self, name: PathName, kind: PathKind, author: Author, ) -> Result<Changed, MapError>
-map::pub fn rename(&mut self, old: &PathName, new: PathName) -> Result<Changed, MapError>
-map::pub fn set_group( &mut self, name: &PathName, group: Option<GroupName>, ) -> Result<Changed, MapError>
-map::pub fn rename_group( &mut self, old: Option<&GroupName>, new: Option<&GroupName>, ) -> Result<PathCount, MapError>
-map::pub fn set_path_note( &mut self, name: &PathName, note: Option<Note>, ) -> Result<Changed, MapError>
-map::pub fn set_step_note( &mut self, name: &PathName, step: &StepId, note: Option<Note>, ) -> Result<Changed, MapError>
-map::pub fn edit_path_note( &mut self, name: &PathName, old: &TextFragment, new: &TextFragment, ) -> Result<Option<Note>, MapError>
-map::pub fn edit_step_note( &mut self, name: &PathName, step: &StepId, old: &TextFragment, new: &TextFragment, ) -> Result<Option<Note>, MapError>
-map::pub fn add_step( &mut self, index: &Index, name: &PathName, file: FileId, span: Span, author: Author, parent: Option<&StepId>, ) -> Result<StepId, MapError>
-map::pub fn pin( &mut self, index: &Index, name: &PathName, step: &StepId, file: FileId, span: Span, author: Author, ) -> Result<Changed, MapError>
-map::pub fn set_link( &mut self, name: &PathName, step: &StepId, target: Option<PathName>, ) -> Result<Changed, MapError>
-map::pub fn reparent( &mut self, name: &PathName, step: &StepId, parent: Option<&StepId>, ) -> Result<Changed, MapError>
-map::pub fn swap( &mut self, name: &PathName, one: &StepId, other: &StepId, ) -> Result<Changed, MapError>
-map::pub fn place( &mut self, name: &PathName, step: &StepId, parent: Option<&StepId>, before: Option<&StepId>, ) -> Result<Changed, MapError>
-map::pub fn remove_step(&mut self, name: &PathName, step: &StepId) -> Result<Step, MapError>
-map::pub fn remove_path(&mut self, name: &PathName) -> Result<Path, MapError>
-map::pub fn promote( &mut self, index: &Index, root: SymbolId, depth: Depth, name: Option<PathName>, author: Author, pruning: Pruning, ) -> Result<Promoted, MapError>
+map::pub fn new(tours: Vec<Tour>) -> Result<Self, MapError>
+map::pub fn tours(&self) -> &[Tour]
+map::pub fn tour(&self, name: &TourName) -> Option<&Tour>
+map::pub fn step(&self, name: &TourName, step: &StepId) -> Option<&Step>
+map::pub fn add_tour( &mut self, name: TourName, kind: TourKind, author: Author, ) -> Result<Changed, MapError>
+map::pub fn rename(&mut self, old: &TourName, new: TourName) -> Result<Changed, MapError>
+map::pub fn set_group( &mut self, name: &TourName, group: Option<GroupName>, ) -> Result<Changed, MapError>
+map::pub fn rename_group( &mut self, old: Option<&GroupName>, new: Option<&GroupName>, ) -> Result<TourCount, MapError>
+map::pub fn set_tour_note( &mut self, name: &TourName, note: Option<Note>, ) -> Result<Changed, MapError>
+map::pub fn set_step_note( &mut self, name: &TourName, step: &StepId, note: Option<Note>, ) -> Result<Changed, MapError>
+map::pub fn edit_tour_note( &mut self, name: &TourName, old: &TextFragment, new: &TextFragment, ) -> Result<Option<Note>, MapError>
+map::pub fn edit_step_note( &mut self, name: &TourName, step: &StepId, old: &TextFragment, new: &TextFragment, ) -> Result<Option<Note>, MapError>
+map::pub fn add_step( &mut self, index: &Index, name: &TourName, file: FileId, span: Span, author: Author, parent: Option<&StepId>, ) -> Result<StepId, MapError>
+map::pub fn pin( &mut self, index: &Index, name: &TourName, step: &StepId, file: FileId, span: Span, author: Author, ) -> Result<Changed, MapError>
+map::pub fn set_link( &mut self, name: &TourName, step: &StepId, target: Option<TourName>, ) -> Result<Changed, MapError>
+map::pub fn reparent( &mut self, name: &TourName, step: &StepId, parent: Option<&StepId>, ) -> Result<Changed, MapError>
+map::pub fn swap( &mut self, name: &TourName, one: &StepId, other: &StepId, ) -> Result<Changed, MapError>
+map::pub fn place( &mut self, name: &TourName, step: &StepId, parent: Option<&StepId>, before: Option<&StepId>, ) -> Result<Changed, MapError>
+map::pub fn remove_step(&mut self, name: &TourName, step: &StepId) -> Result<Step, MapError>
+map::pub fn remove_tour(&mut self, name: &TourName) -> Result<Tour, MapError>
+map::pub fn promote( &mut self, index: &Index, root: SymbolId, depth: Depth, name: Option<TourName>, author: Author, pruning: Pruning, ) -> Result<Promoted, MapError>
 map::pub fn resolve_all(&mut self, index: &Index)
 map::pub fn rows(&self) -> Vec<Row>
-map::pub fn rows_where(&self, wanted: impl Fn(&Path) -> bool) -> Vec<Row>
-map::pub fn links_to(&self, target: &PathName) -> Vec<StepAddress>
+map::pub fn rows_where(&self, wanted: impl Fn(&Tour) -> bool) -> Vec<Row>
+map::pub fn links_to(&self, target: &TourName) -> Vec<StepAddress>
 map::pub fn dangling_links(&self) -> Vec<StepAddress>
 map::pub fn coverage(&self) -> Coverage<'_>
-map::pub fn diff(&self, base: &Self) -> Vec<PathDiff>
+map::pub fn diff(&self, base: &Self) -> Vec<TourDiff>
 map::diff::pub enum Change { Same, Added, Removed, Changed, }
 map::diff::pub enum StepChange { Added, Repinned, NoteEdited, Relinked, }
 map::diff::pub struct StepDiff { pub step: StepId, pub change: Option<StepChange>, }
-map::diff::pub struct PathDiff { name: PathName, change: Change, header: Header, steps: Vec<StepDiff>, removed: Vec<Step>, }
-map::diff::pub fn name(&self) -> &PathName
+map::diff::pub struct TourDiff { name: TourName, change: Change, header: Header, steps: Vec<StepDiff>, removed: Vec<Step>, }
+map::diff::pub fn name(&self) -> &TourName
 map::diff::pub fn change(&self) -> Change
 map::diff::pub fn note_changed(&self) -> bool
 map::diff::pub fn steps(&self) -> &[StepDiff]
@@ -211,14 +211,14 @@ map::diff::pub fn removed(&self) -> &[Step]
 map::error::pub struct InvalidName(String);
 map::error::pub fn new(name: &str) -> Self
 map::error::pub fn as_str(&self) -> &str
-map::error::pub struct StepAddress { pub path: PathName, pub step: StepId, }
-map::error::pub enum MapError { InvalidName(InvalidName), NameTaken(PathName), CaseClash { name: PathName, other: PathName, }, NoGroupGiven, NoSuchGroup(GroupName), NoSuchPath(PathName), NoSuchStep(StepAddress), NoSuchParent, NoSuchFile, NoSuchSymbol, OutsideFile, LinkToOwnPath, LinkedFrom { path: PathName, steps: Vec<StepAddress>, }, UnderItself, NoteLacks(TextFragment), SecondStep(StepAddress), UnknownParent { step: StepAddress, parent: StepId, }, }
+map::error::pub struct StepAddress { pub tour: TourName, pub step: StepId, }
+map::error::pub enum MapError { InvalidName(InvalidName), NameTaken(TourName), CaseClash { name: TourName, other: TourName, }, NoGroupGiven, NoSuchGroup(GroupName), NoSuchTour(TourName), NoSuchStep(StepAddress), NoSuchParent, NoSuchFile, NoSuchSymbol, OutsideFile, LinkToOwnTour, LinkedFrom { tour: TourName, steps: Vec<StepAddress>, }, UnderItself, NoteLacks(TextFragment), SecondStep(StepAddress), UnknownParent { step: StepAddress, parent: StepId, }, }
 map::follow::pub struct Alignment(Vec<Option<usize>>);
 map::follow::pub fn between(old: &[SourceLine], new: &[SourceLine]) -> Self
 map::follow::pub fn get(&self, line: Line) -> Option<Line>
 map::follow::pub struct Followed { pub span: Span, pub kept: LineCount, pub alignment: Alignment, }
 map::follow::pub fn follow(old: &[SourceLine], slice: Span, new: &[SourceLine]) -> Option<Followed>
-map::name::pub struct PathName(String);
+map::name::pub struct TourName(String);
 map::name::pub fn new(name: &str) -> Result<Self, MapError>
 map::name::pub fn from_symbol(symbol: &SymbolName) -> Self
 map::name::pub fn as_str(&self) -> &str
@@ -234,30 +234,11 @@ map::name::pub fn lines(&self) -> impl Iterator<Item = &str>
 map::name::pub struct TextFragment(String);
 map::name::pub fn new(text: &str) -> Self
 map::name::pub fn as_str(&self) -> &str
-map::name::pub enum PathKind { Flow, Layer, Type, }
+map::name::pub enum TourKind { Flow, Layer, Data, }
 map::name::pub enum Author { Human, Agent, }
-map::name::pub struct PathCount(u32);
+map::name::pub struct TourCount(u32);
 map::name::pub const fn new(value: u32) -> Self
 map::name::pub const fn value(self) -> u32
-map::path::pub struct PlacedStep { pub step: StepId, pub depth: Depth, }
-map::path::pub struct StepNumber(Vec<u32>);
-map::path::pub fn parts(&self) -> &[u32]
-map::path::pub struct NumberedStep { pub step: StepId, pub depth: Depth, pub number: StepNumber, }
-map::path::pub enum ParentLabel { Symbol(SymbolName), Line { file: RelativePath, line: Line }, TopLevel, }
-map::path::pub struct Path { name: PathName, kind: PathKind, author: Author, group: Option<GroupName>, note: Option<Note>, steps: Vec<Step>, }
-map::path::pub fn new( name: PathName, kind: PathKind, author: Author, group: Option<GroupName>, note: Option<Note>, mut steps: Vec<Step>, ) -> Result<Self, MapError>
-map::path::pub fn name(&self) -> &PathName
-map::path::pub fn kind(&self) -> PathKind
-map::path::pub fn author(&self) -> Author
-map::path::pub fn group(&self) -> Option<&GroupName>
-map::path::pub fn note(&self) -> Option<&Note>
-map::path::pub fn steps(&self) -> &[Step]
-map::path::pub fn step(&self, id: &StepId) -> Option<&Step>
-map::path::pub fn tree_order(&self) -> Vec<PlacedStep>
-map::path::pub fn tree_order_by(&self, key: impl Fn(&Step, &Step) -> Option<Line>) -> Vec<PlacedStep>
-map::path::pub fn numbered(&self, index: &Index) -> Vec<NumberedStep>
-map::path::pub fn descendants(&self, id: &StepId) -> Vec<StepId>
-map::path::pub fn parent_label(&self, id: &StepId) -> Option<ParentLabel>
 map::step::pub struct StepId(String);
 map::step::pub fn new(id: &str) -> Option<Self>
 map::step::pub fn as_str(&self) -> &str
@@ -276,8 +257,8 @@ map::step::pub fn hash(&self) -> TextHash
 map::step::pub fn resolve(&self, index: &Index) -> Option<Resolution>
 map::step::pub enum Freshness { Current, Stale, }
 map::step::pub struct Resolution { pub span: Span, pub freshness: Freshness, pub symbol: Option<SymbolId>, }
-map::step::pub struct Step { id: StepId, order: StepOrder, parent: Option<StepId>, author: Author, anchor: Anchor, note: Option<Note>, link: Option<PathName>, resolution: Resolution, }
-map::step::pub fn new( id: StepId, order: StepOrder, parent: Option<StepId>, author: Author, anchor: Anchor, note: Option<Note>, link: Option<PathName>, ) -> Self
+map::step::pub struct Step { id: StepId, order: StepOrder, parent: Option<StepId>, author: Author, anchor: Anchor, note: Option<Note>, link: Option<TourName>, resolution: Resolution, }
+map::step::pub fn new( id: StepId, order: StepOrder, parent: Option<StepId>, author: Author, anchor: Anchor, note: Option<Note>, link: Option<TourName>, ) -> Self
 map::step::pub fn id(&self) -> &StepId
 map::step::pub fn order(&self) -> StepOrder
 map::step::pub fn parent(&self) -> Option<&StepId>
@@ -286,12 +267,31 @@ map::step::pub fn anchor(&self) -> &Anchor
 map::step::pub fn file(&self) -> &RelativePath
 map::step::pub fn symbol(&self) -> Option<&SymbolName>
 map::step::pub fn note(&self) -> Option<&Note>
-map::step::pub fn link(&self) -> Option<&PathName>
+map::step::pub fn link(&self) -> Option<&TourName>
 map::step::pub fn resolution(&self) -> Resolution
 map::step::pub fn span(&self) -> Span
 map::step::pub fn is_stale(&self) -> bool
 map::step::pub fn resolved_symbol(&self) -> Option<SymbolId>
 map::step::pub fn resolve(&mut self, index: &Index)
+map::tour::pub struct PlacedStep { pub step: StepId, pub depth: Depth, }
+map::tour::pub struct StepNumber(Vec<u32>);
+map::tour::pub fn parts(&self) -> &[u32]
+map::tour::pub struct NumberedStep { pub step: StepId, pub depth: Depth, pub number: StepNumber, }
+map::tour::pub enum ParentLabel { Symbol(SymbolName), Line { file: RelativePath, line: Line }, TopLevel, }
+map::tour::pub struct Tour { name: TourName, kind: TourKind, author: Author, group: Option<GroupName>, note: Option<Note>, steps: Vec<Step>, }
+map::tour::pub fn new( name: TourName, kind: TourKind, author: Author, group: Option<GroupName>, note: Option<Note>, mut steps: Vec<Step>, ) -> Result<Self, MapError>
+map::tour::pub fn name(&self) -> &TourName
+map::tour::pub fn kind(&self) -> TourKind
+map::tour::pub fn author(&self) -> Author
+map::tour::pub fn group(&self) -> Option<&GroupName>
+map::tour::pub fn note(&self) -> Option<&Note>
+map::tour::pub fn steps(&self) -> &[Step]
+map::tour::pub fn step(&self, id: &StepId) -> Option<&Step>
+map::tour::pub fn tree_order(&self) -> Vec<PlacedStep>
+map::tour::pub fn tree_order_by(&self, key: impl Fn(&Step, &Step) -> Option<Line>) -> Vec<PlacedStep>
+map::tour::pub fn numbered(&self, index: &Index) -> Vec<NumberedStep>
+map::tour::pub fn descendants(&self, id: &StepId) -> Vec<StepId>
+map::tour::pub fn parent_label(&self, id: &StepId) -> Option<ParentLabel>
 text::pub struct Line(u32);
 text::pub const fn new(value: u32) -> Self
 text::pub const fn value(self) -> u32

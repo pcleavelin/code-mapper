@@ -1,9 +1,9 @@
-codemap 8
-path feature-groups
+codemap 9
+tour feature-groups
 kind flow
 author ai
 group features/cli
-note groups: every group with how many paths it holds, nested by indentation. The agent reaches for it to see how the map is organised, and which group a new path belongs in, without listing every path (commit 10dc7e690b8b). A group has no existence of its own: it is the set of paths that name it, so the list is derived from the paths' groups each time and an empty group cannot be listed.
+note groups: every group with how many tours it holds, nested by indentation. The agent reaches for it to see how the map is organised, and which group a new tour belongs in, without listing every tour (commit 10dc7e690b8b). A group has no existence of its own: it is the set of tours that name it, so the list is derived from the tours' groups each time and an empty group cannot be listed.
 
 step 1n4tbz
 order 1
@@ -13,8 +13,8 @@ file crates/domain/src/map.rs
 symbol rows
 lines 0 2
 hash 1e78e876d1b8c878
-link path-groups
-note Builds the nested rows; a group row carries its depth and its path count.
+link tour-groups
+note Builds the nested rows; a group row carries its depth and its tour count.
 
 step 5fjb6j
 order 2
@@ -23,8 +23,8 @@ author ai
 file crates/cli/src/wire.rs
 symbol group_row
 lines 0 7
-hash 7b570e5b798d788e
-note '  <last segment> (n paths)', indented by depth, so the full name is read off the nesting.
+hash 2ec1a47cdf22ad42
+note '  <last segment> (n tours)', indented by depth, so the full name is read off the nesting.
 
 step vxejrd
 order 0
@@ -32,5 +32,5 @@ author ai
 file crates/cli/src/exec.rs
 symbol groups
 lines 0 11
-hash 0ce9670b9ee72c88
-note Keeps only the group rows of the paths list and prints each one.
+hash 8ce96c1a94c328c6
+note Keeps only the group rows of the tours list and prints each one.

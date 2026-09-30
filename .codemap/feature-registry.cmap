@@ -1,6 +1,6 @@
-codemap 8
-path feature-registry
-kind type
+codemap 9
+tour feature-registry
+kind data
 author ai
 group cli
 note The feature registry, crates/features: the one list of everything a user can do with codemap. Each Feature variant is one user function, and Feature::spec gives its Spec: the name (kebab-case, also the CLI command name), a one-line summary (the CLI help line or the GUI tooltip), the Surface it belongs to (Command for the CLI commands, which the GUI's console runs too, Window for what only the GUI does) and every Trigger that fires it: a command word, a key Chord, a click or typing on a named GUI element, or a Gesture on an element. The crate depends on nothing and holds no behaviour; the front ends build from it. The CLI's clap Command takes each command's name and help line from the spec, so help and the registry cannot disagree. The GUI binds keys and gestures by reading a feature's triggers (keys.rs), and names every clickable element through a Control that pairs a Feature with an Element (ids.rs), so a button or key that is not in the registry cannot be written, which xtask lint enforces for key bindings. Tests here check that names are unique, every feature has a trigger and a summary, a command feature is triggered by exactly its own name, and no trigger fires two features; the GUI's tests check that every Control's element is a trigger of its feature. Adding a user function starts here (the add-feature skill).
@@ -88,7 +88,7 @@ author ai
 file crates/features/src/lib.rs
 symbol spec
 lines 0 796
-hash 6ce582a45d10dfb9
+hash 65108f63a84252bf
 note The registry itself: one match arm per feature, built at compile time from const data. A command feature has Surface::Command and exactly one trigger, its own name as a command; a window feature lists every click, key, typed field and gesture that fires it.
 
 step k761ua
@@ -106,7 +106,7 @@ author ai
 file crates/features/src/lib.rs
 symbol Feature
 lines 0 90
-hash 267b033bdbf5f09a
+hash 355de84a1b2d1b20
 note One variant per user function, CLI commands first in help order, then the window's functions. The VariantArray derive lists them as Feature::VARIANTS in declaration order, for the tests that walk the registry.
 
 step lo42kd

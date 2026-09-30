@@ -1,5 +1,5 @@
-codemap 8
-path feature-resize-panel
+codemap 9
+tour feature-resize-panel
 kind flow
 author ai
 group features/gui

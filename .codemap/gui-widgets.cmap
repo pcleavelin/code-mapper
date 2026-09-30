@@ -1,5 +1,5 @@
-codemap 8
-path gui-widgets
+codemap 9
+tour gui-widgets
 kind layer
 author ai
 group gui
@@ -21,8 +21,8 @@ author ai
 file crates/gui/src/text.rs
 symbol Noun
 lines 0 5
-hash 04bf23c451aa5b6b
-note The nouns a count can take: step, path, hit, symbol.
+hash 5b43d95ba79c755c
+note The nouns a count can take: step, tour, hit, symbol.
 
 step 2havd5
 order 13
@@ -30,7 +30,7 @@ author ai
 file crates/gui/src/field.rs
 symbol Fields
 lines 0 11
-hash 0e7c23e707c4f48b
+hash 0d8b6f11b4dbd697
 note The eight fields, one named member each, reached by Which; focused names the one with the keyboard, at most one, so taking focus is setting it.
 
 step 2yp2r2
@@ -155,7 +155,7 @@ file crates/gui/src/widgets.rs
 symbol danger_button
 lines 0 15
 hash 19610956da0a1a95
-note A small button for removing something (a path, a step): weak text on the field colour at rest, and a red border and dark red background under the pointer, so a destructive press looks different from the buttons beside it.
+note A small button for removing something (a tour, a step): weak text on the field colour at rest, and a red border and dark red background under the pointer, so a destructive press looks different from the buttons beside it.
 
 step bwqb9z
 order 37
@@ -184,8 +184,8 @@ author ai
 file crates/gui/src/widgets.rs
 symbol note
 lines 0 12
-hash e0d486ed1f02cb11
-note Wrapped text, grown to the width the element ends up with, with a path's or a step's padding. Path notes and step notes are the only things drawn this way, because they are the only prose in the app.
+hash a2124443f4853e94
+note Wrapped text, grown to the width the element ends up with, with a tour's or a step's padding. Tour notes and step notes are the only things drawn this way, because they are the only prose in the app.
 
 step ezv639
 order 36
@@ -212,7 +212,7 @@ file crates/gui/src/text.rs
 symbol impl Needle
 lines 0 21
 hash 0eae6a7463e6326d
-note The one text filter the lists share (the Symbols filter, the Paths filter): the text as typed, matched as a substring ignoring ASCII case, byte window by byte window, so nothing is lower-cased per row. An empty needle matches everything.
+note The one text filter the lists share (the Symbols filter, the Tours filter): the text as typed, matched as a substring ignoring ASCII case, byte window by byte window, so nothing is lower-cased per row. An empty needle matches everything.
 
 step hnzu9x
 order 22
@@ -221,7 +221,7 @@ file crates/gui/src/text.rs
 symbol left
 lines 0 10
 hash b72ff8088652789b
-note Cuts from the front and keeps the tail: paths are cut this way in the Symbols tab and the peek header, so the file name and line survive.
+note Cuts from the front and keeps the tail: file paths are cut this way in the Symbols tab and the peek header, so the file name and line survive.
 
 step jb1qok
 order 12
@@ -230,8 +230,8 @@ author ai
 file crates/gui/src/field.rs
 symbol Which
 lines 0 10
-hash a8af1f1ac0975c25
-note The eight fields: search, the new path's name and group, the Console, the symbol filter, the path filter, go-to-line and the palette's query. Which::control is the field's Control in ids, whose element name is its script id: field@search, field@new-path, field@new-group, cmd, field@symbols, field@paths, field@goto-line, field@palette.
+hash 340ba883fe72235f
+note The eight fields: search, the new tour's name and group, the Console, the symbol filter, the tour filter, go-to-line and the palette's query. Which::control is the field's Control in ids, whose element name is its script id: field@search, field@new-tour, field@new-group, cmd, field@symbols, field@tours, field@goto-line, field@palette.
 
 step k73r2l
 order 25
@@ -249,8 +249,8 @@ author ai
 file crates/gui/src/text.rs
 symbol impl fmt::Display for Counted
 lines 0 15
-hash 355399abcd1c1a8b
-note A count with its noun, singular for one ('1 step', '3 paths'), so no view spells a plural by hand.
+hash 0b48da3c87a8eef1
+note A count with its noun, singular for one ('1 step', '3 tours'), so no view spells a plural by hand.
 
 step kn1cnd
 order 17
@@ -385,7 +385,7 @@ file crates/gui/src/field.rs
 symbol apply
 lines 0 67
 hash ff9e76cd41f36d85
-note The keys a field understands, as Edits from keys::edits: editing, home and end, up and down through the history, enter to submit, ctrl+a to mark all, ctrl+u to clear, escape to drop the keyboard. Enter returns the line; a field that keeps its text (Enter::Keep: search, the symbol filter, go-to-line) marks it all so the next entry replaces it, one that clears (the Console, new path) empties. Left and right with ctrl or alt never become Edits: they are back and forward.
+note The keys a field understands, as Edits from keys::edits: editing, home and end, up and down through the history, enter to submit, ctrl+a to mark all, ctrl+u to clear, escape to drop the keyboard. Enter returns the line; a field that keeps its text (Enter::Keep: search, the symbol filter, go-to-line) marks it all so the next entry replaces it, one that clears (the Console, new tour) empties. Left and right with ctrl or alt never become Edits: they are back and forward.
 
 step ug0bcn
 order 9
@@ -442,7 +442,7 @@ file crates/gui/src/widgets.rs
 symbol row
 lines 0 2
 hash 6927a95a29c20605
-note A selectable full-width row of coloured runs with a hover background and a selection background, its text cut with an ellipsis where the row ends (Wrap::Clip), so a long name never pushes a row wider than its panel. Every list in the app - paths, steps list, symbols, files, references, hits, diff - is this one function in a loop.
+note A selectable full-width row of coloured runs with a hover background and a selection background, its text cut with an ellipsis where the row ends (Wrap::Clip), so a long name never pushes a row wider than its panel. Every list in the app - tours, steps list, symbols, files, references, hits, diff - is this one function in a loop.
 
 step z678b0
 order 31

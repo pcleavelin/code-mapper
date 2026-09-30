@@ -18,12 +18,12 @@ message; caught after the change, it costs the change.
    - CLAUDE.md, opening (roles, goals, non-goals) and "Why it is built this way";
    - `TODO.md`: the open issues agent sessions and the owner logged because they cost them
      time, what is planned, and each deferred item with the trigger that pulls it in;
-   - `codemap . notes <regex>` and `codemap . path feature-<name>` for the area;
+   - `codemap . notes <regex>` and `codemap . tour feature-<name>` for the area;
    - the `jj log` descriptions of the commits that built the area.
    A request that serves no goal, or runs into a non-goal, goes to the owner before anything
    else.
 3. How it is meant to work. The spec is, in this order: the owner's words, CLAUDE.md, the
-   feature's summary in `crates/features/src/lib.rs`, its `features/` path, the scenarios in
+   feature's summary in `crates/features/src/lib.rs`, its `features/` tour, the scenarios in
    `crates/codemap/tests/common` that drive it. Then see the current behaviour yourself: run the CLI
    command, or a GUI script with `dump` and `shot` (CLAUDE.md, "Testing the GUI"), and read
    the PNG. A bug is reproduced here, with the exact command or script that shows it; one
@@ -32,7 +32,7 @@ message; caught after the change, it costs the change.
    the user will meet it, and each place the first restatement was wrong. If a question is
    left that only the owner can answer (which of two readings, a conflict with CLAUDE.md,
    a reported bug that is the spec's own behaviour), ask it and wait for the answer.
-5. The need from step 4 has one home: for a feature, the note of its `feature-<name>` path
+5. The need from step 4 has one home: for a feature, the note of its `feature-<name>` tour
    (`add-feature` step 6); for a bug, the fix's commit message.
 6. Go on with `prototype` for a new feature, `fix-bug` for a bug, or the skill for the kind
    of change.

@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use domain::{PathKind, PathName, Root};
+use domain::{Root, TourKind, TourName};
 use features::{Feature, Gesture, Key, Modifiers, Surface, Trigger};
 use io_map::MapStore;
 use strum::VariantArray;
@@ -119,7 +119,7 @@ fn graph_button(element: &str) -> Option<&'static str> {
 }
 
 #[test]
-fn every_feature_has_its_flow_path_in_the_map() {
+fn every_feature_has_its_flow_tour_in_the_map() {
     let root = Root::new(&workspace());
     let loaded = MapStore::new(&root).load();
     assert!(loaded.is_ok(), "the map loads");
@@ -128,20 +128,20 @@ fn every_feature_has_its_flow_path_in_the_map() {
     for feature in Feature::VARIANTS {
         let spec = feature.spec();
         let wanted = format!("feature-{}", spec.name().as_str());
-        let Ok(name) = PathName::new(&wanted) else {
-            missing.push(format!("{wanted}: not a path name"));
+        let Ok(name) = TourName::new(&wanted) else {
+            missing.push(format!("{wanted}: not a tour name"));
             continue;
         };
-        match map.path(&name) {
-            None => missing.push(format!("{wanted}: no such path")),
-            Some(path) => {
-                if path.kind() != PathKind::Flow {
+        match map.tour(&name) {
+            None => missing.push(format!("{wanted}: no such tour")),
+            Some(tour) => {
+                if tour.kind() != TourKind::Flow {
                     missing.push(format!("{wanted}: not a flow"));
                 }
-                if path.group().map(domain::GroupName::as_str) != Some(group_of(spec.surface())) {
+                if tour.group().map(domain::GroupName::as_str) != Some(group_of(spec.surface())) {
                     missing.push(format!("{wanted}: not in {}", group_of(spec.surface())));
                 }
-                let roots = path
+                let roots = tour
                     .steps()
                     .iter()
                     .filter(|step| step.parent().is_none())
@@ -154,7 +154,7 @@ fn every_feature_has_its_flow_path_in_the_map() {
             }
         }
     }
-    assert!(missing.is_empty(), "feature paths:\n{}", missing.join("\n"));
+    assert!(missing.is_empty(), "feature tours:\n{}", missing.join("\n"));
 }
 
 #[test]

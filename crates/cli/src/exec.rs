@@ -3,9 +3,9 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use domain::{
     Author, Backend, Change, Changed, Depth, FileId, FileText, Followed, GroupName, Index,
-    Language, Line, LineCount, Map, MapError, Note, Path, PathKind, PathName, Pruning,
-    RelativePath, Revision, Row, SourceFile, SourceLine, Span, Step, StepAddress, StepNumber,
-    Symbol, SymbolId, SymbolName, SymbolQuery, TextFragment, follow,
+    Language, Line, LineCount, Map, MapError, Note, Pruning, RelativePath, Revision, Row,
+    SourceFile, SourceLine, Span, Step, StepAddress, StepNumber, Symbol, SymbolId, SymbolName,
+    SymbolQuery, TextFragment, Tour, TourKind, TourName, follow,
 };
 use index::Servers;
 use io_map::{MapStore, MapText};
@@ -84,8 +84,8 @@ impl Run<'_> {
             Query::Index(filter) => self.index_pending(&filter)?,
             Query::Tree { symbol, levels } => self.tree(&symbol, levels)?,
             Query::Roots(count) => self.roots(count),
-            Query::Paths(name) => self.paths(name.as_ref())?,
-            Query::Path { name, view } => self.path(&name, view)?,
+            Query::Tours(name) => self.tours(name.as_ref())?,
+            Query::Tour { name, view } => self.tour(&name, view)?,
             Query::Groups => self.groups(),
             Query::Stale => {
                 self.stale();
@@ -100,15 +100,15 @@ impl Run<'_> {
 
     fn edit(&mut self, edit: Edit) -> Result<Changed, Failure> {
         match edit {
-            Edit::PathNew {
+            Edit::TourNew {
                 name,
                 kind,
                 note,
                 group,
-            } => self.path_new(&name?, kind, note, group),
-            Edit::PathGroup { name, group } => self.path_group(&name, group),
+            } => self.tour_new(&name?, kind, note, group),
+            Edit::TourGroup { name, group } => self.tour_group(&name, group),
             Edit::GroupRename { old, new } => self.group_rename(old.as_ref(), new.as_ref()),
-            Edit::PathNote { name, note } => self.path_note(&name, note),
+            Edit::TourNote { name, note } => self.tour_note(&name, note),
             Edit::StepNote { name, step, note } => self.step_note(&name, step, note),
             Edit::StepLink { name, step, target } => self.step_link(&name, step, &target),
             Edit::StepUnlink { name, step } => self.step_unlink(&name, step),
@@ -118,17 +118,17 @@ impl Run<'_> {
                 old,
                 new,
             } => self.note_edit(&name, step, &old, &new),
-            Edit::PathRename { name, new } => self.path_rename(&name, new),
-            Edit::PathAdd { name, placement } => self.path_add(&name, &placement),
-            Edit::PathPin {
+            Edit::TourRename { name, new } => self.tour_rename(&name, new),
+            Edit::TourAdd { name, placement } => self.tour_add(&name, &placement),
+            Edit::TourPin {
                 name,
                 step,
                 file,
                 lines,
-            } => self.path_pin(&name, step, &file, lines),
-            Edit::PathMove { name, step, under } => self.path_move(&name, step, under),
-            Edit::PathSwap { name, one, other } => self.path_swap(&name, one, other),
-            Edit::PathRemove { name, step } => self.path_remove(&name, step),
+            } => self.tour_pin(&name, step, &file, lines),
+            Edit::TourMove { name, step, under } => self.tour_move(&name, step, under),
+            Edit::TourSwap { name, one, other } => self.tour_swap(&name, one, other),
+            Edit::TourRemove { name, step } => self.tour_remove(&name, step),
             Edit::Promote {
                 symbol,
                 levels,
@@ -184,16 +184,16 @@ impl Run<'_> {
     }
 
     fn notes(&mut self, regex: &Regex) {
-        for path in self.map.paths() {
-            for text in path
+        for tour in self.map.tours() {
+            for text in tour
                 .note()
                 .into_iter()
                 .flat_map(Note::lines)
                 .filter(|text| regex.is_match(text))
             {
-                wire::path_note_line(self.output, path.name(), text);
+                wire::tour_note_line(self.output, tour.name(), text);
             }
-            for (position, step) in path.steps().iter().enumerate() {
+            for (position, step) in tour.steps().iter().enumerate() {
                 for text in step
                     .note()
                     .into_iter()
@@ -201,7 +201,7 @@ impl Run<'_> {
                     .filter(|text| regex.is_match(text))
                 {
                     let position = StepIndex::new(position);
-                    wire::step_note_line(self.output, path.name(), position, step, text);
+                    wire::step_note_line(self.output, tour.name(), position, step, text);
                 }
             }
         }
@@ -328,29 +328,29 @@ impl Run<'_> {
         }
     }
 
-    fn paths(&mut self, name: Option<&TextFragment>) -> Result<(), Failure> {
-        let names: Vec<PathName> = match name {
-            Some(name) => vec![find_path(self.map, name)?],
+    fn tours(&mut self, name: Option<&TextFragment>) -> Result<(), Failure> {
+        let names: Vec<TourName> = match name {
+            Some(name) => vec![find_tour(self.map, name)?],
             None => self
                 .map
                 .rows()
                 .into_iter()
                 .filter_map(|row| match row {
-                    Row::Path { name: named, .. } => Some(named),
+                    Row::Tour { name: named, .. } => Some(named),
                     Row::Group { .. } => None,
                 })
                 .collect(),
         };
         let mut group: Option<&GroupName> = None;
-        for path in names.iter().filter_map(|named| self.map.path(named)) {
-            if name.is_none() && path.group() != group {
-                group = path.group();
+        for tour in names.iter().filter_map(|named| self.map.tour(named)) {
+            if name.is_none() && tour.group() != group {
+                group = tour.group();
                 wire::group_header(self.output, group);
             }
-            wire::path_row(self.output, path);
-            for placed in path.tree_order() {
+            wire::tour_row(self.output, tour);
+            for placed in tour.tree_order() {
                 if let (Some(step), Some(position)) =
-                    (path.step(&placed.step), step_index(path, &placed.step))
+                    (tour.step(&placed.step), step_index(tour, &placed.step))
                 {
                     wire::step_row(self.output, self.index, step, position, placed.depth);
                 }
@@ -359,13 +359,13 @@ impl Run<'_> {
         Ok(())
     }
 
-    fn path(&mut self, name: &TextFragment, view: LinkView) -> Result<(), Failure> {
-        let name = find_path(self.map, name)?;
+    fn tour(&mut self, name: &TextFragment, view: LinkView) -> Result<(), Failure> {
+        let name = find_tour(self.map, name)?;
         let inlined = (view == LinkView::Inlined).then(|| vec![name.clone()]);
-        let Some(path) = self.map.path(&name) else {
+        let Some(tour) = self.map.tour(&name) else {
             return Ok(());
         };
-        wire::path_title(self.output, path);
+        wire::tour_title(self.output, tour);
         let from = places(self.map, self.map.links_to(&name));
         wire::linked_from(self.output, &from);
         let mut document = Document {
@@ -374,7 +374,7 @@ impl Run<'_> {
             output: self.output,
             inlined,
         };
-        document.steps(path, Depth::new(0), &[]);
+        document.steps(tour, Depth::new(0), &[]);
         Ok(())
     }
 
@@ -383,30 +383,30 @@ impl Run<'_> {
             if let Row::Group {
                 group,
                 depth,
-                paths,
+                tours,
             } = row
             {
-                wire::group_row(self.output, &group, depth, paths);
+                wire::group_row(self.output, &group, depth, tours);
             }
         }
     }
 
     fn stale(&mut self) -> StaleCount {
         let mut steps = Count::default();
-        for path in self.map.paths() {
-            for (position, step) in path.steps().iter().enumerate() {
+        for tour in self.map.tours() {
+            for (position, step) in tour.steps().iter().enumerate() {
                 if !step.is_stale() {
                     continue;
                 }
                 let position = StepIndex::new(position);
                 steps = steps.next();
-                wire::stale_row(self.output, self.index, path.name(), position, step);
+                wire::stale_row(self.output, self.index, tour.name(), position, step);
                 let source = self
                     .index
                     .find_file(step.file())
                     .and_then(|file| self.index.file(file));
                 if let Some(span) = source.and_then(|source| moved_to(source.text(), step)) {
-                    wire::same_text(self.output, path.name(), position, step.file(), span);
+                    wire::same_text(self.output, tour.name(), position, step.file(), span);
                 } else if let (None, Some(symbol)) = (step.resolved_symbol(), step.symbol()) {
                     let query = SymbolQuery::from(symbol.as_str());
                     for id in self.index.find_symbols(&query) {
@@ -414,7 +414,7 @@ impl Run<'_> {
                             (self.index.file(id.file()), self.index.symbol(id))
                         {
                             let span = found.span();
-                            wire::same_name(self.output, path.name(), position, file.path(), span);
+                            wire::same_name(self.output, tour.name(), position, file.path(), span);
                         }
                     }
                 }
@@ -422,14 +422,14 @@ impl Run<'_> {
         }
         let dangling = self.map.dangling_links();
         for address in &dangling {
-            let Some(path) = self.map.path(&address.path) else {
+            let Some(tour) = self.map.tour(&address.tour) else {
                 continue;
             };
             if let (Some(position), Some(link)) = (
-                step_index(path, &address.step),
-                path.step(&address.step).and_then(Step::link),
+                step_index(tour, &address.step),
+                tour.step(&address.step).and_then(Step::link),
             ) {
-                wire::dangling(self.output, path.name(), position, link);
+                wire::dangling(self.output, tour.name(), position, link);
             }
         }
         StaleCount {
@@ -515,24 +515,24 @@ impl Run<'_> {
                 Change::Same => continue,
                 Change::Added => {
                     let steps = Count::new(difference.steps().len());
-                    wire::path_added(self.output, name, steps);
+                    wire::tour_added(self.output, name, steps);
                     continue;
                 }
                 Change::Removed => {
                     let steps = Count::new(difference.removed().len());
-                    wire::path_removed(self.output, name, steps);
+                    wire::tour_removed(self.output, name, steps);
                     continue;
                 }
                 Change::Changed => {
-                    wire::path_changed(self.output, name, difference.note_changed());
+                    wire::tour_changed(self.output, name, difference.note_changed());
                 }
             }
-            let name = find_path(self.map, &TextFragment::new(name.as_str()))?;
-            let Some(path) = self.map.path(&name) else {
+            let name = find_tour(self.map, &TextFragment::new(name.as_str()))?;
+            let Some(tour) = self.map.tour(&name) else {
                 continue;
             };
             for (position, change) in difference.steps().iter().enumerate() {
-                if let (Some(kind), Some(step)) = (change.change, path.steps().get(position)) {
+                if let (Some(kind), Some(step)) = (change.change, tour.steps().get(position)) {
                     let position = StepIndex::new(position);
                     wire::step_change(self.output, self.index, kind, position, step);
                 }
@@ -550,16 +550,16 @@ impl Run<'_> {
             .ok_or(Failure::NoRepository)?;
         let revision = revision.unwrap_or_else(|| vcs.parent());
         let mut olds: BTreeMap<RelativePath, Option<FileText>> = BTreeMap::new();
-        let stale: Vec<(PathName, StepIndex, Step)> = self
+        let stale: Vec<(TourName, StepIndex, Step)> = self
             .map
-            .paths()
+            .tours()
             .iter()
-            .flat_map(|path| {
-                path.steps()
+            .flat_map(|tour| {
+                tour.steps()
                     .iter()
                     .enumerate()
                     .filter(|pair| pair.1.is_stale())
-                    .map(|pair| (path.name().clone(), StepIndex::new(pair.0), pair.1.clone()))
+                    .map(|pair| (tour.name().clone(), StepIndex::new(pair.0), pair.1.clone()))
             })
             .collect();
         let (mut pinned, mut left) = (Count::default(), Count::default());
@@ -571,7 +571,7 @@ impl Run<'_> {
                 index: self.index,
                 step: &step,
                 revision: &revision,
-                path: &name,
+                tour: &name,
                 position,
             };
             match repin.follow(old.as_ref(), self.output) {
@@ -596,16 +596,16 @@ impl Run<'_> {
         Ok((!pinned.is_zero()).then_some(Changed))
     }
 
-    fn path_new(
+    fn tour_new(
         &mut self,
-        name: &PathName,
-        kind: PathKind,
+        name: &TourName,
+        kind: TourKind,
         note: Option<Note>,
         group: GroupPlacement,
     ) -> Result<Changed, Failure> {
-        let _added = self.map.add_path(name.clone(), kind, self.author)?;
+        let _added = self.map.add_tour(name.clone(), kind, self.author)?;
         if let Some(note) = note {
-            let _set = self.map.set_path_note(name, Some(note))?;
+            let _set = self.map.set_tour_note(name, Some(note))?;
         }
         if let GroupPlacement::At(group) = group {
             let _placed = self.map.set_group(name, group)?;
@@ -613,14 +613,14 @@ impl Run<'_> {
         Ok(Changed)
     }
 
-    fn path_group(
+    fn tour_group(
         &mut self,
         name: &TextFragment,
         group: Option<GroupName>,
     ) -> Result<Changed, Failure> {
-        let name = find_path(self.map, name)?;
+        let name = find_tour(self.map, name)?;
         let _placed = self.map.set_group(&name, group)?;
-        let placed = self.map.path(&name).and_then(Path::group);
+        let placed = self.map.tour(&name).and_then(Tour::group);
         wire::group_place(self.output, &name, placed);
         Ok(Changed)
     }
@@ -631,13 +631,13 @@ impl Run<'_> {
         new: Option<&GroupName>,
     ) -> Result<Changed, Failure> {
         let moved = self.map.rename_group(old, new)?;
-        wire::paths_moved(self.output, moved);
+        wire::tours_moved(self.output, moved);
         Ok(Changed)
     }
 
-    fn path_note(&mut self, name: &TextFragment, note: Option<Note>) -> Result<Changed, Failure> {
-        let name = find_path(self.map, name)?;
-        Ok(self.map.set_path_note(&name, note)?)
+    fn tour_note(&mut self, name: &TextFragment, note: Option<Note>) -> Result<Changed, Failure> {
+        let name = find_tour(self.map, name)?;
+        Ok(self.map.set_tour_note(&name, note)?)
     }
 
     fn step_note(
@@ -647,7 +647,7 @@ impl Run<'_> {
         note: Option<Note>,
     ) -> Result<Changed, Failure> {
         let found = find_step(self.map, name, step)?;
-        Ok(self.map.set_step_note(&found.path, &found.step, note)?)
+        Ok(self.map.set_step_note(&found.tour, &found.step, note)?)
     }
 
     fn step_link(
@@ -660,11 +660,11 @@ impl Run<'_> {
         if target.as_str().is_empty() {
             return Err(Failure::NoLinkTarget);
         }
-        let link = PathName::new(target.as_str())
+        let link = TourName::new(target.as_str())
             .ok()
-            .filter(|link| self.map.path(link).is_some())
-            .ok_or_else(|| Failure::NoSuchPath(target.clone()))?;
-        let _linked = self.map.set_link(&found.path, &found.step, Some(link))?;
+            .filter(|link| self.map.tour(link).is_some())
+            .ok_or_else(|| Failure::NoSuchTour(target.clone()))?;
+        let _linked = self.map.set_link(&found.tour, &found.step, Some(link))?;
         wire::step_linked(self.output, position, target);
         Ok(Changed)
     }
@@ -675,11 +675,11 @@ impl Run<'_> {
         position: StepIndex,
     ) -> Result<Changed, Failure> {
         let found = find_step(self.map, name, position)?;
-        let linked = self.map.step(&found.path, &found.step).and_then(Step::link);
+        let linked = self.map.step(&found.tour, &found.step).and_then(Step::link);
         if linked.is_none() {
             return Err(Failure::NoLink(position));
         }
-        let _removed = self.map.set_link(&found.path, &found.step, None)?;
+        let _removed = self.map.set_link(&found.tour, &found.step, None)?;
         wire::link_removed(self.output, position);
         Ok(Changed)
     }
@@ -693,25 +693,25 @@ impl Run<'_> {
     ) -> Result<Changed, Failure> {
         let note = match step {
             None => {
-                let path = find_path(self.map, name)?;
-                self.map.edit_path_note(&path, old, new)?
+                let tour = find_tour(self.map, name)?;
+                self.map.edit_tour_note(&tour, old, new)?
             }
             Some(position) => {
                 let found = find_step(self.map, name, position)?;
                 self.map
-                    .edit_step_note(&found.path, &found.step, old, new)?
+                    .edit_step_note(&found.tour, &found.step, old, new)?
             }
         };
         wire::note_text(self.output, note.as_ref());
         Ok(Changed)
     }
 
-    fn path_rename(
+    fn tour_rename(
         &mut self,
         name: &TextFragment,
-        new: Result<PathName, MapError>,
+        new: Result<TourName, MapError>,
     ) -> Result<Changed, Failure> {
-        let old = find_path(self.map, name)?;
+        let old = find_tour(self.map, name)?;
         let links = Count::new(self.map.links_to(&old).len());
         let new = new?;
         let _moved = self.map.rename(&old, new.clone())?;
@@ -721,23 +721,23 @@ impl Run<'_> {
         Ok(Changed)
     }
 
-    fn path_add(&mut self, name: &TextFragment, placement: &Placement) -> Result<Changed, Failure> {
+    fn tour_add(&mut self, name: &TextFragment, placement: &Placement) -> Result<Changed, Failure> {
         let guessed = placement.under.unwrap_or_else(|| {
-            PathName::new(name.as_str())
+            TourName::new(name.as_str())
                 .ok()
-                .and_then(|name| self.map.path(&name).map(step_count))
+                .and_then(|name| self.map.tour(&name).map(step_count))
                 .map_or(Under::new(-1), Count::last)
         });
         self.index_parent(name, guessed);
-        let path = find_path(self.map, name)?;
-        let steps = self.map.path(&path).map(step_count).unwrap_or_default();
+        let tour = find_tour(self.map, name)?;
+        let steps = self.map.tour(&tour).map(step_count).unwrap_or_default();
         let under = placement.under.unwrap_or_else(|| steps.last());
         if !under.fits(steps) {
             return Err(Failure::NoPlaceUnder { under, steps });
         }
         let parent = under
             .step()
-            .and_then(|under| self.map.path(&path).and_then(|found| step_id(found, under)));
+            .and_then(|under| self.map.tour(&tour).and_then(|found| step_id(found, under)));
         let target = placement.target.as_str();
         let (file, span) = if let Some(lines) = placement.lines {
             let file = find_file(self.index, &RelativePath::new(target))?;
@@ -758,9 +758,9 @@ impl Run<'_> {
         };
         let added =
             self.map
-                .add_step(self.index, &path, file, span, self.author, parent.as_ref())?;
-        let address = StepAddress { path, step: added };
-        if let Some(found) = self.map.path(&address.path)
+                .add_step(self.index, &tour, file, span, self.author, parent.as_ref())?;
+        let address = StepAddress { tour, step: added };
+        if let Some(found) = self.map.tour(&address.tour)
             && let (Some(step), Some(position)) =
                 (found.step(&address.step), step_index(found, &address.step))
         {
@@ -775,7 +775,7 @@ impl Run<'_> {
         Ok(Changed)
     }
 
-    fn path_pin(
+    fn tour_pin(
         &mut self,
         name: &TextFragment,
         position: StepIndex,
@@ -791,20 +791,20 @@ impl Run<'_> {
             .ok_or(Failure::LineRange)?;
         let _pinned = self.map.pin(
             self.index,
-            &found.path,
+            &found.tour,
             &found.step,
             file,
             span,
             self.author,
         )?;
-        if let Some(step) = self.map.step(&found.path, &found.step) {
+        if let Some(step) = self.map.step(&found.tour, &found.step) {
             wire::pinned(self.output, self.index, position, step);
             wire::absolute_note(self.output, step);
         }
         Ok(Changed)
     }
 
-    fn path_move(
+    fn tour_move(
         &mut self,
         name: &TextFragment,
         position: StepIndex,
@@ -816,52 +816,52 @@ impl Run<'_> {
             None => None,
             Some(parent) => Some(
                 self.map
-                    .path(&found.path)
-                    .and_then(|path| step_id(path, parent))
+                    .tour(&found.tour)
+                    .and_then(|tour| step_id(tour, parent))
                     .ok_or(MapError::NoSuchParent)?,
             ),
         };
         let _moved = self
             .map
-            .reparent(&found.path, &found.step, parent.as_ref())?;
+            .reparent(&found.tour, &found.step, parent.as_ref())?;
         wire::moved_under(self.output, position, under);
         self.call_note(&found);
         Ok(Changed)
     }
 
-    fn path_swap(
+    fn tour_swap(
         &mut self,
         name: &TextFragment,
         one: StepIndex,
         other: StepIndex,
     ) -> Result<Changed, Failure> {
         let found = find_step(self.map, name, one.max(other))?;
-        let path = self.map.path(&found.path).ok_or(Failure::NoSuchStep)?;
-        let first = step_id(path, one).ok_or(Failure::NoSuchStep)?;
-        let second = step_id(path, other).ok_or(Failure::NoSuchStep)?;
-        Ok(self.map.swap(&found.path, &first, &second)?)
+        let tour = self.map.tour(&found.tour).ok_or(Failure::NoSuchStep)?;
+        let first = step_id(tour, one).ok_or(Failure::NoSuchStep)?;
+        let second = step_id(tour, other).ok_or(Failure::NoSuchStep)?;
+        Ok(self.map.swap(&found.tour, &first, &second)?)
     }
 
-    fn path_remove(
+    fn tour_remove(
         &mut self,
         name: &TextFragment,
         step: Option<StepIndex>,
     ) -> Result<Changed, Failure> {
-        let name = find_path(self.map, name)?;
+        let name = find_tour(self.map, name)?;
         match step {
             Some(position) => {
                 let id = self
                     .map
-                    .path(&name)
-                    .and_then(|path| step_id(path, position))
+                    .tour(&name)
+                    .and_then(|tour| step_id(tour, position))
                     .ok_or(Failure::NoSuchStep)?;
                 let _removed = self.map.remove_step(&name, &id)?;
             }
-            None => match self.map.remove_path(&name) {
+            None => match self.map.remove_tour(&name) {
                 Ok(_) => {}
-                Err(MapError::LinkedFrom { path, steps }) => {
+                Err(MapError::LinkedFrom { tour, steps }) => {
                     let steps = places(self.map, steps);
-                    return Err(Failure::LinkedFrom { path, steps });
+                    return Err(Failure::LinkedFrom { tour, steps });
                 }
                 Err(error) => return Err(error.into()),
             },
@@ -873,7 +873,7 @@ impl Run<'_> {
         &mut self,
         symbol: &SymbolName,
         levels: Option<Levels>,
-        name: Result<Option<PathName>, MapError>,
+        name: Result<Option<TourName>, MapError>,
         pruning: Pruning,
     ) -> Result<Changed, Failure> {
         let depth = levels.map_or(Map::PROMOTE_DEPTH, Levels::depth);
@@ -895,29 +895,29 @@ impl Run<'_> {
         let promoted = self
             .map
             .promote(self.index, root, depth, name?, self.author, pruning)?;
-        if let Some(path) = self.map.path(&promoted.name) {
-            wire::promote_report(self.output, self.index, path, &promoted);
+        if let Some(tour) = self.map.tour(&promoted.name) {
+            wire::promote_report(self.output, self.index, tour, &promoted);
         }
         Ok(Changed)
     }
 
     fn call_note(&mut self, address: &StepAddress) {
-        let Some(path) = self.map.path(&address.path) else {
+        let Some(tour) = self.map.tour(&address.tour) else {
             return;
         };
-        if path.kind() != PathKind::Flow {
+        if tour.kind() != TourKind::Flow {
             return;
         }
-        let Some(step) = path.step(&address.step) else {
+        let Some(step) = tour.step(&address.step) else {
             return;
         };
-        let Some(parent) = step.parent().and_then(|parent| path.step(parent)) else {
+        let Some(parent) = step.parent().and_then(|parent| tour.step(parent)) else {
             return;
         };
         let (Some(from), Some(to), Some(position)) = (
             parent.resolved_symbol(),
             step.resolved_symbol(),
-            step_index(path, &address.step),
+            step_index(tour, &address.step),
         ) else {
             return;
         };
@@ -973,9 +973,9 @@ impl Run<'_> {
     }
 
     fn index_parent(&mut self, name: &TextFragment, under: Under) {
-        let file = PathName::new(name.as_str())
+        let file = TourName::new(name.as_str())
             .ok()
-            .and_then(|name| self.map.path(&name))
+            .and_then(|name| self.map.tour(&name))
             .zip(under.step())
             .and_then(|found| step_id(found.0, found.1).and_then(|id| found.0.step(&id).cloned()))
             .map(|step| step.file().clone());
@@ -987,21 +987,21 @@ struct Document<'a> {
     index: &'a Index,
     map: &'a Map,
     output: &'a mut Output,
-    inlined: Option<Vec<PathName>>,
+    inlined: Option<Vec<TourName>>,
 }
 
 impl Document<'_> {
-    fn steps(&mut self, path: &Path, base: Depth, prefix: &[StepNumber]) {
+    fn steps(&mut self, tour: &Tour, base: Depth, prefix: &[StepNumber]) {
         let mut previous = Depth::new(0);
-        for numbered in path.numbered(self.index) {
+        for numbered in tour.numbered(self.index) {
             let (Some(step), Some(position)) =
-                (path.step(&numbered.step), step_index(path, &numbered.step))
+                (tour.step(&numbered.step), step_index(tour, &numbered.step))
             else {
                 continue;
             };
             let depth = Depth::new(base.value().saturating_add(numbered.depth.value()));
             if numbered.depth < previous
-                && let Some(parent) = path.parent_label(&numbered.step)
+                && let Some(parent) = tour.parent_label(&numbered.step)
             {
                 wire::back_in(self.output, depth, &parent);
             }
@@ -1010,7 +1010,7 @@ impl Document<'_> {
                 depth,
                 prefix,
                 number: &numbered.number,
-                nested: (base.value() > 0).then_some(path.name()),
+                nested: (base.value() > 0).then_some(tour.name()),
                 position,
             };
             wire::step_title(self.output, self.index, step, &title);
@@ -1036,7 +1036,7 @@ impl Document<'_> {
         let (Some(link), Some(inlined)) = (step.link(), self.inlined.as_mut()) else {
             return;
         };
-        let Some(target) = map.path(link) else {
+        let Some(target) = map.tour(link) else {
             return;
         };
         if inlined.contains(link) {
@@ -1058,7 +1058,7 @@ struct Repin<'a> {
     index: &'a Index,
     step: &'a Step,
     revision: &'a Revision,
-    path: &'a PathName,
+    tour: &'a TourName,
     position: StepIndex,
 }
 
@@ -1171,7 +1171,7 @@ impl Repin<'_> {
         let source = self.index.file(target.file).ok_or(LeftStale::FileGone)?;
         let same = new.count() == length && source.text().hash(new) == Some(anchor.hash());
         let report = FollowReport {
-            path: self.path,
+            tour: self.tour,
             position: self.position,
             file: step.file(),
             old: span_of(start, length).ok_or_else(text_gone)?,
@@ -1248,8 +1248,8 @@ fn compile(regex: &TextFragment) -> Result<Regex, Failure> {
 
 pub(crate) fn map_failure(map: &Map, error: MapError) -> Failure {
     match error {
-        MapError::LinkedFrom { path, steps } => Failure::LinkedFrom {
-            path,
+        MapError::LinkedFrom { tour, steps } => Failure::LinkedFrom {
+            tour,
             steps: places(map, steps),
         },
         other => Failure::Map(other),
@@ -1261,10 +1261,10 @@ fn places(map: &Map, addresses: Vec<StepAddress>) -> Vec<StepPlace> {
         .into_iter()
         .filter_map(|address| {
             let index = map
-                .path(&address.path)
-                .and_then(|path| step_index(path, &address.step))?;
+                .tour(&address.tour)
+                .and_then(|tour| step_index(tour, &address.step))?;
             Some(StepPlace {
-                path: address.path,
+                tour: address.tour,
                 index,
             })
         })
@@ -1302,18 +1302,18 @@ fn find_symbol(index: &Index, symbol: &SymbolName) -> Result<SymbolId, Failure> 
     }
 }
 
-fn find_path(map: &Map, name: &TextFragment) -> Result<PathName, Failure> {
-    PathName::new(name.as_str())
+fn find_tour(map: &Map, name: &TextFragment) -> Result<TourName, Failure> {
+    TourName::new(name.as_str())
         .ok()
-        .filter(|found| map.path(found).is_some())
-        .ok_or_else(|| Failure::NoSuchPath(name.clone()))
+        .filter(|found| map.tour(found).is_some())
+        .ok_or_else(|| Failure::NoSuchTour(name.clone()))
 }
 
 fn find_step(map: &Map, name: &TextFragment, position: StepIndex) -> Result<StepAddress, Failure> {
-    let path = find_path(map, name)?;
+    let tour = find_tour(map, name)?;
     let step = map
-        .path(&path)
+        .tour(&tour)
         .and_then(|found| step_id(found, position))
         .ok_or(Failure::NoSuchStep)?;
-    Ok(StepAddress { path, step })
+    Ok(StepAddress { tour, step })
 }

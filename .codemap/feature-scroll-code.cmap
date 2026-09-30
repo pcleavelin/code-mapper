@@ -1,5 +1,5 @@
-codemap 8
-path feature-scroll-code
+codemap 9
+tour feature-scroll-code
 kind flow
 author ai
 group features/gui

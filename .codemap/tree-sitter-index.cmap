@@ -1,9 +1,9 @@
-codemap 8
-path tree-sitter-index
+codemap 9
+tour tree-sitter-index
 kind flow
 author ai
 group index
-note How a file becomes symbols and calls when no language server answers for it. Parsers::parse runs the language's tree-sitter grammar once over the text; a walk of the syntax tree (Collector) picks out top-level declarations plus one level into impl/mod/trait/class bodies, notes what each import statement brings into scope, and records every call site as a bare (name, qualifier) pair. Nothing is resolved here: the call sites are strings, and link turns them into edges afterwards (see call-resolution). This backend runs for every file that is not cached, and is the final answer for a language whose server is missing or does not exist. Syntax colouring happens in the same parse; that half is the highlighting path. All of it is parse.rs in the index crate, and the small text types there (TypeText, ImportText, CalleeText, QualifierText, NodeKind) each hold one kind of string the walk reads.
+note How a file becomes symbols and calls when no language server answers for it. Parsers::parse runs the language's tree-sitter grammar once over the text; a walk of the syntax tree (Collector) picks out top-level declarations plus one level into impl/mod/trait/class bodies, notes what each import statement brings into scope, and records every call site as a bare (name, qualifier) pair. Nothing is resolved here: the call sites are strings, and link turns them into edges afterwards (see call-resolution). This backend runs for every file that is not cached, and is the final answer for a language whose server is missing or does not exist. Syntax colouring happens in the same parse; that half is the highlighting tour. All of it is parse.rs in the index crate, and the small text types there (TypeText, ImportText, CalleeText, QualifierText, NodeKind) each hold one kind of string the walk reads.
 
 step 0c73gq
 order 0

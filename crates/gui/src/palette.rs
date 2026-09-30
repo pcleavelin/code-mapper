@@ -10,7 +10,7 @@ use crate::authoring::Authoring;
 use crate::field::{FieldText, Which};
 use crate::graph::GraphAction;
 use crate::keys::{PaletteKey, Walk};
-use crate::model::{Model, PathSlot, StepKey, Tab};
+use crate::model::{Model, StepKey, Tab, TourSlot};
 use crate::nav::Scrolling;
 use crate::panels::{Direction, View};
 
@@ -29,7 +29,7 @@ pub(crate) enum PaletteAction {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum EntryKind {
     Action,
-    Path,
+    Tour,
     View,
     Step,
     Symbol,
@@ -40,7 +40,7 @@ impl EntryKind {
     pub(crate) fn tag(self) -> Label {
         Label::new(match self {
             Self::Action => "action",
-            Self::Path => "path",
+            Self::Tour => "tour",
             Self::View => "view",
             Self::Step => "step",
             Self::Symbol => "symbol",
@@ -50,7 +50,7 @@ impl EntryKind {
 
     const fn boost(self) -> Score {
         match self {
-            Self::Action | Self::Path | Self::View | Self::Step => Score::MAPPED,
+            Self::Action | Self::Tour | Self::View | Self::Step => Score::MAPPED,
             Self::Symbol | Self::File => Score::ZERO,
         }
     }
@@ -64,7 +64,7 @@ pub(crate) enum PaletteCommand {
     Hide(Hide),
     Collapse(Collapse),
     ShowGraph,
-    NewPath,
+    NewTour,
     Search,
     AutoLayout,
     Fit,
@@ -86,7 +86,7 @@ pub(crate) const fn commands(feature: Feature) -> &'static [PaletteCommand] {
         Feature::ShowGraph => &[PaletteCommand::ShowGraph],
         Feature::GoBack => &[PaletteCommand::Back, PaletteCommand::Forward],
         Feature::Save => &[PaletteCommand::Save],
-        Feature::NewPath => &[PaletteCommand::NewPath],
+        Feature::NewTour => &[PaletteCommand::NewTour],
         Feature::SearchFiles => &[PaletteCommand::Search],
         Feature::AutoLayout => &[PaletteCommand::AutoLayout],
         Feature::FitGraph => &[PaletteCommand::Fit, PaletteCommand::OneToOne],
@@ -102,7 +102,7 @@ pub(crate) const fn commands(feature: Feature) -> &'static [PaletteCommand] {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Goal {
     Run(PaletteCommand),
-    Path(PathSlot),
+    Tour(TourSlot),
     Step(StepKey),
     Symbol(SymbolId),
     File(FileId),
@@ -405,29 +405,29 @@ impl Gathered {
     }
 
     fn map(&mut self, model: &Model) {
-        for (slot, path) in model.map.paths().iter().enumerate() {
-            let against = Spelling::of(path.name().as_str());
+        for (slot, tour) in model.map.tours().iter().enumerate() {
+            let against = Spelling::of(tour.name().as_str());
             self.offer(
-                EntryKind::Path,
-                Goal::Path(PathSlot::new(slot)),
+                EntryKind::Tour,
+                Goal::Tour(TourSlot::new(slot)),
                 &against,
                 || {
-                    let group = path
+                    let group = tour
                         .group()
                         .map_or_else(String::new, |group| format!("  in {group}"));
                     Shown::plain(
-                        Label::new(path.name().as_str()),
-                        Label::new(format!("{} steps{group}", path.steps().len())),
+                        Label::new(tour.name().as_str()),
+                        Label::new(format!("{} steps{group}", tour.steps().len())),
                     )
                 },
             );
         }
-        let Some(path) = model.nav.path() else {
+        let Some(tour) = model.nav.tour() else {
             return;
         };
-        for numbered in model.numbered(path) {
+        for numbered in model.numbered(tour) {
             let key = StepKey {
-                path,
+                tour,
                 step: numbered.step,
             };
             let Some(step) = model.step(key) else {
@@ -541,27 +541,27 @@ impl Model {
     }
 
     pub(crate) fn palette_actions(&self, goal: Goal) -> Vec<Action> {
-        let reading = self.nav.path();
-        let on_path = |make: fn(PathSlot) -> Action| reading.map(make).into_iter().collect();
+        let reading = self.nav.tour();
+        let on_tour = |make: fn(TourSlot) -> Action| reading.map(make).into_iter().collect();
         match goal {
             Goal::Run(command) => match command {
                 PaletteCommand::Save => vec![Action::Save],
                 PaletteCommand::Back => vec![Action::Back],
                 PaletteCommand::Forward => vec![Action::Forward],
                 PaletteCommand::Hide(Hide::Hide) => {
-                    on_path(|path| Action::HideAll(path, Hide::Hide))
+                    on_tour(|tour| Action::HideAll(tour, Hide::Hide))
                 }
                 PaletteCommand::Hide(Hide::Show) => {
-                    on_path(|path| Action::HideAll(path, Hide::Show))
+                    on_tour(|tour| Action::HideAll(tour, Hide::Show))
                 }
                 PaletteCommand::Collapse(Collapse::Collapse) => {
-                    on_path(|path| Action::CollapseAll(path, Collapse::Collapse))
+                    on_tour(|tour| Action::CollapseAll(tour, Collapse::Collapse))
                 }
                 PaletteCommand::Collapse(Collapse::Expand) => {
-                    on_path(|path| Action::CollapseAll(path, Collapse::Expand))
+                    on_tour(|tour| Action::CollapseAll(tour, Collapse::Expand))
                 }
-                PaletteCommand::ShowGraph => on_path(|path| Action::OpenPath(path, Tab::Graph)),
-                PaletteCommand::NewPath => vec![Action::Authoring(Authoring::ToggleNewPath)],
+                PaletteCommand::ShowGraph => on_tour(|tour| Action::OpenTour(tour, Tab::Graph)),
+                PaletteCommand::NewTour => vec![Action::Authoring(Authoring::ToggleNewTour)],
                 PaletteCommand::Search => vec![Action::FocusField(Which::Search)],
                 PaletteCommand::AutoLayout => vec![Action::Graph(GraphAction::AutoLayout)],
                 PaletteCommand::Fit => vec![Action::Graph(GraphAction::WantFit)],
@@ -577,7 +577,7 @@ impl Model {
                         .collect()
                 }
             },
-            Goal::Path(slot) => vec![Action::OpenPath(slot, Tab::Path)],
+            Goal::Tour(slot) => vec![Action::OpenTour(slot, Tab::Tour)],
             Goal::Step(key) => vec![Action::SelectStep(key, Scrolling::Scroll)],
             Goal::Symbol(symbol) => vec![Action::Jump(symbol)],
             Goal::File(file) => vec![Action::GoTo(file, Line::new(0))],

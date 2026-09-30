@@ -1,9 +1,9 @@
-codemap 8
-path feature-repin
+codemap 9
+tour feature-repin
 kind flow
 author ai
 group features/cli
-note repin [rev]: re-pin every stale step by following its text from revision rev, by default the parent revision (@- in jj, HEAD in git). The agent needs it so re-anchoring after an edit follows the old text through the diff mechanically instead of by hand. After a rebase, rev is the change's pre-rebase commit. For each stale step the file is read as rev had it, the step's slice is found there by its stored hash, and the slice with a few lines of context is aligned against every symbol of the step's name, in its own file first and in every file when the symbol left it. A step that keeps at least half its lines is pinned to where they went; the rest stay stale with the reason printed, for path-pin by hand. The output is the review: every re-pinned step whose text changed prints its removed and added lines, and its note has to be reread against them, because a re-pin keeps the note whether or not it still describes the code. The map is saved only when at least one step was re-pinned.
+note repin [rev]: re-pin every stale step by following its text from revision rev, by default the parent revision (@- in jj, HEAD in git). The agent needs it so re-anchoring after an edit follows the old text through the diff mechanically instead of by hand. After a rebase, rev is the change's pre-rebase commit. For each stale step the file is read as rev had it, the step's slice is found there by its stored hash, and the slice with a few lines of context is aligned against every symbol of the step's name, in its own file first and in every file when the symbol left it. A step that keeps at least half its lines is pinned to where they went; the rest stay stale with the reason printed, for tour-pin by hand. The output is the review: every re-pinned step whose text changed prints its removed and added lines, and its note has to be reread against them, because a re-pin keeps the note whether or not it still describes the code. The map is saved only when at least one step was re-pinned.
 
 step 372fxc
 order 4
@@ -33,7 +33,7 @@ author ai
 file crates/domain/src/map.rs
 symbol pin
 lines 0 20
-hash 9fed4ca3065bbbf2
+hash 9829c26db7f0b4b5
 note Pins the step to the new span; its note, parent, link and order stay, and the pinning author is recorded.
 
 step 7e3xoo
@@ -53,7 +53,7 @@ author ai
 file crates/cli/src/exec.rs
 symbol follow
 lines 0 89
-hash dda079cb90335b6a
+hash 382b1d1e40342440
 link stale-and-pin
 note One step: locate its old slice in rev's file by hash (the occurrence nearest where it was pinned), cut a window with three lines of context, align it with each candidate symbol and keep the candidate that keeps the most lines. Under half the lines kept is a refusal: that step needs someone to read the code.
 
@@ -95,7 +95,7 @@ author ai
 file crates/cli/src/wire.rs
 symbol follow_report
 lines 0 16
-hash 49645b1b37a86d9d
+hash 5ba47799bddb391e
 note One line per followed step: old place in rev, new place (with the new file when it moved), lines kept, and 'text unchanged' when the hash still matches.
 
 step ml8ec5
@@ -116,7 +116,7 @@ author ai
 file crates/cli/src/wire.rs
 symbol left_stale
 lines 0 7
-hash e74b72e4902544f1
+hash 4b9996e3ed00c396
 note The line for a step that was not placed.
 
 step mzem7k
@@ -145,5 +145,5 @@ author ai
 file crates/cli/src/exec.rs
 symbol repin
 lines 0 50
-hash 0484719fb8e0b32e
+hash 09694b1e6adeb970
 note Finds the repository, lists the stale steps up front, then for each one reads its file at rev once (cached per file for the steps after it), follows it, and either pins it or reports why not. Ends with the counts.

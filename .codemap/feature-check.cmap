@@ -1,5 +1,5 @@
-codemap 8
-path feature-check
+codemap 9
+tour feature-check
 kind flow
 author ai
 group features/cli
@@ -41,7 +41,7 @@ author ai
 file crates/cli/src/exec.rs
 symbol stale
 lines 0 45
-hash dd3a43befd16f19c
+hash 86241f9ff6d4d642
 link feature-stale
 note The full stale listing, hints included, so a failing check already says how to fix each step.
 

@@ -2,20 +2,20 @@ mod diff;
 mod error;
 mod follow;
 mod name;
-mod path;
 mod step;
+mod tour;
 
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::index::{Cut, Depth, FileId, Index, PrunedTree, Stop, SymbolId};
 use crate::text::{RelativePath, Span};
 
-pub use diff::{Change, PathDiff, StepChange, StepDiff};
+pub use diff::{Change, StepChange, StepDiff, TourDiff};
 pub use error::{InvalidName, MapError, StepAddress};
 pub use follow::{Alignment, Followed, follow};
-pub use name::{Author, GroupName, Note, PathCount, PathKind, PathName, TextFragment};
-pub use path::{NumberedStep, ParentLabel, Path, PlacedStep, StepNumber};
+pub use name::{Author, GroupName, Note, TextFragment, TourCount, TourKind, TourName};
 pub use step::{Anchor, Freshness, Resolution, Step, StepId, StepOrder};
+pub use tour::{NumberedStep, ParentLabel, PlacedStep, StepNumber, Tour};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[must_use]
@@ -39,10 +39,10 @@ pub enum Row {
     Group {
         group: GroupName,
         depth: Depth,
-        paths: PathCount,
+        tours: TourCount,
     },
-    Path {
-        name: PathName,
+    Tour {
+        name: TourName,
         depth: Depth,
     },
 }
@@ -56,12 +56,12 @@ pub enum Pruning {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LinkCandidate {
     pub step: StepId,
-    pub target: PathName,
+    pub target: TourName,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Promoted {
-    pub name: PathName,
+    pub name: TourName,
     pub cut: BTreeMap<SymbolId, Cut>,
     pub stopped: BTreeMap<SymbolId, Stop>,
     pub links: Vec<LinkCandidate>,
@@ -69,52 +69,52 @@ pub struct Promoted {
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Map {
-    paths: Vec<Path>,
+    tours: Vec<Tour>,
 }
 
 impl Map {
     pub const PROMOTE_DEPTH: Depth = Depth::new(2);
 
-    pub fn new(paths: Vec<Path>) -> Result<Self, MapError> {
+    pub fn new(tours: Vec<Tour>) -> Result<Self, MapError> {
         let mut names = BTreeSet::new();
-        for path in &paths {
-            if !names.insert(path.name()) {
-                return Err(MapError::NameTaken(path.name().clone()));
+        for tour in &tours {
+            if !names.insert(tour.name()) {
+                return Err(MapError::NameTaken(tour.name().clone()));
             }
         }
-        Ok(Self { paths })
+        Ok(Self { tours })
     }
 
-    pub fn paths(&self) -> &[Path] {
-        &self.paths
+    pub fn tours(&self) -> &[Tour] {
+        &self.tours
     }
 
-    pub fn path(&self, name: &PathName) -> Option<&Path> {
-        self.paths.iter().find(|path| path.name() == name)
+    pub fn tour(&self, name: &TourName) -> Option<&Tour> {
+        self.tours.iter().find(|tour| tour.name() == name)
     }
 
-    pub fn step(&self, name: &PathName, step: &StepId) -> Option<&Step> {
-        self.path(name)?.step(step)
+    pub fn step(&self, name: &TourName, step: &StepId) -> Option<&Step> {
+        self.tour(name)?.step(step)
     }
 
-    fn path_mut(&mut self, name: &PathName) -> Result<&mut Path, MapError> {
-        self.paths
+    fn tour_mut(&mut self, name: &TourName) -> Result<&mut Tour, MapError> {
+        self.tours
             .iter_mut()
-            .find(|path| path.name() == name)
-            .ok_or_else(|| MapError::NoSuchPath(name.clone()))
+            .find(|tour| tour.name() == name)
+            .ok_or_else(|| MapError::NoSuchTour(name.clone()))
     }
 
-    fn step_mut(&mut self, name: &PathName, step: &StepId) -> Result<&mut Step, MapError> {
-        self.path_mut(name)?
+    fn step_mut(&mut self, name: &TourName, step: &StepId) -> Result<&mut Step, MapError> {
+        self.tour_mut(name)?
             .step_mut(step)
             .ok_or_else(|| missing_step(name, step))
     }
 
-    fn free_name(&self, name: &PathName, except: Option<&PathName>) -> Result<(), MapError> {
+    fn free_name(&self, name: &TourName, except: Option<&TourName>) -> Result<(), MapError> {
         match self
-            .paths
+            .tours
             .iter()
-            .find(|path| path.name().same_letters(name))
+            .find(|tour| tour.name().same_letters(name))
         {
             Some(other) if Some(other.name()) != except && other.name() == name => {
                 Err(MapError::NameTaken(name.clone()))
@@ -127,43 +127,43 @@ impl Map {
         }
     }
 
-    pub fn add_path(
+    pub fn add_tour(
         &mut self,
-        name: PathName,
-        kind: PathKind,
+        name: TourName,
+        kind: TourKind,
         author: Author,
     ) -> Result<Changed, MapError> {
-        if self.path(&name).is_some() {
+        if self.tour(&name).is_some() {
             return Ok(Changed);
         }
         self.free_name(&name, None)?;
-        self.paths.push(Path::empty(name, kind, author));
+        self.tours.push(Tour::empty(name, kind, author));
         Ok(Changed)
     }
 
-    pub fn rename(&mut self, old: &PathName, new: PathName) -> Result<Changed, MapError> {
-        self.path(old)
-            .ok_or_else(|| MapError::NoSuchPath(old.clone()))?;
+    pub fn rename(&mut self, old: &TourName, new: TourName) -> Result<Changed, MapError> {
+        self.tour(old)
+            .ok_or_else(|| MapError::NoSuchTour(old.clone()))?;
         self.free_name(&new, Some(old))?;
         for step in self
-            .paths
+            .tours
             .iter_mut()
-            .flat_map(|path| path.steps_mut().iter_mut())
+            .flat_map(|tour| tour.steps_mut().iter_mut())
         {
             if step.link() == Some(old) {
                 step.set_link(Some(new.clone()));
             }
         }
-        self.path_mut(old)?.set_name(new);
+        self.tour_mut(old)?.set_name(new);
         Ok(Changed)
     }
 
     pub fn set_group(
         &mut self,
-        name: &PathName,
+        name: &TourName,
         group: Option<GroupName>,
     ) -> Result<Changed, MapError> {
-        self.path_mut(name)?.set_group(group);
+        self.tour_mut(name)?.set_group(group);
         Ok(Changed)
     }
 
@@ -171,33 +171,33 @@ impl Map {
         &mut self,
         old: Option<&GroupName>,
         new: Option<&GroupName>,
-    ) -> Result<PathCount, MapError> {
+    ) -> Result<TourCount, MapError> {
         let old = old.ok_or(MapError::NoGroupGiven)?;
         let mut moved = 0;
-        for path in &mut self.paths {
-            if let Some(group) = path.group().and_then(|group| group.moved(old, new)) {
-                path.set_group(GroupName::new(&group));
+        for tour in &mut self.tours {
+            if let Some(group) = tour.group().and_then(|group| group.moved(old, new)) {
+                tour.set_group(GroupName::new(&group));
                 moved += 1;
             }
         }
         if moved == 0 {
             return Err(MapError::NoSuchGroup(old.clone()));
         }
-        Ok(PathCount::of(moved))
+        Ok(TourCount::of(moved))
     }
 
-    pub fn set_path_note(
+    pub fn set_tour_note(
         &mut self,
-        name: &PathName,
+        name: &TourName,
         note: Option<Note>,
     ) -> Result<Changed, MapError> {
-        self.path_mut(name)?.set_note(note);
+        self.tour_mut(name)?.set_note(note);
         Ok(Changed)
     }
 
     pub fn set_step_note(
         &mut self,
-        name: &PathName,
+        name: &TourName,
         step: &StepId,
         note: Option<Note>,
     ) -> Result<Changed, MapError> {
@@ -205,24 +205,24 @@ impl Map {
         Ok(Changed)
     }
 
-    pub fn edit_path_note(
+    pub fn edit_tour_note(
         &mut self,
-        name: &PathName,
+        name: &TourName,
         old: &TextFragment,
         new: &TextFragment,
     ) -> Result<Option<Note>, MapError> {
-        let path = self.path_mut(name)?;
+        let tour = self.tour_mut(name)?;
         let note = old
-            .replace_first(path.note(), new)
+            .replace_first(tour.note(), new)
             .map(|text| Note::new(&text))
             .ok_or_else(|| MapError::NoteLacks(old.clone()))?;
-        path.set_note(note.clone());
+        tour.set_note(note.clone());
         Ok(note)
     }
 
     pub fn edit_step_note(
         &mut self,
-        name: &PathName,
+        name: &TourName,
         step: &StepId,
         old: &TextFragment,
         new: &TextFragment,
@@ -239,31 +239,31 @@ impl Map {
     pub fn add_step(
         &mut self,
         index: &Index,
-        name: &PathName,
+        name: &TourName,
         file: FileId,
         span: Span,
         author: Author,
         parent: Option<&StepId>,
     ) -> Result<StepId, MapError> {
-        let path = self.path_mut(name)?;
+        let tour = self.tour_mut(name)?;
         if let Some(parent) = parent
-            && path.step(parent).is_none()
+            && tour.step(parent).is_none()
         {
             return Err(MapError::NoSuchParent);
         }
         let pinned = pin_span(index, file, span)?;
         let seed = format!(
             "{}\n{}\n{}\n{}\n{}\n{}",
-            path.name(),
+            tour.name(),
             pinned.anchor.file(),
             pinned.anchor.symbol().map_or("", |symbol| symbol.as_str()),
             pinned.anchor.start(),
             pinned.anchor.end(),
             parent.map_or("", StepId::as_str)
         );
-        let id = StepId::fresh(&seed, |id| path.step(id).is_some());
+        let id = StepId::fresh(&seed, |id| tour.step(id).is_some());
         let mut step = Step::fresh(id, author, pinned.anchor, pinned.resolution);
-        let order = path
+        let order = tour
             .steps()
             .iter()
             .map(|other| other.order().next())
@@ -272,27 +272,27 @@ impl Map {
         step.set_order(order);
         step.set_parent(parent.cloned());
         let added = step.id().clone();
-        path.steps_mut().push(step);
+        tour.steps_mut().push(step);
         Ok(added)
     }
 
     pub fn pin(
         &mut self,
         index: &Index,
-        name: &PathName,
+        name: &TourName,
         step: &StepId,
         file: FileId,
         span: Span,
         author: Author,
     ) -> Result<Changed, MapError> {
-        let path = self.path_mut(name)?;
-        let position = path
+        let tour = self.tour_mut(name)?;
+        let position = tour
             .steps()
             .iter()
             .position(|other| other.id() == step)
             .ok_or_else(|| missing_step(name, step))?;
         let pinned = pin_span(index, file, span)?;
-        if let Some(slot) = path.steps_mut().get_mut(position) {
+        if let Some(slot) = tour.steps_mut().get_mut(position) {
             slot.repin(author, pinned.anchor, pinned.resolution);
         }
         Ok(Changed)
@@ -300,17 +300,17 @@ impl Map {
 
     pub fn set_link(
         &mut self,
-        name: &PathName,
+        name: &TourName,
         step: &StepId,
-        target: Option<PathName>,
+        target: Option<TourName>,
     ) -> Result<Changed, MapError> {
         self.step_mut(name, step)?;
         if let Some(target) = &target {
-            if self.path(target).is_none() {
-                return Err(MapError::NoSuchPath(target.clone()));
+            if self.tour(target).is_none() {
+                return Err(MapError::NoSuchTour(target.clone()));
             }
             if target == name {
-                return Err(MapError::LinkToOwnPath);
+                return Err(MapError::LinkToOwnTour);
             }
         }
         self.step_mut(name, step)?.set_link(target);
@@ -319,12 +319,12 @@ impl Map {
 
     pub fn reparent(
         &mut self,
-        name: &PathName,
+        name: &TourName,
         step: &StepId,
         parent: Option<&StepId>,
     ) -> Result<Changed, MapError> {
-        let path = self.path_mut(name)?;
-        path.step(step).ok_or_else(|| missing_step(name, step))?;
+        let tour = self.tour_mut(name)?;
+        tour.step(step).ok_or_else(|| missing_step(name, step))?;
         let mut visited = BTreeSet::new();
         let mut cursor = parent;
         while let Some(above) = cursor {
@@ -334,10 +334,10 @@ impl Map {
             if !visited.insert(above) {
                 break;
             }
-            cursor = path.step(above).ok_or(MapError::NoSuchParent)?.parent();
+            cursor = tour.step(above).ok_or(MapError::NoSuchParent)?.parent();
         }
         let parent = parent.cloned();
-        path.step_mut(step)
+        tour.step_mut(step)
             .ok_or_else(|| missing_step(name, step))?
             .set_parent(parent);
         Ok(Changed)
@@ -345,27 +345,27 @@ impl Map {
 
     pub fn swap(
         &mut self,
-        name: &PathName,
+        name: &TourName,
         one: &StepId,
         other: &StepId,
     ) -> Result<Changed, MapError> {
-        let path = self.path_mut(name)?;
+        let tour = self.tour_mut(name)?;
         for id in [one, other] {
-            path.step(id).ok_or_else(|| missing_step(name, id))?;
+            tour.step(id).ok_or_else(|| missing_step(name, id))?;
         }
-        swap_places(path.steps_mut(), one, other);
+        swap_places(tour.steps_mut(), one, other);
         Ok(Changed)
     }
 
     pub fn place(
         &mut self,
-        name: &PathName,
+        name: &TourName,
         step: &StepId,
         parent: Option<&StepId>,
         before: Option<&StepId>,
     ) -> Result<Changed, MapError> {
         let _reparented = self.reparent(name, step, parent)?;
-        let steps = self.path_mut(name)?.steps_mut();
+        let steps = self.tour_mut(name)?.steps_mut();
         let position = |id: &StepId| steps.iter().position(|other| other.id() == id);
         let mut at = position(step).ok_or_else(|| missing_step(name, step))?;
         let wanted = match before.filter(|before| *before != step) {
@@ -386,8 +386,8 @@ impl Map {
         Ok(Changed)
     }
 
-    pub fn remove_step(&mut self, name: &PathName, step: &StepId) -> Result<Step, MapError> {
-        let steps = self.path_mut(name)?.steps_mut();
+    pub fn remove_step(&mut self, name: &TourName, step: &StepId) -> Result<Step, MapError> {
+        let steps = self.tour_mut(name)?.steps_mut();
         let position = steps
             .iter()
             .position(|other| other.id() == step)
@@ -405,50 +405,50 @@ impl Map {
         Ok(removed)
     }
 
-    pub fn remove_path(&mut self, name: &PathName) -> Result<Path, MapError> {
+    pub fn remove_tour(&mut self, name: &TourName) -> Result<Tour, MapError> {
         let position = self
-            .paths
+            .tours
             .iter()
-            .position(|path| path.name() == name)
-            .ok_or_else(|| MapError::NoSuchPath(name.clone()))?;
+            .position(|tour| tour.name() == name)
+            .ok_or_else(|| MapError::NoSuchTour(name.clone()))?;
         let from: Vec<StepAddress> = self
             .links_to(name)
             .into_iter()
-            .filter(|address| &address.path != name)
+            .filter(|address| &address.tour != name)
             .collect();
         if !from.is_empty() {
             return Err(MapError::LinkedFrom {
-                path: name.clone(),
+                tour: name.clone(),
                 steps: from,
             });
         }
-        Ok(self.paths.remove(position))
+        Ok(self.tours.remove(position))
     }
 
-    fn covers(&self, besides: &PathName, index: &Index, symbol: SymbolId) -> Vec<PathName> {
+    fn covers(&self, besides: &TourName, index: &Index, symbol: SymbolId) -> Vec<TourName> {
         let (Some(found), Some(file)) = (index.symbol(symbol), index.file(symbol.file())) else {
             return Vec::new();
         };
-        self.paths
+        self.tours
             .iter()
-            .filter(|path| path.name() != besides)
-            .filter(|path| {
-                path.steps().iter().any(|step| {
+            .filter(|tour| tour.name() != besides)
+            .filter(|tour| {
+                tour.steps().iter().any(|step| {
                     step.resolved_symbol() == Some(symbol)
                         || (step.file() == file.path()
                             && step.span().contains(found.span().start())
                             && step.span().contains(found.span().end()))
                 })
             })
-            .map(|path| path.name().clone())
+            .map(|tour| tour.name().clone())
             .collect()
     }
 
-    fn link_target(&self, besides: &PathName, index: &Index, symbol: SymbolId) -> Option<PathName> {
+    fn link_target(&self, besides: &TourName, index: &Index, symbol: SymbolId) -> Option<TourName> {
         let covering = self.covers(besides, index, symbol);
         let rooted = covering.iter().find(|name| {
-            self.path(name).is_some_and(|path| {
-                path.steps()
+            self.tour(name).is_some_and(|tour| {
+                tour.steps()
                     .iter()
                     .any(|step| step.parent().is_none() && step.resolved_symbol() == Some(symbol))
             })
@@ -465,13 +465,13 @@ impl Map {
         index: &Index,
         root: SymbolId,
         depth: Depth,
-        name: Option<PathName>,
+        name: Option<TourName>,
         author: Author,
         pruning: Pruning,
     ) -> Result<Promoted, MapError> {
         let root_symbol = index.symbol(root).ok_or(MapError::NoSuchSymbol)?;
-        let name = name.unwrap_or_else(|| PathName::from_symbol(root_symbol.name()));
-        let _added = self.add_path(name.clone(), PathKind::Flow, author)?;
+        let name = name.unwrap_or_else(|| TourName::from_symbol(root_symbol.name()));
+        let _added = self.add_tour(name.clone(), TourKind::Flow, author)?;
         let tree = match pruning {
             Pruning::All => PrunedTree {
                 entries: index.call_tree(root, depth),
@@ -494,8 +494,8 @@ impl Map {
                 .checked_sub(1)
                 .and_then(|above| stack.get(above))
                 .cloned();
-            let existing = self.path(&name).and_then(|path| {
-                path.steps()
+            let existing = self.tour(&name).and_then(|tour| {
+                tour.steps()
                     .iter()
                     .find(|step| {
                         step.file() == file.path()
@@ -535,8 +535,8 @@ impl Map {
     }
 
     pub fn resolve_all(&mut self, index: &Index) {
-        for path in &mut self.paths {
-            for step in path.steps_mut() {
+        for tour in &mut self.tours {
+            for step in tour.steps_mut() {
                 step.resolve(index);
             }
         }
@@ -546,30 +546,30 @@ impl Map {
         self.rows_where(|_| true)
     }
 
-    pub fn rows_where(&self, wanted: impl Fn(&Path) -> bool) -> Vec<Row> {
+    pub fn rows_where(&self, wanted: impl Fn(&Tour) -> bool) -> Vec<Row> {
         let mut rows = Vec::new();
-        let members: Vec<&Path> = self.paths.iter().filter(|path| wanted(path)).collect();
+        let members: Vec<&Tour> = self.tours.iter().filter(|tour| wanted(tour)).collect();
         level(&members, None, Depth::default(), &mut rows);
         rows
     }
 
-    pub fn links_to(&self, target: &PathName) -> Vec<StepAddress> {
+    pub fn links_to(&self, target: &TourName) -> Vec<StepAddress> {
         self.addresses(|step| step.link() == Some(target))
     }
 
     pub fn dangling_links(&self) -> Vec<StepAddress> {
-        self.addresses(|step| step.link().is_some_and(|link| self.path(link).is_none()))
+        self.addresses(|step| step.link().is_some_and(|link| self.tour(link).is_none()))
     }
 
     fn addresses(&self, wanted: impl Fn(&Step) -> bool) -> Vec<StepAddress> {
-        self.paths
+        self.tours
             .iter()
-            .flat_map(|path| {
-                path.steps()
+            .flat_map(|tour| {
+                tour.steps()
                     .iter()
                     .filter(|step| wanted(step))
                     .map(|step| StepAddress {
-                        path: path.name().clone(),
+                        tour: tour.name().clone(),
                         step: step.id().clone(),
                     })
             })
@@ -578,7 +578,7 @@ impl Map {
 
     pub fn coverage(&self) -> Coverage<'_> {
         let mut spans: BTreeMap<&RelativePath, Vec<Span>> = BTreeMap::new();
-        for step in self.paths.iter().flat_map(Path::steps) {
+        for step in self.tours.iter().flat_map(Tour::steps) {
             if !step.is_stale() {
                 spans.entry(step.file()).or_default().push(step.span());
             }
@@ -586,28 +586,28 @@ impl Map {
         Coverage { spans }
     }
 
-    pub fn diff(&self, base: &Self) -> Vec<PathDiff> {
-        let mut diffs: Vec<PathDiff> = self
-            .paths
+    pub fn diff(&self, base: &Self) -> Vec<TourDiff> {
+        let mut diffs: Vec<TourDiff> = self
+            .tours
             .iter()
-            .map(|path| match base.path(path.name()) {
-                Some(old) => PathDiff::between(path, old),
-                None => PathDiff::added(path),
+            .map(|tour| match base.tour(tour.name()) {
+                Some(old) => TourDiff::between(tour, old),
+                None => TourDiff::added(tour),
             })
             .collect();
         diffs.extend(
-            base.paths
+            base.tours
                 .iter()
-                .filter(|old| self.path(old.name()).is_none())
-                .map(PathDiff::removed_path),
+                .filter(|old| self.tour(old.name()).is_none())
+                .map(TourDiff::removed_tour),
         );
         diffs
     }
 }
 
-fn missing_step(name: &PathName, step: &StepId) -> MapError {
+fn missing_step(name: &TourName, step: &StepId) -> MapError {
     MapError::NoSuchStep(StepAddress {
-        path: name.clone(),
+        tour: name.clone(),
         step: step.clone(),
     })
 }
@@ -653,24 +653,24 @@ fn pin_span(index: &Index, file: FileId, span: Span) -> Result<Pinned, MapError>
     })
 }
 
-fn level(members: &[&Path], prefix: Option<&GroupName>, depth: Depth, rows: &mut Vec<Row>) {
-    let mut groups: BTreeMap<GroupName, Vec<&Path>> = BTreeMap::new();
+fn level(members: &[&Tour], prefix: Option<&GroupName>, depth: Depth, rows: &mut Vec<Row>) {
+    let mut groups: BTreeMap<GroupName, Vec<&Tour>> = BTreeMap::new();
     let mut here = Vec::new();
-    for path in members {
-        match path.group().and_then(|group| group.child_under(prefix)) {
-            Some(child) => groups.entry(child).or_default().push(*path),
-            None => here.push(path.name().clone()),
+    for tour in members {
+        match tour.group().and_then(|group| group.child_under(prefix)) {
+            Some(child) => groups.entry(child).or_default().push(*tour),
+            None => here.push(tour.name().clone()),
         }
     }
     for (group, inside) in groups {
         rows.push(Row::Group {
             group: group.clone(),
             depth,
-            paths: PathCount::of(inside.len()),
+            tours: TourCount::of(inside.len()),
         });
         level(&inside, Some(&group), depth.deeper(), rows);
     }
-    rows.extend(here.into_iter().map(|name| Row::Path { name, depth }));
+    rows.extend(here.into_iter().map(|name| Row::Tour { name, depth }));
 }
 
 #[cfg(test)]

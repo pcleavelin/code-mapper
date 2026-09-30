@@ -1,0 +1,77 @@
+codemap 9
+tour feature-tour-rm
+kind flow
+author ai
+group features/cli
+note tour-rm <name> [index]: with an index, delete that one step; its children move up to its parent, and every index after it shifts down by one. The agent needs it so a wrong or obsolete step or tour can be removed instead of staying in the map (the map describes what was built). Without an index, delete the whole tour, which is refused while any step in another tour links to it, and the error lists each linking step so they can be unlinked first. There is no undo; the map's history is the version control of the repo.
+
+step 1cmt9v
+order 2
+parent tzxk3q
+author ai
+file crates/cli/src/convert.rs
+symbol step_id
+lines 0 4
+hash 30548ed330a6a0c0
+note The step's stable id from its printed index; a bad index is NoSuchStep.
+
+step 5pilwk
+order 6
+parent tzxk3q
+author ai
+file crates/cli/src/exec.rs
+symbol places
+lines 0 13
+hash b49b29cd39d228d2
+note Turns the linking steps' ids into tour-and-index pairs, the form every other command takes, for the error.
+
+step l77v4g
+order 3
+parent tzxk3q
+author ai
+file crates/domain/src/map.rs
+symbol remove_step
+lines 0 17
+hash 5139d19688acdb84
+link tour-tree
+note Removes the step and re-points each of its children at its parent (or makes them roots), so the tree stays connected.
+
+step leaf4r
+order 1
+parent tzxk3q
+author ai
+file crates/cli/src/exec.rs
+symbol find_tour
+lines 0 5
+hash 0d594859f978d957
+note The tour must exist.
+
+step nzjskn
+order 5
+parent r6vk9y
+author ai
+file crates/domain/src/map.rs
+symbol links_to
+lines 0 2
+hash fb31f9ed10a74e6d
+note Every step anywhere in the map whose link names this tour.
+
+step r6vk9y
+order 4
+parent tzxk3q
+author ai
+file crates/domain/src/map.rs
+symbol remove_tour
+lines 0 18
+hash 81c0acf84f8b1035
+link tour-links
+note Refuses while a step in another tour links here; a link from the tour's own steps does not count.
+
+step tzxk3q
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol tour_remove
+lines 0 25
+hash e8b374606286358d
+note An index removes one step; no index removes the tour, turning a LinkedFrom refusal into an error that names the linking steps by tour and index.

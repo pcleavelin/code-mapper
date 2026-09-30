@@ -1,12 +1,12 @@
 use std::collections::BTreeSet;
 
 use domain::{
-    Anchor, GroupName, Line, LineOffset, Map, MapError, Note, Path, PathName, RelativePath, Step,
-    StepId, StepOrder, SymbolName, TextHash,
+    Anchor, GroupName, Line, LineOffset, Map, MapError, Note, RelativePath, Step, StepId,
+    StepOrder, SymbolName, TextHash, Tour, TourName,
 };
 
 use crate::error::{Fault, FieldKey, FieldValue, Located};
-use crate::wire::{CmapPath, CmapStep, StepKey, WireFault};
+use crate::wire::{CmapStep, CmapTour, StepKey, WireFault};
 
 impl From<WireFault> for Located {
     fn from(fault: WireFault) -> Self {
@@ -21,7 +21,7 @@ fn name_fault(error: MapError) -> Fault {
     }
 }
 
-fn step_from_wire(step: &CmapStep, path: &PathName) -> Result<Step, Located> {
+fn step_from_wire(step: &CmapStep, tour: &TourName) -> Result<Step, Located> {
     let here = Line::new(step.line);
     let missing = |key: StepKey| {
         Located::at(
@@ -41,7 +41,7 @@ fn step_from_wire(step: &CmapStep, path: &PathName) -> Result<Step, Located> {
             Located::at(
                 Line::new(*line),
                 Fault::UnknownParent {
-                    path: path.clone(),
+                    tour: tour.clone(),
                     step: id.clone(),
                     parent: FieldValue::new(parent),
                 },
@@ -50,7 +50,7 @@ fn step_from_wire(step: &CmapStep, path: &PathName) -> Result<Step, Located> {
     };
     let link = match &step.link {
         Some((target, line)) if !target.is_empty() => Some(
-            PathName::new(target)
+            TourName::new(target)
                 .map_err(|error| Located::at(Line::new(*line), name_fault(error)))?,
         ),
         _ => None,
@@ -74,11 +74,11 @@ fn step_from_wire(step: &CmapStep, path: &PathName) -> Result<Step, Located> {
     ))
 }
 
-pub(crate) fn path_from_wire(cmap: &CmapPath) -> Result<Path, Located> {
+pub(crate) fn tour_from_wire(cmap: &CmapTour) -> Result<Tour, Located> {
     let Some((raw_name, name_line)) = &cmap.name else {
-        return Err(Located::anywhere(Fault::NoPathLine));
+        return Err(Located::anywhere(Fault::NoTourLine));
     };
-    let name = PathName::new(raw_name)
+    let name = TourName::new(raw_name)
         .map_err(|error| Located::at(Line::new(*name_line), name_fault(error)))?;
     let steps = cmap
         .steps
@@ -96,14 +96,14 @@ pub(crate) fn path_from_wire(cmap: &CmapPath) -> Result<Path, Located> {
             return Err(Located::at(
                 Line::new(*line),
                 Fault::UnknownParent {
-                    path: name.clone(),
+                    tour: name.clone(),
                     step: step.id().clone(),
                     parent: FieldValue::new(raw_parent),
                 },
             ));
         }
     }
-    Path::new(
+    Tour::new(
         name,
         cmap.kind,
         cmap.author,
@@ -114,8 +114,8 @@ pub(crate) fn path_from_wire(cmap: &CmapPath) -> Result<Path, Located> {
     .map_err(|error| Located::anywhere(Fault::Map(error)))
 }
 
-pub(crate) fn map_from_paths(paths: Vec<Path>) -> Result<Map, Located> {
-    Map::new(paths).map_err(|error| Located::anywhere(Fault::Map(error)))
+pub(crate) fn map_from_tours(tours: Vec<Tour>) -> Result<Map, Located> {
+    Map::new(tours).map_err(|error| Located::anywhere(Fault::Map(error)))
 }
 
 fn step_to_wire(step: &Step) -> CmapStep {
@@ -139,17 +139,17 @@ fn step_to_wire(step: &Step) -> CmapStep {
     }
 }
 
-pub(crate) fn path_to_wire(path: &Path) -> CmapPath {
-    CmapPath {
-        name: Some((path.name().as_str().to_owned(), 0)),
-        kind: path.kind(),
-        author: path.author(),
-        group: path
+pub(crate) fn tour_to_wire(tour: &Tour) -> CmapTour {
+    CmapTour {
+        name: Some((tour.name().as_str().to_owned(), 0)),
+        kind: tour.kind(),
+        author: tour.author(),
+        group: tour
             .group()
             .map_or_else(String::new, |group| group.as_str().to_owned()),
-        note: path
+        note: tour
             .note()
             .map_or_else(String::new, |note| note.as_str().to_owned()),
-        steps: path.steps().iter().map(step_to_wire).collect(),
+        steps: tour.steps().iter().map(step_to_wire).collect(),
     }
 }

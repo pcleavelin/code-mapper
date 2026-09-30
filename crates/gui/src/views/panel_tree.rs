@@ -225,16 +225,16 @@ fn body(
     graph: &mut Option<GraphFrame>,
 ) {
     match view {
-        View::Paths | View::Symbols | View::Files => {
+        View::Tours | View::Symbols | View::Files => {
             frame.start(Container::PanelColumn);
             match view {
                 View::Symbols => left::symbols_window(model, frame),
                 View::Files => left::files_window(model, frame),
-                _ => left::paths_window(model, frame),
+                _ => left::tours_window(model, frame),
             }
             frame.finish();
         }
-        View::Path => document::path_document(model, frame),
+        View::Tour => document::tour_document(model, frame),
         View::Diff => center::diff_view(model, frame),
         View::Graph => center::graph_tab(model, frame, graph.take()),
         View::Source => center::source(model, frame),

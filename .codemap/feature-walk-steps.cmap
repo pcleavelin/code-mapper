@@ -1,9 +1,9 @@
-codemap 8
-path feature-walk-steps
+codemap 9
+tour feature-walk-steps
 kind flow
 author ai
 group features/gui
-note With no text field holding the keyboard and the graph not holding it, Down selects the next step of the path being read and Up the previous one, in numbered order (the order the document and steps list show), scrolling each to the top. The reader reaches for it to read a path step by step in order without clicking each row or scrolling to the next header. Down on the last step and Up on the first stay put. With no step selected, either key selects the first step. After a click in the graph the arrows walk the graph instead (feature-walk-graph).
+note With no text field holding the keyboard and the graph not holding it, Down selects the next step of the tour being read and Up the previous one, in numbered order (the order the document and steps list show), scrolling each to the top. The reader reaches for it to read a tour step by step in order without clicking each row or scrolling to the next header. Down on the last step and Up on the first stay put. With no step selected, either key selects the first step. After a click in the graph the arrows walk the graph instead (feature-walk-graph).
 
 step 17uw33
 order 0
@@ -11,8 +11,8 @@ author ai
 file crates/gui/src/nav.rs
 symbol walk
 lines 0 32
-hash 1a7f09d04bfbfe83
-note The handler. Finds the selected step's position in numbered order, moves one along, clamped to the ends, and selects that step with Scrolling::Scroll. Nothing happens without a path or on a path with no steps.
+hash 85e918f902876dfc
+note The handler. Finds the selected step's position in numbered order, moves one along, clamped to the ends, and selects that step with Scrolling::Scroll. Nothing happens without a tour or on a tour with no steps.
 
 step df3ka7
 order 3
@@ -21,7 +21,7 @@ author ai
 file crates/gui/src/app.rs
 symbol keys
 lines 34 49
-hash a9f0bc2cabc2452d
+hash 14426b04573229e6
 note Trigger: every frame the keys phase, unless the graph is shown and holds the keyboard, asks keys::walks which arrow chords were pressed and queues one WalkWhenIdle per press.
 
 step hct277
@@ -31,7 +31,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol select_step
 lines 0 53
-hash c309ed71b85c827e
+hash d8e961f7c6c62ddd
 link feature-select-step
 note Selecting the neighbour is the same as clicking it in the steps list.
 
@@ -62,5 +62,5 @@ author ai
 file crates/gui/src/model.rs
 symbol numbered
 lines 0 15
-hash e433ffa5b0d15e30
-note The displayed order: the path's steps as the document and steps list number them (domain's Path::numbered, which orders siblings by the line of their parent that calls them), as slots of the GUI's step list with depth and number.
+hash ed2032547302a899
+note The displayed order: the tour's steps as the document and steps list number them (domain's Tour::numbered, which orders siblings by the line of their parent that calls them), as slots of the GUI's step list with depth and number.

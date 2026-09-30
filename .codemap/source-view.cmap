@@ -1,9 +1,9 @@
-codemap 8
-path source-view
+codemap 9
+tour source-view
 kind flow
 author ai
 group gui
-note The file viewer, and where a human adds a range of lines as a step. Only the rows on screen become elements - a spacer stands in for everything above and below - which is what makes a four-thousand-line file scroll at the same cost as a short one. Each row is numbered, syntax coloured, and carries a coloured bar on the left where a step of the selected path is anchored, green when current and red when stale. Clicking selects a line and shift-clicking extends the selection, which the toolbar's add button, named for the selected lines, then turns into a step under the target the strip below the toolbar shows (gui-authoring); double-clicking or ctrl-clicking an identifier jumps to its definition instead, and alt-clicking keeps it in the peek panel. The view only reads the Model: every click becomes an Action applied after the tree is built.
+note The file viewer, and where a human adds a range of lines as a step. Only the rows on screen become elements - a spacer stands in for everything above and below - which is what makes a four-thousand-line file scroll at the same cost as a short one. Each row is numbered, syntax coloured, and carries a coloured bar on the left where a step of the selected tour is anchored, green when current and red when stale. Clicking selects a line and shift-clicking extends the selection, which the toolbar's add button, named for the selected lines, then turns into a step under the target the strip below the toolbar shows (gui-authoring); double-clicking or ctrl-clicking an identifier jumps to its definition instead, and alt-clicking keeps it in the peek panel. The view only reads the Model: every click becomes an Action applied after the tree is built.
 
 step 1cxlr5
 order 7
@@ -22,8 +22,8 @@ author ai
 file crates/gui/src/views/center.rs
 symbol source
 lines 26 83
-hash 6d0e7c73a13250d1
-note The rows. rows_window turns the scroll offset into the first visible line and emits the spacer for the lines above; then one code block of the visible lines, then a spacer for the rest plus a row of slack, so the scrollbar sees the whole file while only what shows is drawn. The bar closure marks the selected path's anchors in this file, the background closure the selected lines.
+hash 5d4eb1062ffef29b
+note The rows. rows_window turns the scroll offset into the first visible line and emits the spacer for the lines above; then one code block of the visible lines, then a spacer for the rest plus a row of slack, so the scrollbar sees the whole file while only what shows is drawn. The bar closure marks the selected tour's anchors in this file, the background closure the selected lines.
 
 step 49joa9
 order 10
@@ -41,7 +41,7 @@ author ai
 file crates/gui/src/views/center.rs
 symbol source
 lines 0 84
-hash 641c4ad291c55489
+hash 8d4fefa4435ef5d3
 note The whole viewer: the toolbar (source_toolbar), the target strip, then the scrolling column of rows. With no current file it says so and draws nothing else.
 
 step ghy5uj
@@ -61,7 +61,7 @@ file crates/gui/src/authoring.rs
 symbol add_lines
 lines 0 9
 hash 21f14249bdc80886
-note 'add step' in the Source view's toolbar, the human's authoring gesture from a file: the selected lines become a step of the path being read (add_step, authored Human), under the target the strip above the code shows. Without selected lines it only says what is missing.
+note 'add step' in the Source view's toolbar, the human's authoring gesture from a file: the selected lines become a step of the tour being read (add_step, authored Human), under the target the strip above the code shows. Without selected lines it only says what is missing.
 
 step qf86nv
 order 8

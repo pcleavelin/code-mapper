@@ -42,13 +42,13 @@ pub(crate) fn read(bin: &Path, name: &str) -> String {
         &["notes", "store"],
         &["notes", "^Entry"],
         &["notes", "["],
-        &["paths"],
-        &["paths", "startup"],
-        &["paths", "nope"],
-        &["path", "startup"],
-        &["path", "shapes"],
-        &["path", "stats"],
-        &["path", "c-lib"],
+        &["tours"],
+        &["tours", "startup"],
+        &["tours", "nope"],
+        &["tour", "startup"],
+        &["tour", "shapes"],
+        &["tour", "stats"],
+        &["tour", "c-lib"],
         &["uncovered"],
         &["uncovered", "shapes"],
         &["coverage"],
@@ -58,7 +58,7 @@ pub(crate) fn read(bin: &Path, name: &str) -> String {
         &["stale"],
         &["check"],
         &["promote", "area"],
-        &["path-add", "startup", "nope"],
+        &["tour-add", "startup", "nope"],
         &["bogus-command"],
         &["tree"],
         &["roots", "many"],
@@ -75,84 +75,84 @@ pub(crate) fn edit(bin: &Path, name: &str) -> String {
         out: String::new(),
     };
     for args in [
-        &["path-new", "scratch", "flow"][..],
-        &["path-new", "scratch", "layer"],
-        &["path-new", "bad", "kinda"],
-        &["paths", "scratch"],
-        &["path-add", "scratch", "src/main.rs:main", "-1"],
-        &["path-add", "scratch", "fill"],
-        &["path-add", "scratch", "describe", "0"],
-        &["path-add", "scratch", "src/main.rs", "1", "3"],
-        &["path-add", "scratch", "src/store.rs", "13", "14", "9"],
-        &["path-add", "scratch", "src/store.rs", "30", "99"],
-        &["path-add", "scratch", "src/store.rs", "13", "14", "1"],
-        &["path-note", "scratch", "A note."],
+        &["tour-new", "scratch", "flow"][..],
+        &["tour-new", "scratch", "layer"],
+        &["tour-new", "bad", "kinda"],
+        &["tours", "scratch"],
+        &["tour-add", "scratch", "src/main.rs:main", "-1"],
+        &["tour-add", "scratch", "fill"],
+        &["tour-add", "scratch", "describe", "0"],
+        &["tour-add", "scratch", "src/main.rs", "1", "3"],
+        &["tour-add", "scratch", "src/store.rs", "13", "14", "9"],
+        &["tour-add", "scratch", "src/store.rs", "30", "99"],
+        &["tour-add", "scratch", "src/store.rs", "13", "14", "1"],
+        &["tour-note", "scratch", "A note."],
         &["step-note", "scratch", "1", "fills"],
         &["step-note", "scratch", "9", "x"],
         &["note-edit", "scratch", "1", "fills", "fills it"],
         &["note-edit", "scratch", "-1", "A note", "The note"],
         &["note-edit", "scratch", "1", "zzz", "y"],
-        &["paths", "scratch"],
-        &["path-move", "scratch", "2", "1"],
-        &["path-move", "scratch", "0", "1"],
-        &["path-move", "scratch", "4", "-1"],
-        &["path-swap", "scratch", "1", "2"],
-        &["path-swap", "scratch", "1", "20"],
-        &["paths", "scratch"],
+        &["tours", "scratch"],
+        &["tour-move", "scratch", "2", "1"],
+        &["tour-move", "scratch", "0", "1"],
+        &["tour-move", "scratch", "4", "-1"],
+        &["tour-swap", "scratch", "1", "2"],
+        &["tour-swap", "scratch", "1", "20"],
+        &["tours", "scratch"],
         &["step-link", "scratch", "1", "startup"],
         &["step-link", "scratch", "1", "nope"],
         &["step-link", "scratch", "1", ""],
         &["step-link", "scratch", "1", "scratch"],
         &["step-link", "scratch", "9", "startup"],
         &["step-unlink", "scratch", "2"],
-        &["paths", "scratch"],
-        &["path", "startup"],
-        &["path", "scratch", "--inline"],
-        &["path-rm", "startup"],
-        &["path-rename", "startup", "boot"],
-        &["paths", "scratch"],
-        &["path-rename", "boot", "startup"],
+        &["tours", "scratch"],
+        &["tour", "startup"],
+        &["tour", "scratch", "--inline"],
+        &["tour-rm", "startup"],
+        &["tour-rename", "startup", "boot"],
+        &["tours", "scratch"],
+        &["tour-rename", "boot", "startup"],
         &["check"],
-        &["path-group", "scratch", "flows/demo"],
-        &["path-group", "startup", "flows"],
+        &["tour-group", "scratch", "flows/demo"],
+        &["tour-group", "startup", "flows"],
         &[
-            "path-new",
+            "tour-new",
             "grouped",
             "layer",
             "In a group.",
             "--group",
             " areas/ ",
         ],
-        &["path-group", "nope", "x"],
+        &["tour-group", "nope", "x"],
         &["groups"],
-        &["paths"],
-        &["path", "grouped"],
+        &["tours"],
+        &["tour", "grouped"],
         &["group-rename", "flows", "work/flows"],
         &["group-rename", "nope", "x"],
         &["groups"],
-        &["path-group", "startup", ""],
-        &["path-rm", "grouped"],
+        &["tour-group", "startup", ""],
+        &["tour-rm", "grouped"],
         &["groups"],
-        &["path-pin", "scratch", "3", "src/main.rs", "7", "11"],
-        &["path-pin", "scratch", "3", "src/main.rs", "0", "5"],
-        &["path-pin", "scratch", "3", "src/main.rs", "13", "50"],
-        &["path-rename", "scratch", "scratch2"],
-        &["path-rename", "scratch2", "startup"],
-        &["path", "scratch2"],
-        &["path-rm", "scratch2", "1"],
-        &["path-rm", "scratch2", "9"],
-        &["paths", "scratch2"],
+        &["tour-pin", "scratch", "3", "src/main.rs", "7", "11"],
+        &["tour-pin", "scratch", "3", "src/main.rs", "0", "5"],
+        &["tour-pin", "scratch", "3", "src/main.rs", "13", "50"],
+        &["tour-rename", "scratch", "scratch2"],
+        &["tour-rename", "scratch2", "startup"],
+        &["tour", "scratch2"],
+        &["tour-rm", "scratch2", "1"],
+        &["tour-rm", "scratch2", "9"],
+        &["tours", "scratch2"],
         &["promote", "src/main.rs:main", "2"],
-        &["paths", "main"],
+        &["tours", "main"],
         &["promote", "src/main.rs:main", "2"],
         &["promote", "Store::add", "1", "adding"],
-        &["paths", "adding"],
+        &["tours", "adding"],
         &["promote", "src/main.rs:main", "2", "whole", "--all"],
-        &["paths", "whole"],
-        &["path-rm", "whole"],
-        &["path-rm", "scratch2"],
-        &["path-rm", "nope"],
-        &["paths"],
+        &["tours", "whole"],
+        &["tour-rm", "whole"],
+        &["tour-rm", "scratch2"],
+        &["tour-rm", "nope"],
+        &["tours"],
         &["coverage"],
     ] {
         transcript.run(args);
@@ -176,12 +176,12 @@ pub(crate) fn stale(bin: &Path, name: &str) -> String {
         "// a comment\n// another\npub struct Store {",
     );
     transcript.run(&["stale"]);
-    transcript.run(&["paths", "startup"]);
+    transcript.run(&["tours", "startup"]);
     transcript.note("check's body changes: its step goes stale");
     edit_file(&root, "src/store.rs", "< 1000", "< 2000");
     transcript.run(&["stale"]);
     transcript.run(&["check"]);
-    transcript.run(&["path", "startup"]);
+    transcript.run(&["tour", "startup"]);
     transcript.run(&["uncovered", "check"]);
     transcript.note("a line inside the slice changes, and the absolute-lines step's lines move");
     edit_file(
@@ -202,7 +202,7 @@ pub(crate) fn stale(bin: &Path, name: &str) -> String {
     transcript.run(&["stale"]);
     transcript
         .note("the text of report moves down unchanged in its file: stale lists where it went");
-    transcript.run(&["path-add", "startup", "src/main.rs", "18", "19", "-1"]);
+    transcript.run(&["tour-add", "startup", "src/main.rs", "18", "19", "-1"]);
     edit_file(
         &root,
         "src/main.rs",
@@ -213,16 +213,16 @@ pub(crate) fn stale(bin: &Path, name: &str) -> String {
     transcript.note("helpers.py is deleted: its file is gone");
     fs::remove_file(root.join("tools/helpers.py")).unwrap();
     transcript.run(&["stale"]);
-    transcript.run(&["paths", "stats"]);
+    transcript.run(&["tours", "stats"]);
     transcript.note("re-pin what can be re-pinned by hand, delete the rest");
-    transcript.run(&["path-pin", "startup", "3", "src/store.rs", "31", "33"]);
-    transcript.run(&["path-pin", "startup", "1", "src/main.rs", "13", "16"]);
-    transcript.run(&["path-pin", "startup", "5", "src/store.rs", "23", "27"]);
-    transcript.run(&["path-pin", "startup", "7", "src/main.rs", "19", "20"]);
-    transcript.run(&["path-rm", "stats", "1"]);
+    transcript.run(&["tour-pin", "startup", "3", "src/store.rs", "31", "33"]);
+    transcript.run(&["tour-pin", "startup", "1", "src/main.rs", "13", "16"]);
+    transcript.run(&["tour-pin", "startup", "5", "src/store.rs", "23", "27"]);
+    transcript.run(&["tour-pin", "startup", "7", "src/main.rs", "19", "20"]);
+    transcript.run(&["tour-rm", "stats", "1"]);
     transcript.run(&["stale"]);
     transcript.run(&["check"]);
-    transcript.run(&["path", "startup"]);
+    transcript.run(&["tour", "startup"]);
     transcript.out
 }
 
@@ -239,12 +239,12 @@ pub(crate) fn vcs(bin: &Path, name: &str) -> Result<String, Missing> {
     jj_commit(&root, "base");
     transcript.run(&["diff"]);
     transcript.run(&["step-note", "startup", "0", "A new entry note."]);
-    transcript.run(&["path-add", "startup", "describe", "-1"]);
-    transcript.run(&["path-rm", "shapes"]);
-    transcript.run(&["path-new", "fresh", "layer", "Added in this revision."]);
-    transcript.run(&["path-add", "fresh", "mean", "-1"]);
-    transcript.run(&["path-pin", "c-lib", "0", "c/lib.c", "8", "9"]);
-    transcript.run(&["path-note", "stats", "Changed."]);
+    transcript.run(&["tour-add", "startup", "describe", "-1"]);
+    transcript.run(&["tour-rm", "shapes"]);
+    transcript.run(&["tour-new", "fresh", "layer", "Added in this revision."]);
+    transcript.run(&["tour-add", "fresh", "mean", "-1"]);
+    transcript.run(&["tour-pin", "c-lib", "0", "c/lib.c", "8", "9"]);
+    transcript.run(&["tour-note", "stats", "Changed."]);
     transcript.run(&["step-link", "stats", "0", "startup"]);
     transcript.run(&["diff"]);
     edit_file(
@@ -257,7 +257,7 @@ pub(crate) fn vcs(bin: &Path, name: &str) -> Result<String, Missing> {
 
 def main():",
     );
-    transcript.run(&["path-add", "fresh", "extra", "-1"]);
+    transcript.run(&["tour-add", "fresh", "extra", "-1"]);
     transcript.note("source edits after the commit: repin follows each stale step from @-");
     edit_file(
         &root,
@@ -323,7 +323,7 @@ def main():",
     transcript.run(&["stale"]);
     transcript.run(&["repin", "@--"]);
     transcript.run(&["repin", "nonsense-rev"]);
-    transcript.run(&["path", "startup"]);
+    transcript.run(&["tour", "startup"]);
     let _ = jj(
         &root,
         &["log", "-r", "@", "--no-graph", "-T", "description"],
@@ -344,10 +344,10 @@ pub(crate) fn git(bin: &Path, name: &str) -> Result<String, Missing> {
     git_commit(&root, "base");
     transcript.run(&["diff"]);
     transcript.run(&["step-note", "startup", "0", "A new entry note."]);
-    transcript.run(&["path-add", "startup", "describe", "-1"]);
-    transcript.run(&["path-rm", "shapes"]);
+    transcript.run(&["tour-add", "startup", "describe", "-1"]);
+    transcript.run(&["tour-rm", "shapes"]);
     transcript.run(&["step-link", "stats", "0", "startup"]);
-    transcript.run(&["path-group", "c-lib", "native"]);
+    transcript.run(&["tour-group", "c-lib", "native"]);
     transcript.run(&["diff"]);
     transcript.note("source edits after the commit: repin follows each stale step from HEAD");
     edit_file(
@@ -384,30 +384,30 @@ pub(crate) fn merge(bin: &Path, name: &str) -> Result<String, Missing> {
     let base = committed(&root);
     transcript.note("side one edits a note of startup and adds a step to it");
     transcript.run(&["step-note", "startup", "0", "Side one's entry note."]);
-    transcript.run(&["path-add", "startup", "describe", "-1"]);
+    transcript.run(&["tour-add", "startup", "describe", "-1"]);
     jj(&root, &["commit", "-m", "one"]);
     let one = committed(&root);
     jj(&root, &["new", &base]);
-    transcript.note("side two edits another note of startup, adds a step to shapes and a new path");
+    transcript.note("side two edits another note of startup, adds a step to shapes and a new tour");
     transcript.run(&["step-note", "startup", "5", "Side two's sum note."]);
-    transcript.run(&["path-add", "shapes", "describe", "0"]);
-    transcript.run(&["path-new", "fresh", "layer", "From side two."]);
+    transcript.run(&["tour-add", "shapes", "describe", "0"]);
+    transcript.run(&["tour-new", "fresh", "layer", "From side two."]);
     jj(&root, &["commit", "-m", "two"]);
     let two = committed(&root);
     transcript.note("the merge of the two has every change and no conflict");
     jj(&root, &["new", &one, &two]);
     transcript.run(&["check"]);
-    transcript.run(&["paths", "startup"]);
-    transcript.run(&["paths", "shapes"]);
-    transcript.run(&["paths", "fresh"]);
+    transcript.run(&["tours", "startup"]);
+    transcript.run(&["tours", "shapes"]);
+    transcript.run(&["tours", "fresh"]);
     transcript.note("a third side also adds a step to startup: merged with side one, the two new steps sit apart in the file and merge");
     jj(&root, &["new", &base]);
-    transcript.run(&["path-add", "startup", "mean", "-1"]);
+    transcript.run(&["tour-add", "startup", "mean", "-1"]);
     jj(&root, &["commit", "-m", "three"]);
     let three = committed(&root);
     jj(&root, &["new", &one, &three]);
     transcript.run(&["check"]);
-    transcript.run(&["paths"]);
+    transcript.run(&["tours"]);
     transcript.note("a fourth side edits the note side one edited: that line conflicts, and nothing reads the map until it is resolved");
     jj(&root, &["new", &base]);
     transcript.run(&["step-note", "startup", "0", "Side four's entry note."]);
@@ -415,6 +415,6 @@ pub(crate) fn merge(bin: &Path, name: &str) -> Result<String, Missing> {
     let four = committed(&root);
     jj(&root, &["new", &one, &four]);
     transcript.run(&["check"]);
-    transcript.run(&["path-note", "startup", "Written over a conflict."]);
+    transcript.run(&["tour-note", "startup", "Written over a conflict."]);
     Ok(transcript.out)
 }

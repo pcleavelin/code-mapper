@@ -1,11 +1,11 @@
 use domain::{
-    Author, FileId, GroupName, Map, MapError, PathKind, PathName, Pruning, Span, StepId, SymbolId,
+    Author, FileId, GroupName, Map, MapError, Pruning, Span, StepId, SymbolId, TourKind, TourName,
 };
 use ui::{Label, Point, Rect};
 
 use crate::app::App;
 use crate::field::Which;
-use crate::model::{Dirty, Model, PathSlot, StepKey, StepSlot, Tab};
+use crate::model::{Dirty, Model, StepKey, StepSlot, Tab, TourSlot};
 use crate::status::{Status, Under};
 use crate::theme::{DROP_BAND_WIDTH, GRAB_REACH};
 
@@ -18,9 +18,9 @@ pub(crate) enum Authoring {
     DragStep(Point),
     DropStep(Option<StepDrop>),
     Promote(SymbolId),
-    ToggleNewPath,
-    ChooseKind(PathKind),
-    CreatePath,
+    ToggleNewTour,
+    ChooseKind(TourKind),
+    CreateTour,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -107,27 +107,27 @@ pub(crate) struct StepDrop {
 }
 
 impl Model {
-    fn path_name(&self, path: PathSlot) -> Option<PathName> {
-        self.path(path).map(|found| found.name().clone())
+    fn tour_name(&self, tour: TourSlot) -> Option<TourName> {
+        self.tour(tour).map(|found| found.name().clone())
     }
 
-    fn step_ids(&self, path: PathSlot) -> Vec<StepId> {
-        self.path(path).map_or_else(Vec::new, |found| {
+    fn step_ids(&self, tour: TourSlot) -> Vec<StepId> {
+        self.tour(tour).map_or_else(Vec::new, |found| {
             found.steps().iter().map(|step| step.id().clone()).collect()
         })
     }
 
-    fn under_label(&self, path: PathSlot, parent: Option<StepSlot>) -> Under {
+    fn under_label(&self, tour: TourSlot, parent: Option<StepSlot>) -> Under {
         parent.map_or(Under::TopLevel, |step| {
-            Under::Step(self.number_of(StepKey { path, step }))
+            Under::Step(self.number_of(StepKey { tour, step }))
         })
     }
 
     pub(crate) fn target_under(&self) -> Option<StepSlot> {
-        let path = self.nav.path()?;
+        let tour = self.nav.tour()?;
         self.nav
             .target()
-            .filter(|step| step.get() < self.step_count(path).get())
+            .filter(|step| step.get() < self.step_count(tour).get())
     }
 }
 
@@ -141,9 +141,9 @@ impl App {
             Authoring::DragStep(mouse) => self.drag_step(mouse),
             Authoring::DropStep(target) => self.drop_step(target),
             Authoring::Promote(symbol) => self.promote(symbol),
-            Authoring::ToggleNewPath => self.toggle_new_path(),
+            Authoring::ToggleNewTour => self.toggle_new_tour(),
             Authoring::ChooseKind(kind) => self.choose_kind(kind),
-            Authoring::CreatePath => self.create_path(),
+            Authoring::CreateTour => self.create_tour(),
         }
     }
 
@@ -166,22 +166,22 @@ impl App {
 
     fn add_step(&mut self, file: FileId, span: Span, hang: Hang) {
         let model = &mut self.model;
-        let Some(path) = model.nav.path() else {
-            model.status = Status::SelectPathFirst;
+        let Some(tour) = model.nav.tour() else {
+            model.status = Status::SelectTourFirst;
             return;
         };
-        let Some(name) = model.path_name(path) else {
+        let Some(name) = model.tour_name(tour) else {
             return;
         };
         let parent = match hang {
             Hang::Target => model.target_under(),
             Hang::Under(step) => {
-                Some(step).filter(|step| step.get() < model.step_count(path).get())
+                Some(step).filter(|step| step.get() < model.step_count(tour).get())
             }
         };
-        let parent_id = parent.and_then(|step| model.step_id(StepKey { path, step }));
+        let parent_id = parent.and_then(|step| model.step_id(StepKey { tour, step }));
         let file_path = model.index.file(file).map(|source| source.path().clone());
-        let existing = model.path(path).and_then(|found| {
+        let existing = model.tour(tour).and_then(|found| {
             found.steps().iter().position(|step| {
                 Some(step.file()) == file_path.as_ref()
                     && step.span() == span
@@ -191,10 +191,10 @@ impl App {
         if let Some(existing) = existing {
             model.status = Status::AlreadyStep {
                 number: model.number_of(StepKey {
-                    path,
+                    tour,
                     step: StepSlot::new(existing),
                 }),
-                path: name,
+                tour: name,
             };
             return;
         }
@@ -213,21 +213,21 @@ impl App {
                 return;
             }
         };
-        let Some(step) = model.step_slot(path, &id) else {
+        let Some(step) = model.step_slot(tour, &id) else {
             return;
         };
         model.disk.dirty = Dirty::Unsaved;
         model.status = Status::StepAdded {
-            number: model.number_of(StepKey { path, step }),
-            path: name,
-            under: model.under_label(path, parent),
+            number: model.number_of(StepKey { tour, step }),
+            tour: name,
+            under: model.under_label(tour, parent),
         };
     }
 
     pub(crate) fn add_at_top_level(&mut self) {
         let model = &mut self.model;
         model.add_at_top_level();
-        if let Some(name) = model.nav.path().and_then(|path| model.path_name(path)) {
+        if let Some(name) = model.nav.tour().and_then(|tour| model.tour_name(tour)) {
             model.status = Status::TopLevelTarget(name);
         }
     }
@@ -250,22 +250,22 @@ impl App {
             return;
         };
         let model = &mut self.model;
-        let path = grab.key.path;
+        let tour = grab.key.tour;
         let onto_key = StepKey {
-            path,
+            tour,
             step: drop.onto,
         };
         let (Some(name), Some(moved), Some(onto)) = (
-            model.path_name(path),
+            model.tour_name(tour),
             model.step_id(grab.key),
             model.step_id(onto_key),
         ) else {
             return;
         };
-        let before = model.step_ids(path);
+        let before = model.step_ids(tour);
         let onto_parent = model.step(onto_key).and_then(|step| step.parent().cloned());
         let sibling_after = || {
-            model.path(path).and_then(|found| {
+            model.tour(tour).and_then(|found| {
                 found
                     .steps()
                     .iter()
@@ -286,22 +286,22 @@ impl App {
             model.status = Status::refused(&model.map, error);
             return;
         }
-        let after = model.step_ids(path);
-        model.steps_moved(path, |slot| {
+        let after = model.step_ids(tour);
+        model.steps_moved(tour, |slot| {
             before
                 .get(slot.get())
                 .and_then(|id| after.iter().position(|other| other == id))
                 .map(StepSlot::new)
         });
         model.disk.dirty = Dirty::Unsaved;
-        let Some(step) = model.step_slot(path, &moved) else {
+        let Some(step) = model.step_slot(tour, &moved) else {
             return;
         };
-        let parent = parent.and_then(|id| model.step_slot(path, &id));
+        let parent = parent.and_then(|id| model.step_slot(tour, &id));
         model.status = Status::StepPlaced {
-            number: model.number_of(StepKey { path, step }),
-            path: name,
-            under: model.under_label(path, parent),
+            number: model.number_of(StepKey { tour, step }),
+            tour: name,
+            under: model.under_label(tour, parent),
         };
     }
 
@@ -323,64 +323,64 @@ impl App {
             }
         };
         model.disk.dirty = Dirty::Unsaved;
-        if let Some(slot) = model.find_path(&name) {
-            model.status = Status::PathPromoted {
+        if let Some(slot) = model.find_tour(&name) {
+            model.status = Status::TourPromoted {
                 name,
                 steps: model.step_count(slot),
             };
-            model.select_path(slot);
-            model.set_tab(Tab::Path);
+            model.select_tour(slot);
+            model.set_tab(Tab::Tour);
         }
     }
 
-    pub(crate) fn toggle_new_path(&mut self) {
+    pub(crate) fn toggle_new_tour(&mut self) {
         let model = &mut self.model;
-        if model.new_path.take().is_some() {
-            model.fields.release(Which::NewPath);
+        if model.new_tour.take().is_some() {
+            model.fields.release(Which::NewTour);
             model.fields.release(Which::NewGroup);
             return;
         }
-        model.new_path = Some(PathKind::Flow);
+        model.new_tour = Some(TourKind::Flow);
         let group = model
             .nav
-            .path()
-            .and_then(|path| model.path(path))
-            .and_then(|path| path.group())
+            .tour()
+            .and_then(|tour| model.tour(tour))
+            .and_then(|tour| tour.group())
             .map_or("", GroupName::as_str);
         model.fields.fill(Which::NewGroup, &Label::new(group));
-        model.fields.start_empty(Which::NewPath);
+        model.fields.start_empty(Which::NewTour);
     }
 
-    pub(crate) fn choose_kind(&mut self, kind: PathKind) {
+    pub(crate) fn choose_kind(&mut self, kind: TourKind) {
         let model = &mut self.model;
-        if model.new_path.is_some() {
-            model.new_path = Some(kind);
+        if model.new_tour.is_some() {
+            model.new_tour = Some(kind);
         }
     }
 
-    pub(crate) fn create_path(&mut self) {
+    pub(crate) fn create_tour(&mut self) {
         let model = &mut self.model;
-        let Some(kind) = model.new_path else {
+        let Some(kind) = model.new_tour else {
             return;
         };
         let typed = model
             .fields
-            .get(Which::NewPath)
+            .get(Which::NewTour)
             .text()
             .as_str()
             .trim()
             .to_owned();
         if typed.is_empty() {
-            model.status = Status::NameThePath;
-            model.fields.focus(Which::NewPath);
+            model.status = Status::NameTheTour;
+            model.fields.focus(Which::NewTour);
             return;
         }
         let group = GroupName::new(model.fields.get(Which::NewGroup).text().as_str());
-        let created = PathName::new(&typed).and_then(|name| {
-            if model.map.path(&name).is_some() {
+        let created = TourName::new(&typed).and_then(|name| {
+            if model.map.tour(&name).is_some() {
                 return Err(MapError::NameTaken(name));
             }
-            let _added = model.map.add_path(name.clone(), kind, Author::Human)?;
+            let _added = model.map.add_tour(name.clone(), kind, Author::Human)?;
             let _grouped = model.map.set_group(&name, group)?;
             Ok(name)
         });
@@ -391,14 +391,14 @@ impl App {
                 return;
             }
         };
-        model.new_path = None;
-        model.fields.fill(Which::NewPath, &Label::default());
-        model.fields.release(Which::NewPath);
+        model.new_tour = None;
+        model.fields.fill(Which::NewTour, &Label::default());
+        model.fields.release(Which::NewTour);
         model.fields.release(Which::NewGroup);
-        if let Some(slot) = model.find_path(&name) {
-            model.path_created(slot);
+        if let Some(slot) = model.find_tour(&name) {
+            model.tour_created(slot);
         }
-        model.status = Status::PathCreated(name);
+        model.status = Status::TourCreated(name);
         model.disk.dirty = Dirty::Unsaved;
     }
 }

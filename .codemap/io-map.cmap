@@ -1,9 +1,9 @@
-codemap 8
-path io-map
+codemap 9
+tour io-map
 kind layer
 author ai
 group map
-note The io-map crate's surface: the boundary between the domain Map and the .codemap directory. Callers (the codemap binary, cli's diff, the GUI) make a MapStore for a root, load, resolve and edit the Map in domain, then save; MapStore::base reads a revision's map for diff. The crate guarantees that rendering is deterministic, so an unchanged path saves to identical bytes, that it never writes a path whose text is what it read or last wrote, and that every fault comes back as a value naming the file or revision and line, never a panic and never a partial map. The format and the load and save walk are the map-file path.
+note The io-map crate's surface: the boundary between the domain Map and the .codemap directory. Callers (the codemap binary, cli's diff, the GUI) make a MapStore for a root, load, resolve and edit the Map in domain, then save; MapStore::base reads a revision's map for diff. The crate guarantees that rendering is deterministic, so an unchanged tour saves to identical bytes, that it never writes a tour whose text is what it read or last wrote, and that every fault comes back as a value naming the file or revision and line, never a panic and never a partial map. The format and the load and save walk are the map-file tour.
 
 step 3o03jw
 order 10
@@ -31,7 +31,7 @@ author ai
 file crates/io-map/src/lib.rs
 symbol Stamp
 lines 0 3
-hash 961aff0cd6996300
+hash 458b4a3cfeea17d7
 note What the GUI polls for changes made by someone else: the newest modification time among the directory and its .cmap files, and how many there are. Compared for equality only.
 
 step ah3ejb
@@ -50,8 +50,8 @@ author ai
 file crates/io-map/src/error.rs
 symbol Fault
 lines 0 22
-hash f24db2f39e5d38d0
-note Every way the text can be wrong: a conflict marker, a version other than codemap 8, text before any version line, an unknown author, kind or field, a second step of one id, a malformed order, lines or hash, an invalid path name or step id, a missing required field, a path block without a path line, a parent that is not a step of the path, and domain's own MapError from Path::new or Map::new.
+hash 830b7613c65a8d60
+note Every way the text can be wrong: a conflict marker, a version other than codemap 9, text before any version line, an unknown author, kind or field, a second step of one id, a malformed order, lines or hash, an invalid tour name or step id, a missing required field, a tour block without a tour line, a parent that is not a step of the tour, and domain's own MapError from Tour::new or Map::new.
 
 step f9je8k
 order 0
@@ -61,7 +61,7 @@ symbol new
 lines 0 5
 hash 89f9e0d7eadd3f31
 link map-file
-note A store for one root: the .codemap directory under it and nothing remembered yet. Load before save, or save writes every path as new.
+note A store for one root: the .codemap directory under it and nothing remembered yet. Load before save, or save writes every tour as new.
 
 step j2hue9
 order 6
@@ -89,7 +89,7 @@ file crates/io-map/src/error.rs
 symbol MapSaveError
 lines 0 13
 hash c5f7490d57f967cb
-note Why a save failed, naming the directory or file: creating the directory, writing a path's file, removing a gone path's file, each with the io error.
+note Why a save failed, naming the directory or file: creating the directory, writing a tour's file, removing a gone tour's file, each with the io error.
 
 step tccji4
 order 4
@@ -97,8 +97,8 @@ author ai
 file crates/io-map/src/error.rs
 symbol MapLoadError
 lines 0 6
-hash cfc60348304fb33a
-note Why a load failed, naming the file: the old single-file format, a file that cannot be read, a parse fault, a file holding other than one path, and a path whose name is not its file's name.
+hash 15fec629cf978291
+note Why a load failed, naming the file: the old single-file format, a file that cannot be read, a parse fault, a file holding other than one tour, and a tour whose name is not its file's name.
 
 step z6rx20
 order 7

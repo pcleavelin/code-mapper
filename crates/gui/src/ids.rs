@@ -59,12 +59,12 @@ impl Control {
 
 pub(crate) const SEARCH_FIELD: Control =
     Control::new(Feature::SearchFiles, Element::new("field@search"));
-pub(crate) const NEW_PATH_FIELD: Control =
-    Control::new(Feature::NewPath, Element::new("field@new-path"));
+pub(crate) const NEW_TOUR_FIELD: Control =
+    Control::new(Feature::NewTour, Element::new("field@new-tour"));
 pub(crate) const FILTER_FIELD: Control =
     Control::new(Feature::FilterSymbols, Element::new("field@symbols"));
-pub(crate) const PATH_FILTER_FIELD: Control =
-    Control::new(Feature::FilterPaths, Element::new("field@paths"));
+pub(crate) const TOUR_FILTER_FIELD: Control =
+    Control::new(Feature::FilterTours, Element::new("field@tours"));
 pub(crate) const LINE_FIELD: Control =
     Control::new(Feature::GoToLine, Element::new("field@goto-line"));
 pub(crate) const COMMAND_FIELD: Control = Control::new(Feature::RunCommand, Element::new("cmd"));
@@ -72,10 +72,10 @@ pub(crate) const BACK: Control = Control::new(Feature::GoBack, Element::new("bac
 pub(crate) const FORWARD: Control = Control::new(Feature::GoBack, Element::new("forward"));
 pub(crate) const TAB: Control = Control::new(Feature::SwitchTab, Element::new("tab"));
 pub(crate) const NEW_GROUP_FIELD: Control =
-    Control::new(Feature::NewPath, Element::new("field@new-group"));
-pub(crate) const NEW_PATH: Control = Control::new(Feature::NewPath, Element::new("new-path"));
-pub(crate) const KIND: Control = Control::new(Feature::NewPath, Element::new("kind"));
-pub(crate) const CREATE_PATH: Control = Control::new(Feature::NewPath, Element::new("create-path"));
+    Control::new(Feature::NewTour, Element::new("field@new-group"));
+pub(crate) const NEW_TOUR: Control = Control::new(Feature::NewTour, Element::new("new-tour"));
+pub(crate) const KIND: Control = Control::new(Feature::NewTour, Element::new("kind"));
+pub(crate) const CREATE_TOUR: Control = Control::new(Feature::NewTour, Element::new("create-tour"));
 pub(crate) const ADD_LINES: Control = Control::new(Feature::AddStep, Element::new("add-lines"));
 pub(crate) const ADD_SYMBOL: Control = Control::new(Feature::AddStep, Element::new("add-sym"));
 pub(crate) const ADD_FOCUS: Control = Control::new(Feature::AddStep, Element::new("add-focus"));
@@ -97,7 +97,7 @@ pub(crate) const CLOSE_TAB: Control = Control::new(Feature::CloseTab, Element::n
 pub(crate) const PICK: Control = Control::new(Feature::PickView, Element::new("pick"));
 pub(crate) const VIEW_ROW: Control = Control::new(Feature::PickView, Element::new("view"));
 pub(crate) const VIEW_FIELD: Control = Control::new(Feature::PickView, Element::new("field@views"));
-pub(crate) const PATH_ROW: Control = Control::new(Feature::OpenPath, Element::new("paths"));
+pub(crate) const TOUR_ROW: Control = Control::new(Feature::OpenTour, Element::new("tours"));
 pub(crate) const GROUP_ROW: Control = Control::new(Feature::OpenGroup, Element::new("group"));
 pub(crate) const STEP_LIST_ROW: Control = Control::new(Feature::SelectStep, Element::new("steps"));
 pub(crate) const STEP_HEADER: Control = Control::new(Feature::SelectStep, Element::new("step"));
@@ -125,9 +125,9 @@ pub(crate) const COLLAPSE_ALL: Control =
     Control::new(Feature::CollapseAll, Element::new("doc-collapse"));
 pub(crate) const EXPAND_ALL: Control =
     Control::new(Feature::CollapseAll, Element::new("doc-expand"));
-pub(crate) const REMOVE_PATH: Control =
-    Control::new(Feature::RemovePath, Element::new("doc-delete"));
-pub(crate) const LINKED_FROM: Control = Control::new(Feature::OpenLinkedPath, Element::new("from"));
+pub(crate) const REMOVE_TOUR: Control =
+    Control::new(Feature::RemoveTour, Element::new("doc-delete"));
+pub(crate) const LINKED_FROM: Control = Control::new(Feature::OpenLinkedTour, Element::new("from"));
 pub(crate) const COLLAPSE: Control =
     Control::new(Feature::ToggleCollapse, Element::new("collapse"));
 pub(crate) const HIDE_CODE: Control = Control::new(Feature::ToggleCode, Element::new("hide"));
@@ -135,7 +135,7 @@ pub(crate) const WHOLE: Control = Control::new(Feature::ToggleWholeSymbol, Eleme
 pub(crate) const NO_CONTEXT: Control = Control::new(Feature::MoreContext, Element::new("ctx0"));
 pub(crate) const CONTEXT_ABOVE: Control = Control::new(Feature::MoreContext, Element::new("ctx-a"));
 pub(crate) const CONTEXT_BELOW: Control = Control::new(Feature::MoreContext, Element::new("ctx-b"));
-pub(crate) const LINK: Control = Control::new(Feature::OpenLinkedPath, Element::new("link"));
+pub(crate) const LINK: Control = Control::new(Feature::OpenLinkedTour, Element::new("link"));
 pub(crate) const INLINE: Control = Control::new(Feature::InlineLink, Element::new("inline"));
 pub(crate) const REMOVE_STEP: Control = Control::new(Feature::RemoveStep, Element::new("del"));
 pub(crate) const LINES: Control = Control::new(Feature::SelectLines, Element::new("lines"));
@@ -161,18 +161,18 @@ pub(crate) const PALETTE_ROW: Control =
 #[cfg(test)]
 pub(crate) const CONTROLS: &[Control] = &[
     SEARCH_FIELD,
-    NEW_PATH_FIELD,
+    NEW_TOUR_FIELD,
     FILTER_FIELD,
-    PATH_FILTER_FIELD,
+    TOUR_FILTER_FIELD,
     LINE_FIELD,
     COMMAND_FIELD,
     BACK,
     FORWARD,
     TAB,
     NEW_GROUP_FIELD,
-    NEW_PATH,
+    NEW_TOUR,
     KIND,
-    CREATE_PATH,
+    CREATE_TOUR,
     ADD_LINES,
     ADD_SYMBOL,
     ADD_FOCUS,
@@ -189,7 +189,7 @@ pub(crate) const CONTROLS: &[Control] = &[
     PICK,
     VIEW_ROW,
     VIEW_FIELD,
-    PATH_ROW,
+    TOUR_ROW,
     GROUP_ROW,
     STEP_LIST_ROW,
     STEP_HEADER,
@@ -210,7 +210,7 @@ pub(crate) const CONTROLS: &[Control] = &[
     SHOW_ALL_CODE,
     COLLAPSE_ALL,
     EXPAND_ALL,
-    REMOVE_PATH,
+    REMOVE_TOUR,
     LINKED_FROM,
     COLLAPSE,
     HIDE_CODE,
@@ -247,8 +247,8 @@ pub(crate) fn panel() -> Id {
     Id::new("panel")
 }
 
-pub(crate) fn paths() -> Id {
-    PATH_ROW.id()
+pub(crate) fn tours() -> Id {
+    TOUR_ROW.id()
 }
 
 pub(crate) fn symbols() -> Id {

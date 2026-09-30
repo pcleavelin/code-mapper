@@ -1,9 +1,9 @@
-codemap 8
-path feature-collapse-all
+codemap 9
+tour feature-collapse-all
 kind flow
 author ai
 group features/gui
-note The document toolbar's 'collapse all' collapses every step of the path being read that has children, so only the top-level steps remain with +n counts; 'expand all' expands every step. The reader reaches for it to see the shape of a long path without scrolling past every step. Hide and code state are untouched.
+note The document toolbar's 'collapse all' collapses every step of the tour being read that has children, so only the top-level steps remain with +n counts; 'expand all' expands every step. The reader reaches for it to see the shape of a long tour without scrolling past every step. Hide and code state are untouched.
 
 step 40tsz9
 order 5
@@ -20,10 +20,10 @@ order 2
 parent spow0g
 author ai
 file crates/gui/src/model.rs
-symbol each_of_path
+symbol each_of_tour
 lines 0 10
-hash 6494a53bb8af2e25
-note Visits every view of this path.
+hash 9b13d6a18d12c172
+note Visits every view of this tour.
 
 step dvb7o1
 order 3
@@ -32,7 +32,7 @@ author ai
 file crates/gui/src/views/document.rs
 symbol header_bar
 lines 21 48
-hash c93d9e106df17d9c
+hash b9363cab30ef804a
 note Trigger: COLLAPSE_ALL queues CollapseAll with Collapse::Collapse and EXPAND_ALL with Collapse::Expand.
 
 step h9i1wa
@@ -42,7 +42,7 @@ author ai
 file crates/gui/src/model.rs
 symbol descendants
 lines 0 8
-hash a77696f335213e88
+hash 20255b561ee0b98a
 note The number of steps under a step; a leaf never gets the Collapsed flag, so it has no arrow to show a stale collapse.
 
 step snwm5q
@@ -61,5 +61,5 @@ author ai
 file crates/gui/src/action.rs
 symbol collapse_all
 lines 0 25
-hash 01aacfbeaa25d88c
+hash fb68430f19af9de3
 note The handler. Decides per step whether it collapses (collapse wanted and the step has descendants), creates a view for every step, then sets Collapsed from that list.

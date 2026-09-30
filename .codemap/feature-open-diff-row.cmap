@@ -1,9 +1,9 @@
-codemap 8
-path feature-open-diff-row
+codemap 9
+tour feature-open-diff-row
 kind flow
 author ai
 group features/gui
-note The Diff tab lists every path added (+), removed (-) or changed (~) against the parent revision's map (@- in jj, HEAD in git), with a summary of what changed and, for changed paths, a line per new or changed step. The owner reaches for it to audit what a session changed in the map and whether it mapped what it built. Clicking a row opens that path in the document; a removed path, which exists only in the parent, is described in the status bar instead. 'refresh' reads the parent's map again, for when the parent revision moved.
+note The Diff tab lists every tour added (+), removed (-) or changed (~) against the parent revision's map (@- in jj, HEAD in git), with a summary of what changed and, for changed tours, a line per new or changed step. The owner reaches for it to audit what a session changed in the map and whether it mapped what it built. Clicking a row opens that tour in the document; a removed tour, which exists only in the parent, is described in the status bar instead. 'refresh' reads the parent's map again, for when the parent revision moved.
 
 step 8tb0ub
 order 6
@@ -13,7 +13,7 @@ file crates/gui/src/work.rs
 symbol poll_base
 lines 0 13
 hash 9d2eba5e35c23b23
-note Each frame polls the thread; when it lands, the base map (or the reason there is none) is stored and the Diff tab and the Paths list's +/~ marks follow it.
+note Each frame polls the thread; when it lands, the base map (or the reason there is none) is stored and the Diff tab and the Tours list's +/~ marks follow it.
 
 step 95sndq
 order 2
@@ -22,20 +22,20 @@ author ai
 file crates/gui/src/views/center.rs
 symbol diff_row
 lines 0 40
-hash 04afeb5b3e3d3c59
+hash 2d076b881c0edfe6
 link map-diff
-note Trigger: each changed path is a DIFF_ROW. A click queues OpenPath when the path is in the current map, and otherwise sets the OnlyInParent status both in the overlay (this frame) and through Action::Status (from the next).
+note Trigger: each changed tour is a DIFF_ROW. A click queues OpenTour when the tour is in the current map, and otherwise sets the OnlyInParent status both in the overlay (this frame) and through Action::Status (from the next).
 
 step bw3ohv
 order 1
 parent q71a7x
 author ai
 file crates/gui/src/nav.rs
-symbol select_path
+symbol select_tour
 lines 0 9
-hash 76ddeee19ae30401
+hash 7a595d2881b1892a
 link selection
-note Selects the path's first step.
+note Selects the tour's first step.
 
 step fosnuc
 order 3
@@ -61,10 +61,10 @@ step q71a7x
 order 0
 author ai
 file crates/gui/src/nav.rs
-symbol open_path
+symbol open_tour
 lines 0 5
-hash 6009b8aa2be3f88c
-note The handler for a row of a path that exists: open_path on the Path tab.
+hash 5214b39f2a008c2b
+note The handler for a row of a tour that exists: open_tour on the Tour tab.
 
 step r0nnxl
 order 5

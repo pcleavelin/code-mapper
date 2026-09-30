@@ -1,9 +1,9 @@
-codemap 8
-path feature-follow-xref
+codemap 9
+tour feature-follow-xref
 kind flow
 author ai
 group features/gui
-note The References panel lists, under 'Callers', what calls the focused symbol, under 'Callees', what it calls, and under 'Other references' every reference the language's server reports, grouped by file. The reader reaches for it to move from a symbol to its callers, callees and references without grepping (browsing xrefs). Clicking a caller or callee focuses that symbol the way a Symbols row does: it selects the matching step of the path being read, or opens the Source view on it. Clicking a reference opens its file in the Source view at that line, and clicking a file row opens that file. While the symbol's file waits for its server, the rows are dimmed and caller and callee clicks do nothing.
+note The References panel lists, under 'Callers', what calls the focused symbol, under 'Callees', what it calls, and under 'Other references' every reference the language's server reports, grouped by file. The reader reaches for it to move from a symbol to its callers, callees and references without grepping (browsing xrefs). Clicking a caller or callee focuses that symbol the way a Symbols row does: it selects the matching step of the tour being read, or opens the Source view on it. Clicking a reference opens its file in the Source view at that line, and clicking a file row opens that file. While the symbol's file waits for its server, the rows are dimmed and caller and callee clicks do nothing.
 
 step 56ca80
 order 0
@@ -11,7 +11,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol go_to_symbol
 lines 0 14
-hash 44cd199b2a7a836e
+hash 2431deb63e24562e
 note The handler for a caller or callee row: go_to_symbol, the same as a Symbols row.
 
 step 956vwm
@@ -61,8 +61,8 @@ author ai
 file crates/gui/src/views/references.rs
 symbol call_row
 lines 0 41
-hash 2acb408b06371956
-note Trigger: a caller or callee row, xto/<n> or xfrom/<n> by its position in its list, showing the symbol's name and file:line. A click queues Focus unless the file is still pending; the row's '+ step' (while a path is open) queues AddSymbol instead.
+hash 1ca6582aa41545b9
+note Trigger: a caller or callee row, xto/<n> or xfrom/<n> by its position in its list, showing the symbol's name and file:line. A click queues Focus unless the file is still pending; the row's '+ step' (while a tour is open) queues AddSymbol instead.
 
 step zdpboj
 order 1
@@ -71,6 +71,6 @@ author ai
 file crates/gui/src/nav.rs
 symbol select_symbol
 lines 0 20
-hash 478ce11e8427e2a2
+hash 3559d143e999ed53
 link selection
-note Selects the step when the symbol is a root-anchored step of the path being read, otherwise focuses the symbol.
+note Selects the step when the symbol is a root-anchored step of the tour being read, otherwise focuses the symbol.

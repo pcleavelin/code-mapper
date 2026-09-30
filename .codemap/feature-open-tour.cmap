@@ -1,0 +1,36 @@
+codemap 9
+tour feature-open-tour
+kind flow
+author ai
+group features/gui
+note Click a tour in the Tours list to read it. The reader needs it to read a tour at all; without it the tour shown could only change through the CLI. The document switches to that tour, its first step in tree order is selected and scrolled to, and the Tour view is brought to front wherever it is. Clicking the tour already being read keeps its current step and only switches the tab back to Tour.
+
+step 1tdtjx
+order 0
+author ai
+file crates/gui/src/nav.rs
+symbol open_tour
+lines 0 5
+hash 5214b39f2a008c2b
+note The handler. Selects the tour only when it is not the one being read, so a second click keeps the reader's place; the tab is set either way.
+
+step 62e7oy
+order 1
+parent 1tdtjx
+author ai
+file crates/gui/src/nav.rs
+symbol select_tour
+lines 0 9
+hash 7a595d2881b1892a
+link selection
+note Makes the tour current and selects its first step in tree order, scrolled to the top of the document; a tour with no steps is opened with nothing selected. What selecting a step does to file, lines and focus is the selection tour's.
+
+step u4q6bb
+order 3
+parent 1tdtjx
+author ai
+file crates/gui/src/views/left.rs
+symbol tour_row
+lines 0 66
+hash f064e7bbde135f68
+note The trigger: each row of the Tours list is a TOUR_ROW numbered by the tour's slot. A click queues OpenTour with the Tour tab, which apply hands to open_tour once the frame is built. The row shows the name, then kind, author and step count dimmed; the name is red and 'n stale' follows when a step is stale, and marked + or ~ when the map diff has the tour as added or changed.

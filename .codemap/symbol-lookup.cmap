@@ -1,9 +1,9 @@
-codemap 8
-path symbol-lookup
+codemap 9
+tour symbol-lookup
 kind layer
 author ai
 group index
-note How a name on the command line becomes a symbol. Plain names match every symbol of that name across files; Owner::name narrows to an impl owner or a file stem, path/file.rs:name to a file, file:Owner::name to both. The parsing and matching are the domain's SymbolQuery and Index::find_symbols; the CLI adds the two guards. Commands that read (callers, callees, tree, refs) take every match; commands that write a step (path-add, promote) demand exactly one and list the candidates otherwise.
+note How a name on the command line becomes a symbol. Plain names match every symbol of that name across files; Owner::name narrows to an impl owner or a file stem, path/file.rs:name to a file, file:Owner::name to both. The parsing and matching are the domain's SymbolQuery and Index::find_symbols; the CLI adds the two guards. Commands that read (callers, callees, tree, refs) take every match; commands that write a step (tour-add, promote) demand exactly one and list the candidates otherwise.
 
 step 0ktg96
 order 5

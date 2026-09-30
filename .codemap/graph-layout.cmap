@@ -1,9 +1,9 @@
-codemap 8
-path graph-layout
+codemap 9
+tour graph-layout
 kind flow
 author ai
 group gui/graph
-note Where every node on the canvas ends up. The layout is recomputed from scratch every frame by Built::place_nodes; a node the reader dragged then has its position overwritten by the dragged one (App::graph_layout, in graph-draw). It works along two axes named by the graph's Direction: the main axis, right when the graph runs left to right and down when it is turned top to bottom, and the cross axis at right angles to it. Along the main axis a node sits in the lane of its Rank - its depth in the path tree, or one rank out from whatever reveal revealed it - and the lanes are laid out outward from rank 0 so the root of the path never moves. Along the cross axis the children of one node on one side are one Siblings box, stacked tightly in call order, with the box's first child level with the parent when that lane is free there and below the lane's last box otherwise; boxes in a lane never overlap and are placed breadth first, so siblings stay together however deep their own subtrees run. The roots are boxes too: the path's top-level steps in one, roots off the path in another below it. Everything is in cells and rows (theme::Cells), which no zoom changes; pixels appear only when a rectangle is asked for with this frame's cell size.
+note Where every node on the canvas ends up. The layout is recomputed from scratch every frame by Built::place_nodes; a node the reader dragged then has its position overwritten by the dragged one (App::graph_layout, in graph-draw). It works along two axes named by the graph's Direction: the main axis, right when the graph runs left to right and down when it is turned top to bottom, and the cross axis at right angles to it. Along the main axis a node sits in the lane of its Rank - its depth in the tour tree, or one rank out from whatever reveal revealed it - and the lanes are laid out outward from rank 0 so the root of the tour never moves. Along the cross axis the children of one node on one side are one Siblings box, stacked tightly in call order, with the box's first child level with the parent when that lane is free there and below the lane's last box otherwise; boxes in a lane never overlap and are placed breadth first, so siblings stay together however deep their own subtrees run. The roots are boxes too: the tour's top-level steps in one, roots off the tour in another below it. Everything is in cells and rows (theme::Cells), which no zoom changes; pixels appear only when a rectangle is asked for with this frame's cell size.
 
 step 11m7he
 order 3
@@ -23,7 +23,7 @@ file crates/gui/src/graph/build.rs
 symbol Rank
 lines 0 0
 hash 504ec3672efd7029
-note A lane index, signed: path steps have their depth, callees one rank further along the main axis than the node that revealed them, callers one rank back, and the off-path root rank 0. Left to right a rank is a column, top to bottom a row.
+note A lane index, signed: tour steps have their depth, callees one rank further along the main axis than the node that revealed them, callers one rank back, and the off-tour root rank 0. Left to right a rank is a column, top to bottom a row.
 
 step 3my22g
 order 10
@@ -52,7 +52,7 @@ file crates/gui/src/graph/place.rs
 symbol trees
 lines 0 40
 hash a414ff1de8039ba1
-note The forest place_nodes walks: a path step hangs off its parent step on the callee side, a revealed node off the node that revealed it, on the caller side for callers and the callee side for callees. Each parent's callee-side children are sorted by the line of its code that names them (Built::call_line), so siblings sit in call order and the step order breaks ties; the roots are the nodes with no parent, in step order.
+note The forest place_nodes walks: a tour step hangs off its parent step on the callee side, a revealed node off the node that revealed it, on the caller side for callers and the callee side for callees. Each parent's callee-side children are sorted by the line of its code that names them (Built::call_line), so siblings sit in call order and the step order breaks ties; the roots are the nodes with no parent, in step order.
 
 step 85mf2y
 order 0
@@ -70,8 +70,8 @@ author ai
 file crates/gui/src/graph/place.rs
 symbol top_siblings
 lines 0 17
-hash 50025a8c857767a8
-note The roots grouped into top-level boxes by Parentage and rank: the path's steps in a Path box, anything else in an OffPath box. BTreeMap order puts the path box first.
+hash f9e09541218e7ba0
+note The roots grouped into top-level boxes by Parentage and rank: the tour's steps in a Tour box, anything else in an OffTour box. BTreeMap order puts the tour box first.
 
 step aqe1ly
 order 18
@@ -101,7 +101,7 @@ file crates/gui/src/graph/build.rs
 symbol impl Rank
 lines 0 14
 hash ffcaef55c90f137c
-note next and previous are one rank further along and one back, which is where a reveal's callees and callers go; of_depth turns a step's depth in the path tree into its rank.
+note next and previous are one rank further along and one back, which is where a reveal's callees and callers go; of_depth turns a step's depth in the tour tree into its rank.
 
 step gxs2as
 order 9
@@ -121,7 +121,7 @@ file crates/gui/src/graph/place.rs
 symbol lane_starts
 lines 0 41
 hash 54439d31b70fb761
-note The lanes along the main axis: each rank's lane is as long as its longest node along that axis plus lead_main and pad_main; walking outward from rank 0 (clamped into the ranks present) in both directions, each lane starts rank_gap after the one before, so the path's root keeps its place when a reveal opens a lane before it.
+note The lanes along the main axis: each rank's lane is as long as its longest node along that axis plus lead_main and pad_main; walking outward from rank 0 (clamped into the ranks present) in both directions, each lane starts rank_gap after the one before, so the tour's root keeps its place when a reveal opens a lane before it.
 
 step l634za
 order 4
@@ -209,8 +209,8 @@ author ai
 file crates/gui/src/graph/place.rs
 symbol Parentage
 lines 0 5
-hash 6c6b83bc01afc804
-note What a box's members share: the path (its top-level steps), being off the path (other roots), or being the callees or callers of one parent node. parent() is that node when there is one; place_siblings levels the box with it and the scene names it in the header.
+hash 33bdffe8ba8a4e82
+note What a box's members share: the tour (its top-level steps), being off the tour (other roots), or being the callees or callers of one parent node. parent() is that node when there is one; place_siblings levels the box with it and the scene names it in the header.
 
 step xkn1l0
 order 5

@@ -7,9 +7,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
-use domain::{Map, PathCount, PathName, RelativePath, Revision, Root};
+use domain::{Map, RelativePath, Revision, Root, Tour, TourCount, TourName};
 
-use crate::convert::{map_from_paths, path_from_wire, path_to_wire};
+use crate::convert::{map_from_tours, tour_from_wire, tour_to_wire};
 use crate::error::Located;
 
 pub use crate::error::{
@@ -39,16 +39,16 @@ impl MapText {
         &self.0
     }
 
-    fn of(path: &domain::Path) -> Self {
-        Self(wire::render(&path_to_wire(path)))
+    fn of(tour: &Tour) -> Self {
+        Self(wire::render(&tour_to_wire(tour)))
     }
 
-    fn paths(&self, origin: &Origin) -> Result<Vec<domain::Path>, ParseError> {
-        let wire_paths =
+    fn tours(&self, origin: &Origin) -> Result<Vec<Tour>, ParseError> {
+        let wire_tours =
             wire::parse(&self.0).map_err(|fault| Located::from(fault).within(origin))?;
-        wire_paths
+        wire_tours
             .iter()
-            .map(|path| path_from_wire(path).map_err(|fault| fault.within(origin)))
+            .map(|tour| tour_from_wire(tour).map_err(|fault| fault.within(origin)))
             .collect()
     }
 }
@@ -59,13 +59,13 @@ pub struct Saved;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Stamp {
     modified: SystemTime,
-    files: PathCount,
+    files: TourCount,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MapStore {
     directory: PathBuf,
-    disk: BTreeMap<PathName, MapText>,
+    disk: BTreeMap<TourName, MapText>,
 }
 
 impl MapStore {
@@ -102,7 +102,7 @@ impl MapStore {
             .collect();
         files.sort();
         let mut disk = BTreeMap::new();
-        let mut paths = Vec::new();
+        let mut tours = Vec::new();
         for file in files {
             let text = fs::read_to_string(&file).map(MapText).map_err(|error| {
                 MapLoadError::Unreadable {
@@ -111,24 +111,24 @@ impl MapStore {
                 }
             })?;
             let mut found = text
-                .paths(&Origin::File(file.clone()))
+                .tours(&Origin::File(file.clone()))
                 .map_err(MapLoadError::Parse)?;
-            let (Some(path), true) = (found.pop(), found.is_empty()) else {
-                return Err(MapLoadError::OnePathPerFile(file));
+            let (Some(tour), true) = (found.pop(), found.is_empty()) else {
+                return Err(MapLoadError::OneTourPerFile(file));
             };
             if file
                 .file_stem()
-                .is_none_or(|stem| stem != path.name().as_str())
+                .is_none_or(|stem| stem != tour.name().as_str())
             {
                 return Err(MapLoadError::Misplaced {
                     file,
-                    path: path.name().clone(),
+                    tour: tour.name().clone(),
                 });
             }
-            disk.insert(path.name().clone(), text);
-            paths.push(path);
+            disk.insert(tour.name().clone(), text);
+            tours.push(tour);
         }
-        let map = map_from_paths(paths).map_err(|fault| {
+        let map = map_from_tours(tours).map_err(|fault| {
             MapLoadError::Parse(fault.within(&Origin::File(self.directory.clone())))
         })?;
         self.disk = disk;
@@ -141,14 +141,14 @@ impl MapStore {
             error,
         })?;
         let mut now = BTreeMap::new();
-        for path in map.paths() {
-            let text = MapText::of(path);
-            if self.disk.get(path.name()) != Some(&text) {
-                let file = self.file_of(path.name());
+        for tour in map.tours() {
+            let text = MapText::of(tour);
+            if self.disk.get(tour.name()) != Some(&text) {
+                let file = self.file_of(tour.name());
                 io_store::write(&file, text.as_str())
                     .map_err(|error| MapSaveError::Write { file, error })?;
             }
-            now.insert(path.name().clone(), text);
+            now.insert(tour.name().clone(), text);
         }
         for gone in self.disk.keys().filter(|name| !now.contains_key(*name)) {
             let file = self.file_of(gone);
@@ -162,9 +162,9 @@ impl MapStore {
 
     pub fn base(text: &MapText, revision: &Revision) -> Result<Map, ParseError> {
         let origin = Origin::Revision(revision.clone());
-        let mut paths = text.paths(&origin)?;
-        paths.sort_by(|one, other| one.name().cmp(other.name()));
-        map_from_paths(paths).map_err(|fault| fault.within(&origin))
+        let mut tours = text.tours(&origin)?;
+        tours.sort_by(|one, other| one.name().cmp(other.name()));
+        map_from_tours(tours).map_err(|fault| fault.within(&origin))
     }
 
     pub fn stamp(&self) -> Option<Stamp> {
@@ -184,11 +184,11 @@ impl MapStore {
         }
         Some(Stamp {
             modified,
-            files: PathCount::new(files),
+            files: TourCount::new(files),
         })
     }
 
-    fn file_of(&self, name: &PathName) -> PathBuf {
+    fn file_of(&self, name: &TourName) -> PathBuf {
         self.directory
             .join(format!("{}.{}", name.as_str(), wire::MAP_EXTENSION))
     }

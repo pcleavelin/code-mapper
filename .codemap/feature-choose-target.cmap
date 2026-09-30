@@ -1,9 +1,9 @@
-codemap 8
-path feature-choose-target
+codemap 9
+tour feature-choose-target
 kind flow
 author ai
 group features/gui
-note Steps added from the Source, Symbols or References hang under the target: the step last selected in the path being read. The reader needs it because without a target and a way back to top level, every added step would nest under whatever was selected last. The Source and Symbols views show it in a strip under their toolbars ('adds to startup under 1.2 fill') and the Paths steps list marks its row '+ adds here'. Press 'top level' in the strip and added steps go at the top level of the path instead, until a step is selected again. Moving the selection off the path (a symbol in Symbols, References or the graph) leaves the target where it was, which is what lets a reader collect several symbols under one step.
+note Steps added from the Source, Symbols or References hang under the target: the step last selected in the tour being read. The reader needs it because without a target and a way back to top level, every added step would nest under whatever was selected last. The Source and Symbols views show it in a strip under their toolbars ('adds to startup under 1.2 fill') and the tour's steps list marks its row '+ adds here'. Press 'top level' in the strip and added steps go at the top level of the tour instead, until a step is selected again. Moving the selection off the tour (a symbol in Symbols, References or the graph) leaves the target where it was, which is what lets a reader collect several symbols under one step.
 
 step 9wotic
 order 1
@@ -13,7 +13,7 @@ file crates/gui/src/nav.rs
 symbol add_at_top_level
 lines 0 2
 hash ad004437d15bfa9d
-note The Nav's target is private to nav.rs; this is the one way to clear it besides a path change.
+note The Nav's target is private to nav.rs; this is the one way to clear it besides a tour change.
 
 step d50mxl
 order 3
@@ -22,8 +22,8 @@ author ai
 file crates/gui/src/authoring.rs
 symbol target_under
 lines 0 5
-hash 4cf6a29a21e44671
-note What the strip and every add read: the target while it is a step of the path being read.
+hash f941d0e31638e116
+note What the strip and every add read: the target while it is a step of the tour being read.
 
 step dclwsq
 order 0
@@ -31,8 +31,8 @@ author ai
 file crates/gui/src/authoring.rs
 symbol add_at_top_level
 lines 0 6
-hash df43a8dc1dd24f7a
-note The handler: the target goes to the top level, and the status says so for the path being read.
+hash a68da15bc0b472b4
+note The handler: the target goes to the top level, and the status says so for the tour being read.
 
 step gcovuo
 order 4
@@ -41,8 +41,8 @@ author ai
 file crates/gui/src/nav.rs
 symbol select_step
 lines 0 4
-hash 2fd732e2ea2f45ce
-note Where the target is set: selecting a step makes it the target. select_path with no step, path_created and forget_path clear it; steps_moved shifts it with its step.
+hash 355b62677895ef22
+note Where the target is set: selecting a step makes it the target. select_tour with no step, tour_created and forget_tour clear it; steps_moved shifts it with its step.
 
 step hrvwma
 order 2
@@ -51,8 +51,8 @@ author ai
 file crates/gui/src/views/authoring.rs
 symbol target_strip
 lines 0 34
-hash 052aea45446863f8
-note Trigger and display: the strip under the Source and Symbols toolbars names the path and the target ('under 1.2 fill' or 'at the top level'), and its 'top level' button (target-top) queues AddAtTopLevel. With no path being read it says to open one.
+hash 2558507f47778620
+note Trigger and display: the strip under the Source and Symbols toolbars names the tour and the target ('under 1.2 fill' or 'at the top level'), and its 'top level' button (target-top) queues AddAtTopLevel. With no tour being read it says to open one.
 
 step nioly0
 order 5

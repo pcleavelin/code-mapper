@@ -1,9 +1,9 @@
-codemap 8
-path feature-promote-symbol
+codemap 9
+tour feature-promote-symbol
 kind flow
 author ai
 group features/gui
-note Under the References heading, 'promote' makes a flow path from the selected symbol: the symbol as the root step and the symbols it calls under it, one level deep, all authored by the human, named after the symbol. The reader reaches for it to scaffold a flow from a symbol instead of adding every step by hand. It is the CLI promote command at depth 1. A path of that name already there is extended with whatever of those symbols it does not pin whole. The path opens on the Path tab with its first step selected, and the status gives its name and step count.
+note Under the References heading, 'promote' makes a flow tour from the selected symbol: the symbol as the root step and the symbols it calls under it, one level deep, all authored by the human, named after the symbol. The reader reaches for it to scaffold a flow from a symbol instead of adding every step by hand. It is the CLI promote command at depth 1. A tour of that name already there is extended with whatever of those symbols it does not pin whole. The tour opens on the Tour tab with its first step selected, and the status gives its name and step count.
 
 step am8c85
 order 2
@@ -20,9 +20,9 @@ order 3
 parent miupsu
 author ai
 file crates/gui/src/nav.rs
-symbol select_path
+symbol select_tour
 lines 0 9
-hash 76ddeee19ae30401
+hash 7a595d2881b1892a
 note Opening it selects the first step in tree order, which also makes it the target for further adds.
 
 step miupsu
@@ -31,8 +31,8 @@ author ai
 file crates/gui/src/authoring.rs
 symbol promote
 lines 0 26
-hash 98f2e1ebd0cc8707
-note The handler: promote at depth 1 with no name (the symbol's), authored by the human; a refusal becomes the status. The map is marked dirty and the path opened through select_path on the Path tab.
+hash 615be73fae3553e7
+note The handler: promote at depth 1 with no name (the symbol's), authored by the human; a refusal becomes the status. The map is marked dirty and the tour opened through select_tour on the Tour tab.
 
 step uesrbk
 order 1
@@ -41,5 +41,5 @@ author ai
 file crates/domain/src/map.rs
 symbol promote
 lines 0 72
-hash d7d9004b365ccfc5
-note The same promote the CLI runs: the call tree to the depth, each symbol added under its caller unless the path already pins it whole.
+hash bcdd9854a71a740a
+note The same promote the CLI runs: the call tree to the depth, each symbol added under its caller unless the tour already pins it whole.

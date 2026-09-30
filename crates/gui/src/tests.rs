@@ -1,9 +1,9 @@
 use std::path::Path as FsPath;
 
 use domain::{
-    Anchor, Author, Backend, Depth, FileText, Imports, Index, Line, Map, Path, PathKind, PathName,
-    RelativePath, Root, Row, SourceFile, Span, Step, StepId, StepOrder, Symbol, SymbolKind,
-    SymbolName,
+    Anchor, Author, Backend, Depth, FileText, Imports, Index, Line, Map, RelativePath, Root, Row,
+    SourceFile, Span, Step, StepId, StepOrder, Symbol, SymbolKind, SymbolName, Tour, TourKind,
+    TourName,
 };
 use features::{Feature, Trigger};
 use io_map::MapStore;
@@ -18,7 +18,7 @@ use crate::graph::build::{Built, CellSize, Rank, StepInfo};
 use crate::graph::{Button, Node};
 use crate::ids::CONTROLS;
 use crate::keys::Walk;
-use crate::model::{Model, PathSlot, Readable, StepKey, StepSlot, Tab, ViewFlag};
+use crate::model::{Model, Readable, StepKey, StepSlot, Tab, TourSlot, ViewFlag};
 use crate::nav::Scrolling;
 use crate::palette::{Palette, commands};
 use crate::panels::Direction;
@@ -119,36 +119,36 @@ fn model() -> Model {
         step(&index, "cccccc", 2, Some("bbbbbb"), 8, 8),
         step(&index, "dddddd", 3, Some("aaaaaa"), 7, 7),
     ];
-    let path = Path::new(
-        PathName::new("startup").unwrap(),
-        PathKind::Flow,
+    let tour = Tour::new(
+        TourName::new("startup").unwrap(),
+        TourKind::Flow,
         Author::Agent,
         None,
         None,
         steps,
     )
     .unwrap();
-    let mut map = Map::new(vec![path]).unwrap();
+    let mut map = Map::new(vec![tour]).unwrap();
     map.resolve_all(&index);
     let store = MapStore::new(&Root::new(FsPath::new("/nowhere")));
     Model::new(index, map, store, Readable::Reads)
 }
 
-const PATH: PathSlot = PathSlot::new(0);
+const TOUR: TourSlot = TourSlot::new(0);
 
 fn key(step: usize) -> StepKey {
     StepKey {
-        path: PATH,
+        tour: TOUR,
         step: StepSlot::new(step),
     }
 }
 
 #[test]
-fn opening_a_path_selects_its_first_step_in_tree_order() {
+fn opening_a_tour_selects_its_first_step_in_tree_order() {
     let mut model = model();
-    model.select_path(PATH);
+    model.select_tour(TOUR);
     assert_eq!(model.nav.step(), Some(StepSlot::new(0)));
-    assert_eq!(model.nav.tab(), Tab::Path);
+    assert_eq!(model.nav.tab(), Tab::Tour);
     let focus = model
         .nav
         .focus()
@@ -159,7 +159,7 @@ fn opening_a_path_selects_its_first_step_in_tree_order() {
 #[test]
 fn walking_follows_the_tree_and_stops_at_the_ends() {
     let mut model = model();
-    model.select_path(PATH);
+    model.select_tour(TOUR);
     let mut seen = Vec::new();
     for _ in 0..5 {
         model.walk(Walk::Down);
@@ -173,7 +173,7 @@ fn walking_follows_the_tree_and_stops_at_the_ends() {
 #[test]
 fn back_and_forward_return_to_the_places_visited() {
     let mut model = model();
-    model.select_path(PATH);
+    model.select_tour(TOUR);
     model.track_navigation();
     model.select_step(key(2), Scrolling::Scroll);
     model.track_navigation();
@@ -181,7 +181,7 @@ fn back_and_forward_return_to_the_places_visited() {
     model.track_navigation();
     assert!(model.nav.can_go_back());
     model.back();
-    assert_eq!(model.nav.tab(), Tab::Path);
+    assert_eq!(model.nav.tab(), Tab::Tour);
     assert_eq!(model.nav.step(), Some(StepSlot::new(2)));
     model.back();
     assert_eq!(model.nav.step(), Some(StepSlot::new(0)));
@@ -195,7 +195,7 @@ fn back_and_forward_return_to_the_places_visited() {
 #[test]
 fn history_keeps_the_last_two_hundred_places() {
     let mut model = model();
-    model.select_path(PATH);
+    model.select_tour(TOUR);
     model.track_navigation();
     for round in 0..250 {
         model.select_step(key(round % 2), Scrolling::Scroll);
@@ -236,12 +236,12 @@ fn app() -> App {
 fn hide_all_code_hides_every_step_and_show_all_code_expands_none() {
     let mut app = app();
     app.apply(Action::Toggle(key(1), ViewFlag::Collapsed));
-    app.apply(Action::HideAll(PATH, Hide::Hide));
+    app.apply(Action::HideAll(TOUR, Hide::Hide));
     for step in 0..4 {
         assert!(app.model.views.get(key(step)).flags.has(ViewFlag::Hidden));
     }
     assert!(app.model.views.get(key(1)).flags.has(ViewFlag::Collapsed));
-    app.apply(Action::HideAll(PATH, Hide::Show));
+    app.apply(Action::HideAll(TOUR, Hide::Show));
     for step in 0..4 {
         let flags = app.model.views.get(key(step)).flags;
         assert!(!flags.has(ViewFlag::Hidden));
@@ -252,7 +252,7 @@ fn hide_all_code_hides_every_step_and_show_all_code_expands_none() {
 #[test]
 fn collapse_all_collapses_only_steps_with_children() {
     let mut app = app();
-    app.apply(Action::CollapseAll(PATH, Collapse::Collapse));
+    app.apply(Action::CollapseAll(TOUR, Collapse::Collapse));
     let collapsed: Vec<bool> = (0..4)
         .map(|step| {
             app.model
@@ -263,7 +263,7 @@ fn collapse_all_collapses_only_steps_with_children() {
         })
         .collect();
     assert_eq!(collapsed, [true, true, false, false]);
-    app.apply(Action::CollapseAll(PATH, Collapse::Expand));
+    app.apply(Action::CollapseAll(TOUR, Collapse::Expand));
     assert!(!app.model.views.get(key(0)).flags.has(ViewFlag::Collapsed));
 }
 
@@ -274,7 +274,7 @@ fn removing_a_step_moves_later_views_up_and_clears_the_selection() {
     app.apply(Action::Toggle(key(3), ViewFlag::Whole));
     app.apply(Action::RemoveStep(key(1)));
     assert_eq!(app.model.nav.step(), None);
-    assert_eq!(app.model.step_count(PATH), Count::new(3));
+    assert_eq!(app.model.step_count(TOUR), Count::new(3));
     assert!(app.model.views.get(key(2)).flags.has(ViewFlag::Whole));
     assert!(!app.model.views.get(key(3)).flags.has(ViewFlag::Whole));
     assert_eq!(
@@ -284,15 +284,15 @@ fn removing_a_step_moves_later_views_up_and_clears_the_selection() {
 }
 
 #[test]
-fn removing_the_path_forgets_it() {
+fn removing_the_tour_forgets_it() {
     let mut app = app();
-    app.apply(Action::OpenPath(PATH, Tab::Path));
-    app.apply(Action::RemovePath(PATH));
-    assert_eq!(app.model.nav.path(), None);
-    assert!(app.model.map.paths().is_empty());
+    app.apply(Action::OpenTour(TOUR, Tab::Tour));
+    app.apply(Action::RemoveTour(TOUR));
+    assert_eq!(app.model.nav.tour(), None);
+    assert!(app.model.map.tours().is_empty());
     assert_eq!(
         app.model.status.to_string(),
-        "deleted path 'startup' (4 steps); unsaved"
+        "deleted tour 'startup' (4 steps); unsaved"
     );
 }
 
@@ -354,7 +354,7 @@ fn children_sit_together_in_one_box_beside_their_parent() {
         .collect();
     assert_eq!(
         parentages,
-        [Parentage::Path, Parentage::Callees(built.nodes[0])]
+        [Parentage::Tour, Parentage::Callees(built.nodes[0])]
     );
     let bounds = built.bounds().unwrap();
     assert_eq!(
@@ -384,7 +384,7 @@ fn turned_the_children_sit_below_their_parent_side_by_side() {
 }
 
 #[test]
-fn a_path_linked_from_elsewhere_is_refused_with_the_linking_steps() {
+fn a_tour_linked_from_elsewhere_is_refused_with_the_linking_steps() {
     let index = index();
     let file = index
         .file(index.find_file(&RelativePath::new("src/main.rs")).unwrap())
@@ -397,12 +397,12 @@ fn a_path_linked_from_elsewhere_is_refused_with_the_linking_steps() {
         Author::Agent,
         anchor,
         None,
-        Some(PathName::new("target").unwrap()),
+        Some(TourName::new("target").unwrap()),
     );
-    let path = |name: &str, steps: Vec<Step>| {
-        Path::new(
-            PathName::new(name).unwrap(),
-            PathKind::Flow,
+    let tour = |name: &str, steps: Vec<Step>| {
+        Tour::new(
+            TourName::new(name).unwrap(),
+            TourKind::Flow,
             Author::Agent,
             None,
             None,
@@ -411,16 +411,16 @@ fn a_path_linked_from_elsewhere_is_refused_with_the_linking_steps() {
         .unwrap()
     };
     let mut map = Map::new(vec![
-        path("caller", vec![linking]),
-        path("target", Vec::new()),
+        tour("caller", vec![linking]),
+        tour("target", Vec::new()),
     ])
     .unwrap();
     map.resolve_all(&index);
     let store = MapStore::new(&Root::new(FsPath::new("/nowhere")));
     let model = Model::new(index, map, store, Readable::Reads);
     let mut app = App::of_model(model, &Root::new(FsPath::new("/nowhere")));
-    app.apply(Action::RemovePath(PathSlot::new(1)));
-    assert_eq!(app.model.path_count(), Count::new(2));
+    app.apply(Action::RemoveTour(TourSlot::new(1)));
+    assert_eq!(app.model.tour_count(), Count::new(2));
     assert_eq!(
         app.model.status.to_string(),
         "'target' is linked from caller[0]; unlink those steps first"
@@ -428,14 +428,14 @@ fn a_path_linked_from_elsewhere_is_refused_with_the_linking_steps() {
 }
 
 fn filtered(model: &mut Model, text: &str) -> (usize, Vec<String>) {
-    model.fields.fill(Which::PathFilter, &Label::new(text));
+    model.fields.fill(Which::TourFilter, &Label::new(text));
     let listed = model
         .listed_rows()
         .iter()
-        .filter(|row| matches!(row, Row::Path { .. }))
+        .filter(|row| matches!(row, Row::Tour { .. }))
         .count();
     let found = model
-        .found_steps(PATH)
+        .found_steps(TOUR)
         .iter()
         .map(|numbered| numbered.number.as_str().to_owned())
         .collect();
@@ -443,7 +443,7 @@ fn filtered(model: &mut Model, text: &str) -> (usize, Vec<String>) {
 }
 
 #[test]
-fn the_paths_filter_lists_a_path_by_its_steps_and_names_the_steps_that_match() {
+fn the_tours_filter_lists_a_tour_by_its_steps_and_names_the_steps_that_match() {
     let mut model = model();
     assert_eq!(filtered(&mut model, ""), (1, Vec::new()));
     assert_eq!(filtered(&mut model, "start"), (1, Vec::new()));
@@ -505,7 +505,7 @@ fn the_palette_ranks_a_contiguous_match_above_scattered_ones_and_a_chevron_keeps
 fn the_palette_lists_symbols_and_files_only_once_something_is_typed() {
     let mut model = model();
     let empty = palette_after(&mut model, "");
-    assert!(empty.contains(&listed("path", "startup")));
+    assert!(empty.contains(&listed("tour", "startup")));
     assert!(
         empty
             .iter()
@@ -518,9 +518,9 @@ fn the_palette_lists_symbols_and_files_only_once_something_is_typed() {
 }
 
 #[test]
-fn the_palette_ranks_a_step_of_the_path_being_read_above_the_symbol_it_pins() {
+fn the_palette_ranks_a_step_of_the_tour_being_read_above_the_symbol_it_pins() {
     let mut model = model();
-    model.select_path(PATH);
+    model.select_tour(TOUR);
     let found = palette_after(&mut model, "add");
     assert_eq!(
         found.get(..2),

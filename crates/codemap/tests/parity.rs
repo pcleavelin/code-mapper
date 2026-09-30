@@ -213,8 +213,8 @@ fn repo_at(rev: &str, old: &Path, new: &Path, fails: &mut Vec<String>) {
             root: root.clone(),
             out: String::new(),
         };
-        let (paths, _, _) = common::codemap(bin, &root, &["paths"]);
-        let names: Vec<String> = paths
+        let (tours, _, _) = common::codemap(bin, &root, &["tours"]);
+        let names: Vec<String> = tours
             .lines()
             .filter(|line| !line.starts_with(' '))
             .filter_map(|line| line.split(' ').next())
@@ -227,7 +227,7 @@ fn repo_at(rev: &str, old: &Path, new: &Path, fails: &mut Vec<String>) {
             &["coverage"],
             &["uncovered"],
             &["stale"],
-            &["paths"],
+            &["tours"],
             &["search", "fn [a-z_]+\\(&mut self"],
             &["notes", "stale"],
             &["tree", "frame", "3"],
@@ -236,8 +236,8 @@ fn repo_at(rev: &str, old: &Path, new: &Path, fails: &mut Vec<String>) {
         ] {
             record.run(args);
         }
-        for path_name in &names {
-            record.run(&["path", path_name]);
+        for tour_name in &names {
+            record.run(&["tour", tour_name]);
         }
         record.out
     };

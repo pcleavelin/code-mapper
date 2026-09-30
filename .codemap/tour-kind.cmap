@@ -1,0 +1,72 @@
+codemap 9
+tour tour-kind
+kind data
+author ai
+group map
+note A tour's kind: flow, layer or data. A tag: it is listed and filterable and changes no rendering. Stored in the map file as its name, one kind line. The one behaviour it drives is tour-add's "does not call" note, given only in flows, where each step is meant to sit under the step that calls it.
+
+step 2um3w4
+order 3
+author ai
+file crates/domain/src/map.rs
+symbol add_tour
+lines 0 12
+hash c91454eca2c13b84
+note How a tour is made outside a read, so every tour has a kind from birth; the other way is Tour::new from a file. A name already taken is no change; one differing only in letter case is CaseClash. The GUI's new tour is a flow; the CLI takes the kind as an argument.
+
+step f6tlg7
+order 4
+parent x1wksz
+author ai
+file crates/cli/src/wire.rs
+symbol KINDS
+lines 0 4
+hash 6b0d12b6805b069c
+note The command line's words, the same three: parse_kind reads tour-new's kind with this table and its error lists them, and kind_name prints them in every listing.
+
+step up13ub
+order 1
+parent x1wksz
+author ai
+file crates/io-map/src/wire.rs
+symbol parse_kind
+lines 0 5
+hash d10fae05995eb197
+note The file's words, flow, layer and data (kind_name the other way). An unknown word fails the read with UnknownKind.
+
+step x1wksz
+order 0
+author ai
+file crates/domain/src/map/name.rs
+symbol TourKind
+lines 0 4
+hash 82c3c017ef34964c
+note The three kinds, in domain. Flow is a workflow, what happens when X; Layer is an abstraction boundary, the functions that form its surface; Data is a data structure and what mutates it. VARIANTS (the VariantArray derive) lists them for the front ends. The enum has no string form of its own: each boundary words it.
+
+step xu8zxp
+order 5
+parent x1wksz
+author ai
+file crates/gui/src/text.rs
+symbol kind
+lines 0 6
+hash 0eea5f6910db6d48
+note The GUI's words for the kind tag in the Tours list and the document header.
+
+step ywvq6u
+order 2
+author ai
+file crates/io-map/src/wire.rs
+symbol parse
+lines 58 63
+hash 31e730d8ce4c5c18
+note The file layout: the kind is one line, kind flow, layer or data, in the tour block. A tour block without one is a flow.
+
+step z0z012
+order 6
+author ai
+file crates/cli/src/exec.rs
+symbol call_note
+lines 4 6
+hash 38f55556ecc8a722
+note tour-add and tour-move check whether the parent's symbol calls the new step's function only in a flow; in a layer or data, steps under one another are grouping, not calls.

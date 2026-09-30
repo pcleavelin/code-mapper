@@ -41,16 +41,16 @@ session's first stop with nothing in flight is. This is the order that gets it g
    1. `stale` lists every step whose text changed. `repin` follows each one from the parent
       revision (after a rebase: `repin <pre-rebase commit>` from `jj evolog` / `git reflog`).
    2. For every step `repin` printed with removed and added lines, reread its note against
-      them and fix what no longer holds with `note-edit <path> <index> <old> <new>`.
-   3. Pin what is left by hand: `path-pin <path> <index> <file> <start> <end>`.
-   4. Every new non-trivial symbol goes into a path: `path-add` to an existing path (always
-      give `under`; read the "does not call" note it prints), or `path-new <name> <kind>
+      them and fix what no longer holds with `note-edit <tour> <index> <old> <new>`.
+   3. Pin what is left by hand: `tour-pin <tour> <index> <file> <start> <end>`.
+   4. Every new non-trivial symbol goes into a tour: `tour-add` to an existing tour (always
+      give `under`; read the "does not call" note it prints), or `tour-new <name> <kind>
       <note> --group <group>` with the group its neighbours use (`groups`). For a flow,
-      scaffold with `promote <sym> [depth]`, then trim and annotate. Code several paths call
-      gets its own path; link to it with `step-link`.
-   5. A new user-facing function has its `features/` path (see `add-feature`).
+      scaffold with `promote <sym> [depth]`, then trim and annotate. Code several tours call
+      gets its own tour; link to it with `step-link`.
+   5. A new user-facing function has its `features/` tour (see `add-feature`).
    6. `check` must print nothing.
-   7. After a merge, a conflict in the map sits in `.codemap/<path>.cmap` like any other; resolve
+   7. After a merge, a conflict in the map sits in `.codemap/<tour>.cmap` like any other; resolve
       it in the file (the edit guard allows a file with conflict markers); `check` refuses to
       read the map until no conflict is left.
    8. `uncovered <crate dir>` for the crates you touched lists only what you judge trivial;

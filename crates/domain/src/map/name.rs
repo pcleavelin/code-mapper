@@ -6,9 +6,9 @@ use crate::index::SymbolName;
 use crate::map::error::{InvalidName, MapError};
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct PathName(String);
+pub struct TourName(String);
 
-impl PathName {
+impl TourName {
     pub fn new(name: &str) -> Result<Self, MapError> {
         let allowed = |character: char| {
             character.is_ascii_alphanumeric() || matches!(character, '.' | '_' | '-')
@@ -33,7 +33,7 @@ impl PathName {
             .collect();
         let trimmed = replaced.trim_matches(|character| character == '-' || character == '.');
         if trimmed.is_empty() {
-            Self("path".to_owned())
+            Self("tour".to_owned())
         } else {
             Self(trimmed.to_owned())
         }
@@ -48,7 +48,7 @@ impl PathName {
     }
 }
 
-impl fmt::Display for PathName {
+impl fmt::Display for TourName {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str(&self.0)
     }
@@ -159,10 +159,10 @@ impl fmt::Display for TextFragment {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, VariantArray)]
-pub enum PathKind {
+pub enum TourKind {
     Flow,
     Layer,
-    Type,
+    Data,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -172,9 +172,9 @@ pub enum Author {
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct PathCount(u32);
+pub struct TourCount(u32);
 
-impl PathCount {
+impl TourCount {
     pub const fn new(value: u32) -> Self {
         Self(value)
     }
@@ -188,7 +188,7 @@ impl PathCount {
     }
 }
 
-impl fmt::Display for PathCount {
+impl fmt::Display for TourCount {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(formatter, "{}", self.0)
     }

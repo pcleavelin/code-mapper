@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::process;
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use domain::{Line, Map, Note, PathCount, PathName, Revision, Root};
+use domain::{Line, Map, Note, Revision, Root, TourCount, TourName};
 
 use crate::{Fault, MapLoadError, MapStore, MapText, Origin, ParseError};
 
@@ -51,8 +51,8 @@ impl Drop for Scratch {
     }
 }
 
-const FIRST: &str = "codemap 8
-path first
+const FIRST: &str = "codemap 9
+tour first
 kind flow
 author ai
 group tools/cli
@@ -77,8 +77,8 @@ lines -2 3
 hash ffffffffffffffff
 ";
 
-const SECOND: &str = "codemap 8
-path second
+const SECOND: &str = "codemap 9
+tour second
 kind layer
 author human
 ";
@@ -105,13 +105,13 @@ fn every_committed_map_file_renders_to_its_own_bytes() {
     let root = repository_root();
     let mut store = MapStore::new(&Root::new(&root));
     let map = store.load().unwrap();
-    assert!(!map.paths().is_empty());
-    for path in map.paths() {
+    assert!(!map.tours().is_empty());
+    for tour in map.tours() {
         let file = root
             .join(".codemap")
-            .join(format!("{}.cmap", path.name().as_str()));
+            .join(format!("{}.cmap", tour.name().as_str()));
         let on_disk = fs::read_to_string(&file).unwrap();
-        assert_eq!(MapText::of(path).as_str(), on_disk, "{}", file.display());
+        assert_eq!(MapText::of(tour).as_str(), on_disk, "{}", file.display());
     }
 }
 
@@ -138,26 +138,26 @@ fn a_committed_map_saves_to_identical_bytes() {
 }
 
 #[test]
-fn a_path_round_trips_with_escapes_and_steps_in_id_order() {
+fn a_tour_round_trips_with_escapes_and_steps_in_id_order() {
     let map = parse(FIRST).unwrap();
-    let path = map.path(&PathName::new("first").unwrap()).unwrap();
+    let tour = map.tour(&TourName::new("first").unwrap()).unwrap();
     assert_eq!(
-        path.note().unwrap().as_str(),
+        tour.note().unwrap().as_str(),
         "A note with a line break\nand a backslash \\ and a return\r."
     );
-    assert_eq!(path.group().unwrap().as_str(), "tools/cli");
-    let ids: Vec<&str> = path.steps().iter().map(|step| step.id().as_str()).collect();
+    assert_eq!(tour.group().unwrap().as_str(), "tools/cli");
+    let ids: Vec<&str> = tour.steps().iter().map(|step| step.id().as_str()).collect();
     assert_eq!(ids, ["zzzzzz", "0aaaaa"]);
-    assert_eq!(MapText::of(path).as_str(), FIRST);
+    assert_eq!(MapText::of(tour).as_str(), FIRST);
 }
 
 #[test]
 fn the_base_holds_concatenated_files_sorted_by_name() {
     let map = parse(&format!("{SECOND}{FIRST}")).unwrap();
     let names: Vec<&str> = map
-        .paths()
+        .tours()
         .iter()
-        .map(|path| path.name().as_str())
+        .map(|tour| tour.name().as_str())
         .collect();
     assert_eq!(names, ["first", "second"]);
 }
@@ -165,39 +165,39 @@ fn the_base_holds_concatenated_files_sorted_by_name() {
 #[test]
 fn every_malformed_line_names_its_line_and_reason() {
     assert_eq!(
-        fault("codemap 8\npath a\n<<<<<<< conflict\n"),
+        fault("codemap 9\ntour a\n<<<<<<< conflict\n"),
         (Some(3), Fault::Conflict)
     );
     assert!(
         matches!(fault("codemap 7\n"), (Some(1), Fault::Version(line)) if line.as_str() == "codemap 7")
     );
-    assert_eq!(fault("path a\n"), (Some(1), Fault::NoVersion));
+    assert_eq!(fault("tour a\n"), (Some(1), Fault::NoVersion));
     assert!(
-        matches!(fault("codemap 8\nauthor robot\n"), (Some(2), Fault::UnknownAuthor(value)) if value.as_str() == "robot")
+        matches!(fault("codemap 9\nauthor robot\n"), (Some(2), Fault::UnknownAuthor(value)) if value.as_str() == "robot")
     );
     assert!(
-        matches!(fault("codemap 8\nkind tree\n"), (Some(2), Fault::UnknownKind(value)) if value.as_str() == "tree")
+        matches!(fault("codemap 9\nkind tree\n"), (Some(2), Fault::UnknownKind(value)) if value.as_str() == "tree")
     );
     assert!(
-        matches!(fault("codemap 8\ncolour red\n"), (Some(2), Fault::UnknownPathField(key)) if key.as_str() == "colour")
+        matches!(fault("codemap 9\ncolour red\n"), (Some(2), Fault::UnknownTourField(key)) if key.as_str() == "colour")
     );
     assert!(
-        matches!(fault("codemap 8\npath a\n\nstep aaaaaa\ncolour red\n"), (Some(5), Fault::UnknownStepField(key)) if key.as_str() == "colour")
+        matches!(fault("codemap 9\ntour a\n\nstep aaaaaa\ncolour red\n"), (Some(5), Fault::UnknownStepField(key)) if key.as_str() == "colour")
     );
     assert!(
-        matches!(fault("codemap 8\npath a\n\nstep aaaaaa\n\nstep aaaaaa\n"), (Some(6), Fault::SecondStep(value)) if value.as_str() == "aaaaaa")
+        matches!(fault("codemap 9\ntour a\n\nstep aaaaaa\n\nstep aaaaaa\n"), (Some(6), Fault::SecondStep(value)) if value.as_str() == "aaaaaa")
     );
     assert!(
-        matches!(fault("codemap 8\npath .a\n"), (Some(2), Fault::InvalidName(name)) if name.as_str() == ".a")
+        matches!(fault("codemap 9\ntour .a\n"), (Some(2), Fault::InvalidName(name)) if name.as_str() == ".a")
     );
-    assert_eq!(fault("codemap 8\nkind flow\n"), (None, Fault::NoPathLine));
+    assert_eq!(fault("codemap 9\nkind flow\n"), (None, Fault::NoTourLine));
 }
 
 #[test]
 fn step_values_parse_strictly() {
     let step = |field: &str| {
         format!(
-            "codemap 8\npath a\n\nstep aaaaaa\norder 0\nfile f.rs\nlines 0 1\nhash 0123456789abcdef\n{field}\n"
+            "codemap 9\ntour a\n\nstep aaaaaa\norder 0\nfile f.rs\nlines 0 1\nhash 0123456789abcdef\n{field}\n"
         )
     };
     assert!(parse(&step("note fine")).is_ok());
@@ -222,10 +222,10 @@ fn step_values_parse_strictly() {
         assert_eq!(fault(&step(order)), (Some(9), Fault::Order), "{order}");
     }
     assert!(
-        matches!(fault("codemap 8\npath a\n\nstep ABC\n"), (Some(4), Fault::InvalidStepId(value)) if value.as_str() == "ABC")
+        matches!(fault("codemap 9\ntour a\n\nstep ABC\n"), (Some(4), Fault::InvalidStepId(value)) if value.as_str() == "ABC")
     );
     assert!(
-        matches!(fault("codemap 8\npath a\n\nstep aaaaaa\norder 0\nfile f.rs\nlines 0 1\n"), (Some(4), Fault::MissingField(key)) if key.as_str() == "hash")
+        matches!(fault("codemap 9\ntour a\n\nstep aaaaaa\norder 0\nfile f.rs\nlines 0 1\n"), (Some(4), Fault::MissingField(key)) if key.as_str() == "hash")
     );
     assert!(
         matches!(fault(&step("link .bad")), (Some(9), Fault::InvalidName(name)) if name.as_str() == ".bad")
@@ -234,10 +234,10 @@ fn step_values_parse_strictly() {
 
 #[test]
 fn a_parent_that_is_not_a_step_names_the_parent_line() {
-    let text = "codemap 8\npath a\n\nstep aaaaaa\norder 0\nparent bbbbbb\nfile f.rs\nlines 0 1\nhash 0123456789abcdef\n";
+    let text = "codemap 9\ntour a\n\nstep aaaaaa\norder 0\nparent bbbbbb\nfile f.rs\nlines 0 1\nhash 0123456789abcdef\n";
     match fault(text) {
-        (Some(6), Fault::UnknownParent { path, step, parent }) => {
-            assert_eq!(path.as_str(), "a");
+        (Some(6), Fault::UnknownParent { tour, step, parent }) => {
+            assert_eq!(tour.as_str(), "a");
             assert_eq!(step.as_str(), "aaaaaa");
             assert_eq!(parent.as_str(), "bbbbbb");
         }
@@ -249,27 +249,27 @@ fn a_parent_that_is_not_a_step_names_the_parent_line() {
 fn a_missing_directory_is_an_empty_map() {
     let scratch = Scratch::new("missing");
     let mut store = MapStore::new(&scratch.root());
-    assert!(store.load().unwrap().paths().is_empty());
+    assert!(store.load().unwrap().tours().is_empty());
     assert!(store.stamp().is_none());
 }
 
 #[test]
-fn a_file_must_hold_one_path_named_as_its_stem() {
+fn a_file_must_hold_one_tour_named_as_its_stem() {
     let scratch = Scratch::new("files");
     scratch.put("first.cmap", &format!("{FIRST}{SECOND}"));
     let mut store = MapStore::new(&scratch.root());
     assert!(
-        matches!(store.load(), Err(MapLoadError::OnePathPerFile(file)) if file == scratch.map_file("first.cmap"))
+        matches!(store.load(), Err(MapLoadError::OneTourPerFile(file)) if file == scratch.map_file("first.cmap"))
     );
     scratch.put("first.cmap", SECOND);
     match store.load() {
-        Err(MapLoadError::Misplaced { file, path }) => {
+        Err(MapLoadError::Misplaced { file, tour }) => {
             assert_eq!(file, scratch.map_file("first.cmap"));
-            assert_eq!(path.as_str(), "second");
+            assert_eq!(tour.as_str(), "second");
         }
         other => panic!("{other:?}"),
     }
-    scratch.put("first.cmap", "codemap 8\npath first\n=======\n");
+    scratch.put("first.cmap", "codemap 9\ntour first\n=======\n");
     match store.load() {
         Err(MapLoadError::Parse(error)) => {
             assert_eq!(error.origin, Origin::File(scratch.map_file("first.cmap")));
@@ -291,31 +291,31 @@ fn the_old_single_file_map_is_refused() {
 }
 
 #[test]
-fn save_writes_only_changed_paths_and_removes_gone_ones() {
+fn save_writes_only_changed_tours_and_removes_gone_ones() {
     let scratch = Scratch::new("save");
     scratch.put("first.cmap", FIRST);
     scratch.put("second.cmap", SECOND);
     scratch.put("notes.txt", "kept");
     let mut store = MapStore::new(&scratch.root());
     let mut map = store.load().unwrap();
-    assert_eq!(store.stamp().unwrap().files, PathCount::new(2));
+    assert_eq!(store.stamp().unwrap().files, TourCount::new(2));
     io_store::remove(&scratch.map_file("first.cmap")).unwrap();
-    let second = PathName::new("second").unwrap();
-    assert!(map.set_path_note(&second, Note::new("Changed.")).is_ok());
+    let second = TourName::new("second").unwrap();
+    assert!(map.set_tour_note(&second, Note::new("Changed.")).is_ok());
     store.save(&map).unwrap();
     assert_eq!(scratch.names(), ["notes.txt", "second.cmap"]);
     assert_eq!(
         fs::read_to_string(scratch.map_file("second.cmap")).unwrap(),
         format!("{SECOND}note Changed.\n")
     );
-    map.remove_path(&PathName::new("first").unwrap()).unwrap();
-    map.remove_path(&second).unwrap();
+    map.remove_tour(&TourName::new("first").unwrap()).unwrap();
+    map.remove_tour(&second).unwrap();
     store.save(&map).unwrap();
     assert_eq!(scratch.names(), ["notes.txt"]);
 }
 
 #[test]
-fn saves_of_two_stores_keep_each_others_paths() {
+fn saves_of_two_stores_keep_each_others_tours() {
     let scratch = Scratch::new("two");
     scratch.put("first.cmap", FIRST);
     scratch.put("second.cmap", SECOND);
@@ -323,27 +323,27 @@ fn saves_of_two_stores_keep_each_others_paths() {
     let mut other = MapStore::new(&scratch.root());
     let mut one_map = one.load().unwrap();
     let mut other_map = other.load().unwrap();
-    let first = PathName::new("first").unwrap();
-    let second = PathName::new("second").unwrap();
+    let first = TourName::new("first").unwrap();
+    let second = TourName::new("second").unwrap();
     assert!(
         one_map
-            .set_path_note(&first, Note::new("From one."))
+            .set_tour_note(&first, Note::new("From one."))
             .is_ok()
     );
     assert!(
         other_map
-            .set_path_note(&second, Note::new("From other."))
+            .set_tour_note(&second, Note::new("From other."))
             .is_ok()
     );
     one.save(&one_map).unwrap();
     other.save(&other_map).unwrap();
     let merged = MapStore::new(&scratch.root()).load().unwrap();
     assert_eq!(
-        merged.path(&first).unwrap().note().unwrap().as_str(),
+        merged.tour(&first).unwrap().note().unwrap().as_str(),
         "From one."
     );
     assert_eq!(
-        merged.path(&second).unwrap().note().unwrap().as_str(),
+        merged.tour(&second).unwrap().note().unwrap().as_str(),
         "From other."
     );
 }
@@ -358,5 +358,5 @@ fn a_first_save_creates_the_directory() {
         fs::read_to_string(scratch.map_file("first.cmap")).unwrap(),
         FIRST
     );
-    assert_eq!(store.stamp().unwrap().files, PathCount::new(1));
+    assert_eq!(store.stamp().unwrap().files, TourCount::new(1));
 }

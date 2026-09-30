@@ -1,5 +1,5 @@
-codemap 8
-path ui-tree
+codemap 9
+tour ui-tree
 kind layer
 author ai
 group render
@@ -293,7 +293,7 @@ file crates/ui/src/tree.rs
 symbol placement
 lines 0 2
 hash a921a1d862084d85
-note Last frame's Placement for an id - what a clamp needs, and what the path document uses to find where it is scrolled to.
+note Last frame's Placement for an id - what a clamp needs, and what the tour document uses to find where it is scrolled to.
 
 step rd9o1b
 order 14

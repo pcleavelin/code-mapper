@@ -1,9 +1,9 @@
-codemap 8
-path notes
+codemap 9
+tour notes
 kind flow
 author ai
 group cli
-note How later sessions find what earlier ones wrote. Path notes and step notes are the map's only prose about the code; notes greps them the way grep greps source, one output line per matching note line.
+note How later sessions find what earlier ones wrote. Tour notes and step notes are the map's only prose about the code; notes greps them the way grep greps source, one output line per matching note line.
 
 step 09mgxo
 order 1
@@ -11,8 +11,8 @@ author ai
 file crates/cli/src/exec.rs
 symbol notes
 lines 0 22
-hash e03c25d42f3b307d
-note Every path in map order: each line of its note that the regex matches, then each matching line of each step's note. A multi-line note is matched line by line, so one hit prints one line, not the whole note.
+hash 0219ef3ceea4dafa
+note Every tour in map order: each line of its note that the regex matches, then each matching line of each step's note. A multi-line note is matched line by line, so one hit prints one line, not the whole note.
 
 step 85dhkk
 order 3
@@ -21,8 +21,8 @@ author ai
 file crates/cli/src/wire.rs
 symbol step_note_line
 lines 0 14
-hash 08fe9760017ec26c
-note A step note hit: name[index] as paths numbers it, then file:line of the step's first line and the text, so the output parses like grep and the label pastes into step-note or note-edit.
+hash e5941c0f35cf3c0b
+note A step note hit: name[index] as tours numbers it, then file:line of the step's first line and the text, so the output parses like grep and the label pastes into step-note or note-edit.
 
 step q5khhg
 order 0
@@ -38,7 +38,7 @@ order 2
 parent 09mgxo
 author ai
 file crates/cli/src/wire.rs
-symbol path_note_line
+symbol tour_note_line
 lines 0 2
-hash 6dc6e1f777a28bc3
-note A path note hit: the path name, a colon, the line.
+hash 39f56dee92b107f7
+note A tour note hit: the tour name, a colon, the line.

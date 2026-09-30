@@ -1,9 +1,9 @@
-codemap 8
-path navigation
+codemap 9
+tour navigation
 kind flow
 author ai
 group gui
-note Back and forward, the way a browser does it. Nothing in the app calls a 'navigate' function: at the end of every frame, after the action queue has been applied, the current place is compared with the place at the end of the last frame, and if they differ the old one is pushed onto the history. So any click anywhere - a symbol in a list, a tab, an xref, a command in the Console - becomes history for free, and no feature has to remember to record itself. A place is the centre tab, the current file, the line selection, the focused symbol as a stable key, and the selected path and step; a changed line selection alone does not count as a move. All of it lives in Nav, which only nav.rs changes.
+note Back and forward, the way a browser does it. Nothing in the app calls a 'navigate' function: at the end of every frame, after the action queue has been applied, the current place is compared with the place at the end of the last frame, and if they differ the old one is pushed onto the history. So any click anywhere - a symbol in a list, a tab, an xref, a command in the Console - becomes history for free, and no feature has to remember to record itself. A place is the centre tab, the current file, the line selection, the focused symbol as a stable key, and the selected tour and step; a changed line selection alone does not count as a move. All of it lives in Nav, which only nav.rs changes.
 
 step 0tjy5k
 order 14
@@ -11,8 +11,8 @@ author ai
 file crates/gui/src/nav.rs
 symbol step_removed
 lines 0 6
-hash f76e1f250dadf7bf
-note Removing a step shifts the slot of every step after it in that path. steps_moved does the remapping for any change of slots: the step views and every history entry of the path follow, and the removed step's own entries lose their step, so back never lands on the wrong step.
+hash 1ebcf8db2d0957f6
+note Removing a step shifts the slot of every step after it in that tour. steps_moved does the remapping for any change of slots: the step views and every history entry of the tour follow, and the removed step's own entries lose their step, so back never lands on the wrong step.
 
 step 3ig36u
 order 13
@@ -31,8 +31,8 @@ author ai
 file crates/gui/src/nav.rs
 symbol select_symbol
 lines 0 20
-hash 478ce11e8427e2a2
-note Selecting the symbol, which lands on a step instead when that symbol is a whole-symbol step of the path being read.
+hash 3559d143e999ed53
+note Selecting the symbol, which lands on a step instead when that symbol is a whole-symbol step of the tour being read.
 
 step 4woh4j
 order 18
@@ -41,8 +41,8 @@ author ai
 file crates/gui/src/nav.rs
 symbol walk
 lines 0 32
-hash 1a7f09d04bfbfe83
-note Up and down with no field focused: the selected step moves through the path in numbered order, the order the document and steps list show, clamped at both ends; with nothing selected the first step.
+hash 85e918f902876dfc
+note Up and down with no field focused: the selected step moves through the tour in numbered order, the order the document and steps list show, clamped at both ends; with nothing selected the first step.
 
 step 4wpg9r
 order 0
@@ -50,7 +50,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol Place
 lines 0 7
-hash d79c37a511a460a6
+hash 24e7710aa924d3a8
 note What counts as a place. The file is kept as its path and the focused symbol as a SymbolKey (file path, symbol name) rather than ids, so the history survives a re-index.
 
 step 5hqfou
@@ -59,8 +59,8 @@ author ai
 file crates/gui/src/app.rs
 symbol keys
 lines 0 59
-hash 067fe74013058776
-note The keys, read in the frame before the tree is built and turned into actions: first the palette's chord, and while the palette is open and has the keyboard every key goes to it (feature-palette); then the Save chord, back and forward, every field fed the frame's edits and typed text, then the arrows: while the Graph view is shown and the graph holds the keyboard (the last press was inside its canvas) each arrow is a GraphWalk, otherwise up and down walk the path when no field has the keyboard. Which chord does what comes from the feature registry through keys.
+hash 222b7ee64535629e
+note The keys, read in the frame before the tree is built and turned into actions: first the palette's chord, and while the palette is open and has the keyboard every key goes to it (feature-palette); then the Save chord, back and forward, every field fed the frame's edits and typed text, then the arrows: while the Graph view is shown and the graph holds the keyboard (the last press was inside its canvas) each arrow is a GraphWalk, otherwise up and down walk the tour when no field has the keyboard. Which chord does what comes from the feature registry through keys.
 
 step 5wentz
 order 3
@@ -69,7 +69,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol here
 lines 0 13
-hash 17921a51cc371b23
+hash 544f5b6828acb3e7
 note Snapshots the current place from Nav. Used for the comparison and for both stacks.
 
 step 6ixm0n
@@ -89,7 +89,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol select_step
 lines 0 53
-hash c309ed71b85c827e
+hash d8e961f7c6c62ddd
 note A place that had a step is restored through the normal step selection, so the document scrolls and the graph follows exactly as if it had been clicked.
 
 step gq28ix
@@ -99,17 +99,17 @@ author ai
 file crates/gui/src/nav.rs
 symbol go
 lines 0 22
-hash 2905cac6d6a95cb3
-note Restoring a place without it counting as a new navigation: it overwrites the last-frame snapshot, so track_navigation sees no difference at the end of this frame. A path that disappeared since is dropped, and a step past the end of its path restores only the symbol. The tab is set last, because selecting a step switches the tab on its own.
+hash 790c196df450f7c2
+note Restoring a place without it counting as a new navigation: it overwrites the last-frame snapshot, so track_navigation sees no difference at the end of this frame. A tour that disappeared since is dropped, and a step past the end of its tour restores only the symbol. The tab is set last, because selecting a step switches the tab on its own.
 
 step hbxizr
 order 15
 author ai
 file crates/gui/src/nav.rs
-symbol path_removed
+symbol tour_removed
 lines 0 19
-hash 179f7ba224f9edfd
-note Removing a path drops its history entries and step views and shifts later paths down one, so nothing of another path is lost or reattached.
+hash 9008f15ca6f1fc6e
+note Removing a tour drops its history entries and step views and shifts later tours down one, so nothing of another tour is lost or reattached.
 
 step hdsnp8
 order 16
@@ -119,7 +119,7 @@ file crates/gui/src/model.rs
 symbol remap
 lines 0 5
 hash df904aa1c5f62297
-note The one rewrite of the step views onto new (path, step) keys: the closure gives each key its new value or drops the view. Removing a step, removing a path and reloading the map each pass their own closure.
+note The one rewrite of the step views onto new (tour, step) keys: the closure gives each key its new value or drops the view. Removing a step, removing a tour and reloading the map each pass their own closure.
 
 step j5iweb
 order 17
@@ -147,7 +147,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol same_place
 lines 0 6
-hash 49c701209cfb356f
+hash 783ac6d6f22d18ff
 note The comparison that decides whether something was a navigation. The line selection is left out: moving the selection in the Source view is not a move.
 
 step loikda
@@ -165,8 +165,8 @@ author ai
 file crates/gui/src/nav.rs
 symbol go_to_symbol
 lines 0 14
-hash 44cd199b2a7a836e
-note The usual way a symbol is opened from a list or an xref (the Focus action): select it, and when it is not a step of the path being read, open the Source view unless the graph or a document is showing - there the status line says the symbol is not a step of that path.
+hash 2431deb63e24562e
+note The usual way a symbol is opened from a list or an xref (the Focus action): select it, and when it is not a step of the tour being read, open the Source view unless the graph or a document is showing - there the status line says the symbol is not a step of that tour.
 
 step syqeay
 order 2

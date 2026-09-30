@@ -1,5 +1,5 @@
-codemap 8
-path feature-fit-graph
+codemap 9
+tour feature-fit-graph
 kind flow
 author ai
 group features/gui

@@ -1,5 +1,5 @@
-codemap 8
-path cli-command
+codemap 9
+tour cli-command
 kind flow
 author ai
 group cli
@@ -22,8 +22,8 @@ author ai
 file crates/cli/src/convert.rs
 symbol from
 lines 0 42
-hash 35abf751bce2b9c2
-note Command to Request: the reading commands become a Query, the map edits an Edit, repin its own Request. Each argument struct converts through its own From, so names become PathName or TextFragment, numbers become StepIndex, Under, LineNumber, Levels or Count, and a name that cannot be a PathName is carried as the MapError for exec to report.
+hash 07cef3a2582f59bc
+note Command to Request: the reading commands become a Query, the map edits an Edit, repin its own Request. Each argument struct converts through its own From, so names become TourName or TextFragment, numbers become StepIndex, Under, LineNumber, Levels or Count, and a name that cannot be a TourName is carried as the MapError for exec to report.
 
 step 7ad6e4
 order 21
@@ -121,7 +121,7 @@ author ai
 file crates/cli/src/wire.rs
 symbol Command
 lines 0 74
-hash 9789a85ed63443ca
+hash 5c01624772d17384
 note The command set, one variant per command Feature. Each variant's name and about are the feature's name and summary from the registry, so the registry is the one list of commands and 'help' reads as a signature table. Arguments are plain strings and numbers here; converting them to domain values is convert.rs's job.
 
 step gejk1d
@@ -151,8 +151,8 @@ author ai
 file crates/cli/src/wire.rs
 symbol parse_kind
 lines 0 9
-hash 9a51b7288752b140
-note kind is parsed by clap through this, against the one table of kind names wire.rs also prints with, so domain's PathKind has no clap dependency.
+hash c05371c63332d77b
+note kind is parsed by clap through this, against the one table of kind names wire.rs also prints with, so domain's TourKind has no clap dependency.
 
 step jwmb5v
 order 17
@@ -161,8 +161,8 @@ author ai
 file crates/cli/src/exec.rs
 symbol query
 lines 0 25
-hash 4b612b26158f789d
-note One arm per reading command; the handlers are Run's methods, and the feature-<name> paths follow each one.
+hash fa941c9cf0b4ef55
+note One arm per reading command; the handlers are Run's methods, and the feature-<name> tours follow each one.
 
 step ly4k41
 order 9
@@ -211,7 +211,7 @@ author ai
 file crates/cli/src/wire.rs
 symbol feature
 lines 0 38
-hash c22a268eaba7fcc6
+hash f3d1ee0c28628740
 note Which registry Feature a parsed command is, kept on the Invocation so a front end can tell what ran.
 
 step wh8ryh
@@ -221,7 +221,7 @@ author ai
 file crates/cli/src/exec.rs
 symbol edit
 lines 0 38
-hash 5a0cedc6dcd4fd56
+hash e61ea9d94bae153e
 note One arm per map edit; each returns Changed or the Failure that stopped it before the map was touched.
 
 step xr1iac

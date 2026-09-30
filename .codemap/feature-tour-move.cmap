@@ -1,9 +1,9 @@
-codemap 8
-path feature-path-move
+codemap 9
+tour feature-tour-move
 kind flow
 author ai
 group features/cli
-note path-move <name> <index> <under>: hang one step, with its whole subtree, under another step (-1 makes it a root step). The agent reaches for it to fix what path-add's "does not call" warning names, so a flow reads as a true call tree (commit ad32f4c0d01c). It is the fix path-add's does-not-call note names: in a flow a step belongs under the step that calls it, and this command re-checks that after the move and prints the same note when the new parent still does not call it. Step indices do not change; only the parent does.
+note tour-move <name> <index> <under>: hang one step, with its whole subtree, under another step (-1 makes it a root step). The agent reaches for it to fix what tour-add's "does not call" warning names, so a flow reads as a true call tree (commit ad32f4c0d01c). It is the fix tour-add's does-not-call note names: in a flow a step belongs under the step that calls it, and this command re-checks that after the move and prints the same note when the new parent still does not call it. Step indices do not change; only the parent does.
 
 step gb8m30
 order 5
@@ -12,8 +12,8 @@ author ai
 file crates/domain/src/map.rs
 symbol reparent
 lines 0 24
-hash 2455b1a0f612dd61
-link path-tree
+hash 48f2e2922a035879
+link tour-tree
 note Walks up from the proposed parent and refuses when it reaches the step itself, so a step never ends up under its own subtree; then sets the parent.
 
 step irr2ou
@@ -43,8 +43,8 @@ author ai
 file crates/cli/src/wire.rs
 symbol call_note
 lines 0 7
-hash acb29ae8dfefbf51
-note Names both symbols and the path-move command that would fix the placement.
+hash ac7747d3146af322
+note Names both symbols and the tour-move command that would fix the placement.
 
 step pgm0cv
 order 1
@@ -53,16 +53,16 @@ author ai
 file crates/cli/src/exec.rs
 symbol index_parent
 lines 0 8
-hash 4338e02ed5a9a887
+hash a8a1d337d8e04401
 note Asks the language server for the new parent's file first, so the parent's callees are real xrefs when call_note checks them.
 
 step qowpj3
 order 0
 author ai
 file crates/cli/src/exec.rs
-symbol path_move
+symbol tour_move
 lines 0 23
-hash 19eba8478a755257
+hash 3e3f981e3a244bf5
 note Indexes the new parent's file, finds the step, turns under into the parent's id (a missing parent is an error), reparents, prints the new placement, then runs the does-not-call check.
 
 step um1ax6
@@ -72,7 +72,7 @@ author ai
 file crates/cli/src/convert.rs
 symbol step_id
 lines 0 4
-hash 489ec63efb65e873
+hash 30548ed330a6a0c0
 note The parent's stable id from its printed index.
 
 step z9rdnq
@@ -82,8 +82,8 @@ author ai
 file crates/cli/src/exec.rs
 symbol find_step
 lines 0 7
-hash fe848f2c971eee7d
-note The path by name, then the step at that index; a bad index is an error.
+hash b3c00b8fc9bad614
+note The tour by name, then the step at that index; a bad index is an error.
 
 step zxq1kw
 order 7
@@ -92,5 +92,5 @@ author ai
 file crates/cli/src/exec.rs
 symbol call_note
 lines 0 31
-hash a55574aa8640a5c3
+hash 3e7a134056ea2869
 note Flows only: when parent and step resolve to symbols, the step is a function and the parent's callees do not contain it, prints the note.

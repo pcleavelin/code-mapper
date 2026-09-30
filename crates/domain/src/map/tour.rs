@@ -3,7 +3,7 @@ use std::fmt;
 
 use crate::index::{Depth, Index, SymbolName};
 use crate::map::error::{MapError, StepAddress};
-use crate::map::name::{Author, GroupName, Note, PathKind, PathName};
+use crate::map::name::{Author, GroupName, Note, TourKind, TourName};
 use crate::map::step::{Step, StepId};
 use crate::text::{Line, RelativePath};
 
@@ -51,19 +51,19 @@ pub enum ParentLabel {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Path {
-    name: PathName,
-    kind: PathKind,
+pub struct Tour {
+    name: TourName,
+    kind: TourKind,
     author: Author,
     group: Option<GroupName>,
     note: Option<Note>,
     steps: Vec<Step>,
 }
 
-impl Path {
+impl Tour {
     pub fn new(
-        name: PathName,
-        kind: PathKind,
+        name: TourName,
+        kind: TourKind,
         author: Author,
         group: Option<GroupName>,
         note: Option<Note>,
@@ -73,7 +73,7 @@ impl Path {
         for step in &steps {
             if !ids.insert(step.id().clone()) {
                 return Err(MapError::SecondStep(StepAddress {
-                    path: name,
+                    tour: name,
                     step: step.id().clone(),
                 }));
             }
@@ -84,7 +84,7 @@ impl Path {
         {
             return Err(MapError::UnknownParent {
                 step: StepAddress {
-                    path: name.clone(),
+                    tour: name.clone(),
                     step: orphan.id().clone(),
                 },
                 parent: orphan
@@ -104,7 +104,7 @@ impl Path {
         })
     }
 
-    pub(crate) fn empty(name: PathName, kind: PathKind, author: Author) -> Self {
+    pub(crate) fn empty(name: TourName, kind: TourKind, author: Author) -> Self {
         Self {
             name,
             kind,
@@ -115,11 +115,11 @@ impl Path {
         }
     }
 
-    pub fn name(&self) -> &PathName {
+    pub fn name(&self) -> &TourName {
         &self.name
     }
 
-    pub fn kind(&self) -> PathKind {
+    pub fn kind(&self) -> TourKind {
         self.kind
     }
 
@@ -151,7 +151,7 @@ impl Path {
         &mut self.steps
     }
 
-    pub(crate) fn set_name(&mut self, name: PathName) {
+    pub(crate) fn set_name(&mut self, name: TourName) {
         self.name = name;
     }
 

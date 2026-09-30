@@ -1,0 +1,46 @@
+codemap 9
+tour feature-tour-new
+kind flow
+author ai
+group features/cli
+note tour-new <name> <kind> [note] [--group g]: create an empty tour. The agent needs it to create the tour the agent contract requires every new non-trivial symbol to go into. kind is flow (what happens when X), layer (an abstraction's surface) or data (a data structure and what mutates it). The note and group are optional and set in the same command. Creating a name that exists changes nothing but the note and group given, so a script that creates its tours can be run again.
+
+step 0imqla
+order 2
+parent 9l9dyi
+author ai
+file crates/domain/src/map.rs
+symbol set_tour_note
+lines 0 7
+hash a90b1c936a806e2e
+note Sets the tour note when one was given.
+
+step 93vt8r
+order 3
+parent 9l9dyi
+author ai
+file crates/domain/src/map.rs
+symbol set_group
+lines 0 7
+hash 276d2dbf582b9695
+link tour-groups
+note Places the tour in the group when --group was given.
+
+step 9l9dyi
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol tour_new
+lines 0 15
+hash 52784a5fc2074144
+note Creates the tour, then sets the note and group when they were given. Prints nothing.
+
+step glcos8
+order 1
+parent 9l9dyi
+author ai
+file crates/domain/src/map.rs
+symbol add_tour
+lines 0 12
+hash c91454eca2c13b84
+note An existing name returns at once; otherwise the name is checked (a valid file name, not another tour's name in other letter case) and an empty tour with this kind and author is added.

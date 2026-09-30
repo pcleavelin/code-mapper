@@ -11,7 +11,7 @@ use crate::widgets::{Chosen, Container, Frame};
 const fn tag_color(kind: EntryKind) -> ui::Color {
     match kind {
         EntryKind::Action => ORANGE,
-        EntryKind::Path | EntryKind::Step => GREEN,
+        EntryKind::Tour | EntryKind::Step => GREEN,
         EntryKind::Symbol => ACCENT,
         EntryKind::File | EntryKind::View => WEAK,
     }
@@ -31,7 +31,7 @@ pub(super) fn palette(model: &Model, frame: &mut Frame<'_>) {
     frame.field(
         &model.fields,
         Which::Palette,
-        &Label::new("go to a path, step, symbol, file or view; > for actions"),
+        &Label::new("go to a tour, step, symbol, file or view; > for actions"),
         PALETTE_FIELD,
     );
     let total = palette.entries.len();

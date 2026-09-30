@@ -1,9 +1,9 @@
-codemap 8
-path path-tree
-kind type
+codemap 9
+tour tour-tree
+kind data
 author ai
 group map
-note A path is a tree, stored flat. Every step carries the id of the step it hangs under (None for a root) and nothing else; the tree shape is derived on demand, in pre-order, roots in list order and children in list order. That is what makes a flow readable top-down, and it is also why editing is cheap: appending a step is a push, deleting one moves its children up to its parent, and re-parenting is a single field plus a cycle check. Inside the model a step is named by its StepId, which never changes. The CLI's step indices are positions in the step list, turned into ids at the command line and never stored.
+note A tour is a tree, stored flat. Every step carries the id of the step it hangs under (None for a root) and nothing else; the tree shape is derived on demand, in pre-order, roots in list order and children in list order. That is what makes a flow readable top-down, and it is also why editing is cheap: appending a step is a push, deleting one moves its children up to its parent, and re-parenting is a single field plus a cycle check. Inside the model a step is named by its StepId, which never changes. The CLI's step indices are positions in the step list, turned into ids at the command line and never stored.
 
 step 1xywrf
 order 5
@@ -12,14 +12,14 @@ author ai
 file crates/domain/src/map.rs
 symbol reparent
 lines 0 24
-hash 2455b1a0f612dd61
+hash 48f2e2922a035879
 note Moving a subtree. Walking up from the proposed parent is the cycle check: a step cannot end up under itself or its own descendants (UnderItself); a walk that loops on a broken map stops.
 
 step 2knyln
 order 16
 parent wkjy6d
 author ai
-file crates/domain/src/map/path.rs
+file crates/domain/src/map/tour.rs
 symbol impl fmt::Display for StepNumber
 lines 0 12
 hash 8d31c40d8874f1c1
@@ -32,14 +32,14 @@ author ai
 file crates/domain/src/map.rs
 symbol promote
 lines 34 43
-hash fda9003794896f5b
-note Is this symbol already a whole-symbol step of this path? The check that makes re-promoting add only what is missing instead of duplicating the tree.
+hash ab20e9eb1f974852
+note Is this symbol already a whole-symbol step of this tour? The check that makes re-promoting add only what is missing instead of duplicating the tree.
 
 step 3e05qp
 order 18
 parent 7gczkl
 author ai
-file crates/domain/src/map/path.rs
+file crates/domain/src/map/tour.rs
 symbol PlacedStep
 lines 0 3
 hash 0fb14e634ea2dbf9
@@ -49,11 +49,11 @@ step 6cichl
 order 12
 parent 7gczkl
 author ai
-file crates/domain/src/map/path.rs
+file crates/domain/src/map/tour.rs
 symbol tree_order
 lines 0 2
 hash a9319993b959f3e0
-note The walk with no key, siblings in list order: the paths listing and descendants use it.
+note The walk with no key, siblings in list order: the tours listing and descendants use it.
 
 step 6y963k
 order 15
@@ -62,18 +62,18 @@ author ai
 file crates/cli/src/convert.rs
 symbol step_index
 lines 0 5
-hash cee0432e53d06aac
+hash 2528687cb4f1562f
 note The other way, for printing: a step's place in the list, the index the output shows.
 
 step 7gczkl
 order 1
 parent qhqkj9
 author ai
-file crates/domain/src/map/path.rs
+file crates/domain/src/map/tour.rs
 symbol tree_order_by
 lines 0 40
 hash b6e7aea6bfdf3fc4
-note The walk: roots in list order, then each step's children sorted by the caller's key with list order breaking ties. The views pass the line of the parent's slice that names the child, so siblings read in the order the code calls them. A step whose parent is not in the path or is itself counts as a root, and steps caught in a parent cycle are visited once each, as roots, after everything else.
+note The walk: roots in list order, then each step's children sorted by the caller's key with list order breaking ties. The views pass the line of the parent's slice that names the child, so siblings read in the order the code calls them. A step whose parent is not in the tour or is itself counts as a root, and steps caught in a parent cycle are visited once each, as roots, after everything else.
 
 step d43fmw
 order 3
@@ -82,14 +82,14 @@ author ai
 file crates/domain/src/map.rs
 symbol add_step
 lines 0 38
-hash d53744822dc161fe
-note Appending a step: a parent that is not a step of the path is NoSuchParent; the anchor comes from pin_span, the id from StepId::fresh, and the order is one past the highest in the path. The new step is current from birth.
+hash e0a7a55b402d53ee
+note Appending a step: a parent that is not a step of the tour is NoSuchParent; the anchor comes from pin_span, the id from StepId::fresh, and the order is one past the highest in the tour. The new step is current from birth.
 
 step d4h5zq
 order 8
 parent 7gczkl
 author ai
-file crates/domain/src/map/path.rs
+file crates/domain/src/map/tour.rs
 symbol numbered
 lines 0 26
 hash fabc52c98627a0e7
@@ -122,14 +122,14 @@ author ai
 file crates/domain/src/map.rs
 symbol swap
 lines 0 12
-hash a7b05bf6bc05a30a
+hash aaec18da0c41538b
 note Swapping two steps in list order, which is what orders siblings nothing else orders. swap_places exchanges their places and order values, so the sequence of orders in the list stays where it was; parents name steps by id, so nothing else changes.
 
 step mzyfei
 order 11
 parent 7gczkl
 author ai
-file crates/domain/src/map/path.rs
+file crates/domain/src/map/tour.rs
 symbol descendants
 lines 0 9
 hash d51274eda710982d
@@ -142,7 +142,7 @@ author ai
 file crates/cli/src/convert.rs
 symbol step_id
 lines 0 4
-hash 489ec63efb65e873
+hash 30548ed330a6a0c0
 note A CLI index to the step id at that place in the list; None past the end, which the commands report as NoSuchStep.
 
 step peom6j
@@ -152,14 +152,14 @@ author ai
 file crates/domain/src/map.rs
 symbol remove_step
 lines 0 17
-hash 5aa127210fa4040c
+hash 5139d19688acdb84
 note Deleting a step. Its children are re-pointed at its parent so the tree stays connected, and every CLI index after it shifts down by one, which is why a deletion invalidates indices you were about to use. Ids are untouched.
 
 step q86cx6
 order 17
 parent wbms9u
 author ai
-file crates/domain/src/map/path.rs
+file crates/domain/src/map/tour.rs
 symbol ParentLabel
 lines 0 4
 hash 6d76eb874afa3337
@@ -168,11 +168,11 @@ note The three answers parent_label gives.
 step qhqkj9
 order 0
 author ai
-file crates/domain/src/map/path.rs
-symbol Path
+file crates/domain/src/map/tour.rs
+symbol Tour
 lines 0 7
-hash a15966eb08595b82
-note steps is the flat list, sorted by order with ties by id, which is the step list every index refers to. Map's methods are the only writers, each addressing a step by path name and StepId.
+hash cb73b8d43cf3b7f9
+note steps is the flat list, sorted by order with ties by id, which is the step list every index refers to. Map's methods are the only writers, each addressing a step by tour name and StepId.
 
 step ru6fvm
 order 20
@@ -181,24 +181,24 @@ author ai
 file crates/domain/src/map.rs
 symbol place
 lines 0 27
-hash f75276769ead0caf
+hash aad3a952e039e99d
 note Moving a step to another parent and place in the list, the GUI's steps list drag: reparent, then swap_places it past its neighbours until it sits just before the given step (or at the end), so only the steps it passes change their order.
 
 step wbms9u
 order 2
 parent 7gczkl
 author ai
-file crates/domain/src/map/path.rs
+file crates/domain/src/map/tour.rs
 symbol parent_label
 lines 0 12
 hash 374d54c333a878d1
-note What the step above this one is called: its symbol, or its file and line when it pins absolute lines, or TopLevel. The '-- back in X --' marker in a path document is made of it, which lets a reader come back up a deep flow without counting indentation.
+note What the step above this one is called: its symbol, or its file and line when it pins absolute lines, or TopLevel. The '-- back in X --' marker in a tour document is made of it, which lets a reader come back up a deep flow without counting indentation.
 
 step wkjy6d
 order 14
 parent d4h5zq
 author ai
-file crates/domain/src/map/path.rs
+file crates/domain/src/map/tour.rs
 symbol NumberedStep
 lines 0 4
 hash 38ed7a5732924bbd
@@ -212,14 +212,14 @@ file crates/domain/src/map/step.rs
 symbol impl StepOrder
 lines 0 13
 hash 3faf696146384e91
-note A step's place in the list, stored as order in the file. Set once to one past the highest in the path; only swap_places changes it, through a swap or a place.
+note A step's place in the list, stored as order in the file. Set once to one past the highest in the tour; only swap_places changes it, through a swap or a place.
 
 step yu7ue7
 order 7
 parent qhqkj9
 author ai
 file crates/domain/src/map.rs
-symbol path
+symbol tour
 lines 0 2
-hash 4fa068ca72942f18
-note Paths are addressed by name everywhere; this is the lookup. A name changes only through rename, which rewrites every link to it.
+hash 0fc53ed3094c813c
+note Tours are addressed by name everywhere; this is the lookup. A name changes only through rename, which rewrites every link to it.

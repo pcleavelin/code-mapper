@@ -1,5 +1,5 @@
-codemap 8
-path feature-split-panel
+codemap 9
+tour feature-split-panel
 kind flow
 author ai
 group features/gui

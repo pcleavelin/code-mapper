@@ -1,6 +1,6 @@
-codemap 8
-path ui-geometry
-kind type
+codemap 9
+tour ui-geometry
+kind data
 author ai
 group render
 note The units everything in ui and platform is measured in, each its own type so a signature says which it takes. Px is a whole physical pixel (i32) and the unit of all layout: rows and columns tile exactly because nothing in the tree is fractional. Count is a number of cells, rows or items. Point is a position, Extent a size, Rect a pixel rectangle - the one geometry type the tree and the renderer share - and Axis lets the layout passes be written once for both directions. Coordinate and Vector are the float side, used only where geometry really is fractional: line and curve corners, vertices, the wheel delta. Scale is the window's DPI factor and FontSize a whole pixel size, so a zoom is a different font size rather than a transform. Color is four sRGB bytes, handed to the GPU untouched. The conversions between integer and float are written out rather than done with as-casts, and the tests pin them to what the casts produce.

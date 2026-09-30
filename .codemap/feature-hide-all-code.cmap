@@ -1,9 +1,9 @@
-codemap 8
-path feature-hide-all-code
+codemap 9
+tour feature-hide-all-code
 kind flow
 author ai
 group features/gui
-note The document toolbar's 'hide all code' hides the code of every step of the path being read, leaving headers and notes; 'show all' shows every step's code again and also expands every collapsed step. The reader reaches for it to read a path's notes and structure as prose without the code filling the screen. Steps shown inline under links keep their own state.
+note The document toolbar's 'hide all code' hides the code of every step of the tour being read, leaving headers and notes; 'show all' shows every step's code again and also expands every collapsed step. The reader reaches for it to read a tour's notes and structure as prose without the code filling the screen. Steps shown inline under links keep their own state.
 
 step a0jz5i
 order 2
@@ -12,7 +12,7 @@ author ai
 file crates/gui/src/views/document.rs
 symbol header_bar
 lines 21 48
-hash c93d9e106df17d9c
+hash b9363cab30ef804a
 note Trigger: the toolbar is a table of label, control and action; HIDE_ALL queues HideAll with Hide::Hide and SHOW_ALL with Hide::Show.
 
 step cup7s2
@@ -31,7 +31,7 @@ author ai
 file crates/gui/src/action.rs
 symbol hide_all
 lines 0 15
-hash 3998ab9333f4ade8
+hash 3399fa9787b51f1e
 note The handler. Creates a view for every step first, so steps never touched before are changed too, then sets Hidden on each (or clears it) and clears Collapsed when showing.
 
 step u7aio5
@@ -39,7 +39,7 @@ order 1
 parent frf3py
 author ai
 file crates/gui/src/model.rs
-symbol each_of_path
+symbol each_of_tour
 lines 0 10
-hash 6494a53bb8af2e25
-note Visits every view of this path; views of other paths, including the ones drawn inline under links, are left alone.
+hash 9b13d6a18d12c172
+note Visits every view of this tour; views of other tours, including the ones drawn inline under links, are left alone.

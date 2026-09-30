@@ -1,9 +1,9 @@
-codemap 8
-path feature-path-add
+codemap 9
+tour feature-tour-add
 kind flow
 author ai
 group features/cli
-note path-add <name> <sym|file start end> [under]: add one step to a path. The agent needs it to put a new non-trivial symbol into an existing path, as the agent contract requires. A lone target is a symbol name and the step covers the whole symbol; a file with a start and end (1-based, inclusive) pins that line range. under is the index of the parent step as paths prints it, -1 for a root step; without it the step goes under the last step in the list, so consecutive adds build a chain. The step is recorded with the caller's author (ai from the CLI). In a flow the command also says when the parent does not call the new step, because a flow is meant to read as a call tree and the tool does not enforce that any other way.
+note tour-add <name> <sym|file start end> [under]: add one step to a tour. The agent needs it to put a new non-trivial symbol into an existing tour, as the agent contract requires. A lone target is a symbol name and the step covers the whole symbol; a file with a start and end (1-based, inclusive) pins that line range. under is the index of the parent step as tours prints it, -1 for a root step; without it the step goes under the last step in the list, so consecutive adds build a chain. The step is recorded with the caller's author (ai from the CLI). In a flow the command also says when the parent does not call the new step, because a flow is meant to read as a call tree and the tool does not enforce that any other way.
 
 step 7efzty
 order 11
@@ -12,8 +12,8 @@ author ai
 file crates/cli/src/wire.rs
 symbol call_note
 lines 0 7
-hash acb29ae8dfefbf51
-note The note names both symbols and the path-move command that fixes the placement.
+hash ac7747d3146af322
+note The note names both symbols and the tour-move command that fixes the placement.
 
 step 8gzkeg
 order 6
@@ -53,7 +53,7 @@ author ai
 file crates/cli/src/exec.rs
 symbol call_note
 lines 0 31
-hash a55574aa8640a5c3
+hash 3e7a134056ea2869
 note Flows only: when both parent and child resolve to symbols, the child is a function and the parent's callees do not contain it, prints the note.
 
 step geh8gd
@@ -73,7 +73,7 @@ author ai
 file crates/cli/src/exec.rs
 symbol index_parent
 lines 0 8
-hash 4338e02ed5a9a887
+hash a8a1d337d8e04401
 note Asks the language server for the parent step's file before anything else, so the parent symbol's callees are real xrefs when call_note checks them.
 
 step lr53hp
@@ -100,9 +100,9 @@ step uir8kz
 order 0
 author ai
 file crates/cli/src/exec.rs
-symbol path_add
+symbol tour_add
 lines 0 52
-hash f105cae3ebcbf165
+hash ee61059aad2e6b0c
 note Resolves the parent first (explicit under, or the last step), rejects an under past the end, then turns the target into a file and span: a line range through find_file and line_range, a symbol through find_symbol. After the step is added it prints its index and parent, the absolute-lines warning, and the does-not-call note.
 
 step xxu5o3
@@ -110,10 +110,10 @@ order 3
 parent uir8kz
 author ai
 file crates/cli/src/exec.rs
-symbol find_path
+symbol find_tour
 lines 0 5
-hash 63e1a3b28d250aa6
-note The path must already exist; path-add never creates one.
+hash 0d594859f978d957
+note The tour must already exist; tour-add never creates one.
 
 step zpiimo
 order 7
@@ -122,5 +122,5 @@ author ai
 file crates/domain/src/map.rs
 symbol add_step
 lines 0 38
-hash d53744822dc161fe
-note Pins the span (relative to its enclosing symbol when there is one), derives the step id from a hash of path, file, symbol, lines and parent, and gives it an order one past the highest, so two sessions adding steps produce lines that merge instead of renumbering.
+hash e0a7a55b402d53ee
+note Pins the span (relative to its enclosing symbol when there is one), derives the step id from a hash of tour, file, symbol, lines and parent, and gives it an order one past the highest, so two sessions adding steps produce lines that merge instead of renumbering.

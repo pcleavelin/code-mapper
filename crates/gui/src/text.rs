@@ -1,6 +1,6 @@
 use std::fmt;
 
-use domain::{Author, PathKind, StepChange};
+use domain::{Author, StepChange, TourKind};
 use std::iter;
 use ui::Count;
 
@@ -68,7 +68,7 @@ impl Needle {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Noun {
     Step,
-    Path,
+    Tour,
     Hit,
     Symbol,
 }
@@ -91,8 +91,8 @@ impl fmt::Display for Counted {
         let word = match self.noun {
             Noun::Step if one => "step",
             Noun::Step => "steps",
-            Noun::Path if one => "path",
-            Noun::Path => "paths",
+            Noun::Tour if one => "tour",
+            Noun::Tour => "tours",
             Noun::Hit if one => "hit",
             Noun::Hit => "hits",
             Noun::Symbol if one => "symbol",
@@ -106,11 +106,11 @@ impl fmt::Display for Counted {
 pub(crate) struct Tag(&'static str);
 
 impl Tag {
-    pub(crate) const fn kind(kind: PathKind) -> Self {
+    pub(crate) const fn kind(kind: TourKind) -> Self {
         Self(match kind {
-            PathKind::Flow => "flow",
-            PathKind::Layer => "layer",
-            PathKind::Type => "type",
+            TourKind::Flow => "flow",
+            TourKind::Layer => "layer",
+            TourKind::Data => "data",
         })
     }
 
@@ -171,8 +171,8 @@ mod tests {
         );
         assert_eq!(Counted::new(Count::ZERO, Noun::Step).to_string(), "0 steps");
         assert_eq!(
-            Counted::new(Count::new(3), Noun::Path).to_string(),
-            "3 paths"
+            Counted::new(Count::new(3), Noun::Tour).to_string(),
+            "3 tours"
         );
     }
 }

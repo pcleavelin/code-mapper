@@ -1,9 +1,9 @@
-codemap 8
-path feature-path-pin
+codemap 9
+tour feature-tour-pin
 kind flow
 author ai
 group features/cli
-note path-pin <name> <index> <file> <start> <end>: re-anchor one step on new lines (1-based, inclusive), keeping its note, its parent, its link and its place in the tree. The agent needs it for the steps repin cannot place, so a step keeps its note, parent and link instead of being deleted and rebuilt. It is the hand fix for a step that repin could not place: the symbol is gone or fewer than half its lines survive. The pinning author is recorded on the step, so the owner sees who moved it.
+note tour-pin <name> <index> <file> <start> <end>: re-anchor one step on new lines (1-based, inclusive), keeping its note, its parent, its link and its place in the tree. The agent needs it for the steps repin cannot place, so a step keeps its note, parent and link instead of being deleted and rebuilt. It is the hand fix for a step that repin could not place: the symbol is gone or fewer than half its lines survive. The pinning author is recorded on the step, so the owner sees who moved it.
 
 step 902nnw
 order 1
@@ -12,8 +12,8 @@ author ai
 file crates/cli/src/exec.rs
 symbol find_step
 lines 0 7
-hash fe848f2c971eee7d
-note The path by name, then the step at that index; a bad index is an error.
+hash b3c00b8fc9bad614
+note The tour by name, then the step at that index; a bad index is an error.
 
 step char14
 order 3
@@ -49,9 +49,9 @@ step ig10qd
 order 0
 author ai
 file crates/cli/src/exec.rs
-symbol path_pin
+symbol tour_pin
 lines 0 27
-hash 32c95b8de1c8e9b1
+hash df86e041244d3a5e
 note Finds the step, resolves the file and the line range, pins the step there and prints where it landed, with the absolute-lines warning when the range sits in no symbol.
 
 step ioydvd
@@ -61,7 +61,7 @@ author ai
 file crates/domain/src/map.rs
 symbol pin
 lines 0 20
-hash 9fed4ca3065bbbf2
+hash 9829c26db7f0b4b5
 link stale-and-pin
 note Replaces the step's anchor in place with a fresh one on the new span; id, note, parent, order and link stay; the author becomes the pinning one.
 

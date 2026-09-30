@@ -1,6 +1,6 @@
-codemap 8
-path index-cache
-kind type
+codemap 9
+tour index-cache
+kind data
 author ai
 group index
 note The .codemap-cache file: every indexed file's symbols, calls, targets, references, imports and highlight spans, keyed by the file's text hash. Derived from the backends and never committed. It exists so a launch does not wait on a server or a parse; anything it cannot answer is re-derived. It is the io-cache crate: CacheStore is its surface, wire.rs mirrors the bytes (the Cached* structs, Reader, Writer) and convert.rs maps them to and from the domain's SourceFile, so the index model changes without changing the format.

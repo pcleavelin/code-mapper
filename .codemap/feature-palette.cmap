@@ -1,9 +1,9 @@
-codemap 8
-path feature-palette
+codemap 9
+tour feature-palette
 kind flow
 author ai
 group features/gui
-note Press ctrl+p and a box opens near the top of the window with a search field. Typing lists what matches, ranked: the paths, the steps of the path being read, the views, the actions the registry offers to the palette (save, collapse all, hide all code, fit graph, split panel, go back...), and once something is typed every symbol and file. Each row has a kind tag, actions show their key chord. Up and down move, enter goes to the entry or runs it, a click does the same, esc or ctrl+p closes. A leading > keeps only actions. The reader needs it because reaching a symbol meant switching to the Symbols tab and filtering, and most actions are toolbar buttons that are only on screen in their own view; with the palette anything named is a few keystrokes away, and the action rows teach their chords.
+note Press ctrl+p and a box opens near the top of the window with a search field. Typing lists what matches, ranked: the tours, the steps of the tour being read, the views, the actions the registry offers to the palette (save, collapse all, hide all code, fit graph, split panel, go back...), and once something is typed every symbol and file. Each row has a kind tag, actions show their key chord. Up and down move, enter goes to the entry or runs it, a click does the same, esc or ctrl+p closes. A leading > keeps only actions. The reader needs it because reaching a symbol meant switching to the Symbols tab and filtering, and most actions are toolbar buttons that are only on screen in their own view; with the palette anything named is a few keystrokes away, and the action rows teach their chords.
 
 step 04hhgt
 order 3
@@ -32,8 +32,8 @@ author ai
 file crates/gui/src/palette.rs
 symbol map
 lines 0 48
-hash feaf2b32432b0aae
-note Every path, named by its name with its step count and group; then the steps of the path being read, matched by symbol name (or file for a step with no symbol) and shown with their steps-list number and file:line.
+hash f482e4f0f472c8bf
+note Every tour, named by its name with its step count and group; then the steps of the tour being read, matched by symbol name (or file for a step with no symbol) and shown with their steps-list number and file:line.
 
 step 3a0i3t
 order 23
@@ -72,7 +72,7 @@ author ai
 file crates/gui/src/palette.rs
 symbol PaletteCommand
 lines 0 14
-hash b6c8caf3f30d8a84
+hash 8273bb27b01d5c4f
 note The actions the palette can run, one per palette entry in the registry; two-way features (collapse/expand, back/forward, split right/down, fit/1:1, hide/show) have one per direction.
 
 step aiiie0
@@ -83,7 +83,7 @@ file crates/gui/src/palette.rs
 symbol impl Score
 lines 0 19
 hash 45f172bf02a9add1
-note The weights: a contiguous match (1000) outranks any scattered one; a word start adds 300, the very start 100, the whole name 400; a scattered letter scores 10, 15 more when it follows the previous directly and 20 at a word start, minus its distance from the previous letter up to 10. Paths, steps, views and actions get 50 over symbols and files, enough to win a tie of equal matches and no more.
+note The weights: a contiguous match (1000) outranks any scattered one; a word start adds 300, the very start 100, the whole name 400; a scattered letter scores 10, 15 more when it follows the previous directly and 20 at a word start, minus its distance from the previous letter up to 10. Tours, steps, views and actions get 50 over symbols and files, enough to win a tie of equal matches and no more.
 
 step avdgih
 order 13
@@ -112,7 +112,7 @@ author ai
 file crates/gui/src/palette.rs
 symbol commands
 lines 0 24
-hash e223e4aff84e2fd3
+hash 51659396a2e4dd95
 note Which PaletteCommand each palette entry of a feature runs, in the order the registry lists them. A gui test checks the counts agree, a features test checks a shown chord is one of the feature's Key triggers.
 
 step fgwbhk
@@ -143,7 +143,7 @@ file crates/gui/src/palette.rs
 symbol offer
 lines 0 27
 hash 78e2aaeb6cd4c513
-note Scores one candidate against the query and records it with the kind's boost (paths, steps, views and actions above symbols and files); the row's text is only built for candidates that match.
+note Scores one candidate against the query and records it with the kind's boost (tours, steps, views and actions above symbols and files); the row's text is only built for candidates that match.
 
 step ibxluj
 order 26
@@ -162,8 +162,8 @@ author ai
 file crates/gui/src/palette.rs
 symbol Goal
 lines 0 7
-hash 84deb43294673d9a
-note What running a row does, fixed when the row is ranked: a PaletteCommand, or the path, step, symbol, file or view to go to.
+hash e9b80dc8eb01e5fc
+note What running a row does, fixed when the row is ranked: a PaletteCommand, or the tour, step, symbol, file or view to go to.
 
 step j606ku
 order 35
@@ -172,7 +172,7 @@ author ai
 file crates/gui/src/palette.rs
 symbol impl EntryKind
 lines 0 18
-hash d15f524b3e1cd70e
+hash 98a8b9d9a468cb0f
 note The kind's tag shown on the row and its boost.
 
 step kmr9zj
@@ -182,8 +182,8 @@ author ai
 file crates/gui/src/palette.rs
 symbol palette_actions
 lines 0 43
-hash 4442a2bb373c7ff0
-note Goal to actions. An action's PaletteCommand maps to the Action its button or key pushes (collapse and hide act on the path being read, split on the panel showing the current tab); a path opens in the Path tab, a step is selected, a symbol goes to its definition as a jump does, a file opens in the Source view at its top, a view is shown.
+hash b615dba30fcfa17e
+note Goal to actions. An action's PaletteCommand maps to the Action its button or key pushes (collapse and hide act on the tour being read, split on the panel showing the current tab); a tour opens in the Tour tab, a step is selected, a symbol goes to its definition as a jump does, a file opens in the Source view at its top, a view is shown.
 
 step ld2inb
 order 20
@@ -202,8 +202,8 @@ author ai
 file crates/gui/src/nav.rs
 symbol jumped_to_symbol
 lines 0 6
-hash e448b09bc1f369c0
-note A symbol from the palette lands where a jump to definition lands: on its step when it is one in the path being read, else in the Source view (the graph stays where it is). Reached through Action::Jump.
+hash 03eafa6ac7be3975
+note A symbol from the palette lands where a jump to definition lands: on its step when it is one in the tour being read, else in the Source view (the graph stays where it is). Reached through Action::Jump.
 
 step o830hm
 order 9
@@ -252,7 +252,7 @@ author ai
 file crates/gui/src/views/palette.rs
 symbol palette
 lines 0 60
-hash b7565adac5d40954
+hash baf8890b39064695
 note The box: centred, a tenth of the way down, the field with its hint, then PALETTE_ROWS rows from the top of the window: a coloured kind tag, the name, the detail dimmed and the chord at the right; then 'first-last of total' and the keys. A click runs the row.
 
 step uu4fo1
@@ -272,7 +272,7 @@ author ai
 file crates/gui/src/app.rs
 symbol keys
 lines 0 59
-hash 067fe74013058776
+hash 222b7ee64535629e
 note The keys phase: ctrl+p toggles the palette before anything else; while it is open and its field has the keyboard, every key goes to it; a palette left without the keyboard closes on the next key.
 
 step wsviek

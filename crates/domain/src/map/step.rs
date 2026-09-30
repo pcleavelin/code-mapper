@@ -1,7 +1,7 @@
 use std::fmt;
 
 use crate::index::{Index, SourceFile, SymbolId, SymbolName};
-use crate::map::name::{Author, Note, PathName};
+use crate::map::name::{Author, Note, TourName};
 use crate::text::{Line, LineOffset, RelativePath, Span, TextHash};
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -212,7 +212,7 @@ pub struct Step {
     author: Author,
     anchor: Anchor,
     note: Option<Note>,
-    link: Option<PathName>,
+    link: Option<TourName>,
     resolution: Resolution,
 }
 
@@ -224,7 +224,7 @@ impl Step {
         author: Author,
         anchor: Anchor,
         note: Option<Note>,
-        link: Option<PathName>,
+        link: Option<TourName>,
     ) -> Self {
         Self {
             id,
@@ -288,7 +288,7 @@ impl Step {
         self.note.as_ref()
     }
 
-    pub fn link(&self) -> Option<&PathName> {
+    pub fn link(&self) -> Option<&TourName> {
         self.link.as_ref()
     }
 
@@ -329,7 +329,7 @@ impl Step {
         self.note = note;
     }
 
-    pub(crate) fn set_link(&mut self, link: Option<PathName>) {
+    pub(crate) fn set_link(&mut self, link: Option<TourName>) {
         self.link = link;
     }
 

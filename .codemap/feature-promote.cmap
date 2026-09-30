@@ -1,9 +1,9 @@
-codemap 8
-path feature-promote
+codemap 9
+tour feature-promote
 kind flow
 author ai
 group features/cli
-note promote <symbol> [depth] [name] [--all]: create (or extend) a flow shaped like a symbol's call tree, depth levels deep (default 2), pruned unless --all: tests, accessors (3 lines or fewer with 3 or more callers) and trivial bodies are left out, and callees that are shared (3 or more callers), in another package, or already mapped by another path are kept as leaves; the report names each rule's symbols and prints a step-link line for each mapped leaf, named after the symbol unless name is given. The agent reaches for it to scaffold a flow from a call tree instead of adding every step by hand. It is scaffolding: the tree comes from xrefs, so it carries every helper and, with only the tree-sitter resolver, some false calls; the author trims it with path-rm and path-move and writes the notes. Re-running it on the same path reuses the steps a symbol already has instead of duplicating them.
+note promote <symbol> [depth] [name] [--all]: create (or extend) a flow shaped like a symbol's call tree, depth levels deep (default 2), pruned unless --all: tests, accessors (3 lines or fewer with 3 or more callers) and trivial bodies are left out, and callees that are shared (3 or more callers), in another package, or already mapped by another tour are kept as leaves; the report names each rule's symbols and prints a step-link line for each mapped leaf, named after the symbol unless name is given. The agent reaches for it to scaffold a flow from a call tree instead of adding every step by hand. It is scaffolding: the tree comes from xrefs, so it carries every helper and, with only the tree-sitter resolver, some false calls; the author trims it with tour-rm and tour-move and writes the notes. Re-running it on the same tour reuses the steps a symbol already has instead of duplicating them.
 
 step 5ygab3
 order 2
@@ -22,9 +22,9 @@ author ai
 file crates/domain/src/map.rs
 symbol promote
 lines 0 72
-hash d7d9004b365ccfc5
+hash bcdd9854a71a740a
 link promote
-note Creates the path if needed and adds one whole-symbol step per call-tree entry, under the step of its caller.
+note Creates the tour if needed and adds one whole-symbol step per call-tree entry, under the step of its caller.
 
 step s8dw39
 order 3
@@ -53,7 +53,7 @@ author ai
 file crates/cli/src/exec.rs
 symbol promote
 lines 0 30
-hash 0009aa323550ee52
+hash ab4261e2fc85b978
 note Indexes the files the call tree reaches, resolves the symbol to exactly one, promotes, and prints the resulting step count.
 
 step x9kkbf
@@ -63,5 +63,5 @@ author ai
 file crates/cli/src/wire.rs
 symbol promote_report
 lines 0 34
-hash 30e82e821d3619ee
-note Prints 'path <name> now has n steps'.
+hash 805011abe11c32a0
+note Prints 'tour <name> now has n steps'.

@@ -1,19 +1,19 @@
-codemap 8
-path map-diff
+codemap 9
+tour map-diff
 kind flow
 author ai
 group map
-note How the owner reviews an agent session's map changes without reading path output. The map at the parent revision comes from jj or git (Vcs in io-vcs, a shell-out, no VCS library) and is read by MapStore::base with the same reader as the files on disk; the working map is diffed against it by path name and step id (Map::diff in domain). The CLI prints it as diff; the GUI shows it as the Diff tab, as marks in the Paths list, and as tags on the steps of a document.
+note How the owner reviews an agent session's map changes without reading tour output. The map at the parent revision comes from jj or git (Vcs in io-vcs, a shell-out, no VCS library) and is read by MapStore::base with the same reader as the files on disk; the working map is diffed against it by tour name and step id (Map::diff in domain). The CLI prints it as diff; the GUI shows it as the Diff tab, as marks in the Tours list, and as tags on the steps of a document.
 
 step 0dhho3
 order 5
 parent ss8t8s
 author ai
 file crates/domain/src/map/diff.rs
-symbol PathDiff
+symbol TourDiff
 lines 0 6
-hash c023c5d75ed6b544
-note One path's difference: whether the path itself is new, gone or changed, whether its note, kind or group moved, a verdict per step of the working path, and the base steps that no longer exist. Those removed steps are the base's anchors as parsed and never resolved against the index, so their span means nothing.
+hash c7326fed88e474e2
+note One tour's difference: whether the tour itself is new, gone or changed, whether its note, kind or group moved, a verdict per step of the working tour, and the base steps that no longer exist. Those removed steps are the base's anchors as parsed and never resolved against the index, so their span means nothing.
 
 step 53qktx
 order 13
@@ -32,7 +32,7 @@ file crates/gui/src/views/center.rs
 symbol diff_view
 lines 0 35
 hash a8e705ac7f567ca9
-note The Diff tab: every added, removed or changed path with a one-line summary, and under a changed one the per-step verdicts. Click a row to read that path's document. 'refresh' (Action::RefreshBase) reads the parent revision again, which also happens on start and whenever the map reloads from disk; with no base map the tab says why.
+note The Diff tab: every added, removed or changed tour with a one-line summary, and under a changed one the per-step verdicts. Click a row to read that tour's document. 'refresh' (Action::RefreshBase) reads the parent revision again, which also happens on start and whenever the map reloads from disk; with no base map the tab says why.
 
 step 965kfc
 order 10
@@ -41,18 +41,18 @@ author ai
 file crates/gui/src/views/center.rs
 symbol diff_row
 lines 0 40
-hash 04afeb5b3e3d3c59
-note One changed path: + added, - removed, ~ changed, then a count of each kind of step change. Clicking it opens the path's document; a path only the parent has shows a status instead. Under a changed path, one line per changed step and one per removed step.
+hash 2d076b881c0edfe6
+note One changed tour: + added, - removed, ~ changed, then a count of each kind of step change. Clicking it opens the tour's document; a tour only the parent has shows a status instead. Under a changed tour, one line per changed step and one per removed step.
 
 step a4ykxw
 order 16
 parent ss8t8s
 author ai
 file crates/domain/src/map/diff.rs
-symbol removed_path
+symbol removed_tour
 lines 0 8
-hash f15618a1c23436e6
-note A base path this map lacks: Removed, with all its steps as removed.
+hash d612f1c2a4536266
+note A base tour this map lacks: Removed, with all its steps as removed.
 
 step bqs8ds
 order 0
@@ -83,7 +83,7 @@ file crates/domain/src/map/diff.rs
 symbol StepDiff
 lines 0 3
 hash 921cfcce27a2575c
-note One step of the working path with its verdict, None when it is the same as in the base.
+note One step of the working tour with its verdict, None when it is the same as in the base.
 
 step hqlr2a
 order 18
@@ -93,7 +93,7 @@ file crates/domain/src/map/diff.rs
 symbol Header
 lines 0 3
 hash dfb40c750151216f
-note Whether the path's own fields (note, kind, group) differ, which note_changed reports and the CLI and Diff tab print as a changed header.
+note Whether the tour's own fields (note, kind, group) differ, which note_changed reports and the CLI and Diff tab print as a changed header.
 
 step iiwefr
 order 7
@@ -113,7 +113,7 @@ file crates/domain/src/map/diff.rs
 symbol Change
 lines 0 5
 hash 3c67c53c7d982e1b
-note The four verdicts a path can get. Same is the common case and is never printed.
+note The four verdicts a tour can get. Same is the common case and is never printed.
 
 step m6t8co
 order 2
@@ -121,8 +121,8 @@ author ai
 file crates/cli/src/exec.rs
 symbol diff
 lines 0 48
-hash 8e8e2c659766d6e0
-note The text form (Run::diff in cli): one line per changed path, then its changed steps indented with +, ~ or -. No repository, no committed map and a map that does not read are each a Failure, worded by cli's wire.rs.
+hash de3c62dfe7044cf5
+note The text form (Run::diff in cli): one line per changed tour, then its changed steps indented with +, ~ or -. No repository, no committed map and a map that does not read are each a Failure, worded by cli's wire.rs.
 
 step nwxiya
 order 14
@@ -131,7 +131,7 @@ author ai
 file crates/gui/src/model.rs
 symbol diffs
 lines 0 6
-hash 5f0ad3fb07deff57
+hash 0f0bd5bb074d79b8
 note The diff is recomputed wherever it is shown rather than cached: it is cheap, and caching it would need invalidating on every note keystroke.
 
 step ovgsad
@@ -141,8 +141,8 @@ author ai
 file crates/io-map/src/lib.rs
 symbol base
 lines 0 5
-hash 1f39065ba051126c
-note Reads the revision's map text with the reader the files on disk go through (wire::parse, then convert into domain Paths), the paths sorted by name since the revision hands them back as one text. A ParseError names the revision and line; a map that does not read is reported, never diffed.
+hash da6415ad3c8219f5
+note Reads the revision's map text with the reader the files on disk go through (wire::parse, then convert into domain Tours), the tours sorted by name since the revision hands them back as one text. A ParseError names the revision and line; a map that does not read is reported, never diffed.
 
 step s1r730
 order 15
@@ -151,8 +151,8 @@ author ai
 file crates/domain/src/map/diff.rs
 symbol added
 lines 0 15
-hash d992e448f8002d62
-note A path the base lacks: Added, every step Added.
+hash 3ebecf0bacc40cca
+note A tour the base lacks: Added, every step Added.
 
 step ss8t8s
 order 11
@@ -161,8 +161,8 @@ author ai
 file crates/domain/src/map.rs
 symbol diff
 lines 0 16
-hash 4fcefacf5afd0de7
-note Path by name, step by id. The result lists this map's paths in its order, each Added when the base lacks it or compared by PathDiff::between, then the base's paths this map no longer has, as Removed.
+hash 12b2e4efc9624441
+note Tour by name, step by id. The result lists this map's tours in its order, each Added when the base lacks it or compared by TourDiff::between, then the base's tours this map no longer has, as Removed.
 
 step vfghsy
 order 8
@@ -181,8 +181,8 @@ author ai
 file crates/domain/src/map/diff.rs
 symbol between
 lines 0 48
-hash a3fdbedf06276c4e
-note One path against its base. A step whose anchor (file, symbol, offsets or hash) differs is Repinned; one with only a different note is NoteEdited; one with only a different link is Relinked; an id missing from the base is Added. Base steps whose id this path lacks are kept as removed. A different path note, kind or group marks the header changed, and any of these makes the path Changed.
+hash 2f6b83223563398f
+note One tour against its base. A step whose anchor (file, symbol, offsets or hash) differs is Repinned; one with only a different note is NoteEdited; one with only a different link is Relinked; an id missing from the base is Added. Base steps whose id this tour lacks are kept as removed. A different tour note, kind or group marks the header changed, and any of these makes the tour Changed.
 
 step xhl5y2
 order 9

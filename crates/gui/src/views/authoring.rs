@@ -1,4 +1,4 @@
-use domain::{PathKind, SymbolName};
+use domain::{SymbolName, TourKind};
 use platform::Cursor;
 use strum::VariantArray;
 use ui::{Button, Icon, Label, Ui};
@@ -9,23 +9,23 @@ use crate::field::Which;
 use crate::ids;
 use crate::model::{Model, StepKey, StepSlot};
 use crate::text::Tag;
-use crate::theme::{ACCENT, NEW_PATH_FIELD, TEXT, WEAK};
+use crate::theme::{ACCENT, NEW_TOUR_FIELD, TEXT, WEAK};
 use crate::widgets::{Chosen, Container, Frame};
 
 pub(super) fn target_strip(model: &Model, frame: &mut Frame<'_>) {
     frame.start(Container::ToolbarSmall);
     match model
         .nav
-        .path()
-        .and_then(|path| Some((path, model.path(path)?)))
+        .tour()
+        .and_then(|tour| Some((tour, model.tour(tour)?)))
     {
-        None => frame.label("open a path to add steps to it", WEAK),
-        Some((path, found)) => {
+        None => frame.label("open a tour to add steps to it", WEAK),
+        Some((tour, found)) => {
             frame.label("adds to", WEAK);
             frame.label(found.name().as_str(), TEXT);
             match model.target_under() {
                 Some(step) => {
-                    let key = StepKey { path, step };
+                    let key = StepKey { tour, step };
                     let symbol = model
                         .step(key)
                         .and_then(domain::Step::symbol)
@@ -48,26 +48,26 @@ pub(super) fn target_strip(model: &Model, frame: &mut Frame<'_>) {
     frame.finish();
 }
 
-pub(super) fn new_path_button(frame: &mut Frame<'_>) {
-    let label = format!("{} new path", Icon::Add.glyph().get());
-    if frame.small_button(label, ids::NEW_PATH.target()).clicked() {
-        frame.push(Action::Authoring(Authoring::ToggleNewPath));
+pub(super) fn new_tour_button(frame: &mut Frame<'_>) {
+    let label = format!("{} new tour", Icon::Add.glyph().get());
+    if frame.small_button(label, ids::NEW_TOUR.target()).clicked() {
+        frame.push(Action::Authoring(Authoring::ToggleNewTour));
     }
 }
 
-pub(super) fn new_path_form(model: &Model, frame: &mut Frame<'_>) {
-    let Some(chosen) = model.new_path else {
+pub(super) fn new_tour_form(model: &Model, frame: &mut Frame<'_>) {
+    let Some(chosen) = model.new_tour else {
         return;
     };
     frame.start(Container::ToolbarSmall);
     frame.label("name ", WEAK);
     frame.field(
         &model.fields,
-        Which::NewPath,
+        Which::NewTour,
         &Label::new("e.g. startup"),
-        NEW_PATH_FIELD,
+        NEW_TOUR_FIELD,
     );
-    for kind in PathKind::VARIANTS.iter().copied() {
+    for kind in TourKind::VARIANTS.iter().copied() {
         let word = Tag::kind(kind);
         let target = ids::KIND.with(&Label::new(word.to_string()));
         let selected = if kind == chosen {
@@ -86,13 +86,13 @@ pub(super) fn new_path_form(model: &Model, frame: &mut Frame<'_>) {
         &model.fields,
         Which::NewGroup,
         &Label::new("(none)"),
-        NEW_PATH_FIELD,
+        NEW_TOUR_FIELD,
     );
     if frame
-        .small_button("create", ids::CREATE_PATH.target())
+        .small_button("create", ids::CREATE_TOUR.target())
         .clicked()
     {
-        frame.push(Action::Authoring(Authoring::CreatePath));
+        frame.push(Action::Authoring(Authoring::CreateTour));
     }
     frame.finish();
 }
@@ -104,7 +104,7 @@ pub(super) fn target_mark(model: &Model, step: StepSlot) -> Option<Label> {
 pub(crate) fn step_list_drop(model: &Model, ui: &Ui) -> Option<StepDrop> {
     let grab = model.step_grab?;
     let mouse = ui.pointer().mouse;
-    (0..model.step_count(grab.key.path).get())
+    (0..model.step_count(grab.key.tour).get())
         .map(StepSlot::new)
         .find_map(|step| {
             let row = ui

@@ -1,6 +1,6 @@
-codemap 8
-path index-model
-kind type
+codemap 9
+tour index-model
+kind data
 author ai
 group index
 note The in-memory shape of the auto layer: what an indexed repo is, in the domain crate with no I/O. One Index per process holds one SourceFile per text file under the root, each SourceFile holds its lines, its per-line highlight spans, its imports and its Symbols, and each Symbol holds the raw material for xrefs plus the resolved callee and caller lists. Nothing here is persisted as truth: the whole thing is rebuilt from disk and the cache at startup. Symbols are addressed by SymbolId, a pair of positions, which is fast but only valid until the next re-index; anything that has to survive one uses SymbolKey, the (file path, symbol name) pair, instead.
@@ -192,7 +192,7 @@ file crates/domain/src/index/file.rs
 symbol call_site
 lines 0 24
 hash c2ed13a7fedf353c
-note Whether a line calls a name: the name as a whole word, not inside a string or comment by the line's highlights. A path orders a step's children by the line of the parent that calls them, and this is the test for that line.
+note Whether a line calls a name: the name as a whole word, not inside a string or comment by the line's highlights. A tour orders a step's children by the line of the parent that calls them, and this is the test for that line.
 
 step lkuv4x
 order 3

@@ -1,9 +1,9 @@
-codemap 8
-path stale-and-pin
+codemap 9
+tour stale-and-pin
 kind flow
 author ai
 group map
-note What happens when code under a step changes. Every anchor is re-resolved on load; a hash mismatch or a missing file or symbol marks it stale. stale and check list those; path-pin re-anchors one to fresh lines and keeps its note and place in the tree. The agent that changed the code re-pins: repin follows each stale step's text from the parent revision and pins what it can place, printing every change for the agent to check against the note; the rest stays stale for path-pin. The listing and the follow live in cli's exec.rs; the alignment (follow, Alignment) is pure code in domain.
+note What happens when code under a step changes. Every anchor is re-resolved on load; a hash mismatch or a missing file or symbol marks it stale. stale and check list those; tour-pin re-anchors one to fresh lines and keeps its note and place in the tree. The agent that changed the code re-pins: repin follows each stale step's text from the parent revision and pins what it can place, printing every change for the agent to check against the note; the rest stays stale for tour-pin. The listing and the follow live in cli's exec.rs; the alignment (follow, Alignment) is pure code in domain.
 
 step 0n4iwz
 order 8
@@ -12,7 +12,7 @@ author ai
 file crates/cli/src/exec.rs
 symbol follow
 lines 0 89
-hash dda079cb90335b6a
+hash 382b1d1e40342440
 note Finds the old slice by hash (the match nearest the step's last place when the text repeats), cuts it out with three lines of context, and aligns it with every target, keeping the alignment that keeps the most lines, nearest the old place on a tie. Refuses (LeftStale) when no symbol of that name is left anywhere or under half the lines survive: those need someone to read the code. Prints the follow report: old range, new range, moved file, lines kept.
 
 step 0pm2op
@@ -22,7 +22,7 @@ author ai
 file crates/domain/src/map.rs
 symbol pin
 lines 0 20
-hash 9fed4ca3065bbbf2
+hash 9829c26db7f0b4b5
 note A fresh anchor from the new lines through pin_span, with the step's id, order, note, parent and link untouched and the pinning author recorded. The step is current at once.
 
 step 1xnbd8
@@ -69,10 +69,10 @@ step c3yqy7
 order 13
 author ai
 file crates/cli/src/exec.rs
-symbol path_pin
+symbol tour_pin
 lines 0 27
-hash 32c95b8de1c8e9b1
-note path-pin: find the file (a path suffix is enough), bounds-check the new range, then Map::pin replaces the anchor in place; prints where it landed and warns when the lines are absolute.
+hash df86e041244d3a5e
+note tour-pin: find the file (a path suffix is enough), bounds-check the new range, then Map::pin replaces the anchor in place; prints where it landed and warns when the lines are absolute.
 
 step dbn9ln
 order 10
@@ -102,7 +102,7 @@ file crates/cli/src/exec.rs
 symbol moved_to
 lines 0 8
 hash c79267af13672942
-note The same-text hint: another span of the step's length in its file whose text hashes to the stored hash, so the text only moved and the printed path-pin is the whole fix.
+note The same-text hint: another span of the step's length in its file whose text hashes to the stored hash, so the text only moved and the printed tour-pin is the whole fix.
 
 step l2t4jm
 order 11
@@ -160,8 +160,8 @@ author ai
 file crates/cli/src/exec.rs
 symbol repin
 lines 0 50
-hash 0484719fb8e0b32e
-note repin: every stale step in turn, its file read once from the revision (default: the parent revision, @- in jj or HEAD in git) and kept for the steps after it. A step that follows is pinned through Map::pin like path-pin; one that does not stays stale with the reason printed. The output is the review: each re-pinned step with changed text prints its removed and added lines, and its note has to be reread against them. Changed only when something was pinned.
+hash 09694b1e6adeb970
+note repin: every stale step in turn, its file read once from the revision (default: the parent revision, @- in jj or HEAD in git) and kept for the steps after it. A step that follows is pinned through Map::pin like tour-pin; one that does not stays stale with the reason printed. The output is the review: each re-pinned step with changed text prints its removed and added lines, and its note has to be reread against them. Changed only when something was pinned.
 
 step srs1sk
 order 3
@@ -208,8 +208,8 @@ author ai
 file crates/cli/src/exec.rs
 symbol stale
 lines 0 45
-hash dd3a43befd16f19c
-note stale and check share the listing; check turns a non-empty list into an Err so the process exits 2. Each stale step gets a hint: a ready-made path-pin when its text merely moved, or every symbol of the same name anywhere when the symbol is gone from its file. A link to a path the map does not have is listed after them and fails check the same way.
+hash 86241f9ff6d4d642
+note stale and check share the listing; check turns a non-empty list into an Err so the process exits 2. Each stale step gets a hint: a ready-made tour-pin when its text merely moved, or every symbol of the same name anywhere when the symbol is gone from its file. A link to a tour the map does not have is listed after them and fails check the same way.
 
 step yq0kh1
 order 21

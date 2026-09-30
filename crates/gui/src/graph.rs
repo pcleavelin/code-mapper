@@ -27,7 +27,7 @@ pub(crate) struct Node {
 }
 
 impl Node {
-    const fn off_path(symbol: SymbolId) -> Self {
+    const fn off_tour(symbol: SymbolId) -> Self {
         Self { symbol, step: None }
     }
 }

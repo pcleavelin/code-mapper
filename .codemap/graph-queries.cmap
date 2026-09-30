@@ -1,5 +1,5 @@
-codemap 8
-path graph-queries
+codemap 9
+tour graph-queries
 kind layer
 author ai
 group index
@@ -58,7 +58,7 @@ file crates/domain/src/index.rs
 symbol call_tree
 lines 0 22
 hash b81e86551466166b
-note Pre-order, depth-limited walk from one symbol, each symbol at most once, as a list of (symbol, depth) TreeEntry rows. An explicit stack with callees pushed in reverse keeps the code's call order; the seen set is what stops a cycle and also what makes a shared callee appear under its first caller only. This is the shape a promoted path takes (Map::promote walks it) and the shape the tree command prints.
+note Pre-order, depth-limited walk from one symbol, each symbol at most once, as a list of (symbol, depth) TreeEntry rows. An explicit stack with callees pushed in reverse keeps the code's call order; the seen set is what stops a cycle and also what makes a shared callee appear under its first caller only. This is the shape a promoted tour takes (Map::promote walks it) and the shape the tree command prints.
 
 step el9g3f
 order 9
@@ -87,7 +87,7 @@ file crates/cli/src/wire.rs
 symbol symbol_label
 lines 0 10
 hash e184ce4bafc0e545
-note The one label every symbol is printed with: name, then file:start-end, so output pastes back into show or path-add. symbol_line indents it by depth for callers, callees and tree.
+note The one label every symbol is printed with: name, then file:start-end, so output pastes back into show or tour-add. symbol_line indents it by depth for callers, callees and tree.
 
 step sry152
 order 5

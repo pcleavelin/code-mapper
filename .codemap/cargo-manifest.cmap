@@ -1,6 +1,6 @@
-codemap 8
-path cargo-manifest
-kind type
+codemap 9
+tour cargo-manifest
+kind data
 author ai
 group tooling
 note A Cargo.toml as the gate needs it: sections of trimmed lines, parsed by hand rather than with a TOML library because the gate only reads the package name, the dependency keys and the workspace members.

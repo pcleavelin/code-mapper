@@ -1,6 +1,6 @@
-codemap 8
-path anchor
-kind type
+codemap 9
+tour anchor
+kind data
 author ai
 group map
 note The unit a step is pinned with. An anchor is a slice of lines in one file, but it is stored relative to the start of the enclosing symbol, so code moving above it does not break it; only the anchored text changing does, and a stored hash is how that is detected. This is the whole mechanism behind stale steps and behind coverage: an anchor that resolves cleanly marks its symbol covered, one that does not is red everywhere and has to be re-pinned by whoever changed the code.
@@ -51,8 +51,8 @@ author ai
 file crates/domain/src/map/step.rs
 symbol Step
 lines 0 9
-hash b4a08968ee1fed87
-note A step: the anchor plus what the path hangs on it. The id is set once when the step is made and is how the file names a parent and how diff matches a step; order places it in the step list, ordering siblings the code does not; parent (an id, none for a root) makes the path a tree; then the author, the note and the link to another path. resolution is filled in per session by resolve and never written to disk. Fields change only through the Map's methods.
+hash 2d1939e68b1cd290
+note A step: the anchor plus what the tour hangs on it. The id is set once when the step is made and is how the file names a parent and how diff matches a step; order places it in the step list, ordering siblings the code does not; parent (an id, none for a root) makes the tour a tree; then the author, the note and the link to another tour. resolution is filled in per session by resolve and never written to disk. Fields change only through the Map's methods.
 
 step lp72jd
 order 5
@@ -62,7 +62,7 @@ file crates/domain/src/map/step.rs
 symbol fresh
 lines 0 20
 hash 55fbe87745c3f9f8
-note A step's id: six base36 digits of an FNV-1a hash of a seed, moved past ids the path already holds by hashing again with a counter. add_step seeds it with the path name, file, symbol, offsets and parent id. The digits spread new steps across the file, and two branches that add the same step add the same id and the same lines.
+note A step's id: six base36 digits of an FNV-1a hash of a seed, moved past ids the tour already holds by hashing again with a counter. add_step seeds it with the tour name, file, symbol, offsets and parent id. The digits spread new steps across the file, and two branches that add the same step add the same id and the same lines.
 
 step mlyhhl
 order 11
@@ -101,7 +101,7 @@ author ai
 file crates/domain/src/map.rs
 symbol resolve_all
 lines 0 6
-hash 2e52fa18036fc118
+hash 3ed88071f29c7b8d
 note Resolving the whole map at once. Called after loading (the CLI and the GUI's start), after a re-index and after a server answer, because symbol line numbers move under the map without the map changing.
 
 step rw3k8b

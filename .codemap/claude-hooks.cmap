@@ -1,5 +1,5 @@
-codemap 8
-path claude-hooks
+codemap 9
+tour claude-hooks
 kind flow
 author ai
 group tooling
@@ -194,7 +194,7 @@ author ai
 file xtask/src/hook.rs
 symbol guard_edit
 lines 0 14
-hash ffefbe53d0528217
+hash de13a16316190653
 note An edit to .codemap/ is denied with the codemap commands to use instead, unless the file holds a merge conflict marker, since resolving a conflict in the map is an edit by hand.
 
 step ogsnht

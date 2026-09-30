@@ -1,5 +1,5 @@
-codemap 8
-path feature-node-context
+codemap 9
+tour feature-node-context
 kind flow
 author ai
 group features/gui

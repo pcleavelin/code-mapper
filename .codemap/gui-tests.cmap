@@ -1,5 +1,5 @@
-codemap 8
-path gui-tests
+codemap 9
+tour gui-tests
 kind layer
 author ai
 group gui
@@ -22,7 +22,7 @@ author ai
 file crates/gui/src/tests.rs
 symbol removing_a_step_moves_later_views_up_and_clears_the_selection
 lines 0 13
-hash e1c75567f974c1c3
+hash 16146a00254e6280
 note Removing a step shifts the views of the steps after it and clears the selection.
 
 step 4n3q0r
@@ -31,7 +31,7 @@ author ai
 file crates/gui/src/tests.rs
 symbol model
 lines 0 21
-hash a66e81abc3833267
+hash 68a9b7a3c77bda58
 note The fixture: a flow 'startup' over the in-memory file, main at the root with fill (which has add under it) and report as its children, resolved and wrapped in a Model whose store points nowhere.
 
 step 4voyq2
@@ -40,7 +40,7 @@ author ai
 file crates/gui/src/text.rs
 symbol tests
 lines 0 37
-hash 52a747ad75028d9e
+hash 009ac0ab94ffe392
 note Clipping keeps short text and marks cut text with an ellipsis, from the right or the left; a Needle matches ignoring ASCII case; a count of one takes the singular noun.
 
 step 6eirab
@@ -48,10 +48,10 @@ order 7
 parent 4n3q0r
 author ai
 file crates/gui/src/tests.rs
-symbol opening_a_path_selects_its_first_step_in_tree_order
+symbol opening_a_tour_selects_its_first_step_in_tree_order
 lines 0 10
-hash 64d217aa2c618ade
-note select_path lands on the first step in tree order.
+hash c553cf7250c0abca
+note select_tour lands on the first step in tree order.
 
 step 6j8hrk
 order 6
@@ -70,7 +70,7 @@ author ai
 file crates/gui/src/tests.rs
 symbol hide_all_code_hides_every_step_and_show_all_code_expands_none
 lines 0 14
-hash fec3348f7bcce275
+hash 8ea93f7f2e29948b
 note hide all code hides every step's code and keeps a collapse; show all code shows every step's code and leaves nothing collapsed.
 
 step b6gbpm
@@ -87,10 +87,10 @@ order 16
 parent l5and2
 author ai
 file crates/gui/src/tests.rs
-symbol a_path_linked_from_elsewhere_is_refused_with_the_linking_steps
+symbol a_tour_linked_from_elsewhere_is_refused_with_the_linking_steps
 lines 0 41
-hash d4ee75df286dc59a
-note A path that another path links to is not removed, and the status line names the linking step.
+hash 3c945190acd503fb
+note A tour that another tour links to is not removed, and the status line names the linking step.
 
 step ea3gtj
 order 19
@@ -109,7 +109,7 @@ author ai
 file crates/gui/src/tests.rs
 symbol children_sit_together_in_one_box_beside_their_parent
 lines 0 30
-hash 5adb14107ee161b7
+hash 6cd2905a3d6986e8
 note Left to right, a parent's two children sit stacked tightly in one sibling box one lane to its right, the first level with the parent; the bounds take in the box and its padding.
 
 step fyr34g
@@ -129,8 +129,8 @@ author ai
 file crates/gui/src/tests.rs
 symbol walking_follows_the_tree_and_stops_at_the_ends
 lines 0 11
-hash 8bd3a7291f0fd38b
-note walk follows the path's numbered order, the one the steps list shows, and stops at both ends.
+hash 6fa5c18b3b535ba9
+note walk follows the tour's numbered order, the one the steps list shows, and stops at both ends.
 
 step hvkk6w
 order 20
@@ -148,7 +148,7 @@ author ai
 file crates/gui/src/tests.rs
 symbol history_keeps_the_last_two_hundred_places
 lines 0 14
-hash 32c283971b9cd080
+hash c04c82040ea0e316
 note The history keeps two hundred places and drops the oldest.
 
 step kmg2e3
@@ -185,7 +185,7 @@ author ai
 file crates/gui/src/tests.rs
 symbol collapse_all_collapses_only_steps_with_children
 lines 0 15
-hash 5dacca165e9f3e05
+hash 20844b0498dbb469
 note collapse all collapses only the steps that have children.
 
 step ps5lmt
@@ -203,10 +203,10 @@ order 15
 parent l5and2
 author ai
 file crates/gui/src/tests.rs
-symbol removing_the_path_forgets_it
+symbol removing_the_tour_forgets_it
 lines 0 10
-hash 578024f1a6357d12
-note Removing a path forgets it and its selection.
+hash e65e4a2cf03a231b
+note Removing a tour forgets it and its selection.
 
 step r5j43v
 order 3
@@ -225,5 +225,5 @@ author ai
 file crates/gui/src/tests.rs
 symbol back_and_forward_return_to_the_places_visited
 lines 0 19
-hash cdc47dfd4c28fc2f
+hash 237a4bd00cc039c2
 note back and forward return to the places track_navigation recorded.

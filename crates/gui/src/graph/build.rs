@@ -5,7 +5,7 @@ use ui::{Count, Extent, Icon, Label, Point, Rect, Run};
 
 use crate::graph::place::Siblings;
 use crate::graph::{Around, Button, GraphState, Node, Reveal, Side};
-use crate::model::{Model, PathSlot, StepKey, StepSlot};
+use crate::model::{Model, StepKey, StepSlot, TourSlot};
 use crate::panels::Direction;
 use crate::theme::{Cells, GRAPH_LEAST_COLUMNS, GRAPH_MOST_COLUMNS, GREEN, TEXT, WEAK};
 
@@ -64,7 +64,7 @@ pub(crate) struct Built {
     pub(crate) range: BTreeMap<Node, Span>,
     pub(crate) view: BTreeMap<Node, Span>,
     pub(crate) by_symbol: BTreeMap<SymbolId, Node>,
-    pub(crate) path: Option<PathSlot>,
+    pub(crate) tour: Option<TourSlot>,
     pub(crate) step: BTreeMap<Node, StepInfo>,
     pub(crate) step_parent: BTreeMap<Node, Node>,
     pub(crate) origin: BTreeMap<Node, Origin>,
@@ -211,13 +211,13 @@ impl Built {
         };
         let view = self.view(node).unwrap_or(Span::line(Line::new(0)));
         let Shown { shown, total } = self.shown(graph, node);
-        let off_path = self.path.is_some() && !self.step.contains_key(&node);
+        let off_tour = self.tour.is_some() && !self.step.contains_key(&node);
         if let Some(step) = self.step.get(&node) {
             runs.push(Run::new(format!("{} ", step.number.as_str()), GREEN));
         }
         runs.push(Run::new(symbol.name().as_str(), TEXT));
-        if off_path {
-            runs.push(Run::new("  off path", WEAK));
+        if off_tour {
+            runs.push(Run::new("  off tour", WEAK));
         }
         let range = self.range(node).unwrap_or(view);
         runs.push(Run::new(
@@ -253,7 +253,7 @@ impl Built {
             }
         }
         label(Button::Source, "source".to_owned());
-        if off_path {
+        if off_tour {
             label(Button::Add, "+ step".to_owned());
         }
         let hidden = |list: &[SymbolId]| {
@@ -337,15 +337,15 @@ fn step_symbol(model: &Model, key: StepKey) -> Option<SymbolId> {
 
 pub(crate) fn rebuild(model: &Model) -> Built {
     let mut built = Built {
-        path: model
+        tour: model
             .nav
-            .path()
-            .filter(|path| path.get() < model.path_count().get()),
+            .tour()
+            .filter(|tour| tour.get() < model.tour_count().get()),
         direction: model.graph.direction,
         ..Built::default()
     };
-    if let Some(path) = built.path {
-        add_path_nodes(&mut built, model, path);
+    if let Some(tour) = built.tour {
+        add_tour_nodes(&mut built, model, tour);
     }
     if let Some(root) = model.graph.root
         && !built.by_symbol.contains_key(&root.symbol)
@@ -361,13 +361,13 @@ pub(crate) fn rebuild(model: &Model) -> Built {
     built
 }
 
-fn add_path_nodes(built: &mut Built, model: &Model, path: PathSlot) {
+fn add_tour_nodes(built: &mut Built, model: &Model, tour: TourSlot) {
     let index = &model.index;
     {
         let mut node_of: BTreeMap<StepSlot, Node> = BTreeMap::new();
-        for (order, numbered) in model.numbered(path).into_iter().enumerate() {
+        for (order, numbered) in model.numbered(tour).into_iter().enumerate() {
             let key = StepKey {
-                path,
+                tour,
                 step: numbered.step,
             };
             let parent = model
@@ -414,7 +414,7 @@ fn add_focus(built: &mut Built, model: &Model) -> Option<Vec<Reveal>> {
         return None;
     }
     let symbol = index.symbol(focus)?;
-    let node = Node::off_path(focus);
+    let node = Node::off_tour(focus);
     built.add(index, node, Rank::ZERO, symbol.span());
     let mut reveals = graph.reveals.clone();
     if graph.auto_open != Some(node) {
@@ -454,7 +454,7 @@ fn add_reveals(built: &mut Built, model: &Model, reveals: Vec<Reveal>) {
             let Some(symbol) = index.symbol(found) else {
                 continue;
             };
-            let revealed = Node::off_path(found);
+            let revealed = Node::off_tour(found);
             built.origin.insert(
                 revealed,
                 Origin {

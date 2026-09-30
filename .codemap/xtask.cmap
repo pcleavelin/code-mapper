@@ -1,9 +1,9 @@
-codemap 8
-path xtask
+codemap 9
+tour xtask
 kind layer
 author ai
 group tooling
-note The xtask binary: the repo's rules as a program. cargo xtask is an alias in .cargo/config.toml that runs this crate with its own target directory, so the gate never waits on the workspace's build lock and a broken workspace build cannot break the tool that reports it. Four tasks: gate (the gate path), lint (archlint over the workspace or named files), api (record the API lock) and hook (the Claude Code hooks). A rule that is wrong is changed here openly, in the same change that needs it. A task answers with a Message on success or failure; main prints the first to stdout and the second to stderr and exits non-zero on failure, so a hook or a shell sees the verdict in the exit code.
+note The xtask binary: the repo's rules as a program. cargo xtask is an alias in .cargo/config.toml that runs this crate with its own target directory, so the gate never waits on the workspace's build lock and a broken workspace build cannot break the tool that reports it. Four tasks: gate (the gate tour), lint (archlint over the workspace or named files), api (record the API lock) and hook (the Claude Code hooks). A rule that is wrong is changed here openly, in the same change that needs it. A task answers with a Message on success or failure; main prints the first to stdout and the second to stderr and exits non-zero on failure, so a hook or a shell sees the verdict in the exit code.
 
 step 1me7il
 order 1

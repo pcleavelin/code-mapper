@@ -1,5 +1,5 @@
-codemap 8
-path feature-uncovered
+codemap 9
+tour feature-uncovered
 kind flow
 author ai
 group features/cli
@@ -12,7 +12,7 @@ author ai
 file crates/domain/src/map.rs
 symbol coverage
 lines 0 8
-hash b4612b85e433b734
+hash 703926ae1cd7e0e0
 link coverage
 note Map::coverage collects the spans of every non-stale step per file, once for the whole run; a stale step covers nothing.
 

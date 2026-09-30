@@ -1,9 +1,9 @@
-codemap 8
-path highlighting
+codemap 9
+tour highlighting
 kind flow
 author ai
 group index
-note Where syntax colours come from and where they are painted. tree-sitter does the colouring for every language regardless of which backend supplied the symbols: the grammar's own highlight query runs once per file during the parse, and its captures are bucketed into per-line byte spans with a small class byte. The spans are cached with the rest of the file, so nothing re-parses to draw. The second half of the path is the drawing side, shared by the path document, the Source view and the graph nodes.
+note Where syntax colours come from and where they are painted. tree-sitter does the colouring for every language regardless of which backend supplied the symbols: the grammar's own highlight query runs once per file during the parse, and its captures are bucketed into per-line byte spans with a small class byte. The spans are cached with the rest of the file, so nothing re-parses to draw. The second half of the tour is the drawing side, shared by the tour document, the Source view and the graph nodes.
 
 step 1j2to9
 order 9

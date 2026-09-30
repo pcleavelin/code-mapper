@@ -1,0 +1,77 @@
+codemap 9
+tour feature-tours
+kind flow
+author ai
+group features/cli
+note tours [name]: the map as an outline. The agent reaches for it before touching code, so it neither duplicates nor misses a tour that already names the area. Without a name, every tour in tours-list order, each group announced by a '== group' header line, then the tour's row (name, kind, author, step count, note) and its steps in tree order, indented by depth. With a name, only that tour and no group header. Each step row carries its index in square brackets, which is the number every step-editing command takes, a leading ! when the step is stale, (ai) for agent-authored steps and an arrow for a link. This is the agent's first command in an area: it shows what is already named before any code is read.
+
+step 3v5t8t
+order 3
+parent 8leao4
+author ai
+file crates/cli/src/wire.rs
+symbol group_header
+lines 0 6
+hash 1f147dfc0eb6c688
+note '== <group>' or '== (top level)' before the first tour of each group.
+
+step 8leao4
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol tours
+lines 0 29
+hash 155b92861a331344
+note Picks the tours to list, then prints a group header whenever the group changes (only in the full listing), the tour row, and one row per step in tree order.
+
+step q676v4
+order 5
+parent 8leao4
+author ai
+file crates/domain/src/map/tour.rs
+symbol tree_order
+lines 0 2
+hash a9319993b959f3e0
+link tour-tree
+note Depth-first order of the steps with each one's depth, the order the outline is printed in.
+
+step sfll1s
+order 1
+parent 8leao4
+author ai
+file crates/cli/src/exec.rs
+symbol find_tour
+lines 0 5
+hash 0d594859f978d957
+note With a name, the tour must exist; the error names what was typed.
+
+step uag5h3
+order 4
+parent 8leao4
+author ai
+file crates/cli/src/wire.rs
+symbol tour_row
+lines 0 11
+hash 5d926393977433e5
+note One line per tour: name, [kind], (ai), step count and the tour note.
+
+step vfy10q
+order 6
+parent 8leao4
+author ai
+file crates/cli/src/wire.rs
+symbol step_row
+lines 0 19
+hash 6f4ca5d790298cae
+note One line per step: index, stale mark, file:start-end, symbol, author, link arrow and the step note.
+
+step vkhxth
+order 2
+parent 8leao4
+author ai
+file crates/domain/src/map.rs
+symbol rows
+lines 0 2
+hash 1e78e876d1b8c878
+link tour-groups
+note The full listing's order: groups nested and sorted, tours inside them; group rows are skipped here, groups print as headers instead.

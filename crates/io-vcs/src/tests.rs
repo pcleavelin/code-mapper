@@ -65,8 +65,8 @@ fn available(program: &str) -> bool {
 }
 
 fn fill(scratch: &Scratch) {
-    scratch.put(".codemap/b.cmap", "codemap 8\npath b\n");
-    scratch.put(".codemap/a.cmap", "codemap 8\npath a\n");
+    scratch.put(".codemap/b.cmap", "codemap 9\ntour b\n");
+    scratch.put(".codemap/a.cmap", "codemap 9\ntour a\n");
     scratch.put(".codemap/notes.txt", "not a map file\n");
     scratch.put("src/lib.rs", "fn main() {\n\tbody();\n}\n");
 }
@@ -74,7 +74,7 @@ fn fill(scratch: &Scratch) {
 fn check_revision(vcs: &Vcs) {
     let parent = vcs.parent();
     let map = vcs.map_at(&parent, &RelativePath::new(".codemap")).unwrap();
-    assert_eq!(map.as_str(), "codemap 8\npath a\ncodemap 8\npath b\n");
+    assert_eq!(map.as_str(), "codemap 9\ntour a\ncodemap 9\ntour b\n");
     let text = vcs
         .file_at(&parent, &RelativePath::new("src/lib.rs"))
         .unwrap();

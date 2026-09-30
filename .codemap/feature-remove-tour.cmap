@@ -1,0 +1,55 @@
+codemap 9
+tour feature-remove-tour
+kind flow
+author ai
+group features/gui
+note The document toolbar's 'delete tour' removes the tour being read from the map. The reader reaches for it to retire a tour while reading the map, without switching to the CLI (deleting is in the document). The status bar names it and its step count, the document empties, and the map is marked unsaved until it is saved. A tour that other tours link to is refused: the status bar names the linking steps and nothing changes.
+
+step 18pcb8
+order 4
+parent z8ck9j
+author ai
+file crates/gui/src/views/document.rs
+symbol header_bar
+lines 49 55
+hash 80c1c1c97b4cbb1b
+note Trigger: REMOVE_TOUR, a danger button set apart from the other header buttons by DANGER_GAP and red under the pointer, queues RemoveTour for the tour being read.
+
+step rkzy8c
+order 3
+parent z8ck9j
+author ai
+file crates/gui/src/nav.rs
+symbol tour_removed
+lines 0 19
+hash 9008f15ca6f1fc6e
+note Slots after the removed tour shift down by one: view state is remapped, history entries on the removed tour are dropped and the rest shifted, and the topmost visible step is forgotten.
+
+step xw4x3m
+order 2
+parent z8ck9j
+author ai
+file crates/gui/src/nav.rs
+symbol forget_tour
+lines 0 4
+hash 03edb8c292744b25
+note Neither the tour nor a step of it is selected any more, and there is no target.
+
+step yphowf
+order 1
+parent z8ck9j
+author ai
+file crates/domain/src/map.rs
+symbol remove_tour
+lines 0 18
+hash 81c0acf84f8b1035
+note The removal in the map. It refuses while any step of another tour links here (a tour's links to itself do not count), so the map never holds a link to a missing tour.
+
+step z8ck9j
+order 0
+author ai
+file crates/gui/src/action.rs
+symbol remove_tour
+lines 0 19
+hash 6d4043ee04612f1f
+note The handler. Removes the tour by name; on success it records the status, clears the selection, drops the tour's view state and history, and marks the map dirty. A refusal from the map becomes the status line.

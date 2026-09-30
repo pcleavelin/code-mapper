@@ -1,5 +1,5 @@
-codemap 8
-path live-reload
+codemap 9
+tour live-reload
 kind flow
 author ai
 group gui
@@ -31,7 +31,7 @@ author ai
 file crates/io-map/src/lib.rs
 symbol stamp
 lines 0 19
-hash 83e801d1ca07f983
+hash b83f4b7bbf3e58aa
 note The map's change detection: the newest modification time among .codemap and its .cmap files, and how many there are. The app records it after its own save, so writing the map does not look like somebody else writing it.
 
 step 5iidcm
@@ -61,7 +61,7 @@ author ai
 file crates/io-map/src/lib.rs
 symbol load
 lines 0 49
-hash 1b96845786855780
+hash b33f5d2452f7ea88
 note What a reload reads, put in place of the window's map and resolved against the current index.
 
 step cqad1j
@@ -150,8 +150,8 @@ author ai
 file crates/gui/src/work.rs
 symbol reload_map
 lines 0 58
-hash 7d144034950482d1
-note The reload keeps as much of the reading position as the new map still supports: the path by name, the selected step when the step at that index still has the same anchor (file, symbol and offsets), and a path's step views when its step count is unchanged. Paths are matched by name throughout, so a path added or removed by the agent does not shift another path's state onto the wrong rows. An Err, worded by cli's Failure::Load, leaves the window's map as it was; poll_disk then marks the disk Broken, so a save cannot write over files that did not read.
+hash 747ddb6eb4a685f0
+note The reload keeps as much of the reading position as the new map still supports: the tour by name, the selected step when the step at that index still has the same anchor (file, symbol and offsets), and a tour's step views when its step count is unchanged. Tours are matched by name throughout, so a tour added or removed by the agent does not shift another tour's state onto the wrong rows. An Err, worded by cli's Failure::Load, leaves the window's map as it was; poll_disk then marks the disk Broken, so a save cannot write over files that did not read.
 
 step yy35zu
 order 6

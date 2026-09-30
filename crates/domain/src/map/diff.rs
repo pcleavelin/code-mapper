@@ -1,6 +1,6 @@
-use crate::map::name::PathName;
-use crate::map::path::Path;
+use crate::map::name::TourName;
 use crate::map::step::{Step, StepId};
+use crate::map::tour::Tour;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Change {
@@ -31,16 +31,16 @@ enum Header {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct PathDiff {
-    name: PathName,
+pub struct TourDiff {
+    name: TourName,
     change: Change,
     header: Header,
     steps: Vec<StepDiff>,
     removed: Vec<Step>,
 }
 
-impl PathDiff {
-    pub fn name(&self) -> &PathName {
+impl TourDiff {
+    pub fn name(&self) -> &TourName {
         &self.name
     }
 
@@ -60,12 +60,12 @@ impl PathDiff {
         &self.removed
     }
 
-    pub(crate) fn added(path: &Path) -> Self {
+    pub(crate) fn added(tour: &Tour) -> Self {
         Self {
-            name: path.name().clone(),
+            name: tour.name().clone(),
             change: Change::Added,
             header: Header::Same,
-            steps: path
+            steps: tour
                 .steps()
                 .iter()
                 .map(|step| StepDiff {
@@ -77,7 +77,7 @@ impl PathDiff {
         }
     }
 
-    pub(crate) fn removed_path(base: &Path) -> Self {
+    pub(crate) fn removed_tour(base: &Tour) -> Self {
         Self {
             name: base.name().clone(),
             change: Change::Removed,
@@ -87,8 +87,8 @@ impl PathDiff {
         }
     }
 
-    pub(crate) fn between(path: &Path, base: &Path) -> Self {
-        let steps: Vec<StepDiff> = path
+    pub(crate) fn between(tour: &Tour, base: &Tour) -> Self {
+        let steps: Vec<StepDiff> = tour
             .steps()
             .iter()
             .map(|step| StepDiff {
@@ -109,12 +109,12 @@ impl PathDiff {
         let removed: Vec<Step> = base
             .steps()
             .iter()
-            .filter(|old| path.step(old.id()).is_none())
+            .filter(|old| tour.step(old.id()).is_none())
             .cloned()
             .collect();
-        let header = if path.note() != base.note()
-            || path.kind() != base.kind()
-            || path.group() != base.group()
+        let header = if tour.note() != base.note()
+            || tour.kind() != base.kind()
+            || tour.group() != base.group()
         {
             Header::Changed
         } else {
@@ -129,7 +129,7 @@ impl PathDiff {
             Change::Same
         };
         Self {
-            name: path.name().clone(),
+            name: tour.name().clone(),
             change,
             header,
             steps,

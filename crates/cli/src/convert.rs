@@ -1,16 +1,16 @@
 use std::fmt;
 
 use domain::{
-    Depth, GroupName, Line, MapError, Note, Path, PathKind, PathName, Pruning, RelativePath,
-    Revision, SourceFile, Span, StepId, SymbolName, TextFragment,
+    Depth, GroupName, Line, MapError, Note, Pruning, RelativePath, Revision, SourceFile, Span,
+    StepId, SymbolName, TextFragment, Tour, TourKind, TourName,
 };
 
 use crate::wire::{
-    Command, FilterArguments, GroupRenameArguments, NoteEditArguments, PathAddArguments,
-    PathArguments, PathGroupArguments, PathMoveArguments, PathNewArguments, PathNoteArguments,
-    PathPinArguments, PathRenameArguments, PathRmArguments, PathSwapArguments, PromoteArguments,
+    Command, FilterArguments, GroupRenameArguments, NoteEditArguments, PromoteArguments,
     RegexArguments, ShowArguments, StepArguments, StepLinkArguments, StepNoteArguments,
-    SymbolArguments, TreeArguments,
+    SymbolArguments, TourAddArguments, TourArguments, TourGroupArguments, TourMoveArguments,
+    TourNewArguments, TourNoteArguments, TourPinArguments, TourRenameArguments, TourRmArguments,
+    TourSwapArguments, TreeArguments,
 };
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -168,21 +168,21 @@ impl Levels {
     }
 }
 
-pub(crate) fn step_id(path: &Path, index: StepIndex) -> Option<StepId> {
-    path.steps()
+pub(crate) fn step_id(tour: &Tour, index: StepIndex) -> Option<StepId> {
+    tour.steps()
         .get(index.value())
         .map(|step| step.id().clone())
 }
 
-pub(crate) fn step_index(path: &Path, id: &StepId) -> Option<StepIndex> {
-    path.steps()
+pub(crate) fn step_index(tour: &Tour, id: &StepId) -> Option<StepIndex> {
+    tour.steps()
         .iter()
         .position(|step| step.id() == id)
         .map(StepIndex::new)
 }
 
-pub(crate) fn step_count(path: &Path) -> Count {
-    Count::new(path.steps().len())
+pub(crate) fn step_count(tour: &Tour) -> Count {
+    Count::new(tour.steps().len())
 }
 
 pub(crate) fn line_range(file: &SourceFile, start: LineNumber, end: LineNumber) -> Option<Span> {
@@ -238,8 +238,8 @@ pub(crate) enum Query {
         levels: Levels,
     },
     Roots(Count),
-    Paths(Option<TextFragment>),
-    Path {
+    Tours(Option<TextFragment>),
+    Tour {
         name: TextFragment,
         view: LinkView,
     },
@@ -253,13 +253,13 @@ pub(crate) enum Query {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum Edit {
-    PathNew {
-        name: Result<PathName, MapError>,
-        kind: PathKind,
+    TourNew {
+        name: Result<TourName, MapError>,
+        kind: TourKind,
         note: Option<Note>,
         group: GroupPlacement,
     },
-    PathGroup {
+    TourGroup {
         name: TextFragment,
         group: Option<GroupName>,
     },
@@ -267,7 +267,7 @@ pub(crate) enum Edit {
         old: Option<GroupName>,
         new: Option<GroupName>,
     },
-    PathNote {
+    TourNote {
         name: TextFragment,
         note: Option<Note>,
     },
@@ -291,38 +291,38 @@ pub(crate) enum Edit {
         old: TextFragment,
         new: TextFragment,
     },
-    PathRename {
+    TourRename {
         name: TextFragment,
-        new: Result<PathName, MapError>,
+        new: Result<TourName, MapError>,
     },
-    PathAdd {
+    TourAdd {
         name: TextFragment,
         placement: Placement,
     },
-    PathPin {
+    TourPin {
         name: TextFragment,
         step: StepIndex,
         file: RelativePath,
         lines: Lines,
     },
-    PathMove {
+    TourMove {
         name: TextFragment,
         step: StepIndex,
         under: Under,
     },
-    PathSwap {
+    TourSwap {
         name: TextFragment,
         one: StepIndex,
         other: StepIndex,
     },
-    PathRemove {
+    TourRemove {
         name: TextFragment,
         step: Option<StepIndex>,
     },
     Promote {
         symbol: SymbolName,
         levels: Option<Levels>,
-        name: Result<Option<PathName>, MapError>,
+        name: Result<Option<TourName>, MapError>,
         pruning: Pruning,
     },
 }
@@ -348,10 +348,10 @@ impl From<Command> for Request {
             Command::Index(arguments) => Self::Query(Query::Index(arguments.into())),
             Command::Tree(arguments) => Self::Query(arguments.into()),
             Command::Roots(arguments) => Self::Query(Query::Roots(Count(arguments.count))),
-            Command::Paths(arguments) => Self::Query(Query::Paths(
+            Command::Tours(arguments) => Self::Query(Query::Tours(
                 arguments.name.as_deref().map(TextFragment::new),
             )),
-            Command::Path(arguments) => Self::Query(arguments.into()),
+            Command::Tour(arguments) => Self::Query(arguments.into()),
             Command::Groups => Self::Query(Query::Groups),
             Command::Stale => Self::Query(Query::Stale),
             Command::Check => Self::Query(Query::Check),
@@ -361,20 +361,20 @@ impl From<Command> for Request {
             Command::Repin(arguments) => {
                 Self::Repin(arguments.revision.as_deref().map(Revision::new))
             }
-            Command::PathNew(arguments) => Self::Edit(arguments.into()),
-            Command::PathGroup(arguments) => Self::Edit(arguments.into()),
+            Command::TourNew(arguments) => Self::Edit(arguments.into()),
+            Command::TourGroup(arguments) => Self::Edit(arguments.into()),
             Command::GroupRename(arguments) => Self::Edit(arguments.into()),
-            Command::PathNote(arguments) => Self::Edit(arguments.into()),
+            Command::TourNote(arguments) => Self::Edit(arguments.into()),
             Command::StepNote(arguments) => Self::Edit(arguments.into()),
             Command::StepLink(arguments) => Self::Edit(arguments.into()),
             Command::StepUnlink(arguments) => Self::Edit(arguments.into()),
             Command::NoteEdit(arguments) => Self::Edit(arguments.into()),
-            Command::PathRename(arguments) => Self::Edit(arguments.into()),
-            Command::PathAdd(arguments) => Self::Edit(arguments.into()),
-            Command::PathPin(arguments) => Self::Edit(arguments.into()),
-            Command::PathMove(arguments) => Self::Edit(arguments.into()),
-            Command::PathSwap(arguments) => Self::Edit(arguments.into()),
-            Command::PathRm(arguments) => Self::Edit(arguments.into()),
+            Command::TourRename(arguments) => Self::Edit(arguments.into()),
+            Command::TourAdd(arguments) => Self::Edit(arguments.into()),
+            Command::TourPin(arguments) => Self::Edit(arguments.into()),
+            Command::TourMove(arguments) => Self::Edit(arguments.into()),
+            Command::TourSwap(arguments) => Self::Edit(arguments.into()),
+            Command::TourRm(arguments) => Self::Edit(arguments.into()),
             Command::Promote(arguments) => Self::Edit(arguments.into()),
         }
     }
@@ -417,9 +417,9 @@ impl From<TreeArguments> for Query {
     }
 }
 
-impl From<PathArguments> for Query {
-    fn from(arguments: PathArguments) -> Self {
-        Self::Path {
+impl From<TourArguments> for Query {
+    fn from(arguments: TourArguments) -> Self {
+        Self::Tour {
             name: TextFragment::new(&arguments.name),
             view: if arguments.inline {
                 LinkView::Inlined
@@ -430,10 +430,10 @@ impl From<PathArguments> for Query {
     }
 }
 
-impl From<PathNewArguments> for Edit {
-    fn from(arguments: PathNewArguments) -> Self {
-        Self::PathNew {
-            name: PathName::new(&arguments.name),
+impl From<TourNewArguments> for Edit {
+    fn from(arguments: TourNewArguments) -> Self {
+        Self::TourNew {
+            name: TourName::new(&arguments.name),
             kind: arguments.kind,
             note: arguments.note.as_deref().and_then(Note::new),
             group: arguments
@@ -446,9 +446,9 @@ impl From<PathNewArguments> for Edit {
     }
 }
 
-impl From<PathGroupArguments> for Edit {
-    fn from(arguments: PathGroupArguments) -> Self {
-        Self::PathGroup {
+impl From<TourGroupArguments> for Edit {
+    fn from(arguments: TourGroupArguments) -> Self {
+        Self::TourGroup {
             name: TextFragment::new(&arguments.name),
             group: GroupName::new(&arguments.group),
         }
@@ -464,9 +464,9 @@ impl From<GroupRenameArguments> for Edit {
     }
 }
 
-impl From<PathNoteArguments> for Edit {
-    fn from(arguments: PathNoteArguments) -> Self {
-        Self::PathNote {
+impl From<TourNoteArguments> for Edit {
+    fn from(arguments: TourNoteArguments) -> Self {
+        Self::TourNote {
             name: TextFragment::new(&arguments.name),
             note: Note::new(&arguments.note),
         }
@@ -513,17 +513,17 @@ impl From<NoteEditArguments> for Edit {
     }
 }
 
-impl From<PathRenameArguments> for Edit {
-    fn from(arguments: PathRenameArguments) -> Self {
-        Self::PathRename {
+impl From<TourRenameArguments> for Edit {
+    fn from(arguments: TourRenameArguments) -> Self {
+        Self::TourRename {
             name: TextFragment::new(&arguments.name),
-            new: PathName::new(&arguments.new),
+            new: TourName::new(&arguments.new),
         }
     }
 }
 
-impl From<PathAddArguments> for Edit {
-    fn from(arguments: PathAddArguments) -> Self {
+impl From<TourAddArguments> for Edit {
+    fn from(arguments: TourAddArguments) -> Self {
         let lines = |start: &i64, end: &i64| Lines {
             start: LineNumber(*start),
             end: LineNumber(*end),
@@ -534,7 +534,7 @@ impl From<PathAddArguments> for Edit {
             [start, end, under] => (Some(lines(start, end)), Some(Under(*under))),
             _ => (None, None),
         };
-        Self::PathAdd {
+        Self::TourAdd {
             name: TextFragment::new(&arguments.name),
             placement: Placement {
                 target: TextFragment::new(&arguments.target),
@@ -545,9 +545,9 @@ impl From<PathAddArguments> for Edit {
     }
 }
 
-impl From<PathPinArguments> for Edit {
-    fn from(arguments: PathPinArguments) -> Self {
-        Self::PathPin {
+impl From<TourPinArguments> for Edit {
+    fn from(arguments: TourPinArguments) -> Self {
+        Self::TourPin {
             name: TextFragment::new(&arguments.name),
             step: StepIndex(arguments.index),
             file: RelativePath::new(&arguments.file),
@@ -559,9 +559,9 @@ impl From<PathPinArguments> for Edit {
     }
 }
 
-impl From<PathMoveArguments> for Edit {
-    fn from(arguments: PathMoveArguments) -> Self {
-        Self::PathMove {
+impl From<TourMoveArguments> for Edit {
+    fn from(arguments: TourMoveArguments) -> Self {
+        Self::TourMove {
             name: TextFragment::new(&arguments.name),
             step: StepIndex(arguments.index),
             under: Under(arguments.under),
@@ -569,9 +569,9 @@ impl From<PathMoveArguments> for Edit {
     }
 }
 
-impl From<PathSwapArguments> for Edit {
-    fn from(arguments: PathSwapArguments) -> Self {
-        Self::PathSwap {
+impl From<TourSwapArguments> for Edit {
+    fn from(arguments: TourSwapArguments) -> Self {
+        Self::TourSwap {
             name: TextFragment::new(&arguments.name),
             one: StepIndex(arguments.one),
             other: StepIndex(arguments.other),
@@ -579,9 +579,9 @@ impl From<PathSwapArguments> for Edit {
     }
 }
 
-impl From<PathRmArguments> for Edit {
-    fn from(arguments: PathRmArguments) -> Self {
-        Self::PathRemove {
+impl From<TourRmArguments> for Edit {
+    fn from(arguments: TourRmArguments) -> Self {
+        Self::TourRemove {
             name: TextFragment::new(&arguments.name),
             step: arguments.index.map(StepIndex),
         }
@@ -593,7 +593,7 @@ impl From<PromoteArguments> for Edit {
         Self::Promote {
             symbol: SymbolName::new(&arguments.symbol),
             levels: arguments.depth.map(Levels),
-            name: arguments.name.as_deref().map(PathName::new).transpose(),
+            name: arguments.name.as_deref().map(TourName::new).transpose(),
             pruning: if arguments.all {
                 Pruning::All
             } else {

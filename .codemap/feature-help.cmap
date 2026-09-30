@@ -1,5 +1,5 @@
-codemap 8
-path feature-help
+codemap 9
+tour feature-help
 kind flow
 author ai
 group features/cli
@@ -22,7 +22,7 @@ author ai
 file crates/cli/src/wire.rs
 symbol Command
 lines 0 74
-hash 9789a85ed63443ca
+hash 5c01624772d17384
 note The command set as a clap enum. Each variant takes its subcommand name and about text from the feature registry, and the override_usage attribute supplies the two usage lines at the top of the help.
 
 step 51i5vc

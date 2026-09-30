@@ -1,9 +1,9 @@
-codemap 8
-path panel-tree
+codemap 9
+tour panel-tree
 kind flow
 author ai
 group gui
-note How the window is divided and how the reader rearranges it. Below the top bar and above the status bar, the window is one tree of panels: a split holds two branches side by side or one above the other at a ratio, and a leaf panel holds a stack of views shown as tabs. The ten views (Paths, Symbols, Files, Path, Diff, Graph, Source, Search, References, Console) each live in at most one panel. The tree is Panels in the Model, laid out top-down every frame from the body's rectangle. The reader drags a divider to resize, drags a tab onto a panel to join it or onto a panel's edge to split it, splits a panel with its | and - buttons, closes it with x, and fills a panel from the picker behind +, a searchable list of views. Navigation still speaks in centre tabs: whatever switches the tab brings that view to front wherever it lives, and adds it back next to the last one shown if it was in no panel. Pointer gestures are read before the tree is built and applied at once, so the frame that sees a drag already draws it. The tree is saved to the user's layout file whenever it changes and no drag is held, and a launch starts from that file (the io-layout path), or from the default tree when there is none.
+note How the window is divided and how the reader rearranges it. Below the top bar and above the status bar, the window is one tree of panels: a split holds two branches side by side or one above the other at a ratio, and a leaf panel holds a stack of views shown as tabs. The ten views (Tours, Symbols, Files, Tour, Diff, Graph, Source, Search, References, Console) each live in at most one panel. The tree is Panels in the Model, laid out top-down every frame from the body's rectangle. The reader drags a divider to resize, drags a tab onto a panel to join it or onto a panel's edge to split it, splits a panel with its | and - buttons, closes it with x, and fills a panel from the picker behind +, a searchable list of views. Navigation still speaks in centre tabs: whatever switches the tab brings that view to front wherever it lives, and adds it back next to the last one shown if it was in no panel. Pointer gestures are read before the tree is built and applied at once, so the frame that sees a drag already draws it. The tree is saved to the user's layout file whenever it changes and no drag is held, and a launch starts from that file (the io-layout path), or from the default tree when there is none.
 
 step 0b3yk5
 order 24
@@ -269,8 +269,8 @@ author ai
 file crates/gui/src/panels.rs
 symbol View
 lines 0 11
-hash 1f743ec5e093c0c0
-note The ten things a panel can show. Each is in at most one panel at a time, so element ids (tab@Source), scroll offsets and the one selection stay unambiguous; a view in no panel is hidden until picked or revealed. The five with a centre Tab (Path, Diff, Graph, Source, Search) are the ones navigation switches between.
+hash 03b31a684cf0818a
+note The ten things a panel can show. Each is in at most one panel at a time, so element ids (tab@Source), scroll offsets and the one selection stay unambiguous; a view in no panel is hidden until picked or revealed. The five with a centre Tab (Tour, Diff, Graph, Source, Search) are the ones navigation switches between.
 
 step ekaolx
 order 10
@@ -309,7 +309,7 @@ author ai
 file crates/gui/src/panels.rs
 symbol tab
 lines 0 9
-hash 47c08d74021a78fc
+hash ae87e417380544e5
 note The centre Tab a view stands for, if any: how navigation's tab and the panels' views meet.
 
 step he0ghg
@@ -368,8 +368,8 @@ author ai
 file crates/gui/src/views/panel_tree.rs
 symbol body
 lines 0 25
-hash 324899182a23852c
-note The one match from a view to what draws it. Paths, Symbols and Files sit in a panel-coloured column; References is told the panel's size, since its peek fits itself to it.
+hash 608b0d29fb8c55ac
+note The one match from a view to what draws it. Tours, Symbols and Files sit in a panel-coloured column; References is told the panel's size, since its peek fits itself to it.
 
 step mp1y9p
 order 0
@@ -457,7 +457,7 @@ file crates/gui/src/field.rs
 symbol impl Fields
 lines 37 54
 hash 9aed5dd5fba1b9c9
-note start_empty clears a field and gives it the keyboard; fill sets a field's text without focusing it (the new-path form's group); release takes the keyboard away only if that field has it. The picker uses both, so its search starts empty each time it opens.
+note start_empty clears a field and gives it the keyboard; fill sets a field's text without focusing it (the new-tour form's group); release takes the keyboard away only if that field has it. The picker uses both, so its search starts empty each time it opens.
 
 step sbmmjo
 order 31
@@ -485,8 +485,8 @@ author ai
 file crates/gui/src/panels.rs
 symbol default
 lines 0 23
-hash ca8b217319bd7957
-note The layout a launch starts with: Paths/Symbols/Files on the left (22%), the five centre views in the middle, References on the right (26% of the rest), Console along the bottom (18%).
+hash 6e0dd35299dffbf6
+note The layout a launch starts with: Tours/Symbols/Files on the left (22%), the five centre views in the middle, References on the right (26% of the rest), Console along the bottom (18%).
 
 step wz1vr6
 order 21
@@ -514,7 +514,7 @@ file crates/gui/src/nav.rs
 symbol reveal_tab
 lines 0 3
 hash f58d3e0634186970
-note Called by App::frame after the action queue: shows whichever centre view navigation asked for, so every feature that switches the tab (open a path, follow an xref, go back) also brings that view to front in whichever panel holds it.
+note Called by App::frame after the action queue: shows whichever centre view navigation asked for, so every feature that switches the tab (open a tour, follow an xref, go back) also brings that view to front in whichever panel holds it.
 
 step ycv5xc
 order 27

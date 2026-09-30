@@ -8,8 +8,8 @@ use crate::graph::{GraphAction, Heading};
 use crate::ids;
 use crate::keys::{Extend, PaletteKey, Walk};
 use crate::model::{
-    Context, Dirty, HIT_LIMIT, Hit, HitsShown, Measured, Openness, PathSlot, Readable, StepKey,
-    StepSlot, Tab, ViewFlag, Warned,
+    Context, Dirty, HIT_LIMIT, Hit, HitsShown, Measured, Openness, Readable, StepKey, StepSlot,
+    Tab, TourSlot, ViewFlag, Warned,
 };
 use crate::nav::{Scrolling, Ticket, Tries};
 use crate::palette::{Palette, PaletteAction};
@@ -40,13 +40,13 @@ pub(crate) enum ContextChange {
 pub(crate) enum Action {
     Focus(SymbolId),
     Jump(SymbolId),
-    OpenPath(PathSlot, Tab),
+    OpenTour(TourSlot, Tab),
     SelectStep(StepKey, Scrolling),
     Toggle(StepKey, ViewFlag),
-    HideAll(PathSlot, Hide),
-    CollapseAll(PathSlot, Collapse),
+    HideAll(TourSlot, Hide),
+    CollapseAll(TourSlot, Collapse),
     RemoveStep(StepKey),
-    RemovePath(PathSlot),
+    RemoveTour(TourSlot),
     GoTo(FileId, Line),
     Definition(FileId, Line, Column, Intent),
     SelectLine(Line, Extend),
@@ -96,13 +96,13 @@ impl App {
         match action {
             Action::Focus(symbol) => model.go_to_symbol(symbol),
             Action::Jump(symbol) => model.jumped_to_symbol(symbol),
-            Action::OpenPath(path, tab) => model.open_path(path, tab),
+            Action::OpenTour(tour, tab) => model.open_tour(tour, tab),
             Action::SelectStep(key, scrolling) => model.select_step(key, scrolling),
             Action::Toggle(key, flag) => model.views.entry(key).flags.toggle(flag),
-            Action::HideAll(path, hide) => self.hide_all(path, hide),
-            Action::CollapseAll(path, collapse) => self.collapse_all(path, collapse),
+            Action::HideAll(tour, hide) => self.hide_all(tour, hide),
+            Action::CollapseAll(tour, collapse) => self.collapse_all(tour, collapse),
             Action::RemoveStep(key) => self.remove_step(key),
-            Action::RemovePath(path) => self.remove_path(path),
+            Action::RemoveTour(tour) => self.remove_tour(tour),
             Action::GoTo(file, line) => model.open_line(file, line),
             Action::Definition(file, line, column, intent) => {
                 self.definition(file, line, column, intent);
@@ -269,32 +269,32 @@ impl App {
         }
     }
 
-    fn hide_all(&mut self, path: PathSlot, hide: Hide) {
+    fn hide_all(&mut self, tour: TourSlot, hide: Hide) {
         let model = &mut self.model;
-        let count = model.step_count(path).get();
+        let count = model.step_count(tour).get();
         for step in 0..count {
             model.views.entry(StepKey {
-                path,
+                tour,
                 step: StepSlot::new(step),
             });
         }
         let hide = hide == Hide::Hide;
-        model.views.each_of_path(path, |step, view| {
+        model.views.each_of_tour(tour, |step, view| {
             view.flags.set(ViewFlag::Hidden, hide && step.get() < count);
             let collapsed = view.flags.has(ViewFlag::Collapsed);
             view.flags.set(ViewFlag::Collapsed, collapsed && hide);
         });
     }
 
-    fn collapse_all(&mut self, path: PathSlot, collapse: Collapse) {
+    fn collapse_all(&mut self, tour: TourSlot, collapse: Collapse) {
         let model = &mut self.model;
-        let count = model.step_count(path).get();
+        let count = model.step_count(tour).get();
         let with_children: Vec<bool> = (0..count)
             .map(|step| {
                 collapse == Collapse::Collapse
                     && model
                         .descendants(StepKey {
-                            path,
+                            tour,
                             step: StepSlot::new(step),
                         })
                         .get()
@@ -303,11 +303,11 @@ impl App {
             .collect();
         for step in 0..count {
             model.views.entry(StepKey {
-                path,
+                tour,
                 step: StepSlot::new(step),
             });
         }
-        model.views.each_of_path(path, |step, view| {
+        model.views.each_of_tour(tour, |step, view| {
             let collapsed = with_children.get(step.get()).copied().unwrap_or(false);
             view.flags.set(ViewFlag::Collapsed, collapsed);
         });
@@ -316,16 +316,16 @@ impl App {
     fn remove_step(&mut self, key: StepKey) {
         let model = &mut self.model;
         let number = model.number_of(key);
-        let (Some(path), Some(step)) = (model.path(key.path), model.step(key)) else {
+        let (Some(tour), Some(step)) = (model.tour(key.tour), model.step(key)) else {
             return;
         };
-        let name = path.name().clone();
+        let name = tour.name().clone();
         let id = step.id().clone();
         model.status = Status::StepRemoved {
             number,
             symbol: step.symbol().cloned(),
             file: step.file().clone(),
-            path: name.clone(),
+            tour: name.clone(),
         };
         drop(model.map.remove_step(&name, &id));
         model.forget_step();
@@ -333,19 +333,19 @@ impl App {
         model.disk.dirty = Dirty::Unsaved;
     }
 
-    fn remove_path(&mut self, slot: PathSlot) {
+    fn remove_tour(&mut self, slot: TourSlot) {
         let model = &mut self.model;
-        let Some(name) = model.path(slot).map(|path| path.name().clone()) else {
+        let Some(name) = model.tour(slot).map(|tour| tour.name().clone()) else {
             return;
         };
-        match model.map.remove_path(&name) {
+        match model.map.remove_tour(&name) {
             Ok(removed) => {
-                model.status = Status::PathRemoved {
+                model.status = Status::TourRemoved {
                     name: removed.name().clone(),
                     steps: Count::new(removed.steps().len()),
                 };
-                model.forget_path();
-                model.path_removed(slot);
+                model.forget_tour();
+                model.tour_removed(slot);
                 model.disk.dirty = Dirty::Unsaved;
             }
             Err(error) => {
@@ -381,9 +381,9 @@ impl App {
         let enter = match which {
             Which::Search
             | Which::SymbolFilter
-            | Which::PathFilter
+            | Which::TourFilter
             | Which::GoToLine
-            | Which::NewPath
+            | Which::NewTour
             | Which::NewGroup
             | Which::Palette => Enter::Keep,
             Which::Command | Which::ViewSearch => Enter::Clear,
@@ -393,7 +393,7 @@ impl App {
         if *self.model.fields.get(which).text() != before {
             match which {
                 Which::SymbolFilter => self.model.scrolls.set(ids::symbols(), Px::ZERO),
-                Which::PathFilter => self.model.scrolls.set(ids::paths(), Px::ZERO),
+                Which::TourFilter => self.model.scrolls.set(ids::tours(), Px::ZERO),
                 _ => {}
             }
         }
@@ -403,10 +403,10 @@ impl App {
         match which {
             Which::Command => self.run_command(&line),
             Which::Search => self.search(),
-            Which::NewPath | Which::NewGroup => self.create_path(),
+            Which::NewTour | Which::NewGroup => self.create_tour(),
             Which::GoToLine => self.go_to_line(&line),
             Which::ViewSearch => self.pick_first(&line),
-            Which::SymbolFilter | Which::PathFilter | Which::Palette => {}
+            Which::SymbolFilter | Which::TourFilter | Which::Palette => {}
         }
     }
 

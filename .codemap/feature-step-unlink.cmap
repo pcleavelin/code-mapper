@@ -1,5 +1,5 @@
-codemap 8
-path feature-step-unlink
+codemap 9
+tour feature-step-unlink
 kind flow
 author ai
 group features/cli
@@ -10,10 +10,10 @@ order 2
 parent ixm7kw
 author ai
 file crates/cli/src/exec.rs
-symbol find_path
+symbol find_tour
 lines 0 5
-hash 63e1a3b28d250aa6
-note The path must exist.
+hash 0d594859f978d957
+note The tour must exist.
 
 step 9ruwb7
 order 0
@@ -21,7 +21,7 @@ author ai
 file crates/cli/src/exec.rs
 symbol step_unlink
 lines 0 13
-hash e5525c425a55b681
+hash 55b6aeaaf92e36dd
 note Finds the step, refuses when it carries no link, clears the link and prints the confirmation.
 
 step bb2wjx
@@ -31,8 +31,8 @@ author ai
 file crates/domain/src/map.rs
 symbol set_link
 lines 0 17
-hash de19adf8cf3aeff4
-link path-links
+hash f889c90d31983a4d
+link tour-links
 note Called with no target, which clears the link.
 
 step ixm7kw
@@ -42,8 +42,8 @@ author ai
 file crates/cli/src/exec.rs
 symbol find_step
 lines 0 7
-hash fe848f2c971eee7d
-note The path by name, then the step at that index; a bad index is an error.
+hash b3c00b8fc9bad614
+note The tour by name, then the step at that index; a bad index is an error.
 
 step mpu589
 order 4

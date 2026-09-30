@@ -297,7 +297,7 @@ impl Frame<'_> {
     pub(crate) fn note(&mut self, text: impl Into<Label>, color: ui::Color, padding: Padding) {
         let size = self.metrics.font;
         let padding = match padding {
-            Padding::Path => PANEL_PADDING,
+            Padding::Tour => PANEL_PADDING,
             Padding::Step => LABEL_PADDING,
         };
         self.ui.leaf(
@@ -942,7 +942,7 @@ impl RowClicks {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Padding {
-    Path,
+    Tour,
     Step,
 }
 

@@ -1,9 +1,9 @@
-codemap 8
-path feature-select-step
+codemap 9
+tour feature-select-step
 kind flow
 author ai
 group features/gui
-note Click a step's header in the document, its row in the steps list, or a crumb in the breadcrumb, and that step becomes the selection: it gets the accent bar, its file and lines become the current place, and the graph and xrefs follow its symbol. The reader needs it to set the one selection every view follows from wherever they are looking (one selection for the whole app). Clicked in the steps list or the breadcrumb, the document scrolls the step's header to the top; clicked on its own header, the document stays where it is. A step inside a collapsed subtree is revealed by expanding its ancestors. From the Source, Search or Diff tab the centre switches back to the Path tab.
+note Click a step's header in the document, its row in the steps list, or a crumb in the breadcrumb, and that step becomes the selection: it gets the accent bar, its file and lines become the current place, and the graph and xrefs follow its symbol. The reader needs it to set the one selection every view follows from wherever they are looking (one selection for the whole app). Clicked in the steps list or the breadcrumb, the document scrolls the step's header to the top; clicked on its own header, the document stays where it is. A step inside a collapsed subtree is revealed by expanding its ancestors. From the Source, Search or Diff tab the centre switches back to the Tour tab.
 
 step 1uqvmv
 order 5
@@ -12,7 +12,7 @@ author ai
 file crates/gui/src/views/document.rs
 symbol breadcrumb
 lines 24 43
-hash 238959a04b4050aa
+hash f3f8302605e120c3
 note Trigger in the breadcrumb: one crumb per ancestor of the topmost visible step, root first, each a CRUMB link. A click queues SelectStep with Scrolling::Scroll.
 
 step 95fr2n
@@ -22,7 +22,7 @@ author ai
 file crates/gui/src/model.rs
 symbol parent_of
 lines 0 3
-hash 3ca92289f790c093
+hash f89b0444c179be8e
 note Walks up the tree one parent at a time; the loop stops on a repeated slot so a malformed parent cycle cannot hang the frame.
 
 step 9c84zs
@@ -31,8 +31,8 @@ author ai
 file crates/gui/src/nav.rs
 symbol select_step
 lines 0 53
-hash c309ed71b85c827e
-note The handler. Records the path and step and makes the step the target added steps hang under, expands every collapsed ancestor so the step is visible, then points file, lines and focus at the step. A step whose symbol resolves focuses that symbol; a bare line slice focuses the symbol enclosing its first line. Scrolling::Scroll leaves a ticketed request that the document answers once the header is laid out.
+hash d8e961f7c6c62ddd
+note The handler. Records the tour and step and makes the step the target added steps hang under, expands every collapsed ancestor so the step is visible, then points file, lines and focus at the step. A step whose symbol resolves focuses that symbol; a bare line slice focuses the symbol enclosing its first line. Scrolling::Scroll leaves a ticketed request that the document answers once the header is laid out.
 
 step c1bc11
 order 3
@@ -42,7 +42,7 @@ file crates/gui/src/views/document.rs
 symbol step_header
 lines 40 50
 hash efd4f40df26377f7
-note Trigger in the document: the step header is a link text with the STEP_HEADER id numbered by the step's slot. A click on a step of the path being read queues SelectStep with Scrolling::Stay, so the page does not jump under the pointer; a click on a step shown inline under a link queues Scroll, because that step opens in its own path.
+note Trigger in the document: the step header is a link text with the STEP_HEADER id numbered by the step's slot. A click on a step of the tour being read queues SelectStep with Scrolling::Stay, so the page does not jump under the pointer; a click on a step shown inline under a link queues Scroll, because that step opens in its own tour.
 
 step df3vqi
 order 4

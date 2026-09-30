@@ -1,9 +1,9 @@
-codemap 8
-path feature-jump-to-definition
+codemap 9
+tour feature-jump-to-definition
 kind flow
 author ai
 group features/gui
-note Ctrl-click or double-click an identifier in any code view (document, source, peek, graph node) to go to its definition. The reader reaches for it to reach a definition without searching for it, as an editor with an LSP allows. A definition that is a symbol in the repo lands on that symbol: the matching step of the path being read when there is one, otherwise the Source view. A definition inside a symbol (a field, a local) opens the Source view on its line. One outside the repo cannot be jumped to and is shown in the peek panel instead, with a status line saying where it is. With a language server the answer arrives a few frames later; without one, the symbol of that name is used; prose files do nothing. No definition found is reported in the status bar.
+note Ctrl-click or double-click an identifier in any code view (document, source, peek, graph node) to go to its definition. The reader reaches for it to reach a definition without searching for it, as an editor with an LSP allows. A definition that is a symbol in the repo lands on that symbol: the matching step of the tour being read when there is one, otherwise the Source view. A definition inside a symbol (a field, a local) opens the Source view on its line. One outside the repo cannot be jumped to and is shown in the peek panel instead, with a status line saying where it is. With a language server the answer arrives a few frames later; without one, the symbol of that name is used; prose files do nothing. No definition found is reported in the status bar.
 
 step 0qrr3m
 order 8
@@ -62,8 +62,8 @@ author ai
 file crates/gui/src/nav.rs
 symbol jumped_to_symbol
 lines 0 6
-hash e448b09bc1f369c0
-note Selects the symbol, which picks the matching step of the path being read when there is one; unless that put the reader on a step in the document, or the graph is showing, the Source view is shown.
+hash 03eafa6ac7be3975
+note Selects the symbol, which picks the matching step of the tour being read when there is one; unless that put the reader on a step in the document, or the graph is showing, the Source view is shown.
 
 step oduobc
 order 13

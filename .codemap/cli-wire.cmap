@@ -1,5 +1,5 @@
-codemap 8
-path cli-wire
+codemap 9
+tour cli-wire
 kind layer
 author ai
 group cli
@@ -21,7 +21,7 @@ author ai
 file crates/cli/src/wire.rs
 symbol label
 lines 0 2
-hash 600bddc0e146b905
+hash 35be43a60004dc44
 note name[index], how a step is named in every message.
 
 step 1q3usm
@@ -31,7 +31,7 @@ file crates/cli/src/wire.rs
 symbol place
 lines 0 8
 hash da8d335e32ad517e
-note Where a step points, in paths, path, path-pin's report and stale: file:start-end, or the file with (file gone) or (symbol gone) when it no longer resolves.
+note Where a step points, in tours, tour, tour-pin's report and stale: file:start-end, or the file with (file gone) or (symbol gone) when it no longer resolves.
 
 step 21vnsc
 order 2
@@ -69,7 +69,7 @@ file crates/cli/src/wire.rs
 symbol impl fmt::Display for LeftStale
 lines 0 19
 hash 90aa208827fc07ef
-note Why repin left a step stale: its file or text is gone at the revision, no symbol holds it, or under half its lines survived; printed beside the step so the agent knows it must path-pin by hand.
+note Why repin left a step stale: its file or text is gone at the revision, no symbol holds it, or under half its lines survived; printed beside the step so the agent knows it must tour-pin by hand.
 
 step 76pn34
 order 22
@@ -78,8 +78,8 @@ author ai
 file crates/cli/src/wire.rs
 symbol map_error
 lines 0 33
-hash e0d5348d694af32f
-note The wording of every MapError: invalid, taken and case-clashing names, missing paths, steps, parents, files and symbols, links to a path's own steps, a step under its own subtree, a note-edit whose text is not in the note.
+hash 354ba46ad8658a58
+note The wording of every MapError: invalid, taken and case-clashing names, missing tours, steps, parents, files and symbols, links to a tour's own steps, a step under its own subtree, a note-edit whose text is not in the note.
 
 step 99daqk
 order 29
@@ -89,7 +89,7 @@ file crates/io-map/src/lib.rs
 symbol impl MapVersion
 lines 0 6
 hash 65618a4844500626
-note MapVersion::CURRENT: io-map's version line ('codemap 8') that every .cmap file starts with, quoted when a file has another; a map with another one is regenerated, not migrated.
+note MapVersion::CURRENT: io-map's version line ('codemap 9') that every .cmap file starts with, quoted when a file has another; a map with another one is regenerated, not migrated.
 
 step 9vgd49
 order 8
@@ -107,7 +107,7 @@ file crates/cli/src/wire.rs
 symbol symbol_label
 lines 0 10
 hash e184ce4bafc0e545
-note name file:start-end, the one line format every symbol is printed in, so output pastes back into show or path-add.
+note name file:start-end, the one line format every symbol is printed in, so output pastes back into show or tour-add.
 
 step bahwcf
 order 5
@@ -116,8 +116,8 @@ author ai
 file crates/cli/src/wire.rs
 symbol KINDS
 lines 0 4
-hash df0b407dce6ff722
-note The one table of path-kind names, used to parse a kind and to print one.
+hash 6b0d12b6805b069c
+note The one table of tour-kind names, used to parse a kind and to print one.
 
 step cx2v3v
 order 23
@@ -126,8 +126,8 @@ author ai
 file crates/cli/src/wire.rs
 symbol linked_from_error
 lines 0 5
-hash 947efc27c3944379
-note Removing a path that is linked names every linking step, so the fix is in the message.
+hash b57f43269a54d502
+note Removing a tour that is linked names every linking step, so the fix is in the message.
 
 step e0yvrn
 order 20
@@ -165,7 +165,7 @@ author ai
 file crates/cli/src/wire.rs
 symbol parse_kind
 lines 0 9
-hash 9a51b7288752b140
+hash c05371c63332d77b
 note kind is parsed by clap through this, so a bad kind is a usage error listing the three names.
 
 step fxrv6w
@@ -173,9 +173,9 @@ order 3
 parent gdn2y6
 author ai
 file crates/cli/src/wire.rs
-symbol PathAddArguments
+symbol TourAddArguments
 lines 0 5
-hash 2bc41fc34b35eca9
+hash d13de1d1fb949fe6
 note The one argument struct with a variable shape: up to three trailing numbers, whose count decides between a symbol and a line range and whether a parent was given (read in convert.rs). The other argument structs are one field per positional argument.
 
 step gdn2y6
@@ -184,8 +184,8 @@ author ai
 file crates/cli/src/wire.rs
 symbol Command
 lines 0 74
-hash 9789a85ed63443ca
-note The command set, one variant per command Feature, in the order help lists them. Help is disabled as a flag and overridden as usage so the help text starts with the two ways to run codemap. note-edit, path-add and path-move allow negative numbers, since -1 means the path note or the root there.
+hash 5c01624772d17384
+note The command set, one variant per command Feature, in the order help lists them. Help is disabled as a flag and overridden as usage so the help text starts with the two ways to run codemap. note-edit, tour-add and tour-move allow negative numbers, since -1 means the tour note or the root there.
 
 step h4ludh
 order 16
@@ -202,8 +202,8 @@ author ai
 file crates/cli/src/wire.rs
 symbol kind_name
 lines 0 5
-hash 015b8756c0e64402
-note A path kind's printed name, from KINDS.
+hash cd9ca653d4b5fe4f
+note A tour kind's printed name, from KINDS.
 
 step hltzv5
 order 18
@@ -212,7 +212,7 @@ file crates/cli/src/wire.rs
 symbol is_function
 lines 0 2
 hash ed33f65164aab713
-note Whether a symbol kind is function-like, by substring of the kind name the language gives; path-add's does-not-call note checks only such children.
+note Whether a symbol kind is function-like, by substring of the kind name the language gives; tour-add's does-not-call note checks only such children.
 
 step izkhx9
 order 13
@@ -259,8 +259,8 @@ author ai
 file crates/cli/src/wire.rs
 symbol fault
 lines 0 23
-hash 1c89bd003b71e889
-note The wording of every fault in a .cmap file: a conflict left in it, a wrong or missing version line, unknown fields, kinds and authors, malformed numbers and hashes, a step missing a field or naming a parent the path lacks.
+hash 0bf3507422e2aad0
+note The wording of every fault in a .cmap file: a conflict left in it, a wrong or missing version line, unknown fields, kinds and authors, malformed numbers and hashes, a step missing a field or naming a parent the tour lacks.
 
 step qfqq78
 order 21
@@ -268,7 +268,7 @@ author ai
 file crates/cli/src/wire.rs
 symbol impl fmt::Display for Failure
 lines 0 54
-hash 59022515dd3e9d90
+hash 38d3742a7aa1571d
 note The wording of every Failure. The CLI prints it on stderr, the GUI in its log and status line. An ambiguous symbol lists each candidate's copyable name beside its label; check's failure counts stale steps and broken links.
 
 step rjntgu
@@ -288,8 +288,8 @@ author ai
 file crates/cli/src/wire.rs
 symbol load_error
 lines 0 17
-hash ac6eb4335a6b43bd
-note A map that does not load: the old single-file format, an unreadable file, a parse error, a file holding more than one path or a path in the wrong file. Each names the file, so the agent can open it.
+hash b0caf2e4ec43bdd9
+note A map that does not load: the old single-file format, an unreadable file, a parse error, a file holding more than one tour or a tour in the wrong file. Each names the file, so the agent can open it.
 
 step si0qtr
 order 25

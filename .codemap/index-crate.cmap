@@ -1,9 +1,9 @@
-codemap 8
-path index-crate
+codemap 9
+tour index-crate
 kind layer
 author ai
 group index
-note The index crate: building the domain's Index from the source tree. It owns the two backends and the linking: tree-sitter parsing and highlighting (parse.rs), the language-server orchestration over io-lsp (server.rs), call sites resolved into callees and callers (link.rs), and build, which walks through io-source and reuses io-cache. The CLI and the GUI use only this surface; each piece's workflow is its own path, linked from the step that names it.
+note The index crate: building the domain's Index from the source tree. It owns the two backends and the linking: tree-sitter parsing and highlighting (parse.rs), the language-server orchestration over io-lsp (server.rs), call sites resolved into callees and callers (link.rs), and build, which walks through io-source and reuses io-cache. The CLI and the GUI use only this surface; each piece's workflow is its own tour, linked from the step that names it.
 
 step 7wpoeq
 order 2

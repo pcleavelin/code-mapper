@@ -1,13 +1,13 @@
-use domain::{Author, PathKind};
+use domain::{Author, TourKind};
 use strum::VariantArray;
 
 use crate::error::{Fault, FieldKey, FieldValue};
 
-pub(crate) const VERSION: &str = "codemap 8";
+pub(crate) const VERSION: &str = "codemap 9";
 
 const VERSION_KEY: &str = "codemap";
 
-const VERSION_VALUE: &str = "8";
+const VERSION_VALUE: &str = "9";
 
 pub(crate) const MAP_EXTENSION: &str = "cmap";
 
@@ -57,18 +57,18 @@ impl LineKey {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
-pub(crate) enum PathKey {
-    Path,
+pub(crate) enum TourKey {
+    Tour,
     Kind,
     Author,
     Group,
     Note,
 }
 
-impl PathKey {
+impl TourKey {
     const fn name(self) -> KeyName {
         KeyName(match self {
-            Self::Path => "path",
+            Self::Tour => "tour",
             Self::Kind => "kind",
             Self::Author => "author",
             Self::Group => "group",
@@ -120,9 +120,9 @@ impl StepKey {
     }
 }
 
-pub(crate) struct CmapPath {
+pub(crate) struct CmapTour {
     pub(crate) name: Option<(String, u32)>,
-    pub(crate) kind: PathKind,
+    pub(crate) kind: TourKind,
     pub(crate) author: Author,
     pub(crate) group: String,
     pub(crate) note: String,
@@ -163,16 +163,16 @@ fn parse_author(value: &str) -> Option<Author> {
         .find(|author| author_name(*author).as_str() == value)
 }
 
-fn kind_name(kind: PathKind) -> KeyName {
+fn kind_name(kind: TourKind) -> KeyName {
     KeyName(match kind {
-        PathKind::Flow => "flow",
-        PathKind::Layer => "layer",
-        PathKind::Type => "type",
+        TourKind::Flow => "flow",
+        TourKind::Layer => "layer",
+        TourKind::Data => "data",
     })
 }
 
-fn parse_kind(value: &str) -> Option<PathKind> {
-    PathKind::VARIANTS
+fn parse_kind(value: &str) -> Option<TourKind> {
+    TourKind::VARIANTS
         .iter()
         .copied()
         .find(|kind| kind_name(*kind).as_str() == value)
@@ -228,8 +228,8 @@ fn parse_order(value: &str) -> Option<u32> {
         .flatten()
 }
 
-pub(crate) fn parse(text: &str) -> Result<Vec<CmapPath>, WireFault> {
-    let mut paths: Vec<CmapPath> = Vec::new();
+pub(crate) fn parse(text: &str) -> Result<Vec<CmapTour>, WireFault> {
+    let mut tours: Vec<CmapTour> = Vec::new();
     let mut in_step = false;
     for (line, raw_line) in (0u32..).zip(text.lines()) {
         let at = |fault: Fault| WireFault { line, fault };
@@ -248,9 +248,9 @@ pub(crate) fn parse(text: &str) -> Result<Vec<CmapPath>, WireFault> {
             if raw_line != VERSION {
                 return Err(at(Fault::Version(FieldValue::new(raw_line))));
             }
-            paths.push(CmapPath {
+            tours.push(CmapTour {
                 name: None,
-                kind: PathKind::Flow,
+                kind: TourKind::Flow,
                 author: Author::Agent,
                 group: String::new(),
                 note: String::new(),
@@ -259,22 +259,22 @@ pub(crate) fn parse(text: &str) -> Result<Vec<CmapPath>, WireFault> {
             in_step = false;
             continue;
         }
-        let Some(path) = paths.last_mut() else {
+        let Some(tour) = tours.last_mut() else {
             return Err(at(Fault::NoVersion));
         };
         let author = |name: &str| {
             parse_author(name).ok_or_else(|| at(Fault::UnknownAuthor(FieldValue::new(name))))
         };
         if key == LineKey::Step.name().as_str() {
-            if path.steps.iter().any(|step| step.id == value) {
+            if tour.steps.iter().any(|step| step.id == value) {
                 return Err(at(Fault::SecondStep(FieldValue::new(&value))));
             }
-            path.steps.push(CmapStep {
+            tour.steps.push(CmapStep {
                 id: value,
                 line,
                 order: None,
                 parent: None,
-                author: path.author,
+                author: tour.author,
                 file: None,
                 symbol: String::new(),
                 lines: None,
@@ -286,21 +286,21 @@ pub(crate) fn parse(text: &str) -> Result<Vec<CmapPath>, WireFault> {
             continue;
         }
         if !in_step {
-            match PathKey::named(key) {
-                Some(PathKey::Path) => path.name = Some((value, line)),
-                Some(PathKey::Kind) => {
-                    path.kind = parse_kind(&value)
+            match TourKey::named(key) {
+                Some(TourKey::Tour) => tour.name = Some((value, line)),
+                Some(TourKey::Kind) => {
+                    tour.kind = parse_kind(&value)
                         .ok_or_else(|| at(Fault::UnknownKind(FieldValue::new(&value))))?;
                 }
-                Some(PathKey::Author) => path.author = author(&value)?,
-                Some(PathKey::Group) => path.group = value,
-                Some(PathKey::Note) => path.note = value,
-                None => return Err(at(Fault::UnknownPathField(FieldKey::new(key)))),
+                Some(TourKey::Author) => tour.author = author(&value)?,
+                Some(TourKey::Group) => tour.group = value,
+                Some(TourKey::Note) => tour.note = value,
+                None => return Err(at(Fault::UnknownTourField(FieldKey::new(key)))),
             }
             continue;
         }
-        let Some(step) = path.steps.last_mut() else {
-            return Err(at(Fault::UnknownPathField(FieldKey::new(key))));
+        let Some(step) = tour.steps.last_mut() else {
+            return Err(at(Fault::UnknownTourField(FieldKey::new(key))));
         };
         match StepKey::named(key) {
             Some(StepKey::Parent) => step.parent = Some((value, line)),
@@ -321,7 +321,7 @@ pub(crate) fn parse(text: &str) -> Result<Vec<CmapPath>, WireFault> {
             None => return Err(at(Fault::UnknownStepField(FieldKey::new(key)))),
         }
     }
-    Ok(paths)
+    Ok(tours)
 }
 
 pub(crate) struct CmapText {
@@ -343,21 +343,21 @@ impl CmapText {
     }
 }
 
-pub(crate) fn render(path: &CmapPath) -> String {
+pub(crate) fn render(tour: &CmapTour) -> String {
     let mut out = CmapText {
         text: String::new(),
     };
     out.field(VERSION_KEY, VERSION_VALUE);
-    let name = path.name.as_ref().map_or("", |name| name.0.as_str());
-    out.field(PathKey::Path.name().as_str(), name);
-    out.field(PathKey::Kind.name().as_str(), kind_name(path.kind).as_str());
+    let name = tour.name.as_ref().map_or("", |name| name.0.as_str());
+    out.field(TourKey::Tour.name().as_str(), name);
+    out.field(TourKey::Kind.name().as_str(), kind_name(tour.kind).as_str());
     out.field(
-        PathKey::Author.name().as_str(),
-        author_name(path.author).as_str(),
+        TourKey::Author.name().as_str(),
+        author_name(tour.author).as_str(),
     );
-    out.optional(PathKey::Group.name().as_str(), &path.group);
-    out.optional(PathKey::Note.name().as_str(), &path.note);
-    let mut by_id: Vec<&CmapStep> = path.steps.iter().collect();
+    out.optional(TourKey::Group.name().as_str(), &tour.group);
+    out.optional(TourKey::Note.name().as_str(), &tour.note);
+    let mut by_id: Vec<&CmapStep> = tour.steps.iter().collect();
     by_id.sort_by(|one, other| one.id.cmp(&other.id));
     for step in by_id {
         out.text.push('\n');

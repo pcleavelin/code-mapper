@@ -1,0 +1,218 @@
+codemap 9
+tour tour-editing
+kind flow
+author ai
+group cli
+note How the agent builds a tour from the command line. Each command is one Edit, run by a method on exec.rs's Run that finds the tour and step it names, calls one Map method, and returns Changed; the CLI then saves through MapStore and exits, while the GUI's console marks the map unsaved. Every step and tour created records the author the front end passed: Agent from the CLI, Human from the GUI's console, so the owner can see what a session wrote. The shape of a flow is the agent's responsibility: tour-add and tour-move take an explicit parent and print a note when a step lands under something that does not call it, which is the one guard rail against a flow that does not read like a call tree.
+
+step 1029p2
+order 3
+author ai
+file crates/cli/src/exec.rs
+symbol tour_note
+lines 0 3
+hash 4c786ad696813db9
+note tour-note: replace the tour note. The note is the part written for someone who did not see the code, so it is set separately from creation and usually rewritten once the steps exist. An empty note clears it.
+
+step 2udthu
+order 18
+author ai
+file crates/cli/src/exec.rs
+symbol tour_move
+lines 0 23
+hash 3e3f981e3a244bf5
+note tour-move: ask for the new parent's file, reparent the step with its subtree, then the same does-not-call note tour-add prints, so a flow stays a call tree.
+
+step 51ob7o
+order 15
+parent sf7kmc
+author ai
+file crates/cli/src/exec.rs
+symbol call_note
+lines 0 31
+hash 3e7a134056ea2869
+note The guard rail: in a flow, a step belongs under the step that calls it, so a placement the call graph does not support prints a note with the tour-move command that fixes it. Only a function-like child (function, method, macro, constructor, proc) is checked, so data placed under the function that works on it is a normal step, and a step under its own symbol is not flagged. Only flows are checked; layers and data are groupings, not call trees.
+
+step 59ckov
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol tour_new
+lines 0 15
+hash 52784a5fc2074144
+note tour-new: create the tour, then set its note and its group if they were given. Creating an existing name changes nothing but what was given, so a script can be re-run. An invalid name arrives from convert.rs as the MapError TourName::new returned and is reported here.
+
+step 7v329z
+order 14
+parent sf7kmc
+author ai
+file crates/cli/src/wire.rs
+symbol absolute_note
+lines 0 8
+hash 469d3d0cdac7177b
+note A line range that no single symbol contains is pinned as absolute lines; this says so, since such a step goes stale with any edit above it. tour-pin prints the same note.
+
+step 8npbz9
+order 17
+parent le10tk
+author ai
+file crates/domain/src/map.rs
+symbol impl Map
+lines 0 161
+hash 6a3816f2643356b4
+note edit_tour_note and edit_step_note: the text must occur in the note, else MapError::NoteLacks; replacing it with nothing that leaves an empty note clears the note.
+
+step d4y66f
+order 12
+parent w73udm
+author ai
+file crates/cli/src/exec.rs
+symbol find_step
+lines 0 7
+hash b3c00b8fc9bad614
+note The lookup every command that takes a step index goes through: the tour by name, then the StepId at that position, or Failure::NoSuchStep when the index is past the last step, so step-note, note-edit, step-link, tour-move, tour-swap and tour-pin all reject a bad index the same way.
+
+step e1cs6y
+order 6
+parent sf7kmc
+author ai
+file crates/cli/src/exec.rs
+symbol index_parent
+lines 0 8
+hash a8a1d337d8e04401
+note The parent step's file is asked of the language server first (CLI only), so the does-not-call note sees that file's calls.
+
+step f76nu0
+order 13
+parent wezg24
+author ai
+file crates/domain/src/map.rs
+symbol free_name
+lines 0 15
+hash 341df8b1c1e68bcd
+note The name check for tour-new and tour-rename: not another tour's name, and not another tour's name in other letter case, since the two files would be one on a case-insensitive file system.
+
+step i8rnlb
+order 10
+author ai
+file crates/cli/src/exec.rs
+symbol tour_remove
+lines 0 25
+hash e8b374606286358d
+note tour-rm: with an index it deletes one step, without one the whole tour, which Map::remove_tour refuses while another tour links to it; that refusal is turned into Failure::LinkedFrom naming each linking step as name[index]. There is no undo anywhere in this tool.
+
+step ig13b9
+order 7
+parent sf7kmc
+author ai
+file crates/cli/src/convert.rs
+symbol line_range
+lines 0 6
+hash 6e6ad28c3bf3dc4b
+note The line-range form: user ranges are 1-based inclusive, and this is where they become the 0-based Span everything else uses. A range outside the file is Failure::LineRange rather than clamped, unlike show.
+
+step le10tk
+order 16
+author ai
+file crates/cli/src/exec.rs
+symbol note_edit
+lines 0 20
+hash 463a0b3f8de7cf3a
+note note-edit: replace the first occurrence of one clause in a note, the tour note for index -1 or a step's note otherwise, and print the note as it now reads so the edit can be checked.
+
+step mygqzh
+order 19
+parent 2udthu
+author ai
+file crates/domain/src/map.rs
+symbol reparent
+lines 0 24
+hash 48f2e2922a035879
+note Refuses a parent that is the step itself or inside its subtree (MapError::UnderItself), so the steps stay a tree.
+
+step n0e9yx
+order 8
+parent sf7kmc
+author ai
+file crates/cli/src/exec.rs
+symbol find_symbol
+lines 0 9
+hash 83bfb633b05da03e
+note The symbol form demands exactly one match and lists the candidates otherwise, each under the shortest name that selects it alone, because writing a step into the map is not something to guess at.
+
+step rmkp5m
+order 20
+author ai
+file crates/cli/src/exec.rs
+symbol tour_swap
+lines 0 11
+hash 4a598d83b14bdf41
+note tour-swap: exchange two steps' places in the list, which orders siblings the code does not order (layers, data).
+
+step sf7kmc
+order 5
+author ai
+file crates/cli/src/exec.rs
+symbol tour_add
+lines 0 52
+hash ee61059aad2e6b0c
+note tour-add, the command that does the real work. convert.rs has already read the trailing numbers: none or one is a whole symbol, two or three is a line range, and the last number is the parent when it is there. Default parent is the last step, so consecutive adds build a chain and an explicit index starts a branch; -1 is the root, and a parent past the last step is Failure::NoPlaceUnder. After the add it prints the step's index and parent, and the notes below.
+
+step uophoa
+order 1
+parent 1029p2
+author ai
+file crates/cli/src/exec.rs
+symbol find_tour
+lines 0 5
+hash 0d594859f978d957
+note Every edit but tour-new needs an existing tour; this is the lookup. A name that is not a valid TourName or names no tour is Failure::NoSuchTour with the text as typed, so a typo is obvious.
+
+step w2em3v
+order 11
+parent i8rnlb
+author ai
+file crates/domain/src/map.rs
+symbol remove_step
+lines 0 17
+hash 5139d19688acdb84
+note Deleting a step keeps the tree connected by moving its children up to its parent. Indices are positions in the step list, so every index above the removed one shifts down by one.
+
+step w73udm
+order 4
+author ai
+file crates/cli/src/exec.rs
+symbol step_note
+lines 0 8
+hash d652562b7dcec68f
+note step-note: replace one step's note. The index is the one shown in square brackets by tours.
+
+step wezg24
+order 2
+parent 59ckov
+author ai
+file crates/domain/src/map.rs
+symbol add_tour
+lines 0 12
+hash c91454eca2c13b84
+note The only constructor of a tour, so kind and author exist from birth. A name that already exists returns Changed and leaves that tour as it is, kind and author included.
+
+step yrqc53
+order 9
+parent sf7kmc
+author ai
+file crates/domain/src/map.rs
+symbol add_step
+lines 0 38
+hash e0a7a55b402d53ee
+note The step itself, anchored relative to whatever symbol contains the slice, with a fresh StepId, the next order number and the parent's id. A parent id the tour does not have is MapError::NoSuchParent.
+
+step zqzyl2
+order 21
+parent rmkp5m
+author ai
+file crates/domain/src/map.rs
+symbol swap
+lines 0 12
+hash aaec18da0c41538b
+note Swaps the steps through swap_places, which keeps each position's order number, so the order field, which is what the file stores, follows the swap.

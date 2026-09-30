@@ -69,8 +69,8 @@ impl Spacing {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum Parentage {
-    Path,
-    OffPath,
+    Tour,
+    OffTour,
     Callees(Node),
     Callers(Node),
 }
@@ -78,7 +78,7 @@ pub(crate) enum Parentage {
 impl Parentage {
     pub(crate) const fn parent(self) -> Option<Node> {
         match self {
-            Self::Path | Self::OffPath => None,
+            Self::Tour | Self::OffTour => None,
             Self::Callees(node) | Self::Callers(node) => Some(node),
         }
     }
@@ -290,9 +290,9 @@ impl Built {
         let mut grouped: BTreeMap<(Parentage, Rank), Vec<Node>> = BTreeMap::new();
         for root in roots {
             let parentage = if self.step.contains_key(&root) {
-                Parentage::Path
+                Parentage::Tour
             } else {
-                Parentage::OffPath
+                Parentage::OffTour
             };
             grouped
                 .entry((parentage, self.rank_of(root)))

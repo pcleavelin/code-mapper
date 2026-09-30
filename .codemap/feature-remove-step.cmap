@@ -1,9 +1,9 @@
-codemap 8
-path feature-remove-step
+codemap 9
+tour feature-remove-step
 kind flow
 author ai
 group features/gui
-note The 'delete' button on a step header removes that step from the path being read; the steps under it move up to its parent. The reader reaches for it to undo a wrongly added step from the document, without switching to the CLI (deleting is in the document). The status bar names what was removed, the selection is cleared, and the map is marked unsaved until ctrl+s or the save button writes it. Steps shown inline under a link have no delete button.
+note The 'delete' button on a step header removes that step from the tour being read; the steps under it move up to its parent. The reader reaches for it to undo a wrongly added step from the document, without switching to the CLI (deleting is in the document). The status bar names what was removed, the selection is cleared, and the map is marked unsaved until ctrl+s or the save button writes it. Steps shown inline under a link have no delete button.
 
 step 2xofld
 order 3
@@ -22,7 +22,7 @@ author ai
 file crates/domain/src/map.rs
 symbol remove_step
 lines 0 17
-hash 5aa127210fa4040c
+hash 5139d19688acdb84
 note The removal in the map: the step leaves the list and its children are re-parented to its parent, so the tree stays connected.
 
 step d3u24h
@@ -33,7 +33,7 @@ file crates/gui/src/views/document.rs
 symbol step_header
 lines 89 95
 hash a2f540b720aad8de
-note Trigger: REMOVE_STEP, a danger button (red under the pointer) at the far right of the header, drawn only for steps of the path being read (not inline occurrences), queues RemoveStep.
+note Trigger: REMOVE_STEP, a danger button (red under the pointer) at the far right of the header, drawn only for steps of the tour being read (not inline occurrences), queues RemoveStep.
 
 step g1wlyd
 order 1
@@ -42,7 +42,7 @@ author ai
 file crates/gui/src/model.rs
 symbol number_of
 lines 0 5
-hash b0abe6e56dab5ac4
+hash 7e2f63fbb8bdefd9
 note The hierarchical number shown in the status message, computed while the step still exists.
 
 step k5svvz
@@ -51,7 +51,7 @@ author ai
 file crates/gui/src/action.rs
 symbol remove_step
 lines 0 18
-hash 75a713e84107179d
+hash cf003649ba79559c
 note The handler. Takes the step's number and identity for the status message before removing it by id from the map, then clears the selected step, shifts the per-step view state and history, and marks the map dirty.
 
 step mlcebf
@@ -61,5 +61,5 @@ author ai
 file crates/gui/src/nav.rs
 symbol step_removed
 lines 0 6
-hash f76e1f250dadf7bf
-note Slots after the removed one shift down by one, through steps_moved: view flags and context stay with their steps, the removed step's own view is dropped, history entries on this path shift the same way, and so do the selected step, the target and the top step.
+hash 1ebcf8db2d0957f6
+note Slots after the removed one shift down by one, through steps_moved: view flags and context stay with their steps, the removed step's own view is dropped, history entries on this tour shift the same way, and so do the selected step, the target and the top step.

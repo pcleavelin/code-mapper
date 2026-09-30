@@ -154,18 +154,18 @@ struct Outline {
 
 fn border(input: &SceneInput<'_>, node: Node) -> Outline {
     let built = input.built;
-    let on_path = built.step.contains_key(&node);
-    let stale = node.step.zip(built.path).is_some_and(|(step, path)| {
+    let on_tour = built.step.contains_key(&node);
+    let stale = node.step.zip(built.tour).is_some_and(|(step, tour)| {
         input
             .model
-            .step(StepKey { path, step })
+            .step(StepKey { tour, step })
             .is_some_and(Step::is_stale)
     });
     let (color, width) = if stale {
         (RED, GRAPH_THICK_BORDER)
     } else if input.focus == Some(node) {
         (ACCENT, GRAPH_THICK_BORDER)
-    } else if on_path {
+    } else if on_tour {
         (STEP_BORDER, GRAPH_THIN_BORDER)
     } else {
         (BORDER, GRAPH_THIN_BORDER)
@@ -228,7 +228,7 @@ fn scene_node(
         width: border_width,
     } = border(input, node);
     let from = hits.len();
-    let fill = if built.path.is_some() && !built.step.contains_key(&node) {
+    let fill = if built.tour.is_some() && !built.step.contains_key(&node) {
         PANEL
     } else {
         FIELD
@@ -248,9 +248,9 @@ fn scene_node(
         (right - rect.left).max(Px::ZERO),
         metrics.row_height + metrics.padding,
     );
-    let step_note = node.step.zip(built.path).and_then(|(step, path)| {
+    let step_note = node.step.zip(built.tour).and_then(|(step, tour)| {
         model
-            .step(StepKey { path, step })
+            .step(StepKey { tour, step })
             .and_then(Step::note)
             .map(|found| Label::new(found.as_str()))
     });
@@ -476,15 +476,15 @@ fn box_header(input: &SceneInput<'_>, parentage: Parentage) -> Vec<Run> {
     let model = input.model;
     let built = input.built;
     match parentage {
-        Parentage::Path => {
+        Parentage::Tour => {
             let name = built
-                .path
-                .and_then(|path| model.path(path))
-                .map_or("", |path| path.name().as_str());
-            vec![Run::new("path ", WEAK), Run::new(name, TEXT)]
+                .tour
+                .and_then(|tour| model.tour(tour))
+                .map_or("", |tour| tour.name().as_str());
+            vec![Run::new("tour ", WEAK), Run::new(name, TEXT)]
         }
-        Parentage::OffPath if built.path.is_some() => vec![Run::new("not in the path", WEAK)],
-        Parentage::OffPath => vec![Run::new("no path open", WEAK)],
+        Parentage::OffTour if built.tour.is_some() => vec![Run::new("not in the tour", WEAK)],
+        Parentage::OffTour => vec![Run::new("no tour open", WEAK)],
         Parentage::Callees(_) => vec![Run::new("callees of", WEAK)],
         Parentage::Callers(_) => vec![Run::new("callers of", WEAK)],
     }
@@ -544,7 +544,7 @@ fn sibling_box(input: &SceneInput<'_>, origin: Point, siblings: &Siblings) -> Op
     });
     Some(SceneBox {
         rect,
-        border: if siblings.parentage == Parentage::Path {
+        border: if siblings.parentage == Parentage::Tour {
             STEP_BORDER
         } else {
             SIBLINGS_BORDER

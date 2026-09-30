@@ -25,10 +25,10 @@ fn with_parent(bin: &Path, name: &str) -> Result<PathBuf, Missing> {
     jj_commit(&root, "base");
     for args in [
         &["step-note", "startup", "0", "A changed note."][..],
-        &["path-add", "startup", "describe", "-1"],
-        &["path-rm", "c-lib"],
-        &["path-new", "fresh", "layer", "New here."],
-        &["path-add", "fresh", "mean", "-1"],
+        &["tour-add", "startup", "describe", "-1"],
+        &["tour-rm", "c-lib"],
+        &["tour-new", "fresh", "layer", "New here."],
+        &["tour-add", "fresh", "mean", "-1"],
     ] {
         codemap(bin, &root, args);
     }
@@ -45,12 +45,12 @@ fn reload_hook(bin: &Path, root: &Path, line: &str) {
         codemap(
             bin,
             root,
-            &["path-note", "shapes", "Edited while the window was open."],
+            &["tour-note", "shapes", "Edited while the window was open."],
         );
     }
 }
 
-const SETTLE: &str = "idle\nclick-id save\nclick-id paths/2\nwait 2\n";
+const SETTLE: &str = "idle\nclick-id save\nclick-id tours/2\nwait 2\n";
 
 pub(crate) fn document() -> Scenario {
     Scenario {
@@ -200,7 +200,7 @@ pub(crate) fn source() -> Scenario {
     Scenario {
         setup: |bin, name| Ok(mapped(bin, name)),
         hook: no_hook,
-        after: &[&["paths", "startup"]],
+        after: &[&["tours", "startup"]],
         script: "SETTLE
 open src/store.rs 12
 wait 3
@@ -274,7 +274,7 @@ shot {shots}/revealed.png
 click <<DUMP node new|30,8>>
 wait 4
 dump
-shot {shots}/off-path.png
+shot {shots}/off-tour.png
 key down
 pause 300
 wait 2
@@ -360,7 +360,7 @@ pub(crate) fn panels() -> Scenario {
     Scenario {
         setup: |bin, name| Ok(mapped(bin, name)),
         hook: no_hook,
-        after: &[&["paths"]],
+        after: &[&["tours"]],
         script: "SETTLE
 click-id tab@Symbols
 wait 3
@@ -384,13 +384,13 @@ wait 2
 click-id file/5
 wait 3
 dump
-click-id tab@Paths
+click-id tab@Tours
 wait 2
-click-id field@paths
+click-id field@tours
 text SHAPE
 wait 3
 dump
-shot {shots}/paths-filtered.png
+shot {shots}/tours-filtered.png
 key a ctrl
 key backspace
 wait 3
@@ -398,16 +398,16 @@ dump
 text Circle
 wait 3
 dump
-shot {shots}/paths-found-steps.png
+shot {shots}/tours-found-steps.png
 click-id found@1:1
 wait 3
 dump
-click-id field@paths
+click-id field@tours
 wait 2
 key a ctrl
 key backspace
 wait 3
-click-id paths/1
+click-id tours/1
 wait 3
 dump
 shot {shots}/shapes.png
@@ -421,11 +421,11 @@ click-id hit/2
 wait 3
 dump
 click-id cmd
-text paths startup
+text tours startup
 key enter
 wait 3
 shot {shots}/console.png
-text path-new fresh layer
+text tour-new fresh layer
 key enter
 wait 3
 dump
@@ -437,7 +437,7 @@ dump
 text clear
 key enter
 wait 2
-click-id new-path
+click-id new-tour
 wait 2
 text handmade
 key enter
@@ -459,10 +459,10 @@ quit
 }
 
 const AUTHORING: &str = "SETTLE
-click-id new-path
+click-id new-tour
 wait 2
 dump
-click-id create-path
+click-id create-tour
 wait 2
 dump
 text handmade
@@ -487,7 +487,7 @@ click-id add-sym@3:0
 wait 2
 dump
 shot {shots}/symbols.png
-click-id tab@Paths
+click-id tab@Tours
 wait 2
 click-id steps/0
 wait 3
@@ -534,7 +534,7 @@ shot {shots}/graph.png
 click <<DUMP button new '+ step>>
 wait 4
 dump
-click-id tab@Path
+click-id tab@Tour
 wait 2
 rect steps/3
 rect steps/1
@@ -566,7 +566,7 @@ pub(crate) fn authoring() -> Scenario {
     Scenario {
         setup: |bin, name| Ok(mapped(bin, name)),
         hook: no_hook,
-        after: &[&["paths", "handmade"]],
+        after: &[&["tours", "handmade"]],
         script: AUTHORING,
     }
 }
@@ -575,7 +575,7 @@ pub(crate) fn delete() -> Scenario {
     Scenario {
         setup: |bin, name| Ok(mapped(bin, name)),
         hook: no_hook,
-        after: &[&["paths"]],
+        after: &[&["tours"]],
         script: "SETTLE
 scroll document 2000
 wait 2
@@ -591,8 +591,8 @@ dump
 click-id doc-delete
 wait 3
 dump
-shot {shots}/path-deleted.png
-click-id paths/1
+shot {shots}/tour-deleted.png
+click-id tours/1
 wait 3
 dump
 key s ctrl
@@ -621,7 +621,7 @@ wait 2
 click-id diffrow/0
 wait 3
 dump
-shot {shots}/changed-path.png
+shot {shots}/changed-tour.png
 click-id tab@Diff
 wait 2
 click-id diffrow/4
@@ -704,7 +704,7 @@ up
 wait 2
 dump
 shot {shots}/moved.png
-hover-id tab@Paths
+hover-id tab@Tours
 wait 1
 down
 wait 1
@@ -740,7 +740,7 @@ pub(crate) fn links() -> Scenario {
         setup: |bin, name| {
             let root = mapped(bin, name);
             for args in [
-                &["path-group", "stats", "tools"][..],
+                &["tour-group", "stats", "tools"][..],
                 &["step-link", "startup", "5", "shapes"],
             ] {
                 codemap(bin, &root, args);
@@ -751,18 +751,18 @@ pub(crate) fn links() -> Scenario {
         after: &[],
         script: "SETTLE
 dump
-absent paths/3
+absent tours/3
 dump
 click-id group@tools
 wait 2
-click-id paths/3
+click-id tours/3
 wait 3
 dump
 click-id group@tools
 wait 2
-absent paths/3
+absent tours/3
 dump
-click-id paths/2
+click-id tours/2
 wait 3
 dump
 click-id steps/5

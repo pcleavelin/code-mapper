@@ -1,5 +1,5 @@
-codemap 8
-path gui-structure
+codemap 9
+tour gui-structure
 kind layer
 author ai
 group gui
@@ -12,7 +12,7 @@ author ai
 file crates/gui/src/status.rs
 symbol fmt
 lines 0 89
-hash 9d6a90aa3a097965
+hash a75149d7f6ba0f0f
 note The wording. Map refusals and load failures arrive already worded by cli, so the GUI and the CLI say the same thing.
 
 step 0fz3qy
@@ -22,7 +22,7 @@ author ai
 file crates/gui/src/status.rs
 symbol tone
 lines 0 38
-hash 3950653f647e18d3
+hash 973e2c5a52de353a
 note How the status bar colours each Status: Done for what the reader asked and got (saved, created, added, moved, removed, reloaded, re-indexed), Warning for what needs the reader's attention but broke nothing (a refused gesture, a clamped line, missing input, cut search hits, a change on disk), Problem for a failure (an unreadable map, a refused or failed save or command, a bad regex, a server or re-index failure), Plain for the rest.
 
 step 2e645j
@@ -90,7 +90,7 @@ author ai
 file crates/gui/src/model.rs
 symbol Model
 lines 0 30
-hash c89cbfec7555069e
+hash 77ab741ea3a77988
 note All the state a view can see, in one struct: the index and the map with its MapStore and disk state, the parent map for the Diff tab, Nav, the step views, the open directories and groups, the kept peek, the server Queries, the panel tree, the scroll offsets (down and across), the graph's state, the fields, search hits and whether they were cut at HIT_LIMIT, the measured heights of document steps (Measures), the console log, the status, WorkState, the font metrics and the frame time. gui-model has its values and queries.
 
 step 622pjb
@@ -158,7 +158,7 @@ file crates/gui/src/text.rs
 symbol Tag
 lines 0 0
 hash c60e77cd98afbfc3
-note The short words shown next to a path or step: its kind, the (ai) author tag, and a step's change since the parent revision.
+note The short words shown next to a tour or step: its kind, the (ai) author tag, and a step's change since the parent revision.
 
 step 969yit
 order 6
@@ -194,7 +194,7 @@ parent l7bll4
 author ai
 file crates/gui/src/theme.rs
 lines 192 230
-hash 17b924302afe27a8
+hash 7d67d4029158aedb
 note Every measure counted in cells: button and field widths, column guesses before a panel has a size, the symbol table's columns, tooltip sizes, the gap before a danger button, the status bar's room for the map's place, the panels' floors and the picker's width.
 
 step an1gef
@@ -204,8 +204,8 @@ author ai
 file crates/gui/src/dump.rs
 symbol dump
 lines 0 38
-hash eaaf71ca2c9b8106
-note tab, path, step, focus, file and selection; then an authoring line (target, grab, the new-path form's kind) whenever the target differs from the step, a grab is held or the form is open.
+hash ea2161377fd6aa77
+note tab, tour, step, focus, file and selection; then an authoring line (target, grab, the new-tour form's kind) whenever the target differs from the step, a grab is held or the form is open.
 
 step c3z8pe
 order 62
@@ -302,7 +302,7 @@ author ai
 file crates/gui/src/action.rs
 symbol apply
 lines 0 100
-hash 6aa2bab3baec6252
+hash c9400f4a16d375f6
 note The one place the Model changes during a frame. Each arm is a call into nav.rs, a field of the Model, or a method on the App for changes that need the Services (save, a server question, a command).
 
 step h4xmjq
@@ -341,7 +341,7 @@ author ai
 file crates/gui/src/text.rs
 symbol impl Tag
 lines 0 24
-hash af24226c4be39712
+hash 2d36e92324ac0f7a
 note The words, one match each.
 
 step ho7mj8
@@ -438,8 +438,8 @@ author ai
 file crates/gui/src/status.rs
 symbol authoring
 lines 0 38
-hash 9ee960cf60cab072
-note The wording of path creation and step placement (new path, promote, add, move, the target), split out of fmt to keep it under the length limit; fmt hands every one of these variants here.
+hash 90424ed59c53140c
+note The wording of tour creation and step placement (new tour, promote, add, move, the target), split out of fmt to keep it under the length limit; fmt hands every one of these variants here.
 
 step mch588
 order 33
@@ -448,7 +448,7 @@ author ai
 file crates/gui/src/ids.rs
 symbol CONTROLS
 lines 0 74
-hash 6506a10c95039068
+hash a194a1f94e9be340
 note Every control, for the test that checks them against the registry.
 
 step mjhubp
@@ -506,7 +506,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol Nav
 lines 0 15
-hash 634a2b281ea0b8d6
+hash 20dc4d474ba59098
 note The selection and everything that moves with it (see selection). Its fields are private to nav.rs, so the selection only changes through Model's methods there.
 
 step o9w0e6
@@ -565,7 +565,7 @@ author ai
 file crates/gui/src/dump.rs
 symbol dump
 lines 0 16
-hash e7fab9210eec0076
+hash 9b7d5472e971a798
 note Each scrolling panel's offset, rectangle and content size.
 
 step saeyu5
@@ -574,7 +574,7 @@ author ai
 file crates/gui/src/status.rs
 symbol Status
 lines 0 78
-hash a41d7b882245b333
+hash e90b3e3bd8401350
 note Everything the status line can say, as data: each outcome of a save, a command, a search, an edit, a definition lookup, a server, a re-index or a disk change. Views and apply set one; nothing formats a message where it happens.
 
 step sbpnbg
@@ -605,7 +605,7 @@ file crates/gui/src/theme.rs
 symbol title_font
 lines 0 2
 hash 123a5e8fa1e31e59
-note The path title, a third larger.
+note The tour title, a third larger.
 
 step v6cf9n
 order 66
@@ -634,8 +634,8 @@ author ai
 file crates/gui/src/dump.rs
 symbol dump
 lines 0 27
-hash 6dc12be649c186f1
-note Every step view that differs from the default, as one line 'step-views <path>:<step>(<flags> +<above>/+<below>)': whole, hidden, collapsed and inlined, then the extra context lines above and below. No line when every view is the default, so a reset shows as the line going away.
+hash efdbd041b7bef0c0
+note Every step view that differs from the default, as one line 'step-views <tour>:<step>(<flags> +<above>/+<below>)': whole, hidden, collapsed and inlined, then the extra context lines above and below. No line when every view is the default, so a reset shows as the line going away.
 
 step vkbn4x
 order 20
@@ -692,7 +692,7 @@ author ai
 file crates/gui/src/action.rs
 symbol Action
 lines 0 51
-hash 6d28e40ab679db9d
+hash 26b6eaa99e5df9b3
 note Every change a gesture, a key, a script line or a view's measurement can cause, as data. A view names the change; it never makes it.
 
 step xypoz6
@@ -703,7 +703,7 @@ file crates/gui/src/ids.rs
 symbol impl Control
 lines 0 39
 hash 130e59ef971201ec
-note Ids from a Control: the plain id, the nth for a row, with a suffix for a named row, and nested for a step of a linked path shown inline (linked/<occurrence>@<element>/<n>).
+note Ids from a Control: the plain id, the nth for a row, with a suffix for a named row, and nested for a step of a linked tour shown inline (linked/<occurrence>@<element>/<n>).
 
 step y37wqf
 order 47
@@ -722,7 +722,7 @@ file crates/gui/src/keys.rs
 symbol walks
 lines 0 10
 hash c6c8d3f1568f6f6c
-note Up and down as walks through the path's steps.
+note Up and down as walks through the tour's steps.
 
 step ztmwnk
 order 17

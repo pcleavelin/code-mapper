@@ -17,23 +17,23 @@ pub enum Feature {
     Index,
     Tree,
     Roots,
-    Paths,
-    Path,
-    PathNew,
-    PathGroup,
+    Tours,
+    Tour,
+    TourNew,
+    TourGroup,
     Groups,
     GroupRename,
-    PathNote,
+    TourNote,
     StepNote,
     StepLink,
     StepUnlink,
     NoteEdit,
-    PathRename,
-    PathAdd,
-    PathPin,
-    PathMove,
-    PathSwap,
-    PathRm,
+    TourRename,
+    TourAdd,
+    TourPin,
+    TourMove,
+    TourSwap,
+    TourRm,
     Promote,
     Stale,
     Check,
@@ -42,7 +42,7 @@ pub enum Feature {
     Coverage,
     Diff,
     Help,
-    OpenPath,
+    OpenTour,
     OpenGroup,
     SelectStep,
     WalkSteps,
@@ -50,12 +50,12 @@ pub enum Feature {
     ToggleCode,
     ToggleCollapse,
     InlineLink,
-    OpenLinkedPath,
+    OpenLinkedTour,
     HideAllCode,
     CollapseAll,
     MoreContext,
     RemoveStep,
-    RemovePath,
+    RemoveTour,
     ShowGraph,
     SwitchTab,
     GoBack,
@@ -64,11 +64,11 @@ pub enum Feature {
     ChooseTarget,
     MoveStep,
     PromoteSymbol,
-    NewPath,
+    NewTour,
     SearchFiles,
     RunCommand,
     FilterSymbols,
-    FilterPaths,
+    FilterTours,
     BrowseFiles,
     FollowXref,
     GoToLine,
@@ -134,7 +134,7 @@ impl Feature {
             ),
             Self::Notes => Spec::new(
                 Text::new("notes"),
-                Text::new("<regex>                          search path notes and step notes"),
+                Text::new("<regex>                          search tour notes and step notes"),
                 Surface::Command,
                 &const { [Trigger::Command(Text::new("notes"))] },
             ),
@@ -182,41 +182,41 @@ impl Feature {
                 Surface::Command,
                 &const { [Trigger::Command(Text::new("roots"))] },
             ),
-            Self::Paths => Spec::new(
-                Text::new("paths"),
+            Self::Tours => Spec::new(
+                Text::new("tours"),
                 Text::new(
-                    "[name]                           the map: every path (or one) as a tree of steps (! = stale, (ai) = AI-authored, → = link)",
+                    "[name]                           the map: every tour (or one) as a tree of steps (! = stale, (ai) = AI-authored, → = link)",
                 ),
                 Surface::Command,
-                &const { [Trigger::Command(Text::new("paths"))] },
+                &const { [Trigger::Command(Text::new("tours"))] },
             ),
-            Self::Path => Spec::new(
-                Text::new("path"),
+            Self::Tour => Spec::new(
+                Text::new("tour"),
                 Text::new(
-                    "<name> [--inline]                print a path's note and every step's code, tree order; --inline prints linked paths inline",
+                    "<name> [--inline]                print a tour's note and every step's code, tree order; --inline prints linked tours inline",
                 ),
                 Surface::Command,
-                &const { [Trigger::Command(Text::new("path"))] },
+                &const { [Trigger::Command(Text::new("tour"))] },
             ),
-            Self::PathNew => Spec::new(
-                Text::new("path-new"),
+            Self::TourNew => Spec::new(
+                Text::new("tour-new"),
                 Text::new(
-                    "<name> <kind> [note] [--group g] create a path; kind = flow | layer | type (no-op if it exists)",
+                    "<name> <kind> [note] [--group g] create a tour; kind = flow | layer | data (no-op if it exists)",
                 ),
                 Surface::Command,
-                &const { [Trigger::Command(Text::new("path-new"))] },
+                &const { [Trigger::Command(Text::new("tour-new"))] },
             ),
-            Self::PathGroup => Spec::new(
-                Text::new("path-group"),
+            Self::TourGroup => Spec::new(
+                Text::new("tour-group"),
                 Text::new(
-                    "<name> <group>                   put a path in a group; / nests groups (flows/http), \"\" = top level",
+                    "<name> <group>                   put a tour in a group; / nests groups (flows/http), \"\" = top level",
                 ),
                 Surface::Command,
-                &const { [Trigger::Command(Text::new("path-group"))] },
+                &const { [Trigger::Command(Text::new("tour-group"))] },
             ),
             Self::Groups => Spec::new(
                 Text::new("groups"),
-                Text::new("every group with its paths, nested"),
+                Text::new("every group with its tours, nested"),
                 Surface::Command,
                 &const { [Trigger::Command(Text::new("groups"))] },
             ),
@@ -228,16 +228,16 @@ impl Feature {
                 Surface::Command,
                 &const { [Trigger::Command(Text::new("group-rename"))] },
             ),
-            Self::PathNote => Spec::new(
-                Text::new("path-note"),
-                Text::new("<name> <note>                    set a path's note"),
+            Self::TourNote => Spec::new(
+                Text::new("tour-note"),
+                Text::new("<name> <note>                    set a tour's note"),
                 Surface::Command,
-                &const { [Trigger::Command(Text::new("path-note"))] },
+                &const { [Trigger::Command(Text::new("tour-note"))] },
             ),
             Self::StepNote => Spec::new(
                 Text::new("step-note"),
                 Text::new(
-                    "<name> <index> <note>            set a note on one step (index as shown by `paths`)",
+                    "<name> <index> <note>            set a note on one step (index as shown by `tours`)",
                 ),
                 Surface::Command,
                 &const { [Trigger::Command(Text::new("step-note"))] },
@@ -245,7 +245,7 @@ impl Feature {
             Self::StepLink => Spec::new(
                 Text::new("step-link"),
                 Text::new(
-                    "<name> <index> <target>          link a step to the path that documents what its lines call",
+                    "<name> <index> <target>          link a step to the tour that documents what its lines call",
                 ),
                 Surface::Command,
                 &const { [Trigger::Command(Text::new("step-link"))] },
@@ -259,61 +259,61 @@ impl Feature {
             Self::NoteEdit => Spec::new(
                 Text::new("note-edit"),
                 Text::new(
-                    "<name> <index> <old> <new>       replace the first `old` in a note with `new` (index -1 = the path note)",
+                    "<name> <index> <old> <new>       replace the first `old` in a note with `new` (index -1 = the tour note)",
                 ),
                 Surface::Command,
                 &const { [Trigger::Command(Text::new("note-edit"))] },
             ),
-            Self::PathRename => Spec::new(
-                Text::new("path-rename"),
-                Text::new("<name> <new>                     rename a path"),
+            Self::TourRename => Spec::new(
+                Text::new("tour-rename"),
+                Text::new("<name> <new>                     rename a tour"),
                 Surface::Command,
-                &const { [Trigger::Command(Text::new("path-rename"))] },
+                &const { [Trigger::Command(Text::new("tour-rename"))] },
             ),
-            Self::PathAdd => Spec::new(
-                Text::new("path-add"),
+            Self::TourAdd => Spec::new(
+                Text::new("tour-add"),
                 Text::new(
                     "<name> <sym|file start end> [under]  add a step under step `under` (default: the last step; -1 = root)",
                 ),
                 Surface::Command,
-                &const { [Trigger::Command(Text::new("path-add"))] },
+                &const { [Trigger::Command(Text::new("tour-add"))] },
             ),
-            Self::PathPin => Spec::new(
-                Text::new("path-pin"),
+            Self::TourPin => Spec::new(
+                Text::new("tour-pin"),
                 Text::new(
                     "<name> <index> <file> <start> <end>  re-anchor a step; its note and place in the tree stay",
                 ),
                 Surface::Command,
-                &const { [Trigger::Command(Text::new("path-pin"))] },
+                &const { [Trigger::Command(Text::new("tour-pin"))] },
             ),
-            Self::PathMove => Spec::new(
-                Text::new("path-move"),
+            Self::TourMove => Spec::new(
+                Text::new("tour-move"),
                 Text::new(
                     "<name> <index> <under>          move a step (with its subtree) under step `under` (-1 = root)",
                 ),
                 Surface::Command,
-                &const { [Trigger::Command(Text::new("path-move"))] },
+                &const { [Trigger::Command(Text::new("tour-move"))] },
             ),
-            Self::PathSwap => Spec::new(
-                Text::new("path-swap"),
+            Self::TourSwap => Spec::new(
+                Text::new("tour-swap"),
                 Text::new(
                     "<name> <a> <b>                  swap two steps' places in the list, which orders siblings when the code does not",
                 ),
                 Surface::Command,
-                &const { [Trigger::Command(Text::new("path-swap"))] },
+                &const { [Trigger::Command(Text::new("tour-swap"))] },
             ),
-            Self::PathRm => Spec::new(
-                Text::new("path-rm"),
+            Self::TourRm => Spec::new(
+                Text::new("tour-rm"),
                 Text::new(
-                    "<name> [index]                   delete a step (its children move up) or the whole path",
+                    "<name> [index]                   delete a step (its children move up) or the whole tour",
                 ),
                 Surface::Command,
-                &const { [Trigger::Command(Text::new("path-rm"))] },
+                &const { [Trigger::Command(Text::new("tour-rm"))] },
             ),
             Self::Promote => Spec::new(
                 Text::new("promote"),
                 Text::new(
-                    "<symbol> [depth] [name] [--all]  create a path shaped like a symbol's call tree (default depth 2, named after the symbol): tests, accessors and trivial bodies are left out, shared, other-package and already-mapped callees are kept as leaves, and each rule's symbols and the step-link lines for mapped leaves are printed; --all keeps the whole tree",
+                    "<symbol> [depth] [name] [--all]  create a tour shaped like a symbol's call tree (default depth 2, named after the symbol): tests, accessors and trivial bodies are left out, shared, other-package and already-mapped callees are kept as leaves, and each rule's symbols and the step-link lines for mapped leaves are printed; --all keeps the whole tree",
                 ),
                 Surface::Command,
                 &const { [Trigger::Command(Text::new("promote"))] },
@@ -342,7 +342,7 @@ impl Feature {
             ),
             Self::Uncovered => Spec::new(
                 Text::new("uncovered"),
-                Text::new("[filter]                         symbols in no path, largest first"),
+                Text::new("[filter]                         symbols in no tour, largest first"),
                 Surface::Command,
                 &const { [Trigger::Command(Text::new("uncovered"))] },
             ),
@@ -364,22 +364,22 @@ impl Feature {
                 Surface::Command,
                 &const { [Trigger::Command(Text::new("help"))] },
             ),
-            Self::OpenPath => Spec::new(
-                Text::new("open-path"),
-                Text::new("read a path as a document: click it in the Paths list"),
+            Self::OpenTour => Spec::new(
+                Text::new("open-tour"),
+                Text::new("read a tour as a document: click it in the Tours list"),
                 Surface::Window,
-                &const { [Trigger::Click(Element::new("paths"))] },
+                &const { [Trigger::Click(Element::new("tours"))] },
             ),
             Self::OpenGroup => Spec::new(
                 Text::new("open-group"),
-                Text::new("open or close a group of paths in the Paths list"),
+                Text::new("open or close a group of tours in the Tours list"),
                 Surface::Window,
                 &const { [Trigger::Click(Element::new("group"))] },
             ),
             Self::SelectStep => Spec::new(
                 Text::new("select-step"),
                 Text::new(
-                    "select a step from its header, the steps list, the breadcrumb or a step the paths filter found",
+                    "select a step from its header, the steps list, the breadcrumb or a step the tours filter found",
                 ),
                 Surface::Window,
                 &const {
@@ -426,13 +426,13 @@ impl Feature {
             ),
             Self::InlineLink => Spec::new(
                 Text::new("inline-link"),
-                Text::new("show the path a step links to inline under it"),
+                Text::new("show the tour a step links to inline under it"),
                 Surface::Window,
                 &const { [Trigger::Click(Element::new("inline"))] },
             ),
-            Self::OpenLinkedPath => Spec::new(
-                Text::new("open-linked-path"),
-                Text::new("open the path a step links to, or a step that links here"),
+            Self::OpenLinkedTour => Spec::new(
+                Text::new("open-linked-tour"),
+                Text::new("open the tour a step links to, or a step that links here"),
                 Surface::Window,
                 &const {
                     [
@@ -487,20 +487,20 @@ impl Feature {
                 Surface::Window,
                 &const { [Trigger::Click(Element::new("del"))] },
             ),
-            Self::RemovePath => Spec::new(
-                Text::new("remove-path"),
-                Text::new("delete the path being read"),
+            Self::RemoveTour => Spec::new(
+                Text::new("remove-tour"),
+                Text::new("delete the tour being read"),
                 Surface::Window,
                 &const { [Trigger::Click(Element::new("doc-delete"))] },
             ),
             Self::ShowGraph => Spec::new(
                 Text::new("show-graph"),
-                Text::new("draw the path being read as a graph"),
+                Text::new("draw the tour being read as a graph"),
                 Surface::Window,
                 &const {
                     [
                         Trigger::Click(Element::new("doc-graph")),
-                        Trigger::Palette(Text::new("show path as graph"), None),
+                        Trigger::Palette(Text::new("show tour as graph"), None),
                     ]
                 },
             ),
@@ -531,7 +531,7 @@ impl Feature {
             ),
             Self::Save => Spec::new(
                 Text::new("save"),
-                Text::new("write the map's changed paths to disk"),
+                Text::new("write the map's changed tours to disk"),
                 Surface::Window,
                 &const {
                     [
@@ -547,7 +547,7 @@ impl Feature {
             Self::AddStep => Spec::new(
                 Text::new("add-step"),
                 Text::new(
-                    "add the lines selected in the Source view, a symbol or a graph node as a step of the path being read",
+                    "add the lines selected in the Source view, a symbol or a graph node as a step of the tour being read",
                 ),
                 Surface::Window,
                 &const {
@@ -564,7 +564,7 @@ impl Feature {
             Self::ChooseTarget => Spec::new(
                 Text::new("choose-target"),
                 Text::new(
-                    "add steps at the top level of the path being read instead of under the selected step",
+                    "add steps at the top level of the tour being read instead of under the selected step",
                 ),
                 Surface::Window,
                 &const { [Trigger::Click(Element::new("target-top"))] },
@@ -579,22 +579,22 @@ impl Feature {
             ),
             Self::PromoteSymbol => Spec::new(
                 Text::new("promote-symbol"),
-                Text::new("create a flow path from the selected symbol and the symbols it calls"),
+                Text::new("create a flow tour from the selected symbol and the symbols it calls"),
                 Surface::Window,
                 &const { [Trigger::Click(Element::new("promote-focus"))] },
             ),
-            Self::NewPath => Spec::new(
-                Text::new("new-path"),
-                Text::new("create a path from the Paths tab, with its name, kind and group"),
+            Self::NewTour => Spec::new(
+                Text::new("new-tour"),
+                Text::new("create a tour from the Tours tab, with its name, kind and group"),
                 Surface::Window,
                 &const {
                     [
-                        Trigger::Click(Element::new("new-path")),
+                        Trigger::Click(Element::new("new-tour")),
                         Trigger::Click(Element::new("kind")),
-                        Trigger::Click(Element::new("create-path")),
-                        Trigger::Type(Element::new("field@new-path")),
+                        Trigger::Click(Element::new("create-tour")),
+                        Trigger::Type(Element::new("field@new-tour")),
                         Trigger::Type(Element::new("field@new-group")),
-                        Trigger::Palette(Text::new("new path"), None),
+                        Trigger::Palette(Text::new("new tour"), None),
                     ]
                 },
             ),
@@ -628,13 +628,13 @@ impl Feature {
                     ]
                 },
             ),
-            Self::FilterPaths => Spec::new(
-                Text::new("filter-paths"),
+            Self::FilterTours => Spec::new(
+                Text::new("filter-tours"),
                 Text::new(
-                    "filter the Paths tab to the paths whose name, or a step's symbol or file, contains the text",
+                    "filter the Tours tab to the tours whose name, or a step's symbol or file, contains the text",
                 ),
                 Surface::Window,
-                &const { [Trigger::Type(Element::new("field@paths"))] },
+                &const { [Trigger::Type(Element::new("field@tours"))] },
             ),
             Self::BrowseFiles => Spec::new(
                 Text::new("browse-files"),
@@ -874,7 +874,7 @@ impl Feature {
             ),
             Self::OpenDiffRow => Spec::new(
                 Text::new("open-diff-row"),
-                Text::new("open a path from the map diff, or refresh the diff"),
+                Text::new("open a tour from the map diff, or refresh the diff"),
                 Surface::Window,
                 &const {
                     [
@@ -886,7 +886,7 @@ impl Feature {
             Self::CommandPalette => Spec::new(
                 Text::new("palette"),
                 Text::new(
-                    "type to find a path, step, symbol, file or view and go to it, or an action and run it",
+                    "type to find a tour, step, symbol, file or view and go to it, or an action and run it",
                 ),
                 Surface::Window,
                 &const {

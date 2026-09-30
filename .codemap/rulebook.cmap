@@ -1,6 +1,6 @@
-codemap 8
-path rulebook
-kind type
+codemap 9
+tour rulebook
+kind data
 author ai
 group tooling
 note The repo's rules as data, written as constants in xtask so every rule that depends on them reads the same list. The crate graph (DEPENDENCIES) is every dependency each package may have; the gate fails on any other, so layering is decided here and enforced by the compiler. The sanctioned exceptions (EXPECTS) are every lint suppression in the repo, by file and lint. The API lock records each library crate's public surface so a change to it shows in the diff.

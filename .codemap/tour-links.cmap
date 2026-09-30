@@ -1,0 +1,167 @@
+codemap 9
+tour tour-links
+kind flow
+author ai
+group map
+note How a step names another tour that documents what its lines call, so shared code and work handed to another process are mapped once and read in place. The link is a field of the step, set by step-link and checked by Map::set_link: the target must exist and cannot be the step's own tour. Renaming a tour rewrites every link to it, a tour that something links to cannot be removed, and check fails on a link to a missing tour. tour --inline and the GUI document show the linked tour inline under the step.
+
+step 39fnt5
+order 14
+author ai
+file crates/gui/src/views/document.rs
+symbol link_buttons
+lines 0 33
+hash 29881b16dd300230
+link reader-gui
+note The link controls on a GUI step header: a button that opens the target (red and marked missing when the target is gone), and 'inline' or 'un-inline', or 'inlined above' when the target is already open around this step.
+
+step 4ehl92
+order 13
+author ai
+file crates/domain/src/map.rs
+symbol dangling_links
+lines 0 2
+hash 5bb889558c778e0f
+note Links to a missing tour. Only a map edited outside these commands has any; stale and check list them.
+
+step 4lquiv
+order 6
+author ai
+file crates/cli/src/exec.rs
+symbol tour_rename
+lines 0 13
+hash f1226fce2e418ac9
+note tour-rename: counts the links first so the output says how many now point at the new name.
+
+step 5i63u0
+order 3
+author ai
+file crates/cli/src/exec.rs
+symbol tour
+lines 0 17
+hash ced737c48182ec96
+note tour: the header lists the steps that link here; the steps print through Document::steps, which inlines links with --inline.
+
+step 5kun00
+order 10
+author ai
+file crates/gui/src/action.rs
+symbol remove_tour
+lines 0 19
+hash 6d4043ee04612f1f
+note The GUI delete button: the same remove_tour; a refusal becomes the status line, worded from the same error.
+
+step 6kmtps
+order 9
+author ai
+file crates/cli/src/exec.rs
+symbol tour_remove
+lines 0 25
+hash e8b374606286358d
+note tour-rm: with an index, removes one step (its children move up); without, removes the whole tour. A LinkedFrom refusal comes back with step addresses, turned here into tour names and indices for the message.
+
+step 7pnsug
+order 5
+parent 5i63u0
+author ai
+file crates/cli/src/exec.rs
+symbol steps
+lines 0 32
+hash 3d0747f08131117a
+note Recursive: numbers the tour's steps, prints each with its code, and hands each to inline_link. A linked tour prints under the step one level deeper, numbered after it (1.2 › 1), each nested step naming its tour.
+
+step 8j5bux
+order 7
+parent 4lquiv
+author ai
+file crates/domain/src/map.rs
+symbol rename
+lines 0 15
+hash 5a4fe1bfd5b7dc8a
+note Renames the tour and every link to it in one pass, so no rename leaves a link dangling.
+
+step bnpar9
+order 8
+parent 6kmtps
+author ai
+file crates/domain/src/map.rs
+symbol remove_tour
+lines 0 18
+hash 81c0acf84f8b1035
+note Shared by tour-rm and the GUI delete button: refuses with LinkedFrom, naming those steps, while a step of another tour links here. A tour's links to itself do not count.
+
+step cnqxg6
+order 4
+parent 5i63u0
+author ai
+file crates/domain/src/map.rs
+symbol links_to
+lines 0 2
+hash fb31f9ed10a74e6d
+note Backlinks, in map order. The document header and tour-rm use it too.
+
+step h8i7sj
+order 12
+parent 7pnsug
+author ai
+file crates/cli/src/exec.rs
+symbol inline_link
+lines 0 26
+hash 955265c3bbc629e6
+note Only with --inline. inlined holds the tours printed around this one, so a cycle prints an inlined-above line once instead of recursing; otherwise the target's steps print one level deeper, followed by an end-of line.
+
+step he08im
+order 2
+author ai
+file crates/cli/src/exec.rs
+symbol step_unlink
+lines 0 13
+hash 55b6aeaaf92e36dd
+note step-unlink: refuses a step that has no link, so a typo in the index says so.
+
+step jhgt6d
+order 15
+author ai
+file crates/gui/src/views/document.rs
+symbol inline
+lines 0 25
+hash e43f38a6251c6692
+note The GUI's inline expansion: the target's steps drawn under the step one level deeper, numbered after it, with the chain of open tours extended so a cycle stops.
+
+step kl5svv
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol step_link
+lines 0 17
+hash 975503847a85f50c
+note step-link: the step must exist and the target must name a tour the map has (NoSuchTour otherwise); an empty target is refused (NoLinkTarget), since step-unlink removes links. Then set_link decides.
+
+step mkq22m
+order 16
+author ai
+file crates/gui/src/views/document.rs
+symbol linked_from
+lines 0 27
+hash dc6c8abafc6413ea
+note The GUI document header's backlinks: a button per step that links here, which selects that step.
+
+step uj55ph
+order 1
+parent kl5svv
+author ai
+file crates/domain/src/map.rs
+symbol set_link
+lines 0 17
+hash f889c90d31983a4d
+note The one place a link is set or cleared; None clears it. Refuses a missing target (NoSuchTour) and the step's own tour (LinkToOwnTour).
+
+step z3d58w
+order 11
+parent cnqxg6
+author ai
+file crates/domain/src/map.rs
+symbol addresses
+lines 0 13
+hash 8a3e3985ae457c17
+note Every step of every tour that passes a test, as a StepAddress (tour name and step id), in map order. links_to and dangling_links are its two tests.

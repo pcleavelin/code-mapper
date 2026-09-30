@@ -1,18 +1,18 @@
-codemap 8
-path feature-open-group
+codemap 9
+tour feature-open-group
 kind flow
 author ai
 group features/gui
-note Click a group's row in the Paths list to open or close it. The reader reaches for it to close the groups they are not working in, which would otherwise list every path in the map at once. A closed group hides every path and group inside it; the row shows the group's last name segment, the number of paths under it, and turns red when any of them has a stale step. Until clicked, a group is open exactly when the path being read is inside it. The choice lasts for the session.
+note Click a group's row in the Tours list to open or close it. The reader reaches for it to close the groups they are not working in, which would otherwise list every tour in the map at once. A closed group hides every tour and group inside it; the row shows the group's last name segment, the number of tours under it, and turns red when any of them has a stale step. Until clicked, a group is open exactly when the tour being read is inside it. The choice lasts for the session.
 
 step 1sqnqq
 order 2
 parent f1nrga
 author ai
 file crates/gui/src/views/left.rs
-symbol paths_window
-lines 43 60
-hash 8f17df24c0718c87
+symbol tours_window
+lines 0 88
+hash acfdfedc1a8979b5
 note The effect in the list: a closed group sets closed_at to its depth and every following row deeper than that is skipped.
 
 step 71087f
@@ -22,8 +22,8 @@ author ai
 file crates/gui/src/views/left.rs
 symbol group_row
 lines 0 57
-hash 4c08e27cc9d2ae03
-note Trigger and effect: the row's openness is the recorded one or, failing that, whether the path being read is in this group or below it. A click on the GROUP_ROW queues OpenGroup with the opposite openness. The returned openness tells paths_window whether to draw what is inside.
+hash 7b717c8d8daf48e5
+note Trigger and effect: the row's openness is the recorded one or, failing that, whether the tour being read is in this group or below it. A click on the GROUP_ROW queues OpenGroup with the opposite openness. The returned openness tells tours_window whether to draw what is inside.
 
 step f1nrga
 order 0
@@ -32,4 +32,4 @@ file crates/gui/src/action.rs
 symbol apply
 lines 33 35
 hash 9e18adf391d892d8
-note The handler: records the wanted openness for the group by its full name. Once recorded it overrides the default of following the path being read.
+note The handler: records the wanted openness for the group by its full name. Once recorded it overrides the default of following the tour being read.

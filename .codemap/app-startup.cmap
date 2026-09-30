@@ -1,9 +1,9 @@
-codemap 8
-path app-startup
+codemap 9
+tour app-startup
 kind flow
 author ai
 group gui
-note What happens when codemap is opened as a GUI. One process, one root, everything in memory: the tree is walked and every file parsed or taken from the cache before the window appears, the map is loaded and every anchor resolved against that index, the first path is opened so no view is empty, and background threads are started - the watcher that stats the source files, the language servers for whatever the cache could not answer, and jj or git for the parent revision's map. Nothing here waits on a server, which is the point of the cache. The App is then handed to platform::run, which creates the window and owns the loop; there is no separate initialisation inside the first frame.
+note What happens when codemap is opened as a GUI. One process, one root, everything in memory: the tree is walked and every file parsed or taken from the cache before the window appears, the map is loaded and every anchor resolved against that index, the first tour is opened so no view is empty, and background threads are started - the watcher that stats the source files, the language servers for whatever the cache could not answer, and jj or git for the parent revision's map. Nothing here waits on a server, which is the point of the cache. The App is then handed to platform::run, which creates the window and owns the loop; there is no separate initialisation inside the first frame.
 
 step 2j9b9b
 order 10
@@ -22,7 +22,7 @@ author ai
 file crates/domain/src/map.rs
 symbol resolve_all
 lines 0 6
-hash 2e52fa18036fc118
+hash 3ed88071f29c7b8d
 note Every anchor is resolved against the index that was just built. This is where stale steps get their red colour and where coverage becomes answerable.
 
 step 3y1r9w
@@ -51,8 +51,8 @@ author ai
 file crates/io-map/src/lib.rs
 symbol stamp
 lines 0 19
-hash 83e801d1ca07f983
-note The map directory's stamp: the newest modification time among the directory and its .cmap files, and how many .cmap files there are, so a removed path file also counts as a change. It is taken again after every save, so the app's own write does not look like somebody else's.
+hash b83f4b7bbf3e58aa
+note The map directory's stamp: the newest modification time among the directory and its .cmap files, and how many .cmap files there are, so a removed tour file also counts as a change. It is taken again after every save, so the app's own write does not look like somebody else's.
 
 step 7ah903
 order 12
@@ -90,10 +90,10 @@ order 13
 parent pucdnk
 author ai
 file crates/gui/src/nav.rs
-symbol select_path
+symbol select_tour
 lines 0 9
-hash 76ddeee19ae30401
-note The first path is opened and its first step selected, so the window lands on a document rather than on an empty frame.
+hash 7a595d2881b1892a
+note The first tour is opened and its first step selected, so the window lands on a document rather than on an empty frame.
 
 step jg0upl
 order 14
@@ -142,8 +142,8 @@ author ai
 file crates/gui/src/app.rs
 symbol new
 lines 0 51
-hash c6ff626c0a56207e
-note Builds the whole application state before the first frame. The order matters: index first, then the map resolved against it, then the Model that holds both, with its panel tree from the user's layout file (none for a script or screenshot run unless CODEMAP_LAYOUT names one) and the Services with their watcher, then the first path selected so the document, steps list, Source view, References panel and graph all have something in them, then the language servers and the parent map. A map that did not read leaves its error in the status line; otherwise the status line says how many files and symbols were indexed.
+hash 12566b3766b17069
+note Builds the whole application state before the first frame. The order matters: index first, then the map resolved against it, then the Model that holds both, with its panel tree from the user's layout file (none for a script or screenshot run unless CODEMAP_LAYOUT names one) and the Services with their watcher, then the first tour selected so the document, steps list, Source view, References panel and graph all have something in them, then the language servers and the parent map. A map that did not read leaves its error in the status line; otherwise the status line says how many files and symbols were indexed.
 
 step t4wzoi
 order 5
@@ -182,8 +182,8 @@ author ai
 file crates/gui/src/model.rs
 symbol new
 lines 0 41
-hash 91e7187277bb2f79
-note The Model is built around the index, the map and its store, with every panel in its default state (Nav on the Path tab, the default panel tree, empty fields). The map's stamp is taken here, so the once-a-second disk poll starts out knowing the map as it was read.
+hash caeb1749f6c5f050
+note The Model is built around the index, the map and its store, with every panel in its default state (Nav on the Tour tab, the default panel tree, empty fields). The map's stamp is taken here, so the once-a-second disk poll starts out knowing the map as it was read.
 
 step yzu1mn
 order 6
@@ -192,5 +192,5 @@ author ai
 file crates/io-map/src/lib.rs
 symbol load
 lines 0 49
-hash 1b96845786855780
+hash b33f5d2452f7ea88
 note The map, read by MapStore from .codemap. One that does not read is reported in the status bar, worded by cli's Failure::Load, and the app starts with an empty map marked Broken: saving is refused until the map on disk reads, since a save would rewrite the files that did not read.

@@ -14,10 +14,10 @@ use crate::theme::{
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, VariantArray)]
 pub(crate) enum View {
-    Paths,
+    Tours,
     Symbols,
     Files,
-    Path,
+    Tour,
     Diff,
     Graph,
     Source,
@@ -44,10 +44,10 @@ impl fmt::Display for ViewName {
 impl View {
     pub(crate) const fn name(self) -> ViewName {
         ViewName(match self {
-            Self::Paths => "Paths",
+            Self::Tours => "Tours",
             Self::Symbols => "Symbols",
             Self::Files => "Files",
-            Self::Path => "Path",
+            Self::Tour => "Tour",
             Self::Diff => "Diff",
             Self::Graph => "Graph",
             Self::Source => "Source",
@@ -59,18 +59,18 @@ impl View {
 
     pub(crate) const fn tab(self) -> Option<Tab> {
         match self {
-            Self::Path => Some(Tab::Path),
+            Self::Tour => Some(Tab::Tour),
             Self::Diff => Some(Tab::Diff),
             Self::Graph => Some(Tab::Graph),
             Self::Source => Some(Tab::Source),
             Self::Search => Some(Tab::Search),
-            Self::Paths | Self::Symbols | Self::Files | Self::References | Self::Console => None,
+            Self::Tours | Self::Symbols | Self::Files | Self::References | Self::Console => None,
         }
     }
 
     pub(crate) const fn of_tab(tab: Tab) -> Self {
         match tab {
-            Tab::Path => Self::Path,
+            Tab::Tour => Self::Tour,
             Tab::Diff => Self::Diff,
             Tab::Graph => Self::Graph,
             Tab::Source => Self::Source,
@@ -464,12 +464,12 @@ impl Default for Panels {
             next: BranchId(0),
             grab: None,
             picker: None,
-            revealed: Tab::Path,
+            revealed: Tab::Tour,
             answered: Ticket::default(),
         };
-        let nav = panels.panel(vec![View::Paths, View::Symbols, View::Files]);
+        let nav = panels.panel(vec![View::Tours, View::Symbols, View::Files]);
         let centre = panels.panel(vec![
-            View::Path,
+            View::Tour,
             View::Diff,
             View::Graph,
             View::Source,

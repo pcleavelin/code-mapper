@@ -1,5 +1,5 @@
-codemap 8
-path feature-pan-graph
+codemap 9
+tour feature-pan-graph
 kind flow
 author ai
 group features/gui

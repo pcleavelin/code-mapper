@@ -1,9 +1,9 @@
-codemap 8
-path graph-model
-kind type
+codemap 9
+tour graph-model
+kind data
 author ai
 group gui/graph
-note The graph canvas is derived, never accumulated. What is on screen is always a base plus an ordered list of reveals: the base is the selected path's steps as a tree, plus the off-path root the reader last navigated to from outside the graph and the focused symbol, each as its own root when no step shows it, and each reveal is 'the callers of X' or 'the callees of X' in the order the reader opened them. rebuild runs every frame, reads only the Model, and returns a fresh Built, so closing a reveal also removes whatever was only reachable through it - there is no orphan cleanup because nothing is ever added incrementally. The only state that survives a rebuild is what the reader chose, kept on GraphState: the reveal list, which nodes are cut to a preview, how much context each shows, any node they dragged, the kept off-path root, the direction, and the camera. GraphState's fields are private to the graph module and change only through GraphAction values applied by GraphState::apply, which App::apply reaches through Action::Graph - so every change is an action the rest of the GUI can see, queue or replay. The reader's state is keyed by Node, which holds a SymbolId that a re-index invalidates, so save and restore carry it across one by SymbolKey.
+note The graph canvas is derived, never accumulated. What is on screen is always a base plus an ordered list of reveals: the base is the selected tour's steps as a tree, plus the off-tour root the reader last navigated to from outside the graph and the focused symbol, each as its own root when no step shows it, and each reveal is 'the callers of X' or 'the callees of X' in the order the reader opened them. rebuild runs every frame, reads only the Model, and returns a fresh Built, so closing a reveal also removes whatever was only reachable through it - there is no orphan cleanup because nothing is ever added incrementally. The only state that survives a rebuild is what the reader chose, kept on GraphState: the reveal list, which nodes are cut to a preview, how much context each shows, any node they dragged, the kept off-tour root, the direction, and the camera. GraphState's fields are private to the graph module and change only through GraphAction values applied by GraphState::apply, which App::apply reaches through Action::Graph - so every change is an action the rest of the GUI can see, queue or replay. The reader's state is keyed by Node, which holds a SymbolId that a re-index invalidates, so save and restore carry it across one by SymbolKey.
 
 step 12pcq1
 order 25
@@ -22,7 +22,7 @@ file crates/gui/src/graph.rs
 symbol GraphState
 lines 0 22
 hash 8817d334efd6c9d9
-note The fields split two ways. The reader's part survives frames: reveals opened, auto_open (the off-path root whose callers and callees were opened for it, so closing them afterwards sticks), root (that off-path root, kept as a root of the tree while the reader moves around inside the graph), collapsed (nodes cut to a preview), context (lines widened above and below), manual (dragged positions in fractional cells, which override the layout for as long as the node exists), the drag in progress, pan (pixels) and zoom, direction (left to right or top to bottom), the camera wishes look and fit with keep, the node a button asked to hold still, steering (who inside the graph is about to change the focus), glide (a pan in flight), keyboard (whether the last press was inside the canvas, which gives the arrows to the graph) and presence (whether the graph was on screen last frame). The frame's part is replaced every frame: built (this frame's Built), hits (hit rectangles in window pixels, read by the next frame's input), code_top (the pixel y of each node's first code row) and cell (the frame's cell size in pixels).
+note The fields split two ways. The reader's part survives frames: reveals opened, auto_open (the off-tour root whose callers and callees were opened for it, so closing them afterwards sticks), root (that off-tour root, kept as a root of the tree while the reader moves around inside the graph), collapsed (nodes cut to a preview), context (lines widened above and below), manual (dragged positions in fractional cells, which override the layout for as long as the node exists), the drag in progress, pan (pixels) and zoom, direction (left to right or top to bottom), the camera wishes look and fit with keep, the node a button asked to hold still, steering (who inside the graph is about to change the focus), glide (a pan in flight), keyboard (whether the last press was inside the canvas, which gives the arrows to the graph) and presence (whether the graph was on screen last frame). The frame's part is replaced every frame: built (this frame's Built), hits (hit rectangles in window pixels, read by the next frame's input), code_top (the pixel y of each node's first code row) and cell (the frame's cell size in pixels).
 
 step 1qriwj
 order 7
@@ -102,7 +102,7 @@ file crates/gui/src/graph.rs
 symbol Node
 lines 0 3
 hash f11392d06ae27683
-note A node is a symbol plus the path step it stands for, so two slice steps of one symbol are two nodes each showing its own lines; an off-path node has no step. Built::by_symbol picks the one node per symbol that edges and reveals land on.
+note A node is a symbol plus the tour step it stands for, so two slice steps of one symbol are two nodes each showing its own lines; an off-tour node has no step. Built::by_symbol picks the one node per symbol that edges and reveals land on.
 
 step 9e9x8x
 order 17
@@ -211,8 +211,8 @@ author ai
 file crates/gui/src/graph/build.rs
 symbol add_reveals
 lines 0 36
-hash bd32b2fded97dc29
-note Each reveal in order: the node's callees (callees_of) one rank right or its callers one rank left, each added as an off-path node with its origin unless its symbol is already on the canvas. A reveal whose node is not on the canvas this frame does nothing and stays in the list.
+hash ccb8bc1b0c7170ee
+note Each reveal in order: the node's callees (callees_of) one rank right or its callers one rank left, each added as an off-tour node with its origin unless its symbol is already on the canvas. A reveal whose node is not on the canvas this frame does nothing and stays in the list.
 
 step i7dtw6
 order 13
@@ -312,7 +312,7 @@ file crates/gui/src/graph/build.rs
 symbol StepInfo
 lines 0 4
 hash 6ae9afc3670ae14c
-note A step node's pre-order position in the path (the tiebreak the layout sorts siblings and roots by), its slot, and its hierarchical number for the header.
+note A step node's pre-order position in the tour (the tiebreak the layout sorts siblings and roots by), its slot, and its hierarchical number for the header.
 
 step mtdt80
 order 39
@@ -412,7 +412,7 @@ file crates/gui/src/graph/build.rs
 symbol add
 lines 0 16
 hash cc57497df839d588
-note Adds a node at a rank, ignoring a node that is already placed. First placement wins the rank, which is what stops a reveal from dragging a path step out of its depth. The range is clamped to the file's last line, and by_symbol keeps the first node for the symbol.
+note Adds a node at a rank, ignoring a node that is already placed. First placement wins the rank, which is what stops a reveal from dragging a tour step out of its depth. The range is clamped to the file's last line, and by_symbol keeps the first node for the symbol.
 
 step vz67qx
 order 12
@@ -421,8 +421,8 @@ author ai
 file crates/gui/src/graph/build.rs
 symbol header
 lines 0 74
-hash 4727cbb8b5891d59
-note The header runs and the button list, built here for both measuring and drawing: step number, name, off-path tag, file:lines; then more/less when the view is longer than PREVIEW_LINES, context above, below and none (never while cut to a preview, and above or below only when the file has more lines there), source, '+ step' on an off-path node while a path is read, and the two reveals. A reveal that is open says 'hide N' and closes on a click; a closed one is offered only when it would reveal something, so a button whose targets are all on the canvas already is not drawn at all rather than doing nothing when pressed.
+hash b93b1017f5736c44
+note The header runs and the button list, built here for both measuring and drawing: step number, name, off-tour tag, file:lines; then more/less when the view is longer than PREVIEW_LINES, context above, below and none (never while cut to a preview, and above or below only when the file has more lines there), source, '+ step' on an off-tour node while a tour is read, and the two reveals. A reveal that is open says 'hide N' and closes on a click; a closed one is offered only when it would reveal something, so a button whose targets are all on the canvas already is not drawn at all rather than doing nothing when pressed.
 
 step wu5v06
 order 14
@@ -431,8 +431,8 @@ author ai
 file crates/gui/src/graph/build.rs
 symbol rebuild
 lines 0 24
-hash cf30fa07b8d48df4
-note The derivation, run every frame from App::graph_layout: an empty Built for the selected path with the graph's direction, then the path's steps, then the kept off-path root at rank 0 when no step shows it, then the reveals, then the focus when it is still not on the canvas - with a second pass over the reveal list add_focus returns, which may carry the focus's own auto-opened neighbourhood - then every node's view. Because the kept root and the reveals come before the focus, clicking an off-path node that is already on the canvas selects it without re-rooting the tree or adding nodes.
+hash ef068320f4f5ed6f
+note The derivation, run every frame from App::graph_layout: an empty Built for the selected tour with the graph's direction, then the tour's steps, then the kept off-tour root at rank 0 when no step shows it, then the reveals, then the focus when it is still not on the canvas - with a second pass over the reveal list add_focus returns, which may carry the focus's own auto-opened neighbourhood - then every node's view. Because the kept root and the reveals come before the focus, clicking an off-tour node that is already on the canvas selects it without re-rooting the tree or adding nodes.
 
 step x18bte
 order 23
@@ -441,8 +441,8 @@ author ai
 file crates/gui/src/graph/build.rs
 symbol add_focus
 lines 0 21
-hash 0004b21d11b8e91d
-note The focused symbol as its own root at rank 0, only when no node shows it yet; otherwise None and nothing changes. Unless this very node was auto-opened before, its callers and its callees are appended to the reveal list it returns and auto_open is set, so an off-path jump lands in a neighbourhood rather than on a lone box; rebuild replays the list, and App::graph_layout then records it with an AutoOpen action, which also makes the node the kept root, and rebuilds, which makes the opening part of the reader's list, so closing either side afterwards sticks.
+hash a50b455d99034b26
+note The focused symbol as its own root at rank 0, only when no node shows it yet; otherwise None and nothing changes. Unless this very node was auto-opened before, its callers and its callees are appended to the reveal list it returns and auto_open is set, so an off-tour jump lands in a neighbourhood rather than on a lone box; rebuild replays the list, and App::graph_layout then records it with an AutoOpen action, which also makes the node the kept root, and rebuilds, which makes the opening part of the reader's list, so closing either side afterwards sticks.
 
 step yfsnxc
 order 2
@@ -451,18 +451,18 @@ author ai
 file crates/gui/src/graph/build.rs
 symbol Built
 lines 0 16
-hash 891cbc4a5e861add
-note What rebuild derives, rebuilt from nothing every frame and moved into GraphState by a Built action, which also drops dragged positions and context for nodes that no longer exist. nodes is the insertion order; rank is each node's lane and doubles as the set of nodes; position and size are in cells, written by the layout and measure; range is a node's own lines (the step's slice or the whole symbol) and view is that range widened by context and clamped to the file; by_symbol is the first node per symbol; path is the selected path's slot when it is in range; step maps a step node to its StepInfo, step_parent to its parent step's node, origin maps a revealed node to what revealed it; has_note marks step nodes with a note, which take one more row; auto_open is set when this rebuild opened the focus's neighbourhood; direction is copied from GraphState for the layout and the edges; siblings are the boxes of children the layout placed together.
+hash fafb3d65a584e7b7
+note What rebuild derives, rebuilt from nothing every frame and moved into GraphState by a Built action, which also drops dragged positions and context for nodes that no longer exist. nodes is the insertion order; rank is each node's lane and doubles as the set of nodes; position and size are in cells, written by the layout and measure; range is a node's own lines (the step's slice or the whole symbol) and view is that range widened by context and clamped to the file; by_symbol is the first node per symbol; tour is the selected tour's slot when it is in range; step maps a step node to its StepInfo, step_parent to its parent step's node, origin maps a revealed node to what revealed it; has_note marks step nodes with a note, which take one more row; auto_open is set when this rebuild opened the focus's neighbourhood; direction is copied from GraphState for the layout and the edges; siblings are the boxes of children the layout placed together.
 
 step yn4pco
 order 22
 parent wu5v06
 author ai
 file crates/gui/src/graph/build.rs
-symbol add_path_nodes
+symbol add_tour_nodes
 lines 0 43
-hash 457ca4b03dfe9f5f
-note One node per step of the path, in numbered order, at its depth in the tree, with the step's slice as its range and its number kept for the header. A step with no node hands its node slot to its parent's node, so its children still attach to the nearest ancestor that has one and the tree keeps its shape.
+hash 8ff2d0965860bfd4
+note One node per step of the tour, in numbered order, at its depth in the tree, with the step's slice as its range and its number kept for the header. A step with no node hands its node slot to its parent's node, so its children still attach to the nearest ancestor that has one and the tree keeps its shape.
 
 step yvr48n
 order 10

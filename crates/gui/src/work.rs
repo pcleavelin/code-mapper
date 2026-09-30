@@ -15,7 +15,7 @@ use ui::{Count, Grid, Label};
 
 use crate::app::App;
 use crate::grid;
-use crate::model::PathSlot;
+use crate::model::TourSlot;
 use crate::model::{Dirty, Readable, StepKey, Warned};
 use crate::peek::{Intent, Peek, Probe};
 use crate::runtime::{self, Job, Landing, landed};
@@ -563,17 +563,17 @@ impl App {
 
     fn reload_map(&mut self) -> Result<(), Label> {
         let model = &mut self.model;
-        let before: Vec<(domain::PathName, usize)> = model
+        let before: Vec<(domain::TourName, usize)> = model
             .map
-            .paths()
+            .tours()
             .iter()
-            .map(|path| (path.name().clone(), path.steps().len()))
+            .map(|tour| (tour.name().clone(), tour.steps().len()))
             .collect();
-        let path_name = model
+        let tour_name = model
             .nav
-            .path()
-            .and_then(|path| model.path(path))
-            .map(|path| path.name().clone());
+            .tour()
+            .and_then(|tour| model.tour(tour))
+            .map(|tour| tour.name().clone());
         let step = model.nav.step_key().and_then(|key| {
             model
                 .step(key)
@@ -585,10 +585,10 @@ impl App {
             .map_err(|error| Label::new(Failure::Load(error).to_string()))?;
         model.map = loaded;
         model.map.resolve_all(&model.index);
-        let path = path_name.and_then(|name| model.find_path(&name));
-        let step = match (path, step) {
-            (Some(path), Some((slot, anchor))) => model
-                .step(StepKey { path, step: slot })
+        let tour = tour_name.and_then(|name| model.find_tour(&name));
+        let step = match (tour, step) {
+            (Some(tour), Some((slot, anchor))) => model
+                .step(StepKey { tour, step: slot })
                 .filter(|found| {
                     let now = found.anchor();
                     now.file() == anchor.file()
@@ -599,22 +599,22 @@ impl App {
                 .map(|_| slot),
             _ => None,
         };
-        model.reselect(path, step);
+        model.reselect(tour, step);
         let kept: BTreeMap<usize, usize> = before
             .iter()
             .enumerate()
             .filter_map(|(old, (name, count))| {
                 model
                     .map
-                    .paths()
+                    .tours()
                     .iter()
                     .position(|found| found.name() == name && found.steps().len() == *count)
                     .map(|new| (old, new))
             })
             .collect();
         model.views.remap(|key| {
-            kept.get(&key.path.get()).map(|new| StepKey {
-                path: PathSlot::new(*new),
+            kept.get(&key.tour.get()).map(|new| StepKey {
+                tour: TourSlot::new(*new),
                 step: key.step,
             })
         });

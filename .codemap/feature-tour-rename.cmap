@@ -1,0 +1,56 @@
+codemap 9
+tour feature-tour-rename
+kind flow
+author ai
+group features/cli
+note tour-rename <name> <new>: rename a tour and every link that points at it, so no step is left linking to a missing tour. The agent reaches for it when understanding changes what a tour should be called, without breaking the links that point at it (commit 387d0d7e5ff9). The new name must be a valid file name and must not collide with another tour's name in any letter case, because each tour is a file under .codemap and a case-insensitive file system would make the two one file.
+
+step fx1fz5
+order 3
+parent tc6ziy
+author ai
+file crates/domain/src/map.rs
+symbol rename
+lines 0 15
+hash 5a4fe1bfd5b7dc8a
+link tour-links
+note Checks the new name is free, repoints every link to it, then renames the tour.
+
+step kz5jup
+order 2
+parent tc6ziy
+author ai
+file crates/domain/src/map.rs
+symbol links_to
+lines 0 2
+hash fb31f9ed10a74e6d
+note Every step that links to the old name, counted for the report.
+
+step nx8htv
+order 4
+parent tc6ziy
+author ai
+file crates/cli/src/wire.rs
+symbol links_moved
+lines 0 2
+hash fce7f44efc6b78d2
+note 'n links now point at <new>'.
+
+step tc6ziy
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol tour_rename
+lines 0 13
+hash f1226fce2e418ac9
+note Counts the links to the old name, renames, and reports the links that moved when there were any.
+
+step uqbcx0
+order 1
+parent tc6ziy
+author ai
+file crates/cli/src/exec.rs
+symbol find_tour
+lines 0 5
+hash 0d594859f978d957
+note The old tour must exist; the error names what was typed.

@@ -1,5 +1,5 @@
 use domain::{
-    Change, Coverage, Depth, FileId, GroupName, PathCount, PathDiff, Row, Step, SymbolName,
+    Change, Coverage, Depth, FileId, GroupName, Row, Step, SymbolName, TourCount, TourDiff,
 };
 use ui::{Count, Icon, Label, Px, Run};
 
@@ -7,13 +7,13 @@ use crate::action::Action;
 use crate::authoring::{Authoring, Hang};
 use crate::field::Which;
 use crate::ids;
-use crate::model::{Model, Openness, PathSlot, StepKey, Tab, ViewFlag};
+use crate::model::{Model, Openness, StepKey, Tab, TourSlot, ViewFlag};
 use crate::nav::Scrolling;
 use crate::text::{Clipped, Counted, Needle, Noun, Tag};
 use crate::theme::{
-    ACCENT, Cells, FAINT, FILTER_FIELD, GREEN, PANEL_TEXT_ROOM, PATHS_GUESS, PATHS_LEAST, PENDING,
-    PIXEL, RED, ROW_EXTRA, SELECTED, STEP_LIST_TOP, SYMBOL_FIXED, SYMBOL_NAME, SYMBOL_NAME_LEAST,
-    SYMBOLS_GUESS, SYMBOLS_LEAST, TEXT, WEAK,
+    ACCENT, Cells, FAINT, FILTER_FIELD, GREEN, PANEL_TEXT_ROOM, PENDING, PIXEL, RED, ROW_EXTRA,
+    SELECTED, STEP_LIST_TOP, SYMBOL_FIXED, SYMBOL_NAME, SYMBOL_NAME_LEAST, SYMBOLS_GUESS,
+    SYMBOLS_LEAST, TEXT, TOURS_GUESS, TOURS_LEAST, WEAK,
 };
 use crate::widgets::{Chosen, Container, Frame, RowAction, Scroller};
 
@@ -33,7 +33,7 @@ fn group_row(
     model: &Model,
     frame: &mut Frame<'_>,
     group: &GroupName,
-    paths: PathCount,
+    tours: TourCount,
     pad: &Label,
     reading: &Label,
     forced: Option<Openness>,
@@ -59,14 +59,14 @@ fn group_row(
     let tally = format!(
         "  {}",
         Counted::new(
-            Count::new(usize::try_from(paths.value()).unwrap_or(0)),
-            Noun::Path
+            Count::new(usize::try_from(tours.value()).unwrap_or(0)),
+            Noun::Tour
         )
     );
-    let stale = model.map.paths().iter().any(|path| {
-        path.group().is_some_and(|inside| {
+    let stale = model.map.tours().iter().any(|tour| {
+        tour.group().is_some_and(|inside| {
             inside.as_str() == full || inside.as_str().starts_with(&format!("{full}/"))
-        }) && path.steps().iter().any(Step::is_stale)
+        }) && tour.steps().iter().any(Step::is_stale)
     });
     let id = ids::GROUP_ROW.with(&Label::new(full));
     let runs = vec![
@@ -88,25 +88,25 @@ fn group_row(
     }
 }
 
-fn path_row(
+fn tour_row(
     model: &Model,
     frame: &mut Frame<'_>,
-    slot: PathSlot,
-    diffs: &[PathDiff],
+    slot: TourSlot,
+    diffs: &[TourDiff],
     pad: &Label,
     columns: Count,
 ) -> Chosen {
-    let Some(path) = model.path(slot) else {
+    let Some(tour) = model.tour(slot) else {
         return Chosen::Plain;
     };
-    let name = path.name();
+    let name = tour.name();
     let pad = pad.as_str();
-    let steps = path.steps().len();
-    let stale = path.steps().iter().filter(|step| step.is_stale()).count();
+    let steps = tour.steps().len();
+    let stale = tour.steps().iter().filter(|step| step.is_stale()).count();
     let mark = match diffs
         .iter()
         .find(|diff| diff.name() == name)
-        .map(PathDiff::change)
+        .map(TourDiff::change)
     {
         Some(Change::Added) => "+ ",
         Some(Change::Changed) => "~ ",
@@ -119,15 +119,15 @@ fn path_row(
     } else {
         TEXT
     };
-    let chosen = if model.nav.path() == Some(slot) {
+    let chosen = if model.nav.tour() == Some(slot) {
         Chosen::Chosen
     } else {
         Chosen::Plain
     };
     let tally = format!(
         " [{}]{}  {}",
-        Tag::kind(path.kind()),
-        Tag::author(path.author()),
+        Tag::kind(tour.kind()),
+        Tag::author(tour.author()),
         Counted::new(Count::new(steps), Noun::Step)
     );
     let stale_note = if stale > 0 {
@@ -146,18 +146,18 @@ fn path_row(
                 Run::new(tally, WEAK),
                 Run::new(stale_note, RED),
             ],
-            ids::PATH_ROW.nth(Count::new(slot.get())),
+            ids::TOUR_ROW.nth(Count::new(slot.get())),
             chosen,
         )
         .clicked()
     {
-        frame.push(Action::OpenPath(slot, Tab::Path));
+        frame.push(Action::OpenTour(slot, Tab::Tour));
     }
     chosen
 }
 
 fn follow_step_list(model: &Model, frame: &mut Frame<'_>, offset: Px) {
-    let base = ids::paths();
+    let base = ids::tours();
     let (Some(step), Some(placement)) = (model.nav.top_step(), frame.ui.placement(base)) else {
         return;
     };
@@ -177,53 +177,53 @@ fn follow_step_list(model: &Model, frame: &mut Frame<'_>, offset: Px) {
     frame.push(Action::StepListShown(step));
 }
 
-pub(super) fn paths_window(model: &Model, frame: &mut Frame<'_>) {
-    let filter = model.fields.get(Which::PathFilter).text().as_str();
+pub(super) fn tours_window(model: &Model, frame: &mut Frame<'_>) {
+    let filter = model.fields.get(Which::TourFilter).text().as_str();
     let rows = model.listed_rows();
     frame.start(Container::ToolbarSmall);
     frame.field(
         &model.fields,
-        Which::PathFilter,
+        Which::TourFilter,
         &Label::new("filter"),
         FILTER_FIELD,
     );
-    authoring::new_path_button(frame);
+    authoring::new_tour_button(frame);
     if !filter.is_empty() {
         let shown = rows
             .iter()
-            .filter(|row| matches!(row, Row::Path { .. }))
+            .filter(|row| matches!(row, Row::Tour { .. }))
             .count();
-        frame.label(format!("{shown} of {}", model.map.paths().len()), WEAK);
+        frame.label(format!("{shown} of {}", model.map.tours().len()), WEAK);
     }
     frame.finish();
-    authoring::new_path_form(model, frame);
+    authoring::new_tour_form(model, frame);
     if rows.is_empty() {
         frame.label(
             if filter.is_empty() {
-                "no paths yet".to_owned()
+                "no tours yet".to_owned()
             } else {
-                format!("no path name, step symbol or step file matches '{filter}'")
+                format!("no tour name, step symbol or step file matches '{filter}'")
             },
             WEAK,
         );
     }
     let forced = (!filter.is_empty()).then_some(Openness::Open);
     let diffs = model.diffs();
-    let base = ids::paths();
+    let base = ids::tours();
     let scrolled = frame.scroll_column(base, model.scrolls.get(base), Scroller::Plain, None);
-    let columns = columns(frame, scrolled.interaction.rect(), PATHS_GUESS, PATHS_LEAST);
+    let columns = columns(frame, scrolled.interaction.rect(), TOURS_GUESS, TOURS_LEAST);
     let reading = Label::new(
         model
             .nav
-            .path()
-            .and_then(|path| model.path(path))
-            .and_then(|path| path.group())
+            .tour()
+            .and_then(|tour| model.tour(tour))
+            .and_then(|tour| tour.group())
             .map_or("", GroupName::as_str),
     );
     let mut closed_at: Option<Depth> = None;
     for row in rows {
         let depth = match &row {
-            Row::Group { depth, .. } | Row::Path { depth, .. } => *depth,
+            Row::Group { depth, .. } | Row::Tour { depth, .. } => *depth,
         };
         if closed_at.is_some_and(|closed| depth > closed) {
             continue;
@@ -231,18 +231,18 @@ pub(super) fn paths_window(model: &Model, frame: &mut Frame<'_>) {
         closed_at = None;
         let pad = Label::new("  ".repeat(usize::try_from(depth.value()).unwrap_or(0)));
         match row {
-            Row::Group { group, paths, .. } => {
-                if group_row(model, frame, &group, paths, &pad, &reading, forced)
+            Row::Group { group, tours, .. } => {
+                if group_row(model, frame, &group, tours, &pad, &reading, forced)
                     == Openness::Closed
                 {
                     closed_at = Some(depth);
                 }
             }
-            Row::Path { name, .. } => {
-                let Some(slot) = model.find_path(&name) else {
+            Row::Tour { name, .. } => {
+                let Some(slot) = model.find_tour(&name) else {
                     continue;
                 };
-                if path_row(model, frame, slot, &diffs, &pad, columns) == Chosen::Chosen {
+                if tour_row(model, frame, slot, &diffs, &pad, columns) == Chosen::Chosen {
                     step_list(model, frame, slot, &pad);
                     follow_step_list(model, frame, scrolled.offset);
                 } else {
@@ -267,11 +267,11 @@ pub(super) fn paths_window(model: &Model, frame: &mut Frame<'_>) {
     frame.finish();
 }
 
-fn found_step_rows(model: &Model, frame: &mut Frame<'_>, path: PathSlot, pad: &Label) {
+fn found_step_rows(model: &Model, frame: &mut Frame<'_>, tour: TourSlot, pad: &Label) {
     let pad = pad.as_str();
-    for numbered in model.found_steps(path) {
+    for numbered in model.found_steps(tour) {
         let key = StepKey {
-            path,
+            tour,
             step: numbered.step,
         };
         let Some(step) = model.step(key) else {
@@ -284,7 +284,7 @@ fn found_step_rows(model: &Model, frame: &mut Frame<'_>, path: PathSlot, pad: &L
         let runs = vec![Run::new(line, color), Run::new(format!("  {file}"), FAINT)];
         let id = ids::FOUND_STEP.with(&Label::new(format!(
             "{}:{}",
-            path.get(),
+            tour.get(),
             numbered.step.get()
         )));
         if frame.row(runs, id, Chosen::Plain).clicked() {
@@ -293,16 +293,16 @@ fn found_step_rows(model: &Model, frame: &mut Frame<'_>, path: PathSlot, pad: &L
     }
 }
 
-fn step_list(model: &Model, frame: &mut Frame<'_>, path: PathSlot, pad: &Label) {
+fn step_list(model: &Model, frame: &mut Frame<'_>, tour: TourSlot, pad: &Label) {
     let pad = pad.as_str();
     let mut hide_below: Option<Depth> = None;
-    for numbered in model.numbered(path) {
+    for numbered in model.numbered(tour) {
         if hide_below.is_some_and(|depth| numbered.depth > depth) {
             continue;
         }
         hide_below = None;
         let key = StepKey {
-            path,
+            tour,
             step: numbered.step,
         };
         let Some(step) = model.step(key) else {
@@ -431,7 +431,7 @@ pub(super) fn symbols_window(model: &Model, frame: &mut Frame<'_>) {
     );
     frame.caption(vec![
         Run::new(Icon::Check, GREEN),
-        Run::new(" in a path", WEAK),
+        Run::new(" in a tour", WEAK),
     ]);
     frame.finish();
     authoring::target_strip(model, frame);
@@ -522,7 +522,7 @@ fn symbol_row(
     columns: Count,
 ) {
     let index = &model.index;
-    let adding = model.nav.path().is_some();
+    let adding = model.nav.tour().is_some();
     let (Some(symbol), Some(file)) = (index.symbol(symbol_id), index.file(symbol_id.file())) else {
         return;
     };
@@ -605,7 +605,7 @@ pub(super) fn files_window(model: &Model, frame: &mut Frame<'_>) {
     });
     frame.start(Container::Header);
     frame.label(
-        format!("{covered} of {total} symbols in a path; covered/total per file"),
+        format!("{covered} of {total} symbols in a tour; covered/total per file"),
         WEAK,
     );
     frame.finish();

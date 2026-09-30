@@ -1,5 +1,5 @@
-codemap 8
-path io-store
+codemap 9
+tour io-store
 kind layer
 author ai
 group map
@@ -32,7 +32,7 @@ file crates/io-store/src/lib.rs
 symbol remove
 lines 0 2
 hash 24709e1d50a63fd6
-note Removes one file; the map store uses it for the files of paths that were removed or renamed.
+note Removes one file; the map store uses it for the files of tours that were removed or renamed.
 
 step cvz6kn
 order 0

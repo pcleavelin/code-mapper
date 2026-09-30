@@ -1,6 +1,6 @@
-codemap 8
-path ui-input
-kind type
+codemap 9
+tour ui-input
+kind data
 author ai
 group render
 note One frame's input, as the platform collects it and the app reads it: no winit type crosses into ui. Input holds the Pointer (mouse position, buttons pressed this frame and held down, click counts, wheel delta, trackpad pinch, modifiers), the keys pressed with their modifiers, the text typed, the window size and the time since start. Events accumulate into it between frames and end_frame clears the momentary part after each frame, so an app reads 'was this pressed' without an event queue. Typing and shortcuts are kept apart: a key press is a Press, the characters the platform produced go into Typed, and the platform only adds typed text when neither ctrl nor alt is held.

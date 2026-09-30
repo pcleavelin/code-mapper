@@ -1,9 +1,9 @@
-codemap 8
-path cli-read-commands
+codemap 9
+tour cli-read-commands
 kind layer
 author ai
 group cli
-note The read-only half of the CLI: the commands that answer questions about the source rather than the map. files, symbols, show and search all walk the in-memory Index directly, and every one of them prints one item per line in a file:line shape so the output can be pasted back into another command or parsed like grep output. Each is a method on exec.rs's Run that walks the index, with the row formats in wire.rs. These four are what the agent falls back to when no path covers the code it needs.
+note The read-only half of the CLI: the commands that answer questions about the source rather than the map. files, symbols, show and search all walk the in-memory Index directly, and every one of them prints one item per line in a file:line shape so the output can be pasted back into another command or parsed like grep output. Each is a method on exec.rs's Run that walks the index, with the row formats in wire.rs. These four are what the agent falls back to when no tour covers the code it needs.
 
 step 0dsrz5
 order 0
@@ -41,7 +41,7 @@ file crates/cli/src/exec.rs
 symbol show
 lines 0 13
 hash bb764e066c0963fd
-note show: numbered lines, the escape hatch for code no path covers. A file that is not indexed is an error; a range is not.
+note show: numbered lines, the escape hatch for code no tour covers. A file that is not indexed is an error; a range is not.
 
 step d9uhyu
 order 4
@@ -71,7 +71,7 @@ file crates/cli/src/wire.rs
 symbol numbered_lines
 lines 0 6
 hash 88a7e246954e7eda
-note The numbered-line printer, shared with the path command so a step's code and a raw show look the same: the 1-based number right-aligned in five columns, then the text.
+note The numbered-line printer, shared with the tour command so a step's code and a raw show look the same: the 1-based number right-aligned in five columns, then the text.
 
 step wdd0ll
 order 1

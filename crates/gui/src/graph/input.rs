@@ -646,9 +646,9 @@ impl Heading {
 
 impl Built {
     fn select(&self, node: Node) -> Action {
-        match (node.step, self.path) {
-            (Some(step), Some(path)) => {
-                Action::SelectStep(StepKey { path, step }, Scrolling::Scroll)
+        match (node.step, self.tour) {
+            (Some(step), Some(tour)) => {
+                Action::SelectStep(StepKey { tour, step }, Scrolling::Scroll)
             }
             _ => Action::Focus(node.symbol),
         }
@@ -710,12 +710,12 @@ impl App {
         let Some(to) = built.toward(from, heading, graph.cell) else {
             return;
         };
-        let path = built.path;
+        let tour = built.tour;
         self.graph(GraphAction::Steer(Steering::Keys));
-        match (to.step, path) {
-            (Some(step), Some(path)) => self
+        match (to.step, tour) {
+            (Some(step), Some(tour)) => self
                 .model
-                .select_step(StepKey { path, step }, Scrolling::Scroll),
+                .select_step(StepKey { tour, step }, Scrolling::Scroll),
             _ => self.model.go_to_symbol(to.symbol),
         }
     }

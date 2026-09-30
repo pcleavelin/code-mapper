@@ -6,7 +6,7 @@ use ui::Count;
 
 use crate::field::Which;
 use crate::keys::{Extend, Walk};
-use crate::model::{LineSelection, Model, PathSlot, StepKey, StepSlot, Tab, ViewFlag};
+use crate::model::{LineSelection, Model, StepKey, StepSlot, Tab, TourSlot, ViewFlag};
 use crate::panels::{BranchId, View};
 use crate::status::Status;
 
@@ -54,7 +54,7 @@ pub(crate) struct Place {
     file: Option<RelativePath>,
     lines: Option<LineSelection>,
     focus: Option<SymbolKey>,
-    path: Option<PathSlot>,
+    tour: Option<TourSlot>,
     step: Option<StepSlot>,
 }
 
@@ -63,7 +63,7 @@ impl Place {
         self.tab == other.tab
             && self.file == other.file
             && self.focus == other.focus
-            && self.path == other.path
+            && self.tour == other.tour
             && self.step == other.step
     }
 }
@@ -95,7 +95,7 @@ pub(crate) enum Scrolling {
 #[derive(Clone, Debug)]
 pub(crate) struct Nav {
     tab: Tab,
-    path: Option<PathSlot>,
+    tour: Option<TourSlot>,
     step: Option<StepSlot>,
     target: Option<StepSlot>,
     focus: Option<SymbolId>,
@@ -113,8 +113,8 @@ pub(crate) struct Nav {
 impl Default for Nav {
     fn default() -> Self {
         Self {
-            tab: Tab::Path,
-            path: None,
+            tab: Tab::Tour,
+            tour: None,
             step: None,
             target: None,
             focus: None,
@@ -136,8 +136,8 @@ impl Nav {
         self.tab
     }
 
-    pub(crate) const fn path(&self) -> Option<PathSlot> {
-        self.path
+    pub(crate) const fn tour(&self) -> Option<TourSlot> {
+        self.tour
     }
 
     pub(crate) const fn step(&self) -> Option<StepSlot> {
@@ -150,7 +150,7 @@ impl Nav {
 
     pub(crate) fn step_key(&self) -> Option<StepKey> {
         Some(StepKey {
-            path: self.path?,
+            tour: self.tour?,
             step: self.step?,
         })
     }
@@ -218,7 +218,7 @@ impl Model {
                 .map(|file| file.path().clone()),
             lines: nav.lines,
             focus: nav.focus.and_then(|symbol| self.index.symbol_key(symbol)),
-            path: nav.path,
+            tour: nav.tour,
             step: nav.step,
         }
     }
@@ -257,12 +257,12 @@ impl Model {
     }
 
     fn go(&mut self, place: Place) {
-        self.nav.path = place
-            .path
-            .filter(|path| path.get() < self.path_count().get());
-        match (self.nav.path, place.step) {
-            (Some(path), Some(step)) if step.get() < self.step_count(path).get() => {
-                self.select_step(StepKey { path, step }, Scrolling::Scroll);
+        self.nav.tour = place
+            .tour
+            .filter(|tour| tour.get() < self.tour_count().get());
+        match (self.nav.tour, place.step) {
+            (Some(tour), Some(step)) if step.get() < self.step_count(tour).get() => {
+                self.select_step(StepKey { tour, step }, Scrolling::Scroll);
             }
             _ => {
                 self.nav.step = None;
@@ -281,7 +281,7 @@ impl Model {
     }
 
     pub(crate) fn step_removed(&mut self, removed: StepKey) {
-        self.steps_moved(removed.path, |step| match step.cmp(&removed.step) {
+        self.steps_moved(removed.tour, |step| match step.cmp(&removed.step) {
             Ordering::Equal => None,
             Ordering::Greater => Some(StepSlot::new(step.get() - 1)),
             Ordering::Less => Some(step),
@@ -290,13 +290,13 @@ impl Model {
 
     pub(crate) fn steps_moved(
         &mut self,
-        path: PathSlot,
+        tour: TourSlot,
         shift: impl Fn(StepSlot) -> Option<StepSlot>,
     ) {
         self.views.remap(|key| {
-            if key.path == path {
+            if key.tour == tour {
                 shift(key.step).map(|step| StepKey {
-                    path: key.path,
+                    tour: key.tour,
                     step,
                 })
             } else {
@@ -304,11 +304,11 @@ impl Model {
             }
         });
         for place in self.nav.history.places_mut() {
-            if place.path == Some(path) {
+            if place.tour == Some(tour) {
                 place.step = place.step.and_then(&shift);
             }
         }
-        if self.nav.path == Some(path) {
+        if self.nav.tour == Some(tour) {
             self.nav.step = self.nav.step.and_then(&shift);
             self.nav.target = self.nav.target.and_then(&shift);
             self.nav.top_step = self.nav.top_step.and_then(&shift);
@@ -320,36 +320,36 @@ impl Model {
         self.nav.target = None;
     }
 
-    pub(crate) fn path_removed(&mut self, removed: PathSlot) {
-        let shift = |path: PathSlot| match path.cmp(&removed) {
+    pub(crate) fn tour_removed(&mut self, removed: TourSlot) {
+        let shift = |tour: TourSlot| match tour.cmp(&removed) {
             Ordering::Equal => None,
-            Ordering::Greater => Some(PathSlot::new(path.get() - 1)),
-            Ordering::Less => Some(path),
+            Ordering::Greater => Some(TourSlot::new(tour.get() - 1)),
+            Ordering::Less => Some(tour),
         };
         self.views.remap(|key| {
-            shift(key.path).map(|path| StepKey {
-                path,
+            shift(key.tour).map(|tour| StepKey {
+                tour,
                 step: key.step,
             })
         });
         let history = &mut self.nav.history;
-        history.back.retain(|place| place.path != Some(removed));
-        history.forward.retain(|place| place.path != Some(removed));
+        history.back.retain(|place| place.tour != Some(removed));
+        history.forward.retain(|place| place.tour != Some(removed));
         for place in history.places_mut() {
-            place.path = place.path.and_then(shift);
+            place.tour = place.tour.and_then(shift);
         }
         self.nav.top_step = None;
     }
 
     pub(crate) fn walk(&mut self, walk: Walk) {
-        let Some(path) = self
+        let Some(tour) = self
             .nav
-            .path
-            .filter(|path| path.get() < self.path_count().get())
+            .tour
+            .filter(|tour| tour.get() < self.tour_count().get())
         else {
             return;
         };
-        let order = self.numbered(path);
+        let order = self.numbered(tour);
         let Some(last) = order.len().checked_sub(1) else {
             return;
         };
@@ -367,7 +367,7 @@ impl Model {
         if let Some(placed) = order.get(at) {
             self.select_step(
                 StepKey {
-                    path,
+                    tour,
                     step: placed.step,
                 },
                 Scrolling::Scroll,
@@ -390,16 +390,16 @@ impl Model {
     }
 
     pub(crate) fn select_symbol(&mut self, symbol: SymbolId) {
-        if let Some(path) = self.nav.path {
-            let on_path = self.path(path).and_then(|found| {
+        if let Some(tour) = self.nav.tour {
+            let on_tour = self.tour(tour).and_then(|found| {
                 found.steps().iter().position(|step| {
                     step.resolved_symbol() == Some(symbol) && step.anchor().start().is_zero()
                 })
             });
-            if let Some(step) = on_path {
+            if let Some(step) = on_tour {
                 self.select_step(
                     StepKey {
-                        path,
+                        tour,
                         step: StepSlot::new(step),
                     },
                     Scrolling::Scroll,
@@ -412,14 +412,14 @@ impl Model {
     }
 
     pub(crate) fn select_step(&mut self, key: StepKey, scrolling: Scrolling) {
-        self.nav.path = Some(key.path);
+        self.nav.tour = Some(key.tour);
         self.nav.step = Some(key.step);
         self.nav.target = Some(key.step);
         let mut seen = BTreeSet::new();
         let mut up = self.parent_of(key);
         while let Some(parent) = up.filter(|parent| seen.insert(*parent)) {
             let above = StepKey {
-                path: key.path,
+                tour: key.tour,
                 step: parent,
             };
             if let Some(view) = self.views.existing(above) {
@@ -462,24 +462,24 @@ impl Model {
             });
         }
         if matches!(self.nav.tab, Tab::Source | Tab::Search | Tab::Diff) {
-            self.nav.show(Tab::Path);
+            self.nav.show(Tab::Tour);
         }
     }
 
-    pub(crate) fn select_path(&mut self, path: PathSlot) {
-        self.nav.path = Some(path);
-        if let Some(placed) = self.tree_order(path).first() {
+    pub(crate) fn select_tour(&mut self, tour: TourSlot) {
+        self.nav.tour = Some(tour);
+        if let Some(placed) = self.tree_order(tour).first() {
             let step = placed.step;
-            self.select_step(StepKey { path, step }, Scrolling::Scroll);
+            self.select_step(StepKey { tour, step }, Scrolling::Scroll);
         } else {
             self.nav.step = None;
             self.nav.target = None;
         }
     }
 
-    pub(crate) fn open_path(&mut self, path: PathSlot, tab: Tab) {
-        if self.nav.path != Some(path) {
-            self.select_path(path);
+    pub(crate) fn open_tour(&mut self, tour: TourSlot, tab: Tab) {
+        if self.nav.tour != Some(tour) {
+            self.select_tour(tour);
         }
         self.nav.show(tab);
     }
@@ -489,20 +489,20 @@ impl Model {
         if self.nav.step.is_some() {
             return;
         }
-        if !matches!(self.nav.tab, Tab::Graph | Tab::Path) {
+        if !matches!(self.nav.tab, Tab::Graph | Tab::Tour) {
             self.nav.show(Tab::Source);
-        } else if let Some(path) = self.nav.path {
+        } else if let Some(tour) = self.nav.tour {
             let name = self.index.symbol(symbol).map(|found| found.name().clone());
-            let path = self.path(path).map(|found| found.name().clone());
-            if let (Some(name), Some(path)) = (name, path) {
-                self.status = Status::OffPathSymbol { symbol: name, path };
+            let tour = self.tour(tour).map(|found| found.name().clone());
+            if let (Some(name), Some(tour)) = (name, tour) {
+                self.status = Status::OffTourSymbol { symbol: name, tour };
             }
         }
     }
 
     pub(crate) fn jumped_to_symbol(&mut self, symbol: SymbolId) {
         self.select_symbol(symbol);
-        let on_step = self.nav.step.is_some() && self.nav.tab == Tab::Path;
+        let on_step = self.nav.step.is_some() && self.nav.tab == Tab::Tour;
         if self.nav.tab != Tab::Graph && !on_step {
             self.nav.show(Tab::Source);
         }
@@ -554,25 +554,25 @@ impl Model {
         self.panels.reveal(tab, asked);
     }
 
-    pub(crate) fn path_created(&mut self, path: PathSlot) {
-        self.nav.path = Some(path);
+    pub(crate) fn tour_created(&mut self, tour: TourSlot) {
+        self.nav.tour = Some(tour);
         self.nav.step = None;
         self.nav.target = None;
-        self.nav.show(Tab::Path);
+        self.nav.show(Tab::Tour);
     }
 
     pub(crate) fn forget_step(&mut self) {
         self.nav.step = None;
     }
 
-    pub(crate) fn forget_path(&mut self) {
-        self.nav.path = None;
+    pub(crate) fn forget_tour(&mut self) {
+        self.nav.tour = None;
         self.nav.step = None;
         self.nav.target = None;
     }
 
-    pub(crate) fn reselect(&mut self, path: Option<PathSlot>, step: Option<StepSlot>) {
-        self.nav.path = path;
+    pub(crate) fn reselect(&mut self, tour: Option<TourSlot>, step: Option<StepSlot>) {
+        self.nav.tour = tour;
         self.nav.step = step;
         self.nav.target = step;
     }

@@ -1,6 +1,6 @@
-codemap 8
-path text
-kind type
+codemap 9
+tour text
+kind data
 author ai
 group map
 note Positions and text, the vocabulary every other crate measures code in (domain's text.rs). A Line is a 0-based line number; the 1-based number users see is Line::number. A Span is an inclusive, never-empty range of lines. LineOffset is signed, the distance of an anchor's lines from its symbol's first line. FileText is a file as lines with tabs expanded to four spaces on the way in, so display, hashing and every column agree whether the text came from disk, a server or a revision. TextHash is FNV-1a, the fingerprint anchors and the index cache compare. RelativePath is a path under the root with forward slashes; Revision names a jj or git revision as the user or the VCS gave it. Each is its own type so a signature cannot take one where another is meant.

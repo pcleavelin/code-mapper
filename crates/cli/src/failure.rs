@@ -1,4 +1,4 @@
-use domain::{MapError, PathName, RelativePath, Revision, SymbolName, TextFragment};
+use domain::{MapError, RelativePath, Revision, SymbolName, TextFragment, TourName};
 use io_map::{MapLoadError, MapSaveError, ParseError};
 use io_vcs::Program;
 
@@ -7,7 +7,7 @@ use crate::output::Output;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StepPlace {
-    pub path: PathName,
+    pub tour: TourName,
     pub index: StepIndex,
 }
 
@@ -21,10 +21,10 @@ pub struct Candidate {
 pub enum Failure {
     Map(MapError),
     LinkedFrom {
-        path: PathName,
+        tour: TourName,
         steps: Vec<StepPlace>,
     },
-    NoSuchPath(TextFragment),
+    NoSuchTour(TextFragment),
     NoSuchStep,
     NoSuchFile(RelativePath),
     NoSuchSymbol(SymbolName),

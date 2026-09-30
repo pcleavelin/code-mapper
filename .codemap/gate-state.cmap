@@ -1,6 +1,6 @@
-codemap 8
-path gate-state
-kind type
+codemap 9
+tour gate-state
+kind data
 author ai
 group tooling
 note The gate's memory between runs, in target/xtask/gate: the stamp of the workspace the last run saw, green or red, how many runs in a row were red with the identical report, and that report. It is what lets the hooks be cheap and strict at once: a commit or a stop is allowed without rerunning the gate when the recorded green matches the current stamp, a stuck session is recognised by its repeat count, and a new session is told what the last one left red. It lives under target/, so it is never committed and a clean build forgets it.

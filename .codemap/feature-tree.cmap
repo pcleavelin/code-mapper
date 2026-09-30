@@ -1,5 +1,5 @@
-codemap 8
-path feature-tree
+codemap 9
+tour feature-tree
 kind flow
 author ai
 group features/cli

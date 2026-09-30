@@ -1,0 +1,151 @@
+codemap 9
+tour tour-groups
+kind flow
+author ai
+group map
+note How tours are placed in groups so the tours list is a tree instead of one flat list. A group is a field of the tour, a GroupName normalised when it is made, with / nesting one group in another; a group exists while a tour is in it. Map::rows orders the list once for both front ends: at each level the groups sorted by name, then the tours of that level in map order.
+
+step 0dem6y
+order 14
+parent cqowwi
+author ai
+file crates/domain/src/map.rs
+symbol level
+lines 0 18
+hash 026c174e569d4a01
+note One level: each tour goes to the child group its group names under this prefix, or stays at this level; the child groups come first, sorted by name (a BTreeMap), each followed by its own level, then this level's tours in map order.
+
+step 0u8wp3
+order 1
+parent gzhf7a
+author ai
+file crates/domain/src/map.rs
+symbol set_group
+lines 0 7
+hash 276d2dbf582b9695
+note The one place a group is set. None leaves the tour at the top level of the list.
+
+step 2d3h84
+order 2
+parent 7qw1be
+author ai
+file crates/domain/src/map/name.rs
+symbol new
+lines 0 8
+hash ce4fe329a70237ec
+note Trims each part and drops empty ones, so " /flows//http/ " and "flows/http" are the same group; None when nothing is left. The only constructor, so every GroupName is normal.
+
+step 49sg4o
+order 12
+parent 0dem6y
+author ai
+file crates/domain/src/map/name.rs
+symbol child_under
+lines 0 16
+hash 36d457b340e902d6
+note The next part of a group below a prefix, as a whole group name (flows under none is flows; flows/http under flows is flows/http). None when the group is not under the prefix or is the prefix itself.
+
+step 77jjzt
+order 4
+parent zwkmx2
+author ai
+file crates/domain/src/map.rs
+symbol rename_group
+lines 0 17
+hash 2d048b71c9c55b20
+note Every tour whose group is the old one or inside it gets the new head. NoGroupGiven when the old name normalised to nothing, NoSuchGroup when no tour moved; renaming to nothing lifts them one level.
+
+step 79qkl3
+order 13
+parent bthmeg
+author ai
+file crates/gui/src/views/left.rs
+symbol group_row
+lines 0 57
+hash 7b717c8d8daf48e5
+note One group row: an expanded or collapsed chevron icon and the last part of the name, then the tour count dimmed ('3 tours'). Open unless the reader closed it, and open by default when it holds the tour being read. Red when any tour inside it has a stale step. A click toggles it through Action::OpenGroup. While the Tours filter holds text every group is open and a click does nothing.
+
+step 7qw1be
+order 0
+author ai
+file crates/cli/src/convert.rs
+symbol from
+lines 0 5
+hash d40896d65202cc0e
+note The command line becomes a GroupName here, in cli's convert.rs, for tour-group, group-rename and tour-new --group alike; a group that normalises to nothing is None, the top level.
+
+step bthmeg
+order 8
+author ai
+file crates/gui/src/views/left.rs
+symbol tours_window
+lines 0 88
+hash acfdfedc1a8979b5
+link reader-gui
+note The Tours tab walks the same rows, narrowed to the tours the filter field lists (feature-filter-tours), skipping everything under a closed group.
+
+step cqowwi
+order 5
+parent p8bthl
+author ai
+file crates/domain/src/map.rs
+symbol rows
+lines 0 2
+hash 1e78e876d1b8c878
+note The list order, built by level from the top over every tour (rows_where builds it over only the tours a predicate accepts, for the GUI's Tours filter). Group rows carry the number of tours under them at any depth; tour rows carry their depth for indenting.
+
+step gxaocm
+order 7
+author ai
+file crates/cli/src/exec.rs
+symbol groups
+lines 0 11
+hash 8ce96c1a94c328c6
+note groups: the group rows of rows() alone, indented by depth.
+
+step gzhf7a
+order 3
+author ai
+file crates/cli/src/exec.rs
+symbol tour_group
+lines 0 10
+hash 029ffaba3aa8cd37
+note tour-group: moves one tour and prints where it now sits; an empty group puts it back at the top level.
+
+step p8bthl
+order 6
+author ai
+file crates/cli/src/exec.rs
+symbol tours
+lines 0 29
+hash 155b92861a331344
+note tours: the tour rows of rows(), with a == line naming the group wherever it changes, (top level) included, so a flat listing still says where each tour sits.
+
+step qtxapd
+order 11
+parent cqowwi
+author ai
+file crates/domain/src/map.rs
+symbol Row
+lines 0 10
+hash 03a7dc00de25a591
+note A row of the list: a group with its depth and tour count, or a tour with its depth.
+
+step xn6107
+order 10
+parent 77jjzt
+author ai
+file crates/domain/src/map/name.rs
+symbol moved
+lines 0 7
+hash 5275a4982490e57e
+note Matches the group and its descendants by whole parts, so renaming flow leaves flows alone, and splices the new head onto the rest.
+
+step zwkmx2
+order 9
+author ai
+file crates/cli/src/exec.rs
+symbol group_rename
+lines 0 8
+hash ca6b615c05ede1e5
+note group-rename: moves every tour of the group and of the groups inside it, and prints how many moved.

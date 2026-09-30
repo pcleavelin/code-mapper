@@ -266,7 +266,7 @@ fn guard_edit(root: &Root, path: &RepoPath) -> Decision {
             return Decision::Allow;
         }
         return Decision::Deny(Message::new(
-            "The map is written only through codemap commands (`codemap . help`): path-add, step-note, note-edit, path-pin, repin.",
+            "The map is written only through codemap commands (`codemap . help`): tour-add, step-note, note-edit, tour-pin, repin.",
         ));
     }
     Decision::Allow

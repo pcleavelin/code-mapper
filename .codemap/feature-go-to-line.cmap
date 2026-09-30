@@ -1,5 +1,5 @@
-codemap 8
-path feature-go-to-line
+codemap 9
+tour feature-go-to-line
 kind flow
 author ai
 group features/gui
@@ -41,7 +41,7 @@ author ai
 file crates/gui/src/app.rs
 symbol keys
 lines 43 50
-hash de06bec86c783ce5
+hash 1cf770d07d8ba042
 note Trigger: the keys phase hands edits and typed text to the go-to-line field last.
 
 step xm25ym
@@ -51,8 +51,8 @@ author ai
 file crates/gui/src/action.rs
 symbol typed
 lines 0 31
-hash 93b44485cfbbff1d
-link feature-new-path
+hash f3a379a4518cae0a
+link feature-new-tour
 note The line field keeps its text on enter; a submitted line goes to go_to_line.
 
 step zzv611

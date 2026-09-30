@@ -2,7 +2,7 @@ use std::fmt;
 use std::io;
 use std::path::PathBuf;
 
-use domain::{InvalidName, Line, MapError, PathName, Revision, StepId};
+use domain::{InvalidName, Line, MapError, Revision, StepId, TourName};
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FieldKey(String);
@@ -55,7 +55,7 @@ pub enum Fault {
     NoVersion,
     UnknownAuthor(FieldValue),
     UnknownKind(FieldValue),
-    UnknownPathField(FieldKey),
+    UnknownTourField(FieldKey),
     UnknownStepField(FieldKey),
     SecondStep(FieldValue),
     Order,
@@ -64,9 +64,9 @@ pub enum Fault {
     InvalidName(InvalidName),
     InvalidStepId(FieldValue),
     MissingField(FieldKey),
-    NoPathLine,
+    NoTourLine,
     UnknownParent {
-        path: PathName,
+        tour: TourName,
         step: StepId,
         parent: FieldValue,
     },
@@ -85,8 +85,8 @@ pub enum MapLoadError {
     OldFormat(PathBuf),
     Unreadable { file: PathBuf, error: io::Error },
     Parse(ParseError),
-    OnePathPerFile(PathBuf),
-    Misplaced { file: PathBuf, path: PathName },
+    OneTourPerFile(PathBuf),
+    Misplaced { file: PathBuf, tour: TourName },
 }
 
 #[derive(Debug)]

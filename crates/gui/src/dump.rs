@@ -91,16 +91,16 @@ impl Dump for Nav {
             .lines()
             .map(|chosen| format!("({}, {})", chosen.from.value(), chosen.to.value()));
         lines.line(format_args!(
-            "tab={:?} path={} step={} focus={} file={} sel={}",
+            "tab={:?} tour={} step={} focus={} file={} sel={}",
             self.tab(),
-            Optional(self.path()),
+            Optional(self.tour()),
             Optional(self.step()),
             Optional(focus),
             Optional(file),
             Optional(selection)
         ));
         let model = context.model;
-        if self.target() != self.step() || model.step_grab.is_some() || model.new_path.is_some() {
+        if self.target() != self.step() || model.step_grab.is_some() || model.new_tour.is_some() {
             let grab = model.step_grab.map(|grab| {
                 format!(
                     "{}{}",
@@ -109,10 +109,10 @@ impl Dump for Nav {
                 )
             });
             lines.line(format_args!(
-                "authoring target={} grab={} new_path={}",
+                "authoring target={} grab={} new_tour={}",
                 Optional(self.target()),
                 Optional(grab),
-                Optional(model.new_path.map(Tag::kind))
+                Optional(model.new_tour.map(Tag::kind))
             ));
         }
     }
@@ -123,7 +123,7 @@ impl Dump for Scrolls {
         for (name, id) in [
             ("document", ids::document()),
             ("source", ids::source()),
-            ("paths", ids::paths()),
+            ("tours", ids::tours()),
             ("console", ids::console()),
         ] {
             if let Some(placement) = context.ui.placement(id) {
@@ -191,11 +191,11 @@ impl Dump for Fields {
             .model
             .listed_rows()
             .iter()
-            .filter(|row| matches!(row, Row::Path { .. }))
+            .filter(|row| matches!(row, Row::Tour { .. }))
             .count();
         lines.line(format_args!(
-            "paths filter={} listed={listed}",
-            Quoted(self.get(Which::PathFilter).text().as_str())
+            "tours filter={} listed={listed}",
+            Quoted(self.get(Which::TourFilter).text().as_str())
         ));
     }
 }
@@ -217,7 +217,7 @@ impl Dump for StepViews {
             write!(
                 views,
                 " {}:{}({} +{}/+{})",
-                key.path,
+                key.tour,
                 key.step,
                 flags.join(" "),
                 view.context.above,

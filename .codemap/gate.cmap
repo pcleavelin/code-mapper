@@ -1,5 +1,5 @@
-codemap 8
-path gate
+codemap 9
+tour gate
 kind flow
 author ai
 group tooling
@@ -43,7 +43,7 @@ file xtask/src/gate.rs
 symbol steps
 lines 40 52
 hash eae5beaaa3361350
-note Feature coverage: crates/codemap/tests/features.rs checks that every Feature in the registry has its feature-<name> flow path with the handler as its one root, and that some scenario triggers it. It reads only the map and the test sources, so it runs in every gate.
+note Feature coverage: crates/codemap/tests/features.rs checks that every Feature in the registry has its feature-<name> flow tour with the handler as its one root, and that some scenario triggers it. It reads only the map and the test sources, so it runs in every gate.
 
 step 7fhoz2
 order 27
@@ -116,7 +116,7 @@ file xtask/src/gate.rs
 symbol steps
 lines 34 39
 hash 780f594242d5e859
-note codemap check on this repo: the map must have no stale step and no link to a missing path, so code and its only prose stay in step.
+note codemap check on this repo: the map must have no stale step and no link to a missing tour, so code and its only prose stay in step.
 
 step d62cya
 order 31

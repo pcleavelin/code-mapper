@@ -1,5 +1,5 @@
-codemap 8
-path feature-toggle-whole-symbol
+codemap 9
+tour feature-toggle-whole-symbol
 kind flow
 author ai
 group features/gui

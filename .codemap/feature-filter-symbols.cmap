@@ -1,9 +1,9 @@
-codemap 8
-path feature-filter-symbols
+codemap 9
+tour feature-filter-symbols
 kind flow
 author ai
 group features/gui
-note In the Symbols tab, type in the filter field to narrow the list to symbols whose name contains the text, or every symbol of a file whose path contains it, ignoring case; every keystroke re-filters and scrolls the list back to its top. The reader reaches for it to find a symbol or file by name in a large repo without scrolling every file. The toolbar shows 'n of m' while filtering. Symbols sit under a row per file with its covered/total count; each symbol row shows a check when a path covers the symbol, its name, line and kind. Clicking a symbol row focuses that symbol: when it is a whole-symbol step of the path being read, that step is selected; otherwise the Source view opens on it, or, on the Path or Graph tab, the document stays and the status bar says the symbol is off the path. Clicking a file row opens that file in the Source view.
+note In the Symbols tab, type in the filter field to narrow the list to symbols whose name contains the text, or every symbol of a file whose path contains it, ignoring case; every keystroke re-filters and scrolls the list back to its top. The reader reaches for it to find a symbol or file by name in a large repo without scrolling every file. The toolbar shows 'n of m' while filtering. Symbols sit under a row per file with its covered/total count; each symbol row shows a check when a tour covers the symbol, its name, line and kind. Clicking a symbol row focuses that symbol: when it is a whole-symbol step of the tour being read, that step is selected; otherwise the Source view opens on it, or, on the Tour or Graph tab, the document stays and the status bar says the symbol is off the tour. Clicking a file row opens that file in the Source view.
 
 step 0pe1eq
 order 0
@@ -11,8 +11,8 @@ author ai
 file crates/gui/src/nav.rs
 symbol go_to_symbol
 lines 0 14
-hash 44cd199b2a7a836e
-note The handler for a row click. After select_symbol, a symbol that landed on a step is done; otherwise the Source view is shown, unless the Path or Graph tab is current, where the status bar notes the symbol is off the path being read.
+hash 2431deb63e24562e
+note The handler for a row click. After select_symbol, a symbol that landed on a step is done; otherwise the Source view is shown, unless the Tour or Graph tab is current, where the status bar notes the symbol is off the tour being read.
 
 step 5sspkq
 order 4
@@ -21,8 +21,8 @@ author ai
 file crates/gui/src/action.rs
 symbol typed
 lines 0 31
-hash 93b44485cfbbff1d
-link feature-new-path
+hash f3a379a4518cae0a
+link feature-new-tour
 note An edit that changes the symbol filter's text scrolls the Symbols list back to its top, so the first match is in view. The filter keeps its text on enter and has nothing to run; the field's text is all the filter needs.
 
 step a4zz2d
@@ -32,8 +32,8 @@ author ai
 file crates/gui/src/views/left.rs
 symbol symbol_row
 lines 0 65
-hash 570a16900869e658
-note One symbol row: the check mark when covered, then name, line and kind, the name clipped to the room columns gives it. A click on the row queues Focus; the '+ step' action, shown on the hovered or selected row while a path is open, queues an AddSymbol instead (feature-add-step).
+hash 5fb2fc57e5e94dbb
+note One symbol row: the check mark when covered, then name, line and kind, the name clipped to the room columns gives it. A click on the row queues Focus; the '+ step' action, shown on the hovered or selected row while a tour is open, queues an AddSymbol instead (feature-add-step).
 
 step dectne
 order 5
@@ -52,9 +52,9 @@ author ai
 file crates/gui/src/nav.rs
 symbol select_symbol
 lines 0 20
-hash 478ce11e8427e2a2
+hash 3559d143e999ed53
 link selection
-note A symbol that is the root-anchored step of the path being read selects that step; any other symbol clears the step and focuses the symbol.
+note A symbol that is the root-anchored step of the tour being read selects that step; any other symbol clears the step and focuses the symbol.
 
 step hxs4u8
 order 6
@@ -73,8 +73,8 @@ author ai
 file crates/gui/src/app.rs
 symbol keys
 lines 43 50
-hash de06bec86c783ce5
-note The typing: after the walks, the keys phase hands edits and typed text to the symbol filter, path filter and go-to-line fields.
+hash 1cf770d07d8ba042
+note The typing: after the walks, the keys phase hands edits and typed text to the symbol filter, tour filter and go-to-line fields.
 
 step w6a3u3
 order 2
@@ -83,7 +83,7 @@ author ai
 file crates/gui/src/views/left.rs
 symbol symbols_window
 lines 0 70
-hash 0d4f6e5108e3d998
+hash d4fbce21f46697af
 note Trigger and filter: the filter field's text becomes a Needle and symbol_lines matches it while the list is built, so there is no filter action to apply. The toolbar shows the count, 'n of m' while filtering, or says nothing matches. Rows are virtualised to the visible window; file lines are drawn by symbol_file_row, symbols by symbol_row.
 
 step xfe8cr

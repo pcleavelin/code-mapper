@@ -1,5 +1,5 @@
-codemap 8
-path feature-select-lines
+codemap 9
+tour feature-select-lines
 kind flow
 author ai
 group features/gui

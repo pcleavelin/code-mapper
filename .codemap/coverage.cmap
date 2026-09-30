@@ -1,5 +1,5 @@
-codemap 8
-path coverage
+codemap 9
+tour coverage
 kind flow
 author ai
 group map
@@ -13,7 +13,7 @@ file crates/domain/src/map.rs
 symbol Coverage
 lines 0 2
 hash 13f37d92f956993d
-note What coverage returns: the spans of the current steps, borrowed from the map and keyed by file, so asking about every symbol of the index is a lookup per file and a scan of that file's steps rather than a walk over every path. The GUI's Symbols and Files tabs build one per frame the same way.
+note What coverage returns: the spans of the current steps, borrowed from the map and keyed by file, so asking about every symbol of the index is a lookup per file and a scan of that file's steps rather than a walk over every tour. The GUI's Symbols and Files tabs build one per frame the same way.
 
 step e5btrm
 order 3
@@ -32,7 +32,7 @@ author ai
 file crates/domain/src/map.rs
 symbol coverage
 lines 0 8
-hash b4612b85e433b734
+hash 703926ae1cd7e0e0
 note The one definition of covered: Map::coverage collects the span of every non-stale step, grouped by file, once per command. Stale steps do not count: their text no longer matches the code, and check fails on them anyway.
 
 step nb45f6

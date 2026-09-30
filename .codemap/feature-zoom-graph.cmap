@@ -1,5 +1,5 @@
-codemap 8
-path feature-zoom-graph
+codemap 9
+tour feature-zoom-graph
 kind flow
 author ai
 group features/gui

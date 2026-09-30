@@ -1,5 +1,5 @@
-codemap 8
-path feature-toggle-collapse
+codemap 9
+tour feature-toggle-collapse
 kind flow
 author ai
 group features/gui

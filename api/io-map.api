@@ -5,9 +5,9 @@ error::pub struct FieldValue(String);
 error::pub fn new(value: &str) -> Self
 error::pub fn as_str(&self) -> &str
 error::pub enum Origin { File(PathBuf), Revision(Revision), }
-error::pub enum Fault { Conflict, Version(FieldValue), NoVersion, UnknownAuthor(FieldValue), UnknownKind(FieldValue), UnknownPathField(FieldKey), UnknownStepField(FieldKey), SecondStep(FieldValue), Order, Lines, Hash, InvalidName(InvalidName), InvalidStepId(FieldValue), MissingField(FieldKey), NoPathLine, UnknownParent { path: PathName, step: StepId, parent: FieldValue, }, Map(MapError), }
+error::pub enum Fault { Conflict, Version(FieldValue), NoVersion, UnknownAuthor(FieldValue), UnknownKind(FieldValue), UnknownTourField(FieldKey), UnknownStepField(FieldKey), SecondStep(FieldValue), Order, Lines, Hash, InvalidName(InvalidName), InvalidStepId(FieldValue), MissingField(FieldKey), NoTourLine, UnknownParent { tour: TourName, step: StepId, parent: FieldValue, }, Map(MapError), }
 error::pub struct ParseError { pub origin: Origin, pub line: Option<Line>, pub fault: Fault, }
-error::pub enum MapLoadError { OldFormat(PathBuf), Unreadable { file: PathBuf, error: io::Error }, Parse(ParseError), OnePathPerFile(PathBuf), Misplaced { file: PathBuf, path: PathName }, }
+error::pub enum MapLoadError { OldFormat(PathBuf), Unreadable { file: PathBuf, error: io::Error }, Parse(ParseError), OneTourPerFile(PathBuf), Misplaced { file: PathBuf, tour: TourName }, }
 error::pub enum MapSaveError { CreateDirectory { directory: PathBuf, error: io::Error, }, Write { file: PathBuf, error: io::Error, }, Remove { file: PathBuf, error: io::Error, }, }
 pub struct MapVersion(&'static str);
 pub const CURRENT: Self = Self(wire::VERSION);
@@ -16,8 +16,8 @@ pub struct MapText(String);
 pub fn new(text: &str) -> Self
 pub fn as_str(&self) -> &str
 pub struct Saved;
-pub struct Stamp { modified: SystemTime, files: PathCount, }
-pub struct MapStore { directory: PathBuf, disk: BTreeMap<PathName, MapText>, }
+pub struct Stamp { modified: SystemTime, files: TourCount, }
+pub struct MapStore { directory: PathBuf, disk: BTreeMap<TourName, MapText>, }
 pub fn new(root: &Root) -> Self
 pub fn relative_directory() -> RelativePath
 pub fn directory(&self) -> &Path

@@ -1,5 +1,5 @@
-codemap 8
-path behaviour-pin
+codemap 9
+tour behaviour-pin
 kind layer
 author ai
 group tests
@@ -22,7 +22,7 @@ author ai
 file crates/codemap/tests/common/cli.rs
 symbol vcs
 lines 0 103
-hash 90a0d7955eca081d
+hash 5f9728620265cf45
 note diff and repin in a jj repo (skipped without jj): diff with no VCS and with nothing changed, then every kind of map edit diffed against the parent revision, then source edits after the commit (an inserted function, a changed body, a slice, a symbol moved to another file, a rename, a deleted file) and repin from @- and from @--, and a revision that does not exist.
 
 step 216e03
@@ -32,8 +32,8 @@ author ai
 file crates/codemap/tests/common/mod.rs
 symbol MAP
 lines 0 45
-hash f3681d2a8f8f8fa4
-note Four paths of every kind, with nested steps, a slice step and notes: enough for the document, the steps list, the graph and the diff to have something to show.
+hash 0748293473fc5db4
+note Four tours of every kind, with nested steps, a slice step and notes: enough for the document, the steps list, the graph and the diff to have something to show.
 
 step 2kgy4u
 order 34
@@ -52,8 +52,8 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol graph
 lines 0 97
-hash 0e81cc4949068369
-note The graph: the fitted start, a node's callees and hide buttons, an off-path node, shift-wheel and wheel, dragging a node, auto layout, ctrl-wheel zoom, fit, 1:1, panning, and a node's context and no-context buttons; then, after clicking an off-path node, the arrow keys down, left and right walking between nodes (a dump after each, once the glide has had time to land), and the graph-turn button laying the tree out top to bottom (turned.png); last, a node's source button opening its file in the Source view.
+hash 7d5d258221a1f67c
+note The graph: the fitted start, a node's callees and hide buttons, an off-tour node, shift-wheel and wheel, dragging a node, auto layout, ctrl-wheel zoom, fit, 1:1, panning, and a node's context and no-context buttons; then, after clicking an off-tour node, the arrow keys down, left and right walking between nodes (a dump after each, once the glide has had time to land), and the graph-turn button laying the tree out top to bottom (turned.png); last, a node's source button opening its file in the Source view.
 
 step 5147ql
 order 23
@@ -62,8 +62,8 @@ author ai
 file crates/codemap/tests/common/cli.rs
 symbol edit
 lines 0 90
-hash f1b26648698e56b1
-note Every edit command on a scratch path: creating with a bad kind, adding by symbol and by lines with bad parents and ranges, notes and note-edit, moves and swaps, links (to a missing path and to itself), rename, groups and group-rename, path-pin with bad ranges, path-rm of a step and of a linked path, and promote with and without a name.
+hash 34cc033cec564e45
+note Every edit command on a scratch tour: creating with a bad kind, adding by symbol and by lines with bad parents and ranges, notes and note-edit, moves and swaps, links (to a missing tour and to itself), rename, groups and group-rename, tour-pin with bad ranges, tour-rm of a step and of a linked tour, and promote with and without a name.
 
 step 57lpfq
 order 40
@@ -72,7 +72,7 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol source
 lines 0 59
-hash 1d8ff7256147e6c5
+hash 42bc7a916429359a
 note The Source view: opening a file at a line, a shift-click range selection added to startup with 'add step' (checked by the after command), goto-line with good, past-the-end and non-numeric input, the tooltip, ctrl-click, and back and forward by button and by key.
 
 step 62zoqn
@@ -92,8 +92,8 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol SETTLE
 lines 0 0
-hash 4b6296ae0d051cf5
-note What every script starts with: wait until every server request is answered, save, then open startup by clicking paths/2, since the paths list reads c-lib, shapes, startup, stats. Without the idle and save, with several servers missing, the status line says whichever failure came last.
+hash ce8611b7ca78f67c
+note What every script starts with: wait until every server request is answered, save, then open startup by clicking tours/2, since the tours list reads c-lib, shapes, startup, stats. Without the idle and save, with several servers missing, the status line says whichever failure came last.
 
 step 791rdb
 order 50
@@ -122,8 +122,8 @@ author ai
 file crates/codemap/tests/common/cli.rs
 symbol merge
 lines 0 45
-hash 4f8d6c4e55d3b9dc
-note Two jj branches edit different notes of one path, one adds a step to another path and a new path: the merge reads with every change. A third branch adding a step to the same path merges too, since the new steps sit apart in the file. A fourth editing the same note conflicts on that one line, and every command refuses the map until it is resolved.
+hash f16043fdbe58f0bc
+note Two jj branches edit different notes of one tour, one adds a step to another tour and a new tour: the merge reads with every change. A third branch adding a step to the same tour merges too, since the new steps sit apart in the file. A fourth editing the same note conflicts on that one line, and every command refuses the map until it is resolved.
 
 step 9ionsq
 order 16
@@ -159,10 +159,10 @@ step aanf57
 order 55
 author ai
 file crates/codemap/tests/features.rs
-symbol every_feature_has_its_flow_path_in_the_map
+symbol every_feature_has_its_flow_tour_in_the_map
 lines 0 36
-hash 69d41924c1216365
-note Every feature in the registry has its flow path feature-<name> in the repo's own map, in features/cli or features/gui by its surface, with exactly one root step, the handler. A feature added without its path fails here.
+hash 6dc156878809b22e
+note Every feature in the registry has its flow tour feature-<name> in the repo's own map, in features/cli or features/gui by its surface, with exactly one root step, the handler. A feature added without its tour fails here.
 
 step b2unkk
 order 60
@@ -181,8 +181,8 @@ author ai
 file crates/codemap/tests/common/cli.rs
 symbol read
 lines 0 57
-hash e9e1b7296703a912
-note Every read command on the mapped fixture, including a range past the end of a file, a missing file, a bad regex, an unknown symbol or path, and the refusals of a bad command line.
+hash d4219d5bb80ad8de
+note Every read command on the mapped fixture, including a range past the end of a file, a missing file, a bad regex, an unknown symbol or tour, and the refusals of a bad command line.
 
 step by7tn1
 order 43
@@ -191,8 +191,8 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol delete
 lines 0 30
-hash 71a866262d82eb96
-note Deleting a step and a whole path from the document, then saving; the after command shows what the map lost.
+hash 00745a5e865683a5
+note Deleting a step and a whole tour from the document, then saving; the after command shows what the map lost.
 
 step cylef2
 order 54
@@ -259,7 +259,7 @@ author ai
 file crates/codemap/tests/common/cli.rs
 symbol stale
 lines 0 64
-hash 5be0c9fa7b00257c
+hash fef4f0a6939231c2
 note Source edits that go stale in each way: text moved above a step (still current), a body changed, a slice's line changed, a symbol renamed, text moved down unchanged (stale names where it went), a file deleted; then the re-pins and removals that make check pass again.
 
 step gnnw22
@@ -364,8 +364,8 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol layout
 lines 0 73
-hash 50ec9b998e75870b
-note The panel tree: resizing the left split by its divider, splitting the centre and picking the Source by typing, splitting that down and picking References by clicking (its old panel closes), dragging Console onto the left edge of the Paths panel, a click on a tab that moves nothing, a drag released over the top bar that cancels, closing a panel, and a tab command that brings the Source back into a panel.
+hash b2537bd6d1592806
+note The panel tree: resizing the left split by its divider, splitting the centre and picking the Source by typing, splitting that down and picking References by clicking (its old panel closes), dragging Console onto the left edge of the Tours panel, a click on a tab that moves nothing, a drag released over the top bar that cancels, closing a panel, and a tab command that brings the Source back into a panel.
 
 step j8h125
 order 33
@@ -395,7 +395,7 @@ file crates/codemap/tests/features.rs
 symbol group_of
 lines 0 5
 hash f3a6a88c243979d2
-note The group a feature's path belongs in: features/cli for a command, features/gui for a window feature.
+note The group a feature's tour belongs in: features/cli for a command, features/gui for a window feature.
 
 step js1rob
 order 38
@@ -424,7 +424,7 @@ author ai
 file crates/codemap/tests/common/cli.rs
 symbol git
 lines 0 35
-hash aa38097940ddf699
+hash ffc9750a2f0b14ee
 note diff and repin against HEAD of a git repo (skipped without git), the same verdicts the jj scenario gets.
 
 step m9gnrp
@@ -462,8 +462,8 @@ author ai
 file crates/codemap/tests/parity.rs
 symbol repo_at
 lines 0 72
-hash 756c261933cc1315
-note The repo as a second fixture: files, symbols, roots, coverage, uncovered, stale, paths, a search, notes, a tree, callers and callees, then every path printed; then a GUI script opens the document, a long path scrolled, the graph and the graph fitted, and the symbol, file and Source views, all photographed.
+hash 270744192ade251e
+note The repo as a second fixture: files, symbols, roots, coverage, uncovered, stale, tours, a search, notes, a tree, callers and callees, then every tour printed; then a GUI script opens the document, a long tour scrolled, the graph and the graph fitted, and the symbol, file and Source views, all photographed.
 
 step o4w5dz
 order 49
@@ -472,8 +472,8 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol links
 lines 0 57
-hash 748d1989c5d42556
-note Path groups and links: collapsing and expanding a group in the paths list (absent checks that a closed group lists none of its paths), a linked step inlined in the document and the code inside it, the linked-from row, collapsing the link again, and following the link.
+hash 63b48660d0b01e0b
+note Tour groups and links: collapsing and expanding a group in the tours list (absent checks that a closed group lists none of its tours), a linked step inlined in the document and the code inside it, the linked-from row, collapsing the link again, and following the link.
 
 step q0lbe5
 order 42
@@ -482,8 +482,8 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol panels
 lines 0 100
-hash d3b58208c368fda1
-note The side panels and console: the symbol list and its filter, the file tree and a folder toggle, the paths list, search and a hit, commands typed into the console (with a bad one and clear), a new path from the Paths tab's form, an 'add step' from the Source view, and ctrl-s to save.
+hash fb457068b66b2987
+note The side panels and console: the symbol list and its filter, the file tree and a folder toggle, the tours list, search and a hit, commands typed into the console (with a bad one and clear), a new tour from the Tours tab's form, an 'add step' from the Source view, and ctrl-s to save.
 
 step rlmca4
 order 29
@@ -521,8 +521,8 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol diff
 lines 0 31
-hash fb0df0d6a614751b
-note The diff tab against a parent revision: the rows, following a row to its path, and refresh.
+hash 83399d22894e4df2
+note The diff tab against a parent revision: the rows, following a row to its tour, and refresh.
 
 step vtkgzt
 order 10
@@ -550,8 +550,8 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol AUTHORING
 lines 0 102
-hash d7a7705f3c463bc7
-note The GUI authoring gestures on a fresh path: the new-path form (an empty name refused, kind and group chosen), '+ step' from Symbols and References, each row hovered first since its action shows only then (a repeat refused), the target strip's 'top level', 'add step' from the Source view, '+ step' on an off-path graph node, three steps list drags (under, before, under), 'promote', and a save; the after command prints the resulting path.
+hash 03d1b28893c428cd
+note The GUI authoring gestures on a fresh tour: the new-tour form (an empty name refused, kind and group chosen), '+ step' from Symbols and References, each row hovered first since its action shows only then (a repeat refused), the target strip's 'top level', 'add step' from the Source view, '+ step' on an off-tour graph node, three steps list drags (under, before, under), 'promote', and a save; the after command prints the resulting tour.
 
 step wv4hxm
 order 17
@@ -570,8 +570,8 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol with_parent
 lines 0 14
-hash e6131c4e1631fd45
-note The diff scenario's setup (skipped without jj): commits the mapped fixture as the parent revision, then edits a note, adds a step, removes a path and adds a new one, so the diff tab has every kind of row.
+hash cc97c9ebdf8810d1
+note The diff scenario's setup (skipped without jj): commits the mapped fixture as the parent revision, then edits a note, adds a step, removes a tour and adds a new one, so the diff tab has every kind of row.
 
 step xwqk4d
 order 8
@@ -599,8 +599,8 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol reload_hook
 lines 0 11
-hash 05f3b426c9cd54e5
-note The reload scenario's hook: at the script's rect edit-source line it edits src/store.rs, at rect edit-map it rewrites a path note through the CLI.
+hash d627235b56706f9a
+note The reload scenario's hook: at the script's rect edit-source line it edits src/store.rs, at rect edit-map it rewrites a tour note through the CLI.
 
 step zrx31m
 order 12

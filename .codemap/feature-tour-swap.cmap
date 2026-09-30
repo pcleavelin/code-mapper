@@ -1,0 +1,46 @@
+codemap 9
+tour feature-tour-swap
+kind flow
+author ai
+group features/cli
+note tour-swap <name> <a> <b>: exchange two steps' places in the tour's list. The agent reaches for it to order siblings in layer and data tours, which have no call order the tool can derive (commit 8ba04f79ddad). Siblings in a tour are shown in list order, which for a flow follows the code's call order; layer and data tours have no call order, so this is how their author orders siblings. Parents are untouched, so swapping two steps under different parents changes only where each sits among its own siblings. Prints nothing on success.
+
+step 11glbd
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol tour_swap
+lines 0 11
+hash 4a598d83b14bdf41
+note Validates the higher index through find_step (which also validates the tour), takes both steps' ids and swaps them.
+
+step 4afxvz
+order 3
+parent 11glbd
+author ai
+file crates/domain/src/map.rs
+symbol swap
+lines 0 12
+hash aaec18da0c41538b
+link tour-tree
+note Checks both steps exist, then swap_places exchanges their places in the list; each list slot keeps its order value, so the two steps trade orders and the list stays sorted by order, which is the order the map file stores and a load restores.
+
+step etir9f
+order 1
+parent 11glbd
+author ai
+file crates/cli/src/exec.rs
+symbol find_step
+lines 0 7
+hash b3c00b8fc9bad614
+note Checking the larger of the two indices is enough to know both are in range.
+
+step rbbc7p
+order 2
+parent 11glbd
+author ai
+file crates/cli/src/convert.rs
+symbol step_id
+lines 0 4
+hash 30548ed330a6a0c0
+note Each printed index to its stable id.

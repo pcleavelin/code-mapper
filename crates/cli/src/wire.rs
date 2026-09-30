@@ -6,9 +6,9 @@ use std::mem;
 use clap::{Args, CommandFactory, Parser};
 use domain::{
     Author, Cut, Depth, GroupName, Index, Line, LineCount, Location, MapError, Note, ParentLabel,
-    Path, PathCount, PathKind, PathName, Program, Promoted, RelativePath, Revision, SourceFile,
-    SourceLine, Span, Step, StepChange, StepNumber, Stop, Symbol, SymbolId, SymbolKind, SymbolName,
-    SymbolQuery, TextFragment,
+    Program, Promoted, RelativePath, Revision, SourceFile, SourceLine, Span, Step, StepChange,
+    StepNumber, Stop, Symbol, SymbolId, SymbolKind, SymbolName, SymbolQuery, TextFragment, Tour,
+    TourCount, TourKind, TourName,
 };
 use features::Feature;
 use index::{ServerNotice, StartError};
@@ -21,10 +21,10 @@ use crate::output::{Output, write_line};
 
 const PROGRAM: &str = "codemap";
 
-const KINDS: [(PathKind, &str); 3] = [
-    (PathKind::Flow, "flow"),
-    (PathKind::Layer, "layer"),
-    (PathKind::Type, "type"),
+const KINDS: [(TourKind, &str); 3] = [
+    (TourKind::Flow, "flow"),
+    (TourKind::Layer, "layer"),
+    (TourKind::Data, "data"),
 ];
 
 const FUNCTION_KINDS: [&str; 5] = ["function", "method", "macro", "constructor", "proc"];
@@ -66,20 +66,20 @@ pub(crate) enum Command {
     Tree(TreeArguments),
     #[command(name = command_name(Feature::Roots), about = summary(Feature::Roots))]
     Roots(RootsArguments),
-    #[command(name = command_name(Feature::Paths), about = summary(Feature::Paths))]
-    Paths(PathsArguments),
-    #[command(name = command_name(Feature::Path), about = summary(Feature::Path))]
-    Path(PathArguments),
-    #[command(name = command_name(Feature::PathNew), about = summary(Feature::PathNew))]
-    PathNew(PathNewArguments),
-    #[command(name = command_name(Feature::PathGroup), about = summary(Feature::PathGroup))]
-    PathGroup(PathGroupArguments),
+    #[command(name = command_name(Feature::Tours), about = summary(Feature::Tours))]
+    Tours(ToursArguments),
+    #[command(name = command_name(Feature::Tour), about = summary(Feature::Tour))]
+    Tour(TourArguments),
+    #[command(name = command_name(Feature::TourNew), about = summary(Feature::TourNew))]
+    TourNew(TourNewArguments),
+    #[command(name = command_name(Feature::TourGroup), about = summary(Feature::TourGroup))]
+    TourGroup(TourGroupArguments),
     #[command(name = command_name(Feature::Groups), about = summary(Feature::Groups))]
     Groups,
     #[command(name = command_name(Feature::GroupRename), about = summary(Feature::GroupRename))]
     GroupRename(GroupRenameArguments),
-    #[command(name = command_name(Feature::PathNote), about = summary(Feature::PathNote))]
-    PathNote(PathNoteArguments),
+    #[command(name = command_name(Feature::TourNote), about = summary(Feature::TourNote))]
+    TourNote(TourNoteArguments),
     #[command(name = command_name(Feature::StepNote), about = summary(Feature::StepNote))]
     StepNote(StepNoteArguments),
     #[command(name = command_name(Feature::StepLink), about = summary(Feature::StepLink))]
@@ -89,20 +89,20 @@ pub(crate) enum Command {
     #[command(name = command_name(Feature::NoteEdit), about = summary(Feature::NoteEdit))]
     #[command(allow_negative_numbers = true)]
     NoteEdit(NoteEditArguments),
-    #[command(name = command_name(Feature::PathRename), about = summary(Feature::PathRename))]
-    PathRename(PathRenameArguments),
-    #[command(name = command_name(Feature::PathAdd), about = summary(Feature::PathAdd))]
+    #[command(name = command_name(Feature::TourRename), about = summary(Feature::TourRename))]
+    TourRename(TourRenameArguments),
+    #[command(name = command_name(Feature::TourAdd), about = summary(Feature::TourAdd))]
     #[command(allow_negative_numbers = true)]
-    PathAdd(PathAddArguments),
-    #[command(name = command_name(Feature::PathPin), about = summary(Feature::PathPin))]
-    PathPin(PathPinArguments),
-    #[command(name = command_name(Feature::PathMove), about = summary(Feature::PathMove))]
+    TourAdd(TourAddArguments),
+    #[command(name = command_name(Feature::TourPin), about = summary(Feature::TourPin))]
+    TourPin(TourPinArguments),
+    #[command(name = command_name(Feature::TourMove), about = summary(Feature::TourMove))]
     #[command(allow_negative_numbers = true)]
-    PathMove(PathMoveArguments),
-    #[command(name = command_name(Feature::PathSwap), about = summary(Feature::PathSwap))]
-    PathSwap(PathSwapArguments),
-    #[command(name = command_name(Feature::PathRm), about = summary(Feature::PathRm))]
-    PathRm(PathRmArguments),
+    TourMove(TourMoveArguments),
+    #[command(name = command_name(Feature::TourSwap), about = summary(Feature::TourSwap))]
+    TourSwap(TourSwapArguments),
+    #[command(name = command_name(Feature::TourRm), about = summary(Feature::TourRm))]
+    TourRm(TourRmArguments),
     #[command(name = command_name(Feature::Promote), about = summary(Feature::Promote))]
     Promote(PromoteArguments),
     #[command(name = command_name(Feature::Stale), about = summary(Feature::Stale))]
@@ -155,29 +155,29 @@ pub(crate) struct RootsArguments {
 }
 
 #[derive(Args, Debug)]
-pub(crate) struct PathsArguments {
+pub(crate) struct ToursArguments {
     pub(crate) name: Option<String>,
 }
 
 #[derive(Args, Debug)]
-pub(crate) struct PathArguments {
+pub(crate) struct TourArguments {
     pub(crate) name: String,
     #[arg(long)]
     pub(crate) inline: bool,
 }
 
 #[derive(Args, Debug)]
-pub(crate) struct PathNewArguments {
+pub(crate) struct TourNewArguments {
     pub(crate) name: String,
     #[arg(value_parser = parse_kind)]
-    pub(crate) kind: PathKind,
+    pub(crate) kind: TourKind,
     pub(crate) note: Option<String>,
     #[arg(long)]
     pub(crate) group: Option<String>,
 }
 
 #[derive(Args, Debug)]
-pub(crate) struct PathGroupArguments {
+pub(crate) struct TourGroupArguments {
     pub(crate) name: String,
     pub(crate) group: String,
 }
@@ -189,7 +189,7 @@ pub(crate) struct GroupRenameArguments {
 }
 
 #[derive(Args, Debug)]
-pub(crate) struct PathNoteArguments {
+pub(crate) struct TourNoteArguments {
     pub(crate) name: String,
     pub(crate) note: String,
 }
@@ -223,13 +223,13 @@ pub(crate) struct NoteEditArguments {
 }
 
 #[derive(Args, Debug)]
-pub(crate) struct PathRenameArguments {
+pub(crate) struct TourRenameArguments {
     pub(crate) name: String,
     pub(crate) new: String,
 }
 
 #[derive(Args, Debug)]
-pub(crate) struct PathAddArguments {
+pub(crate) struct TourAddArguments {
     pub(crate) name: String,
     pub(crate) target: String,
     #[arg(value_name = "NUMS", num_args = 0..=3)]
@@ -237,7 +237,7 @@ pub(crate) struct PathAddArguments {
 }
 
 #[derive(Args, Debug)]
-pub(crate) struct PathPinArguments {
+pub(crate) struct TourPinArguments {
     pub(crate) name: String,
     pub(crate) index: usize,
     pub(crate) file: String,
@@ -246,14 +246,14 @@ pub(crate) struct PathPinArguments {
 }
 
 #[derive(Args, Debug)]
-pub(crate) struct PathMoveArguments {
+pub(crate) struct TourMoveArguments {
     pub(crate) name: String,
     pub(crate) index: usize,
     pub(crate) under: i64,
 }
 
 #[derive(Args, Debug)]
-pub(crate) struct PathSwapArguments {
+pub(crate) struct TourSwapArguments {
     pub(crate) name: String,
     #[arg(value_name = "A")]
     pub(crate) one: usize,
@@ -262,7 +262,7 @@ pub(crate) struct PathSwapArguments {
 }
 
 #[derive(Args, Debug)]
-pub(crate) struct PathRmArguments {
+pub(crate) struct TourRmArguments {
     pub(crate) name: String,
     pub(crate) index: Option<usize>,
 }
@@ -296,23 +296,23 @@ impl Command {
             Self::Index(_) => Feature::Index,
             Self::Tree(_) => Feature::Tree,
             Self::Roots(_) => Feature::Roots,
-            Self::Paths(_) => Feature::Paths,
-            Self::Path(_) => Feature::Path,
-            Self::PathNew(_) => Feature::PathNew,
-            Self::PathGroup(_) => Feature::PathGroup,
+            Self::Tours(_) => Feature::Tours,
+            Self::Tour(_) => Feature::Tour,
+            Self::TourNew(_) => Feature::TourNew,
+            Self::TourGroup(_) => Feature::TourGroup,
             Self::Groups => Feature::Groups,
             Self::GroupRename(_) => Feature::GroupRename,
-            Self::PathNote(_) => Feature::PathNote,
+            Self::TourNote(_) => Feature::TourNote,
             Self::StepNote(_) => Feature::StepNote,
             Self::StepLink(_) => Feature::StepLink,
             Self::StepUnlink(_) => Feature::StepUnlink,
             Self::NoteEdit(_) => Feature::NoteEdit,
-            Self::PathRename(_) => Feature::PathRename,
-            Self::PathAdd(_) => Feature::PathAdd,
-            Self::PathPin(_) => Feature::PathPin,
-            Self::PathMove(_) => Feature::PathMove,
-            Self::PathSwap(_) => Feature::PathSwap,
-            Self::PathRm(_) => Feature::PathRm,
+            Self::TourRename(_) => Feature::TourRename,
+            Self::TourAdd(_) => Feature::TourAdd,
+            Self::TourPin(_) => Feature::TourPin,
+            Self::TourMove(_) => Feature::TourMove,
+            Self::TourSwap(_) => Feature::TourSwap,
+            Self::TourRm(_) => Feature::TourRm,
             Self::Promote(_) => Feature::Promote,
             Self::Stale => Feature::Stale,
             Self::Check => Feature::Check,
@@ -324,7 +324,7 @@ impl Command {
     }
 }
 
-fn parse_kind(text: &str) -> Result<PathKind, String> {
+fn parse_kind(text: &str) -> Result<TourKind, String> {
     KINDS
         .iter()
         .find(|entry| entry.1 == text)
@@ -387,7 +387,7 @@ pub(crate) fn is_function(kind: &SymbolKind) -> bool {
     FUNCTION_KINDS.iter().any(|word| kind.contains(word))
 }
 
-fn kind_name(kind: PathKind) -> &'static str {
+fn kind_name(kind: TourKind) -> &'static str {
     KINDS
         .iter()
         .find(|entry| entry.0 == kind)
@@ -472,8 +472,8 @@ fn link_tag(step: &Step) -> String {
         .map_or_else(String::new, |link| format!("  → {link}"))
 }
 
-fn label(path: &PathName, index: StepIndex) -> String {
-    format!("{path}[{index}]")
+fn label(tour: &TourName, index: StepIndex) -> String {
+    format!("{tour}[{index}]")
 }
 
 pub(crate) fn numbered_lines(output: &mut Output, file: &SourceFile, span: Span) {
@@ -512,13 +512,13 @@ pub(crate) fn hit_line(output: &mut Output, file: &SourceFile, line: Line, text:
     write_line!(output, "{}:{}: {}", file.path(), line.number(), text);
 }
 
-pub(crate) fn path_note_line(output: &mut Output, path: &PathName, text: &str) {
-    write_line!(output, "{path}: {text}");
+pub(crate) fn tour_note_line(output: &mut Output, tour: &TourName, text: &str) {
+    write_line!(output, "{tour}: {text}");
 }
 
 pub(crate) fn step_note_line(
     output: &mut Output,
-    path: &PathName,
+    tour: &TourName,
     position: StepIndex,
     step: &Step,
     text: &str,
@@ -526,7 +526,7 @@ pub(crate) fn step_note_line(
     write_line!(
         output,
         "{} {}:{}: {text}",
-        label(path, position),
+        label(tour, position),
         step.file(),
         step.span().start().number()
     );
@@ -586,15 +586,15 @@ pub(crate) fn group_header(output: &mut Output, group: Option<&GroupName>) {
     );
 }
 
-pub(crate) fn path_row(output: &mut Output, path: &Path) {
+pub(crate) fn tour_row(output: &mut Output, tour: &Tour) {
     write_line!(
         output,
         "{} [{}]{} ({} steps){}",
-        path.name(),
-        kind_name(path.kind()),
-        author_tag(path.author()),
-        path.steps().len(),
-        path.note()
+        tour.name(),
+        kind_name(tour.kind()),
+        author_tag(tour.author()),
+        tour.steps().len(),
+        tour.note()
             .map_or_else(String::new, |note| format!(": {note}"))
     );
 }
@@ -620,17 +620,17 @@ pub(crate) fn step_row(
     );
 }
 
-pub(crate) fn path_title(output: &mut Output, path: &Path) {
+pub(crate) fn tour_title(output: &mut Output, tour: &Tour) {
     write_line!(
         output,
         "# {} [{}]{}{}",
-        path.name(),
-        kind_name(path.kind()),
-        author_tag(path.author()),
-        path.group()
+        tour.name(),
+        kind_name(tour.kind()),
+        author_tag(tour.author()),
+        tour.group()
             .map_or_else(String::new, |group| format!("  in {group}"))
     );
-    if let Some(note) = path.note() {
+    if let Some(note) = tour.note() {
         write_line!(output, "{note}");
     }
 }
@@ -641,7 +641,7 @@ pub(crate) fn linked_from(output: &mut Output, places: &[StepPlace]) {
     }
     let list: Vec<String> = places
         .iter()
-        .map(|place| label(&place.path, place.index))
+        .map(|place| label(&place.tour, place.index))
         .collect();
     write_line!(output, "linked from: {}", list.join(", "));
 }
@@ -659,7 +659,7 @@ pub(crate) struct Title<'a> {
     pub(crate) depth: Depth,
     pub(crate) prefix: &'a [StepNumber],
     pub(crate) number: &'a StepNumber,
-    pub(crate) nested: Option<&'a PathName>,
+    pub(crate) nested: Option<&'a TourName>,
     pub(crate) position: StepIndex,
 }
 
@@ -672,7 +672,7 @@ pub(crate) fn step_title(output: &mut Output, index: &Index, step: &Step, title:
         .concat();
     let label = match title.nested {
         None => format!("[{}]", title.position),
-        Some(path) => format!("[{}]", label(path, title.position)),
+        Some(tour) => format!("[{}]", label(tour, title.position)),
     };
     write_line!(
         output,
@@ -690,7 +690,7 @@ pub(crate) fn step_title(output: &mut Output, index: &Index, step: &Step, title:
     }
 }
 
-pub(crate) fn inlined_before(output: &mut Output, depth: Depth, link: &PathName) {
+pub(crate) fn inlined_before(output: &mut Output, depth: Depth, link: &TourName) {
     write_line!(
         output,
         "\n{}-- {link} is inlined above --",
@@ -698,29 +698,29 @@ pub(crate) fn inlined_before(output: &mut Output, depth: Depth, link: &PathName)
     );
 }
 
-pub(crate) fn end_of(output: &mut Output, depth: Depth, link: &PathName) {
+pub(crate) fn end_of(output: &mut Output, depth: Depth, link: &TourName) {
     write_line!(output, "\n{}-- end of {link} --", padding(depth.value()));
 }
 
-pub(crate) fn group_place(output: &mut Output, path: &PathName, group: Option<&GroupName>) {
+pub(crate) fn group_place(output: &mut Output, tour: &TourName, group: Option<&GroupName>) {
     let place = group.map_or_else(
         || "at the top level".to_owned(),
         |group| format!("in {group}"),
     );
-    write_line!(output, "'{path}' is {place}");
+    write_line!(output, "'{tour}' is {place}");
 }
 
-pub(crate) fn group_row(output: &mut Output, group: &GroupName, depth: Depth, paths: PathCount) {
+pub(crate) fn group_row(output: &mut Output, group: &GroupName, depth: Depth, tours: TourCount) {
     write_line!(
         output,
-        "{}{} ({paths} paths)",
+        "{}{} ({tours} tours)",
         padding(depth.value()),
         group.last_segment()
     );
 }
 
-pub(crate) fn paths_moved(output: &mut Output, moved: PathCount) {
-    write_line!(output, "{moved} paths moved");
+pub(crate) fn tours_moved(output: &mut Output, moved: TourCount) {
+    write_line!(output, "{moved} tours moved");
 }
 
 pub(crate) fn step_linked(output: &mut Output, position: StepIndex, target: &TextFragment) {
@@ -735,7 +735,7 @@ pub(crate) fn note_text(output: &mut Output, note: Option<&Note>) {
     write_line!(output, "{}", note.map_or("", Note::as_str));
 }
 
-pub(crate) fn links_moved(output: &mut Output, links: Count, new: &PathName) {
+pub(crate) fn links_moved(output: &mut Output, links: Count, new: &TourName) {
     write_line!(output, "{links} links now point at '{new}'");
 }
 
@@ -764,7 +764,7 @@ pub(crate) fn absolute_note(output: &mut Output, step: &Step) {
 pub(crate) fn call_note(output: &mut Output, parent: &Step, step: &Step, position: StepIndex) {
     write_line!(
         output,
-        "note: {} does not call {}; in a flow a step goes under the step that calls it (path-move <name> {position} <under>)",
+        "note: {} does not call {}; in a flow a step goes under the step that calls it (tour-move <name> {position} <under>)",
         symbol_text(parent.symbol()),
         symbol_text(step.symbol())
     );
@@ -788,7 +788,7 @@ const fn cut_word(cut: Cut) -> &'static str {
 
 const fn stop_word(stop: Stop) -> &'static str {
     match stop {
-        Stop::Mapped => "mapped by another path",
+        Stop::Mapped => "mapped by another tour",
         Stop::Shared => "shared (3 or more callers)",
         Stop::OtherPackage => "in another package",
     }
@@ -810,12 +810,12 @@ fn names_by<T: Copy + Ord>(
     grouped
 }
 
-pub(crate) fn promote_report(output: &mut Output, index: &Index, path: &Path, promoted: &Promoted) {
+pub(crate) fn promote_report(output: &mut Output, index: &Index, tour: &Tour, promoted: &Promoted) {
     write_line!(
         output,
-        "path '{}' now has {} steps",
-        path.name(),
-        path.steps().len()
+        "tour '{}' now has {} steps",
+        tour.name(),
+        tour.steps().len()
     );
     let cut = names_by(index, &promoted.cut);
     if !cut.is_empty() {
@@ -832,13 +832,13 @@ pub(crate) fn promote_report(output: &mut Output, index: &Index, path: &Path, pr
         }
     }
     if !promoted.links.is_empty() {
-        write_line!(output, "link each mapped leaf to the path that maps it:");
+        write_line!(output, "link each mapped leaf to the tour that maps it:");
         for link in &promoted.links {
-            if let Some(position) = step_index(path, &link.step) {
+            if let Some(position) = step_index(tour, &link.step) {
                 write_line!(
                     output,
                     "  step-link {} {position} {}",
-                    path.name(),
+                    tour.name(),
                     link.target
                 );
             }
@@ -849,14 +849,14 @@ pub(crate) fn promote_report(output: &mut Output, index: &Index, path: &Path, pr
 pub(crate) fn stale_row(
     output: &mut Output,
     index: &Index,
-    path: &PathName,
+    tour: &TourName,
     position: StepIndex,
     step: &Step,
 ) {
     write_line!(
         output,
         "{} {} {}",
-        label(path, position),
+        label(tour, position),
         place(index, step),
         symbol_text(step.symbol())
     );
@@ -864,7 +864,7 @@ pub(crate) fn stale_row(
 
 pub(crate) fn same_text(
     output: &mut Output,
-    path: &PathName,
+    tour: &TourName,
     position: StepIndex,
     file: &RelativePath,
     span: Span,
@@ -872,13 +872,13 @@ pub(crate) fn same_text(
     let (start, end) = (span.start().number(), span.end().number());
     write_line!(
         output,
-        "  same text at {file}:{start}-{end}   path-pin {path} {position} {file} {start} {end}"
+        "  same text at {file}:{start}-{end}   tour-pin {tour} {position} {file} {start} {end}"
     );
 }
 
 pub(crate) fn same_name(
     output: &mut Output,
-    path: &PathName,
+    tour: &TourName,
     position: StepIndex,
     file: &RelativePath,
     span: Span,
@@ -886,15 +886,15 @@ pub(crate) fn same_name(
     let (start, end) = (span.start().number(), span.end().number());
     write_line!(
         output,
-        "  same name at {file}:{start}-{end}   path-pin {path} {position} {file} {start} {end}"
+        "  same name at {file}:{start}-{end}   tour-pin {tour} {position} {file} {start} {end}"
     );
 }
 
-pub(crate) fn dangling(output: &mut Output, path: &PathName, position: StepIndex, link: &PathName) {
+pub(crate) fn dangling(output: &mut Output, tour: &TourName, position: StepIndex, link: &TourName) {
     write_line!(
         output,
-        "{} links to a missing path '{link}'   step-link {path} {position} <path> | step-unlink {path} {position}",
-        label(path, position)
+        "{} links to a missing tour '{link}'   step-link {tour} {position} <tour> | step-unlink {tour} {position}",
+        label(tour, position)
     );
 }
 
@@ -903,7 +903,7 @@ pub(crate) fn all_fresh(output: &mut Output) {
 }
 
 pub(crate) struct FollowReport<'a> {
-    pub(crate) path: &'a PathName,
+    pub(crate) tour: &'a TourName,
     pub(crate) position: StepIndex,
     pub(crate) file: &'a RelativePath,
     pub(crate) old: Span,
@@ -919,7 +919,7 @@ pub(crate) fn follow_report(output: &mut Output, report: &FollowReport<'_>) {
     write_line!(
         output,
         "{} {}:{} in {} -> {}{}  {}/{} lines kept{}",
-        label(report.path, report.position),
+        label(report.tour, report.position),
         report.file,
         span_text(report.old),
         report.revision,
@@ -943,11 +943,11 @@ pub(crate) fn added_line(output: &mut Output, text: &SourceLine) {
 
 pub(crate) fn left_stale(
     output: &mut Output,
-    path: &PathName,
+    tour: &TourName,
     position: StepIndex,
     reason: &LeftStale,
 ) {
-    write_line!(output, "{} left stale: {reason}", label(path, position));
+    write_line!(output, "{} left stale: {reason}", label(tour, position));
 }
 
 pub(crate) fn repin_report(output: &mut Output, pinned: Count, left: Count) {
@@ -977,7 +977,7 @@ pub(crate) fn all_coverage(output: &mut Output, covered: Count, symbols: Count) 
     write_line!(output, "total: {covered}/{symbols}");
 }
 
-pub(crate) fn path_changed(output: &mut Output, name: &PathName, header: bool) {
+pub(crate) fn tour_changed(output: &mut Output, name: &TourName, header: bool) {
     write_line!(
         output,
         "~ {name}{}",
@@ -989,11 +989,11 @@ pub(crate) fn path_changed(output: &mut Output, name: &PathName, header: bool) {
     );
 }
 
-pub(crate) fn path_added(output: &mut Output, name: &PathName, steps: Count) {
+pub(crate) fn tour_added(output: &mut Output, name: &TourName, steps: Count) {
     write_line!(output, "+ {name} ({steps} steps)");
 }
 
-pub(crate) fn path_removed(output: &mut Output, name: &PathName, steps: Count) {
+pub(crate) fn tour_removed(output: &mut Output, name: &TourName, steps: Count) {
     write_line!(output, "- {name} ({steps} steps)");
 }
 
@@ -1075,41 +1075,41 @@ impl fmt::Display for LeftStale {
 fn map_error(error: &MapError) -> String {
     match error {
         MapError::InvalidName(name) => format!(
-            "'{name}' cannot name a path: use letters, digits, '.', '_' and '-', not starting with '.'"
+            "'{name}' cannot name a tour: use letters, digits, '.', '_' and '-', not starting with '.'"
         ),
-        MapError::NameTaken(name) => format!("a path named '{name}' already exists"),
+        MapError::NameTaken(name) => format!("a tour named '{name}' already exists"),
         MapError::CaseClash { name, other } => {
-            format!("'{name}' differs from the path '{other}' only in letter case")
+            format!("'{name}' differs from the tour '{other}' only in letter case")
         }
         MapError::NoGroupGiven => "no group given".to_owned(),
         MapError::NoSuchGroup(group) => format!("no such group: {group}"),
-        MapError::NoSuchPath(name) => format!("no such path: {name}"),
+        MapError::NoSuchTour(name) => format!("no such tour: {name}"),
         MapError::NoSuchStep(_) => "no such step".to_owned(),
         MapError::NoSuchParent => "no such parent step".to_owned(),
         MapError::NoSuchFile => "no such file".to_owned(),
         MapError::NoSuchSymbol => "no such symbol".to_owned(),
         MapError::OutsideFile => "line range out of bounds".to_owned(),
-        MapError::LinkToOwnPath => "a step cannot link to its own path".to_owned(),
-        MapError::LinkedFrom { path, steps } => {
+        MapError::LinkToOwnTour => "a step cannot link to its own tour".to_owned(),
+        MapError::LinkedFrom { tour, steps } => {
             let list: Vec<String> = steps
                 .iter()
-                .map(|address| format!("{}[{}]", address.path, address.step))
+                .map(|address| format!("{}[{}]", address.tour, address.step))
                 .collect();
-            linked_from_error(path, &list)
+            linked_from_error(tour, &list)
         }
         MapError::UnderItself => "a step cannot go under itself or its own descendants".to_owned(),
         MapError::NoteLacks(old) => format!("the note does not contain '{old}'"),
         MapError::SecondStep(address) => format!("a second step {}", address.step),
         MapError::UnknownParent { step, parent } => format!(
             "step {} has parent {parent}, which is not a step of '{}'",
-            step.step, step.path
+            step.step, step.tour
         ),
     }
 }
 
-fn linked_from_error(path: &PathName, steps: &[String]) -> String {
+fn linked_from_error(tour: &TourName, steps: &[String]) -> String {
     format!(
-        "'{path}' is linked from {}; unlink those steps first",
+        "'{tour}' is linked from {}; unlink those steps first",
         steps.join(", ")
     )
 }
@@ -1131,7 +1131,7 @@ fn fault(fault: &Fault) -> String {
         Fault::NoVersion => format!("expected '{version}' first"),
         Fault::UnknownAuthor(value) => format!("unknown author '{value}'"),
         Fault::UnknownKind(value) => format!("unknown kind '{value}'"),
-        Fault::UnknownPathField(key) => format!("unknown field '{key}' of a path"),
+        Fault::UnknownTourField(key) => format!("unknown field '{key}' of a tour"),
         Fault::UnknownStepField(key) => format!("unknown field '{key}' of a step"),
         Fault::SecondStep(value) => format!("a second step {value}"),
         Fault::Order => "order takes a number".to_owned(),
@@ -1140,9 +1140,9 @@ fn fault(fault: &Fault) -> String {
         Fault::InvalidName(name) => map_error(&MapError::InvalidName(name.clone())),
         Fault::InvalidStepId(value) => format!("'{value}' is not a step id"),
         Fault::MissingField(key) => format!("a step with no '{key}' line"),
-        Fault::NoPathLine => "a path with no 'path' line".to_owned(),
-        Fault::UnknownParent { path, step, parent } => {
-            format!("step {step} has parent {parent}, which is not a step of '{path}'")
+        Fault::NoTourLine => "a tour with no 'tour' line".to_owned(),
+        Fault::UnknownParent { tour, step, parent } => {
+            format!("step {step} has parent {parent}, which is not a step of '{tour}'")
         }
         Fault::Map(error) => map_error(error),
     }
@@ -1168,12 +1168,12 @@ fn load_error(error: &MapLoadError) -> String {
         ),
         MapLoadError::Unreadable { file, error } => format!("{}: {error}", file.display()),
         MapLoadError::Parse(error) => parse_error(error),
-        MapLoadError::OnePathPerFile(file) => format!(
-            "{}: a map file holds exactly one path",
+        MapLoadError::OneTourPerFile(file) => format!(
+            "{}: a map file holds exactly one tour",
             origin(&Origin::File(file.clone()))
         ),
-        MapLoadError::Misplaced { file, path } => format!(
-            "{}: holds the path '{path}', which belongs in {path}.cmap",
+        MapLoadError::Misplaced { file, tour } => format!(
+            "{}: holds the tour '{tour}', which belongs in {tour}.cmap",
             origin(&Origin::File(file.clone()))
         ),
     }
@@ -1191,14 +1191,14 @@ impl fmt::Display for Failure {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Map(error) => formatter.write_str(&map_error(error)),
-            Self::LinkedFrom { path, steps } => {
+            Self::LinkedFrom { tour, steps } => {
                 let list: Vec<String> = steps
                     .iter()
-                    .map(|place| label(&place.path, place.index))
+                    .map(|place| label(&place.tour, place.index))
                     .collect();
-                formatter.write_str(&linked_from_error(path, &list))
+                formatter.write_str(&linked_from_error(tour, &list))
             }
-            Self::NoSuchPath(name) => write!(formatter, "no such path: {name}"),
+            Self::NoSuchTour(name) => write!(formatter, "no such tour: {name}"),
             Self::NoSuchStep => formatter.write_str("no such step"),
             Self::NoSuchFile(file) => write!(formatter, "no such file: {file}"),
             Self::NoSuchSymbol(symbol) => write!(formatter, "no such symbol: {symbol}"),
@@ -1216,11 +1216,11 @@ impl fmt::Display for Failure {
             Self::LineRange => formatter.write_str("line range out of bounds"),
             Self::NoPlaceUnder { under, steps } => write!(
                 formatter,
-                "no step [{under}] to go under: the path has {steps} steps (-1 = root)"
+                "no step [{under}] to go under: the tour has {steps} steps (-1 = root)"
             ),
             Self::NoLink(position) => write!(formatter, "step [{position}] has no link"),
             Self::NoLinkTarget => formatter
-                .write_str("step-link needs the path to link to; step-unlink removes a link"),
+                .write_str("step-link needs the tour to link to; step-unlink removes a link"),
             Self::Regex(error) => write!(formatter, "{error}"),
             Self::ServersInBackground => {
                 formatter.write_str("the GUI asks the servers for every file in the background")

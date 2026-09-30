@@ -5,13 +5,13 @@ not ticked. The CLI list is ordered by what cost the agents the most.
 
 ## CLI
 
-1. **`path` and `paths` print different sibling orders.** The document sorts callees by
+1. **`tour` and `tours` print different sibling orders.** The document sorts callees by
    first mention in the parent's text; the parent's own signature line matches its
    namesake, so the repository call renders above the fetchers that run first (four
    flows in memejoin-rs). A shadowing local wins over the function of the same name.
-   Steps anchored to an `impl` block never match and sink below everything. `path-swap`
+   Steps anchored to an `impl` block never match and sink below everything. `tour-swap`
    only reorders unmatched siblings, so in the case it is wanted for it silently does
-   nothing. Skip the parent's declaration line when scanning; make `path-swap` pin an
+   nothing. Skip the parent's declaration line when scanning; make `tour-swap` pin an
    explicit order that beats the name sort, or refuse and say why.
 2. **Calls through a trait bound resolve to the trait declaration.** Anchoring a flow
    step to the impl a reader wants is always "not called by" its parent, and `roots`
@@ -22,7 +22,7 @@ not ticked. The CLI list is ordered by what cost the agents the most.
    warning (`callers get_guild`: six symbols' results in one block); only `promote`
    errors with "ambiguous". `help` never shows the `file:sym` form. The agent gave up on
    names and anchored all 212 steps by `file start end`.
-4. **Silent mutations.** `step-note`, `path-note`, `path-swap`, `path-rm` print nothing;
+4. **Silent mutations.** `step-note`, `tour-note`, `tour-swap`, `tour-rm` print nothing;
    `note-edit` echoes the whole note; a failed `note-edit` restates the needle (one
    apostrophe off in a 120-character needle) instead of the longest matching prefix.
    Wanted: `--append` for notes; notes from stdin or `@file` so a backtick in prose
@@ -33,23 +33,23 @@ not ticked. The CLI list is ordered by what cost the agents the most.
 6. **`under` wants an index that batching cannot predict.** Accept a `file:sym` or
    `file:line` target.
 7. **`search` has no file scope.**
-8. **Absolute anchors render with an empty symbol slot** in `paths`.
+8. **Absolute anchors render with an empty symbol slot** in `tours`.
 9. **"Intentionally unmapped" marker** (Deferred, below): a third of
     memejoin-rs is a dead previous version; `coverage` cannot distinguish explained from
     acknowledged-dead.
-10. **Negative claims and counts are unverifiable from `path` output** ("the only
+10. **Negative claims and counts are unverifiable from `tour` output** ("the only
     handler that names X", "twenty-six methods"); the reviewer found every one it
-    checked wrong. Per-path "what falls between the steps" would help.
+    checked wrong. Per-tour "what falls between the steps" would help.
 11. **`repin` can follow a common name into the wrong file.** Once a step's file, or its
     symbol within the file, is gone, every same-named symbol in the repo is a candidate,
     and only "half the lines survive" guards it. A short `fmt` step whose `impl Display`
     was deleted can land on another type's identical `fmt`. The new file is printed, so
     the reread catches it; a stricter bar for a cross-file move (all lines kept, or the
     candidate absent from the parent revision) would stop it.
-12. **`path-move` does not bounds-check `under`**, unlike `path-add`. `-7` is saved as
+12. **`tour-move` does not bounds-check `under`**, unlike `tour-add`. `-7` is saved as
     `-1` (a root) and a number past the step count fails with "no such parent step".
-    Give it `path-add`'s check and message.
-13. **`path` prints line 1 of the file as the body of a symbol-gone step** (`STALE
+    Give it `tour-add`'s check and message.
+13. **`tour` prints line 1 of the file as the body of a symbol-gone step** (`STALE
     src/main.rs (symbol gone) log_line` followed by `1 mod shapes;`). Print nothing, the
     way the GUI document does.
 
@@ -89,7 +89,7 @@ Left open after the UX review of 2026-09-21 and the fixes that followed it.
 **Prompts in the code.** The owner leaves a marker comment in a source file where a question
 or a request for the map belongs (`// codemap: why does this retry three times?`). `prompts`
 lists every marker with file:line and text; the agent contract tells a session to answer
-each one in the map (a note, a step, a path) and remove the marker in the same commit; the
+each one in the map (a note, a step, a tour) and remove the marker in the same commit; the
 GUI shows the open markers in the Source view and counts them in the status bar. Done when: the
 owner writes a question in a comment, the next agent session's map answers it, and the
 marker is gone from the diff.
@@ -103,10 +103,10 @@ written here first.
 |---|---|
 | A daemon holding the server sessions for the CLI | cold CLI runs on changed files are the bottleneck of an agent session |
 | Hand-written resolver for a language | a target repo uses it and has no server |
-| Links in the graph: a linked step reveals the linked path's tree from its node | reading a journey across processes in the document is not enough |
+| Links in the graph: a linked step reveals the linked tour's tree from its node | reading a journey across processes in the document is not enough |
 | "Intentionally unmapped" marker on symbols | `uncovered` is mostly things already decided not to matter |
-| Step-level review state | a long path gets one re-pinned step and rereading it all is a cost |
-| Kind-specific rendering | a list of 50 mixed-kind paths is unreadable |
+| Step-level review state | a long tour gets one re-pinned step and rereading it all is a cost |
+| Kind-specific rendering | a list of 50 mixed-kind tours is unreadable |
 | Documentation panel for the focused symbol | per language: doc comments first, then external docs |
 | Detachable windows | one window's panel tree is not enough for a real session |
 | Multi-threaded search | a search takes more than 100 ms |

@@ -1,0 +1,146 @@
+codemap 9
+tour feature-tour
+kind flow
+author ai
+group features/cli
+note tour <name> [--inline]: one tour as a document to read top to bottom instead of opening files. The agent reaches for it to read a mapped workflow as one document instead of opening every file its steps point into. It prints the tour's title and note, which other tours link to it, then every step in tree order with its note and its code as numbered lines. Steps are numbered like sections (1, 1.1, 1.2, 2) and a '-- back in <symbol> --' line marks the return to a shallower level, so a long flow reads like a book. With --inline, a step that links to another tour is followed by that tour's steps inline, numbered under the linking step; a tour already open higher up is not inlined again, which keeps a link cycle finite.
+
+step 0el8qw
+order 7
+parent w9pwsw
+author ai
+file crates/cli/src/exec.rs
+symbol steps
+lines 0 32
+hash 3d0747f08131117a
+note Walks the numbered steps: a back-in line when the depth decreases, the step title, its numbered source lines, then the linked tour when inlining.
+
+step 0j3lcw
+order 5
+parent w9pwsw
+author ai
+file crates/cli/src/exec.rs
+symbol places
+lines 0 13
+hash b49b29cd39d228d2
+note Turns those step addresses into tour name and step index for printing.
+
+step 2xgopp
+order 3
+parent w9pwsw
+author ai
+file crates/cli/src/wire.rs
+symbol tour_title
+lines 0 13
+hash 86150b3567860da1
+note '# name [kind] (ai)  in group' and the tour note under it.
+
+step 85irtd
+order 4
+parent w9pwsw
+author ai
+file crates/domain/src/map.rs
+symbol links_to
+lines 0 2
+hash fb31f9ed10a74e6d
+note Every step in the map that links to this tour.
+
+step bxdbz5
+order 6
+parent w9pwsw
+author ai
+file crates/cli/src/wire.rs
+symbol linked_from
+lines 0 9
+hash 8c6329ecbb50074c
+note 'linked from: tour[i], ...', omitted when nothing links here.
+
+step d96qod
+order 14
+parent z5050n
+author ai
+file crates/cli/src/wire.rs
+symbol end_of
+lines 0 2
+hash fd78018ac361502c
+note '-- end of <tour> --' after an inlined link.
+
+step eoh4yn
+order 8
+parent 0el8qw
+author ai
+file crates/domain/src/map/tour.rs
+symbol numbered
+lines 0 26
+hash fabc52c98627a0e7
+note Section numbers for every step in tree order, with the depth each sits at.
+
+step ft452m
+order 9
+parent 0el8qw
+author ai
+file crates/cli/src/wire.rs
+symbol back_in
+lines 0 7
+hash 8b726110c902c680
+note '-- back in <parent> --': the symbol (or file:line) the reader returns to.
+
+step hj84zx
+order 10
+parent 0el8qw
+author ai
+file crates/cli/src/wire.rs
+symbol step_title
+lines 0 25
+hash e7de0b9e8364367a
+note '== 1.2 [i] file:start-end symbol (ai)' with a STALE mark and a link arrow, then the step note on its own line.
+
+step hyje53
+order 1
+parent w9pwsw
+author ai
+file crates/cli/src/exec.rs
+symbol find_tour
+lines 0 5
+hash 0d594859f978d957
+note The tour must exist; the error names what was typed.
+
+step nwyef6
+order 11
+parent 0el8qw
+author ai
+file crates/cli/src/wire.rs
+symbol numbered_lines
+lines 0 6
+hash 88a7e246954e7eda
+note The step's code as numbered lines, the same printer show uses.
+
+step rlndgq
+order 13
+parent z5050n
+author ai
+file crates/cli/src/wire.rs
+symbol inlined_before
+lines 0 6
+hash 7ccf904e0af38160
+note Printed instead of recursing when the linked tour is already open above, which stops a cycle.
+
+step w9pwsw
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol tour
+lines 0 17
+hash ced737c48182ec96
+note Run::tour: looks the name up and, for --inline, seeds the list of open tours with this one so a link back to it is not inlined; then prints the title, the 'linked from' line, and hands the steps to a Document that carries the index, map, output and the inlined list.
+
+step z5050n
+order 12
+parent 0el8qw
+author ai
+file crates/cli/src/exec.rs
+symbol inline_link
+lines 0 26
+hash 955265c3bbc629e6
+link tour-links
+note Only with --inline and a link to an existing tour: recurses into steps with the target's steps one level deeper, prefixed with the linking step's number, then prints the end marker.

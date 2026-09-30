@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::map::name::{GroupName, PathName, TextFragment};
+use crate::map::name::{GroupName, TextFragment, TourName};
 use crate::map::step::StepId;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -24,29 +24,29 @@ impl fmt::Display for InvalidName {
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct StepAddress {
-    pub path: PathName,
+    pub tour: TourName,
     pub step: StepId,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MapError {
     InvalidName(InvalidName),
-    NameTaken(PathName),
+    NameTaken(TourName),
     CaseClash {
-        name: PathName,
-        other: PathName,
+        name: TourName,
+        other: TourName,
     },
     NoGroupGiven,
     NoSuchGroup(GroupName),
-    NoSuchPath(PathName),
+    NoSuchTour(TourName),
     NoSuchStep(StepAddress),
     NoSuchParent,
     NoSuchFile,
     NoSuchSymbol,
     OutsideFile,
-    LinkToOwnPath,
+    LinkToOwnTour,
     LinkedFrom {
-        path: PathName,
+        tour: TourName,
         steps: Vec<StepAddress>,
     },
     UnderItself,

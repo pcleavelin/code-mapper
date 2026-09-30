@@ -1,5 +1,5 @@
-codemap 8
-path graph-camera
+codemap 9
+tour graph-camera
 kind flow
 author ai
 group gui/graph

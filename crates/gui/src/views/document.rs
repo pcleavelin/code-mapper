@@ -1,12 +1,12 @@
 use std::collections::BTreeMap;
 
-use domain::{Change, Depth, FileId, Line, Path, PathDiff, Span, Step, Symbol, SymbolName};
+use domain::{Change, Depth, FileId, Line, Span, Step, Symbol, SymbolName, Tour, TourDiff};
 use ui::{Count, Icon, Id, Label, Px, Run};
 
 use crate::action::{Action, Collapse, ContextChange, Hide};
 use crate::ids::{self, Control, Target};
 use crate::model::{
-    Context, Measured, Model, Numbered, PathSlot, StepKey, StepShape, StepSlot, StepView, Tab,
+    Context, Measured, Model, Numbered, StepKey, StepShape, StepSlot, StepView, Tab, TourSlot,
     ViewFlag,
 };
 use crate::nav::Scrolling;
@@ -24,8 +24,8 @@ struct Occurrence(usize);
 struct Walk<'walk> {
     base: Count,
     prefix: Label,
-    diff: Option<&'walk PathDiff>,
-    chain: Vec<PathSlot>,
+    diff: Option<&'walk TourDiff>,
+    chain: Vec<TourSlot>,
     occurrence: Option<Occurrence>,
     next: Count,
 }
@@ -94,7 +94,7 @@ fn track_steps(
     top_step
 }
 
-fn header_bar(frame: &mut Frame<'_>, path: PathSlot, found: &Path, diff: Option<&PathDiff>) {
+fn header_bar(frame: &mut Frame<'_>, tour: TourSlot, found: &Tour, diff: Option<&TourDiff>) {
     frame.start(Container::Toolbar);
     frame.title(found.name().as_str());
     frame.label(
@@ -109,33 +109,33 @@ fn header_bar(frame: &mut Frame<'_>, path: PathSlot, found: &Path, diff: Option<
     if let Some(group) = found.group() {
         frame.label(format!("in {group}"), WEAK);
     }
-    match diff.map(PathDiff::change) {
+    match diff.map(TourDiff::change) {
         Some(Change::Added) => frame.label("new since the parent revision", GREEN),
         Some(Change::Changed) => frame.label("changed since the parent revision", GREEN),
         _ => {}
     }
     frame.grow();
     let buttons = [
-        ("graph", ids::SHOW_GRAPH, Action::OpenPath(path, Tab::Graph)),
+        ("graph", ids::SHOW_GRAPH, Action::OpenTour(tour, Tab::Graph)),
         (
             "hide all code",
             ids::HIDE_ALL_CODE,
-            Action::HideAll(path, Hide::Hide),
+            Action::HideAll(tour, Hide::Hide),
         ),
         (
             "show all code",
             ids::SHOW_ALL_CODE,
-            Action::HideAll(path, Hide::Show),
+            Action::HideAll(tour, Hide::Show),
         ),
         (
             "collapse all",
             ids::COLLAPSE_ALL,
-            Action::CollapseAll(path, Collapse::Collapse),
+            Action::CollapseAll(tour, Collapse::Collapse),
         ),
         (
             "expand all",
             ids::EXPAND_ALL,
-            Action::CollapseAll(path, Collapse::Expand),
+            Action::CollapseAll(tour, Collapse::Expand),
         ),
     ];
     for (label, control, action) in buttons {
@@ -145,15 +145,15 @@ fn header_bar(frame: &mut Frame<'_>, path: PathSlot, found: &Path, diff: Option<
     }
     frame.cells_gap(DANGER_GAP);
     if frame
-        .danger_button("delete path", ids::REMOVE_PATH.target())
+        .danger_button("delete tour", ids::REMOVE_TOUR.target())
         .clicked()
     {
-        frame.push(Action::RemovePath(path));
+        frame.push(Action::RemoveTour(tour));
     }
     frame.finish();
 }
 
-fn linked_from(model: &Model, frame: &mut Frame<'_>, found: &Path) {
+fn linked_from(model: &Model, frame: &mut Frame<'_>, found: &Tour) {
     let from = model.map.links_to(found.name());
     if from.is_empty() {
         return;
@@ -161,17 +161,17 @@ fn linked_from(model: &Model, frame: &mut Frame<'_>, found: &Path) {
     frame.start(Container::ToolbarTight);
     frame.label("linked from", WEAK);
     for (position, address) in from.iter().enumerate() {
-        let Some(source) = model.find_path(&address.path) else {
+        let Some(source) = model.find_tour(&address.tour) else {
             continue;
         };
         let Some(step) = model.step_slot(source, &address.step) else {
             continue;
         };
-        let key = StepKey { path: source, step };
+        let key = StepKey { tour: source, step };
         let number = model.number_of(key);
         if frame
             .small_button(
-                format!("{} {}", address.path, number.as_str()),
+                format!("{} {}", address.tour, number.as_str()),
                 ids::LINKED_FROM.nth(Count::new(position)),
             )
             .clicked()
@@ -185,7 +185,7 @@ fn linked_from(model: &Model, frame: &mut Frame<'_>, found: &Path) {
 fn breadcrumb(
     model: &Model,
     frame: &mut Frame<'_>,
-    path: PathSlot,
+    tour: TourSlot,
     numbered: &[Numbered],
     top_step: Option<StepSlot>,
 ) {
@@ -195,12 +195,12 @@ fn breadcrumb(
         .collect();
     frame.start(Container::Breadcrumb);
     let mut chain: Vec<StepSlot> = Vec::new();
-    let count = model.step_count(path).get();
+    let count = model.step_count(tour).get();
     let mut current = top_step.filter(|step| step.get() < count);
     while let Some(step) = current {
         chain.push(step);
         current = model
-            .parent_of(StepKey { path, step })
+            .parent_of(StepKey { tour, step })
             .filter(|parent| parent.get() < count && !chain.contains(parent));
     }
     if chain.is_empty() {
@@ -210,7 +210,7 @@ fn breadcrumb(
         if position > 0 {
             frame.label("\u{203a}", WEAK);
         }
-        let key = StepKey { path, step: *step };
+        let key = StepKey { tour, step: *step };
         let Some(found_step) = model.step(key) else {
             continue;
         };
@@ -230,7 +230,7 @@ fn breadcrumb(
     frame.finish();
 }
 
-fn removed_steps(frame: &mut Frame<'_>, diff: Option<&PathDiff>) {
+fn removed_steps(frame: &mut Frame<'_>, diff: Option<&TourDiff>) {
     let Some(diff) = diff.filter(|diff| !diff.removed().is_empty()) else {
         return;
     };
@@ -250,54 +250,54 @@ fn removed_steps(frame: &mut Frame<'_>, diff: Option<&PathDiff>) {
     }
 }
 
-pub(super) fn path_document(model: &Model, frame: &mut Frame<'_>) {
-    let Some(path) = model
+pub(super) fn tour_document(model: &Model, frame: &mut Frame<'_>) {
+    let Some(tour) = model
         .nav
-        .path()
-        .filter(|path| path.get() < model.path_count().get())
+        .tour()
+        .filter(|tour| tour.get() < model.tour_count().get())
     else {
         frame.label(
-            if model.map.paths().is_empty() {
-                "no paths yet: the agent writes them (path-new, path-add in the console)"
+            if model.map.tours().is_empty() {
+                "no tours yet: the agent writes them (tour-new, tour-add in the console)"
             } else {
-                "pick a path on the left"
+                "pick a tour on the left"
             },
             WEAK,
         );
         return;
     };
-    let Some(found) = model.path(path) else {
+    let Some(found) = model.tour(tour) else {
         return;
     };
     let diffs = model.diffs();
     let diff = diffs.iter().find(|diff| diff.name() == found.name());
-    let numbered = model.numbered(path);
+    let numbered = model.numbered(tour);
     let mut offset = model.scrolls.get(ids::document());
     let top_step = track_steps(model, frame, &numbered, &mut offset);
-    header_bar(frame, path, found, diff);
+    header_bar(frame, tour, found, diff);
     match found.note() {
-        Some(note) => frame.note(note.as_str(), TEXT, Padding::Path),
-        None => frame.note("(no path note)", WEAK, Padding::Path),
+        Some(note) => frame.note(note.as_str(), TEXT, Padding::Tour),
+        None => frame.note("(no tour note)", WEAK, Padding::Tour),
     }
     linked_from(model, frame, found);
-    breadcrumb(model, frame, path, &numbered, top_step);
+    breadcrumb(model, frame, tour, &numbered, top_step);
     frame.scroll_column(ids::document(), offset, Scroller::Document, None);
     if found.steps().is_empty() {
         frame.note(
-            "No steps yet. Select lines in the Source view and press 'add step', or press '+ step' on a row in Symbols or References, or on a node in the Graph. Drag steps in the Paths steps list to rearrange them.",
+            "No steps yet. Select lines in the Source view and press 'add step', or press '+ step' on a row in Symbols or References, or on a node in the Graph. Drag steps in the Tours steps list to rearrange them.",
             WEAK,
-            Padding::Path,
+            Padding::Tour,
         );
     }
     let mut walk = Walk {
         base: Count::ZERO,
         prefix: Label::default(),
         diff,
-        chain: vec![path],
+        chain: vec![tour],
         occurrence: None,
         next: Count::ZERO,
     };
-    steps(model, frame, path, &mut walk);
+    steps(model, frame, tour, &mut walk);
     removed_steps(frame, diff);
     frame.finish();
 }
@@ -389,9 +389,9 @@ fn link_buttons(
     frame: &mut Frame<'_>,
     row: &Row<'_>,
     walk: &Walk<'_>,
-) -> Option<PathSlot> {
+) -> Option<TourSlot> {
     let link = row.step.link()?;
-    let Some(target) = model.find_path(link) else {
+    let Some(target) = model.find_tour(link) else {
         frame.label(format!("\u{2192} {link} (missing)"), RED);
         return None;
     };
@@ -399,7 +399,7 @@ fn link_buttons(
         .small_button(format!("\u{2192} {link}"), row.target(ids::LINK))
         .clicked()
     {
-        frame.push(Action::OpenPath(target, Tab::Path));
+        frame.push(Action::OpenTour(target, Tab::Tour));
     }
     if walk.chain.contains(&target) {
         frame.label("inlined above", WEAK);
@@ -425,7 +425,7 @@ fn step_header(
     row: &Row<'_>,
     walk: &Walk<'_>,
     first: &mut First,
-) -> Option<PathSlot> {
+) -> Option<TourSlot> {
     let key = row.key;
     let collapsed = row.has(ViewFlag::Collapsed);
     let hidden = row.has(ViewFlag::Hidden);
@@ -455,8 +455,8 @@ fn step_header(
     }
     if row.occurrence.is_some() && mem::replace(first, First::Done) == First::Pending {
         let name = model
-            .path(key.path)
-            .map_or_else(String::new, |path| path.name().to_string());
+            .tour(key.tour)
+            .map_or_else(String::new, |tour| tour.name().to_string());
         runs.push(Run::new(format!("  in {name}"), WEAK));
     }
     if frame
@@ -603,7 +603,7 @@ fn step_or_reserve(
     walk: &Walk<'_>,
     first: &mut First,
     view: Option<ui::Rect>,
-) -> Option<PathSlot> {
+) -> Option<TourSlot> {
     let id = step_column(row.occurrence, row.key.step);
     let shape = StepShape {
         view: row.view,
@@ -632,7 +632,7 @@ fn step_or_reserve(
         if row.occurrence.is_some() {
             *first = First::Done;
         }
-        row.step.link().and_then(|link| model.find_path(link))
+        row.step.link().and_then(|link| model.find_tour(link))
     } else {
         frame.start(Container::StepColumn(id));
         let target = step_header(model, frame, row, walk, first);
@@ -653,7 +653,7 @@ fn step_or_reserve(
     }
 }
 
-fn steps(model: &Model, frame: &mut Frame<'_>, path: PathSlot, walk: &mut Walk<'_>) {
+fn steps(model: &Model, frame: &mut Frame<'_>, tour: TourSlot, walk: &mut Walk<'_>) {
     let occurrence = walk.occurrence;
     let mut hide_below: Option<Depth> = None;
     let mut first = First::Pending;
@@ -661,13 +661,13 @@ fn steps(model: &Model, frame: &mut Frame<'_>, path: PathSlot, walk: &mut Walk<'
         .ui
         .placement(ids::document())
         .map(|placement| placement.rect);
-    for numbered in model.numbered(path) {
+    for numbered in model.numbered(tour) {
         if hide_below.is_some_and(|depth| numbered.depth > depth) {
             continue;
         }
         hide_below = None;
         let key = StepKey {
-            path,
+            tour,
             step: numbered.step,
         };
         let Some(step) = model.step(key) else {
@@ -723,7 +723,7 @@ fn inline(
     frame: &mut Frame<'_>,
     walk: &mut Walk<'_>,
     row: &Row<'_>,
-    target: PathSlot,
+    target: TourSlot,
     depth: Count,
 ) {
     walk.next += Count::new(1);

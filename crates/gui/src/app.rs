@@ -17,7 +17,7 @@ use crate::graph::{GraphAction, Keyboard, Presence};
 use crate::grid::Grids;
 use crate::ids;
 use crate::keys::{self, Going};
-use crate::model::{Metrics, Model, PathSlot, Readable, Tab, TabName};
+use crate::model::{Metrics, Model, Readable, Tab, TabName, TourSlot};
 use crate::palette::PaletteAction;
 use crate::panels::{Panels, View};
 use crate::status::Status;
@@ -100,8 +100,8 @@ impl App {
             None => app.indexed_status(),
         };
         app.services.watch(indexed.stamps);
-        if !app.model.map.paths().is_empty() {
-            app.model.select_path(PathSlot::new(0));
+        if !app.model.map.tours().is_empty() {
+            app.model.select_tour(TourSlot::new(0));
         }
         app.start_backend();
         app.load_base();
@@ -192,7 +192,7 @@ impl App {
         for which in [
             Which::Command,
             Which::Search,
-            Which::NewPath,
+            Which::NewTour,
             Which::NewGroup,
         ] {
             actions.push(Action::Type(which, edits.clone(), typed.clone()));
@@ -210,7 +210,7 @@ impl App {
         }
         for which in [
             Which::SymbolFilter,
-            Which::PathFilter,
+            Which::TourFilter,
             Which::ViewSearch,
             Which::GoToLine,
         ] {

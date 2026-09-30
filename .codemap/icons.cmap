@@ -1,5 +1,5 @@
-codemap 8
-path icons
+codemap 9
+tour icons
 kind flow
 author ai
 group render
@@ -21,7 +21,7 @@ file crates/ui/src/icon.rs
 symbol Icon
 lines 0 14
 hash c105c6b0b09a3a66
-note The icons the GUI draws, by what they mean rather than what they look like: Add (the picker), Close, SplitRight and SplitDown, Back and Forward, Expanded and Collapsed (a collapse's or a group's chevron, named after ViewFlag::Collapsed and Collapse/Expand; Close is the dismiss icon, a different thing), MoreAbove and MoreBelow (context), Check (a symbol some path covers, in the Symbols tab). A new icon is a variant here and its Codicons codepoint in glyph.
+note The icons the GUI draws, by what they mean rather than what they look like: Add (the picker), Close, SplitRight and SplitDown, Back and Forward, Expanded and Collapsed (a collapse's or a group's chevron, named after ViewFlag::Collapsed and Collapse/Expand; Close is the dismiss icon, a different thing), MoreAbove and MoreBelow (context), Check (a symbol some tour covers, in the Symbols tab). A new icon is a variant here and its Codicons codepoint in glyph.
 
 step 979nyy
 order 8

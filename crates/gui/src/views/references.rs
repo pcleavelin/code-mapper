@@ -250,7 +250,7 @@ fn focus_actions(model: &Model, frame: &mut Frame<'_>, symbol: SymbolId) {
         .and_then(domain::Step::resolved_symbol)
         == Some(symbol);
     frame.start(Container::ToolbarSmall);
-    if model.nav.path().is_some()
+    if model.nav.tour().is_some()
         && !on_step
         && frame
             .small_button("add step", ids::ADD_FOCUS.target())
@@ -371,7 +371,7 @@ fn call_row(
         None,
         model
             .nav
-            .path()
+            .tour()
             .is_some()
             .then(|| RowAction::add_step(add.nth(position))),
     );
@@ -455,7 +455,7 @@ pub(super) fn references_panel(model: &Model, frame: &mut Frame<'_>, area: Exten
         .and_then(|current| Some((current, index.symbol(current)?, index.file(current.file())?)))
     else {
         frame.label(
-            "no symbol selected: click one in Symbols, a path, or the Source view",
+            "no symbol selected: click one in Symbols, a tour, or the Source view",
             WEAK,
         );
         frame.finish();

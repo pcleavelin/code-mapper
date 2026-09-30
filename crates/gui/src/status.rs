@@ -1,7 +1,7 @@
 use std::fmt;
 use std::path::PathBuf;
 
-use domain::{Line, LineCount, Map, MapError, PathName, Program, RelativePath, SymbolName};
+use domain::{Line, LineCount, Map, MapError, Program, RelativePath, SymbolName, TourName};
 use ui::{Count, Label};
 
 use crate::model::HitsShown;
@@ -55,37 +55,37 @@ pub(crate) enum Status {
         shown: HitsShown,
     },
     MapRefused(Label),
-    PathCreated(PathName),
-    NameThePath,
-    PathPromoted {
-        name: PathName,
+    TourCreated(TourName),
+    NameTheTour,
+    TourPromoted {
+        name: TourName,
         steps: Count,
     },
     AlreadyStep {
         number: Label,
-        path: PathName,
+        tour: TourName,
     },
     StepPlaced {
         number: Label,
-        path: PathName,
+        tour: TourName,
         under: Under,
     },
-    TopLevelTarget(PathName),
+    TopLevelTarget(TourName),
     SelectLinesFirst,
-    SelectPathFirst,
+    SelectTourFirst,
     StepAdded {
         number: Label,
-        path: PathName,
+        tour: TourName,
         under: Under,
     },
     StepRemoved {
         number: Label,
         symbol: Option<SymbolName>,
         file: RelativePath,
-        path: PathName,
+        tour: TourName,
     },
-    PathRemoved {
-        name: PathName,
+    TourRemoved {
+        name: TourName,
         steps: Count,
     },
     LineOutside {
@@ -94,9 +94,9 @@ pub(crate) enum Status {
     },
     NoLineNumber(Label),
     NoFileOpen,
-    OffPathSymbol {
+    OffTourSymbol {
         symbol: SymbolName,
-        path: PathName,
+        tour: TourName,
     },
     NoDefinitionOf(Label),
     DefinedOutside {
@@ -113,7 +113,7 @@ pub(crate) enum Status {
     MapUnreadableKept(Label),
     MapReloaded,
     OnlyInParent {
-        name: PathName,
+        name: TourName,
         steps: Count,
     },
 }
@@ -130,39 +130,39 @@ impl fmt::Display for Under {
 impl Status {
     fn authoring(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::PathCreated(name) => write!(formatter, "path '{name}' created (unsaved)"),
-            Self::NameThePath => formatter.write_str("type a name for the new path"),
-            Self::PathPromoted { name, steps } => write!(
+            Self::TourCreated(name) => write!(formatter, "tour '{name}' created (unsaved)"),
+            Self::NameTheTour => formatter.write_str("type a name for the new tour"),
+            Self::TourPromoted { name, steps } => write!(
                 formatter,
-                "path '{name}' made from the symbol and its calls, {steps} steps (unsaved)"
+                "tour '{name}' made from the symbol and its calls, {steps} steps (unsaved)"
             ),
-            Self::AlreadyStep { number, path } => write!(
+            Self::AlreadyStep { number, tour } => write!(
                 formatter,
-                "already step {} of '{path}' in that place",
+                "already step {} of '{tour}' in that place",
                 number.as_str()
             ),
             Self::SelectLinesFirst => formatter.write_str("select lines in the Source view first"),
-            Self::SelectPathFirst => formatter.write_str("open a path to add steps to first"),
+            Self::SelectTourFirst => formatter.write_str("open a tour to add steps to first"),
             Self::StepAdded {
                 number,
-                path,
+                tour,
                 under,
             } => write!(
                 formatter,
-                "step {} added to '{path}' {under}",
+                "step {} added to '{tour}' {under}",
                 number.as_str()
             ),
             Self::StepPlaced {
                 number,
-                path,
+                tour,
                 under,
             } => write!(
                 formatter,
-                "moved to step {} of '{path}' {under}",
+                "moved to step {} of '{tour}' {under}",
                 number.as_str()
             ),
-            Self::TopLevelTarget(path) => {
-                write!(formatter, "steps added to '{path}' now go at the top level")
+            Self::TopLevelTarget(tour) => {
+                write!(formatter, "steps added to '{tour}' now go at the top level")
             }
             _ => Ok(()),
         }
@@ -200,22 +200,22 @@ impl Status {
     pub(crate) const fn tone(&self) -> Tone {
         match self {
             Self::Saved
-            | Self::PathCreated(_)
-            | Self::PathPromoted { .. }
+            | Self::TourCreated(_)
+            | Self::TourPromoted { .. }
             | Self::StepAdded { .. }
             | Self::StepPlaced { .. }
             | Self::StepRemoved { .. }
-            | Self::PathRemoved { .. }
+            | Self::TourRemoved { .. }
             | Self::MapReloaded
             | Self::Reindexed(_) => Tone::Done,
             Self::Hits {
                 shown: HitsShown::First,
                 ..
             }
-            | Self::NameThePath
+            | Self::NameTheTour
             | Self::AlreadyStep { .. }
             | Self::SelectLinesFirst
-            | Self::SelectPathFirst
+            | Self::SelectTourFirst
             | Self::LineOutside { .. }
             | Self::NoLineNumber(_)
             | Self::NoFileOpen
@@ -279,12 +279,12 @@ impl fmt::Display for Status {
             Self::RegexRefused(reason) => write!(formatter, "bad regex: {}", reason.as_str()),
             Self::Hits { .. } => self.hits(formatter),
             Self::MapRefused(error) => formatter.write_str(error.as_str()),
-            Self::PathCreated(_)
-            | Self::NameThePath
-            | Self::PathPromoted { .. }
+            Self::TourCreated(_)
+            | Self::NameTheTour
+            | Self::TourPromoted { .. }
             | Self::AlreadyStep { .. }
             | Self::SelectLinesFirst
-            | Self::SelectPathFirst
+            | Self::SelectTourFirst
             | Self::StepAdded { .. }
             | Self::StepPlaced { .. }
             | Self::TopLevelTarget(_) => self.authoring(formatter),
@@ -292,15 +292,15 @@ impl fmt::Display for Status {
                 number,
                 symbol,
                 file,
-                path,
+                tour,
             } => write!(
                 formatter,
-                "deleted step {} {} ({file}) from '{path}'; unsaved",
+                "deleted step {} {} ({file}) from '{tour}'; unsaved",
                 number.as_str(),
                 symbol.as_ref().map_or("", SymbolName::as_str)
             ),
-            Self::PathRemoved { name, steps } => {
-                write!(formatter, "deleted path '{name}' ({steps} steps); unsaved")
+            Self::TourRemoved { name, steps } => {
+                write!(formatter, "deleted tour '{name}' ({steps} steps); unsaved")
             }
             Self::LineOutside { line, last } => write!(
                 formatter,
@@ -309,8 +309,8 @@ impl fmt::Display for Status {
             ),
             Self::NoLineNumber(text) => write!(formatter, "'{}' is not a line number", text.as_str()),
             Self::NoFileOpen => formatter.write_str("no file open in the Source view"),
-            Self::OffPathSymbol { symbol, path } => {
-                write!(formatter, "{symbol} selected; not a step of '{path}'")
+            Self::OffTourSymbol { symbol, tour } => {
+                write!(formatter, "{symbol} selected; not a step of '{tour}'")
             }
             Self::NoDefinitionOf(word) => {
                 write!(formatter, "no definition of '{}' in this repo", word.as_str())
@@ -344,7 +344,7 @@ impl fmt::Display for Status {
             Self::MapReloaded => formatter.write_str("map reloaded (changed on disk)"),
             Self::OnlyInParent { name, steps } => write!(
                 formatter,
-                "'{name}' exists only in the parent revision; its {steps} steps are listed under the path it was removed from"
+                "'{name}' exists only in the parent revision; its {steps} steps are listed under the tour it was removed from"
             ),
         }
     }

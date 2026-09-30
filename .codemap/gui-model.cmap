@@ -1,9 +1,9 @@
-codemap 8
-path gui-model
-kind type
+codemap 9
+tour gui-model
+kind data
 author ai
 group gui
-note The Model: all the state a view can read, and the vocabulary it is written in. Paths and steps are addressed by slot - a PathSlot is a position in the map's path list, a StepSlot a position in that path's steps, a StepKey the pair - because that is how the map stores them and how element ids number rows; a slot is only good until the map changes, so anything kept across a change (history, step views, a reload's selection) is shifted or re-found by name and StepId when it does. Views read the Model through &Model; its helpers here answer in slots so a view never walks the map itself. Everything per-step the reader toggles is in StepViews, keyed by StepKey, default when absent.
+note The Model: all the state a view can read, and the vocabulary it is written in. Tours and steps are addressed by slot - a TourSlot is a position in the map's tour list, a StepSlot a position in that tour's steps, a StepKey the pair - because that is how the map stores them and how element ids number rows; a slot is only good until the map changes, so anything kept across a change (history, step views, a reload's selection) is shifted or re-found by name and StepId when it does. Views read the Model through &Model; its helpers here answer in slots so a view never walks the map itself. Everything per-step the reader toggles is in StepViews, keyed by StepKey, default when absent.
 
 step 4dd7h5
 order 17
@@ -23,7 +23,7 @@ file crates/gui/src/model.rs
 symbol ViewFlags
 lines 0 0
 hash c04a46a315a03e36
-note The four flags as bits: whole symbol, code hidden, subtree collapsed, linked path inlined.
+note The four flags as bits: whole symbol, code hidden, subtree collapsed, linked tour inlined.
 
 step 4rpslj
 order 18
@@ -42,7 +42,7 @@ author ai
 file crates/gui/src/model.rs
 symbol number_of
 lines 0 5
-hash b0abe6e56dab5ac4
+hash 7e2f63fbb8bdefd9
 note A step's hierarchical number, for status messages and link buttons.
 
 step 5zr9ht
@@ -82,7 +82,7 @@ author ai
 file crates/gui/src/model.rs
 symbol diffs
 lines 0 6
-hash 5f0ad3fb07deff57
+hash 0f0bd5bb074d79b8
 note The map against the parent's, computed wherever it is shown rather than cached; empty while there is no base.
 
 step 7hvckf
@@ -110,10 +110,10 @@ order 6
 parent w41rnw
 author ai
 file crates/gui/src/model.rs
-symbol PathSlot
+symbol TourSlot
 lines 0 0
-hash c531c4d7c7e62622
-note A path's slot, and the StepSlot, StepKey and their queries.
+hash f626b4215f76455d
+note A tour's slot, and the StepSlot, StepKey and their queries.
 
 step 9xv7om
 order 12
@@ -142,7 +142,7 @@ author ai
 file crates/gui/src/model.rs
 symbol new
 lines 0 41
-hash 91e7187277bb2f79
+hash caeb1749f6c5f050
 note Every panel in its default state, the map's stamp taken from the store, the metrics at the starting font until the first frame measures the real one.
 
 step erlcdz
@@ -152,7 +152,7 @@ author ai
 file crates/gui/src/model.rs
 symbol parent_of
 lines 0 3
-hash 3ca92289f790c093
+hash f89b0444c179be8e
 note A step's parent, as a slot.
 
 step frxjr5
@@ -163,7 +163,7 @@ file crates/gui/src/model.rs
 symbol Openness
 lines 0 3
 hash 711fa6d14011de84
-note A group's state in the Paths list, once the reader has clicked it.
+note A group's state in the Tours list, once the reader has clicked it.
 
 step gdb3ru
 order 5
@@ -172,7 +172,7 @@ author ai
 file crates/gui/src/model.rs
 symbol impl Model
 lines 103 117
-hash 38073dd51f7f9c09
+hash 17458e228a233098
 note Name to slot and StepId to slot: how a slot is found again after the map changed.
 
 step i04y8d
@@ -182,8 +182,8 @@ author ai
 file crates/gui/src/model.rs
 symbol impl StepViews
 lines 0 38
-hash 0faf8d6b7cf55471
-note Read with the default, write through entry, change only existing entries (so expanding ancestors creates nothing), change every view of one path, remap every key when steps or paths shift, and list the views that differ from the default for the dump.
+hash 0748236508faeb82
+note Read with the default, write through entry, change only existing entries (so expanding ancestors creates nothing), change every view of one tour, remap every key when steps or tours shift, and list the views that differ from the default for the dump.
 
 step i9wqui
 order 35
@@ -202,8 +202,8 @@ author ai
 file crates/gui/src/model.rs
 symbol numbered
 lines 0 15
-hash e433ffa5b0d15e30
-note The path's steps in tree order with their depth and hierarchical number (1.2.3), in slots: the steps list, the document and the graph all number steps through this, and walking up and down follows it.
+hash ed2032547302a899
+note The tour's steps in tree order with their depth and hierarchical number (1.2.3), in slots: the steps list, the document and the graph all number steps through this, and walking up and down follows it.
 
 step kh0he1
 order 24
@@ -242,8 +242,8 @@ author ai
 file crates/gui/src/model.rs
 symbol StepKey
 lines 0 3
-hash 7dac423b21368552
-note One step of one path, the key of StepViews and of every per-step action.
+hash bae41f241aefa88e
+note One step of one tour, the key of StepViews and of every per-step action.
 
 step ssjk1s
 order 4
@@ -252,8 +252,8 @@ author ai
 file crates/gui/src/model.rs
 symbol impl Model
 lines 44 50
-hash 4e552f3b17adea7d
-note Slot to Path and to Step, None past the end.
+hash 25d42bb761237bdd
+note Slot to Tour and to Step, None past the end.
 
 step t0x2sp
 order 16
@@ -291,7 +291,7 @@ author ai
 file crates/gui/src/model.rs
 symbol Model
 lines 0 30
-hash c89cbfec7555069e
+hash 77ab741ea3a77988
 note All the state a view can see (gui-structure lists the fields). Views get &Model; apply gets &mut.
 
 step x5fqsj
@@ -301,7 +301,7 @@ author ai
 file crates/gui/src/model.rs
 symbol descendants
 lines 0 8
-hash a77696f335213e88
+hash 20255b561ee0b98a
 note How many steps hang under a step, at any depth: the collapsed count, and whether a step gets a collapse arrow.
 
 step xu6ld0
@@ -321,7 +321,7 @@ author ai
 file crates/gui/src/model.rs
 symbol Tab
 lines 0 6
-hash 47a9e89f56984123
+hash 81d415dd97a8647c
 note The five centre tabs; from_name reads one from CODEMAP_SHOT_TAB (a script's tab command names any view through View::named).
 
 step y3xlpg
@@ -332,7 +332,7 @@ file crates/gui/src/model.rs
 symbol StepSlot
 lines 0 0
 hash d5b6dfd947bdb991
-note A step's position in its path's step list: the n of step/n, collapse/n and the other per-step element ids.
+note A step's position in its tour's step list: the n of step/n, collapse/n and the other per-step element ids.
 
 step y4jba3
 order 32
@@ -351,5 +351,5 @@ author ai
 file crates/gui/src/model.rs
 symbol tree_order
 lines 0 13
-hash 030cbed1e9f09c79
-note The path's steps in tree order, as slots: what opening a path follows.
+hash c60d0b0fa0fd51ac
+note The tour's steps in tree order, as slots: what opening a tour follows.

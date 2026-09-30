@@ -1,6 +1,6 @@
-codemap 8
-path xtask-text
-kind type
+codemap 9
+tour xtask-text
+kind data
 author ai
 group tooling
 note The values xtask handles, each with its own type, because archlint runs over xtask too and xtask obeys the rules it enforces: no bare string or number in a signature. Most are one-field wrappers with a constructor and as_str; the ones below do more than wrap.

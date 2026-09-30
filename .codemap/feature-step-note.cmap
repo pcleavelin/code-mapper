@@ -1,9 +1,9 @@
-codemap 8
-path feature-step-note
+codemap 9
+tour feature-step-note
 kind flow
 author ai
 group features/cli
-note step-note <name> <index> <note>: replace one step's note. The agent needs it because one function can be a step in several paths with a different role in each, which no code comment can say (commit 80cd0f0063f0). The index is the one paths prints in square brackets. A step note says what that step does for this path; the same function can be a step in several paths with a different note in each.
+note step-note <name> <index> <note>: replace one step's note. The agent needs it because one function can be a step in several tours with a different role in each, which no code comment can say (commit 80cd0f0063f0). The index is the one tours prints in square brackets. A step note says what that step does for this tour; the same function can be a step in several tours with a different note in each.
 
 step asvjlt
 order 0
@@ -11,7 +11,7 @@ author ai
 file crates/cli/src/exec.rs
 symbol step_note
 lines 0 8
-hash 60e7acf9789d0a04
+hash d652562b7dcec68f
 note Run::step_note: find the step, replace its note. Prints nothing.
 
 step l2dmhj
@@ -21,7 +21,7 @@ author ai
 file crates/domain/src/map.rs
 symbol set_step_note
 lines 0 8
-hash eaf7f0309f5c383c
+hash 062188b8807620cb
 note Replaces the note on the step.
 
 step xfsiy8
@@ -31,5 +31,5 @@ author ai
 file crates/cli/src/exec.rs
 symbol find_step
 lines 0 7
-hash fe848f2c971eee7d
-note The path by name, then the step by index; an index past the last step is an error.
+hash b3c00b8fc9bad614
+note The tour by name, then the step by index; an index past the last step is an error.

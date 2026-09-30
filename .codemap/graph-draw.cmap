@@ -1,9 +1,9 @@
-codemap 8
-path graph-draw
+codemap 9
+tour graph-draw
 kind flow
 author ai
 group gui/graph
-note One frame of the graph canvas, in two halves. First App::graph_phase, run from App::frame before any view is built, while it still has the renderer's Measure: input against last frame's hit rectangles, the rebuild and layout, the camera, and a Scene built in window pixels. Every change it makes to GraphState is a GraphAction sent through App::apply, and the actions meant for the rest of the GUI (select a step, focus, go to a line, ask for a hover) come back in GraphFrame to be pushed by the view. Then the graph_tab view draws the toolbar and hands the Scene to one custom element, frame.canvas, whose closure paints it onto ui's Canvas when the tree is drawn. So there is no element per node and no hit testing from the element tree: the scene records its own hit rectangles and the next frame's clicks are resolved against them. Pan and zoom are two GraphState fields rather than a transform - the node font size is the UI size times the zoom, rounded to a whole pixel, so text is rasterised at the size it is drawn and never scaled. Sibling boxes are painted first, then edges, then nodes, so nodes sit on top: muted green curves for the steps of a path, grey ones for the other calls, and an orange one for a callee drawn behind its caller along the graph's direction, looping back between the two nodes' facing sides. Every edge is routed for the direction: left to right it leaves and enters sideways, top to bottom through the bottom and top edges.
+note One frame of the graph canvas, in two halves. First App::graph_phase, run from App::frame before any view is built, while it still has the renderer's Measure: input against last frame's hit rectangles, the rebuild and layout, the camera, and a Scene built in window pixels. Every change it makes to GraphState is a GraphAction sent through App::apply, and the actions meant for the rest of the GUI (select a step, focus, go to a line, ask for a hover) come back in GraphFrame to be pushed by the view. Then the graph_tab view draws the toolbar and hands the Scene to one custom element, frame.canvas, whose closure paints it onto ui's Canvas when the tree is drawn. So there is no element per node and no hit testing from the element tree: the scene records its own hit rectangles and the next frame's clicks are resolved against them. Pan and zoom are two GraphState fields rather than a transform - the node font size is the UI size times the zoom, rounded to a whole pixel, so text is rasterised at the size it is drawn and never scaled. Sibling boxes are painted first, then edges, then nodes, so nodes sit on top: muted green curves for the steps of a tour, grey ones for the other calls, and an orange one for a callee drawn behind its caller along the graph's direction, looping back between the two nodes' facing sides. Every edge is routed for the direction: left to right it leaves and enters sideways, top to bottom through the bottom and top edges.
 
 step 01hcuw
 order 17
@@ -22,8 +22,8 @@ author ai
 file crates/gui/src/graph/scene.rs
 symbol border
 lines 0 19
-hash eb83407467bfafee
-note The border says what the node is: thick red when its step is stale, thick accent when it is the focus, thin faint green (STEP_BORDER) on the path, thin and plain off it.
+hash 8f98cd34632b9d4f
+note The border says what the node is: thick red when its step is stale, thick accent when it is the focus, thin faint green (STEP_BORDER) on the tour, thin and plain off it.
 
 step 0vlh88
 order 24
@@ -61,8 +61,8 @@ author ai
 file crates/gui/src/views/center.rs
 symbol graph_tab
 lines 0 62
-hash eb9c86bdb8768e5c
-note The view: the deferred actions pushed (a hover through push_hover), the tooltip set, then the toolbar - '1:1' which resets the zoom and re-centres, 'auto layout' which drops every dragged position, 'fit' which zooms out until the whole tree is on the canvas and centres it, the direction button (graph-turn, labelled with the direction it switches to: 'top to bottom' or 'left to right'), the zoom percentage, and one clipped caption: while a path is being read, its name and a legend drawn in the edge colours themselves (green step, dim revealed, orange call back up), then the pan and zoom gestures spelled out - then the canvas element whose closure paints the scene. The toolbar holds no authoring control; '+ step' lives on off-path nodes.
+hash 5dd9113524580600
+note The view: the deferred actions pushed (a hover through push_hover), the tooltip set, then the toolbar - '1:1' which resets the zoom and re-centres, 'auto layout' which drops every dragged position, 'fit' which zooms out until the whole tree is on the canvas and centres it, the direction button (graph-turn, labelled with the direction it switches to: 'top to bottom' or 'left to right'), the zoom percentage, and one clipped caption: while a tour is being read, its name and a legend drawn in the edge colours themselves (green step, dim revealed, orange call back up), then the pan and zoom gestures spelled out - then the canvas element whose closure paints the scene. The toolbar holds no authoring control; '+ step' lives on off-tour nodes.
 
 step 4yhd4f
 order 0
@@ -232,7 +232,7 @@ file crates/gui/src/graph/scene.rs
 symbol tinted
 lines 0 24
 hash 358428e8b9d7bc3a
-note The lines tinted as calls: a line is tinted when an edge leaves it. It names any node on the canvas the symbol calls, or one of its child steps, however either was revealed, so an off-path caller shows the line that calls the node it hangs off. Lines past the shown ones are left out.
+note The lines tinted as calls: a line is tinted when an edge leaves it. It names any node on the canvas the symbol calls, or one of its child steps, however either was revealed, so an off-tour caller shows the line that calls the node it hangs off. Lines past the shown ones are left out.
 
 step msyws5
 order 1
@@ -262,7 +262,7 @@ file crates/gui/src/graph.rs
 symbol Button
 lines 0 9
 hash c282a18378f5015e
-note The buttons a node header can carry: preview, source, '+ step' (off-path nodes), reveals, and context above, below and none.
+note The buttons a node header can carry: preview, source, '+ step' (off-tour nodes), reveals, and context above, below and none.
 
 step osav6h
 order 21
@@ -293,7 +293,7 @@ file crates/gui/src/graph/scene.rs
 symbol edges
 lines 0 72
 hash 834cea6528ddf3b5
-note The edges, routed by a Router for the graph's direction. Left to right a call edge leaves level with the line that makes the call when that line is shown, and from the header otherwise; top to bottom it leaves the middle of the node's bottom edge. An edge to a node ahead along the direction is a curve bowing forward into the target's entry (the header's left end, or the top middle), in EXPANSION_EDGE; a callee drawn behind its caller gets a BACK_EDGE curve bowing backwards between the facing sides instead of a wire across the canvas. Path edges, parent step to child step, are drawn last, thicker and in STEP_EDGE, and carry no label - the node's number is the label. A self-call and a callee that is already the caller's child step get no call edge.
+note The edges, routed by a Router for the graph's direction. Left to right a call edge leaves level with the line that makes the call when that line is shown, and from the header otherwise; top to bottom it leaves the middle of the node's bottom edge. An edge to a node ahead along the direction is a curve bowing forward into the target's entry (the header's left end, or the top middle), in EXPANSION_EDGE; a callee drawn behind its caller gets a BACK_EDGE curve bowing backwards between the facing sides instead of a wire across the canvas. Tour edges, parent step to child step, are drawn last, thicker and in STEP_EDGE, and carry no label - the node's number is the label. A self-call and a callee that is already the caller's child step get no call edge.
 
 step pi32um
 order 9
@@ -302,8 +302,8 @@ author ai
 file crates/gui/src/graph/scene.rs
 symbol scene_node
 lines 0 102
-hash 8185ceceb226cc4a
-note One node: its rectangle, code grid, border, fill (panel for an off-path node while a path is shown), header runs and buttons, the step's note, then one hit rectangle per shown line. A node's hits are recorded body, header, lines, buttons, and the later one wins, so a button beats the header under it.
+hash ae01339dc060ae50
+note One node: its rectangle, code grid, border, fill (panel for an off-tour node while a tour is shown), header runs and buttons, the step's note, then one hit rectangle per shown line. A node's hits are recorded body, header, lines, buttons, and the later one wins, so a button beats the header under it.
 
 step q4uqvf
 order 35
@@ -312,8 +312,8 @@ author ai
 file crates/gui/src/graph/scene.rs
 symbol sibling_box
 lines 0 47
-hash 1fdc30acffa3d10e
-note One sibling box for the painter: its pixel rectangle from Built::sibling_bounds at the scene's origin, its header text (box_header) centred in the GRAPH_BOX_HEADER rows at its top, and, for a box with a parent, a ParentButton just after the text. build_scene turns each ParentButton into a Hit::Parent, which graph_click answers by selecting the parent with Steering::Keys so the camera glides to it. A path box has the step border colour.
+hash fcfebcfe63aec573
+note One sibling box for the painter: its pixel rectangle from Built::sibling_bounds at the scene's origin, its header text (box_header) centred in the GRAPH_BOX_HEADER rows at its top, and, for a box with a parent, a ParentButton just after the text. build_scene turns each ParentButton into a Hit::Parent, which graph_click answers by selecting the parent with Steering::Keys so the camera glides to it. A tour box has the step border colour.
 
 step q6d4as
 order 37
@@ -353,7 +353,7 @@ file crates/gui/src/graph/input.rs
 symbol graph_click
 lines 0 67
 hash e22b2f48be3c7757
-note A press against last frame's hit: a button sends its action (preview, callees, callers, context) or defers a GoTo for source, or an AddSymbol for '+ step' under the step the node was revealed from as a callee, else under the target; a header click grabs the node, defers selecting its step (or focusing its symbol off the path) and sends Steer(Steering::Click) so the camera stays put and the tree keeps its root; a press on a code line grabs the node and, with ctrl or alt, defers a definition jump or peek at the column under the pointer; a body press grabs the node; the background starts a pan.
+note A press against last frame's hit: a button sends its action (preview, callees, callers, context) or defers a GoTo for source, or an AddSymbol for '+ step' under the step the node was revealed from as a callee, else under the target; a header click grabs the node, defers selecting its step (or focusing its symbol off the tour) and sends Steer(Steering::Click) so the camera stays put and the tree keeps its root; a press on a code line grabs the node and, with ctrl or alt, defers a definition jump or peek at the column under the pointer; a body press grabs the node; the background starts a pan.
 
 step rgjxnq
 order 28
@@ -402,8 +402,8 @@ author ai
 file crates/gui/src/graph/scene.rs
 symbol box_header
 lines 0 16
-hash 3adcc5385b83a3be
-note What a box's members are: 'path <name>' for the path's top-level steps, 'not in the path' (or 'no path open') for roots off the path, 'callees of' or 'callers of' for a parent's children, which the parent's button then names.
+hash 90db98dd3e842761
+note What a box's members are: 'tour <name>' for the tour's top-level steps, 'not in the tour' (or 'no tour open') for roots off the tour, 'callees of' or 'callers of' for a parent's children, which the parent's button then names.
 
 step wyzcd5
 order 43
@@ -412,8 +412,8 @@ author ai
 file crates/gui/src/graph/input.rs
 symbol select
 lines 0 7
-hash d6f8c4dbf08ace7d
-note A node to the Action that selects it: SelectStep for a step of the drawn path, Focus for anything else. graph_click uses it for a header press (with Steering::Click, camera kept) and for a box's parent button (with Steering::Keys, camera glides).
+hash b9b903892439323c
+note A node to the Action that selects it: SelectStep for a step of the drawn tour, Focus for anything else. graph_click uses it for a header press (with Steering::Click, camera kept) and for a box's parent button (with Steering::Keys, camera glides).
 
 step xav3yc
 order 40

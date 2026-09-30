@@ -1,4 +1,4 @@
-use domain::{Change, FileId, Line, PathDiff, RelativePath, StepChange, SymbolName};
+use domain::{Change, FileId, Line, RelativePath, StepChange, SymbolName, TourDiff};
 use ui::{Count, Label, Px, Run};
 
 use crate::action::Action;
@@ -7,7 +7,7 @@ use crate::field::Which;
 use crate::graph::{GraphAction, GraphFrame, draw_scene};
 use crate::ids;
 use crate::keys;
-use crate::model::{HIT_LIMIT, HitsShown, Model, PathSlot, StepKey, Tab};
+use crate::model::{HIT_LIMIT, HitsShown, Model, StepKey, Tab, TourSlot};
 use crate::panels::Direction;
 use crate::status::Status;
 use crate::text::{Counted, Noun, Tag};
@@ -79,10 +79,10 @@ pub(super) fn source(model: &Model, frame: &mut Frame<'_>) {
     let selection = model.nav.lines();
     let anchors: Vec<(domain::Span, bool)> = model
         .nav
-        .path()
-        .and_then(|path| model.path(path))
-        .map(|path| {
-            path.steps()
+        .tour()
+        .and_then(|tour| model.tour(tour))
+        .map(|tour| {
+            tour.steps()
                 .iter()
                 .filter(|step| step.file() == source.path())
                 .map(|step| (step.span(), step.is_stale()))
@@ -253,7 +253,7 @@ pub(super) fn search_view(model: &Model, frame: &mut Frame<'_>) {
     frame.finish();
 }
 
-fn summary(diff: &PathDiff) -> Label {
+fn summary(diff: &TourDiff) -> Label {
     Label::new(match diff.change() {
         Change::Added => Counted::new(Count::new(diff.steps().len()), Noun::Step).to_string(),
         Change::Removed => Counted::new(Count::new(diff.removed().len()), Noun::Step).to_string(),
@@ -277,22 +277,22 @@ fn summary(diff: &PathDiff) -> Label {
                 }
             }
             if diff.note_changed() {
-                parts.push("path note, kind or group changed".to_owned());
+                parts.push("tour note, kind or group changed".to_owned());
             }
             parts.join(", ")
         }
     })
 }
 
-fn step_lines(model: &Model, frame: &mut Frame<'_>, path: PathSlot, diff: &PathDiff) {
+fn step_lines(model: &Model, frame: &mut Frame<'_>, tour: TourSlot, diff: &TourDiff) {
     for step_diff in diff.steps() {
         let Some(change) = step_diff.change else {
             continue;
         };
-        let Some(slot) = model.step_slot(path, &step_diff.step) else {
+        let Some(slot) = model.step_slot(tour, &step_diff.step) else {
             continue;
         };
-        let key = StepKey { path, step: slot };
+        let key = StepKey { tour, step: slot };
         let Some(step) = model.step(key) else {
             continue;
         };
@@ -317,14 +317,14 @@ fn step_lines(model: &Model, frame: &mut Frame<'_>, path: PathSlot, diff: &PathD
     }
 }
 
-fn diff_row(model: &Model, frame: &mut Frame<'_>, position: Count, diff: &PathDiff) {
+fn diff_row(model: &Model, frame: &mut Frame<'_>, position: Count, diff: &TourDiff) {
     let (mark, color) = match diff.change() {
         Change::Same => return,
         Change::Added => ("+", GREEN),
         Change::Removed => ("-", RED),
         Change::Changed => ("~", GREEN),
     };
-    let path = model.find_path(diff.name());
+    let tour = model.find_tour(diff.name());
     let runs = vec![
         Run::new(format!("{mark} {}   ", diff.name()), color),
         Run::new(summary(diff), WEAK),
@@ -333,8 +333,8 @@ fn diff_row(model: &Model, frame: &mut Frame<'_>, position: Count, diff: &PathDi
         .row(runs, ids::DIFF_ROW.nth(position), Chosen::Plain)
         .clicked()
     {
-        if let Some(open) = path {
-            frame.push(Action::OpenPath(open, Tab::Path));
+        if let Some(open) = tour {
+            frame.push(Action::OpenTour(open, Tab::Tour));
         } else {
             let status = Status::OnlyInParent {
                 name: diff.name().clone(),
@@ -344,8 +344,8 @@ fn diff_row(model: &Model, frame: &mut Frame<'_>, position: Count, diff: &PathDi
             frame.push(Action::Status(status));
         }
     }
-    if let Some(path) = path.filter(|_| diff.change() == Change::Changed) {
-        step_lines(model, frame, path, diff);
+    if let Some(tour) = tour.filter(|_| diff.change() == Change::Changed) {
+        step_lines(model, frame, tour, diff);
     }
     for step in diff.removed() {
         frame.label(
@@ -440,9 +440,9 @@ pub(super) fn graph_tab(model: &Model, frame: &mut Frame<'_>, graph: Option<Grap
     }
     frame.label(format!("{:.0}%", zoom.get() * 100.0), WEAK);
     let mut runs = Vec::new();
-    if let Some(path) = model.graph.built().path.and_then(|path| model.path(path)) {
+    if let Some(tour) = model.graph.built().tour.and_then(|tour| model.tour(tour)) {
         runs.extend([
-            Run::new(format!("{}: ", path.name()), TEXT),
+            Run::new(format!("{}: ", tour.name()), TEXT),
             Run::new("\u{2500} step  ", GREEN),
             Run::new("\u{2500} revealed  ", WEAK),
             Run::new("\u{2500} call back up  ", ORANGE),

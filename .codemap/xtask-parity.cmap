@@ -1,5 +1,5 @@
-codemap 8
-path xtask-parity
+codemap 9
+tour xtask-parity
 kind flow
 author ai
 group tooling

@@ -1,0 +1,47 @@
+codemap 9
+tour feature-open-linked-tour
+kind flow
+author ai
+group features/gui
+note A step with a link shows the linked tour's name as a button (→ name); clicking it opens that tour in the document. The reader reaches for it to follow a link to the shared tour it names instead of hunting for that tour in the Tours list. Under a tour's note, 'linked from' lists every step in other tours that links here; clicking one selects that step in its own tour. A link to a tour that no longer exists shows as red (missing) and cannot be clicked.
+
+step 2i3qxs
+order 1
+parent r4lu04
+author ai
+file crates/gui/src/nav.rs
+symbol select_tour
+lines 0 9
+hash 7a595d2881b1892a
+link selection
+note The linked tour becomes current with its first step selected and scrolled to.
+
+step blx0n2
+order 2
+parent r4lu04
+author ai
+file crates/gui/src/views/document.rs
+symbol link_buttons
+lines 6 16
+hash 47415deb5997e463
+note Trigger: a step's link is looked up by name; a missing target is drawn as a red label, a found one as the LINK button that queues OpenTour with the Tour tab.
+
+step r4lu04
+order 0
+author ai
+file crates/gui/src/nav.rs
+symbol open_tour
+lines 0 5
+hash 5214b39f2a008c2b
+note The handler for the link button: the same open_tour the Tours list uses, with the Tour tab.
+
+step zof35p
+order 3
+parent r4lu04
+author ai
+file crates/gui/src/views/document.rs
+symbol linked_from
+lines 0 27
+hash dc6c8abafc6413ea
+link feature-select-step
+note Trigger for the other direction: the 'linked from' toolbar asks the map for every step linking to this tour and draws one LINKED_FROM button per step, named by tour and step number. A click queues SelectStep with Scrolling::Scroll, which goes through select_step, not open_tour.

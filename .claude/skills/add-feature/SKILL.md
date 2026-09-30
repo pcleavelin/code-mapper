@@ -25,8 +25,8 @@ cannot be written.
 5. Tests: the behaviour stated before the code, as a unit test of the handler or domain method;
    then a CLI scenario line for every outcome (success and each error), or a GUI scenario
    step that triggers it and a dump that shows its effect (`add-test-scenario`).
-6. The map: a `flow` path named `feature-<name>` in group `features/cli` or `features/gui`,
+6. The map: a `flow` tour named `feature-<name>` in group `features/cli` or `features/gui`,
    whose note is the need `understand` found, whose root step is the handler and whose steps
-   follow what it calls (`codemap . promote <handler> 2 feature-<name>`, then `path-group`,
-   `path-note`, trim, annotate).
+   follow what it calls (`codemap . promote <handler> 2 feature-<name>`, then `tour-group`,
+   `tour-note`, trim, annotate).
 7. `finish`.
