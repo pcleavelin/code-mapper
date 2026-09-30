@@ -588,9 +588,9 @@ parent d5you8
 author ai
 file crates/gui/src/views/document.rs
 symbol header_bar
-lines 0 57
-hash 731b8b372009b246
-note The header: name, kind, author, step count, group, whether the tour is new or changed since the parent revision, and the tour-wide buttons: graph, hide all code, show all code, collapse all, expand all, then, set apart, the danger button 'delete tour'.
+lines 0 31
+hash 77c8279510d4bc31
+note The header: name, kind, author, step count, group, whether the tour is new or changed since the parent revision, and the tour-wide buttons: graph, hide all code, show all code, collapse all, expand all, then, set apart, the danger button 'delete tour'. The buttons sit at the right of the header row when the row fits the panel; when it does not, they move to a row of their own under it, so no button is cut off by the panel's edge (header_rows).
 
 step kfwd14
 order 46
@@ -928,6 +928,16 @@ hash e4321ac653e57c5e
 link panel-tree
 note Divider and tab drags, read before any panel is drawn so the frame draws the new layout.
 
+step vm1ddl
+order 101
+parent jydflb
+author ai
+file crates/gui/src/views/document.rs
+symbol tour_buttons
+lines 0 36
+hash 4bacbf547bb282ed
+note The tour-wide buttons, the same in either layout: graph, hide all code, show all code, collapse all, expand all, then 'delete tour' set apart by DANGER_GAP.
+
 step vnygv8
 order 63
 parent sn1cn1
@@ -997,6 +1007,16 @@ symbol locate
 lines 0 8
 hash 3b8c6ccc156d21c8
 note A named element's Visibility from last frame's placement: its visible centre, which the loop turns a click-id or hover-id line into a plain click or mouse move at, or OutOfView when scrolling or a panel edge cut the centre off, or Absent.
+
+step znipxx
+order 100
+parent jydflb
+author ai
+file crates/gui/src/views/document.rs
+symbol header_rows
+lines 0 15
+hash dad42c703ffde36c
+note One row or two, from the previous frame's rectangles like every layout decision here. Last frame one row: two when its content was wider than its rectangle. Last frame two rows: back to one only when both rows' contents plus a gap fit, a sum that is always at least the one-row width, so the header does not flip between the two.
 
 step zub7v0
 order 24

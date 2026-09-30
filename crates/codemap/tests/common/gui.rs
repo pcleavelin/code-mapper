@@ -677,6 +677,8 @@ up
 wait 2
 dump
 shot {shots}/resized.png
+hover-id doc-delete
+wait 1
 click-id split-right/1
 wait 3
 click-id field@views

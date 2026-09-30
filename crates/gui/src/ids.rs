@@ -310,6 +310,14 @@ pub(crate) fn picker() -> Id {
     Id::new("picker")
 }
 
+pub(crate) fn tour_header() -> Id {
+    Id::new("tour-header")
+}
+
+pub(crate) fn tour_buttons() -> Id {
+    Id::new("tour-buttons")
+}
+
 pub(crate) fn palette_box() -> Id {
     Id::new("palette-box")
 }

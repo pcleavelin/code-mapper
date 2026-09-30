@@ -10,8 +10,8 @@ order 4
 parent z8ck9j
 author ai
 file crates/gui/src/views/document.rs
-symbol header_bar
-lines 49 55
+symbol tour_buttons
+lines 29 35
 hash 80c1c1c97b4cbb1b
 note Trigger: REMOVE_TOUR, a danger button set apart from the other header buttons by DANGER_GAP and red under the pointer, queues RemoveTour for the tour being read.
 

@@ -69,6 +69,8 @@ pub(crate) enum Container {
     TopBar,
     StatusBar,
     Toolbar,
+    TourHeader,
+    TourButtons,
     ToolbarTight,
     ToolbarSmall,
     Header,
@@ -98,24 +100,28 @@ impl Shape {
     }
 }
 
+fn toolbar(gap: Px) -> Layout {
+    Layout::row()
+        .grow_width()
+        .padding(BAR_PADDING)
+        .gap(gap)
+        .cross(Align::Center)
+}
+
+fn marked(selected: Chosen) -> Style {
+    Style {
+        background: None,
+        border: if selected == Chosen::Chosen {
+            Sides::LEFT
+        } else {
+            Sides::NONE
+        },
+        border_color: ACCENT,
+    }
+}
+
 impl Container {
     fn shape(self) -> Shape {
-        let toolbar = |gap: Px| {
-            Layout::row()
-                .grow_width()
-                .padding(BAR_PADDING)
-                .gap(gap)
-                .cross(Align::Center)
-        };
-        let marked = |selected: Chosen| Style {
-            background: None,
-            border: if selected == Chosen::Chosen {
-                Sides::LEFT
-            } else {
-                Sides::NONE
-            },
-            border_color: ACCENT,
-        };
         match self {
             Self::Window => {
                 Shape::new(Layout::column().grow(), Style::background(BACKGROUND), None)
@@ -133,6 +139,12 @@ impl Container {
                 None,
             ),
             Self::Toolbar => Shape::new(toolbar(WIDE_GAP), Style::NONE, None),
+            Self::TourHeader => {
+                Shape::new(toolbar(WIDE_GAP), Style::NONE, Some(ids::tour_header()))
+            }
+            Self::TourButtons => {
+                Shape::new(toolbar(WIDE_GAP), Style::NONE, Some(ids::tour_buttons()))
+            }
             Self::ToolbarTight => Shape::new(toolbar(GAP), Style::NONE, None),
             Self::ToolbarSmall => Shape::new(toolbar(SMALL_GAP), Style::NONE, None),
             Self::Header => Shape::new(

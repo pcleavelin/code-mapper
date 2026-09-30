@@ -30,9 +30,9 @@ order 3
 parent spow0g
 author ai
 file crates/gui/src/views/document.rs
-symbol header_bar
-lines 21 48
-hash b9363cab30ef804a
+symbol tour_buttons
+lines 12 28
+hash 0d5a19a0ce93e317
 note Trigger: COLLAPSE_ALL queues CollapseAll with Collapse::Collapse and EXPAND_ALL with Collapse::Expand.
 
 step h9i1wa

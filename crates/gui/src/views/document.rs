@@ -13,7 +13,7 @@ use crate::nav::Scrolling;
 use crate::text::{Counted, Noun, Tag};
 use crate::theme::{
     ACCENT, COLLAPSE_ROOM, DANGER_GAP, FAINT, GREEN, HIDE_BUTTON, INDENT, INLINE_BUTTON, PENDING,
-    PIXEL, RED, SLICE, TEXT, WEAK, WHOLE_BUTTON,
+    PIXEL, RED, SLICE, TEXT, WEAK, WHOLE_BUTTON, WIDE_GAP,
 };
 use crate::widgets::{Chosen, CodeBlock, Container, Frame, Marks, Padding, Scroller, Width};
 use std::mem;
@@ -94,27 +94,30 @@ fn track_steps(
     top_step
 }
 
-fn header_bar(frame: &mut Frame<'_>, tour: TourSlot, found: &Tour, diff: Option<&TourDiff>) {
-    frame.start(Container::Toolbar);
-    frame.title(found.name().as_str());
-    frame.label(
-        format!(
-            "[{}]{}  {}",
-            Tag::kind(found.kind()),
-            Tag::author(found.author()),
-            Counted::new(Count::new(found.steps().len()), Noun::Step)
-        ),
-        WEAK,
-    );
-    if let Some(group) = found.group() {
-        frame.label(format!("in {group}"), WEAK);
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum HeaderRows {
+    One,
+    Two,
+}
+
+fn header_rows(frame: &Frame<'_>) -> HeaderRows {
+    let Some(header) = frame.ui.placement(ids::tour_header()) else {
+        return HeaderRows::One;
+    };
+    let wanted = frame
+        .ui
+        .placement(ids::tour_buttons())
+        .map_or(header.content.width, |buttons| {
+            header.content.width + buttons.content.width + WIDE_GAP
+        });
+    if wanted <= header.rect.width {
+        HeaderRows::One
+    } else {
+        HeaderRows::Two
     }
-    match diff.map(TourDiff::change) {
-        Some(Change::Added) => frame.label("new since the parent revision", GREEN),
-        Some(Change::Changed) => frame.label("changed since the parent revision", GREEN),
-        _ => {}
-    }
-    frame.grow();
+}
+
+fn tour_buttons(frame: &mut Frame<'_>, tour: TourSlot) {
     let buttons = [
         ("graph", ids::SHOW_GRAPH, Action::OpenTour(tour, Tab::Graph)),
         (
@@ -150,7 +153,39 @@ fn header_bar(frame: &mut Frame<'_>, tour: TourSlot, found: &Tour, diff: Option<
     {
         frame.push(Action::RemoveTour(tour));
     }
+}
+
+fn header_bar(frame: &mut Frame<'_>, tour: TourSlot, found: &Tour, diff: Option<&TourDiff>) {
+    let rows = header_rows(frame);
+    frame.start(Container::TourHeader);
+    frame.title(found.name().as_str());
+    frame.label(
+        format!(
+            "[{}]{}  {}",
+            Tag::kind(found.kind()),
+            Tag::author(found.author()),
+            Counted::new(Count::new(found.steps().len()), Noun::Step)
+        ),
+        WEAK,
+    );
+    if let Some(group) = found.group() {
+        frame.label(format!("in {group}"), WEAK);
+    }
+    match diff.map(TourDiff::change) {
+        Some(Change::Added) => frame.label("new since the parent revision", GREEN),
+        Some(Change::Changed) => frame.label("changed since the parent revision", GREEN),
+        _ => {}
+    }
+    if rows == HeaderRows::One {
+        frame.grow();
+        tour_buttons(frame, tour);
+    }
     frame.finish();
+    if rows == HeaderRows::Two {
+        frame.start(Container::TourButtons);
+        tour_buttons(frame, tour);
+        frame.finish();
+    }
 }
 
 fn linked_from(model: &Model, frame: &mut Frame<'_>, found: &Tour) {

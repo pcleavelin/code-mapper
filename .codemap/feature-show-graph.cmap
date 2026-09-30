@@ -21,8 +21,8 @@ order 2
 parent x7w987
 author ai
 file crates/gui/src/views/document.rs
-symbol header_bar
-lines 21 48
+symbol tour_buttons
+lines 1 28
 hash b9363cab30ef804a
 note Trigger: SHOW_GRAPH in the document toolbar queues OpenTour with Tab::Graph.
 
