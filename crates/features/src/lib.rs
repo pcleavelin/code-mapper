@@ -377,13 +377,16 @@ impl Feature {
             ),
             Self::SelectStep => Spec::new(
                 Text::new("select-step"),
-                Text::new("select a step from its header, the outline or the breadcrumb"),
+                Text::new(
+                    "select a step from its header, the outline, the breadcrumb or a step the paths filter found",
+                ),
                 Surface::Window,
                 &const {
                     [
                         Trigger::Click(Element::new("step")),
                         Trigger::Click(Element::new("outline")),
                         Trigger::Click(Element::new("crumb")),
+                        Trigger::Click(Element::new("found")),
                     ]
                 },
             ),
@@ -609,7 +612,9 @@ impl Feature {
             ),
             Self::FilterPaths => Spec::new(
                 Text::new("filter-paths"),
-                Text::new("filter the Paths tab to the paths whose name contains the text"),
+                Text::new(
+                    "filter the Paths tab to the paths whose name, or a step's symbol or file, contains the text",
+                ),
                 Surface::Window,
                 &const { [Trigger::Type(Element::new("field@paths"))] },
             ),

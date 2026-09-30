@@ -3,7 +3,17 @@ path feature-filter-paths
 kind flow
 author ai
 group features/gui
-note Type in the filter field at the top of the Paths tab to narrow the list to paths whose name contains the text, case-insensitively; every keystroke re-filters and scrolls the list to its top, and the toolbar shows how many of all the paths match. The reader reaches for it to find one path by name in a large map without scrolling the whole list. A group shows only when a path under it matches, its count is the number of matching paths, and every group is open while the filter holds text (clicks on group rows do nothing then). Removed paths from the map diff are filtered the same way. Clearing the field restores the full list with each group's openness as it was.
+note Type in the filter field at the top of the Paths tab to narrow the list to paths whose name, or the symbol or file of one of their steps, contains the text, case-insensitively; every keystroke re-filters and scrolls the list to its top, and the toolbar shows how many of all the paths match. The reader reaches for it to find one path by name in a large map without scrolling the whole list, or to find every path that walks through a function or file. Under a path listed because of its steps (its name does not match, and it is not the path being read), the matching steps show as rows with their number, symbol and file; clicking one opens that path at that step. A group shows only when a path under it matches, its count is the number of matching paths, and every group is open while the filter holds text (clicks on group rows do nothing then). Removed paths from the map diff are filtered by name only, since their steps are gone. Clearing the field restores the full list with each group's openness as it was.
+
+step 4g8amg
+order 11
+parent 8j5rz8
+author ai
+file crates/gui/src/model.rs
+symbol path_filter
+lines 0 2
+hash a8f81c0ba2623c1d
+note The filter field's text as a Needle, read fresh each time so the list follows every keystroke.
 
 step 4tvhu1
 order 1
@@ -21,9 +31,29 @@ parent z6m3sw
 author ai
 file crates/gui/src/model.rs
 symbol listed_rows
-lines 0 2
-hash 101c5c70af808445
-note The Paths list's rows: the map's rows holding only the paths lists accepts. dump prints how many paths it holds (DUMP paths filter=... listed=n).
+lines 0 9
+hash 379b5dde18e4bb0d
+note The Paths list's rows: the map's rows holding only the paths whose name or some step passes the filter. dump prints how many paths it holds (DUMP paths filter=... listed=n).
+
+step 9rc3mq
+order 12
+parent 8j5rz8
+author ai
+file crates/gui/src/model.rs
+symbol step_found
+lines 0 4
+hash 20a64ee5daac834e
+note A step passes when its symbol's name or its file's path contains the needle. The note is not searched: the filter matches what the outline rows show.
+
+step ij7fpw
+order 13
+parent z6m3sw
+author ai
+file crates/gui/src/views/left.rs
+symbol found_step_rows
+lines 0 24
+hash 37514d66e1632705
+note One row per step found_steps returns, indented under the path row, numbered as in the outline and red when stale. A click selects the step, which makes its path the one being read and shows it in the document. Ids are found@<path slot>:<step slot>, a trigger of select-step.
 
 step lhcomc
 order 7
@@ -54,6 +84,16 @@ symbol level
 lines 0 18
 hash febf3f0c2f4f1706
 note Groups paths by their next group segment under the prefix; a group row exists only when some member is inside it.
+
+step qf6tvh
+order 14
+parent ij7fpw
+author ai
+file crates/gui/src/model.rs
+symbol found_steps
+lines 0 16
+hash 7ba7ca9397af3e50
+note The steps to list under a path: none when the filter is empty or already matches the path's name (the name row says why it is listed), otherwise the path's steps in outline order that step_found accepts, numbered as the outline numbers them.
 
 step tldqqa
 order 10
@@ -92,14 +132,14 @@ author ai
 file crates/gui/src/model.rs
 symbol lists
 lines 0 2
-hash e6102eb60f88b6ea
-note Whether a path name passes the Paths filter: the field's text as a Needle, a substring ignoring ASCII case; an empty filter passes everything.
+hash 19885c0be8a25172
+note Whether a path name passes the Paths filter, for the removed paths of the map diff, which have no steps to search: the field's text as a Needle, a substring ignoring ASCII case; an empty filter passes everything.
 
 step z6m3sw
 order 5
 author ai
 file crates/gui/src/views/left.rs
 symbol paths_window
-lines 0 86
-hash ea9801e43780b845
-note Trigger and effect: the filter field sits in a toolbar above the list, beside the 'new path' button; its text is read while the list is built, so there is no filter action to apply. While it holds text the toolbar shows 'n of m' paths, and an empty result says 'no path name matches'. A non-empty filter forces every group open. The rows come from listed_rows instead of the whole map, and removed paths pass through lists.
+lines 0 88
+hash 5b267d6b54877d31
+note Trigger and effect: the filter field sits in a toolbar above the list, beside the 'new path' button; its text is read while the list is built, so there is no filter action to apply. While it holds text the toolbar shows 'n of m' paths, and an empty result says 'no path name, step symbol or step file matches'. Under a path that is not the one being read, found_step_rows lists the steps the filter found. A non-empty filter forces every group open. The rows come from listed_rows instead of the whole map, and removed paths pass through lists, which reads names only.

@@ -2,7 +2,8 @@ use std::path::Path as FsPath;
 
 use domain::{
     Anchor, Author, Backend, Depth, FileText, Imports, Index, Line, Map, Path, PathKind, PathName,
-    RelativePath, Root, SourceFile, Span, Step, StepId, StepOrder, Symbol, SymbolKind, SymbolName,
+    RelativePath, Root, Row, SourceFile, Span, Step, StepId, StepOrder, Symbol, SymbolKind,
+    SymbolName,
 };
 use features::Trigger;
 use io_map::MapStore;
@@ -10,6 +11,7 @@ use ui::{Count, Label};
 
 use crate::action::{Action, Fold, Hide};
 use crate::app::App;
+use crate::field::Which;
 use crate::graph::Parentage;
 use crate::graph::build::{Built, CellSize, Rank, StepInfo};
 use crate::graph::{Button, Node};
@@ -407,4 +409,32 @@ fn a_path_linked_from_elsewhere_is_refused_with_the_linking_steps() {
         app.model.status.to_string(),
         "'target' is linked from caller[0]; unlink those steps first"
     );
+}
+
+fn filtered(model: &mut Model, text: &str) -> (usize, Vec<String>) {
+    model.fields.fill(Which::PathFilter, &Label::new(text));
+    let listed = model
+        .listed_rows()
+        .iter()
+        .filter(|row| matches!(row, Row::Path { .. }))
+        .count();
+    let found = model
+        .found_steps(PATH)
+        .iter()
+        .map(|numbered| numbered.number.as_str().to_owned())
+        .collect();
+    (listed, found)
+}
+
+#[test]
+fn the_paths_filter_lists_a_path_by_its_steps_and_names_the_steps_that_match() {
+    let mut model = model();
+    assert_eq!(filtered(&mut model, ""), (1, Vec::new()));
+    assert_eq!(filtered(&mut model, "start"), (1, Vec::new()));
+    assert_eq!(filtered(&mut model, "REPORT"), (1, vec!["1.2".to_owned()]));
+    assert_eq!(
+        filtered(&mut model, "main.rs"),
+        (1, ["1", "1.1", "1.1.1", "1.2"].map(str::to_owned).to_vec())
+    );
+    assert_eq!(filtered(&mut model, "absent"), (0, Vec::new()));
 }

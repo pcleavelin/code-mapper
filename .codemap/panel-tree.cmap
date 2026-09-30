@@ -447,7 +447,7 @@ file crates/gui/src/panels.rs
 symbol matching
 lines 0 7
 hash ac9f40259feff53e
-note The rows: every view whose name contains the search, case-insensitively, in View::ALL order.
+note The rows: every view whose name contains the search, case-insensitively, in View::VARIANTS order.
 
 step s3yr31
 order 35

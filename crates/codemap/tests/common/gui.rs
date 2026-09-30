@@ -372,6 +372,18 @@ key a ctrl
 key backspace
 wait 3
 dump
+text Circle
+wait 3
+dump
+shot {shots}/paths-found-steps.png
+click-id found@1:1
+wait 3
+dump
+click-id field@paths
+wait 2
+key a ctrl
+key backspace
+wait 3
 click-id paths/1
 wait 3
 dump

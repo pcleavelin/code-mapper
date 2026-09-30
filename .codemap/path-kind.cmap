@@ -41,7 +41,7 @@ file crates/domain/src/map/name.rs
 symbol PathKind
 lines 0 4
 hash f6066b8937b07d2d
-note The three kinds, in domain. Flow is a workflow, what happens when X; Layer is an abstraction boundary, the functions that form its surface; Type is a data structure and what mutates it. ALL lists them for the front ends. The enum has no string form of its own: each boundary words it.
+note The three kinds, in domain. Flow is a workflow, what happens when X; Layer is an abstraction boundary, the functions that form its surface; Type is a data structure and what mutates it. VARIANTS (the VariantArray derive) lists them for the front ends. The enum has no string form of its own: each boundary words it.
 
 step xu8zxp
 order 5

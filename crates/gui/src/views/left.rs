@@ -198,7 +198,7 @@ pub(super) fn paths_window(model: &Model, frame: &mut Frame<'_>) {
             if filter.is_empty() {
                 "no paths yet".to_owned()
             } else {
-                format!("no path name matches '{filter}'")
+                format!("no path name, step symbol or step file matches '{filter}'")
             },
             WEAK,
         );
@@ -241,6 +241,8 @@ pub(super) fn paths_window(model: &Model, frame: &mut Frame<'_>) {
                 if path_row(model, frame, slot, &diffs, &pad, columns) == Chosen::Chosen {
                     outline(model, frame, slot, &pad);
                     follow_outline(model, frame, scrolled.offset);
+                } else {
+                    found_step_rows(model, frame, slot, &pad);
                 }
             }
         }
@@ -259,6 +261,32 @@ pub(super) fn paths_window(model: &Model, frame: &mut Frame<'_>) {
         );
     }
     frame.finish();
+}
+
+fn found_step_rows(model: &Model, frame: &mut Frame<'_>, path: PathSlot, pad: &Label) {
+    let pad = pad.as_str();
+    for numbered in model.found_steps(path) {
+        let key = StepKey {
+            path,
+            step: numbered.step,
+        };
+        let Some(step) = model.step(key) else {
+            continue;
+        };
+        let name = step.symbol().map_or("(lines)", SymbolName::as_str);
+        let file = step.file().as_str().rsplit('/').next().unwrap_or("");
+        let line = format!("{pad}  {}  {name}", numbered.number.as_str());
+        let color = if step.is_stale() { RED } else { WEAK };
+        let runs = vec![Run::new(line, color), Run::new(format!("  {file}"), FAINT)];
+        let id = ids::FOUND_STEP.with(&Label::new(format!(
+            "{}:{}",
+            path.get(),
+            numbered.step.get()
+        )));
+        if frame.row(runs, id, Chosen::Plain).clicked() {
+            frame.push(Action::SelectStep(key, Scrolling::Scroll));
+        }
+    }
 }
 
 fn outline(model: &Model, frame: &mut Frame<'_>, path: PathSlot, pad: &Label) {

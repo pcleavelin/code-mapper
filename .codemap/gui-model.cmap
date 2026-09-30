@@ -171,7 +171,7 @@ parent 8ftts9
 author ai
 file crates/gui/src/model.rs
 symbol impl Model
-lines 67 81
+lines 102 116
 hash 38073dd51f7f9c09
 note Name to slot and StepId to slot: how a slot is found again after the map changed.
 

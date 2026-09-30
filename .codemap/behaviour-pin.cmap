@@ -481,8 +481,8 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol panels
-lines 0 88
-hash 4293415277ca4c91
+lines 0 100
+hash a8533df344f2f080
 note The side panels and command line: the symbol list and its filter, the file tree and a folder toggle, the paths list, search and a hit, commands typed into the command line (with a bad one and clear), a new path from the Paths tab's form, an 'add step' from the listing, and ctrl-s to save.
 
 step rlmca4

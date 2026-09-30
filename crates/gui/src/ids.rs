@@ -102,6 +102,7 @@ pub(crate) const GROUP_ROW: Control = Control::new(Feature::OpenGroup, Element::
 pub(crate) const OUTLINE_ROW: Control = Control::new(Feature::SelectStep, Element::new("outline"));
 pub(crate) const STEP_HEADER: Control = Control::new(Feature::SelectStep, Element::new("step"));
 pub(crate) const CRUMB: Control = Control::new(Feature::SelectStep, Element::new("crumb"));
+pub(crate) const FOUND_STEP: Control = Control::new(Feature::SelectStep, Element::new("found"));
 pub(crate) const SYMBOL_ROW: Control = Control::new(Feature::FilterSymbols, Element::new("sym"));
 pub(crate) const SYMBOL_FILE_ROW: Control =
     Control::new(Feature::BrowseFiles, Element::new("symfile"));
@@ -184,6 +185,7 @@ pub(crate) const CONTROLS: &[Control] = &[
     OUTLINE_ROW,
     STEP_HEADER,
     CRUMB,
+    FOUND_STEP,
     SYMBOL_ROW,
     SYMBOL_FILE_ROW,
     DIRECTORY_ROW,

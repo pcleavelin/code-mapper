@@ -79,8 +79,8 @@ order 8
 author ai
 file crates/gui/src/views/left.rs
 symbol paths_window
-lines 0 86
-hash ea9801e43780b845
+lines 0 88
+hash 5b267d6b54877d31
 link reader-gui
 note The Paths tab walks the same rows, narrowed to the paths the filter field lists (feature-filter-paths), skipping everything under a closed group.
 

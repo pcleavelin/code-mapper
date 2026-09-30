@@ -454,12 +454,47 @@ impl Model {
         Count::new(self.path(path).map_or(0, |found| found.steps().len()))
     }
 
+    fn path_filter(&self) -> Needle {
+        Needle::new(self.fields.get(Which::PathFilter).text().as_str())
+    }
+
     pub(crate) fn lists(&self, name: &PathName) -> bool {
-        Needle::new(self.fields.get(Which::PathFilter).text().as_str()).found_in(name.as_str())
+        self.path_filter().found_in(name.as_str())
+    }
+
+    fn step_found(needle: &Needle, step: &Step) -> bool {
+        step.symbol()
+            .is_some_and(|symbol| needle.found_in(symbol.as_str()))
+            || needle.found_in(step.file().as_str())
     }
 
     pub(crate) fn listed_rows(&self) -> Vec<Row> {
-        self.map.rows_where(|path| self.lists(path.name()))
+        let needle = self.path_filter();
+        self.map.rows_where(|path| {
+            needle.found_in(path.name().as_str())
+                || path
+                    .steps()
+                    .iter()
+                    .any(|step| Self::step_found(&needle, step))
+        })
+    }
+
+    pub(crate) fn found_steps(&self, slot: PathSlot) -> Vec<Numbered> {
+        let needle = self.path_filter();
+        let Some(path) = self.path(slot) else {
+            return Vec::new();
+        };
+        if needle.is_empty() || needle.found_in(path.name().as_str()) {
+            return Vec::new();
+        }
+        self.numbered(slot)
+            .into_iter()
+            .filter(|numbered| {
+                path.steps()
+                    .get(numbered.step.get())
+                    .is_some_and(|step| Self::step_found(&needle, step))
+            })
+            .collect()
     }
 
     pub(crate) fn find_path(&self, name: &PathName) -> Option<PathSlot> {
