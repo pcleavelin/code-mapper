@@ -489,7 +489,10 @@ impl Model {
         if self.nav.step.is_some() {
             return;
         }
-        if !matches!(self.nav.tab, Tab::Graph | Tab::Tour) {
+        if !matches!(
+            self.nav.tab,
+            Tab::Graph | Tab::Tour | Tab::Types | Tab::Data | Tab::Sequence | Tab::Atlas
+        ) {
             self.nav.show(Tab::Source);
         } else if let Some(tour) = self.nav.tour {
             let name = self.index.symbol(symbol).map(|found| found.name().clone());

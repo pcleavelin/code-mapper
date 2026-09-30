@@ -313,3 +313,49 @@ pub(crate) fn picker() -> Id {
 pub(crate) fn palette_box() -> Id {
     Id::new("palette-box")
 }
+
+pub(crate) const SEQUENCE_UNIT: Control =
+    Control::new(Feature::TurnGraph, Element::new("seq-unit"));
+pub(crate) const SEQUENCE_LINKS: Control =
+    Control::new(Feature::InlineLink, Element::new("seq-links"));
+pub(crate) const SEQUENCE_HEADER: Control =
+    Control::new(Feature::SelectStep, Element::new("seq-head"));
+pub(crate) const SEQUENCE_ROW: Control = Control::new(Feature::SelectStep, Element::new("seq"));
+pub(crate) const ATLAS_ORDER: Control =
+    Control::new(Feature::OpenTour, Element::new("atlas-order"));
+pub(crate) const ATLAS_HEADER: Control =
+    Control::new(Feature::OpenTour, Element::new("atlas-head"));
+pub(crate) const ATLAS_ROW: Control = Control::new(Feature::OpenTour, Element::new("atlas"));
+
+pub(crate) fn sequence() -> Id {
+    Id::new("sequence")
+}
+
+pub(crate) fn atlas() -> Id {
+    Id::new("atlasview")
+}
+
+pub(crate) const SEQUENCE_CALLS: Control =
+    Control::new(Feature::TurnGraph, Element::new("seq-calls"));
+pub(crate) const SEQUENCE_FOLD: Control =
+    Control::new(Feature::InlineLink, Element::new("seq-fold"));
+pub(crate) const SEQUENCE_ALONE: Control =
+    Control::new(Feature::OpenTour, Element::new("seq-alone"));
+pub(crate) const TYPES_CANVAS: Control =
+    Control::new(Feature::SelectStep, Element::new("types-canvas"));
+pub(crate) const TYPES_ROW: Control = Control::new(Feature::SelectStep, Element::new("tfn"));
+pub(crate) const TYPES_CHIP: Control = Control::new(Feature::SelectStep, Element::new("tchip"));
+pub(crate) const DATA_ROW: Control = Control::new(Feature::SelectStep, Element::new("data"));
+pub(crate) const DATA_HEADER: Control =
+    Control::new(Feature::SelectStep, Element::new("data-head"));
+pub(crate) const DATA_SHARED: Control =
+    Control::new(Feature::SelectStep, Element::new("data-shared"));
+
+pub(crate) fn types() -> Id {
+    Id::new("typesview")
+}
+
+pub(crate) fn data() -> Id {
+    Id::new("dataview")
+}
+pub(crate) const TYPES_TRAIL: Control = Control::new(Feature::SelectStep, Element::new("ttrail"));

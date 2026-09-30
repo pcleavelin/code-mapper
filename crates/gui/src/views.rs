@@ -1,13 +1,17 @@
+mod atlas;
 mod authoring;
 mod bars;
 mod center;
 mod console;
+mod dataflow;
 mod document;
 mod left;
 mod palette;
 mod panel_tree;
 mod references;
+mod sequence;
 mod tooltip;
+mod types;
 
 use crate::graph::GraphFrame;
 use crate::model::Model;

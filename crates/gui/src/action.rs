@@ -88,6 +88,10 @@ pub(crate) enum Action {
     WalkWhenIdle(Walk),
     GraphWalk(Heading),
     Graph(GraphAction),
+    Sequence(crate::sequence::SequenceAction),
+    Atlas(crate::atlas::AtlasAction),
+    Types(crate::types::TypesAction),
+    Data(crate::dataflow::DataAction),
 }
 
 impl App {
@@ -190,6 +194,10 @@ impl App {
             }
             Action::GraphWalk(heading) => self.graph_walk(heading),
             Action::Graph(action) => model.graph.apply(action),
+            Action::Sequence(action) => model.sequence.apply(action),
+            Action::Atlas(action) => model.atlas.apply(action),
+            Action::Types(action) => model.types.apply(action),
+            Action::Data(action) => model.data.apply(action),
         }
     }
 
