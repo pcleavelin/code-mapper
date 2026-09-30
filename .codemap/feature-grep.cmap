@@ -3,7 +3,7 @@ path feature-grep
 kind flow
 author ai
 group features/cli
-note grep <regex>: a Rust regex over every line the index holds in memory, printed as file:line: text. The agent reaches for it to find code it cannot yet name a symbol for (design.md section 1: browsing grep). The regex is compiled in the query arm first, so a bad pattern is an error before anything is scanned. It reads the same files the index walked, so ignored and non-indexed files are not searched.
+note grep <regex>: a Rust regex over every line the index holds in memory, printed as file:line: text. The agent reaches for it to find code it cannot yet name a symbol for (browsing grep). The regex is compiled in the query arm first, so a bad pattern is an error before anything is scanned. It reads the same files the index walked, so ignored and non-indexed files are not searched.
 
 step 5ez356
 order 1

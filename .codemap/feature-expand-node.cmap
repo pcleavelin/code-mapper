@@ -3,7 +3,7 @@ path feature-expand-node
 kind flow
 author ai
 group features/gui
-note Each graph node's header has 'callees > n' and 'n < callers' buttons, where n counts the calls not already on the canvas. The reader reaches for it to see a node's callers or callees on the canvas instead of leaving the graph for Xrefs (design.md section 6, the graph). Pressed, the node's callees hang to its right or its callers to its left as off-path nodes, drawn distinctly, with grey edges; a revealed symbol that is also a step stays one node with an extra edge. The button then reads 'hide n callees' or 'hide n callers' and removes what it revealed. The node pressed stays where it is on screen while the layout changes around it, and a node the user had dragged returns to the automatic layout.
+note Each graph node's header has 'callees > n' and 'n < callers' buttons, where n counts the calls not already on the canvas. The reader reaches for it to see a node's callers or callees on the canvas instead of leaving the graph for Xrefs. Pressed, the node's callees hang to its right or its callers to its left as off-path nodes, drawn distinctly, with grey edges; a revealed symbol that is also a step stays one node with an extra edge. The button then reads 'hide n callees' or 'hide n callers' and removes what it revealed. The node pressed stays where it is on screen while the layout changes around it, and a node the user had dragged returns to the automatic layout.
 
 step 485fnx
 order 3

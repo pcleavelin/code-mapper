@@ -3,7 +3,7 @@ path feature-files
 kind flow
 author ai
 group features/cli
-note files [filter]: every indexed file, one per line with its line and symbol count. The agent reaches for it to see what the index holds, text files with no symbols included, without leaving the tool for `ls` (design.md section 1: browsing files). The filter is a plain substring of the relative path, not a regex. A file with 0 symbols is text the index holds but no backend parsed into symbols; show and grep still read it.
+note files [filter]: every indexed file, one per line with its line and symbol count. The agent reaches for it to see what the index holds, text files with no symbols included, without leaving the tool for `ls` (browsing files). The filter is a plain substring of the relative path, not a regex. A file with 0 symbols is text the index holds but no backend parsed into symbols; show and grep still read it.
 
 step ktf7mb
 order 1

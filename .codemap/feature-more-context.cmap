@@ -3,7 +3,7 @@ path feature-more-context
 kind flow
 author ai
 group features/gui
-note Above and below a step's code sit buttons that show ten more lines of the file on that side each press, the way a diff hunk expands; once anything beyond the slice shows, the slice is highlighted and a 'no context' button in the header goes back to the slice alone. The reader reaches for it to check what surrounds a step's slice without opening the whole file in the Listing (design.md section 6, the document). The top button disappears at the file's first line and the bottom one at its last. Per step, for the session.
+note Above and below a step's code sit buttons that show ten more lines of the file on that side each press, the way a diff hunk expands; once anything beyond the slice shows, the slice is highlighted and a 'no context' button in the header goes back to the slice alone. The reader reaches for it to check what surrounds a step's slice without opening the whole file in the Listing. The top button disappears at the file's first line and the bottom one at its last. Per step, for the session.
 
 step 27qy6o
 order 1

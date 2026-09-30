@@ -1,6 +1,6 @@
 ---
 name: fix-bug
-description: Fix behaviour that differs from what the owner, design.md, or a feature's summary says it should be. Use for every bug report, including the items in TODO.md.
+description: Fix behaviour that differs from what the owner, CLAUDE.md, or a feature's summary says it should be. Use for every bug report, including the items in TODO.md.
 ---
 
 # Fix a bug

@@ -3,7 +3,7 @@ path feature-paths
 kind flow
 author ai
 group features/cli
-note paths [name]: the map as an outline. The agent reaches for it before touching code, so it neither duplicates nor misses a path that already names the area (design.md section 5). Without a name, every path in paths-list order, each group announced by a '== group' header line, then the path's row (name, kind, author, step count, note) and its steps in tree order, indented by depth. With a name, only that path and no group header. Each step row carries its index in square brackets, which is the number every step-editing command takes, a leading ! when the step is stale, (ai) for agent-authored steps and an arrow for a link. This is the agent's first command in an area: it shows what is already named before any code is read.
+note paths [name]: the map as an outline. The agent reaches for it before touching code, so it neither duplicates nor misses a path that already names the area. Without a name, every path in paths-list order, each group announced by a '== group' header line, then the path's row (name, kind, author, step count, note) and its steps in tree order, indented by depth. With a name, only that path and no group header. Each step row carries its index in square brackets, which is the number every step-editing command takes, a leading ! when the step is stale, (ai) for agent-authored steps and an arrow for a link. This is the agent's first command in an area: it shows what is already named before any code is read.
 
 step 3v5t8t
 order 3

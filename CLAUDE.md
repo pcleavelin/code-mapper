@@ -1,6 +1,26 @@
 # codemap
 
-Read `design.md` first. It is the source of truth for what this tool is and why.
+The developer no longer writes the code; an AI does. The developer still has to understand
+it: the workflows, the abstraction layers, the data structures. That understanding used to
+be a side effect of writing the code, and it disappears when the writing is delegated.
+codemap moves the building of that mental model from the human to the tool: the AI writes
+the map as a side effect of writing the code, and the human reads the map instead of the
+diff.
+
+- **The agent** writes code and, in the same session, the map: which paths the change
+  touched, what the new code is for, how the pieces relate. Its interface is the CLI.
+- **The human** reads the map, browses the codebase through the same tool (files, grep,
+  symbols, xrefs), and builds paths by hand where code is shown. Its interface is the GUI.
+
+Goals: understanding an unfamiliar codebase, or a change you did not write, takes less
+friction through codemap than through an editor with an LSP; the map is a second channel
+beside the source, prose about workflows that overlap in the code they touch, grepped the way
+source is; code no path covers is visible, so the human can audit what the agent mapped; a
+small, snappy native app.
+
+Never: editing source from codemap (it reads code, it does not write it), any web or remote
+surface, multi-root or workspaces. What is planned or deferred, and what would pull a
+deferred item in, is in `TODO.md`.
 
 Every change ends with the `finish` skill. The Stop hook runs `cargo xtask gate` and keeps the
 session going until it is green, and commits are refused while it is red; each failure says
@@ -30,12 +50,74 @@ rule applies.
 4. **Types carry meaning.** Every value that means something has its own type, even when it
    is one integer. Data cannot be handed to a parameter that was not shaped for it.
 5. **One description.** Each concept has one name in code, CLI, GUI and docs, and each kind of
-   knowledge has one home.
+   knowledge has one home: what a feature does and why is the note of its `feature-<name>`
+   path, what a layer or type is for is its path's note, the vocabulary and the reasons
+   behind the design are below.
 6. **Every test can fail.** A test names a mistake in the code it would catch. One whose
    expected value comes from the code under test, or that asserts what a type already
    guarantees, passes on every implementation and is deleted.
 7. **Nothing is done until the gate is green.** The rules are enforced after every agent
    turn and before every commit.
+
+## Concepts
+
+| Term | Meaning |
+|---|---|
+| **Symbol** | A top-level declaration, plus one level of members of impl / mod / trait / class bodies. Name, kind, inclusive line range, depth 0 or 1. |
+| **Xref** | Symbol A calls or references symbol B. Xrefs to a symbol are its callers, xrefs from it its callees. |
+| **Anchor** | A pinned slice of lines in one file, stored relative to the innermost enclosing symbol (absolute when none), so it follows the symbol when code above it moves. Carries a hash of its text; when the hash no longer matches, it is **stale**. |
+| **Path** | A named tree of anchors (**steps**) with a kind, a group, a note, an author, and a note per step. The one unit of the mental model. Siblings show in the order the parent's code names them. |
+| **Link** | A step naming another path that documents what its lines call (shared code, or a queue another process reads). The step stays at the call site; the linked path is read instead of copying its steps. |
+| **Group** | Where a path sits in the paths list, `/` nesting (`flows/http`). Orders the list, changes nothing else. |
+| **Kind** | `flow`: what happens when X. `layer`: an abstraction boundary and the functions forming its surface (a module is a layer rooted at its file). `type`: a data structure and what mutates it. A tag only. |
+| **Coverage** | A symbol is covered when a step's anchor overlaps it. Derived, never stored. |
+| **Map** | All paths for one root: `.codemap/`, one text file per path, committed with the code. The only thing persisted (the manual layer). Everything derived from source (files, symbols, xrefs, roots, call trees, coverage) is the auto layer, cached in `.codemap-cache`, never committed. |
+
+A path note describes the workflow as a whole; a step note says what the step does for this
+path. What is true of the code in every path goes in the note of the `layer` or `type` path
+covering it: the code has no comments, so the map is the only prose about it.
+
+## Why it is built this way
+
+- **The map merges.** One file per path, groups a field rather than directories or name
+  prefixes, step ids a hash of what the step first pinned and never changed, steps written in
+  id order, a stored `order` only `path-swap` changes, no counts in the file: two branches that
+  change different paths touch different files, two that change one path touch different
+  lines. The format has no version compatibility; the reader rejects any version it does not
+  write and an old map is regenerated.
+- **Nothing re-anchors on load.** The agent that changed the code has the diff and re-pins
+  (`stale`, `repin`, `path-pin`); the human never does. `repin` aligns the old slice against
+  each symbol of the step's name with a patience diff and pins only when half the lines
+  survive; it never vouches for a note.
+- **One backend per language.** The language's server when on PATH, else a tree-sitter
+  resolver written for that language. No language-agnostic resolver: its rules would be
+  nobody's.
+- **Index only what is asked.** `references` and `incomingCalls` are a search of the whole
+  workspace each, so they are asked for one symbol when wanted, never while indexing. The CLI
+  asks the server only about the files a command touches. The GUI merges server answers
+  about once a second, since a merge re-resolves the map and drops every drawn grid.
+- **Links go through a step**, not text in a note, so they are checked, renamed with their
+  path, and expanded. A path that is linked to cannot be removed.
+- **Roots are strictly "no callers"; `promote` defaults to depth 1**, a scaffold the agent
+  trims. **Coverage is observable, never a `check` failure.** **No review state on paths.**
+- **The GUI is one selection** (a symbol, with a step behind it when reached through a path);
+  every view shows it, and the document, outline and graph are three views of one thing that
+  never disagree. The graph is derived (the selection plus an ordered list of expansions) and
+  its camera moves only on explicit navigation.
+- **The UI is its own library** (`crates/ui`, in the shape of odin_editor's): elements opened
+  and closed each frame, layout once at frame end, input answered from the previous frame's
+  rectangles, one monospace font at whole-pixel sizes in one atlas, icons as Codicons glyphs.
+
+## Crates
+
+`domain` (the model, no I/O), `io-*` (one crate per outside format or program: `io-map`
+`.codemap/`, `io-cache`, `io-layout`, `io-vcs` jj or git, `io-lsp`, `io-source`, `io-process`,
+`io-store`), `index` (tree-sitter resolvers, server orchestration), `features` (every function
+a user can reach; CLI commands and help, GUI buttons and keys are built from it), `cli` (text
+commands, also the GUI's Output view), `ui` (the element tree), `platform` (wgpu, fonts,
+winit, the script runner), `gui`, `codemap` (the binary and integration tests), `xtask` (the
+gate). The allowed edges are in `xtask/src/arch.rs`. `cli` and `gui` are two front ends over
+one `Index` and `Map`; anything that mutates the map is a method of `Map`.
 
 ## Explore codebases through codemap, not grep
 
@@ -57,7 +139,9 @@ target/release/codemap <root> <command> [args]
 
 `codemap help` prints the full command list. A save writes only the paths its command
 changed, so sessions working on different paths at once keep each other's work; on one path
-the last writer wins.
+the last writer wins. The same contract belongs in the `CLAUDE.md` of every mapped repo, with
+the map upkeep the `finish` skill does here: `stale`, `repin`, every new non-trivial symbol
+into a path, `check` clean.
 
 ## Indexing
 

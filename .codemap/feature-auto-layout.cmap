@@ -3,7 +3,7 @@ path feature-auto-layout
 kind flow
 author ai
 group features/gui
-note The Graph tab's 'auto layout' button drops every position the user set by dragging nodes, so the whole graph goes back to the computed layout. The reader reaches for it after dragging nodes around, to get the computed layout back instead of undoing each drag (design.md section 6, the graph). Expansions, context and the camera stay.
+note The Graph tab's 'auto layout' button drops every position the user set by dragging nodes, so the whole graph goes back to the computed layout. The reader reaches for it after dragging nodes around, to get the computed layout back instead of undoing each drag. Expansions, context and the camera stay.
 
 step 23x47j
 order 0

@@ -3,7 +3,7 @@ path feature-index
 kind flow
 author ai
 group features/cli
-note index [filter]: ask the language servers now for every pending file whose path contains the filter, e.g. a crate about to be mapped, instead of letting each later command ask for the files it touches. The agent reaches for it before mapping a crate, so the language servers' cold start is paid once instead of on every later command (design.md section 11: cold runs are the bottleneck of an agent session). Refused in the GUI, whose own threads index in the background. Reports how many files were asked for and how many in the repo still wait.
+note index [filter]: ask the language servers now for every pending file whose path contains the filter, e.g. a crate about to be mapped, instead of letting each later command ask for the files it touches. The agent reaches for it before mapping a crate, so the language servers' cold start is paid once instead of on every later command (cold runs are the bottleneck of an agent session). Refused in the GUI, whose own threads index in the background. Reports how many files were asked for and how many in the repo still wait.
 
 step 1mfjaj
 order 0

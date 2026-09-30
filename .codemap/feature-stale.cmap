@@ -3,7 +3,7 @@ path feature-stale
 kind flow
 author ai
 group features/cli
-note stale: list every step whose text no longer matches its pinned hash, or whose file or symbol is gone, and every link to a path that does not exist. The agent needs it to learn which steps an edit invalidated, which the agent contract requires re-pinning before a commit (design.md section 5). No arguments. Nothing is computed here: every anchor was re-resolved against the index when the map loaded (main runs resolve_all before any command), so this command only reads each step's stale flag. Each stale step comes with a hint that can be pasted as-is: a path-pin to the place its exact text moved to, or, when its symbol is gone from its file, a path-pin per symbol of that name anywhere. The hints are guesses for the agent to check, not fixes; repin does the text-following work.
+note stale: list every step whose text no longer matches its pinned hash, or whose file or symbol is gone, and every link to a path that does not exist. The agent needs it to learn which steps an edit invalidated, which the agent contract requires re-pinning before a commit. No arguments. Nothing is computed here: every anchor was re-resolved against the index when the map loaded (main runs resolve_all before any command), so this command only reads each step's stale flag. Each stale step comes with a hint that can be pasted as-is: a path-pin to the place its exact text moved to, or, when its symbol is gone from its file, a path-pin per symbol of that name anywhere. The hints are guesses for the agent to check, not fixes; repin does the text-following work.
 
 step 0b7cgq
 order 7

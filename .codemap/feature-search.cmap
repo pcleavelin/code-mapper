@@ -3,7 +3,7 @@ path feature-search
 kind flow
 author ai
 group features/gui
-note Type a regex in the search field at the left of the top bar and press enter: every line of every indexed file is matched, up to 5000 hits (when there were more, the Results tab reads '5000+' and the view and the status bar say the list was cut), and the centre switches to the Results tab listing the hits under a row per file, each with its line number and the line's text. The reader reaches for it to find text anywhere in the repo, not only in what a path covers, without switching to an editor (design.md sections 2 and 6). The status bar gives the count. Clicking a hit opens its file in the Listing at that line; clicking a file row opens the file. A bad regex is refused in the status bar with the parser's last line. The field keeps its text, selected, so typing replaces it.
+note Type a regex in the search field at the left of the top bar and press enter: every line of every indexed file is matched, up to 5000 hits (when there were more, the Results tab reads '5000+' and the view and the status bar say the list was cut), and the centre switches to the Results tab listing the hits under a row per file, each with its line number and the line's text. The reader reaches for it to find text anywhere in the repo, not only in what a path covers, without switching to an editor. The status bar gives the count. Clicking a hit opens its file in the Listing at that line; clicking a file row opens the file. A bad regex is refused in the status bar with the parser's last line. The field keeps its text, selected, so typing replaces it.
 
 step 5etsxq
 order 1

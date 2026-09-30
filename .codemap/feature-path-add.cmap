@@ -3,7 +3,7 @@ path feature-path-add
 kind flow
 author ai
 group features/cli
-note path-add <name> <sym|file start end> [under]: add one step to a path. The agent needs it to put a new non-trivial symbol into an existing path, as the agent contract requires (design.md section 5). A lone target is a symbol name and the step covers the whole symbol; a file with a start and end (1-based, inclusive) pins that line range. under is the index of the parent step as paths prints it, -1 for a root step; without it the step goes under the last step in the list, so consecutive adds build a chain. The step is recorded with the caller's author (ai from the CLI). In a flow the command also says when the parent does not call the new step, because a flow is meant to read as a call tree and the tool does not enforce that any other way.
+note path-add <name> <sym|file start end> [under]: add one step to a path. The agent needs it to put a new non-trivial symbol into an existing path, as the agent contract requires. A lone target is a symbol name and the step covers the whole symbol; a file with a start and end (1-based, inclusive) pins that line range. under is the index of the parent step as paths prints it, -1 for a root step; without it the step goes under the last step in the list, so consecutive adds build a chain. The step is recorded with the caller's author (ai from the CLI). In a flow the command also says when the parent does not call the new step, because a flow is meant to read as a call tree and the tool does not enforce that any other way.
 
 step 7efzty
 order 11

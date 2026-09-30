@@ -3,7 +3,7 @@ path feature-show-graph
 kind flow
 author ai
 group features/gui
-note The document toolbar's 'graph' button switches the centre to the Graph tab with the path being read drawn as a tree, left to right unless the reader turned it top to bottom. The reader reaches for it to see the path being read as a call tree instead of a linear document (design.md section 6, the graph). The same happens from the Graph tab button, which only switches the tab; this button also selects the path first when it is not the one being read, which from the document it always is.
+note The document toolbar's 'graph' button switches the centre to the Graph tab with the path being read drawn as a tree, left to right unless the reader turned it top to bottom. The reader reaches for it to see the path being read as a call tree instead of a linear document. The same happens from the Graph tab button, which only switches the tab; this button also selects the path first when it is not the one being read, which from the document it always is.
 
 step 1qheqh
 order 3

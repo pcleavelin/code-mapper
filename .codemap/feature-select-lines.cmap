@@ -3,7 +3,7 @@ path feature-select-lines
 kind flow
 author ai
 group features/gui
-note In the Listing, click a line to select it and shift-click another to extend the selection from the first; the selected lines are highlighted. The reader needs it to say which lines a hand-built step pins, since 'add step' adds the selected lines (design.md section 6, authoring). A ctrl-, alt- or double-click is a definition gesture, not a selection. The selection is what the Listing's 'add step' adds and what back and forward remember.
+note In the Listing, click a line to select it and shift-click another to extend the selection from the first; the selected lines are highlighted. The reader needs it to say which lines a hand-built step pins, since 'add step' adds the selected lines. A ctrl-, alt- or double-click is a definition gesture, not a selection. The selection is what the Listing's 'add step' adds and what back and forward remember.
 
 step laekhp
 order 2

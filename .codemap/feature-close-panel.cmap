@@ -3,7 +3,7 @@ path feature-close-panel
 kind flow
 author ai
 group features/gui
-note The close icon in a panel's header closes that panel: its neighbour in the split takes the whole of the split's room. The reader reaches for it to get the room of a panel back; without it a split could never be undone (design.md section 6, panel header). The views it held are hidden until picked again or revealed by navigation. The button is not shown when one panel fills the window.
+note The close icon in a panel's header closes that panel: its neighbour in the split takes the whole of the split's room. The reader reaches for it to get the room of a panel back; without it a split could never be undone. The views it held are hidden until picked again or revealed by navigation. The button is not shown when one panel fills the window.
 
 step 7ujof2
 order 1

@@ -3,7 +3,7 @@ path feature-filter-paths
 kind flow
 author ai
 group features/gui
-note Type in the filter field at the top of the Paths tab to narrow the list to paths whose name contains the text, case-insensitively; every keystroke re-filters and scrolls the list to its top, and the toolbar shows how many of all the paths match. The reader reaches for it to find one path by name in a large map without scrolling the whole list (design.md section 6, Paths). A group shows only when a path under it matches, its count is the number of matching paths, and every group is open while the filter holds text (clicks on group rows do nothing then). Removed paths from the map diff are filtered the same way. Clearing the field restores the full list with each group's openness as it was.
+note Type in the filter field at the top of the Paths tab to narrow the list to paths whose name contains the text, case-insensitively; every keystroke re-filters and scrolls the list to its top, and the toolbar shows how many of all the paths match. The reader reaches for it to find one path by name in a large map without scrolling the whole list. A group shows only when a path under it matches, its count is the number of matching paths, and every group is open while the filter holds text (clicks on group rows do nothing then). Removed paths from the map diff are filtered the same way. Clearing the field restores the full list with each group's openness as it was.
 
 step 4tvhu1
 order 1

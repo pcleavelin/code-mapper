@@ -3,7 +3,7 @@ path feature-roots
 kind flow
 author ai
 group features/cli
-note roots [n]: entry points, the symbols that call something and that nothing calls, biggest first, the first n of them (default 30). The agent reaches for it for a place to start reading an unfamiliar codebase instead of guessing an entry point (design.md section 2: understanding an unfamiliar codebase). Where to start reading an unknown repo. With only tree-sitter xrefs a symbol called through a trait or a closure can look like a root.
+note roots [n]: entry points, the symbols that call something and that nothing calls, biggest first, the first n of them (default 30). The agent reaches for it for a place to start reading an unfamiliar codebase instead of guessing an entry point (understanding an unfamiliar codebase). Where to start reading an unknown repo. With only tree-sitter xrefs a symbol called through a trait or a closure can look like a root.
 
 step jg0w76
 order 1

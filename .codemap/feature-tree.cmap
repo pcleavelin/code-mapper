@@ -3,7 +3,7 @@ path feature-tree
 kind flow
 author ai
 group features/cli
-note tree <symbol> [depth]: the call tree below a symbol, depth levels deep (default 4), one symbol per line indented by depth. The agent reaches for it to see a workflow's shape several calls deep at once instead of chaining callees by hand (design.md section 5). The tree reaches files one level at a time, so indexing repeats until no newly reached file is pending: each round's server answers can add callees in files the previous round did not see.
+note tree <symbol> [depth]: the call tree below a symbol, depth levels deep (default 4), one symbol per line indented by depth. The agent reaches for it to see a workflow's shape several calls deep at once instead of chaining callees by hand. The tree reaches files one level at a time, so indexing repeats until no newly reached file is pending: each round's server answers can add callees in files the previous round did not see.
 
 step 7q4gy0
 order 0

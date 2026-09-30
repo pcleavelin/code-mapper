@@ -3,7 +3,7 @@ path feature-check
 kind flow
 author ai
 group features/cli
-note check: the gate. The gate needs one pass or fail answer, so a hook can refuse a commit while the map is stale (design.md section 5). Prints the same listing as stale and then 'ok' when nothing is stale and no link is broken; otherwise ends with an error naming the counts and the process exits 2. No arguments. The CLAUDE.md contract requires it to pass before a commit, and the exit code is what makes it usable from a hook. A map with a merge conflict in it never gets this far: the load itself refuses it.
+note check: the gate. The gate needs one pass or fail answer, so a hook can refuse a commit while the map is stale. Prints the same listing as stale and then 'ok' when nothing is stale and no link is broken; otherwise ends with an error naming the counts and the process exits 2. No arguments. The CLAUDE.md contract requires it to pass before a commit, and the exit code is what makes it usable from a hook. A map with a merge conflict in it never gets this far: the load itself refuses it.
 
 step 3occ1b
 order 2

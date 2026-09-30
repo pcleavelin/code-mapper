@@ -3,7 +3,7 @@ path feature-zoom-graph
 kind flow
 author ai
 group features/gui
-note A trackpad pinch or ctrl+wheel over the graph zooms it around the pointer: the point under the pointer stays under it. The reader reaches for it to shrink a large tree to see its whole shape, or enlarge one area to read it, which 'fit' alone cannot do (design.md section 6, the graph; TODO.md GUI item 2). The zoom changes in proportion to the gesture (a pinch's magnification, or the wheel's pixel delta, one Zoom step per WHEEL_NOTCH pixels), so a trackpad's many small scroll events add up to the same zoom as one mouse notch of the same distance. The zoom is a font size; the toolbar shows it as a percentage. It goes down until the graph font is SMALLEST_GRAPH_FONT (a few pixels, an overview where boxes and edges are legible but text is not) or Zoom::SMALLEST, whichever is larger.
+note A trackpad pinch or ctrl+wheel over the graph zooms it around the pointer: the point under the pointer stays under it. The reader reaches for it to shrink a large tree to see its whole shape, or enlarge one area to read it, which 'fit' alone cannot do (TODO.md GUI item 2). The zoom changes in proportion to the gesture (a pinch's magnification, or the wheel's pixel delta, one Zoom step per WHEEL_NOTCH pixels), so a trackpad's many small scroll events add up to the same zoom as one mouse notch of the same distance. The zoom is a font size; the toolbar shows it as a percentage. It goes down until the graph font is SMALLEST_GRAPH_FONT (a few pixels, an overview where boxes and edges are legible but text is not) or Zoom::SMALLEST, whichever is larger.
 
 step 3tcu6q
 order 3

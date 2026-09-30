@@ -15,8 +15,8 @@ session's first stop with nothing in flight is. This is the order that gets it g
    stop and use the `tripped` skill instead of working around it.
 2. Naming. Spawn one Sonnet subagent with the change (`jj diff --git`) and this brief: for each
    name the diff introduces (types, variants, functions, fields, modules), find how the code
-   already names the same concept (`codemap . refs`, `api/*.api`, the glossary in design.md
-   section 4) and report only real inconsistencies: one concept under two names, one name for
+   already names the same concept (`codemap . refs`, `api/*.api`, the Concepts table in
+   CLAUDE.md) and report only real inconsistencies: one concept under two names, one name for
    two concepts, an abbreviation where the code spells the word out, a name that contradicts
    the glossary. It suggests renames with the reason for each and edits nothing. Apply the
    ones you agree with before the map step (a rename that reaches code outside the diff is a

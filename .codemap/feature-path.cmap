@@ -3,7 +3,7 @@ path feature-path
 kind flow
 author ai
 group features/cli
-note path <name> [--expand]: one path as a document to read top to bottom instead of opening files. The agent reaches for it to read a mapped workflow as one document instead of opening every file its steps point into (design.md section 5). It prints the path's title and note, which other paths link to it, then every step in tree order with its note and its code as numbered lines. Steps are numbered like sections (1, 1.1, 1.2, 2) and a '-- back in <symbol> --' line marks the return to a shallower level, so a long flow reads like a book. With --expand, a step that links to another path is followed by that path's steps inline, numbered under the linking step; a path already open higher up is not expanded again, which keeps a link cycle finite.
+note path <name> [--expand]: one path as a document to read top to bottom instead of opening files. The agent reaches for it to read a mapped workflow as one document instead of opening every file its steps point into. It prints the path's title and note, which other paths link to it, then every step in tree order with its note and its code as numbered lines. Steps are numbered like sections (1, 1.1, 1.2, 2) and a '-- back in <symbol> --' line marks the return to a shallower level, so a long flow reads like a book. With --expand, a step that links to another path is followed by that path's steps inline, numbered under the linking step; a path already open higher up is not expanded again, which keeps a link cycle finite.
 
 step 0el8qw
 order 7

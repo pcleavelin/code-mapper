@@ -3,7 +3,7 @@ path feature-new-path
 kind flow
 author ai
 group features/gui
-note In the Paths tab, press 'new path' beside the filter: a form opens under it with a name field (it takes the keyboard), the three kinds as buttons (flow chosen), and a group field filled with the group of the path being read. The reader reaches for it to start a path while browsing without switching to the CLI (design.md section 1: the human builds paths by hand). Press 'create', or enter in either field: the path is added to the map with that kind and group, authored by the human, and opened empty in the document, which says how to add steps (feature-add-step). The form closes. An empty name keeps the form open and says to type one; an invalid name or one that exists is refused in the status bar. Pressing 'new path' again closes the form.
+note In the Paths tab, press 'new path' beside the filter: a form opens under it with a name field (it takes the keyboard), the three kinds as buttons (flow chosen), and a group field filled with the group of the path being read. The reader reaches for it to start a path while browsing without switching to the CLI (the human builds paths by hand). Press 'create', or enter in either field: the path is added to the map with that kind and group, authored by the human, and opened empty in the document, which says how to add steps (feature-add-step). The form closes. An empty name keeps the form open and says to type one; an invalid name or one that exists is refused in the status bar. Pressing 'new path' again closes the form.
 
 step 1oxroe
 order 11

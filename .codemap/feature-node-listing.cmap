@@ -3,7 +3,7 @@ path feature-node-listing
 kind flow
 author ai
 group features/gui
-note A graph node's 'listing' button opens the node's file in the Listing tab, with the first line of the node's shown range selected and scrolled into view. The reader reaches for it to see a node's whole file with line numbers, since the graph shows only the node's own lines (design.md section 6, the graph and Listing). It leaves the graph; back returns to it.
+note A graph node's 'listing' button opens the node's file in the Listing tab, with the first line of the node's shown range selected and scrolled into view. The reader reaches for it to see a node's whole file with line numbers, since the graph shows only the node's own lines. It leaves the graph; back returns to it.
 
 step 0m2cjy
 order 2

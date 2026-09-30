@@ -3,7 +3,7 @@ path feature-split-panel
 kind flow
 author ai
 group features/gui
-note The split-across and split-down icons in a panel's header split it in two, side by side or one above the other, half each: the panel keeps its views in the first half and the second half is a new empty panel. The reader reaches for it to see two views at once, such as the document beside the graph, instead of one replacing the other (design.md section 6, panel header). The picker opens on the new panel with its search field taking the keyboard, so typing a view's name and pressing enter fills it.
+note The split-across and split-down icons in a panel's header split it in two, side by side or one above the other, half each: the panel keeps its views in the first half and the second half is a new empty panel. The reader reaches for it to see two views at once, such as the document beside the graph, instead of one replacing the other. The picker opens on the new panel with its search field taking the keyboard, so typing a view's name and pressing enter fills it.
 
 step 2rwmch
 order 0

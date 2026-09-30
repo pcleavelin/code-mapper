@@ -36,7 +36,7 @@ not ticked. The CLI list is ordered by what cost the agents the most.
    A "skip symbols under N lines / with more than K callers" filter.
 8. **`grep` has no file scope.**
 9. **Absolute anchors render with an empty symbol slot** in `paths`.
-10. **"Intentionally unmapped" marker** (design.md deferred list): a third of
+10. **"Intentionally unmapped" marker** (Deferred, below): a third of
     memejoin-rs is a dead previous version; `coverage` cannot distinguish explained from
     acknowledged-dead.
 11. **Negative claims and counts are unverifiable from `path` output** ("the only
@@ -85,3 +85,34 @@ Left open after the UX review of 2026-09-21 and the fixes that followed it.
    stop getting frames from the compositor and a script stalls. A private headless compositor
    (weston --backend=headless) with software Vulkan runs them reliably, at about a minute per
    scenario.
+
+## Planned
+
+**Prompts in the code.** The owner leaves a marker comment in a source file where a question
+or a request for the map belongs (`// codemap: why does this retry three times?`). `prompts`
+lists every marker with file:line and text; the agent contract tells a session to answer
+each one in the map (a note, a step, a path) and remove the marker in the same commit; the
+GUI shows the open markers in the listing and counts them in the status bar. Done when: the
+owner writes a question in a comment, the next agent session's map answers it, and the
+marker is gone from the diff.
+
+## Deferred
+
+Each item waits for the trigger beside it. Work on one before its trigger needs the reason
+written here first.
+
+| Item | Trigger |
+|---|---|
+| A daemon holding the server sessions for the CLI | cold CLI runs on changed files are the bottleneck of an agent session |
+| Hand-written resolver for a language | a target repo uses it and has no server |
+| Links in the graph: a linked step expands the linked path's tree from its node | reading a journey across processes in the document is not enough |
+| "Intentionally unmapped" marker on symbols | `uncovered` is mostly things already decided not to matter |
+| Step-level review state | a long path gets one re-pinned step and rereading it all is a cost |
+| Kind-specific rendering | a list of 50 mixed-kind paths is unreadable |
+| Documentation panel for the focused symbol | per language: doc comments first, then external docs |
+| Detachable windows | one window's panel tree is not enough for a real session |
+| Multi-threaded grep | a search takes more than 100 ms |
+| Watch for new / deleted files | restarting for new files annoys |
+| Undo | a mis-click deletes something that took effort to build |
+| MCP server | the CLI is stable and the shell round trip is the bottleneck |
+| More languages | a target repo needs one |

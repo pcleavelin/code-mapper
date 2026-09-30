@@ -3,7 +3,7 @@ path feature-scroll-code
 kind flow
 author ai
 group features/gui
-note Shift+wheel over a code block scrolls it sideways, for lines wider than the view. The reader reaches for it to see the end of a line wider than the panel, since code is shown at full length without wrapping (design.md section 6, the document). The offset is kept per code block, clamped so the text cannot scroll past its end, and a thin mark on the block's left edge shows it is scrolled. In the graph, shift+wheel pans the canvas sideways instead.
+note Shift+wheel over a code block scrolls it sideways, for lines wider than the view. The reader reaches for it to see the end of a line wider than the panel, since code is shown at full length without wrapping. The offset is kept per code block, clamped so the text cannot scroll past its end, and a thin mark on the block's left edge shows it is scrolled. In the graph, shift+wheel pans the canvas sideways instead.
 
 step 7cxi2o
 order 4

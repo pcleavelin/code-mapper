@@ -12,7 +12,8 @@ prototypes that differ in shape, and exactly one survives.
    feature (which surface, which trigger, what they see) or in where it lives in the code
    (which crate, which type owns it), not in naming or detail. Give each a name and two
    lines in the reply: what the user does and sees, and what code it adds or changes. A
-   design that breaks design.md or an axiom in CLAUDE.md is dropped here, with the reason.
+   design that breaks CLAUDE.md (a non-goal, a reason in "Why it is built this way", an
+   axiom) is dropped here, with the reason.
 2. One jj workspace per design, outside the repo (the session's scratch directory or the
    system temp directory), based on the current change:
    `jj workspace add <dir>/proto-<name> --name proto-<name> -r @`.
@@ -31,7 +32,7 @@ prototypes that differ in shape, and exactly one survives.
    what the failures taught, or to the owner if they say the request itself cannot work.
 5. Choose among the survivors, comparing in this order: the behaviour matches the
    restatement; the user's steps (fewer, and triggered the way existing features are);
-   fit with design.md and the axioms (no second way, no new concept where one exists); the
+   fit with CLAUDE.md and the axioms (no second way, no new concept where one exists); the
    size of the code and the number of crates it touches. State the winner in the reply, and
    for every other design the reason it lost.
 6. Keep the winner, scrap the rest. In the repo, `jj restore --from proto-<winner>@` brings

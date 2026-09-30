@@ -3,7 +3,7 @@ path feature-toggle-whole-symbol
 kind flow
 author ai
 group features/gui
-note The 'whole symbol' button on a step header shows the whole enclosing symbol around the step's slice, with the slice highlighted; pressed again ('slice') it shows the slice alone. The reader reaches for it to see a slice inside its enclosing function without opening the file in the Listing (design.md section 6, the document). The button exists only while the step's code is shown and the step is a slice smaller than its symbol. The choice is per step and lasts for the session; it is not saved.
+note The 'whole symbol' button on a step header shows the whole enclosing symbol around the step's slice, with the slice highlighted; pressed again ('slice') it shows the slice alone. The reader reaches for it to see a slice inside its enclosing function without opening the file in the Listing. The button exists only while the step's code is shown and the step is a slice smaller than its symbol. The choice is per step and lasts for the session; it is not saved.
 
 step d5orsx
 order 2

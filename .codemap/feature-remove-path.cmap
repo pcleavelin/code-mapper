@@ -3,7 +3,7 @@ path feature-remove-path
 kind flow
 author ai
 group features/gui
-note The document toolbar's 'delete path' removes the path being read from the map. The reader reaches for it to retire a path while reading the map, without switching to the CLI (design.md section 6: deleting is in the document). The status bar names it and its step count, the document empties, and the map is marked unsaved until it is saved. A path that other paths link to is refused: the status bar names the linking steps and nothing changes.
+note The document toolbar's 'delete path' removes the path being read from the map. The reader reaches for it to retire a path while reading the map, without switching to the CLI (deleting is in the document). The status bar names it and its step count, the document empties, and the map is marked unsaved until it is saved. A path that other paths link to is refused: the status bar names the linking steps and nothing changes.
 
 step 18pcb8
 order 4

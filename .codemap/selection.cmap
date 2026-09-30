@@ -3,7 +3,7 @@ path selection
 kind flow
 author ai
 group gui
-note One selection for the whole app: a symbol, with a step behind it when it was reached through a path. Every view reads the same fields of Nav - the focused symbol, the path being read and the selected step - and none keeps a copy: the graph derives its whole node set from them every frame, and the document and outline read them directly, so they cannot disagree. Nav's fields are private to nav.rs, so every change of selection goes through these functions, called from apply. Two entry points: select_step for anything path-shaped, select_symbol for anything else; select_symbol turns into select_step when the symbol is a whole-symbol step of the path being read, so an xref click onto a step lands on the step.
+note One selection for the whole app: a symbol, with a step behind it when it was reached through a path. Every view reads the same fields of Nav - the focused symbol, the path being read and the selected step - and none keeps a copy: the graph derives its whole node set from them every frame, and the document and outline read them directly, so they cannot disagree. Nav's fields are private to nav.rs, so every change of selection goes through these functions, called from apply. Two entry points: select_step for anything path-shaped, select_symbol for anything else; select_symbol turns into select_step when the symbol is a whole-symbol step of the path being read, so an xref click onto a step lands on the step. Every view shows the selection; with nothing selected every view is empty.
 
 step 0gu816
 order 3

@@ -3,7 +3,7 @@ path feature-jump-to-definition
 kind flow
 author ai
 group features/gui
-note Ctrl-click or double-click an identifier in any code view (document, listing, peek, graph node) to go to its definition. The reader reaches for it to reach a definition without searching for it, as an editor with an LSP allows (design.md sections 2 and 6). A definition that is a symbol in the repo lands on that symbol: the matching step of the path being read when there is one, otherwise the Listing. A definition inside a symbol (a field, a local) opens the Listing on its line. One outside the repo cannot be jumped to and is shown in the peek panel instead, with a status line saying where it is. With a language server the answer arrives a few frames later; without one, the symbol of that name is used; prose files do nothing. No definition found is reported in the status bar.
+note Ctrl-click or double-click an identifier in any code view (document, listing, peek, graph node) to go to its definition. The reader reaches for it to reach a definition without searching for it, as an editor with an LSP allows. A definition that is a symbol in the repo lands on that symbol: the matching step of the path being read when there is one, otherwise the Listing. A definition inside a symbol (a field, a local) opens the Listing on its line. One outside the repo cannot be jumped to and is shown in the peek panel instead, with a status line saying where it is. With a language server the answer arrives a few frames later; without one, the symbol of that name is used; prose files do nothing. No definition found is reported in the status bar.
 
 step 0qrr3m
 order 8

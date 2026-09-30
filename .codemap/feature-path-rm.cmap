@@ -3,7 +3,7 @@ path feature-path-rm
 kind flow
 author ai
 group features/cli
-note path-rm <name> [index]: with an index, delete that one step; its children move up to its parent, and every index after it shifts down by one. The agent needs it so a wrong or obsolete step or path can be removed instead of staying in the map (design.md section 2: the map describes what was built). Without an index, delete the whole path, which is refused while any step in another path links to it, and the error lists each linking step so they can be unlinked first. There is no undo; the map's history is the version control of the repo.
+note path-rm <name> [index]: with an index, delete that one step; its children move up to its parent, and every index after it shifts down by one. The agent needs it so a wrong or obsolete step or path can be removed instead of staying in the map (the map describes what was built). Without an index, delete the whole path, which is refused while any step in another path links to it, and the error lists each linking step so they can be unlinked first. There is no undo; the map's history is the version control of the repo.
 
 step 1cmt9v
 order 2

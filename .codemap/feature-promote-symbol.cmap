@@ -3,7 +3,7 @@ path feature-promote-symbol
 kind flow
 author ai
 group features/gui
-note Under the Xrefs heading, 'new path from it' makes a flow path from the selected symbol: the symbol as the root step and the symbols it calls under it, one level deep, all authored by the human, named after the symbol. The reader reaches for it to scaffold a flow from a symbol instead of adding every step by hand (design.md sections 1 and 7). It is promote from the command line at depth 1. A path of that name already there is extended with whatever of those symbols it does not pin whole. The path opens on the Path tab with its first step selected, and the status gives its name and step count.
+note Under the Xrefs heading, 'new path from it' makes a flow path from the selected symbol: the symbol as the root step and the symbols it calls under it, one level deep, all authored by the human, named after the symbol. The reader reaches for it to scaffold a flow from a symbol instead of adding every step by hand. It is promote from the command line at depth 1. A path of that name already there is extended with whatever of those symbols it does not pin whole. The path opens on the Path tab with its first step selected, and the status gives its name and step count.
 
 step am8c85
 order 2

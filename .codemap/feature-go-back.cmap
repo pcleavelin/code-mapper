@@ -3,7 +3,7 @@ path feature-go-back
 kind flow
 author ai
 group features/gui
-note The back and forward arrow icons in the top bar, alt+left and alt+right, ctrl+left and ctrl+right, and the mouse's back and forward buttons move back and forward through the places visited, the way a browser does: tab, file, selected lines, focused symbol, path and step. The reader reaches for it to return to where a jump, an xref or a search started instead of finding the place again by hand, as an editor with an LSP allows (design.md section 2). Nothing records a place explicitly; the end of every frame compares where the reader is with where they were. The arrow keys with a modifier are left to a focused text field, where they move the caret.
+note The back and forward arrow icons in the top bar, alt+left and alt+right, ctrl+left and ctrl+right, and the mouse's back and forward buttons move back and forward through the places visited, the way a browser does: tab, file, selected lines, focused symbol, path and step. The reader reaches for it to return to where a jump, an xref or a search started instead of finding the place again by hand, as an editor with an LSP allows. Nothing records a place explicitly; the end of every frame compares where the reader is with where they were. The arrow keys with a modifier are left to a focused text field, where they move the caret.
 
 step 1wvo6m
 order 6

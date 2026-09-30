@@ -3,7 +3,7 @@ path feature-peek-definition
 kind flow
 author ai
 group features/gui
-note Alt-click an identifier in any code view to pin its definition at the top of the Xrefs view, above the xrefs, without leaving the place being read. The reader reaches for it to check what an identifier is without losing their place in the step or file being read (design.md section 6, peek). The peek shows the symbol's whole text, or the lines around a definition that is not a symbol's start, or a definition outside the repo read from disk. Its 'go' button goes there (a symbol is focused, a line opens in the Listing; an outside definition has no go), and 'x' closes it. The peek stays until closed or replaced.
+note Alt-click an identifier in any code view to pin its definition at the top of the Xrefs view, above the xrefs, without leaving the place being read. The reader reaches for it to check what an identifier is without losing their place in the step or file being read. The peek shows the symbol's whole text, or the lines around a definition that is not a symbol's start, or a definition outside the repo read from disk. Its 'go' button goes there (a symbol is focused, a line opens in the Listing; an outside definition has no go), and 'x' closes it. The peek stays until closed or replaced.
 
 step 1h923r
 order 1
