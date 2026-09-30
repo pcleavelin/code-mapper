@@ -71,6 +71,13 @@ pub struct Placement {
     pub content: Extent,
 }
 
+impl Placement {
+    pub fn visible_center(self) -> Option<Point> {
+        let center = self.rect.center();
+        self.clip.contains(center).then_some(center)
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
 struct Signals(u8);
 

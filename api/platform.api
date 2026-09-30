@@ -17,6 +17,7 @@ window::pub enum Exit { Stay, Quit, }
 window::pub enum Cursor { Default, ColumnResize, RowResize, Grab, Grabbing, }
 window::pub struct Frame { pub redraw_after: Duration, pub exit: Exit, pub clear: Color, pub cursor: Cursor, pub drawing: DrawList, }
 window::pub trait App
+window::pub enum Visibility { Visible(Point), OutOfView, Absent, }
 window::pub struct Title(String);
 window::pub fn new(text: impl Into<String>) -> Self
 window::pub fn run<Application: App>(title: Title, app: Application) -> Result<(), StartError>

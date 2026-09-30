@@ -101,6 +101,7 @@ pub(crate) fn edit(bin: &Path, name: &str) -> String {
         &["paths", "scratch"],
         &["step-link", "scratch", "1", "startup"],
         &["step-link", "scratch", "1", "nope"],
+        &["step-link", "scratch", "1", ""],
         &["step-link", "scratch", "1", "scratch"],
         &["step-link", "scratch", "9", "startup"],
         &["step-unlink", "scratch", "2"],

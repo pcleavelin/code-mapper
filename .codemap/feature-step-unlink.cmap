@@ -3,7 +3,7 @@ path feature-step-unlink
 kind flow
 author ai
 group features/cli
-note step-unlink <name> <index>: remove the link from one step, so the step reads as a plain step again. The agent reaches for it to undo a wrong link (design.md section 12). Unlike step-link with an empty target, it refuses a step that has no link, so a wrong index shows up as an error instead of silently changing nothing.
+note step-unlink <name> <index>: remove the link from one step, so the step reads as a plain step again. The agent reaches for it to undo a wrong link (design.md section 12). It is the one way to remove a link (step-link refuses an empty target), and it refuses a step that has no link, so a wrong index shows up as an error instead of silently changing nothing.
 
 step 4mzh90
 order 2

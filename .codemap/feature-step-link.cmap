@@ -3,7 +3,7 @@ path feature-step-link
 kind flow
 author ai
 group features/cli
-note step-link <name> <index> <target>: mark one step as the call site of the path named target, so a reader follows the link instead of reading the shared code's steps again in every path that reaches it. The agent needs it so shared code is mapped once in its own path and every path reaching it points there instead of copying its steps (design.md section 12). index is the step index paths prints. An empty target clears the link, the same as step-unlink without its check. The target must exist and cannot be the step's own path; path --expand prints the linked path inline under the step.
+note step-link <name> <index> <target>: mark one step as the call site of the path named target, so a reader follows the link instead of reading the shared code's steps again in every path that reaches it. The agent needs it so shared code is mapped once in its own path and every path reaching it points there instead of copying its steps (design.md section 12). index is the step index paths prints. An empty target is refused: step-unlink is the one way to remove a link. The target must exist and cannot be the step's own path; path --expand prints the linked path inline under the step.
 
 step 92vcw2
 order 3
@@ -61,6 +61,6 @@ order 0
 author ai
 file crates/cli/src/exec.rs
 symbol step_link
-lines 0 19
-hash 40f80718aa33259d
-note Finds the step, checks the target names an existing path (an empty target means no link), sets the link and prints the confirmation.
+lines 0 17
+hash b34a285af178e15c
+note Finds the step, checks the target names an existing path (an empty target is refused, since step-unlink removes links), sets the link and prints the confirmation.

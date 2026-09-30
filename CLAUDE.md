@@ -101,7 +101,9 @@ Never claim a visual or interactive behaviour from reading the code; drive it an
   `open <file> [line]`, `scroll <panel> <n>`, `idle` (waits until every server request is
   answered, merged and re-indexed), `rect <id>` (an element's rectangle by id name),
   `click-id <id> [ctrl|alt|shift]`, `dblclick-id <id>`, `hover-id <id>` (the same gestures
-  aimed at an element's centre), `shot <file.png>`, `dump`. Id names are the ones in
+  aimed at an element's centre, refused when the centre lies outside the part of the screen the
+  element shows in), `absent <id>` (fails only when the element is in view; passes when it is out of view or not drawn), `shot <file.png>`,
+  `dump`. A `script:` line on stderr fails the scenario. Id names are the ones in
   `crates/gui/src/ids.rs`: `name`, `name/<n>` for rows, `name@<key>` (every view's tab
   `tab@<View>`, e.g. `tab@Graph`, `tab@Symbols`; document steps `step/<n>`, `fold/<n>`,
   `hide/<n>`, `whole/<n>`, `del/<n>`, `ctx-a/<n>`, `ctx-b/<n>`; paths list `paths/<n>`,

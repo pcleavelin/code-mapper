@@ -267,8 +267,8 @@ order 21
 author ai
 file crates/cli/src/wire.rs
 symbol impl fmt::Display for Failure
-lines 0 52
-hash 2ca8d4b2464bf08c
+lines 0 54
+hash 59022515dd3e9d90
 note The wording of every Failure. The CLI prints it on stderr, the GUI in its log and status line. An ambiguous symbol lists each candidate's copyable name beside its label; check's failure counts stale steps and broken links.
 
 step rjntgu

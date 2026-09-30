@@ -1158,6 +1158,8 @@ impl fmt::Display for Failure {
                 "no step [{under}] to go under: the path has {steps} steps (-1 = root)"
             ),
             Self::NoLink(position) => write!(formatter, "step [{position}] has no link"),
+            Self::NoLinkTarget => formatter
+                .write_str("step-link needs the path to link to; step-unlink removes a link"),
             Self::Regex(error) => write!(formatter, "{error}"),
             Self::ServersInBackground => {
                 formatter.write_str("the GUI asks the servers for every file in the background")

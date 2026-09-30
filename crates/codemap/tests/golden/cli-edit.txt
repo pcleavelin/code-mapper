@@ -80,6 +80,9 @@ step [1] links to 'startup'
 $ codemap step-link scratch 1 nope
 ! no such path: nope
 [exit 2]
+$ codemap step-link scratch 1 ""
+! step-link needs the path to link to; step-unlink removes a link
+[exit 2]
 $ codemap step-link scratch 1 scratch
 ! a step cannot link to its own path
 [exit 2]

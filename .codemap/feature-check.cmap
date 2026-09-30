@@ -30,7 +30,7 @@ parent ccger0
 author ai
 file crates/cli/src/wire.rs
 symbol fmt
-lines 44 48
+lines 46 50
 hash c1d6595c5d135112
 note How the failure reads on stderr: 'N stale steps', 'N broken links', or both.
 

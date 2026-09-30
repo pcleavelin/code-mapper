@@ -133,9 +133,9 @@ order 0
 author ai
 file crates/cli/src/exec.rs
 symbol step_link
-lines 0 19
-hash 40f80718aa33259d
-note step-link: the step must exist and the target must name a path the map has (NoSuchPath otherwise); an empty target clears the link. Then set_link decides.
+lines 0 17
+hash b34a285af178e15c
+note step-link: the step must exist and the target must name a path the map has (NoSuchPath otherwise); an empty target is refused (NoLinkTarget), since step-unlink removes links. Then set_link decides.
 
 step mkq22m
 order 16

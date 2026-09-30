@@ -11,8 +11,10 @@ description: Add or extend a CLI or GUI golden scenario in tests/. Use when a ch
    The golden is `tests/golden/cli-<name>.txt`.
 3. GUI: a function `pub fn <name>() -> Scenario` in `tests/common/gui.rs`, then add `<name>`
    to `gui_scenarios!`. The script aims at element ids (`click-id`, `hover-id`, `outline/<n>`
-   to bring a step into view, `<<DUMP ...|dx,dy>>` inside an element); the window is a fixed
-   1600x1000 at scale 1. `pause <ms>` waits for wall-time polls.
+   to bring a step into view, `<<DUMP ...|dx,dy>>` inside an element, resolved against the
+   frame the line runs in); the window is a fixed 1600x1000 at scale 1. `pause <ms>` waits for
+   wall-time polls. A gesture at an element out of view is refused and fails the scenario; to
+   check that something is not shown, use `absent <id>`.
 4. A scenario needing jj or git starts with `needs("jj")?`; it is skipped where the tool is
    missing.
 5. Bless: `CODEMAP_BLESS=1 cargo test --release --test cli <name>` (GUI: `--test gui`; on

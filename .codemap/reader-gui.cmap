@@ -994,9 +994,9 @@ order 28
 author ai
 file crates/gui/src/app.rs
 symbol locate
-lines 0 2
-hash 78221254ae8c1491
-note The centre of a named element from last frame's rectangle, which the loop turns a click-id or hover-id line into a plain click or mouse move at.
+lines 0 8
+hash 3b8c6ccc156d21c8
+note A named element's Visibility from last frame's placement: its visible centre, which the loop turns a click-id or hover-id line into a plain click or mouse move at, or OutOfView when scrolling or a panel edge cut the centre off, or Absent.
 
 step zub7v0
 order 24

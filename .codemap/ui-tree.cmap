@@ -186,6 +186,16 @@ lines 0 0
 hash 6419410d3b10f91c
 note A set of the four sides as bits, so a style names 'left and bottom' as LEFT.with(BOTTOM).
 
+step hilu6r
+order 43
+parent 8qzl72
+author ai
+file crates/ui/src/tree.rs
+symbol visible_center
+lines 0 3
+hash 6f0b1e62c86de446
+note The centre of the rectangle when it lies inside the clip, the part of the screen the element shows in; None when scrolling or a panel edge has cut the centre off. A script's click-id aims here and refuses an element with none.
+
 step hndy1n
 order 15
 parent rd9o1b

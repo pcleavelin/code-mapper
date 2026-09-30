@@ -263,6 +263,11 @@ fn scrolled_column_clips_children_and_reports_content() {
     let second = ui.placement(Id::new("row").nth(1)).unwrap();
     assert_eq!(second.rect, rect(0, 8, 50, 20));
     assert_eq!(second.clip, rect(0, 0, 50, 30));
+    assert_eq!(second.visible_center(), Some(Point::new(px(25), px(18))));
+    let scrolled_above = ui.placement(Id::new("row").nth(0)).unwrap();
+    assert_eq!(scrolled_above.visible_center(), None);
+    let below_the_fold = ui.placement(Id::new("row").nth(3)).unwrap();
+    assert_eq!(below_the_fold.visible_center(), None);
     let drawn = ui.draw(&mut Cells, Color::rgba(1, 2, 3, 255));
     let fills: Vec<Rect> = drawn
         .commands()

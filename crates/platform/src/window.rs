@@ -56,7 +56,14 @@ pub struct Frame {
 pub trait App {
     fn frame(&mut self, renderer: &mut Renderer, input: &mut Input) -> Frame;
     fn script(&mut self, line: &ScriptLine) -> Outcome;
-    fn locate(&mut self, id: Id) -> Option<Point>;
+    fn locate(&mut self, id: Id) -> Visibility;
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Visibility {
+    Visible(Point),
+    OutOfView,
+    Absent,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]

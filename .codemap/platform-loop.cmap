@@ -25,6 +25,16 @@ lines 0 7
 hash e29a6fcee371dc45
 note The momentary part of the Input is cleared after the frame (see ui-input): presses, clicks, wheel, keys and text go, the pointer, held buttons and modifiers stay.
 
+step 4354gc
+order 25
+parent mqqkcp
+author ai
+file crates/platform/src/window.rs
+symbol Visibility
+lines 0 4
+hash b1fa9212e1cea4fd
+note What locate answers for a named element: Visible with the point a gesture aims at, OutOfView when it was drawn but its centre lies outside the area it shows in, Absent when it was not drawn last frame.
+
 step 5sfd6n
 order 24
 parent o82jom
@@ -153,8 +163,8 @@ author ai
 file crates/platform/src/window.rs
 symbol App
 lines 0 4
-hash 8d69ef68b3f1c97d
-note The whole interface between the loop and the application: frame, given the Renderer (as the Measure and for scale and screenshots) and the frame's input, returning a Frame; script and locate answer the lines of a test script the loop does not understand itself and the element names it aims at. script returning Retry means the line is not done and runs again next frame; locate gives the centre of the named element from last frame's rectangles. This is why the gui crate never mentions winit.
+hash 712376ee4209c03a
+note The whole interface between the loop and the application: frame, given the Renderer (as the Measure and for scale and screenshots) and the frame's input, returning a Frame; script and locate answer the lines of a test script the loop does not understand itself and the element names it aims at. script returning Retry means the line is not done and runs again next frame; locate says whether the named element was visible last frame and where its centre was. This is why the gui crate never mentions winit.
 
 step nu33ir
 order 6

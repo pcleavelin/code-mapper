@@ -7,7 +7,7 @@ use std::time::{Duration, Instant};
 use ui::{Button, Coordinate, Glyph, Id, Key, Mods, Pinch, Point, Press, Px};
 
 use crate::report::report;
-use crate::window::{App, Exit, Runner};
+use crate::window::{App, Exit, Runner, Visibility};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct ScriptLine(String);
@@ -293,6 +293,10 @@ impl<Application: App> Runner<Application> {
                 self.aim(&line);
                 Flow::Next
             }
+            Some(ScriptCommand::Absent) => {
+                self.expect_absent(&line);
+                Flow::Next
+            }
             Some(ScriptCommand::Drag) => {
                 self.insert_next(line.drag());
                 Flow::Next
@@ -329,11 +333,29 @@ impl<Application: App> Runner<Application> {
         let Some(name) = line.word(1) else {
             return;
         };
-        let located = line.element().and_then(|id| self.app.locate(id));
-        match located {
-            Some(at) => self.insert_next(vec![line.aimed(at)]),
-            None => report(format_args!("script: no element '{name}' last frame")),
+        match self.locate(line) {
+            Visibility::Visible(at) => self.insert_next(vec![line.aimed(at)]),
+            Visibility::OutOfView => report(format_args!(
+                "script: element '{name}' is out of view last frame"
+            )),
+            Visibility::Absent => report(format_args!("script: no element '{name}' last frame")),
         }
+    }
+
+    fn expect_absent(&mut self, line: &ScriptLine) {
+        let Some(name) = line.word(1) else {
+            return;
+        };
+        if let Visibility::Visible(_) = self.locate(line) {
+            report(format_args!(
+                "script: element '{name}' is in view last frame, expected absent"
+            ));
+        }
+    }
+
+    fn locate(&mut self, line: &ScriptLine) -> Visibility {
+        line.element()
+            .map_or(Visibility::Absent, |id| self.app.locate(id))
     }
 
     fn hand_to_app(&mut self, line: ScriptLine) -> Flow {
@@ -414,6 +436,7 @@ enum ScriptCommand {
     ClickId,
     HoverId,
     DoubleClickId,
+    Absent,
     Drag,
     Wheel,
     Pinch,
@@ -423,7 +446,7 @@ enum ScriptCommand {
 }
 
 impl ScriptCommand {
-    const ALL: [Self; 16] = [
+    const ALL: [Self; 17] = [
         Self::Wait,
         Self::Pause,
         Self::Mouse,
@@ -434,6 +457,7 @@ impl ScriptCommand {
         Self::ClickId,
         Self::HoverId,
         Self::DoubleClickId,
+        Self::Absent,
         Self::Drag,
         Self::Wheel,
         Self::Pinch,
@@ -454,6 +478,7 @@ impl ScriptCommand {
             Self::ClickId => "click-id",
             Self::HoverId => "hover-id",
             Self::DoubleClickId => "dblclick-id",
+            Self::Absent => "absent",
             Self::Drag => "drag",
             Self::Wheel => "wheel",
             Self::Pinch => "pinch",

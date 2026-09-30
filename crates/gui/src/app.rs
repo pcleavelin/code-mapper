@@ -6,8 +6,8 @@ use domain::LayoutTree;
 use domain::{Line, Map, RelativePath, Root};
 use io_layout::{LayoutStore, Reach};
 use io_map::MapStore;
-use platform::{Cursor, Exit, Frame as PlatformFrame, Outcome, Renderer, ScriptLine};
-use ui::{Button, Count, Id, Input, Label, Measure, Point, Px, Rect, Ui};
+use platform::{Cursor, Exit, Frame as PlatformFrame, Outcome, Renderer, ScriptLine, Visibility};
+use ui::{Button, Count, Id, Input, Label, Measure, Px, Ui};
 
 use crate::action::Action;
 use crate::dump::{self, Context, Dump, DumpLines};
@@ -336,8 +336,14 @@ impl platform::App for App {
         Outcome::Done
     }
 
-    fn locate(&mut self, id: Id) -> Option<Point> {
-        self.ui.interaction(id).rect().map(Rect::center)
+    fn locate(&mut self, id: Id) -> Visibility {
+        self.ui
+            .placement(id)
+            .map_or(Visibility::Absent, |placement| {
+                placement
+                    .visible_center()
+                    .map_or(Visibility::OutOfView, Visibility::Visible)
+            })
     }
 }
 

@@ -38,6 +38,7 @@ pub enum Failure {
         steps: Count,
     },
     NoLink(StepIndex),
+    NoLinkTarget,
     Regex(regex::Error),
     ServersInBackground,
     NoRepository,

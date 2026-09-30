@@ -11,9 +11,9 @@ parent jcl12n
 author ai
 file crates/platform/src/script.rs
 symbol run_line
-lines 0 73
-hash 7a0af21d8c4fcd81
-note One line. Input commands write the Input directly - mouse moves the pointer, down presses and holds the left button (twice makes it a double click, carried on the press since that is the frame the app sees it on) with the modifiers named after it, up releases it, wheel adds to the wheel, pinch n adds a pinch of n percent, key pushes a Press, text appends typed text - and all but mouse yield, so each is a frame of its own. wait and pause yield for their duration. click, dblclick and drag queue their expansion; the -id forms aim first. quit ends the run. Anything else goes to the app.
+lines 0 77
+hash f745b6365ada2aac
+note One line. Input commands write the Input directly - mouse moves the pointer, down presses and holds the left button (twice makes it a double click, carried on the press since that is the frame the app sees it on) with the modifiers named after it, up releases it, wheel adds to the wheel, pinch n adds a pinch of n percent, key pushes a Press, text appends typed text - and all but mouse yield, so each is a frame of its own. wait and pause yield for their duration. click, dblclick and drag queue their expansion; the -id forms aim first; absent checks an element is not in view. quit ends the run. Anything else goes to the app.
 
 step 09hitd
 order 7
@@ -21,9 +21,9 @@ parent 006u4m
 author ai
 file crates/platform/src/script.rs
 symbol aim
-lines 0 9
-hash 8d08127dcb15f807
-note click-id, dblclick-id and hover-id: ask the app where the named element was last frame and queue the plain gesture at its centre. An element that was not drawn is reported, not fatal.
+lines 0 11
+hash 5bb18665248eac03
+note click-id, dblclick-id and hover-id: ask the app where the named element was last frame and queue the plain gesture at its centre. An element that was not drawn, or whose centre lies outside the area it shows in, is refused with a script error instead of a gesture at a point where something else is; the test harness fails the scenario on it.
 
 step 1p3fbr
 order 2
@@ -44,14 +44,24 @@ lines 0 4
 hash e0f90ba51482d55a
 note The lines still to run, as a queue, the frames left to wait and the wall-clock time a pause runs until. Expanding a gesture pushes its lines onto the front, so they run next.
 
+step arusoq
+order 20
+parent 006u4m
+author ai
+file crates/platform/src/script.rs
+symbol expect_absent
+lines 0 9
+hash aa6fe80f4ce1c6da
+note absent <id>: reports a script error when the element is in view last frame; out of view or not drawn both pass. A scenario asserts that something is not shown with it, since every script error fails the scenario.
+
 step asgf8r
 order 19
 parent i1u3a4
 author ai
 file crates/platform/src/script.rs
 symbol impl ScriptCommand
-lines 0 47
-hash bb73ae01e172a355
+lines 0 49
+hash 74ff4ca8146d6fd0
 note named finds the command whose name is the line's first word, so run_line's match and the fallback to hand_to_app both go through one lookup instead of comparing the word against each command in turn.
 
 step dk4cd8
@@ -90,8 +100,8 @@ parent 006u4m
 author ai
 file crates/platform/src/script.rs
 symbol ScriptCommand
-lines 0 17
-hash 58be1d6f2ba187f4
+lines 0 18
+hash 24431912a1b9cfa9
 note Every line word run_line and hand_to_app dispatch on: the input and timing commands, the click/drag/aim forms, and quit.
 
 step jcl12n
@@ -182,6 +192,16 @@ symbol ScriptLine
 lines 0 0
 hash 84f572ae9bf9272b
 note One script line and the word, number and rest accessors every command parses with. A missing number reads as zero.
+
+step vfj1f5
+order 21
+parent 09hitd
+author ai
+file crates/platform/src/script.rs
+symbol locate
+lines 0 3
+hash 01c2d6fbbf594897
+note The app's answer for the line's element, Absent when the line names none.
 
 step wo72ck
 order 15

@@ -716,8 +716,7 @@ pub(crate) fn links() -> Scenario {
         after: &[],
         script: "SETTLE
 dump
-click-id paths/3
-wait 2
+absent paths/3
 dump
 click-id group@tools
 wait 2
@@ -726,8 +725,7 @@ wait 3
 dump
 click-id group@tools
 wait 2
-click-id paths/3
-wait 2
+absent paths/3
 dump
 click-id paths/2
 wait 3
@@ -777,7 +775,7 @@ pub(crate) fn play(
                 }
                 None => (lines[line_index][open + 2..close].to_owned(), None),
             };
-            let probe = lines[..line_index].join("\n") + "\nquit\n";
+            let probe = lines[..line_index].join("\n") + "\ndump\nquit\n";
             let root = (scenario.setup)(bin, name)?;
             let err = gui(bin, &root, name, &probe, &mut |line| {
                 (scenario.hook)(bin, &root, line);
@@ -805,6 +803,15 @@ pub(crate) fn play(
     let err = gui(bin, &root, name, &(lines.join("\n") + "\n"), &mut |line| {
         (scenario.hook)(bin, &root, line);
     });
+    let failed: Vec<&str> = err
+        .lines()
+        .filter(|line| line.starts_with("script:"))
+        .collect();
+    assert!(
+        failed.is_empty(),
+        "{name}: the script failed; fix the script, never bless it:\n{}",
+        failed.join("\n")
+    );
     let mut after = Transcript {
         bin,
         root,

@@ -61,8 +61,8 @@ parent ii6lor
 author ai
 file crates/codemap/tests/common/cli.rs
 symbol edit
-lines 0 86
-hash 80a809cf08ecf281
+lines 0 87
+hash 136489e10b5692af
 note Every edit command on a scratch path: creating with a bad kind, adding by symbol and by lines with bad parents and ranges, notes and note-edit, moves and swaps, links (to a missing path and to itself), rename, groups and group-rename, path-pin with bad ranges, path-rm of a step and of a linked path, and promote with and without a name.
 
 step 57lpfq
@@ -238,9 +238,9 @@ order 21
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol play
-lines 0 53
-hash 755bf42efdf281d3
-note Plays a GUI scenario and returns its stderr and the output of its after commands. A script line aiming at <<prefix>> is resolved first by a probe run of the script up to that line, on a fresh fixture, reading the rectangle the probe's dump or rect printed; the final run then starts from the same state. <<prefix>> stands for the centre of the last stderr line starting with prefix, <<prefix|dx,dy>> for a point offset from its top-left corner. Offsets are pixels: the scripts assume the fixed 1600x1000 script window at scale 1, 16 px rows. The screenshots land in shots(name).
+lines 0 62
+hash f65371b4d026fb54
+note Plays a GUI scenario and returns its stderr and the output of its after commands. A script line aiming at <<prefix>> is resolved first by a probe run of the script up to that line, on a fresh fixture, which ends with a dump of the frame that line runs in, reading the rectangle from that dump (or an earlier rect line); the final run then starts from the same state. <<prefix>> stands for the centre of the last stderr line starting with prefix, <<prefix|dx,dy>> for a point offset from its top-left corner. Offsets are pixels: the scripts assume the fixed 1600x1000 script window at scale 1, 16 px rows. Any script: line in the final run's stderr fails the scenario before its golden is compared, so a missed gesture cannot be blessed. The screenshots land in shots(name).
 
 step g4vgzv
 order 19
@@ -490,9 +490,9 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol links
-lines 0 59
-hash 5e2e8a84e1071795
-note Path groups and links: collapsing and expanding a group in the paths list, a linked step expanded inline in the document and the code inside it, the linked-from row, collapsing the link again, and following the link.
+lines 0 57
+hash 005626a36c380763
+note Path groups and links: collapsing and expanding a group in the paths list (absent checks that a closed group lists none of its paths), a linked step expanded inline in the document and the code inside it, the linked-from row, collapsing the link again, and following the link.
 
 step q0lbe5
 order 42

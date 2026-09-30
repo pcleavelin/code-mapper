@@ -203,6 +203,7 @@ tree::pub struct Scrollbar { pub track: Rect, pub thumb: Rect, }
 tree::pub const WIDTH: Px = Px::new(8);
 tree::pub fn of(rect: Rect, content_height: Px, scroll: Px) -> Option<Self>
 tree::pub struct Placement { pub rect: Rect, pub clip: Rect, pub content: Extent, }
+tree::pub fn visible_center(self) -> Option<Point>
 tree::pub struct Interaction { signals: Signals, drag: Option<Point>, wheel: Vector, pinch: Pinch, rect: Option<Rect>, }
 tree::pub const fn hovered(self) -> bool
 tree::pub const fn clicked(self) -> bool

@@ -656,16 +656,14 @@ impl Run<'_> {
         target: &TextFragment,
     ) -> Result<Changed, Failure> {
         let found = find_step(self.map, name, position)?;
-        let link = if target.as_str().is_empty() {
-            None
-        } else {
-            let link = PathName::new(target.as_str())
-                .ok()
-                .filter(|link| self.map.path(link).is_some())
-                .ok_or_else(|| Failure::NoSuchPath(target.clone()))?;
-            Some(link)
-        };
-        let _linked = self.map.set_link(&found.path, &found.step, link)?;
+        if target.as_str().is_empty() {
+            return Err(Failure::NoLinkTarget);
+        }
+        let link = PathName::new(target.as_str())
+            .ok()
+            .filter(|link| self.map.path(link).is_some())
+            .ok_or_else(|| Failure::NoSuchPath(target.clone()))?;
+        let _linked = self.map.set_link(&found.path, &found.step, Some(link))?;
         wire::step_linked(self.output, position, target);
         Ok(Changed)
     }
