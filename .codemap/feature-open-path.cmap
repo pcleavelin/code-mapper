@@ -3,7 +3,7 @@ path feature-open-path
 kind flow
 author ai
 group features/gui
-note Click a path in the Paths list to read it. The document switches to that path, its first step in tree order is selected and scrolled to, and the Path view is brought to front wherever it is. Clicking the path already being read keeps its current step and only switches the tab back to Path.
+note Click a path in the Paths list to read it. The reader needs it to read a path at all; without it the path shown could only change through the CLI (design.md section 6, Paths). The document switches to that path, its first step in tree order is selected and scrolled to, and the Path view is brought to front wherever it is. Clicking the path already being read keeps its current step and only switches the tab back to Path.
 
 step 1tdtjx
 order 0

@@ -3,7 +3,7 @@ path feature-path-group
 kind flow
 author ai
 group features/cli
-note path-group <name> <group>: put one path in a group. / nests groups (flows/http); an empty group puts the path at the top level. The group is created by being named: nothing else declares it.
+note path-group <name> <group>: put one path in a group. The agent reaches for it so the paths list stays navigable by area as the map grows, instead of one flat list (commit 10dc7e690b8b). / nests groups (flows/http); an empty group puts the path at the top level. The group is created by being named: nothing else declares it.
 
 step 1khaht
 order 1

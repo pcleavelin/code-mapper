@@ -3,7 +3,7 @@ path feature-follow-xref
 kind flow
 author ai
 group features/gui
-note The Xrefs panel lists, under 'Callers', what calls the focused symbol, under 'Callees', what it calls, and under 'References' every reference the language's server reports, grouped by file. Clicking a caller or callee focuses that symbol the way a Symbols row does: it selects the matching step of the path being read, or opens the Listing on it. Clicking a reference opens its file in the Listing at that line, and clicking a file row opens that file. While the symbol's file waits for its server, the rows are dimmed and caller and callee clicks do nothing.
+note The Xrefs panel lists, under 'Callers', what calls the focused symbol, under 'Callees', what it calls, and under 'References' every reference the language's server reports, grouped by file. The reader reaches for it to move from a symbol to its callers, callees and references without grepping (design.md section 1: browsing xrefs). Clicking a caller or callee focuses that symbol the way a Symbols row does: it selects the matching step of the path being read, or opens the Listing on it. Clicking a reference opens its file in the Listing at that line, and clicking a file row opens that file. While the symbol's file waits for its server, the rows are dimmed and caller and callee clicks do nothing.
 
 step 56ca80
 order 0

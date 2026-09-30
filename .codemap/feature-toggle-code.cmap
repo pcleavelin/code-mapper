@@ -3,7 +3,7 @@ path feature-toggle-code
 kind flow
 author ai
 group features/gui
-note The 'hide code' button on a step header hides that step's code, leaving the header and the note; pressed again ('code') it shows the code. A step whose file or symbol is gone has no code and no button. Per step, for the session.
+note The 'hide code' button on a step header hides that step's code, leaving the header and the note; pressed again ('code') it shows the code. The reader reaches for it to skim one step by header and note without its code taking the screen (design.md section 6, the document). A step whose file or symbol is gone has no code and no button. Per step, for the session.
 
 step 75ejf8
 order 1

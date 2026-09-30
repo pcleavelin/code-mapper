@@ -3,7 +3,7 @@ path feature-hide-all-code
 kind flow
 author ai
 group features/gui
-note The document toolbar's 'hide all code' hides the code of every step of the path being read, leaving headers and notes; 'show all' shows every step's code again and also unfolds every folded step. Steps shown inline under links keep their own state.
+note The document toolbar's 'hide all code' hides the code of every step of the path being read, leaving headers and notes; 'show all' shows every step's code again and also unfolds every folded step. The reader reaches for it to read a path's notes and structure as prose without the code filling the screen (design.md section 6, the document). Steps shown inline under links keep their own state.
 
 step a0jz5i
 order 2

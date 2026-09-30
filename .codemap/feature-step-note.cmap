@@ -3,7 +3,7 @@ path feature-step-note
 kind flow
 author ai
 group features/cli
-note step-note <name> <index> <note>: replace one step's note. The index is the one paths prints in square brackets. A step note says what that step does for this path; the same function can be a step in several paths with a different note in each.
+note step-note <name> <index> <note>: replace one step's note. The agent needs it because one function can be a step in several paths with a different role in each, which no code comment can say (commit 80cd0f0063f0). The index is the one paths prints in square brackets. A step note says what that step does for this path; the same function can be a step in several paths with a different note in each.
 
 step asvjlt
 order 0

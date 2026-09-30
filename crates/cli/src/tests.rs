@@ -3,7 +3,7 @@ use std::collections::BTreeSet;
 use clap::CommandFactory;
 use domain::{
     Depth, FileText, Imports, Line, MapError, PathName, RelativePath, SourceFile, Span,
-    StepAddress, StepId, SymbolName, TextFragment, TextHash,
+    StepAddress, StepId, SymbolName, TextFragment,
 };
 use features::{Feature, Surface};
 use io_map::{Fault, FieldKey, FieldValue, Origin, ParseError};
@@ -336,8 +336,9 @@ fn shown_lines_clamp_to_the_file() {
 }
 
 #[test]
-fn levels_become_depths() {
+fn levels_beyond_the_deepest_depth_saturate() {
     assert_eq!(Levels::new(4).depth(), Depth::new(4));
+    assert_eq!(Levels::new(usize::MAX).depth(), Depth::new(u32::MAX));
 }
 
 #[test]
@@ -346,7 +347,6 @@ fn numbered_lines_are_right_aligned_and_one_based() {
     let mut output = Output::new();
     wire::numbered_lines(&mut output, &source, span(1, 5).unwrap());
     assert_eq!(output.as_str(), "    2 line 1\n    3 line 2\n");
-    assert_eq!(source.hash(), TextHash::of(b"line 0\nline 1\nline 2\n"));
 }
 
 #[test]

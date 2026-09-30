@@ -3,7 +3,7 @@ path feature-remove-step
 kind flow
 author ai
 group features/gui
-note The 'delete' button on a step header removes that step from the path being read; the steps under it move up to its parent. The status bar names what was removed, the selection is cleared, and the map is marked unsaved until ctrl+s or the save button writes it. Steps shown inline under a link have no delete button.
+note The 'delete' button on a step header removes that step from the path being read; the steps under it move up to its parent. The reader reaches for it to undo a wrongly added step from the document, without switching to the CLI (design.md section 6: deleting is in the document). The status bar names what was removed, the selection is cleared, and the map is marked unsaved until ctrl+s or the save button writes it. Steps shown inline under a link have no delete button.
 
 step 2xofld
 order 3

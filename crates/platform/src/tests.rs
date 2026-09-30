@@ -96,5 +96,6 @@ fn read_back_rows_drop_padding_and_swap_blue() {
 #[test]
 fn bytes_of_reads_plain_values() {
     let values = [1_u32, 2];
-    assert_eq!(bytes_of(&values).as_slice().len(), 8);
+    let expected = [1_u32.to_ne_bytes(), 2_u32.to_ne_bytes()].concat();
+    assert_eq!(bytes_of(&values).as_slice(), expected.as_slice());
 }

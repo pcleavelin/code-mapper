@@ -3,7 +3,7 @@ path feature-path-rename
 kind flow
 author ai
 group features/cli
-note path-rename <name> <new>: rename a path and every link that points at it, so no step is left linking to a missing path. The new name must be a valid file name and must not collide with another path's name in any letter case, because each path is a file under .codemap and a case-insensitive file system would make the two one file.
+note path-rename <name> <new>: rename a path and every link that points at it, so no step is left linking to a missing path. The agent reaches for it when understanding changes what a path should be called, without breaking the links that point at it (commit 387d0d7e5ff9). The new name must be a valid file name and must not collide with another path's name in any letter case, because each path is a file under .codemap and a case-insensitive file system would make the two one file.
 
 step fx1fz5
 order 3

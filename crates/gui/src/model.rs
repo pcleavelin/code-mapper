@@ -220,6 +220,13 @@ impl StepViews {
         self.0.get_mut(&key)
     }
 
+    pub(crate) fn customized(&self) -> impl Iterator<Item = (StepKey, StepView)> + '_ {
+        self.0
+            .iter()
+            .filter(|(_, view)| **view != StepView::default())
+            .map(|(key, view)| (*key, *view))
+    }
+
     pub(crate) fn each_of_path(
         &mut self,
         path: PathSlot,

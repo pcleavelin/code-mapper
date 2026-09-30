@@ -3,7 +3,7 @@ path feature-select-step
 kind flow
 author ai
 group features/gui
-note Click a step's header in the document, its row in the outline, or a crumb in the breadcrumb, and that step becomes the selection: it gets the accent bar, its file and lines become the current place, and the graph and xrefs follow its symbol. Clicked in the outline or the breadcrumb, the document scrolls the step's header to the top; clicked on its own header, the document stays where it is. A step inside a folded subtree is revealed by unfolding its ancestors. From the Listing, Results or Diff tab the centre switches back to the Path tab.
+note Click a step's header in the document, its row in the outline, or a crumb in the breadcrumb, and that step becomes the selection: it gets the accent bar, its file and lines become the current place, and the graph and xrefs follow its symbol. The reader needs it to set the one selection every view follows from wherever they are looking (design.md section 6: one selection for the whole app). Clicked in the outline or the breadcrumb, the document scrolls the step's header to the top; clicked on its own header, the document stays where it is. A step inside a folded subtree is revealed by unfolding its ancestors. From the Listing, Results or Diff tab the centre switches back to the Path tab.
 
 step 1uqvmv
 order 5

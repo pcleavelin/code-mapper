@@ -3,7 +3,7 @@ path feature-turn-graph
 kind flow
 author ai
 group features/gui
-note The Graph toolbar's direction button (graph-turn) turns the tree between left to right, the default, and top to bottom. Its label names the direction it switches to. Turned, lanes become rows: a node's children sit in a box below it, side by side in call order, and edges leave a node's bottom edge and enter the next one's top. Every dragged position is dropped, since it was placed for the other direction, and the camera looks at the selected node again. The selection, the expansions and the zoom are untouched. The direction is not saved with the layout: a new window starts left to right.
+note The Graph toolbar's direction button (graph-turn) turns the tree between left to right, the default, and top to bottom. The reader reaches for it when a tree reads better in the other direction for the window's shape, such as a very wide tree (commit ad88590; TODO.md GUI item 2). Its label names the direction it switches to. Turned, lanes become rows: a node's children sit in a box below it, side by side in call order, and edges leave a node's bottom edge and enter the next one's top. Every dragged position is dropped, since it was placed for the other direction, and the camera looks at the selected node again. The selection, the expansions and the zoom are untouched. The direction is not saved with the layout: a new window starts left to right.
 
 step 5mwf54
 order 10

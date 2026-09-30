@@ -3,7 +3,7 @@ path feature-open-linked-path
 kind flow
 author ai
 group features/gui
-note A step with a link shows the linked path's name as a button (→ name); clicking it opens that path in the document. Under a path's note, 'linked from' lists every step in other paths that links here; clicking one selects that step in its own path. A link to a path that no longer exists shows as red (missing) and cannot be clicked.
+note A step with a link shows the linked path's name as a button (→ name); clicking it opens that path in the document. The reader reaches for it to follow a link to the shared path it names instead of hunting for that path in the Paths list (design.md sections 4 and 6). Under a path's note, 'linked from' lists every step in other paths that links here; clicking one selects that step in its own path. A link to a path that no longer exists shows as red (missing) and cannot be clicked.
 
 step 2i3qxs
 order 1

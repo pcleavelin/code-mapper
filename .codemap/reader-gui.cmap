@@ -41,9 +41,9 @@ parent vc7u1p
 author ai
 file crates/gui/src/app.rs
 symbol dump
-lines 0 21
-hash be91709da534c617
-note dump: the selection, the scroll offsets, the panel tree, the tooltip, peek and status, the Paths filter and how many paths it lists, how far the servers have got, the graph camera and every node and node button rectangle, to stderr as DUMP lines a script can grep. Each part of the Model prints itself through the Dump trait.
+lines 0 22
+hash 76f7d160cb23a2e5
+note dump: the selection, the scroll offsets, the panel tree, the tooltip, peek and status, the Paths filter and how many paths it lists, every step view that differs from the default, how far the servers have got, the graph camera and every node and node button rectangle, to stderr as DUMP lines a script can grep. Each part of the Model prints itself through the Dump trait.
 
 step 25fyn8
 order 44

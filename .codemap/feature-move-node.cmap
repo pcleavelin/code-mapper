@@ -3,7 +3,7 @@ path feature-move-node
 kind flow
 author ai
 group features/gui
-note Drag a graph node by its title (or its body) to move it; the node stays where it was dropped from then on, while the rest keeps the automatic layout. Pressing on the title also selects the node: its step if it is one, otherwise its symbol, without re-centring the camera. 'auto layout' drops every dragged position.
+note Drag a graph node by its title (or its body) to move it; the node stays where it was dropped from then on, while the rest keeps the automatic layout. The reader reaches for it to move a node the automatic layout placed where it is hard to read (design.md section 6, the graph). Pressing on the title also selects the node: its step if it is one, otherwise its symbol, without re-centring the camera. 'auto layout' drops every dragged position.
 
 step 1142i7
 order 1

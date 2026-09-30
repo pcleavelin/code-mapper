@@ -3,7 +3,7 @@ path feature-groups
 kind flow
 author ai
 group features/cli
-note groups: every group with how many paths it holds, nested by indentation. A group has no existence of its own: it is the set of paths that name it, so the list is derived from the paths' groups each time and an empty group cannot be listed.
+note groups: every group with how many paths it holds, nested by indentation. The agent reaches for it to see how the map is organised, and which group a new path belongs in, without listing every path (commit 10dc7e690b8b). A group has no existence of its own: it is the set of paths that name it, so the list is derived from the paths' groups each time and an empty group cannot be listed.
 
 step 1n4tbz
 order 1

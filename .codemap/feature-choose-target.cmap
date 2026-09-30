@@ -3,7 +3,7 @@ path feature-choose-target
 kind flow
 author ai
 group features/gui
-note Steps added from the Listing, Symbols or Xrefs hang under the target: the step last selected in the path being read. The Listing and Symbols views show it in a strip under their toolbars ('adds to startup under 1.2 fill') and the Paths outline marks its row '+ adds here'. Press 'top level' in the strip and added steps go at the top level of the path instead, until a step is selected again. Moving the selection off the path (a symbol in Symbols, Xrefs or the graph) leaves the target where it was, which is what lets a reader collect several symbols under one step.
+note Steps added from the Listing, Symbols or Xrefs hang under the target: the step last selected in the path being read. The reader needs it because without a target and a way back to top level, every added step would nest under whatever was selected last (design.md section 6, authoring). The Listing and Symbols views show it in a strip under their toolbars ('adds to startup under 1.2 fill') and the Paths outline marks its row '+ adds here'. Press 'top level' in the strip and added steps go at the top level of the path instead, until a step is selected again. Moving the selection off the path (a symbol in Symbols, Xrefs or the graph) leaves the target where it was, which is what lets a reader collect several symbols under one step.
 
 step 9wotic
 order 1

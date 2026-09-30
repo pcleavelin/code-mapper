@@ -8,7 +8,7 @@ use ui::{Id, Ui};
 use crate::field::{Fields, Which};
 use crate::graph::{GraphState, Hit, Node};
 use crate::ids;
-use crate::model::{Model, Scrolls};
+use crate::model::{Model, Scrolls, StepViews, ViewFlag};
 use crate::nav::Nav;
 use crate::panels::Panels;
 use crate::peek::Peek;
@@ -196,6 +196,37 @@ impl Dump for Fields {
             "paths filter={} listed={listed}",
             Quoted(self.get(Which::PathFilter).text().as_str())
         ));
+    }
+}
+
+impl Dump for StepViews {
+    fn dump(&self, _context: &Context<'_>, lines: &mut DumpLines) {
+        let mut views = String::new();
+        for (key, view) in self.customized() {
+            let flags: Vec<&str> = [
+                (ViewFlag::Whole, "whole"),
+                (ViewFlag::Hidden, "hidden"),
+                (ViewFlag::Folded, "folded"),
+                (ViewFlag::Expanded, "expanded"),
+            ]
+            .into_iter()
+            .filter(|(flag, _)| view.flags.has(*flag))
+            .map(|(_, name)| name)
+            .collect();
+            write!(
+                views,
+                " {}:{}({} +{}/+{})",
+                key.path,
+                key.step,
+                flags.join(" "),
+                view.context.above,
+                view.context.below
+            )
+            .unwrap_or_default();
+        }
+        if !views.is_empty() {
+            lines.line(format_args!("step-views{views}"));
+        }
     }
 }
 

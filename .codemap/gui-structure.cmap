@@ -129,7 +129,7 @@ file crates/gui/src/dump.rs
 symbol Dump
 lines 0 2
 hash 32f1e195f6bd176e
-note What a script's dump prints for one part of the Model. The App dumps Nav, the scrolls, the panel tree, the status, the fields, WorkState and the graph, in that order.
+note What a script's dump prints for one part of the Model. The App dumps Nav, the scrolls, the panel tree, the status, the fields, the step views, WorkState and the graph, in that order.
 
 step 7h1hw9
 order 32
@@ -626,6 +626,16 @@ symbol graph_font
 lines 0 2
 hash 12a899611704bf18
 note The graph's font for a zoom, rounded to a whole pixel size and never under 6.
+
+step vjry75
+order 75
+parent 7579zm
+author ai
+file crates/gui/src/dump.rs
+symbol dump
+lines 0 27
+hash 2c0d7cbafb49667f
+note Every step view that differs from the default, as one line 'step-views <path>:<step>(<flags> +<above>/+<below>)': whole, hidden, folded and expanded, then the extra context lines above and below. No line when every view is the default, so a reset shows as the line going away.
 
 step vkbn4x
 order 20

@@ -3,7 +3,7 @@ path feature-fold-all
 kind flow
 author ai
 group features/gui
-note The document toolbar's 'fold all' folds every step of the path being read that has children, so only the top-level steps remain with +n counts; 'unfold all' unfolds every step. Hide and code state are untouched.
+note The document toolbar's 'fold all' folds every step of the path being read that has children, so only the top-level steps remain with +n counts; 'unfold all' unfolds every step. The reader reaches for it to see the shape of a long path without scrolling past every step (design.md section 6, the document). Hide and code state are untouched.
 
 step 40tsz9
 order 5

@@ -209,12 +209,13 @@ impl App {
             ui: &self.ui,
             services: &self.services,
         };
-        let parts: [&dyn Dump; 7] = [
+        let parts: [&dyn Dump; 8] = [
             &model.nav,
             &model.scrolls,
             &model.panels,
             &model.status,
             &model.fields,
+            &model.views,
             &model.work,
             &model.graph,
         ];

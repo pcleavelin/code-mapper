@@ -3,7 +3,7 @@ path feature-note-edit
 kind flow
 author ai
 group features/cli
-note note-edit <name> <index> <old> <new>: replace the first occurrence of old with new in one note, without resending the whole note. index -1 edits the path note, any other index the note of that step. It exists so a session fixing one clause after a code change does not have to retype a long note and risk dropping the rest of it. The command prints the whole note after the edit so the result can be reread.
+note note-edit <name> <index> <old> <new>: replace the first occurrence of old with new in one note, without resending the whole note. The agent reaches for it to fix one clause of a long note without resending the whole note through the shell, where one stray quote loses the rest (commit 387d0d7e5ff9, TODO.md CLI item 4). index -1 edits the path note, any other index the note of that step. It exists so a session fixing one clause after a code change does not have to retype a long note and risk dropping the rest of it. The command prints the whole note after the edit so the result can be reread.
 
 step 9d1jpg
 order 2

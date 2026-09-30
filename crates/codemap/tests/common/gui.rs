@@ -68,14 +68,15 @@ dump
 click-id whole/5
 wait 2
 shot {shots}/whole.png
-click-id ctx-a/5
-wait 2
 click-id ctx-b/5
+wait 2
+click-id ctx-a/5
 wait 2
 dump
 shot {shots}/context.png
 click-id ctx0/5
 wait 2
+dump
 scroll document 0
 wait 2
 click-id hide/1
@@ -318,14 +319,15 @@ dump
 shot {shots}/context.png
 click <<DUMP button fill 'no context>>
 wait 4
-click <<DUMP button fill 'listing>>
-wait 4
 dump
 click-id graph-turn
 pause 300
 wait 2
 dump
 shot {shots}/turned.png
+click <<DUMP button fill 'listing>>
+wait 4
+dump
 quit
 ",
     }

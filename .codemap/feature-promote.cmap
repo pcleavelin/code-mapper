@@ -3,7 +3,7 @@ path feature-promote
 kind flow
 author ai
 group features/cli
-note promote <symbol> [depth] [name]: create (or extend) a flow shaped like a symbol's call tree, depth levels deep (default 1), named after the symbol unless name is given. It is scaffolding: the tree comes from xrefs, so it carries every helper and, with only the tree-sitter resolver, some false calls; the author trims it with path-rm and path-move and writes the notes. Re-running it on the same path reuses the steps a symbol already has instead of duplicating them.
+note promote <symbol> [depth] [name]: create (or extend) a flow shaped like a symbol's call tree, depth levels deep (default 1), named after the symbol unless name is given. The agent reaches for it to scaffold a flow from a call tree instead of adding every step by hand (design.md section 12). It is scaffolding: the tree comes from xrefs, so it carries every helper and, with only the tree-sitter resolver, some false calls; the author trims it with path-rm and path-move and writes the notes. Re-running it on the same path reuses the steps a symbol already has instead of duplicating them.
 
 step 5ygab3
 order 2

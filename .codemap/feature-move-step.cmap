@@ -3,7 +3,7 @@ path feature-move-step
 kind flow
 author ai
 group features/gui
-note Drag a row of the Paths outline to move that step with everything under it. Dropped on the middle of another row, it hangs under that step as its last child; on the top or bottom quarter, it goes just before or after that step among that step's siblings. While dragging, a band shows where it will land (a box around the row, or a line on its edge) and the cursor is a grabbing hand; letting go outside a row, or onto the step itself, does nothing. Dropping a step under its own subtree is refused in the status bar. Siblings the parent's lines call keep the code's call order whatever the list says, so a drag reorders only siblings the parent does not call. The status names the step's new number and parent; selection, folds and history follow the step.
+note Drag a row of the Paths outline to move that step with everything under it. The reader reaches for it to restructure a path's steps while reading it instead of switching to the CLI (design.md section 1: the outline rearranges by dragging). Dropped on the middle of another row, it hangs under that step as its last child; on the top or bottom quarter, it goes just before or after that step among that step's siblings. While dragging, a band shows where it will land (a box around the row, or a line on its edge) and the cursor is a grabbing hand; letting go outside a row, or onto the step itself, does nothing. Dropping a step under its own subtree is refused in the status bar. Siblings the parent's lines call keep the code's call order whatever the list says, so a drag reorders only siblings the parent does not call. The status names the step's new number and parent; selection, folds and history follow the step.
 
 step 0jxud1
 order 0

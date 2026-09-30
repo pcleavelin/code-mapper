@@ -3,7 +3,7 @@ path feature-expand-link
 kind flow
 author ai
 group features/gui
-note A step that links to another path has an 'expand' button. Pressed, the linked path's steps appear inline under the step, indented one level and numbered after it (1.2 › 1, 1.2 › 1.1), each with its own view buttons; 'collapse' removes them. A link to a path already expanded further up shows 'expanded above' instead of a button, so a cycle of links cannot recurse.
+note A step that links to another path has an 'expand' button. The reader reaches for it to read a linked path's steps in place, under the step that calls into it, instead of leaving the path being read (design.md sections 4 and 6). Pressed, the linked path's steps appear inline under the step, indented one level and numbered after it (1.2 › 1, 1.2 › 1.1), each with its own view buttons; 'collapse' removes them. A link to a path already expanded further up shows 'expanded above' instead of a button, so a cycle of links cannot recurse.
 
 step a79171
 order 4

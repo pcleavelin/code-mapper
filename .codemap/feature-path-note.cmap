@@ -3,7 +3,7 @@ path feature-path-note
 kind flow
 author ai
 group features/cli
-note path-note <name> <note>: replace a path's note. The path note describes the workflow as a whole for someone who did not see the code; it is usually rewritten once the steps exist.
+note path-note <name> <note>: replace a path's note. The agent reaches for it to rewrite a path's summary once its steps show what the workflow is, since the note is written for someone who did not see the diff (design.md section 5). The path note describes the workflow as a whole for someone who did not see the code; it is usually rewritten once the steps exist.
 
 step 02gu4e
 order 1

@@ -51,9 +51,9 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol graph
-lines 0 96
-hash 1d78df16cef0ef73
-note The graph: the fitted start, a node's callees and hide buttons, an off-path node, shift-wheel and wheel, dragging a node, auto layout, ctrl-wheel zoom, fit, 1:1, panning, and a node's context, listing and no-context buttons; then, after clicking an off-path node, the arrow keys down, left and right walking between nodes (a dump after each, once the glide has had time to land), and the graph-turn button laying the tree out top to bottom (turned.png).
+lines 0 97
+hash ff2e7fea213363d3
+note The graph: the fitted start, a node's callees and hide buttons, an off-path node, shift-wheel and wheel, dragging a node, auto layout, ctrl-wheel zoom, fit, 1:1, panning, and a node's context and no-context buttons; then, after clicking an off-path node, the arrow keys down, left and right walking between nodes (a dump after each, once the glide has had time to land), and the graph-turn button laying the tree out top to bottom (turned.png); last, a node's listing button opening its file in the Listing.
 
 step 5147ql
 order 23
@@ -80,9 +80,9 @@ order 30
 author ai
 file crates/codemap/tests/common/mod.rs
 symbol gui_state
-lines 0 24
-hash 4907a9d0b48a8dfa
-note What a GUI golden keeps of stderr: the tab and selection line, the panel tree line, the Paths filter line, the tooltip and peek line, backend state and script errors, graph node and button names without their rectangles and the graph line without its pan. What depends on the screen or timing stays out.
+lines 0 25
+hash 909be89c4fe59f34
+note What a GUI golden keeps of stderr: the tab and selection line, the panel tree line, the Paths filter line, the step views line, the tooltip and peek line, backend state and script errors, graph node and button names without their rectangles and the graph line without its pan. What depends on the screen or timing stays out.
 
 step 62zoqn
 order 15
@@ -422,8 +422,8 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol document
-lines 0 69
-hash 043130874edd7811
+lines 0 70
+hash 072eaa449f47307b
 note The document: scrolling, selecting a step, whole-symbol and context toggles, hide and fold, arrow keys, the breadcrumb, collapse, fold and unfold all, wheel scrolling, the outline and the jump to the graph.
 
 step k23duj

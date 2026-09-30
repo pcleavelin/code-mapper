@@ -3,7 +3,7 @@ path feature-group-rename
 kind flow
 author ai
 group features/cli
-note group-rename <old> <new>: move every path in group old, and in every group nested inside it, to the same place under new. An empty new moves them to the top level. Since a group exists only as a name on its paths, renaming is rewriting that name on each path; it fails when no path is in old.
+note group-rename <old> <new>: move every path in group old, and in every group nested inside it, to the same place under new. The agent reaches for it to reorganise a whole branch of the map in one move instead of regrouping every path in it (commit 10dc7e690b8b). An empty new moves them to the top level. Since a group exists only as a name on its paths, renaming is rewriting that name on each path; it fails when no path is in old.
 
 step 11k04p
 order 1

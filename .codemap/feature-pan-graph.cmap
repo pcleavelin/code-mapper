@@ -3,7 +3,7 @@ path feature-pan-graph
 kind flow
 author ai
 group features/gui
-note Drag the graph's background to pan it, or scroll over it: the wheel or a two-finger trackpad swipe pans by its pixel delta in both directions, shift+wheel pans sideways. The camera otherwise moves only on explicit navigation, never on an edit.
+note Drag the graph's background to pan it, or scroll over it: the wheel or a two-finger trackpad swipe pans by its pixel delta in both directions, shift+wheel pans sideways. The reader reaches for it to see parts of a tree larger than the window, outside what 'fit' or a click framed (design.md section 6, the graph; TODO.md GUI item 2). The camera otherwise moves only on explicit navigation, never on an edit.
 
 step 4lmczg
 order 5

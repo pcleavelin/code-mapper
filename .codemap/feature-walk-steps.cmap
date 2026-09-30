@@ -3,7 +3,7 @@ path feature-walk-steps
 kind flow
 author ai
 group features/gui
-note With no text field holding the keyboard and the graph not holding it, Down selects the next step of the path being read and Up the previous one, in numbered order (the order the document and outline show), scrolling each to the top. Down on the last step and Up on the first stay put. With no step selected, either key selects the first step. After a click in the graph the arrows walk the graph instead (feature-walk-graph).
+note With no text field holding the keyboard and the graph not holding it, Down selects the next step of the path being read and Up the previous one, in numbered order (the order the document and outline show), scrolling each to the top. The reader reaches for it to read a path step by step in order without clicking each row or scrolling to the next header (design.md section 6). Down on the last step and Up on the first stay put. With no step selected, either key selects the first step. After a click in the graph the arrows walk the graph instead (feature-walk-graph).
 
 step 17uw33
 order 0

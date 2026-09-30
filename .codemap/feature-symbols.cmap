@@ -3,7 +3,7 @@ path feature-symbols
 kind flow
 author ai
 group features/cli
-note symbols [filter]: every symbol in the index, one row each, with kind, 1-based line range and its callee and caller counts. The filter is a substring matched against the symbol name or the file path, so a file path lists that file's symbols. Counts come from the index as it stands: a file still pending for its language server shows tree-sitter's xrefs.
+note symbols [filter]: every symbol in the index, one row each, with kind, 1-based line range and its callee and caller counts. The agent reaches for it to see which symbols exist and which are already covered before writing a path, without opening files one by one (design.md section 1: browsing symbols). The filter is a substring matched against the symbol name or the file path, so a file path lists that file's symbols. Counts come from the index as it stands: a file still pending for its language server shows tree-sitter's xrefs.
 
 step roqkwl
 order 0

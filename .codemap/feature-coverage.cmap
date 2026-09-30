@@ -3,7 +3,7 @@ path feature-coverage
 kind flow
 author ai
 group features/cli
-note coverage: covered/total symbols per file, then the total. Files without symbols are skipped. Coverage is derived from the map and the index on every run, never stored.
+note coverage: covered/total symbols per file, then the total. The owner reaches for it to see at a glance how much of each file is mapped (design.md section 5). Files without symbols are skipped. Coverage is derived from the map and the index on every run, never stored.
 
 step 9yar5s
 order 4

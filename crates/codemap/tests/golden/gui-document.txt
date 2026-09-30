@@ -14,54 +14,70 @@ DUMP tab=Path path=Some(2) step=Some(5) focus=Some("total_area") file=Some("src/
 DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path* Diff Graph Listing Results] 2[Xrefs*])) 3[Output*])
 DUMP tip=None peek=None status="saved"
 DUMP paths filter="" listed=4
+DUMP step-views 2:5(whole +10/+10)
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(2) step=Some(5) focus=Some("total_area") file=Some("src/store.rs") sel=Some((20, 24))
 DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path* Diff Graph Listing Results] 2[Xrefs*])) 3[Output*])
 DUMP tip=None peek=None status="saved"
 DUMP paths filter="" listed=4
-DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
-DUMP graph zoom=1.000
-DUMP tab=Path path=Some(2) step=Some(6) focus=Some("log_line") file=Some("src/main.rs") sel=Some((23, 25))
-DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path* Diff Graph Listing Results] 2[Xrefs*])) 3[Output*])
-DUMP tip=None peek=None status="saved"
-DUMP paths filter="" listed=4
+DUMP step-views 2:5(whole +0/+0)
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(2) step=Some(5) focus=Some("total_area") file=Some("src/store.rs") sel=Some((20, 24))
 DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path* Diff Graph Listing Results] 2[Xrefs*])) 3[Output*])
 DUMP tip=None peek=None status="saved"
 DUMP paths filter="" listed=4
-DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
-DUMP graph zoom=1.000
-DUMP tab=Path path=Some(2) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
-DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path* Diff Graph Listing Results] 2[Xrefs*])) 3[Output*])
-DUMP tip=None peek=None status="saved"
-DUMP paths filter="" listed=4
-DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
-DUMP graph zoom=1.000
-DUMP tab=Path path=Some(2) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
-DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path* Diff Graph Listing Results] 2[Xrefs*])) 3[Output*])
-DUMP tip=None peek=None status="saved"
-DUMP paths filter="" listed=4
-DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
-DUMP graph zoom=1.000
-DUMP tab=Path path=Some(2) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
-DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path* Diff Graph Listing Results] 2[Xrefs*])) 3[Output*])
-DUMP tip=None peek=None status="saved"
-DUMP paths filter="" listed=4
+DUMP step-views 2:1(hidden folded +0/+0) 2:5(whole +0/+0)
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Path path=Some(2) step=Some(6) focus=Some("log_line") file=Some("src/main.rs") sel=Some((23, 25))
 DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path* Diff Graph Listing Results] 2[Xrefs*])) 3[Output*])
 DUMP tip=None peek=None status="saved"
 DUMP paths filter="" listed=4
+DUMP step-views 2:1(hidden folded +0/+0) 2:5(whole +0/+0)
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Path path=Some(2) step=Some(5) focus=Some("total_area") file=Some("src/store.rs") sel=Some((20, 24))
+DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path* Diff Graph Listing Results] 2[Xrefs*])) 3[Output*])
+DUMP tip=None peek=None status="saved"
+DUMP paths filter="" listed=4
+DUMP step-views 2:1(hidden folded +0/+0) 2:5(whole +0/+0)
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Path path=Some(2) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
+DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path* Diff Graph Listing Results] 2[Xrefs*])) 3[Output*])
+DUMP tip=None peek=None status="saved"
+DUMP paths filter="" listed=4
+DUMP step-views 2:1(hidden folded +0/+0) 2:5(whole +0/+0)
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Path path=Some(2) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
+DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path* Diff Graph Listing Results] 2[Xrefs*])) 3[Output*])
+DUMP tip=None peek=None status="saved"
+DUMP paths filter="" listed=4
+DUMP step-views 2:0(folded +0/+0) 2:1(folded +0/+0) 2:2(folded +0/+0) 2:4(folded +0/+0) 2:5(whole +0/+0)
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Path path=Some(2) step=Some(0) focus=Some("main") file=Some("src/main.rs") sel=Some((6, 10))
+DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path* Diff Graph Listing Results] 2[Xrefs*])) 3[Output*])
+DUMP tip=None peek=None status="saved"
+DUMP paths filter="" listed=4
+DUMP step-views 2:5(whole +0/+0)
+DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
+DUMP graph zoom=1.000
+DUMP tab=Path path=Some(2) step=Some(6) focus=Some("log_line") file=Some("src/main.rs") sel=Some((23, 25))
+DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path* Diff Graph Listing Results] 2[Xrefs*])) 3[Output*])
+DUMP tip=None peek=None status="saved"
+DUMP paths filter="" listed=4
+DUMP step-views 2:5(whole +0/+0)
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP tab=Graph path=Some(2) step=Some(6) focus=Some("log_line") file=Some("src/main.rs") sel=Some((23, 25))
 DUMP panels down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path Diff Graph* Listing Results] 2[Xrefs*])) 3[Output*])
 DUMP tip=None peek=None status="saved"
 DUMP paths filter="" listed=4
+DUMP step-views 2:5(whole +0/+0)
 DUMP backend progress="" indexing={} unmerged=0 reindexing=false linking=false
 DUMP graph zoom=1.000
 DUMP node 1 main

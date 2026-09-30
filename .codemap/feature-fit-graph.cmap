@@ -3,7 +3,7 @@ path feature-fit-graph
 kind flow
 author ai
 group features/gui
-note The Graph tab's 'fit' button zooms and pans so the whole graph fits the canvas with a margin, centred, shrinking the font step by step down to the smallest readable size; '1:1' sets the zoom back to 100% and centres the selected node. The camera otherwise moves only on explicit navigation.
+note The Graph tab's 'fit' button zooms and pans so the whole graph fits the canvas with a margin, centred, shrinking the font step by step down to the smallest readable size; '1:1' sets the zoom back to 100% and centres the selected node. The reader reaches for it after panning and zooming into one part, to see the whole graph again without re-centring by hand (design.md section 6, the graph). The camera otherwise moves only on explicit navigation.
 
 step 5ljx4z
 order 1

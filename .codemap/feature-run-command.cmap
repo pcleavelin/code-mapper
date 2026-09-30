@@ -3,7 +3,7 @@ path feature-run-command
 kind flow
 author ai
 group features/gui
-note Click the command line at the bottom of the Output panel, type any CLI command (without the root) and press enter: it runs against the open index and map exactly as the CLI would, its output is appended to the log and the log scrolls to the end. A command that changes the map marks it unsaved instead of saving. 'clear' empties the log. Up and down recall earlier commands.
+note Click the command line at the bottom of the Output panel, type any CLI command (without the root) and press enter: it runs against the open index and map exactly as the CLI would, its output is appended to the log and the log scrolls to the end. The reader needs it for the map edits that have no control of their own yet (notes, links, kind, group) and for roots, without leaving for a terminal (design.md section 6). A command that changes the map marks it unsaved instead of saving. 'clear' empties the log. Up and down recall earlier commands.
 
 step arolan
 order 3

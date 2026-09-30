@@ -3,7 +3,7 @@ path feature-callers
 kind flow
 author ai
 group features/cli
-note callers <symbol>: who calls a symbol. Every symbol matching the name is listed, each followed by its callers. Callers live in other files, so indexing the symbol's own file would not find them; with a server the command asks for the symbol's incoming calls instead and maps each call site back to the symbol enclosing it. Without a server (the GUI's command line) the index's caller list is answered.
+note callers <symbol>: who calls a symbol. The agent reaches for it to move up the call graph without grepping for call sites by hand (design.md section 5). Every symbol matching the name is listed, each followed by its callers. Callers live in other files, so indexing the symbol's own file would not find them; with a server the command asks for the symbol's incoming calls instead and maps each call site back to the symbol enclosing it. Without a server (the GUI's command line) the index's caller list is answered.
 
 step esgi7r
 order 3

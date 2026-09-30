@@ -3,7 +3,7 @@ path feature-refs
 kind flow
 author ai
 group features/cli
-note refs <symbol>: every reference to a symbol, as file:line: text under each match. References are asked of the language's server for the one symbol. With no Servers (the GUI) a file that a server indexed answers from the references it stored; otherwise the command says which server it needs, because tree-sitter does not resolve references.
+note refs <symbol>: every reference to a symbol, as file:line: text under each match. The agent reaches for it when a symbol is used other than by a call (a type, a field, a constant), which the call graph commands do not see (commit e25b2f92410a). References are asked of the language's server for the one symbol. With no Servers (the GUI) a file that a server indexed answers from the references it stored; otherwise the command says which server it needs, because tree-sitter does not resolve references.
 
 step 04yqdz
 order 5

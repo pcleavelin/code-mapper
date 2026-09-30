@@ -271,8 +271,7 @@ fn scrolled_column_clips_children_and_reports_content() {
             _ => None,
         })
         .collect();
-    let bar = Scrollbar::of(list.rect, px(80), px(12)).unwrap();
-    assert_eq!(fills, [bar.track, bar.thumb.shrink(px(1))]);
+    assert_eq!(fills, [rect(42, 0, 8, 30), rect(43, 3, 6, 18)]);
 }
 
 #[test]

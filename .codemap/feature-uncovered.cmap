@@ -3,7 +3,7 @@ path feature-uncovered
 kind flow
 author ai
 group features/cli
-note uncovered [filter]: every symbol no current step overlaps, largest first, so the owner can audit what a session judged too trivial to map. The filter is a substring of the symbol's name or its file's path. Size is the ordering because a large uncovered symbol is more likely an omission than a small one.
+note uncovered [filter]: every symbol no current step overlaps, largest first, so the owner can audit what a session judged too trivial to map. The owner needs it to audit which symbols a session judged too trivial to map, since coverage is observed rather than enforced (design.md section 5). The filter is a substring of the symbol's name or its file's path. Size is the ordering because a large uncovered symbol is more likely an omission than a small one.
 
 step 6r7994
 order 1

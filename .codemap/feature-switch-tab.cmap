@@ -3,7 +3,7 @@ path feature-switch-tab
 kind flow
 author ai
 group features/gui
-note Each panel's header has a tab per view it holds (Results shows its hit count); clicking one brings that view to front in its panel. Switching changes only what is shown: the selection, the path being read and the file stay. Other features switch the centre view on their own (opening a line shows the Listing, a search the Results): that brings the view to front wherever it is, and puts it back next to the last one shown if it was in no panel.
+note Each panel's header has a tab per view it holds (Results shows its hit count); clicking one brings that view to front in its panel. The reader reaches for it to bring an open view to front without picking it again or splitting the panel (design.md section 6, tab strip). Switching changes only what is shown: the selection, the path being read and the file stay. Other features switch the centre view on their own (opening a line shows the Listing, a search the Results): that brings the view to front wherever it is, and puts it back next to the last one shown if it was in no panel.
 
 step 0omynn
 order 0

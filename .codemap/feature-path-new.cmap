@@ -3,7 +3,7 @@ path feature-path-new
 kind flow
 author ai
 group features/cli
-note path-new <name> <kind> [note] [--group g]: create an empty path. kind is flow (what happens when X), layer (an abstraction's surface) or type (a data structure and what mutates it). The note and group are optional and set in the same command. Creating a name that exists changes nothing but the note and group given, so a script that creates its paths can be run again.
+note path-new <name> <kind> [note] [--group g]: create an empty path. The agent needs it to create the path the agent contract requires every new non-trivial symbol to go into (design.md section 5). kind is flow (what happens when X), layer (an abstraction's surface) or type (a data structure and what mutates it). The note and group are optional and set in the same command. Creating a name that exists changes nothing but the note and group given, so a script that creates its paths can be run again.
 
 step 0imqla
 order 2

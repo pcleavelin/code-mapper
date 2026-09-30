@@ -3,7 +3,7 @@ path feature-path-swap
 kind flow
 author ai
 group features/cli
-note path-swap <name> <a> <b>: exchange two steps' places in the path's list. Siblings in a path are shown in list order, which for a flow follows the code's call order; layers and types have no call order, so this is how their author orders siblings. Parents are untouched, so swapping two steps under different parents changes only where each sits among its own siblings. Prints nothing on success.
+note path-swap <name> <a> <b>: exchange two steps' places in the path's list. The agent reaches for it to order siblings in layer and type paths, which have no call order the tool can derive (commit 8ba04f79ddad). Siblings in a path are shown in list order, which for a flow follows the code's call order; layers and types have no call order, so this is how their author orders siblings. Parents are untouched, so swapping two steps under different parents changes only where each sits among its own siblings. Prints nothing on success.
 
 step 11glbd
 order 0

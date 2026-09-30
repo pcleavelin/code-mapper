@@ -3,7 +3,7 @@ path feature-show
 kind flow
 author ai
 group features/cli
-note show <file> [start] [end]: print a file's lines numbered, 1-based and inclusive. start and end default to the whole file and are clamped to it instead of rejected, so an overshooting range still prints. It is the fallback for code no path covers, and its line format is the one path uses for a step's code.
+note show <file> [start] [end]: print a file's lines numbered, 1-based and inclusive. The agent reaches for it to read code no path covers yet, which would otherwise send it back to an editor (design.md section 5). start and end default to the whole file and are clamped to it instead of rejected, so an overshooting range still prints. It is the fallback for code no path covers, and its line format is the one path uses for a step's code.
 
 step e86f51
 order 2

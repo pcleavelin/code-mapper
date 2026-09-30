@@ -3,7 +3,7 @@ path feature-move-view
 kind flow
 author ai
 group features/gui
-note Press a view's tab and drag it: once the pointer has travelled a few pixels a band shows where it will land. Over the middle of a panel the band covers the panel and letting go adds the view to that panel's tabs; within a quarter of a panel's edge the band covers that half and letting go splits the panel there, the view alone in the new half. A panel left with no views closes and its neighbour takes its room. Letting go over the top or status bar, or before the pointer has moved, changes nothing (a press on a tab alone just shows it).
+note Press a view's tab and drag it: once the pointer has travelled a few pixels a band shows where it will land. The reader reaches for it to lay the window out the way they read instead of keeping the default panels (design.md section 6, panel header). Over the middle of a panel the band covers the panel and letting go adds the view to that panel's tabs; within a quarter of a panel's edge the band covers that half and letting go splits the panel there, the view alone in the new half. A panel left with no views closes and its neighbour takes its room. Letting go over the top or status bar, or before the pointer has moved, changes nothing (a press on a tab alone just shows it).
 
 step a40hff
 order 0

@@ -3,7 +3,7 @@ path feature-go-to-line
 kind flow
 author ai
 group features/gui
-note In the Listing's toolbar, type a line number in the 'line' field and press enter: the listing selects that line and scrolls it into view, three lines from the top. A number past either end is clamped to the file and the status bar says so; text that is not a number, or no open file, is reported in the status bar.
+note In the Listing's toolbar, type a line number in the 'line' field and press enter: the listing selects that line and scrolls it into view, three lines from the top. The reader reaches for it to reach a known line number without scrolling for it (design.md section 6, Listing). A number past either end is clamped to the file and the status bar says so; text that is not a number, or no open file, is reported in the status bar.
 
 step 1a0bgg
 order 0

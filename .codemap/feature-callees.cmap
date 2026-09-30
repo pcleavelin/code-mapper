@@ -3,7 +3,7 @@ path feature-callees
 kind flow
 author ai
 group features/cli
-note callees <symbol>: what a symbol calls. Every symbol matching the name is listed, each followed by its callees indented one level. A symbol's callees are known once its own file is indexed, so the command asks the language server for the matched symbols' files first; without a server the tree-sitter resolver's calls are answered.
+note callees <symbol>: what a symbol calls. The agent reaches for it to move down the call graph without opening every function a symbol calls (design.md section 5). Every symbol matching the name is listed, each followed by its callees indented one level. A symbol's callees are known once its own file is indexed, so the command asks the language server for the matched symbols' files first; without a server the tree-sitter resolver's calls are answered.
 
 step 0pb9ar
 order 1

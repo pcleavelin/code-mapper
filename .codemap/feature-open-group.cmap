@@ -3,7 +3,7 @@ path feature-open-group
 kind flow
 author ai
 group features/gui
-note Click a group's row in the Paths list to open or close it. A closed group hides every path and group inside it; the row shows the group's last name segment, the number of paths under it, and turns red when any of them has a stale step. Until clicked, a group is open exactly when the path being read is inside it. The choice lasts for the session.
+note Click a group's row in the Paths list to open or close it. The reader reaches for it to close the groups they are not working in, which would otherwise list every path in the map at once (design.md section 6, Paths). A closed group hides every path and group inside it; the row shows the group's last name segment, the number of paths under it, and turns red when any of them has a stale step. Until clicked, a group is open exactly when the path being read is inside it. The choice lasts for the session.
 
 step 1sqnqq
 order 2

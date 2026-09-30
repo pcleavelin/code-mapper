@@ -3,7 +3,7 @@ path feature-diff
 kind flow
 author ai
 group features/cli
-note diff: the map against the parent revision's map (@- in jj, HEAD in git), so the owner reviews what a session changed in the map without reading path output. Paths are listed as + added, - removed, or ~ changed; a changed path lists its new, re-pinned, note-edited and relinked steps and its removed ones. It needs a repository and a map at the parent revision; either missing is an error.
+note diff: the map against the parent revision's map (@- in jj, HEAD in git), so the owner reviews what a session changed in the map without reading path output. The owner needs it to review what a session changed in the map without reading path output (design.md section 11, milestone M4). Paths are listed as + added, - removed, or ~ changed; a changed path lists its new, re-pinned, note-edited and relinked steps and its removed ones. It needs a repository and a map at the parent revision; either missing is an error.
 
 step 176xed
 order 0

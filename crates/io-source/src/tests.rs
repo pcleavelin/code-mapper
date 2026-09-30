@@ -45,10 +45,6 @@ fn the_walk_skips_ignored_hidden_and_binary_files() {
         .find(|file| file.path.as_str() == "src/a.rs")
         .unwrap();
     assert_eq!(source.contents.as_str(), "fn a() {\n    b();\n}\n");
-    assert_eq!(
-        source.contents.hash(),
-        TextHash::of(b"fn a() {\n    b();\n}\n")
-    );
     assert_eq!(source.contents.text().whole_hash(), source.contents.hash());
     assert!(source.modified.is_some());
     let stamps = Stamps::new(

@@ -3,7 +3,7 @@ path feature-path-move
 kind flow
 author ai
 group features/cli
-note path-move <name> <index> <under>: hang one step, with its whole subtree, under another step (-1 makes it a root step). It is the fix path-add's does-not-call note names: in a flow a step belongs under the step that calls it, and this command re-checks that after the move and prints the same note when the new parent still does not call it. Step indices do not change; only the parent does.
+note path-move <name> <index> <under>: hang one step, with its whole subtree, under another step (-1 makes it a root step). The agent reaches for it to fix what path-add's "does not call" warning names, so a flow reads as a true call tree (commit ad32f4c0d01c). It is the fix path-add's does-not-call note names: in a flow a step belongs under the step that calls it, and this command re-checks that after the move and prints the same note when the new parent still does not call it. Step indices do not change; only the parent does.
 
 step gb8m30
 order 5

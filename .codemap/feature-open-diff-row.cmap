@@ -3,7 +3,7 @@ path feature-open-diff-row
 kind flow
 author ai
 group features/gui
-note The Diff tab lists every path added (+), removed (-) or changed (~) against the parent revision's map (@- in jj, HEAD in git), with a summary of what changed and, for changed paths, a line per new or changed step. Clicking a row opens that path in the document; a removed path, which exists only in the parent, is described in the status bar instead. 'refresh' reads the parent's map again, for when the parent revision moved.
+note The Diff tab lists every path added (+), removed (-) or changed (~) against the parent revision's map (@- in jj, HEAD in git), with a summary of what changed and, for changed paths, a line per new or changed step. The owner reaches for it to audit what a session changed in the map and whether it mapped what it built (design.md section 2). Clicking a row opens that path in the document; a removed path, which exists only in the parent, is described in the status bar instead. 'refresh' reads the parent's map again, for when the parent revision moved.
 
 step 8tb0ub
 order 6

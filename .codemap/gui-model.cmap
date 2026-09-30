@@ -181,9 +181,9 @@ parent 9xv7om
 author ai
 file crates/gui/src/model.rs
 symbol impl StepViews
-lines 0 31
-hash a8ab68174605d55f
-note Read with the default, write through entry, change only existing entries (so unfolding ancestors creates nothing), change every view of one path, and remap every key when steps or paths shift.
+lines 0 38
+hash 0faf8d6b7cf55471
+note Read with the default, write through entry, change only existing entries (so unfolding ancestors creates nothing), change every view of one path, remap every key when steps or paths shift, and list the views that differ from the default for the dump.
 
 step i9wqui
 order 35

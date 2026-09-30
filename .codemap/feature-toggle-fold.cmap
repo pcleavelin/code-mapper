@@ -3,7 +3,7 @@ path feature-toggle-fold
 kind flow
 author ai
 group features/gui
-note The arrow at the left of a step header folds the steps under it: they disappear from the document and the header shows how many are hidden (+n). Pressed again it unfolds them. Only a step with children has the arrow. Selecting a step inside a folded subtree unfolds it.
+note The arrow at the left of a step header folds the steps under it: they disappear from the document and the header shows how many are hidden (+n). The reader reaches for it to skip a branch already understood, or skim structure, instead of scrolling past every nested step (design.md section 6, the document). Pressed again it unfolds them. Only a step with children has the arrow. Selecting a step inside a folded subtree unfolds it.
 
 step 8a976r
 order 1

@@ -3,7 +3,7 @@ path feature-help
 kind flow
 author ai
 group features/cli
-note help: print the usage lines and one row per command, the command's name then its signature and description. Three spellings reach it: 'codemap help' (also --help and -h), which never picks a root, so it works outside a repo; 'codemap <root> help', which is clap's own help subcommand and comes back from parsing as a failure that belongs on stdout; and 'help' typed in the GUI's output panel, which goes through the same parse. Every row's text is the feature registry's name and summary, so the help, the registry and the golden transcripts cannot drift apart. clap's --help flag is disabled on the Command enum so 'help' is the one command that prints this.
+note help: print the usage lines and one row per command, the command's name then its signature and description. The agent reaches for it to learn the commands, and the text cannot drift from them because both come from the one registry (design.md section 10). Three spellings reach it: 'codemap help' (also --help and -h), which never picks a root, so it works outside a repo; 'codemap <root> help', which is clap's own help subcommand and comes back from parsing as a failure that belongs on stdout; and 'help' typed in the GUI's output panel, which goes through the same parse. Every row's text is the feature registry's name and summary, so the help, the registry and the golden transcripts cannot drift apart. clap's --help flag is disabled on the Command enum so 'help' is the one command that prints this.
 
 step 1nsf1l
 order 10

@@ -3,7 +3,7 @@ path feature-hover-info
 kind flow
 author ai
 group features/gui
-note Rest the pointer on an identifier in any code view and a tooltip shows what the language's server knows about it: signature, type, docs. The server is asked only after the pointer has stayed on the same spot for a short delay and while no other hover is in flight; answers are cached per position and file version. A language without a server shows the matching symbol's code instead; prose files show nothing. The tooltip hides while the left button is down.
+note Rest the pointer on an identifier in any code view and a tooltip shows what the language's server knows about it: signature, type, docs. The reader reaches for it to see an identifier's signature, type or docs without leaving the code being read (design.md section 6, peek). The server is asked only after the pointer has stayed on the same spot for a short delay and while no other hover is in flight; answers are cached per position and file version. A language without a server shows the matching symbol's code instead; prose files show nothing. The tooltip hides while the left button is down.
 
 step 35v8s4
 order 6
