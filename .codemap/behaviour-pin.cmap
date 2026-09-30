@@ -61,8 +61,8 @@ parent ii6lor
 author ai
 file crates/codemap/tests/common/cli.rs
 symbol edit
-lines 0 87
-hash 136489e10b5692af
+lines 0 90
+hash 36f8d324511ce556
 note Every edit command on a scratch path: creating with a bad kind, adding by symbol and by lines with bad parents and ranges, notes and note-edit, moves and swaps, links (to a missing path and to itself), rename, groups and group-rename, path-pin with bad ranges, path-rm of a step and of a linked path, and promote with and without a name.
 
 step 57lpfq

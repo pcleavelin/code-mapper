@@ -32,26 +32,24 @@ not ticked. The CLI list is ordered by what cost the agents the most.
    Wanted: anchor to the first symbol with a span, or `symA..symB`.
 6. **`under` wants an index that batching cannot predict.** Accept a `file:sym` or
    `file:line` target.
-7. **`promote` depth 2 yields 42 steps**, 30 of them getters and builder combinators.
-   A "skip symbols under N lines / with more than K callers" filter.
-8. **`grep` has no file scope.**
-9. **Absolute anchors render with an empty symbol slot** in `paths`.
-10. **"Intentionally unmapped" marker** (Deferred, below): a third of
+7. **`grep` has no file scope.**
+8. **Absolute anchors render with an empty symbol slot** in `paths`.
+9. **"Intentionally unmapped" marker** (Deferred, below): a third of
     memejoin-rs is a dead previous version; `coverage` cannot distinguish explained from
     acknowledged-dead.
-11. **Negative claims and counts are unverifiable from `path` output** ("the only
+10. **Negative claims and counts are unverifiable from `path` output** ("the only
     handler that names X", "twenty-six methods"); the reviewer found every one it
     checked wrong. Per-path "what falls between the steps" would help.
-12. **`repin` can follow a common name into the wrong file.** Once a step's file, or its
+11. **`repin` can follow a common name into the wrong file.** Once a step's file, or its
     symbol within the file, is gone, every same-named symbol in the repo is a candidate,
     and only "half the lines survive" guards it. A short `fmt` step whose `impl Display`
     was deleted can land on another type's identical `fmt`. The new file is printed, so
     the reread catches it; a stricter bar for a cross-file move (all lines kept, or the
     candidate absent from the parent revision) would stop it.
-13. **`path-move` does not bounds-check `under`**, unlike `path-add`. `-7` is saved as
+12. **`path-move` does not bounds-check `under`**, unlike `path-add`. `-7` is saved as
     `-1` (a root) and a number past the step count fails with "no such parent step".
     Give it `path-add`'s check and message.
-14. **`path` prints line 1 of the file as the body of a symbol-gone step** (`STALE
+13. **`path` prints line 1 of the file as the body of a symbol-gone step** (`STALE
     src/main.rs (symbol gone) log_line` followed by `1 mod shapes;`). Print nothing, the
     way the GUI document does.
 

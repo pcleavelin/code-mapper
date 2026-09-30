@@ -69,8 +69,8 @@ order 26
 author ai
 file crates/gui/src/authoring.rs
 symbol promote
-lines 0 21
-hash 9d38fe77442de552
+lines 0 26
+hash 98f2e1ebd0cc8707
 note 'new path from it' under the Xrefs heading: Map::promote at depth 1 with no name, so the path is named after the symbol and holds it with its callees (an existing path of that name is extended). The result is opened on the Path tab.
 
 step 6llyda

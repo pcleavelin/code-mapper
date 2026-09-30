@@ -7,7 +7,7 @@ mod step;
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::index::{Depth, FileId, Index, SymbolId};
+use crate::index::{Cut, Depth, FileId, Index, PrunedTree, Stop, SymbolId};
 use crate::text::{RelativePath, Span};
 
 pub use diff::{Change, PathDiff, StepChange, StepDiff};
@@ -47,12 +47,34 @@ pub enum Row {
     },
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Pruning {
+    Pruned,
+    All,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LinkCandidate {
+    pub step: StepId,
+    pub target: PathName,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Promoted {
+    pub name: PathName,
+    pub cut: BTreeMap<SymbolId, Cut>,
+    pub stopped: BTreeMap<SymbolId, Stop>,
+    pub links: Vec<LinkCandidate>,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Map {
     paths: Vec<Path>,
 }
 
 impl Map {
+    pub const PROMOTE_DEPTH: Depth = Depth::new(2);
+
     pub fn new(paths: Vec<Path>) -> Result<Self, MapError> {
         let mut names = BTreeSet::new();
         for path in &paths {
@@ -403,6 +425,41 @@ impl Map {
         Ok(self.paths.remove(position))
     }
 
+    fn covers(&self, besides: &PathName, index: &Index, symbol: SymbolId) -> Vec<PathName> {
+        let (Some(found), Some(file)) = (index.symbol(symbol), index.file(symbol.file())) else {
+            return Vec::new();
+        };
+        self.paths
+            .iter()
+            .filter(|path| path.name() != besides)
+            .filter(|path| {
+                path.steps().iter().any(|step| {
+                    step.resolved_symbol() == Some(symbol)
+                        || (step.file() == file.path()
+                            && step.span().contains(found.span().start())
+                            && step.span().contains(found.span().end()))
+                })
+            })
+            .map(|path| path.name().clone())
+            .collect()
+    }
+
+    fn link_target(&self, besides: &PathName, index: &Index, symbol: SymbolId) -> Option<PathName> {
+        let covering = self.covers(besides, index, symbol);
+        let rooted = covering.iter().find(|name| {
+            self.path(name).is_some_and(|path| {
+                path.steps()
+                    .iter()
+                    .any(|step| step.parent().is_none() && step.resolved_symbol() == Some(symbol))
+            })
+        });
+        match (rooted, covering.as_slice()) {
+            (Some(rooted), _) => Some(rooted.clone()),
+            (None, [only]) => Some(only.clone()),
+            _ => None,
+        }
+    }
+
     pub fn promote(
         &mut self,
         index: &Index,
@@ -410,12 +467,23 @@ impl Map {
         depth: Depth,
         name: Option<PathName>,
         author: Author,
-    ) -> Result<PathName, MapError> {
+        pruning: Pruning,
+    ) -> Result<Promoted, MapError> {
         let root_symbol = index.symbol(root).ok_or(MapError::NoSuchSymbol)?;
         let name = name.unwrap_or_else(|| PathName::from_symbol(root_symbol.name()));
         let _added = self.add_path(name.clone(), PathKind::Flow, author)?;
+        let tree = match pruning {
+            Pruning::All => PrunedTree {
+                entries: index.call_tree(root, depth),
+                ..PrunedTree::default()
+            },
+            Pruning::Pruned => index.pruned_tree(root, depth, |symbol| {
+                symbol != root && !self.covers(&name, index, symbol).is_empty()
+            }),
+        };
         let mut stack: Vec<StepId> = Vec::new();
-        for entry in index.call_tree(root, depth) {
+        let mut links = Vec::new();
+        for entry in &tree.entries {
             let level = entry.depth.position();
             let (Some(symbol), Some(file)) =
                 (index.symbol(entry.symbol), index.file(entry.symbol.file()))
@@ -447,10 +515,23 @@ impl Map {
                     parent.as_ref(),
                 )?,
             };
+            if tree.stopped.get(&entry.symbol) == Some(&Stop::Mapped)
+                && let Some(target) = self.link_target(&name, index, entry.symbol)
+            {
+                links.push(LinkCandidate {
+                    step: id.clone(),
+                    target,
+                });
+            }
             stack.truncate(level);
             stack.push(id);
         }
-        Ok(name)
+        Ok(Promoted {
+            name,
+            cut: tree.cut,
+            stopped: tree.stopped,
+            links,
+        })
     }
 
     pub fn resolve_all(&mut self, index: &Index) {

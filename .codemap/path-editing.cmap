@@ -58,7 +58,7 @@ parent le10tk
 author ai
 file crates/domain/src/map.rs
 symbol impl Map
-lines 131 159
+lines 133 161
 hash c8c49e1b6df9f5c4
 note edit_path_note and edit_step_note: the text must occur in the note, else MapError::NoteLacks; replacing it with nothing that leaves an empty note clears the note.
 

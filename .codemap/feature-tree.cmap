@@ -11,7 +11,7 @@ author ai
 file crates/cli/src/exec.rs
 symbol tree
 lines 0 8
-hash d69918baef7b771d
+hash 45e6e0614ec528e9
 note Indexes everything the tree reaches, then prints each match's tree.
 
 step esnzp1
@@ -32,7 +32,7 @@ author ai
 file crates/cli/src/exec.rs
 symbol index_tree
 lines 0 16
-hash 7a09941bfac5cb5a
+hash e34b196172ef6d3c
 note Loop: compute the tree from every match, collect the pending files it reaches that were not asked yet, index them, repeat until none are left or there is no server.
 
 step ntq3mk

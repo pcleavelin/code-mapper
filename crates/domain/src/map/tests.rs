@@ -776,8 +776,16 @@ fn promote_adds_only_symbols_the_path_does_not_pin_whole() {
     }]);
     let mut map = Map::default();
     let path = map
-        .promote(&index, root, Depth::new(5), None, Author::Agent)
-        .unwrap();
+        .promote(
+            &index,
+            root,
+            Depth::new(5),
+            None,
+            Author::Agent,
+            Pruning::All,
+        )
+        .unwrap()
+        .name;
     assert_eq!(path, name("a"));
     let tree: Vec<(Option<String>, u32)> = map
         .path(&path)
@@ -794,8 +802,16 @@ fn promote_adds_only_symbols_the_path_does_not_pin_whole() {
         .collect();
     assert_eq!(tree, [(Some("a".to_owned()), 0), (Some("b".to_owned()), 1)]);
     let again = map
-        .promote(&index, root, Depth::new(5), None, Author::Agent)
-        .unwrap();
+        .promote(
+            &index,
+            root,
+            Depth::new(5),
+            None,
+            Author::Agent,
+            Pruning::All,
+        )
+        .unwrap()
+        .name;
     assert_eq!(again, path);
     assert_eq!(map.path(&path).unwrap().steps().len(), 2);
 
@@ -811,8 +827,16 @@ fn promote_adds_only_symbols_the_path_does_not_pin_whole() {
         )
         .unwrap();
     let _again = map
-        .promote(&index, root, Depth::new(5), None, Author::Agent)
-        .unwrap();
+        .promote(
+            &index,
+            root,
+            Depth::new(5),
+            None,
+            Author::Agent,
+            Pruning::All,
+        )
+        .unwrap()
+        .name;
     assert_eq!(map.path(&path).unwrap().steps().len(), 3);
 
     let shallow = map
@@ -822,8 +846,10 @@ fn promote_adds_only_symbols_the_path_does_not_pin_whole() {
             Depth::new(0),
             Some(name("shallow")),
             Author::Human,
+            Pruning::All,
         )
-        .unwrap();
+        .unwrap()
+        .name;
     assert_eq!(map.path(&shallow).unwrap().steps().len(), 1);
 }
 
@@ -1003,4 +1029,61 @@ fn slices_follow_the_diff() {
     assert_eq!(followed.alignment.get(Line::new(0)), Some(Line::new(5)));
     assert_eq!(followed.alignment.get(Line::new(2)), None);
     assert_eq!(followed.alignment.get(Line::new(40)), None);
+}
+
+#[test]
+fn promote_stops_at_code_another_path_covers_and_names_the_path_to_link() {
+    let mut index = one_file();
+    let first = index.by_line(&file("a.rs"), Line::new(0)).unwrap();
+    let second = index.by_line(&file("a.rs"), Line::new(3)).unwrap();
+    index.connect(&[Edge {
+        from: first,
+        to: second,
+    }]);
+    let mut map = Map::default();
+    let promote = |into: &mut Map, root, called: &str, pruning| {
+        into.promote(
+            &index,
+            root,
+            Depth::new(2),
+            Some(name(called)),
+            Author::Agent,
+            pruning,
+        )
+        .unwrap()
+    };
+    let links = |from: &Map, promoted: &Promoted| -> Vec<(usize, String)> {
+        let steps = from.path(&promoted.name).unwrap().steps();
+        promoted
+            .links
+            .iter()
+            .map(|link| {
+                (
+                    steps
+                        .iter()
+                        .position(|step| step.id() == &link.step)
+                        .unwrap(),
+                    link.target.to_string(),
+                )
+            })
+            .collect()
+    };
+    let all = promote(&mut map, first, "a-covering", Pruning::All);
+    assert!(all.links.is_empty() && all.stopped.is_empty());
+    let only = promote(&mut map, first, "one", Pruning::Pruned);
+    assert_eq!(
+        only.stopped.values().copied().collect::<Vec<_>>(),
+        [Stop::Mapped]
+    );
+    assert_eq!(links(&map, &only), [(1, "a-covering".to_owned())]);
+    let _rooted = promote(&mut map, second, "z-rooted", Pruning::Pruned);
+    let rooted = promote(&mut map, first, "two", Pruning::Pruned);
+    assert_eq!(links(&map, &rooted), [(1, "z-rooted".to_owned())]);
+    let _removed = map.remove_path(&name("z-rooted")).unwrap();
+    let ambiguous = promote(&mut map, first, "three", Pruning::Pruned);
+    assert_eq!(
+        ambiguous.stopped.values().copied().collect::<Vec<_>>(),
+        [Stop::Mapped]
+    );
+    assert!(links(&map, &ambiguous).is_empty());
 }

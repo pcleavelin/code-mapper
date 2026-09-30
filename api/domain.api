@@ -94,6 +94,10 @@ index::language::pub const fn extensions(self) -> &'static [Extension]
 index::language::pub const fn program(self) -> Program
 index::language::pub const fn arguments(self) -> &'static [Argument]
 index::language::pub fn of(path: &RelativePath) -> Option<Self>
+index::prune::pub enum Cut { Test, Accessor, Trivial, }
+index::prune::pub enum Stop { Mapped, Shared, OtherPackage, }
+index::prune::pub struct PrunedTree { pub entries: Vec<TreeEntry>, pub cut: BTreeMap<SymbolId, Cut>, pub stopped: BTreeMap<SymbolId, Stop>, }
+index::prune::pub fn pruned_tree( &self, root: SymbolId, deepest: Depth, mapped: impl Fn(SymbolId) -> bool, ) -> PrunedTree
 index::symbol::pub struct FileId(Position);
 index::symbol::pub struct SymbolIndex(Position);
 index::symbol::pub const fn number(self) -> usize
@@ -162,7 +166,11 @@ map::pub struct Changed;
 map::pub struct Coverage<'map> { spans: BTreeMap<&'map RelativePath, Vec<Span>>, }
 map::pub fn covers(&self, file: &RelativePath, span: Span) -> bool
 map::pub enum Row { Group { group: GroupName, depth: Depth, paths: PathCount, }, Path { name: PathName, depth: Depth, }, }
+map::pub enum Pruning { Pruned, All, }
+map::pub struct LinkCandidate { pub step: StepId, pub target: PathName, }
+map::pub struct Promoted { pub name: PathName, pub cut: BTreeMap<SymbolId, Cut>, pub stopped: BTreeMap<SymbolId, Stop>, pub links: Vec<LinkCandidate>, }
 map::pub struct Map { paths: Vec<Path>, }
+map::pub const PROMOTE_DEPTH: Depth = Depth::new(2);
 map::pub fn new(paths: Vec<Path>) -> Result<Self, MapError>
 map::pub fn paths(&self) -> &[Path]
 map::pub fn path(&self, name: &PathName) -> Option<&Path>
@@ -183,7 +191,7 @@ map::pub fn swap( &mut self, name: &PathName, one: &StepId, other: &StepId, ) ->
 map::pub fn place( &mut self, name: &PathName, step: &StepId, parent: Option<&StepId>, before: Option<&StepId>, ) -> Result<Changed, MapError>
 map::pub fn remove_step(&mut self, name: &PathName, step: &StepId) -> Result<Step, MapError>
 map::pub fn remove_path(&mut self, name: &PathName) -> Result<Path, MapError>
-map::pub fn promote( &mut self, index: &Index, root: SymbolId, depth: Depth, name: Option<PathName>, author: Author, ) -> Result<PathName, MapError>
+map::pub fn promote( &mut self, index: &Index, root: SymbolId, depth: Depth, name: Option<PathName>, author: Author, pruning: Pruning, ) -> Result<Promoted, MapError>
 map::pub fn resolve_all(&mut self, index: &Index)
 map::pub fn rows(&self) -> Vec<Row>
 map::pub fn rows_where(&self, wanted: impl Fn(&Path) -> bool) -> Vec<Row>
@@ -343,6 +351,7 @@ text::pub struct RelativePath(String);
 text::pub fn new(path: &str) -> Self
 text::pub fn as_str(&self) -> &str
 text::pub fn stem(&self) -> &str
+text::pub fn package(&self) -> &str
 text::pub fn directory(&self) -> Option<&str>
 text::pub fn extension(&self) -> Option<&str>
 text::pub fn ends_with(&self, suffix: &str) -> bool

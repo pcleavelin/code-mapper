@@ -313,7 +313,7 @@ impl Feature {
             Self::Promote => Spec::new(
                 Text::new("promote"),
                 Text::new(
-                    "<symbol> [depth] [name]          create a path shaped like a symbol's call tree (default depth 1, named after the symbol)",
+                    "<symbol> [depth] [name] [--all]  create a path shaped like a symbol's call tree (default depth 2, named after the symbol): tests, accessors and trivial bodies are left out, shared, other-package and already-mapped callees are kept as leaves, and each rule's symbols and the step-link lines for mapped leaves are printed; --all keeps the whole tree",
                 ),
                 Surface::Command,
                 &const { [Trigger::Command(Text::new("promote"))] },

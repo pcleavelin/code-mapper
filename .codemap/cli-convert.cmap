@@ -90,8 +90,8 @@ parent brorqo
 author ai
 file crates/cli/src/convert.rs
 symbol Edit
-lines 0 72
-hash ee62179fc46ddc36
+lines 0 73
+hash 006b4998ddcad22b
 note The map edits. Names of paths to find are TextFragments, looked up by exec, while names to create are Result<PathName, MapError>, so a bad name reaches exec and is reported there like any other refusal.
 
 step ba8nwl

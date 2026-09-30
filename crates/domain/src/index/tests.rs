@@ -274,3 +274,114 @@ fn ids_print_as_their_positions() {
     assert_eq!(found.file().number(), 1);
     assert_eq!(found.symbol().number(), 2);
 }
+
+fn pruning_fixture() -> Index {
+    let mut index = Index::new(Root::new(FsPath::new(".")));
+    index.push(file(
+        "crates/app/src/main.rs",
+        "fn run() {\n    load();\n    wrap(1);\n    count();\n    shared();\n    other();\n}\nfn load() {\n    parse();\n}\nfn parse() {\n    deep();\n}\nfn deep() {}\nfn wrap(x: u32) -> Id {\n    Self(x)\n}\nfn count(&self) -> usize { self.items.len() }\nfn shared() {\n    deep();\n    deep();\n}\n",
+        vec![
+            symbol("run", 0, 6, 0, None),
+            symbol("load", 7, 9, 0, None),
+            symbol("parse", 10, 12, 0, None),
+            symbol("deep", 13, 13, 0, None),
+            symbol("wrap", 14, 16, 0, None),
+            symbol("count", 17, 17, 0, None),
+            symbol("shared", 18, 21, 0, None),
+        ],
+    ));
+    index.push(file(
+        "crates/app/src/tests.rs",
+        "fn checks() {}\n",
+        vec![symbol("checks", 0, 0, 0, None)],
+    ));
+    index.push(file(
+        "crates/lib/src/lib.rs",
+        "fn other() {\n    far();\n}\nfn far() {}\n",
+        vec![symbol("other", 0, 2, 0, None), symbol("far", 3, 3, 0, None)],
+    ));
+    let at = |path: &str, name: &str| id(&index, path, name);
+    let main = "crates/app/src/main.rs";
+    let (run, load, parse, deep) = (
+        at(main, "run"),
+        at(main, "load"),
+        at(main, "parse"),
+        at(main, "deep"),
+    );
+    let (wrap, count, shared) = (at(main, "wrap"), at(main, "count"), at(main, "shared"));
+    let checks = at("crates/app/src/tests.rs", "checks");
+    let (other, far) = (
+        at("crates/lib/src/lib.rs", "other"),
+        at("crates/lib/src/lib.rs", "far"),
+    );
+    let edge = |from, to| Edge { from, to };
+    index.connect(&[
+        edge(run, load),
+        edge(run, wrap),
+        edge(run, count),
+        edge(run, shared),
+        edge(run, other),
+        edge(load, parse),
+        edge(load, checks),
+        edge(load, count),
+        edge(load, shared),
+        edge(parse, deep),
+        edge(parse, count),
+        edge(parse, shared),
+        edge(shared, deep),
+        edge(other, far),
+    ]);
+    index
+}
+
+fn pruned(index: &Index, mapped: &[&str]) -> (Vec<String>, Vec<String>, Vec<String>) {
+    let main = "crates/app/src/main.rs";
+    let run = id(index, main, "run");
+    let mapped: Vec<SymbolId> = mapped.iter().map(|name| id(index, main, name)).collect();
+    let tree = index.pruned_tree(run, Depth::new(2), |symbol| mapped.contains(&symbol));
+    let name = |symbol: SymbolId| index.symbol(symbol).unwrap().name().to_string();
+    (
+        tree.entries
+            .iter()
+            .map(|entry| {
+                format!(
+                    "{}{}",
+                    "  ".repeat(entry.depth.value() as usize),
+                    name(entry.symbol)
+                )
+            })
+            .collect(),
+        tree.cut
+            .iter()
+            .map(|(symbol, cut)| format!("{} {cut:?}", name(*symbol)))
+            .collect(),
+        tree.stopped
+            .iter()
+            .map(|(symbol, stop)| format!("{} {stop:?}", name(*symbol)))
+            .collect(),
+    )
+}
+
+#[test]
+fn a_pruned_tree_cuts_tests_accessors_and_trivial_bodies_and_stops_at_shared_foreign_and_mapped_code()
+ {
+    let index = pruning_fixture();
+    let (entries, cut, stopped) = pruned(&index, &[]);
+    assert_eq!(
+        entries,
+        ["run", "  load", "    parse", "    shared", "  other"]
+    );
+    let mut cut = cut;
+    cut.sort();
+    assert_eq!(cut, ["checks Test", "count Accessor", "wrap Trivial"]);
+    let mut stopped = stopped;
+    stopped.sort();
+    assert_eq!(stopped, ["other OtherPackage", "shared Shared"]);
+    let (mapped_entries, _, mut mapped_stops) = pruned(&index, &["load", "shared"]);
+    assert_eq!(mapped_entries, ["run", "  load", "  shared", "  other"]);
+    mapped_stops.sort();
+    assert_eq!(
+        mapped_stops,
+        ["load Mapped", "other OtherPackage", "shared Mapped"]
+    );
+}

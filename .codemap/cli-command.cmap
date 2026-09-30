@@ -220,8 +220,8 @@ parent c8vrt4
 author ai
 file crates/cli/src/exec.rs
 symbol edit
-lines 0 37
-hash 7cbf0aa9f389a2c4
+lines 0 38
+hash 5a0cedc6dcd4fd56
 note One arm per map edit; each returns Changed or the Failure that stopped it before the map was touched.
 
 step xr1iac

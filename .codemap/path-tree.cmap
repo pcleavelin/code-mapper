@@ -31,7 +31,7 @@ parent d43fmw
 author ai
 file crates/domain/src/map.rs
 symbol promote
-lines 23 32
+lines 34 43
 hash fda9003794896f5b
 note Is this symbol already a whole-symbol step of this path? The check that makes re-promoting add only what is missing instead of duplicating the tree.
 

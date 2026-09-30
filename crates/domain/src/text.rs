@@ -325,6 +325,16 @@ impl fmt::Display for Revision {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct Folder(&'static str);
+
+const PACKAGE_FOLDERS: [Folder; 4] = [
+    Folder("crates"),
+    Folder("packages"),
+    Folder("libs"),
+    Folder("apps"),
+];
+
 #[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct RelativePath(String);
 
@@ -340,6 +350,18 @@ impl RelativePath {
     pub fn stem(&self) -> &str {
         let base = self.0.rsplit('/').next().unwrap_or(&self.0);
         base.split('.').next().unwrap_or(base)
+    }
+
+    pub fn package(&self) -> &str {
+        let mut segments = self.0.match_indices('/').map(|(at, _)| at);
+        let first = segments.next().unwrap_or(self.0.len());
+        let head = self.0.get(..first).unwrap_or_default();
+        let end = if PACKAGE_FOLDERS.iter().any(|folder| folder.0 == head) {
+            segments.next().unwrap_or(self.0.len())
+        } else {
+            first
+        };
+        self.0.get(..end).unwrap_or_default()
     }
 
     pub fn directory(&self) -> Option<&str> {

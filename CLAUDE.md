@@ -98,8 +98,11 @@ covering it: the code has no comments, so the map is the only prose about it.
   about once a second, since a merge re-resolves the map and drops every drawn grid.
 - **Links go through a step**, not text in a note, so they are checked, renamed with their
   path, and expanded. A path that is linked to cannot be removed.
-- **Roots are strictly "no callers"; `promote` defaults to depth 1**, a scaffold the agent
-  trims. **Coverage is observable, never a `check` failure.** **No review state on paths.**
+- **Roots are strictly "no callers".** **`promote` prunes by measured rules** (depth 2; tests,
+  accessors and trivial bodies left out; shared, other-package and mapped callees kept as
+  leaves), chosen by scoring against this repo's hand-written feature paths; it is still a
+  scaffold the agent trims and annotates. **Coverage is observable, never a `check` failure.**
+  **No review state on paths.**
 - **The GUI is one selection** (a symbol, with a step behind it when reached through a path);
   every view shows it, and the document, outline and graph are three views of one thing that
   never disagree. The graph is derived (the selection plus an ordered list of expansions) and

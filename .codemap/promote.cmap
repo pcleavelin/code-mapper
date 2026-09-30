@@ -3,7 +3,17 @@ path promote
 kind flow
 author ai
 group cli
-note The scaffolding command, and the reason building a flow is not tedious. promote turns a symbol's call tree into a path shaped like it: one step per symbol, each under the step it is called from, named after the root symbol. The result is a draft, not an answer: the agent then deletes the steps that do not belong to the workflow, re-parents anything the resolver placed wrong, and writes the notes. Running it again on the same path adds only the symbols the path does not already have, so a path can be deepened after a change.
+note The scaffolding command, and the reason building a flow is not tedious. promote turns a symbol's call tree into a path shaped like it: one step per symbol, each under the step it is called from, named after the root symbol. By default the tree is pruned (Index::pruned_tree) by rules measured against the hand-written feature paths of this repo: on its CLI features a depth-2 pruned tree kept 85% of the steps the authors chose at 69% precision, where the whole depth-2 tree kept 93% at 20% (TODO item 7's 42-step scaffolds). The result is still a draft, not an answer: the agent then deletes the steps that do not belong to the workflow, re-parents anything the resolver placed wrong, and writes the notes. Running it again on the same path adds only the symbols the path does not already have, so a path can be deepened after a change.
+
+step 413kyo
+order 15
+parent ia62kn
+author ai
+file crates/domain/src/map.rs
+symbol covers
+lines 0 17
+hash b678ee9a7fc77c82
+note Every other path with a step on the symbol, or with a step whose lines hold all of it: what 'already mapped' means to promote.
 
 step 6881s1
 order 4
@@ -23,7 +33,27 @@ file crates/domain/src/index.rs
 symbol call_tree
 lines 0 22
 hash b81e86551466166b
-note Where the shape comes from. Default depth is 1: a shallow scaffold the agent deepens on purpose is cheaper to fix than a deep one it has to prune.
+note Where the shape comes from with --all: every callee to the depth asked.
+
+step 7klfk9
+order 8
+parent ia62kn
+author ai
+file crates/domain/src/index/prune.rs
+symbol pruned_tree
+lines 0 50
+hash 6c76d9f3d6a949c8
+note The default shape: the call tree in pre-order, each symbol once, where a cut callee is left out and a stopped one is kept as a leaf whose own callees are not followed. The root is never cut or stopped. The rules and their thresholds were chosen by scoring against the hand-written feature paths of this repo; the report names every symbol each rule touched so an agent can put one back.
+
+step 8kery8
+order 12
+parent e26eha
+author ai
+file crates/domain/src/text.rs
+symbol package
+lines 0 10
+hash 94db9fcb3152bcf5
+note The package a file belongs to, the unit the other-package rule compares: the first two segments under crates, packages, libs or apps (crates/cli), else the first segment.
 
 step a0t4ce
 order 1
@@ -32,8 +62,18 @@ author ai
 file crates/cli/src/exec.rs
 symbol index_tree
 lines 0 16
-hash 7a09941bfac5cb5a
+hash e34b196172ef6d3c
 note Asks the language servers for the files the call tree reaches, one round per answer: a newly indexed file can reveal deeper callees, so it repeats until the tree reaches no pending file. Without servers (the GUI's command line) it asks nothing and the tree is what the index already knows.
+
+step e26eha
+order 11
+parent 7klfk9
+author ai
+file crates/domain/src/index/prune.rs
+symbol stop
+lines 0 17
+hash 38cad9267358220f
+note Kept as a leaf: a callee another path already maps (checked first, so the report can offer the link), one with more than 2 callers (shared code a flow reaches but does not own), or one in another package than its caller (a boundary a flow crosses into a layer). Measured: keeping shared callees as leaves instead of leaving them out kept 20 points of recall.
 
 step e9sag5
 order 2
@@ -50,9 +90,9 @@ order 0
 author ai
 file crates/cli/src/exec.rs
 symbol promote
-lines 0 15
-hash dc99fd0a0eaf7edb
-note The command: index the files the call tree reaches, resolve the symbol to exactly one, hand it to Map::promote with the agent or human as author, and print how many steps the path now has. The name and depth arrive already converted: the name as a PathName or the MapError that refuses it, the depth as Levels, 1 unless given.
+lines 0 30
+hash 0009aa323550ee52
+note The command: index the files the call tree reaches, resolve the symbol to exactly one, hand it to Map::promote with the agent or human as author, and print how many steps the path now has with what each pruning rule did. The name and depth arrive already converted: the name as a PathName or the MapError that refuses it, the depth as Levels, Map::PROMOTE_DEPTH (2) unless given. A pruned promote first asks the server for every pending file of the root's language, since the accessor and shared rules count callers and a caller in an unindexed file would be missed.
 
 step i8jlm4
 order 5
@@ -70,9 +110,29 @@ parent ggmy6f
 author ai
 file crates/domain/src/map.rs
 symbol promote
-lines 0 48
-hash 9b371b481fd7afe9
+lines 0 72
+hash d7d9004b365ccfc5
 note Walks the call tree in pre-order and keeps a stack of the StepId at each depth, so the step created at depth d becomes the parent of everything at depth d+1. The path is created as a flow, since a call tree is a workflow by construction, and named from the root symbol when no name is given.
+
+step kpfpi2
+order 14
+parent ggmy6f
+author ai
+file crates/cli/src/wire.rs
+symbol promote_report
+lines 0 34
+hash 30e82e821d3619ee
+note What promote prints: the step count, then per rule the symbols it left out or kept as leaves, then a ready step-link line for each mapped leaf that has a target.
+
+step l4xdjv
+order 13
+parent ia62kn
+author ai
+file crates/domain/src/map.rs
+symbol link_target
+lines 0 14
+hash 427ad720301a7600
+note Which path a mapped leaf should link to: the path rooted at that symbol, else the only other path covering it; none when several cover it and none is rooted there. On this repo's feature paths 80% of linked steps link to a path that covers the step's symbol.
 
 step mkum0c
 order 6
@@ -80,6 +140,26 @@ parent ia62kn
 author ai
 file crates/domain/src/map.rs
 symbol promote
-lines 23 43
+lines 34 54
 hash 40944294b7ba26d9
 note Re-promoting reuses the step a symbol already has instead of adding a second one, which also means notes already written survive. Only a step anchored at the symbol's first line counts as the symbol's step, so a step narrowed to a slice of it does not stop the whole symbol from being added.
+
+step u3yovj
+order 9
+parent 7klfk9
+author ai
+file crates/domain/src/index/prune.rs
+symbol cut
+lines 0 31
+hash accba617e7c39002
+note Left out: a test (a 'tests' path segment or file stem, or a member of mod tests), an accessor (3 lines or fewer with 3 or more callers: a short specific helper with few callers is kept, since length alone cut too much of what authors keep), or a trivial body.
+
+step xrlyep
+order 10
+parent u3yovj
+author ai
+file crates/domain/src/index/prune.rs
+symbol trivial
+lines 0 15
+hash 109cfc2f656a4850
+note A body that is one line and only reads a field of self or builds Self: a getter or a newtype wrap, never where a flow does anything.

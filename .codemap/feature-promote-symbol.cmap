@@ -30,8 +30,8 @@ order 0
 author ai
 file crates/gui/src/authoring.rs
 symbol promote
-lines 0 21
-hash 9d38fe77442de552
+lines 0 26
+hash 98f2e1ebd0cc8707
 note The handler: promote at depth 1 with no name (the symbol's), authored by the human; a refusal becomes the status. The map is marked dirty and the path opened through select_path on the Path tab.
 
 step uesrbk
@@ -40,6 +40,6 @@ parent miupsu
 author ai
 file crates/domain/src/map.rs
 symbol promote
-lines 0 48
-hash 9b371b481fd7afe9
+lines 0 72
+hash d7d9004b365ccfc5
 note The same promote the CLI runs: the call tree to the depth, each symbol added under its caller unless the path already pins it whole.

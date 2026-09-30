@@ -88,7 +88,7 @@ author ai
 file crates/features/src/lib.rs
 symbol spec
 lines 0 794
-hash 8eadfa6e4136a412
+hash 20c02131f8e3292b
 note The registry itself: one match arm per feature, built at compile time from const data. A command feature has Surface::Command and exactly one trigger, its own name as a command; a window feature lists every click, key, typed field and gesture that fires it.
 
 step k761ua

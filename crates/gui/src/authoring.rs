@@ -1,5 +1,5 @@
 use domain::{
-    Author, Depth, FileId, GroupName, MapError, PathKind, PathName, Span, StepId, SymbolId,
+    Author, FileId, GroupName, Map, MapError, PathKind, PathName, Pruning, Span, StepId, SymbolId,
 };
 use ui::{Label, Point, Rect};
 
@@ -307,11 +307,16 @@ impl App {
 
     pub(crate) fn promote(&mut self, symbol: SymbolId) {
         let model = &mut self.model;
-        let promoted = model
-            .map
-            .promote(&model.index, symbol, Depth::new(1), None, Author::Human);
+        let promoted = model.map.promote(
+            &model.index,
+            symbol,
+            Map::PROMOTE_DEPTH,
+            None,
+            Author::Human,
+            Pruning::Pruned,
+        );
         let name = match promoted {
-            Ok(name) => name,
+            Ok(promoted) => promoted.name,
             Err(error) => {
                 model.status = Status::refused(&model.map, error);
                 return;

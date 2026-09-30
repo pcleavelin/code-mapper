@@ -1,19 +1,20 @@
+use std::collections::BTreeMap;
 use std::fmt;
 use std::iter;
 use std::mem;
 
 use clap::{Args, CommandFactory, Parser};
 use domain::{
-    Author, Depth, GroupName, Index, Line, LineCount, Location, MapError, Note, ParentLabel, Path,
-    PathCount, PathKind, PathName, Program, RelativePath, Revision, SourceFile, SourceLine, Span,
-    Step, StepChange, StepNumber, Symbol, SymbolId, SymbolKind, SymbolName, SymbolQuery,
-    TextFragment,
+    Author, Cut, Depth, GroupName, Index, Line, LineCount, Location, MapError, Note, ParentLabel,
+    Path, PathCount, PathKind, PathName, Program, Promoted, RelativePath, Revision, SourceFile,
+    SourceLine, Span, Step, StepChange, StepNumber, Stop, Symbol, SymbolId, SymbolKind, SymbolName,
+    SymbolQuery, TextFragment,
 };
 use features::Feature;
 use index::{ServerNotice, StartError};
 use io_map::{Fault, MapLoadError, MapSaveError, MapStore, MapVersion, Origin, ParseError};
 
-use crate::convert::{Count, StepIndex, Under};
+use crate::convert::{Count, StepIndex, Under, step_index};
 use crate::exec::LeftStale;
 use crate::failure::{Candidate, Failure, StepPlace};
 use crate::output::{Output, write_line};
@@ -269,9 +270,10 @@ pub(crate) struct PathRmArguments {
 #[derive(Args, Debug)]
 pub(crate) struct PromoteArguments {
     pub(crate) symbol: String,
-    #[arg(default_value_t = 1)]
-    pub(crate) depth: usize,
+    pub(crate) depth: Option<usize>,
     pub(crate) name: Option<String>,
+    #[arg(long)]
+    pub(crate) all: bool,
 }
 
 #[derive(Args, Debug)]
@@ -776,13 +778,72 @@ pub(crate) fn pinned(output: &mut Output, index: &Index, position: StepIndex, st
     write_line!(output, "step [{position}] pinned to {}", place(index, step));
 }
 
-pub(crate) fn promote_report(output: &mut Output, path: &Path) {
+const fn cut_word(cut: Cut) -> &'static str {
+    match cut {
+        Cut::Test => "test",
+        Cut::Accessor => "accessor (3 lines or fewer, 3 or more callers)",
+        Cut::Trivial => "trivial body (a field or Self)",
+    }
+}
+
+const fn stop_word(stop: Stop) -> &'static str {
+    match stop {
+        Stop::Mapped => "mapped by another path",
+        Stop::Shared => "shared (3 or more callers)",
+        Stop::OtherPackage => "in another package",
+    }
+}
+
+fn names_by<T: Copy + Ord>(
+    index: &Index,
+    reasons: &BTreeMap<SymbolId, T>,
+) -> BTreeMap<T, Vec<String>> {
+    let mut grouped: BTreeMap<T, Vec<String>> = BTreeMap::new();
+    for (symbol, reason) in reasons {
+        if let Some(found) = index.symbol(*symbol) {
+            grouped
+                .entry(*reason)
+                .or_default()
+                .push(found.name().as_str().to_owned());
+        }
+    }
+    grouped
+}
+
+pub(crate) fn promote_report(output: &mut Output, index: &Index, path: &Path, promoted: &Promoted) {
     write_line!(
         output,
         "path '{}' now has {} steps",
         path.name(),
         path.steps().len()
     );
+    let cut = names_by(index, &promoted.cut);
+    if !cut.is_empty() {
+        write_line!(output, "left out (promote --all keeps them):");
+        for (reason, names) in cut {
+            write_line!(output, "  {}: {}", cut_word(reason), names.join(", "));
+        }
+    }
+    let stopped = names_by(index, &promoted.stopped);
+    if !stopped.is_empty() {
+        write_line!(output, "kept as a leaf, not followed:");
+        for (reason, names) in stopped {
+            write_line!(output, "  {}: {}", stop_word(reason), names.join(", "));
+        }
+    }
+    if !promoted.links.is_empty() {
+        write_line!(output, "link each mapped leaf to the path that maps it:");
+        for link in &promoted.links {
+            if let Some(position) = step_index(path, &link.step) {
+                write_line!(
+                    output,
+                    "  step-link {} {position} {}",
+                    path.name(),
+                    link.target
+                );
+            }
+        }
+    }
 }
 
 pub(crate) fn stale_row(

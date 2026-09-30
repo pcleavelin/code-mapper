@@ -123,6 +123,6 @@ order 12
 author ai
 file crates/domain/src/text.rs
 symbol impl RelativePath
-lines 0 30
-hash 588ff80ff2645560
+lines 0 42
+hash dde5ec7f094168aa
 note A path under the root, backslashes turned to forward slashes, the form every file is named by in the index and the map. stem, directory and extension are what the index and the graph label files with; ends_with lets a command take a path suffix.

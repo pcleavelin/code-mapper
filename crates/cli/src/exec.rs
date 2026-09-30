@@ -3,9 +3,9 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use domain::{
     Author, Backend, Change, Changed, Depth, FileId, FileText, Followed, GroupName, Index,
-    Language, Line, LineCount, Map, MapError, Note, Path, PathKind, PathName, RelativePath,
-    Revision, Row, SourceFile, SourceLine, Span, Step, StepAddress, StepNumber, Symbol, SymbolId,
-    SymbolName, SymbolQuery, TextFragment, follow,
+    Language, Line, LineCount, Map, MapError, Note, Path, PathKind, PathName, Pruning,
+    RelativePath, Revision, Row, SourceFile, SourceLine, Span, Step, StepAddress, StepNumber,
+    Symbol, SymbolId, SymbolName, SymbolQuery, TextFragment, follow,
 };
 use index::Servers;
 use io_map::{MapStore, MapText};
@@ -133,7 +133,8 @@ impl Run<'_> {
                 symbol,
                 levels,
                 name,
-            } => self.promote(&symbol, levels, name),
+                pruning,
+            } => self.promote(&symbol, levels, name, pruning),
         }
     }
 
@@ -312,7 +313,7 @@ impl Run<'_> {
     }
 
     fn tree(&mut self, symbol: &SymbolName, levels: Levels) -> Result<(), Failure> {
-        self.index_tree(symbol, levels)?;
+        self.index_tree(symbol, levels.depth())?;
         for id in find_symbols(self.index, symbol)? {
             for entry in self.index.call_tree(id, levels.depth()) {
                 wire::symbol_line(self.output, self.index, entry.symbol, entry.depth);
@@ -871,16 +872,31 @@ impl Run<'_> {
     fn promote(
         &mut self,
         symbol: &SymbolName,
-        levels: Levels,
+        levels: Option<Levels>,
         name: Result<Option<PathName>, MapError>,
+        pruning: Pruning,
     ) -> Result<Changed, Failure> {
-        self.index_tree(symbol, levels)?;
+        let depth = levels.map_or(Map::PROMOTE_DEPTH, Levels::depth);
+        self.index_tree(symbol, depth)?;
+        if pruning == Pruning::Pruned {
+            let language = find_symbol(self.index, symbol)
+                .ok()
+                .and_then(|root| self.index.file(root.file()))
+                .and_then(SourceFile::language);
+            let pending: Vec<RelativePath> = self
+                .index
+                .files()
+                .filter(|file| file.is_pending() && file.language() == language)
+                .map(|file| file.path().clone())
+                .collect();
+            self.index_files(pending);
+        }
         let root = find_symbol(self.index, symbol)?;
-        let named = self
+        let promoted = self
             .map
-            .promote(self.index, root, levels.depth(), name?, self.author)?;
-        if let Some(path) = self.map.path(&named) {
-            wire::promote_report(self.output, path);
+            .promote(self.index, root, depth, name?, self.author, pruning)?;
+        if let Some(path) = self.map.path(&promoted.name) {
+            wire::promote_report(self.output, self.index, path, &promoted);
         }
         Ok(Changed)
     }
@@ -938,12 +954,12 @@ impl Run<'_> {
         self.map.resolve_all(self.index);
     }
 
-    fn index_tree(&mut self, symbol: &SymbolName, levels: Levels) -> Result<(), Failure> {
+    fn index_tree(&mut self, symbol: &SymbolName, depth: Depth) -> Result<(), Failure> {
         let mut asked: BTreeSet<RelativePath> = BTreeSet::new();
         loop {
             let found: Vec<RelativePath> = find_symbols(self.index, symbol)?
                 .into_iter()
-                .flat_map(|id| self.index.call_tree(id, levels.depth()))
+                .flat_map(|id| self.index.call_tree(id, depth))
                 .filter_map(|entry| self.index.file(entry.symbol.file()))
                 .filter(|file| file.is_pending() && !asked.contains(file.path()))
                 .map(|file| file.path().clone())

@@ -1,8 +1,8 @@
 use std::fmt;
 
 use domain::{
-    Depth, GroupName, Line, MapError, Note, Path, PathKind, PathName, RelativePath, Revision,
-    SourceFile, Span, StepId, SymbolName, TextFragment,
+    Depth, GroupName, Line, MapError, Note, Path, PathKind, PathName, Pruning, RelativePath,
+    Revision, SourceFile, Span, StepId, SymbolName, TextFragment,
 };
 
 use crate::wire::{
@@ -321,8 +321,9 @@ pub(crate) enum Edit {
     },
     Promote {
         symbol: SymbolName,
-        levels: Levels,
+        levels: Option<Levels>,
         name: Result<Option<PathName>, MapError>,
+        pruning: Pruning,
     },
 }
 
@@ -591,8 +592,13 @@ impl From<PromoteArguments> for Edit {
     fn from(arguments: PromoteArguments) -> Self {
         Self::Promote {
             symbol: SymbolName::new(&arguments.symbol),
-            levels: Levels(arguments.depth),
+            levels: arguments.depth.map(Levels),
             name: arguments.name.as_deref().map(PathName::new).transpose(),
+            pruning: if arguments.all {
+                Pruning::All
+            } else {
+                Pruning::Pruned
+            },
         }
     }
 }
