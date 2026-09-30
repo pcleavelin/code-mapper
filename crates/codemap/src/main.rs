@@ -8,6 +8,7 @@ use cli::{Argument, Channel, Failure, Invocation, Output};
 use domain::{Author, Root};
 use index::Servers;
 use io_map::MapStore;
+use strum::VariantArray;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct WordName(&'static str);
@@ -18,7 +19,7 @@ impl WordName {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
 enum HelpWord {
     Word,
     Flag,
@@ -26,8 +27,6 @@ enum HelpWord {
 }
 
 impl HelpWord {
-    const ALL: [Self; 3] = [Self::Word, Self::Flag, Self::Letter];
-
     const fn name(self) -> WordName {
         WordName(match self {
             Self::Word => "help",
@@ -125,7 +124,7 @@ fn main() -> ExitCode {
         .collect();
     let first = arguments.first();
     if first.is_some_and(|first| {
-        HelpWord::ALL
+        HelpWord::VARIANTS
             .iter()
             .any(|entry| entry.name().as_str() == first.as_str())
     }) {

@@ -9,6 +9,7 @@ name = "codemap"
 path = "src/main.rs"
 
 [dependencies]
+strum = { version = "0.28", features = ["derive"] }
 cli = { path = "../cli" }
 gui = { path = "../gui" }
 domain = { path = "../domain" }

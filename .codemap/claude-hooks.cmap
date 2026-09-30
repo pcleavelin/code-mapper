@@ -31,8 +31,8 @@ parent ky1r9m
 author ai
 file xtask/src/state.rs
 symbol load
-lines 0 36
-hash b99a935300e4d447
+lines 0 38
+hash ffe6ce1e4bca7193
 link gate-state
 note The recorded result.
 
@@ -42,8 +42,8 @@ parent 21x8i0
 author ai
 file xtask/src/hook.rs
 symbol impl ToolName
-lines 0 18
-hash 90e05aaf8862d9a8
+lines 0 10
+hash eb734ec8e4c0c13d
 note name is the tool_name field's exact spelling; convert finds the matching variant instead of comparing tool_name against each one in turn.
 
 step 3l608d
@@ -283,8 +283,8 @@ parent qt0e9o
 author ai
 file xtask/src/hook.rs
 symbol impl Event
-lines 0 22
-hash cab35aa5624122cd
+lines 0 16
+hash 8b95231dabdb4e62
 note The event name on the command line.
 
 step wmurmf
@@ -293,8 +293,8 @@ parent q6kz2r
 author ai
 file xtask/src/hook.rs
 symbol convert
-lines 0 34
-hash 6e77299a92c221ad
+lines 0 36
+hash 607bf6e9242e8e03
 note Converts the wire input into the hook's own types: the tool as Edit (Edit, Write, MultiEdit, NotebookEdit), Shell (Bash) or Other, the file as a path relative to the repo (none when outside it), whether this stop is a continuation of an earlier blocked stop, which event is stopping (session or a subagent's own) and whether a background task is still running.
 
 step xs7sll
@@ -313,8 +313,8 @@ parent g4olwp
 author ai
 file xtask/src/hook.rs
 symbol impl Stopping
-lines 0 9
-hash d19f74051489306f
+lines 0 7
+hash 5f8e86a207fc1f67
 note name is the hook_event_name field's exact spelling; convert finds the matching variant, defaulting to Session, instead of comparing hook_event_name against each one in turn.
 
 step yxwobd

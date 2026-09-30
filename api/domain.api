@@ -47,7 +47,6 @@ index::pub fn take_edges(&mut self, linked: &Self)
 index::pub fn pending(&self) -> Vec<PendingBatch>
 index::pub fn give_up(&mut self, language: Language)
 index::file::pub enum HighlightClass { Plain, Keyword, String, Comment, Function, Type, Constant, Property, }
-index::file::pub const ALL: [Self; 8] = [ Self::Plain, Self::Keyword, Self::String, Self::Comment, Self::Function, Self::Type, Self::Constant, Self::Property, ];
 index::file::pub const fn is_quoted(self) -> bool
 index::file::pub struct Highlight { pub start: ByteOffset, pub end: ByteOffset, pub class: HighlightClass, }
 index::file::pub enum Backend { TreeSitter, Server, }
@@ -91,7 +90,6 @@ index::language::pub const fn as_str(self) -> &'static str
 index::language::pub struct Argument(&'static str);
 index::language::pub const fn as_str(self) -> &'static str
 index::language::pub enum Language { Rust, Odin, Clang, Python, Javascript, }
-index::language::pub const ALL: [Self; 5] = [ Self::Rust, Self::Odin, Self::Clang, Self::Python, Self::Javascript, ];
 index::language::pub const fn extensions(self) -> &'static [Extension]
 index::language::pub const fn program(self) -> Program
 index::language::pub const fn arguments(self) -> &'static [Argument]
@@ -229,7 +227,6 @@ map::name::pub struct TextFragment(String);
 map::name::pub fn new(text: &str) -> Self
 map::name::pub fn as_str(&self) -> &str
 map::name::pub enum PathKind { Flow, Layer, Type, }
-map::name::pub const ALL: [Self; 3] = [Self::Flow, Self::Layer, Self::Type];
 map::name::pub enum Author { Human, Agent, }
 map::name::pub struct PathCount(u32);
 map::name::pub const fn new(value: u32) -> Self

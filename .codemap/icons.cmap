@@ -127,8 +127,8 @@ parent 256k5h
 author ai
 file crates/ui/src/icon.rs
 symbol of
-lines 0 2
-hash 9f84d520ea9241d4
+lines 0 5
+hash d9e8f27b63debc25
 note The icon a glyph is, if any.
 
 step zzbqtf

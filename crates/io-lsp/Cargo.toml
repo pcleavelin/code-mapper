@@ -5,6 +5,7 @@ edition = "2024"
 publish = false
 
 [dependencies]
+strum = { version = "0.28", features = ["derive"] }
 domain = { path = "../domain" }
 io-process = { path = "../io-process" }
 serde_json = "1"

@@ -51,8 +51,8 @@ parent z9ah7m
 author ai
 file xtask/src/state.rs
 symbol load
-lines 0 36
-hash b99a935300e4d447
+lines 0 38
+hash ffe6ce1e4bca7193
 link gate-state
 note The previous run's state, read to count identical red runs.
 

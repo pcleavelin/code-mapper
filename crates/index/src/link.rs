@@ -4,6 +4,7 @@ use domain::{
     Call, Edge, FileId, Index, Qualifier, RelativePath, SourceFile, Symbol, SymbolId, SymbolName,
     TypeName,
 };
+use strum::VariantArray;
 
 pub fn link(index: &mut Index) {
     let edges = edges(index);
@@ -58,15 +59,13 @@ impl SuffixName {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
 enum Suffix {
     Source,
     Header,
 }
 
 impl Suffix {
-    const ALL: [Self; 2] = [Self::Source, Self::Header];
-
     fn name(self) -> SuffixName {
         SuffixName(match self {
             Self::Source => ".c",
@@ -75,8 +74,9 @@ impl Suffix {
     }
 
     fn matches(path: &RelativePath) -> bool {
-        Self::ALL
-            .into_iter()
+        Self::VARIANTS
+            .iter()
+            .copied()
             .any(|suffix| path.ends_with(suffix.name().as_str()))
     }
 }

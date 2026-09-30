@@ -145,8 +145,8 @@ order 3
 author ai
 file xtask/src/arch.rs
 symbol DEPENDENCIES
-lines 0 123
-hash 598832835bc7e5f7
+lines 0 138
+hash eacd7ae41d7f000f
 note The crate graph: for each package, the crates it may depend on, workspace crates and external ones alike. domain, io-process, io-store, features and ui depend on nothing; each io crate on domain and at most one lower io crate and its one external library; index, cli, gui and codemap stack on top.
 
 step wnqjal

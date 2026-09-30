@@ -30,8 +30,8 @@ parent x1wksz
 author ai
 file crates/io-map/src/wire.rs
 symbol parse_kind
-lines 0 4
-hash a8f07d918e99be48
+lines 0 5
+hash 87948378e1b81413
 note The file's words, flow, layer and type (kind_name the other way). An unknown word fails the read with UnknownKind.
 
 step x1wksz

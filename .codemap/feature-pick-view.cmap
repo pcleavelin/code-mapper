@@ -41,8 +41,8 @@ parent 5z60rb
 author ai
 file crates/gui/src/panels.rs
 symbol matching
-lines 0 6
-hash 9d11d4bd70f308fd
+lines 0 7
+hash ac9f40259feff53e
 note The matches, case-insensitive substring of the name.
 
 step m2tf99

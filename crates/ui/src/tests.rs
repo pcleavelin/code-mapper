@@ -1,5 +1,7 @@
 use std::rc::Rc;
 
+use strum::VariantArray;
+
 use crate::{
     Button, Canvas, Cell, Color, Command, Coordinate, Count, Extent, FontSize, Glyph, Grid, Icon,
     Id, Input, Key, Kind, Label, Layout, Measure, Mods, Point, Press, Px, Rect, Run, Scale,
@@ -513,7 +515,7 @@ fn an_icon_is_two_columns_wide_and_spells_its_name() {
     let label = Label::new(format!("{} Paths", Icon::Close.glyph().get()));
     assert_eq!(label.columns(), 8);
     assert_eq!(label.spelled(), "[close] Paths");
-    assert!(Icon::ALL.iter().all(|icon| icon.glyph().is_icon()));
+    assert!(Icon::VARIANTS.iter().all(|icon| icon.glyph().is_icon()));
     assert!(!Glyph::new('x').is_icon());
     assert_eq!(Icon::of(Icon::SplitDown.glyph()), Some(Icon::SplitDown));
 }

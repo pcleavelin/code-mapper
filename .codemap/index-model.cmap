@@ -61,8 +61,8 @@ parent 9pngy2
 author ai
 file crates/domain/src/index/language.rs
 symbol impl Language
-lines 0 51
-hash 87930c8610f8046d
+lines 0 43
+hash 81062b396d811ae3
 note The whole language table: extensions, the server program looked for on PATH, and that program's arguments (--stdio for pyright and typescript-language-server). Adding a language is a variant here plus a grammar in the index crate's Grammar.
 
 step 8cainq
@@ -271,7 +271,7 @@ author ai
 file crates/domain/src/index/language.rs
 symbol of
 lines 0 8
-hash 40c270cce3922603
+hash 7b1aecd188bb9580
 note Extension to language, by the path's last dotted segment. None is what 'indexed for viewing and grep only' means, and a file with no language is never pending. Every language here has a bundled grammar, so a file with a language has symbols even without its server.
 
 step y43lw6

@@ -32,7 +32,7 @@ author ai
 file crates/gui/src/views/authoring.rs
 symbol new_path_form
 lines 0 40
-hash c0d524b335ec7e32
+hash 3943e9f48a23a1fb
 note The form, drawn under the toolbar only while it is open: the labelled name field, a button per kind (kind@flow, kind@layer, kind@type, the chosen one highlighted), then the labelled group field and 'create' (create-path), which queues CreatePath.
 
 step 6bofi6

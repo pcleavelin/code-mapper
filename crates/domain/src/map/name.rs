@@ -1,5 +1,7 @@
 use std::fmt;
 
+use strum::VariantArray;
+
 use crate::index::SymbolName;
 use crate::map::error::{InvalidName, MapError};
 
@@ -156,15 +158,11 @@ impl fmt::Display for TextFragment {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, VariantArray)]
 pub enum PathKind {
     Flow,
     Layer,
     Type,
-}
-
-impl PathKind {
-    pub const ALL: [Self; 3] = [Self::Flow, Self::Layer, Self::Type];
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]

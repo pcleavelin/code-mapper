@@ -98,7 +98,7 @@ author ai
 file xtask/src/source.rs
 symbol kind_map
 lines 0 13
-hash 2d9e9e46f2cdbcfd
+hash 6c6b105569589ad8
 note The kind_id-to-NodeKind table, built once from the grammar: for each variant, asks tree-sitter for the id of its name and records the variant at that slot, so of after this is a slot lookup, not a string compare.
 
 step uus93t
@@ -155,6 +155,6 @@ parent vancak
 author ai
 file xtask/src/source.rs
 symbol impl NodeKind
-lines 0 119
-hash 797dba61f682752d
+lines 0 66
+hash 917b3390bf01abc4
 note is compares a node's kind string against the variant's name, for a single check; of looks a node's numeric kind_id up in kind_map and gets the matching variant (or None for a kind no check names), which is what every match on a node's kind goes through.

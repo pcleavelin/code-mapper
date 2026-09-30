@@ -14,12 +14,12 @@ const DEFAULT: &str = "down6(820 across5(220 0[Paths* Symbols Files] across4(740
 fn the_default_tree_holds_every_view_once() {
     let panels = Panels::default();
     assert_eq!(panels.to_string(), DEFAULT);
-    for view in View::ALL {
+    for view in View::VARIANTS {
         assert_eq!(
             panels
                 .panels()
                 .iter()
-                .filter(|panel| panel.holds(view))
+                .filter(|panel| panel.holds(*view))
                 .count(),
             1,
             "{view:?}"
@@ -193,8 +193,8 @@ fn closing_a_panels_last_tab_closes_the_panel_but_never_the_last_panel() {
         panels.to_string(),
         "down6(820 across5(220 0[Paths* Symbols Files] 1[Path* Graph Listing Results]) 3[Output*])"
     );
-    for view in View::ALL {
-        panels.close_view(view);
+    for view in View::VARIANTS {
+        panels.close_view(*view);
     }
     assert!(panels.is_single());
     assert_eq!(panels.panels().len(), 1);

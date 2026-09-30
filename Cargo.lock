@@ -315,6 +315,7 @@ dependencies = [
  "io-map",
  "io-vcs",
  "regex",
+ "strum",
 ]
 
 [[package]]
@@ -327,6 +328,7 @@ dependencies = [
  "gui",
  "index",
  "io-map",
+ "strum",
 ]
 
 [[package]]
@@ -502,6 +504,9 @@ dependencies = [
 [[package]]
 name = "domain"
 version = "0.1.0"
+dependencies = [
+ "strum",
+]
 
 [[package]]
 name = "downcast-rs"
@@ -543,6 +548,9 @@ dependencies = [
 [[package]]
 name = "features"
 version = "0.1.0"
+dependencies = [
+ "strum",
+]
 
 [[package]]
 name = "find-msvc-tools"
@@ -777,6 +785,7 @@ dependencies = [
  "io-vcs",
  "platform",
  "regex",
+ "strum",
  "ui",
 ]
 
@@ -860,6 +869,7 @@ dependencies = [
  "io-cache",
  "io-lsp",
  "io-source",
+ "strum",
  "tree-sitter",
  "tree-sitter-c",
  "tree-sitter-javascript",
@@ -885,6 +895,7 @@ version = "0.1.0"
 dependencies = [
  "domain",
  "io-store",
+ "strum",
 ]
 
 [[package]]
@@ -902,6 +913,7 @@ dependencies = [
  "domain",
  "io-process",
  "serde_json",
+ "strum",
 ]
 
 [[package]]
@@ -910,6 +922,7 @@ version = "0.1.0"
 dependencies = [
  "domain",
  "io-store",
+ "strum",
 ]
 
 [[package]]
@@ -1578,6 +1591,7 @@ dependencies = [
  "fontdue",
  "io-store",
  "png",
+ "strum",
  "ui",
  "wgpu",
  "winit",
@@ -2007,6 +2021,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
 
 [[package]]
+name = "strum"
+version = "0.28.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9628de9b8791db39ceda2b119bbe13134770b56c138ec1d3af810d045c04f9bd"
+dependencies = [
+ "strum_macros",
+]
+
+[[package]]
+name = "strum_macros"
+version = "0.28.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab85eea0270ee17587ed4156089e10b9e6880ee688791d45a905f5b1ca36f664"
+dependencies = [
+ "heck",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
+]
+
+[[package]]
 name = "syn"
 version = "2.0.119"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2240,6 +2275,9 @@ dependencies = [
 [[package]]
 name = "ui"
 version = "0.1.0"
+dependencies = [
+ "strum",
+]
 
 [[package]]
 name = "unicode-ident"
@@ -2925,6 +2963,7 @@ version = "0.1.0"
 dependencies = [
  "ignore",
  "serde_json",
+ "strum",
  "tree-sitter",
  "tree-sitter-rust",
 ]

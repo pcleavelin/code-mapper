@@ -3,6 +3,7 @@ use std::iter;
 use std::sync::OnceLock;
 
 use ignore::WalkBuilder;
+use strum::VariantArray;
 use tree_sitter::{Language, Node, Parser, Tree};
 
 use crate::text::{LineNumber, Literal, Message, RepoPath, Root};
@@ -16,7 +17,7 @@ impl KindName {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, VariantArray)]
 pub(crate) enum NodeKind {
     Struct,
     Enum,
@@ -71,59 +72,6 @@ pub(crate) enum NodeKind {
 }
 
 impl NodeKind {
-    const ALL: [Self; 50] = [
-        Self::Struct,
-        Self::Enum,
-        Self::Function,
-        Self::FunctionSignature,
-        Self::FunctionType,
-        Self::FieldDeclaration,
-        Self::Constant,
-        Self::Static,
-        Self::OrderedFieldDeclarationList,
-        Self::LineComment,
-        Self::BlockComment,
-        Self::PrimitiveType,
-        Self::TupleType,
-        Self::TypeIdentifier,
-        Self::IndexExpression,
-        Self::BinaryExpression,
-        Self::ScopedIdentifier,
-        Self::Parameter,
-        Self::LetDeclaration,
-        Self::Identifier,
-        Self::FieldIdentifier,
-        Self::AttributeItem,
-        Self::InnerAttributeItem,
-        Self::CallExpression,
-        Self::FieldExpression,
-        Self::IntegerLiteral,
-        Self::FloatLiteral,
-        Self::StringLiteral,
-        Self::UnaryExpression,
-        Self::MatchPattern,
-        Self::OrPattern,
-        Self::TuplePattern,
-        Self::SlicePattern,
-        Self::TupleStructPattern,
-        Self::FieldPattern,
-        Self::ReferencePattern,
-        Self::ReferenceExpression,
-        Self::CapturedPattern,
-        Self::Arguments,
-        Self::MacroInvocation,
-        Self::RawStringLiteral,
-        Self::Trait,
-        Self::Impl,
-        Self::Module,
-        Self::MacroDefinition,
-        Self::Union,
-        Self::EnumVariant,
-        Self::UseDeclaration,
-        Self::TypeItem,
-        Self::VisibilityModifier,
-    ];
-
     const fn name(self) -> KindName {
         KindName(match self {
             Self::Struct => "struct_item",
@@ -196,7 +144,7 @@ fn kind_map() -> &'static [Option<NodeKind>] {
     MAP.get_or_init(|| {
         let language: Language = tree_sitter_rust::LANGUAGE.into();
         let mut map = vec![None; language.node_kind_count()];
-        for kind in NodeKind::ALL {
+        for kind in NodeKind::VARIANTS.iter().copied() {
             let slot = usize::from(language.id_for_node_kind(kind.name().as_str(), true));
             if let Some(entry) = map.get_mut(slot) {
                 *entry = Some(kind);

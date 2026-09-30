@@ -1,5 +1,6 @@
 use domain::{PathKind, SymbolName};
 use platform::Cursor;
+use strum::VariantArray;
 use ui::{Button, Icon, Label, Ui};
 
 use crate::action::Action;
@@ -66,7 +67,7 @@ pub(super) fn new_path_form(model: &Model, frame: &mut Frame<'_>) {
         &Label::new("e.g. startup"),
         NEW_PATH_FIELD,
     );
-    for kind in PathKind::ALL {
+    for kind in PathKind::VARIANTS.iter().copied() {
         let word = Tag::kind(kind);
         let target = ids::KIND.with(&Label::new(word.to_string()));
         let selected = if kind == chosen {

@@ -161,7 +161,7 @@ author ai
 file crates/codemap/tests/features.rs
 symbol every_feature_has_its_flow_path_in_the_map
 lines 0 36
-hash 767e29ccf51e69d4
+hash 69d41924c1216365
 note Every feature in the registry has its flow path feature-<name> in the repo's own map, in features/cli or features/gui by its surface, with exactly one root step, the handler. A feature added without its path fails here.
 
 step b2unkk
@@ -324,8 +324,8 @@ order 56
 author ai
 file crates/codemap/tests/features.rs
 symbol every_feature_is_exercised_by_a_scenario
-lines 0 18
-hash dcf4c9e322fdf1b3
+lines 0 19
+hash b74c648a0295809c
 note Every feature in the registry is triggered by some scenario: at least one of its triggers appears in the CLI or GUI scenario sources. A feature no test reaches fails here.
 
 step hrljo7

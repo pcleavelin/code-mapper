@@ -1,9 +1,11 @@
 use std::fmt;
 
+use strum::VariantArray;
+
 use crate::input::Glyph;
 use crate::text::Label;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, VariantArray)]
 pub enum Icon {
     Add,
     Close,
@@ -36,22 +38,6 @@ impl fmt::Display for IconName {
 }
 
 impl Icon {
-    pub const ALL: [Self; 13] = [
-        Self::Add,
-        Self::Close,
-        Self::SplitAcross,
-        Self::SplitDown,
-        Self::Back,
-        Self::Forward,
-        Self::Unfolded,
-        Self::Folded,
-        Self::MoreAbove,
-        Self::MoreBelow,
-        Self::Check,
-        Self::Up,
-        Self::Down,
-    ];
-
     pub const fn glyph(self) -> Glyph {
         Glyph::new(match self {
             Self::Add => '\u{EA60}',
@@ -89,7 +75,10 @@ impl Icon {
     }
 
     pub fn of(glyph: Glyph) -> Option<Self> {
-        Self::ALL.into_iter().find(|icon| icon.glyph() == glyph)
+        Self::VARIANTS
+            .iter()
+            .copied()
+            .find(|icon| icon.glyph() == glyph)
     }
 }
 

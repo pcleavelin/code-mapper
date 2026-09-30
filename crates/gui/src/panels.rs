@@ -2,6 +2,7 @@ use std::fmt;
 use std::mem;
 
 use domain::{LayoutPanel, LayoutSplit, LayoutTree, Share, SplitDirection, ViewKey};
+use strum::VariantArray;
 use ui::{Axis, Count, Extent, FontSize, Label, Point, Px, Rect};
 
 use crate::model::Tab;
@@ -11,7 +12,7 @@ use crate::theme::{
     SPLIT_LEAST,
 };
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, VariantArray)]
 pub(crate) enum View {
     Paths,
     Symbols,
@@ -41,19 +42,6 @@ impl fmt::Display for ViewName {
 }
 
 impl View {
-    pub(crate) const ALL: [Self; 10] = [
-        Self::Paths,
-        Self::Symbols,
-        Self::Files,
-        Self::Path,
-        Self::Diff,
-        Self::Graph,
-        Self::Listing,
-        Self::Results,
-        Self::Xrefs,
-        Self::Output,
-    ];
-
     pub(crate) const fn name(self) -> ViewName {
         ViewName(match self {
             Self::Paths => "Paths",
@@ -91,22 +79,24 @@ impl View {
     }
 
     pub(crate) fn named(name: &Label) -> Option<Self> {
-        Self::ALL
-            .into_iter()
+        Self::VARIANTS
+            .iter()
+            .copied()
             .find(|view| view.name().as_str().eq_ignore_ascii_case(name.as_str()))
     }
 
     pub(crate) fn matching(search: &Label) -> Vec<Self> {
         let search = search.as_str().to_lowercase();
-        Self::ALL
-            .into_iter()
+        Self::VARIANTS
+            .iter()
+            .copied()
             .filter(|view| view.name().as_str().to_lowercase().contains(&search))
             .collect()
     }
 
     pub(crate) fn position(self) -> Count {
         Count::new(
-            Self::ALL
+            Self::VARIANTS
                 .iter()
                 .position(|view| *view == self)
                 .unwrap_or_default(),
@@ -653,8 +643,9 @@ impl Panels {
         let home = self
             .holder(before)
             .or_else(|| {
-                View::ALL
-                    .into_iter()
+                View::VARIANTS
+                    .iter()
+                    .copied()
                     .filter(|other| other.tab().is_some())
                     .find_map(|other| self.holder(other))
             })

@@ -1,11 +1,13 @@
 use std::collections::BTreeMap;
 
+use strum::VariantArray;
+
 use crate::id::{Entry, IdList};
 use crate::index::language::Language;
 use crate::index::symbol::{Symbol, SymbolIndex, SymbolName};
 use crate::text::{ByteOffset, FileText, Line, RelativePath, SourceLine, Span, TextHash};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, VariantArray)]
 pub enum HighlightClass {
     Plain,
     Keyword,
@@ -18,17 +20,6 @@ pub enum HighlightClass {
 }
 
 impl HighlightClass {
-    pub const ALL: [Self; 8] = [
-        Self::Plain,
-        Self::Keyword,
-        Self::String,
-        Self::Comment,
-        Self::Function,
-        Self::Type,
-        Self::Constant,
-        Self::Property,
-    ];
-
     pub const fn is_quoted(self) -> bool {
         matches!(self, Self::Comment | Self::String)
     }

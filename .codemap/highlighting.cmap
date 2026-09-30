@@ -79,8 +79,8 @@ parent w8lonq
 author ai
 file crates/index/src/parse.rs
 symbol impl Capture
-lines 0 102
-hash 064b989dfedf33a9
+lines 0 72
+hash 0c83648767cefbed
 note Collapses the grammar's capture names (dozens, and different per language) into the eight classes the renderer knows, by the name's first dotted segment. Anything unrecognised is Plain and is not stored at all.
 
 step s9wyjd

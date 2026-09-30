@@ -4,6 +4,7 @@ use std::fmt;
 use std::fs;
 use std::time::{Duration, Instant};
 
+use strum::VariantArray;
 use ui::{Button, Coordinate, Glyph, Id, Key, Mods, Pinch, Point, Press, Px};
 
 use crate::report::report;
@@ -387,7 +388,7 @@ impl Literal {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
 enum NamedKey {
     Enter,
     Escape,
@@ -399,16 +400,6 @@ enum NamedKey {
 }
 
 impl NamedKey {
-    const ALL: [Self; 7] = [
-        Self::Enter,
-        Self::Escape,
-        Self::Backspace,
-        Self::Left,
-        Self::Right,
-        Self::Up,
-        Self::Down,
-    ];
-
     const fn name(self) -> Literal {
         Literal(match self {
             Self::Enter => "enter",
@@ -423,13 +414,14 @@ impl NamedKey {
 
     fn named(line: &ScriptLine) -> Option<Self> {
         let word = line.word(1).unwrap_or_default();
-        Self::ALL
-            .into_iter()
+        Self::VARIANTS
+            .iter()
+            .copied()
             .find(|key| key.name().as_str() == word)
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
 enum ScriptCommand {
     Wait,
     Pause,
@@ -451,26 +443,6 @@ enum ScriptCommand {
 }
 
 impl ScriptCommand {
-    const ALL: [Self; 17] = [
-        Self::Wait,
-        Self::Pause,
-        Self::Mouse,
-        Self::Down,
-        Self::Up,
-        Self::Click,
-        Self::DoubleClick,
-        Self::ClickId,
-        Self::HoverId,
-        Self::DoubleClickId,
-        Self::Absent,
-        Self::Drag,
-        Self::Wheel,
-        Self::Pinch,
-        Self::Key,
-        Self::Text,
-        Self::Quit,
-    ];
-
     const fn name(self) -> Literal {
         Literal(match self {
             Self::Wait => "wait",
@@ -495,8 +467,9 @@ impl ScriptCommand {
 
     fn named(line: &ScriptLine) -> Option<Self> {
         let word = line.word(0).unwrap_or_default();
-        Self::ALL
-            .into_iter()
+        Self::VARIANTS
+            .iter()
+            .copied()
             .find(|command| command.name().as_str() == word)
     }
 }

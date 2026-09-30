@@ -1,4 +1,5 @@
 use domain::{Author, PathKind};
+use strum::VariantArray;
 
 use crate::error::{Fault, FieldKey, FieldValue};
 
@@ -21,7 +22,7 @@ impl KeyName {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
 enum ConflictMark {
     Begin,
     Middle,
@@ -31,14 +32,6 @@ enum ConflictMark {
 }
 
 impl ConflictMark {
-    const ALL: [Self; 5] = [
-        Self::Begin,
-        Self::Middle,
-        Self::End,
-        Self::Diff,
-        Self::Added,
-    ];
-
     const fn name(self) -> KeyName {
         KeyName(match self {
             Self::Begin => "<<<<<<<",
@@ -63,7 +56,7 @@ impl LineKey {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
 pub(crate) enum PathKey {
     Path,
     Kind,
@@ -73,14 +66,6 @@ pub(crate) enum PathKey {
 }
 
 impl PathKey {
-    const ALL: [Self; 5] = [
-        Self::Path,
-        Self::Kind,
-        Self::Author,
-        Self::Group,
-        Self::Note,
-    ];
-
     const fn name(self) -> KeyName {
         KeyName(match self {
             Self::Path => "path",
@@ -92,13 +77,14 @@ impl PathKey {
     }
 
     fn named(key: &str) -> Option<Self> {
-        Self::ALL
-            .into_iter()
+        Self::VARIANTS
+            .iter()
+            .copied()
             .find(|entry| entry.name().as_str() == key)
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
 pub(crate) enum StepKey {
     Parent,
     Order,
@@ -112,18 +98,6 @@ pub(crate) enum StepKey {
 }
 
 impl StepKey {
-    const ALL: [Self; 9] = [
-        Self::Parent,
-        Self::Order,
-        Self::Author,
-        Self::File,
-        Self::Symbol,
-        Self::Lines,
-        Self::Hash,
-        Self::Link,
-        Self::Note,
-    ];
-
     pub(crate) const fn name(self) -> KeyName {
         KeyName(match self {
             Self::Parent => "parent",
@@ -139,8 +113,9 @@ impl StepKey {
     }
 
     fn named(key: &str) -> Option<Self> {
-        Self::ALL
-            .into_iter()
+        Self::VARIANTS
+            .iter()
+            .copied()
             .find(|entry| entry.name().as_str() == key)
     }
 }
@@ -197,8 +172,9 @@ fn kind_name(kind: PathKind) -> KeyName {
 }
 
 fn parse_kind(value: &str) -> Option<PathKind> {
-    PathKind::ALL
-        .into_iter()
+    PathKind::VARIANTS
+        .iter()
+        .copied()
         .find(|kind| kind_name(*kind).as_str() == value)
 }
 
@@ -257,7 +233,7 @@ pub(crate) fn parse(text: &str) -> Result<Vec<CmapPath>, WireFault> {
     let mut in_step = false;
     for (line, raw_line) in (0u32..).zip(text.lines()) {
         let at = |fault: Fault| WireFault { line, fault };
-        if ConflictMark::ALL
+        if ConflictMark::VARIANTS
             .iter()
             .any(|mark| raw_line.starts_with(mark.name().as_str()))
         {

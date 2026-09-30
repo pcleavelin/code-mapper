@@ -12,7 +12,7 @@ cannot be written.
 1. `understand`: the request restated, why it is needed, how it is meant to work.
 2. `prototype`: several designs built and run, one kept. The steps below finish the one
    that was kept.
-3. `crates/features/src/lib.rs`: add the variant to `Feature` and to `Feature::ALL`, and its
+3. `crates/features/src/lib.rs`: add the variant to `Feature` and its
    arm in `spec()`: the name (kebab-case, also the CLI command name), a one-line summary
    (the CLI help line or the button's tooltip), the surface, and every trigger (command,
    key chord, click on a named element, a gesture). `cargo test -p features` checks names and

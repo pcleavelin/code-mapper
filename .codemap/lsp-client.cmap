@@ -420,8 +420,8 @@ parent 88q1my
 author ai
 file crates/io-lsp/src/wire.rs
 symbol impl Method
-lines 0 42
-hash 765f777f02c34f50
+lines 0 26
+hash 658a3203e745645a
 note name is the wire spelling notice.rs matches on to send an initialize request; named finds a variant whose name matches text, which is what notice uses to sort an incoming message by its method.
 
 step xiwank

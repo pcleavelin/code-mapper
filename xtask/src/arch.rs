@@ -129,6 +129,7 @@ const DEPENDENCIES: [Allowed; 17] = [
     Allowed {
         package: Literal::new("xtask"),
         dependencies: &[
+            Literal::new("strum"),
             Literal::new("ignore"),
             Literal::new("serde_json"),
             Literal::new("tree-sitter"),
@@ -137,7 +138,7 @@ const DEPENDENCIES: [Allowed; 17] = [
     },
     Allowed {
         package: Literal::new("domain"),
-        dependencies: &[],
+        dependencies: &[Literal::new("strum")],
     },
     Allowed {
         package: Literal::new("io-process"),
@@ -153,11 +154,19 @@ const DEPENDENCIES: [Allowed; 17] = [
     },
     Allowed {
         package: Literal::new("io-map"),
-        dependencies: &[Literal::new("domain"), Literal::new("io-store")],
+        dependencies: &[
+            Literal::new("strum"),
+            Literal::new("domain"),
+            Literal::new("io-store"),
+        ],
     },
     Allowed {
         package: Literal::new("io-cache"),
-        dependencies: &[Literal::new("domain"), Literal::new("io-store")],
+        dependencies: &[
+            Literal::new("strum"),
+            Literal::new("domain"),
+            Literal::new("io-store"),
+        ],
     },
     Allowed {
         package: Literal::new("io-layout"),
@@ -170,6 +179,7 @@ const DEPENDENCIES: [Allowed; 17] = [
     Allowed {
         package: Literal::new("io-lsp"),
         dependencies: &[
+            Literal::new("strum"),
             Literal::new("domain"),
             Literal::new("io-process"),
             Literal::new("serde_json"),
@@ -178,6 +188,7 @@ const DEPENDENCIES: [Allowed; 17] = [
     Allowed {
         package: Literal::new("index"),
         dependencies: &[
+            Literal::new("strum"),
             Literal::new("domain"),
             Literal::new("io-source"),
             Literal::new("io-cache"),
@@ -193,11 +204,12 @@ const DEPENDENCIES: [Allowed; 17] = [
     },
     Allowed {
         package: Literal::new("features"),
-        dependencies: &[],
+        dependencies: &[Literal::new("strum")],
     },
     Allowed {
         package: Literal::new("cli"),
         dependencies: &[
+            Literal::new("strum"),
             Literal::new("domain"),
             Literal::new("index"),
             Literal::new("io-map"),
@@ -209,11 +221,12 @@ const DEPENDENCIES: [Allowed; 17] = [
     },
     Allowed {
         package: Literal::new("ui"),
-        dependencies: &[],
+        dependencies: &[Literal::new("strum")],
     },
     Allowed {
         package: Literal::new("platform"),
         dependencies: &[
+            Literal::new("strum"),
             Literal::new("ui"),
             Literal::new("io-store"),
             Literal::new("winit"),
@@ -225,6 +238,7 @@ const DEPENDENCIES: [Allowed; 17] = [
     Allowed {
         package: Literal::new("gui"),
         dependencies: &[
+            Literal::new("strum"),
             Literal::new("domain"),
             Literal::new("index"),
             Literal::new("io-map"),
@@ -241,6 +255,7 @@ const DEPENDENCIES: [Allowed; 17] = [
     Allowed {
         package: Literal::new("codemap"),
         dependencies: &[
+            Literal::new("strum"),
             Literal::new("domain"),
             Literal::new("index"),
             Literal::new("io-map"),

@@ -9,9 +9,10 @@ use domain::{
     TypeName,
 };
 use io_source::Contents;
+use strum::VariantArray;
 use tree_sitter::{Node, Parser, Query, QueryCursor, StreamingIterator};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, VariantArray)]
 enum Grammar {
     Rust,
     Odin,
@@ -23,16 +24,6 @@ enum Grammar {
 }
 
 impl Grammar {
-    const ALL: [Self; 7] = [
-        Self::Rust,
-        Self::Odin,
-        Self::Clang,
-        Self::Python,
-        Self::Javascript,
-        Self::Typescript,
-        Self::Tsx,
-    ];
-
     fn suffixes(self) -> &'static [Word] {
         match self {
             Self::Rust => &[Word("rs")],
@@ -47,7 +38,7 @@ impl Grammar {
 
     fn of(path: &RelativePath) -> Option<Self> {
         let extension = Path::new(path.as_str()).extension()?.to_str()?;
-        Self::ALL.into_iter().find(|grammar| {
+        Self::VARIANTS.iter().copied().find(|grammar| {
             grammar
                 .suffixes()
                 .iter()
@@ -168,7 +159,7 @@ impl Word {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
 enum Capture {
     Keyword,
     Include,
@@ -214,37 +205,6 @@ impl Modifier {
 }
 
 impl Capture {
-    const ALL: [Self; 28] = [
-        Self::Keyword,
-        Self::Include,
-        Self::Repeat,
-        Self::Conditional,
-        Self::StorageClass,
-        Self::Storage,
-        Self::Exception,
-        Self::String,
-        Self::Character,
-        Self::Escape,
-        Self::Comment,
-        Self::Function,
-        Self::Method,
-        Self::Constructor,
-        Self::Macro,
-        Self::Type,
-        Self::Namespace,
-        Self::Module,
-        Self::Number,
-        Self::Constant,
-        Self::Boolean,
-        Self::Float,
-        Self::Property,
-        Self::Field,
-        Self::Attribute,
-        Self::Label,
-        Self::Tag,
-        Self::BuiltinVariable,
-    ];
-
     fn word(self) -> Word {
         Word(match self {
             Self::Keyword => "keyword",
@@ -310,8 +270,9 @@ impl Capture {
                 .contains(Modifier::Builtin.word().as_str())
                 .then_some(Self::BuiltinVariable);
         }
-        Self::ALL
-            .into_iter()
+        Self::VARIANTS
+            .iter()
+            .copied()
             .filter(|capture| *capture != Self::BuiltinVariable)
             .find(|capture| capture.word().as_str() == prefix)
     }
@@ -426,15 +387,13 @@ impl TypePrefix {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
 enum ScriptSuffix {
     Javascript,
     Typescript,
 }
 
 impl ScriptSuffix {
-    const ALL: [Self; 2] = [Self::Javascript, Self::Typescript];
-
     fn word(self) -> Word {
         Word(match self {
             Self::Javascript => ".js",
@@ -443,7 +402,7 @@ impl ScriptSuffix {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
 enum ImportKeyword {
     Import,
     From,
@@ -453,14 +412,6 @@ enum ImportKeyword {
 }
 
 impl ImportKeyword {
-    const ALL: [Self; 5] = [
-        Self::Import,
-        Self::From,
-        Self::As,
-        Self::Type,
-        Self::Default,
-    ];
-
     fn word(self) -> Word {
         Word(match self {
             Self::Import => "import",
@@ -472,7 +423,7 @@ impl ImportKeyword {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
 enum ImportPrefix {
     Public,
     RustImport,
@@ -481,8 +432,6 @@ enum ImportPrefix {
 }
 
 impl ImportPrefix {
-    const ALL: [Self; 4] = [Self::Public, Self::RustImport, Self::From, Self::Import];
-
     fn word(self) -> Word {
         Word(match self {
             Self::Public => "pub ",
@@ -506,7 +455,7 @@ impl ImportToken {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
 enum SelfWord {
     Lower,
     Type,
@@ -515,8 +464,6 @@ enum SelfWord {
 }
 
 impl SelfWord {
-    const ALL: [Self; 4] = [Self::Lower, Self::Type, Self::Instance, Self::Parent];
-
     fn word(self) -> Word {
         Word(match self {
             Self::Lower => "self",
@@ -565,8 +512,9 @@ impl ImportText<'_> {
                 .chars()
                 .take_while(|character| *character != '"' && *character != '\'')
                 .collect();
-            let module = ScriptSuffix::ALL
-                .into_iter()
+            let module = ScriptSuffix::VARIANTS
+                .iter()
+                .copied()
                 .fold(
                     quoted.rsplit(['/', ':', '\\']).next().unwrap_or(&quoted),
                     |name, suffix| name.trim_end_matches(suffix.word().as_str()),
@@ -578,8 +526,9 @@ impl ImportText<'_> {
                 .split(|character: char| !(character.is_alphanumeric() || character == '_'))
                 .filter(|token| !token.is_empty())
             {
-                if ImportKeyword::ALL
-                    .into_iter()
+                if ImportKeyword::VARIANTS
+                    .iter()
+                    .copied()
                     .any(|keyword| keyword.word().as_str() == token)
                 {
                     continue;
@@ -592,9 +541,12 @@ impl ImportText<'_> {
             }
             return;
         }
-        let body = ImportPrefix::ALL.into_iter().fold(text, |body, prefix| {
-            body.trim_start_matches(prefix.word().as_str())
-        });
+        let body = ImportPrefix::VARIANTS
+            .iter()
+            .copied()
+            .fold(text, |body, prefix| {
+                body.trim_start_matches(prefix.word().as_str())
+            });
         let (path_part, items) = match body.split_once(Split::PythonImport.word().as_str()) {
             Some((path_part, items)) => (path_part.trim(), items.trim()),
             None => match body.find('{') {
@@ -688,8 +640,9 @@ struct QualifierText<'text>(&'text str);
 
 impl QualifierText<'_> {
     fn qualifier(self) -> Qualifier {
-        if SelfWord::ALL
-            .into_iter()
+        if SelfWord::VARIANTS
+            .iter()
+            .copied()
             .any(|word| word.word().as_str() == self.0)
         {
             return Qualifier::SelfReference;

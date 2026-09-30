@@ -133,7 +133,7 @@ file xtask/src/lint.rs
 symbol Rule
 lines 0 16
 hash 919a6b3c29106e9f
-note The rules. A code is a stable id printed with every finding; Widget and Theme share L12. The feature coverage rule is a test (crates/codemap/tests/features.rs), not an archlint rule.
+note The rules. A code is a stable id printed with every finding; Widget and Theme share L12. The feature coverage rule is a test (crates/codemap/tests/features.rs), not an archlint rule. Lint runs them in declaration order, through Rule::VARIANTS (the VariantArray derive).
 
 step 7zl7if
 order 21
@@ -152,7 +152,7 @@ author ai
 file xtask/src/lint/checks.rs
 symbol compared_place
 lines 0 44
-hash 7889dd3457ef45f8
+hash 21b84b65bdceb64f
 note Where one literal falls foul, checked in order: a pattern position (including matches! by field name); an operand of a binary == or !=, unless it is the empty string; the first argument of a call whose method is one of PatternMethod's. Anything else falls through to in_matches_pattern.
 
 step 9xfykw
@@ -466,16 +466,6 @@ lines 0 13
 hash 1c8bb561f1fecd27
 note The integer types whose MAX and MIN count as sentinels.
 
-step qbgnfh
-order 12
-parent 734zq6
-author ai
-file xtask/src/lint.rs
-symbol ALL
-lines 0 16
-hash 542c7b3ea554382b
-note Every rule, in the order lint runs them.
-
 step qjtytc
 order 34
 parent dbzwz0
@@ -562,7 +552,7 @@ author ai
 file xtask/src/lint.rs
 symbol lint
 lines 0 12
-hash 396ba453b60b8736
+hash 89074e127b08831b
 note Runs every rule that applies to each file's zone and returns the findings sorted and deduplicated, so the report is stable across runs.
 
 step y9mk0x

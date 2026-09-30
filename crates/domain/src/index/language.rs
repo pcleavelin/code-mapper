@@ -1,5 +1,7 @@
 use std::fmt;
 
+use strum::VariantArray;
+
 use crate::text::RelativePath;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -35,7 +37,7 @@ impl Argument {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, VariantArray)]
 pub enum Language {
     Rust,
     Odin,
@@ -47,14 +49,6 @@ pub enum Language {
 const STANDARD_INPUT: [Argument; 1] = [Argument("--stdio")];
 
 impl Language {
-    pub const ALL: [Self; 5] = [
-        Self::Rust,
-        Self::Odin,
-        Self::Clang,
-        Self::Python,
-        Self::Javascript,
-    ];
-
     pub const fn extensions(self) -> &'static [Extension] {
         match self {
             Self::Rust => &[Extension("rs")],
@@ -90,7 +84,7 @@ impl Language {
 
     pub fn of(path: &RelativePath) -> Option<Self> {
         let last = path.last_dotted();
-        Self::ALL.into_iter().find(|language| {
+        Self::VARIANTS.iter().copied().find(|language| {
             language
                 .extensions()
                 .iter()

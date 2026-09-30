@@ -3,11 +3,13 @@ pub(crate) mod checks;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
+use strum::VariantArray;
+
 use crate::arch;
 use crate::source::SourceFile;
 use crate::text::{CrateName, LineNumber, Message, RepoPath, RuleCode, TypeName};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, VariantArray)]
 pub(crate) enum Rule {
     Comment,
     Primitive,
@@ -27,24 +29,6 @@ pub(crate) enum Rule {
 }
 
 impl Rule {
-    pub(crate) const ALL: [Self; 15] = [
-        Self::Comment,
-        Self::Primitive,
-        Self::NewtypeField,
-        Self::Indexing,
-        Self::Absence,
-        Self::WireLeak,
-        Self::DomainIo,
-        Self::Suppression,
-        Self::TestRegistry,
-        Self::Alias,
-        Self::Widget,
-        Self::Theme,
-        Self::ElementId,
-        Self::KeyBinding,
-        Self::Compared,
-    ];
-
     pub(crate) const fn code(self) -> RuleCode {
         RuleCode::new(match self {
             Self::Comment => "L1",
@@ -158,7 +142,7 @@ impl Workspace {
 pub(crate) fn lint(workspace: &Workspace, files: &[SourceFile]) -> Vec<Finding> {
     let mut findings = Vec::new();
     for file in files {
-        for rule in Rule::ALL {
+        for rule in Rule::VARIANTS.iter().copied() {
             if arch::applies(rule, file) {
                 checks::check(rule, workspace, file, &mut findings);
             }

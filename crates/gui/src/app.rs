@@ -7,6 +7,7 @@ use domain::{Line, Map, RelativePath, Root};
 use io_layout::{LayoutStore, Reach};
 use io_map::MapStore;
 use platform::{Cursor, Exit, Frame as PlatformFrame, Outcome, Renderer, ScriptLine, Visibility};
+use strum::VariantArray;
 use ui::{Button, Count, Id, Input, Label, Measure, Px, Ui};
 
 use crate::action::Action;
@@ -356,7 +357,7 @@ impl Literal {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
 enum AppCommand {
     Idle,
     Rect,
@@ -368,16 +369,6 @@ enum AppCommand {
 }
 
 impl AppCommand {
-    const ALL: [Self; 7] = [
-        Self::Idle,
-        Self::Rect,
-        Self::Tab,
-        Self::Scroll,
-        Self::Shot,
-        Self::Open,
-        Self::Dump,
-    ];
-
     const fn name(self) -> Literal {
         Literal(match self {
             Self::Idle => "idle",
@@ -392,8 +383,9 @@ impl AppCommand {
 
     fn named(line: &ScriptLine) -> Option<Self> {
         let word = line.word(0).unwrap_or_default();
-        Self::ALL
-            .into_iter()
+        Self::VARIANTS
+            .iter()
+            .copied()
             .find(|command| command.name().as_str() == word)
     }
 }

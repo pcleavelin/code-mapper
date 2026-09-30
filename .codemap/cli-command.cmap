@@ -71,8 +71,8 @@ parent 0s6eim
 author ai
 file crates/codemap/src/main.rs
 symbol impl HelpWord
-lines 0 10
-hash 79d654861ae7d328
+lines 0 8
+hash 42c4bbe57b061840
 note name spells one of the three; main checks the first argument against every one of ALL instead of matching each spelling in turn.
 
 step c8vrt4
@@ -130,7 +130,7 @@ author ai
 file crates/codemap/src/main.rs
 symbol main
 lines 0 23
-hash 7dc0a35815c9d98d
+hash df0c737aedab73d6
 note Entry. help, --help or -h as the first argument prints the help with exit 0, before a root is chosen, so help works in a directory that is not a repo. The first argument is the root (the current directory when there is none); a root alone opens the window, a root with more arguments runs one command.
 
 step gxv29t

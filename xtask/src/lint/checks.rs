@@ -1,3 +1,4 @@
+use strum::VariantArray;
 use tree_sitter::Node;
 
 use crate::arch;
@@ -117,7 +118,7 @@ impl RepoArea {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, VariantArray)]
 enum PatternMethod {
     StartsWith,
     EndsWith,
@@ -144,31 +145,6 @@ enum PatternMethod {
 }
 
 impl PatternMethod {
-    const ALL: [Self; 22] = [
-        Self::StartsWith,
-        Self::EndsWith,
-        Self::StripPrefix,
-        Self::StripSuffix,
-        Self::Contains,
-        Self::Find,
-        Self::ReverseFind,
-        Self::Split,
-        Self::ReverseSplit,
-        Self::SplitCount,
-        Self::ReverseSplitCount,
-        Self::SplitOnce,
-        Self::ReverseSplitOnce,
-        Self::SplitTerminator,
-        Self::Matches,
-        Self::MatchIndices,
-        Self::TrimMatches,
-        Self::TrimStartMatches,
-        Self::TrimEndMatches,
-        Self::Replace,
-        Self::ReplaceCount,
-        Self::EqualIgnoreAsciiCase,
-    ];
-
     const fn name(self) -> Literal {
         match self {
             Self::StartsWith => Literal::new("starts_with"),
@@ -775,7 +751,7 @@ fn compared_place(file: &SourceFile, literal: Node<'_>) -> Option<Message> {
         let first = named_children(parent).first().copied()?;
         let function = parent.parent()?.child_by_field_name("function")?;
         let method = function.child_by_field_name("field")?;
-        let pattern_method = PatternMethod::ALL
+        let pattern_method = PatternMethod::VARIANTS
             .iter()
             .any(|name| file.text.of(method) == name.name().as_str());
         return (first.id() == literal.id()

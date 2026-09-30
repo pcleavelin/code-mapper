@@ -1,19 +1,19 @@
 use std::fs;
 use std::path::PathBuf;
 
+use strum::VariantArray;
+
 use crate::files::write;
 use crate::source::workspace_files;
 use crate::text::{Count, Hasher, Literal, Message, Root, Stamp};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
 pub(crate) enum Light {
     Green,
     Red,
 }
 
 impl Light {
-    const ALL: [Self; 2] = [Self::Green, Self::Red];
-
     const fn name(self) -> Literal {
         match self {
             Self::Green => Literal::new("green"),
@@ -22,7 +22,7 @@ impl Light {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
 enum Key {
     Stamp,
     Result,
@@ -30,8 +30,6 @@ enum Key {
 }
 
 impl Key {
-    const ALL: [Self; 3] = [Self::Stamp, Self::Result, Self::Repeats];
-
     const fn name(self) -> Literal {
         match self {
             Self::Stamp => Literal::new("stamp"),
@@ -76,14 +74,16 @@ impl GateState {
             let Some((key_word, value)) = line.split_once(' ') else {
                 continue;
             };
-            match Key::ALL
-                .into_iter()
+            match Key::VARIANTS
+                .iter()
+                .copied()
                 .find(|key| key.name().as_str() == key_word)
             {
                 Some(Key::Stamp) => stamp = Stamp::parse(value),
                 Some(Key::Result) => {
-                    if let Some(known) = Light::ALL
-                        .into_iter()
+                    if let Some(known) = Light::VARIANTS
+                        .iter()
+                        .copied()
                         .find(|candidate| candidate.name().as_str() == value)
                     {
                         light = Some(known);

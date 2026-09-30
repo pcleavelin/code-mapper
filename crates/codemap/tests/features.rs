@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use domain::{PathKind, PathName, Root};
 use features::{Feature, Gesture, Key, Modifiers, Surface, Trigger};
 use io_map::MapStore;
+use strum::VariantArray;
 
 fn workspace() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -114,7 +115,7 @@ fn every_feature_has_its_flow_path_in_the_map() {
     assert!(loaded.is_ok(), "the map loads");
     let Ok(map) = loaded else { return };
     let mut missing = Vec::new();
-    for feature in Feature::ALL {
+    for feature in Feature::VARIANTS {
         let spec = feature.spec();
         let wanted = format!("feature-{}", spec.name().as_str());
         let Ok(name) = PathName::new(&wanted) else {
@@ -150,8 +151,9 @@ fn every_feature_has_its_flow_path_in_the_map() {
 fn every_feature_is_exercised_by_a_scenario() {
     let scripts = read("tests/common/gui.rs");
     let commands = read("tests/common/cli.rs") + &scripts;
-    let unexercised: Vec<&str> = Feature::ALL
-        .into_iter()
+    let unexercised: Vec<&str> = Feature::VARIANTS
+        .iter()
+        .copied()
         .filter(|feature| {
             !feature
                 .spec()

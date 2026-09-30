@@ -135,7 +135,7 @@ note walk follows the path's numbered order, the one the outline shows, and stop
 step hvkk6w
 order 20
 author ai
-file crates/gui/src/panels.rs
+file crates/io-lsp/src/lib.rs
 symbol tests
 lines 0 0
 hash b0307a5ca14bb937

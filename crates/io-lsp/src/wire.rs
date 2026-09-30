@@ -1,6 +1,7 @@
 use std::io::BufRead;
 
 use serde_json::{Value, json};
+use strum::VariantArray;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct WireName(&'static str);
@@ -28,7 +29,7 @@ impl Header {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
 enum Method {
     Initialize,
     Initialized,
@@ -47,23 +48,6 @@ enum Method {
 }
 
 impl Method {
-    const ALL: [Self; 14] = [
-        Self::Initialize,
-        Self::Initialized,
-        Self::Shutdown,
-        Self::Exit,
-        Self::DocumentSymbol,
-        Self::PrepareCallHierarchy,
-        Self::OutgoingCalls,
-        Self::IncomingCalls,
-        Self::References,
-        Self::Hover,
-        Self::Definition,
-        Self::Progress,
-        Self::Status,
-        Self::Configuration,
-    ];
-
     const fn name(self) -> WireName {
         WireName(match self {
             Self::Initialize => "initialize",
@@ -84,21 +68,20 @@ impl Method {
     }
 
     fn named(text: &str) -> Option<Self> {
-        Self::ALL
-            .into_iter()
+        Self::VARIANTS
+            .iter()
+            .copied()
             .find(|entry| entry.name().as_str() == text)
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
 enum ProgressWord {
     Begin,
     End,
 }
 
 impl ProgressWord {
-    const ALL: [Self; 2] = [Self::Begin, Self::End];
-
     const fn name(self) -> WireName {
         WireName(match self {
             Self::Begin => "begin",
@@ -107,8 +90,9 @@ impl ProgressWord {
     }
 
     fn named(text: &str) -> Option<Self> {
-        Self::ALL
-            .into_iter()
+        Self::VARIANTS
+            .iter()
+            .copied()
             .find(|entry| entry.name().as_str() == text)
     }
 }

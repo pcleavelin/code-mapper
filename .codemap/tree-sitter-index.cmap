@@ -30,8 +30,8 @@ parent adt563
 author ai
 file crates/index/src/parse.rs
 symbol qualifier
-lines 0 8
-hash 9fe9f6caa962b3b2
+lines 0 9
+hash 1d0c220bffd8afb3
 note The qualifier a call names, shared by find_calls and CalleeText::call: self, Self, this and super mean the caller's own owner (Qualifier::SelfReference); anything else is Named with a bare type name.
 
 step 3oloto
@@ -110,8 +110,8 @@ parent a41e5v
 author ai
 file crates/index/src/parse.rs
 symbol record
-lines 0 80
-hash 0661663d60d2426e
+lines 0 85
+hash b4f466ccb03ef265
 note Every import statement in the file, reduced to a map of name-or-alias to module stem. Deliberately string work rather than per-language parsing: it only has to be good enough for resolve to send an unqualified or aliased call to the right file. Two shapes: a quoted module (Odin import "core:fmt" or import alias "../pkg", JS import {a, b} from './mod') maps every identifier before the quote to the module's last path segment, or the module to itself when none is named; anything else is a path plus items (Rust use a::b::{c, d as e}, Python from a.b import c, d or import a.b), and each item or its alias maps to the last segment of the path.
 
 step k1m1hq
@@ -120,8 +120,8 @@ parent 0c73gq
 author ai
 file crates/index/src/parse.rs
 symbol impl Grammar
-lines 11 31
-hash 9ca86ecd0e109828
+lines 1 21
+hash 9372ac5570b29b07
 note The extension-to-grammar table: with compile, the only place a bundled tree-sitter grammar is named. A file this does not know parses to nothing, so it is listed and greppable but has no symbols.
 
 step kuh7fw

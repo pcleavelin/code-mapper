@@ -7,6 +7,7 @@ use domain::{
     Span, Step, StepId,
 };
 use io_map::{MapStore, Stamp};
+use strum::VariantArray;
 use ui::{Count, Extent, FontSize, Id, Label, Px};
 
 use crate::authoring::StepGrab;
@@ -65,7 +66,7 @@ pub(crate) struct StepKey {
     pub(crate) step: StepSlot,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
 pub(crate) enum Tab {
     Path,
     Diff,
@@ -97,14 +98,6 @@ impl Literal {
 }
 
 impl Tab {
-    const ALL: [Self; 5] = [
-        Self::Path,
-        Self::Diff,
-        Self::Graph,
-        Self::Listing,
-        Self::Results,
-    ];
-
     const fn name(self) -> Literal {
         Literal(match self {
             Self::Path => "path",
@@ -116,8 +109,9 @@ impl Tab {
     }
 
     pub(crate) fn from_name(name: &TabName) -> Self {
-        Self::ALL
-            .into_iter()
+        Self::VARIANTS
+            .iter()
+            .copied()
             .find(|tab| tab.name().as_str() == name.as_str())
             .unwrap_or(Self::Path)
     }

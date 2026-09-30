@@ -5,16 +5,6 @@ author ai
 group cli
 note The feature registry, crates/features: the one list of everything a user can do with codemap. Each Feature variant is one user function, and Feature::spec gives its Spec: the name (kebab-case, also the CLI command name), a one-line summary (the CLI help line or the GUI tooltip), the Surface it belongs to (Command for the CLI commands, which the GUI's command line runs too, Window for what only the GUI does) and every Trigger that fires it: a command word, a key Chord, a click or typing on a named GUI element, or a Gesture on an element. The crate depends on nothing and holds no behaviour; the front ends build from it. The CLI's clap Command takes each command's name and help line from the spec, so help and the registry cannot disagree. The GUI binds keys and gestures by reading a feature's triggers (keys.rs), and names every clickable element through a Control that pairs a Feature with an Element (ids.rs), so a button or key that is not in the registry cannot be written, which xtask lint enforces for key bindings. Tests here check that names are unique, every feature has a trigger and a summary, a command feature is triggered by exactly its own name, and no trigger fires two features; the GUI's tests check that every Control's element is a trigger of its feature. Adding a user function starts here (the add-feature skill).
 
-step 0fybwu
-order 1
-parent l04dki
-author ai
-file crates/features/src/lib.rs
-symbol ALL
-lines 0 89
-hash f0abd47555f55926
-note Every feature, for the tests that walk the registry; the length is part of the type, so adding a variant without listing it here does not compile.
-
 step 2xdex6
 order 20
 parent k761ua
@@ -51,7 +41,7 @@ author ai
 file crates/features/src/tests.rs
 symbol every_trigger_belongs_to_one_feature
 lines 0 7
-hash 462a5a3a9dca33c6
+hash 05f15edb88b31f5b
 note No trigger fires two features, so a key or a click on an element has one meaning.
 
 step 85m4mz
@@ -70,7 +60,7 @@ author ai
 file crates/features/src/tests.rs
 symbol a_command_feature_is_triggered_by_its_own_name
 lines 0 7
-hash 5549208db194e8b6
+hash 4bdb9a6223ba6047
 note A command feature is fired by its own name and nothing else, which is what lets wire.rs use the name as the clap subcommand.
 
 step dv13e4
@@ -88,7 +78,7 @@ author ai
 file crates/features/src/tests.rs
 symbol every_feature_has_a_unique_name_and_a_trigger
 lines 0 11
-hash 51cc01f27f963dfc
+hash 1b8900b36fcb26d7
 note Names are unique and every feature has at least one trigger and a non-empty summary.
 
 step g7eehz
@@ -117,7 +107,7 @@ file crates/features/src/lib.rs
 symbol Feature
 lines 0 89
 hash ced9035c31f3e956
-note One variant per user function, CLI commands first in help order, then the window's functions.
+note One variant per user function, CLI commands first in help order, then the window's functions. The VariantArray derive lists them as Feature::VARIANTS in declaration order, for the tests that walk the registry.
 
 step lo42kd
 order 3

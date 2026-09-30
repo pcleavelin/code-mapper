@@ -7,6 +7,7 @@ use domain::{
 };
 use features::{Feature, Surface};
 use io_map::{Fault, FieldKey, FieldValue, Origin, ParseError};
+use strum::VariantArray;
 
 use crate::convert::{Count, Levels, LineNumber, StepIndex, Under, line_range};
 use crate::failure::{Candidate, Failure, StepPlace};
@@ -44,15 +45,17 @@ fn span(start: u32, end: u32) -> Option<Span> {
 fn every_command_feature_is_a_subcommand_and_every_subcommand_a_command_feature() {
     let subcommands = wire::subcommands();
     let names: BTreeSet<String> = subcommands.iter().map(|pair| pair.0.clone()).collect();
-    let features: BTreeSet<String> = Feature::ALL
-        .into_iter()
+    let features: BTreeSet<String> = Feature::VARIANTS
+        .iter()
+        .copied()
         .filter(|feature| feature.spec().surface() == Surface::Command)
         .map(|feature| feature.spec().name().as_str().to_owned())
         .collect();
     assert_eq!(names, features);
     for (name, about) in &subcommands {
-        let feature = Feature::ALL
-            .into_iter()
+        let feature = Feature::VARIANTS
+            .iter()
+            .copied()
             .find(|feature| feature.spec().name().as_str() == name)
             .unwrap();
         if feature != Feature::Help {

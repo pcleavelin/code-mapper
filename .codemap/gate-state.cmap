@@ -61,8 +61,8 @@ parent wna3ij
 author ai
 file xtask/src/state.rs
 symbol load
-lines 0 36
-hash b99a935300e4d447
+lines 0 38
+hash ffe6ce1e4bca7193
 note Reads the state file (stamp, result and repeats lines) and the failures file; a state without a stamp or result is no state.
 
 step wdua6h

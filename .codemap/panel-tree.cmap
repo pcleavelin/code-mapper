@@ -219,8 +219,8 @@ parent y23yqo
 author ai
 file crates/gui/src/panels.rs
 symbol reveal
-lines 0 24
-hash 8bea09596ebbb4fd
+lines 0 25
+hash 753be8855f40cbc6
 note Acts once per ticket. A view in a panel is brought to front there; a view in no panel is added next to the one navigation showed before, else to the first panel holding a centre view, else to the first panel. A tab the reader clicked away from stays away until navigation asks again.
 
 step cv9ede
@@ -386,8 +386,8 @@ parent ec5woa
 author ai
 file crates/gui/src/panels.rs
 symbol named
-lines 0 4
-hash 47dca09172446abe
+lines 0 5
+hash 1d305cee14487465
 note A view by name in any case, for a script's tab command.
 
 step odjrjn
@@ -445,8 +445,8 @@ parent jiqvb4
 author ai
 file crates/gui/src/panels.rs
 symbol matching
-lines 0 6
-hash 9d11d4bd70f308fd
+lines 0 7
+hash ac9f40259feff53e
 note The rows: every view whose name contains the search, case-insensitively, in View::ALL order.
 
 step s3yr31

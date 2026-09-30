@@ -5,6 +5,8 @@ use std::io::{Read, stdin};
 use std::path::Path;
 use std::slice;
 
+use strum::VariantArray;
+
 use crate::gate::{Depth, lint_files, run_gate};
 use crate::process::{Outcome, run};
 use crate::state::{GateState, Light, stamp};
@@ -44,7 +46,7 @@ const COMMITTING: [Literal; 7] = [
     Literal::new("jj git push"),
 ];
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
 pub(crate) enum Event {
     PreTool,
     PostTool,
@@ -53,13 +55,6 @@ pub(crate) enum Event {
 }
 
 impl Event {
-    const ALL: [Self; 4] = [
-        Self::PreTool,
-        Self::PostTool,
-        Self::Stop,
-        Self::SessionStart,
-    ];
-
     const fn name(self) -> Literal {
         match self {
             Self::PreTool => Literal::new("pre-tool"),
@@ -70,8 +65,9 @@ impl Event {
     }
 
     pub(crate) fn parse(word: &Argument) -> Option<Self> {
-        Self::ALL
-            .into_iter()
+        Self::VARIANTS
+            .iter()
+            .copied()
             .find(|event| event.name().as_str() == word.as_str())
     }
 }
@@ -83,7 +79,7 @@ enum Tool {
     Other,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
 enum ToolName {
     Edit,
     Write,
@@ -93,14 +89,6 @@ enum ToolName {
 }
 
 impl ToolName {
-    const ALL: [Self; 5] = [
-        Self::Edit,
-        Self::Write,
-        Self::MultiEdit,
-        Self::NotebookEdit,
-        Self::Bash,
-    ];
-
     const fn name(self) -> Literal {
         match self {
             Self::Edit => Literal::new("Edit"),
@@ -176,15 +164,13 @@ enum StopActive {
     Continued,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
 enum Stopping {
     Session,
     Agent,
 }
 
 impl Stopping {
-    const ALL: [Self; 2] = [Self::Session, Self::Agent];
-
     const fn name(self) -> Literal {
         match self {
             Self::Session => Literal::new("Stop"),
@@ -201,8 +187,9 @@ enum Background {
 
 fn convert(root: &Root, wire: wire::WireInput) -> Input {
     let tool_name = wire.tool_name.as_str();
-    let tool = match ToolName::ALL
-        .into_iter()
+    let tool = match ToolName::VARIANTS
+        .iter()
+        .copied()
         .find(|tool| tool.name().as_str() == tool_name)
     {
         Some(ToolName::Edit | ToolName::Write | ToolName::MultiEdit | ToolName::NotebookEdit) => {
@@ -223,8 +210,9 @@ fn convert(root: &Root, wire: wire::WireInput) -> Input {
         } else {
             StopActive::First
         },
-        stopping: Stopping::ALL
-            .into_iter()
+        stopping: Stopping::VARIANTS
+            .iter()
+            .copied()
             .find(|stopping| stopping.name().as_str() == wire.hook_event_name)
             .unwrap_or(Stopping::Session),
         background: if wire.background_tasks > 0 {

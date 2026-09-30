@@ -15,6 +15,8 @@ mod text;
 use std::env;
 use std::process::ExitCode;
 
+use strum::VariantArray;
+
 use crate::gate::{Depth, lint_files, run_gate};
 use crate::hook::Event;
 use crate::terminal::{complain, say};
@@ -39,7 +41,7 @@ enum Task {
     Usage,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
 enum TaskKind {
     Gate,
     Lint,
@@ -49,8 +51,6 @@ enum TaskKind {
 }
 
 impl TaskKind {
-    const ALL: [Self; 5] = [Self::Gate, Self::Lint, Self::Api, Self::Parity, Self::Hook];
-
     const fn name(self) -> Literal {
         match self {
             Self::Gate => Literal::new("gate"),
@@ -62,8 +62,9 @@ impl TaskKind {
     }
 
     fn named(word: &Argument) -> Option<Self> {
-        Self::ALL
-            .into_iter()
+        Self::VARIANTS
+            .iter()
+            .copied()
             .find(|task| task.name().as_str() == word.as_str())
     }
 }

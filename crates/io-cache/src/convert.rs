@@ -3,6 +3,7 @@ use domain::{
     Location, Qualifier, RelativePath, Scope, SourceFile, Span, Symbol, SymbolKind, SymbolName,
     TextHash, TypeName,
 };
+use strum::VariantArray;
 
 use crate::wire::{
     CacheFile, CachedCall, CachedFile, CachedHighlight, CachedLocation, CachedQualifier,
@@ -78,8 +79,9 @@ fn location(cached: &CachedLocation) -> Location {
 }
 
 fn highlight(cached: &CachedHighlight) -> Highlight {
-    let class = HighlightClass::ALL
-        .into_iter()
+    let class = HighlightClass::VARIANTS
+        .iter()
+        .copied()
         .zip(0..)
         .find(|pair| pair.1 == cached.class)
         .map_or(HighlightClass::Plain, |pair| pair.0);
@@ -158,8 +160,9 @@ fn cached_highlight(highlight: &Highlight) -> CachedHighlight {
     CachedHighlight {
         start: highlight.start.value(),
         end: highlight.end.value(),
-        class: HighlightClass::ALL
-            .into_iter()
+        class: HighlightClass::VARIANTS
+            .iter()
+            .copied()
             .zip(0..)
             .find(|pair| pair.0 == highlight.class)
             .map_or(0, |pair| pair.1),

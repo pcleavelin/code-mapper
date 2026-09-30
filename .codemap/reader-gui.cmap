@@ -729,8 +729,8 @@ parent uyj8fj
 author ai
 file crates/gui/src/app.rs
 symbol impl AppCommand
-lines 0 29
-hash bd4d469b35600b51
+lines 0 20
+hash b3ecf7b57e87692c
 note named finds the command whose name is the line's first word, which is what script's match reads instead of comparing the word against each command.
 
 step q64nn9
@@ -1004,6 +1004,6 @@ parent vc7u1p
 author ai
 file crates/gui/src/model.rs
 symbol from_name
-lines 0 5
-hash 117bba5ad2c04bee
+lines 0 6
+hash 8930302df0a34799
 note A tab by its lower-case name, any other name meaning the path document. CODEMAP_SHOT_TAB goes through it; a script's tab command takes any view's name through View::named instead.

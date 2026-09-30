@@ -61,8 +61,8 @@ parent 1me7il
 author ai
 file xtask/src/hook.rs
 symbol parse
-lines 0 4
-hash f48c2242aa7861e6
+lines 0 5
+hash 1061aaf16189c297
 link claude-hooks
 note hook's event word.
 
