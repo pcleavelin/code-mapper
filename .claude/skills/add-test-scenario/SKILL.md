@@ -17,5 +17,7 @@ description: Add or extend a CLI or GUI golden scenario in tests/. Use when a ch
    missing.
 5. Bless: `CODEMAP_BLESS=1 cargo test --release --test cli <name>` (GUI: `--test gui`; on
    Linux run GUI tests under a headless compositor, one at a time). Read the new golden in
-   full; it is the specification of the behaviour.
+   full; it is the specification of the behaviour. Check each line against how `understand`
+   says the behaviour is meant to work, not against what the code printed: a bless records
+   whatever the code does, so a line nobody checked pins the bug it should catch.
 6. `finish`.

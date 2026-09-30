@@ -31,7 +31,10 @@ rule applies.
    is one integer. Data cannot be handed to a parameter that was not shaped for it.
 5. **One description.** Each concept has one name in code, CLI, GUI and docs, and each kind of
    knowledge has one home.
-6. **Nothing is done until the gate is green.** The rules are enforced after every agent
+6. **Every test can fail.** A test names a mistake in the code it would catch. One whose
+   expected value comes from the code under test, or that asserts what a type already
+   guarantees, passes on every implementation and is deleted.
+7. **Nothing is done until the gate is green.** The rules are enforced after every agent
    turn and before every commit.
 
 ## Explore codebases through codemap, not grep

@@ -22,7 +22,21 @@ session's first stop with nothing in flight is. This is the order that gets it g
    ones you agree with before the map step (a rename that reaches code outside the diff is a
    `refactor`), and say in your reply which you declined and why. Skip this step when the diff
    introduces no names.
-3. The map. Build the binary once (`cargo build --release -p codemap`) and use
+3. Tests. Spawn one Sonnet subagent, in the same turn as the naming one, with the change and
+   this brief: for each test the diff adds or changes (a unit test, a scenario step, a golden
+   line), name one plausible mistake in the code under test that makes it fail. A test with
+   no such mistake is tautological:
+   - its expected value comes from the code under test, or from a copy of its logic;
+   - it asserts a literal, a constant, or what a type already guarantees (a constructor's
+     value read back through its accessor, a list's length restated as a number);
+   - it checks a stub or fixture the test built, not what the code did with it;
+   - it runs the code and asserts nothing about the result.
+   It reports each tautological test with the reason and edits nothing. Rewrite each one to
+   pin behaviour the code could get wrong, or delete it; a tautological test is never kept.
+   For each test that survives the review, break the line it covers (flip the condition,
+   return the default), watch it fail, and restore the line. Skip this step when the diff
+   touches no tests.
+4. The map. Build the binary once (`cargo build --release -p codemap`) and use
    `target/release/codemap .` below.
    1. `stale` lists every step whose text changed. `repin` follows each one from the parent
       revision (after a rebase: `repin <pre-rebase commit>` from `jj evolog` / `git reflog`).
@@ -41,9 +55,9 @@ session's first stop with nothing in flight is. This is the order that gets it g
       read the map until no conflict is left.
    8. `uncovered <crate dir>` for the crates you touched lists only what you judge trivial;
       the owner audits that judgement.
-4. `cargo xtask api` if a library crate's public items changed, and include the `api/` diff.
-5. If the change was meant to alter output, rebless: `CODEMAP_BLESS=1 cargo test --release
+5. `cargo xtask api` if a library crate's public items changed, and include the `api/` diff.
+6. If the change was meant to alter output, rebless: `CODEMAP_BLESS=1 cargo test --release
    --test cli` (and `--test gui` for GUI output), and read the golden diff before committing
    it. If it was meant not to, run the `refactor` skill's parity check instead.
-6. `cargo xtask gate` once more, then commit (`jj commit -m ...` or `git commit`). The
+7. `cargo xtask gate` once more, then commit (`jj commit -m ...` or `git commit`). The
    message says what changed and why, for someone who did not see the session.
