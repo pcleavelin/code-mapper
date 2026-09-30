@@ -297,9 +297,9 @@ parent hed6nt
 author ai
 file crates/codemap/tests/features.rs
 symbol exercised
-lines 0 51
-hash d78ae563027b5a59
-note Whether the scenario sources fire one trigger: a command by an argument array in commands (cli.rs and gui.rs) starting with its name, a click or typed field by a click-id or dblclick-id aimed at the element (a graph node's buttons by their label in a <<DUMP button>> click), a key by a key line with its modifier, and a gesture by the script command that performs it. The back and forward mouse buttons have no script command, so they never count.
+lines 0 61
+hash 031314f767b7efd1
+note Whether the scenario sources fire one trigger: a command by an argument array in commands (cli.rs and gui.rs) starting with its name, a click or typed field by a click-id or dblclick-id aimed at the element (a graph node's buttons by their label in a <<DUMP button>> click), a key by a key line with its modifier, a gesture by the script command that performs it, and a palette entry by a text line whose words, after an optional >, begin its label ignoring case. The back and forward mouse buttons have no script command, so they never count.
 
 step hbyc72
 order 20
@@ -403,8 +403,8 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol document
-lines 0 70
-hash 072eaa449f47307b
+lines 0 93
+hash e3447eca17052124
 note The document: scrolling, selecting a step, whole-symbol and context toggles, hide and fold, arrow keys, the breadcrumb, collapse, fold and unfold all, wheel scrolling, the outline and the jump to the graph.
 
 step k23duj

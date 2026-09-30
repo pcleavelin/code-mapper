@@ -41,7 +41,7 @@ parent y91rv4
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 7 12
+lines 18 23
 hash f6c28c0aab2b50c3
 note Trigger from the keyboard and the mouse's side buttons, read in the keys phase before the views are built.
 

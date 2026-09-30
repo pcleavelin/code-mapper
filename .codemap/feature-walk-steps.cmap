@@ -20,7 +20,7 @@ parent 17uw33
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 23 38
+lines 34 49
 hash a9f0bc2cabc2452d
 note Trigger: every frame the keys phase, unless the graph is shown and holds the keyboard, asks keys::walks which arrow chords were pressed and queues one WalkWhenIdle per press.
 
@@ -51,7 +51,7 @@ parent 17uw33
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 90 94
+lines 92 96
 hash 547c8bd0901ef4e5
 note The gate: a walk is dropped while any field is focused, so the arrows move the caret or the field's history there instead.
 

@@ -148,6 +148,10 @@ pub(crate) const GRAPH_FIT: Control = Control::new(Feature::FitGraph, Element::n
 pub(crate) const GRAPH_TURN: Control = Control::new(Feature::TurnGraph, Element::new("graph-turn"));
 pub(crate) const GRAPH_CANVAS: Control =
     Control::new(Feature::PanGraph, Element::new("graph-canvas"));
+pub(crate) const PALETTE_FIELD: Control =
+    Control::new(Feature::CommandPalette, Element::new("field@palette"));
+pub(crate) const PALETTE_ROW: Control =
+    Control::new(Feature::CommandPalette, Element::new("palette"));
 
 #[cfg(test)]
 pub(crate) const CONTROLS: &[Control] = &[
@@ -222,6 +226,8 @@ pub(crate) const CONTROLS: &[Control] = &[
     GRAPH_FIT,
     GRAPH_TURN,
     GRAPH_CANVAS,
+    PALETTE_FIELD,
+    PALETTE_ROW,
 ];
 
 pub(crate) fn body() -> Id {
@@ -297,4 +303,8 @@ pub(crate) fn tooltip_code() -> Id {
 
 pub(crate) fn picker() -> Id {
     Id::new("picker")
+}
+
+pub(crate) fn palette_box() -> Id {
+    Id::new("palette-box")
 }

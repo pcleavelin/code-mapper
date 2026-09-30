@@ -31,7 +31,7 @@ parent 2xm1wz
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 27 31
+lines 28 32
 hash bdc4245d250a073f
 note The handler for a directory click: the directory's path prefix is added to or removed from the set of flipped directories.
 

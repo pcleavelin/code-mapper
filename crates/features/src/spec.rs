@@ -113,6 +113,7 @@ pub enum Trigger {
     Click(Element),
     Type(Element),
     Gesture(Gesture, Element),
+    Palette(Text, Option<Chord>),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]

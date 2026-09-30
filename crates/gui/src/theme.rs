@@ -220,6 +220,8 @@ pub(crate) const PANEL_LEAST_ACROSS: Cells = Cells::new(12);
 pub(crate) const PANEL_LEAST_DOWN: Cells = Cells::new(4);
 pub(crate) const PICKER_WIDTH: Cells = Cells::new(28);
 pub(crate) const PICKER_FIELD: Cells = Cells::new(24);
+pub(crate) const PALETTE_FIELD: Cells = Cells::new(96);
+pub(crate) const PALETTE_TAG: Cells = Cells::new(8);
 
 pub(crate) const RATIO_WHOLE: Ratio = Ratio::permille(1000);
 pub(crate) const HALF: Ratio = Ratio::permille(500);

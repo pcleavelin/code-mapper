@@ -30,6 +30,7 @@ pub(crate) enum Which {
     PathFilter,
     ViewSearch,
     GoToLine,
+    Palette,
 }
 
 impl Which {
@@ -43,6 +44,7 @@ impl Which {
             Self::PathFilter => ids::PATH_FILTER_FIELD,
             Self::ViewSearch => ids::VIEW_FIELD,
             Self::GoToLine => ids::LINE_FIELD,
+            Self::Palette => ids::PALETTE_FIELD,
         }
     }
 }
@@ -316,6 +318,7 @@ pub(crate) struct Fields {
     path_filter: Field,
     view_search: Field,
     line: Field,
+    palette: Field,
     focused: Option<Which>,
 }
 
@@ -330,6 +333,7 @@ impl Fields {
             Which::PathFilter => &self.path_filter,
             Which::ViewSearch => &self.view_search,
             Which::GoToLine => &self.line,
+            Which::Palette => &self.palette,
         }
     }
 
@@ -343,6 +347,7 @@ impl Fields {
             Which::PathFilter => &mut self.path_filter,
             Which::ViewSearch => &mut self.view_search,
             Which::GoToLine => &mut self.line,
+            Which::Palette => &mut self.palette,
         }
     }
 

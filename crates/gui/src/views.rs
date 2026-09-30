@@ -4,6 +4,7 @@ mod center;
 mod document;
 mod left;
 mod output;
+mod palette;
 mod panel_tree;
 mod tooltip;
 mod xrefs;
@@ -27,5 +28,6 @@ pub(crate) fn build(model: &Model, frame: &mut Frame<'_>, graph: Option<GraphFra
     panel_tree::drag_band(model, frame);
     authoring::outline_band(model, frame);
     panel_tree::picker(model, frame);
+    palette::palette(model, frame);
     tooltip::tooltip(model, frame);
 }

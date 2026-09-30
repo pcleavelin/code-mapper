@@ -40,7 +40,7 @@ parent 1a0bgg
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 32 39
+lines 43 50
 hash de06bec86c783ce5
 note Trigger: the keys phase hands edits and typed text to the go-to-line field last.
 
@@ -50,8 +50,8 @@ parent urcirn
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 30
-hash 6efdb8b3bc3f3335
+lines 0 31
+hash 93b44485cfbbff1d
 link feature-new-path
 note The line field keeps its text on enter; a submitted line goes to go_to_line.
 

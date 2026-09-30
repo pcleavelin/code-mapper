@@ -14,6 +14,7 @@ use crate::authoring::StepGrab;
 use crate::field::{Fields, Which};
 use crate::graph::GraphState;
 use crate::nav::Nav;
+use crate::palette::Palette;
 use crate::panels::Panels;
 use crate::peek::{Peek, Queries};
 use crate::status::{OutputLog, Status};
@@ -383,6 +384,7 @@ pub(crate) struct Model {
     pub(crate) graph: GraphState,
     pub(crate) tip_shown: Option<Label>,
     pub(crate) fields: Fields,
+    pub(crate) palette: Option<Palette>,
     pub(crate) new_path: Option<PathKind>,
     pub(crate) step_grab: Option<StepGrab>,
     pub(crate) results: Vec<Hit>,
@@ -422,6 +424,7 @@ impl Model {
             graph: GraphState::default(),
             tip_shown: None,
             fields: Fields::default(),
+            palette: None,
             new_path: None,
             step_grab: None,
             results: Vec::new(),

@@ -6,12 +6,13 @@ use crate::authoring::Authoring;
 use crate::field::{Edit, Enter, FieldText, Which};
 use crate::graph::{GraphAction, Heading};
 use crate::ids;
-use crate::keys::{Extend, Walk};
+use crate::keys::{Extend, PaletteKey, Walk};
 use crate::model::{
     Context, Dirty, HIT_LIMIT, Hit, HitsShown, Measured, Openness, PathSlot, Readable, StepKey,
     StepSlot, Tab, ViewFlag, Warned,
 };
 use crate::nav::{Scrolling, Ticket, Tries};
+use crate::palette::{Palette, PaletteAction};
 use crate::panels::{BranchId, Direction, DropTarget, Ratio, View};
 use crate::peek::{HoverStep, Intent, Peek, Probe, Probing, WantedDefinition};
 use crate::status::Status;
@@ -38,6 +39,7 @@ pub(crate) enum ContextChange {
 
 pub(crate) enum Action {
     Focus(SymbolId),
+    Jump(SymbolId),
     OpenPath(PathSlot, Tab),
     SelectStep(StepKey, Scrolling),
     Toggle(StepKey, ViewFlag),
@@ -81,6 +83,7 @@ pub(crate) enum Action {
     Pick(BranchId, View),
     CloseView(View),
     ClosePicker,
+    Palette(PaletteAction),
     Type(Which, Vec<Edit>, Typed),
     WalkWhenIdle(Walk),
     GraphWalk(Heading),
@@ -92,6 +95,7 @@ impl App {
         let model = &mut self.model;
         match action {
             Action::Focus(symbol) => model.go_to_symbol(symbol),
+            Action::Jump(symbol) => model.jumped_to_symbol(symbol),
             Action::OpenPath(path, tab) => model.open_path(path, tab),
             Action::SelectStep(key, scrolling) => model.select_step(key, scrolling),
             Action::Toggle(key, flag) => model.views.entry(key).flags.toggle(flag),
@@ -177,6 +181,7 @@ impl App {
                 model.panels.close_picker();
                 model.fields.release(Which::ViewSearch);
             }
+            Action::Palette(action) => self.palette(action),
             Action::Type(which, edits, typed) => self.typed(which, &edits, &typed),
             Action::WalkWhenIdle(walk) => {
                 if model.fields.focused().is_none() {
@@ -185,6 +190,53 @@ impl App {
             }
             Action::GraphWalk(heading) => self.graph_walk(heading),
             Action::Graph(action) => model.graph.apply(action),
+        }
+    }
+
+    fn palette(&mut self, action: PaletteAction) {
+        let model = &mut self.model;
+        match action {
+            PaletteAction::Toggle => {
+                if model.palette.take().is_some() {
+                    model.fields.release(Which::Palette);
+                } else {
+                    model.palette = Some(Palette::default());
+                    model.fields.start_empty(Which::Palette);
+                    model.refresh_palette();
+                }
+            }
+            PaletteAction::Close => {
+                model.palette = None;
+                model.fields.release(Which::Palette);
+            }
+            PaletteAction::Key(PaletteKey::Move(walk)) => {
+                if let Some(palette) = model.palette.as_mut() {
+                    palette.walk(walk);
+                }
+            }
+            PaletteAction::Key(PaletteKey::Run) => {
+                let row = model.palette.as_ref().map(|palette| palette.selected);
+                if let Some(row) = row {
+                    self.run_palette(row);
+                }
+            }
+            PaletteAction::Key(PaletteKey::Close) => self.palette(PaletteAction::Close),
+            PaletteAction::Run(row) => self.run_palette(row),
+        }
+    }
+
+    fn run_palette(&mut self, row: Count) {
+        let goal = self
+            .model
+            .palette
+            .as_ref()
+            .and_then(|palette| palette.goal(row));
+        self.palette(PaletteAction::Close);
+        let Some(goal) = goal else {
+            return;
+        };
+        for action in self.model.palette_actions(goal) {
+            self.apply(action);
         }
     }
 
@@ -332,7 +384,8 @@ impl App {
             | Which::PathFilter
             | Which::GoToLine
             | Which::NewPath
-            | Which::NewGroup => Enter::Keep,
+            | Which::NewGroup
+            | Which::Palette => Enter::Keep,
             Which::Command | Which::ViewSearch => Enter::Clear,
         };
         let before = self.model.fields.get(which).text().clone();
@@ -353,7 +406,7 @@ impl App {
             Which::NewPath | Which::NewGroup => self.create_path(),
             Which::GoToLine => self.go_to_line(&line),
             Which::ViewSearch => self.pick_first(&line),
-            Which::SymbolFilter | Which::PathFilter => {}
+            Which::SymbolFilter | Which::PathFilter | Which::Palette => {}
         }
     }
 

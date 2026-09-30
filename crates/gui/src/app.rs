@@ -18,6 +18,7 @@ use crate::grid::Grids;
 use crate::ids;
 use crate::keys::{self, Going};
 use crate::model::{Metrics, Model, PathSlot, Readable, Tab, TabName};
+use crate::palette::PaletteAction;
 use crate::panels::{Panels, View};
 use crate::status::Status;
 use crate::theme::{self, BACKGROUND, TEXT};
@@ -152,7 +153,30 @@ impl App {
         exit
     }
 
+    fn palette_keys(&mut self, input: &Input) {
+        self.apply(Action::Type(
+            Which::Palette,
+            keys::palette_edits(input),
+            input.typed.clone(),
+        ));
+        self.model.refresh_palette();
+        for key in keys::palette_keys(input) {
+            self.apply(Action::Palette(PaletteAction::Key(key)));
+        }
+    }
+
     fn keys(&mut self, input: &Input) {
+        if keys::palette_toggled(input) {
+            self.apply(Action::Palette(PaletteAction::Toggle));
+            return;
+        }
+        if self.model.palette.is_some() {
+            if self.model.fields.focused() == Some(Which::Palette) {
+                self.palette_keys(input);
+                return;
+            }
+            self.apply(Action::Palette(PaletteAction::Close));
+        }
         let edits = keys::edits(input);
         let typed = &input.typed;
         let mut actions = Vec::new();
@@ -210,7 +234,7 @@ impl App {
             ui: &self.ui,
             services: &self.services,
         };
-        let parts: [&dyn Dump; 8] = [
+        let parts: [&dyn Dump; 9] = [
             &model.nav,
             &model.scrolls,
             &model.panels,
@@ -219,6 +243,7 @@ impl App {
             &model.views,
             &model.work,
             &model.graph,
+            &model.palette,
         ];
         for part in parts {
             part.dump(&context, &mut lines);
@@ -242,6 +267,7 @@ impl platform::App for App {
         self.poll_disk();
         self.model.now = input.time;
         self.keys(input);
+        self.model.refresh_palette();
         self.ui.begin(input);
         for action in views::panel_input(&self.model, &self.ui) {
             self.apply(action);

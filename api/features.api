@@ -1,4 +1,4 @@
-pub enum Feature { Files, Symbols, Show, Grep, Notes, Callers, Callees, Refs, Index, Tree, Roots, Paths, Path, PathNew, PathGroup, Groups, GroupRename, PathNote, StepNote, StepLink, StepUnlink, NoteEdit, PathRename, PathAdd, PathPin, PathMove, PathSwap, PathRm, Promote, Stale, Check, Repin, Uncovered, Coverage, Diff, Help, OpenPath, OpenGroup, SelectStep, WalkSteps, ToggleWholeSymbol, ToggleCode, ToggleFold, ExpandLink, OpenLinkedPath, HideAllCode, FoldAll, MoreContext, RemoveStep, RemovePath, ShowGraph, SwitchTab, GoBack, Save, AddStep, ChooseTarget, MoveStep, PromoteSymbol, NewPath, Search, RunCommand, FilterSymbols, FilterPaths, BrowseFiles, FollowXref, GoToLine, SelectLines, JumpToDefinition, PeekDefinition, HoverInfo, ScrollCode, ExpandNode, MoveNode, NodeContext, NodeListing, AutoLayout, FitGraph, PanGraph, ZoomGraph, WalkGraph, TurnGraph, MoveView, ResizePanel, SplitPanel, ClosePanel, CloseTab, PickView, OpenDiffRow, }
+pub enum Feature { Files, Symbols, Show, Grep, Notes, Callers, Callees, Refs, Index, Tree, Roots, Paths, Path, PathNew, PathGroup, Groups, GroupRename, PathNote, StepNote, StepLink, StepUnlink, NoteEdit, PathRename, PathAdd, PathPin, PathMove, PathSwap, PathRm, Promote, Stale, Check, Repin, Uncovered, Coverage, Diff, Help, OpenPath, OpenGroup, SelectStep, WalkSteps, ToggleWholeSymbol, ToggleCode, ToggleFold, ExpandLink, OpenLinkedPath, HideAllCode, FoldAll, MoreContext, RemoveStep, RemovePath, ShowGraph, SwitchTab, GoBack, Save, AddStep, ChooseTarget, MoveStep, PromoteSymbol, NewPath, Search, RunCommand, FilterSymbols, FilterPaths, BrowseFiles, FollowXref, GoToLine, SelectLines, JumpToDefinition, PeekDefinition, HoverInfo, ScrollCode, ExpandNode, MoveNode, NodeContext, NodeListing, AutoLayout, FitGraph, PanGraph, ZoomGraph, WalkGraph, TurnGraph, MoveView, ResizePanel, SplitPanel, ClosePanel, CloseTab, PickView, OpenDiffRow, CommandPalette, }
 pub fn spec(self) -> Spec
 spec::pub struct Text(&'static str);
 spec::pub const fn new(text: &'static str) -> Self
@@ -18,7 +18,7 @@ spec::pub const fn alt(key: Key) -> Self
 spec::pub const fn key(self) -> Key
 spec::pub const fn modifiers(self) -> Modifiers
 spec::pub enum Gesture { ShiftClick, ControlClick, AltClick, DoubleClick, Hover, Drag, Wheel, ShiftWheel, ControlWheel, Pinch, BackButton, ForwardButton, }
-spec::pub enum Trigger { Command(Text), Key(Chord), Click(Element), Type(Element), Gesture(Gesture, Element), }
+spec::pub enum Trigger { Command(Text), Key(Chord), Click(Element), Type(Element), Gesture(Gesture, Element), Palette(Text, Option<Chord>), }
 spec::pub enum Surface { Command, Window, }
 spec::pub struct Spec { name: Text, summary: Text, surface: Surface, triggers: &'static [Trigger], }
 spec::pub const fn new( name: Text, summary: Text, surface: Surface, triggers: &'static [Trigger], ) -> Self

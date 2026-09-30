@@ -1,0 +1,325 @@
+codemap 8
+path feature-palette
+kind flow
+author ai
+group features/gui
+note Press ctrl+p and a box opens near the top of the window with a search field. Typing lists what matches, ranked: the paths, the steps of the path being read, the views, the actions the registry offers to the palette (save, fold all, hide all code, fit graph, split panel, go back...), and once something is typed every symbol and file. Each row has a kind tag, actions show their key chord. Up and down move, enter goes to the entry or runs it, a click does the same, esc or ctrl+p closes. A leading > keeps only actions. The reader needs it because reaching a symbol meant switching to the Symbols tab and filtering, and most actions are toolbar buttons that are only on screen in their own view; with the palette anything named is a few keystrokes away, and the action rows teach their chords.
+
+step 04hhgt
+order 3
+parent 0hd3o2
+author ai
+file crates/gui/src/palette.rs
+symbol goal
+lines 0 2
+hash 8d3f0f8ca5f3581a
+note The goal a row stands for, by its place in the ranked list.
+
+step 0hd3o2
+order 1
+parent wsviek
+author ai
+file crates/gui/src/action.rs
+symbol run_palette
+lines 0 13
+hash 1e97087dffce72c1
+note Running a row: its goal is read before the palette closes, the palette closes, and the goal's actions are applied in turn, so running an action behaves exactly as its button or key does.
+
+step 2xthvf
+order 25
+parent z307u5
+author ai
+file crates/gui/src/palette.rs
+symbol map
+lines 0 48
+hash feaf2b32432b0aae
+note Every path, named by its name with its step count and group; then the steps of the path being read, matched by symbol name (or file for a step with no symbol) and shown with their outline number and file:line.
+
+step 3a0i3t
+order 23
+parent z307u5
+author ai
+file crates/gui/src/palette.rs
+symbol new
+lines 0 11
+hash 812a4579fcb142bd
+note The query: leading and trailing spaces dropped, a leading > turning it actions-only, the rest lowered for matching.
+
+step 57neod
+order 31
+parent xvo0vn
+author ai
+file crates/gui/src/palette.rs
+symbol subsequence
+lines 0 26
+hash 50dbe6803d83601c
+note Letters in order: each letter scores, more when it follows the previous one directly or starts a word, less the further it sits from the previous one (capped).
+
+step 5julak
+order 24
+parent z307u5
+author ai
+file crates/gui/src/palette.rs
+symbol actions
+lines 0 16
+hash 945d80fafb302d8d
+note The actions come from the registry: every Trigger::Palette of every feature, its label as the row's name, the feature's summary as detail and the chord the trigger names. The labels pair in order with commands(feature).
+
+step 6k4lbj
+order 38
+parent ecrorf
+author ai
+file crates/gui/src/palette.rs
+symbol PaletteCommand
+lines 0 14
+hash c7f71a8a7fd02788
+note The actions the palette can run, one per palette entry in the registry; two-way features (fold/unfold, back/forward, split across/down, fit/1:1, hide/show) have one per direction.
+
+step aiiie0
+order 33
+parent xvo0vn
+author ai
+file crates/gui/src/palette.rs
+symbol impl Score
+lines 0 19
+hash 45f172bf02a9add1
+note The weights: a contiguous match (1000) outranks any scattered one; a word start adds 300, the very start 100, the whole name 400; a scattered letter scores 10, 15 more when it follows the previous directly and 20 at a word start, minus its distance from the previous letter up to 10. Paths, steps, views and actions get 50 over symbols and files, enough to win a tie of equal matches and no more.
+
+step avdgih
+order 13
+parent wsviek
+author ai
+file crates/gui/src/palette.rs
+symbol refresh_palette
+lines 0 16
+hash 9a5ffd6578fd27ba
+note Ranks the list again only when the field's text differs from the text last ranked, and then puts the selection back on the first row; while the text is unchanged nothing is recomputed, since ranking reads every symbol in the index.
+
+step bozf2p
+order 19
+parent wohd78
+author ai
+file crates/gui/src/app.rs
+symbol palette_keys
+lines 0 10
+hash 07766087038f836f
+note Typing edits the palette's field, the list is ranked again, then up, down, enter and esc become palette keys.
+
+step ecrorf
+order 29
+parent 5julak
+author ai
+file crates/gui/src/palette.rs
+symbol commands
+lines 0 24
+hash 8e8d9e3006162ad1
+note Which PaletteCommand each palette entry of a feature runs, in the order the registry lists them. A gui test checks the counts agree, a features test checks a shown chord is one of the feature's Key triggers.
+
+step fgwbhk
+order 40
+parent ufpxbf
+author ai
+file crates/gui/src/widgets.rs
+symbol palette_row
+lines 0 49
+hash 6f60a3142e835376
+note One palette row: the kind tag in a fixed column, the name and detail clipped to the room left, the chord right-aligned, the selected row highlighted.
+
+step h1jr7f
+order 34
+parent xvo0vn
+author ai
+file crates/gui/src/palette.rs
+symbol word_start
+lines 0 6
+hash 81a8506656083f32
+note A word starts at the beginning, after any non-alphanumeric character (_, /, ., space), and where a lower-case letter is followed by an upper-case one, so 'tA' finds total_area's parts and 'SF' finds SourceFile.
+
+step i1l5e5
+order 28
+parent z307u5
+author ai
+file crates/gui/src/palette.rs
+symbol offer
+lines 0 27
+hash 78e2aaeb6cd4c513
+note Scores one candidate against the query and records it with the kind's boost (paths, steps, views and actions above symbols and files); the row's text is only built for candidates that match.
+
+step ibxluj
+order 26
+parent z307u5
+author ai
+file crates/gui/src/palette.rs
+symbol views
+lines 0 10
+hash 3a6def5d013289f1
+note Every view, to bring its tab to the front.
+
+step ii2ybu
+order 37
+parent 04hhgt
+author ai
+file crates/gui/src/palette.rs
+symbol Goal
+lines 0 7
+hash 84deb43294673d9a
+note What running a row does, fixed when the row is ranked: a PaletteCommand, or the path, step, symbol, file or view to go to.
+
+step j606ku
+order 35
+parent i1l5e5
+author ai
+file crates/gui/src/palette.rs
+symbol impl EntryKind
+lines 0 18
+hash d15f524b3e1cd70e
+note The kind's tag shown on the row and its boost.
+
+step kmr9zj
+order 4
+parent 0hd3o2
+author ai
+file crates/gui/src/palette.rs
+symbol palette_actions
+lines 0 43
+hash d055c440865530d8
+note Goal to actions. An action's PaletteCommand maps to the Action its button or key pushes (fold and hide act on the path being read, split on the panel showing the current tab); a path opens in the Path tab, a step is selected, a symbol goes to its definition as a jump does, a file opens in the Listing at its top, a view is shown.
+
+step ld2inb
+order 20
+parent bozf2p
+author ai
+file crates/gui/src/keys.rs
+symbol palette_keys
+lines 0 13
+hash 89541e3a8471b21c
+note Up, down, enter and escape without ctrl or alt, as palette keys; the field takes every other edit except enter, escape and history recall.
+
+step mecvvs
+order 32
+parent kmr9zj
+author ai
+file crates/gui/src/nav.rs
+symbol jumped_to_symbol
+lines 0 6
+hash 543017efdc030005
+note A symbol from the palette lands where a jump to definition lands: on its step when it is one in the path being read, else in the Listing (the graph stays where it is). Reached through Action::Jump.
+
+step o830hm
+order 9
+parent wsviek
+author ai
+file crates/gui/src/palette.rs
+symbol walk
+lines 0 10
+hash 197997f2a3e5e103
+note Up and down wrap around the ends of the list.
+
+step p1aj67
+order 22
+parent wsviek
+author ai
+file crates/gui/src/dump.rs
+symbol impl Dump for Option<Palette>
+lines 0 21
+hash 8b4b56f7f9ebd6c8
+note What a script sees while the palette is open: DUMP palette query=... rows=... selected=... top=... chosen=<kind> '<name>'.
+
+step pvboq5
+order 39
+parent 5julak
+author ai
+file crates/gui/src/palette.rs
+symbol chord_label
+lines 0 14
+hash 00ebf6ff59fc11d7
+note A chord as the row shows it: ctrl+ or alt+ and the key.
+
+step rgityw
+order 18
+parent wohd78
+author ai
+file crates/gui/src/keys.rs
+symbol palette_toggled
+lines 0 2
+hash dbe20945cbd17efb
+note ctrl+p is read from the registry, the CommandPalette feature's Key trigger.
+
+step ufpxbf
+order 21
+parent wsviek
+author ai
+file crates/gui/src/views/palette.rs
+symbol palette
+lines 0 60
+hash b7565adac5d40954
+note The box: centred, a tenth of the way down, the field with its hint, then PALETTE_ROWS rows from the top of the window: a coloured kind tag, the name, the detail dimmed and the chord at the right; then 'first-last of total' and the keys. A click runs the row.
+
+step uu4fo1
+order 36
+parent wsviek
+author ai
+file crates/gui/src/palette.rs
+symbol Palette
+lines 0 5
+hash 8629c40449653cf6
+note The open palette: the ranked entries, the selected row, the first row shown, and the query text it last ranked. Model::palette is None while closed.
+
+step wohd78
+order 17
+parent wsviek
+author ai
+file crates/gui/src/app.rs
+symbol keys
+lines 0 59
+hash 067fe74013058776
+note The keys phase: ctrl+p toggles the palette before anything else; while it is open and its field has the keyboard, every key goes to it; a palette left without the keyboard closes on the next key.
+
+step wsviek
+order 0
+author ai
+file crates/gui/src/action.rs
+symbol palette
+lines 0 30
+hash e25ed5f5dedf1540
+note The handler, for Action::Palette: toggling opens a fresh palette with an empty focused field and ranks it at once, or closes it and releases the field; up and down walk the rows; enter or a click runs the selected row; esc closes.
+
+step xvo0vn
+order 30
+parent i1l5e5
+author ai
+file crates/gui/src/palette.rs
+symbol score
+lines 0 32
+hash 4cb52c7b581b9d58
+note The match: a contiguous occurrence scores highest, more at a word start (after a non-alphanumeric or a lower-to-upper case change), at the very start, and for the whole name; otherwise the letters in order, the better of taking each at the next occurrence or at a word start; every score is lowered by the name's length so shorter names win ties. None when the letters are not all there in order.
+
+step yu1fpu
+order 10
+parent o830hm
+author ai
+file crates/gui/src/palette.rs
+symbol keep_in_view
+lines 0 7
+hash 7c5ca7d23253f989
+note Keeps the selected row among the PALETTE_ROWS shown, scrolling the window of rows by as little as needed.
+
+step z307u5
+order 16
+parent avdgih
+author ai
+file crates/gui/src/palette.rs
+symbol gather
+lines 0 15
+hash d1e045f6e0b94c59
+note Gathers every candidate, keeps those the query matches, sorts by score (ties by kind, actions first) and keeps the best PALETTE_LIMIT. Symbols and files are only gathered once something is typed and the query is not actions-only, so an empty palette lists the map, the views and the actions.
+
+step zbxiij
+order 27
+parent z307u5
+author ai
+file crates/gui/src/palette.rs
+symbol index
+lines 0 35
+hash 28d0daf554d48fd0
+note Every symbol in the index with its file:line and kind, then every file with its symbol count.

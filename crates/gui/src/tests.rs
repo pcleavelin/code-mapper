@@ -5,8 +5,9 @@ use domain::{
     RelativePath, Root, Row, SourceFile, Span, Step, StepId, StepOrder, Symbol, SymbolKind,
     SymbolName,
 };
-use features::Trigger;
+use features::{Feature, Trigger};
 use io_map::MapStore;
+use strum::VariantArray;
 use ui::{Count, Label};
 
 use crate::action::{Action, Fold, Hide};
@@ -19,6 +20,7 @@ use crate::ids::CONTROLS;
 use crate::keys::Walk;
 use crate::model::{Model, PathSlot, Readable, StepKey, StepSlot, Tab, ViewFlag};
 use crate::nav::Scrolling;
+use crate::palette::{Palette, commands};
 use crate::panels::Direction;
 use crate::theme::Cells;
 
@@ -34,7 +36,7 @@ fn every_control_is_named_by_its_feature() {
                 Trigger::Click(element) | Trigger::Type(element) | Trigger::Gesture(_, element) => {
                     *element == control.element()
                 }
-                Trigger::Command(_) | Trigger::Key(_) => false,
+                Trigger::Command(_) | Trigger::Key(_) | Trigger::Palette(..) => false,
             });
         assert!(named, "{control:?} is not a trigger of its feature");
     }
@@ -437,4 +439,77 @@ fn the_paths_filter_lists_a_path_by_its_steps_and_names_the_steps_that_match() {
         (1, ["1", "1.1", "1.1.1", "1.2"].map(str::to_owned).to_vec())
     );
     assert_eq!(filtered(&mut model, "absent"), (0, Vec::new()));
+}
+
+#[test]
+fn every_palette_entry_in_the_registry_runs_one_command() {
+    for feature in Feature::VARIANTS {
+        let entries = feature
+            .spec()
+            .triggers()
+            .iter()
+            .filter(|trigger| matches!(trigger, Trigger::Palette(..)))
+            .count();
+        assert_eq!(
+            entries,
+            commands(*feature).len(),
+            "{feature:?} lists {entries} palette entries"
+        );
+    }
+}
+
+fn palette_after(model: &mut Model, typed: &str) -> Vec<(String, String)> {
+    model.palette = Some(Palette::default());
+    model.fields.fill(Which::Palette, &Label::new(typed));
+    model.refresh_palette();
+    model
+        .palette
+        .iter()
+        .flat_map(|palette| &palette.entries)
+        .map(|entry| {
+            (
+                entry.kind.tag().as_str().to_owned(),
+                entry.name.as_str().to_owned(),
+            )
+        })
+        .collect()
+}
+
+fn listed(kind: &str, name: &str) -> (String, String) {
+    (kind.to_owned(), name.to_owned())
+}
+
+#[test]
+fn the_palette_ranks_a_contiguous_match_above_scattered_ones_and_a_chevron_keeps_only_actions() {
+    let mut model = model();
+    let found = palette_after(&mut model, ">sa");
+    assert_eq!(found.first(), Some(&listed("action", "save")));
+    assert!(found.iter().all(|(kind, _)| kind == "action"), "{found:?}");
+}
+
+#[test]
+fn the_palette_lists_symbols_and_files_only_once_something_is_typed() {
+    let mut model = model();
+    let empty = palette_after(&mut model, "");
+    assert!(empty.contains(&listed("path", "startup")));
+    assert!(
+        empty
+            .iter()
+            .all(|(kind, _)| kind != "symbol" && kind != "file"),
+        "{empty:?}"
+    );
+    let typed = palette_after(&mut model, "main");
+    assert!(typed.contains(&listed("symbol", "main")), "{typed:?}");
+    assert!(typed.contains(&listed("file", "src/main.rs")), "{typed:?}");
+}
+
+#[test]
+fn the_palette_ranks_a_step_of_the_path_being_read_above_the_symbol_it_pins() {
+    let mut model = model();
+    model.select_path(PATH);
+    let found = palette_after(&mut model, "add");
+    assert_eq!(
+        found.get(..2),
+        Some(&[listed("step", "1.1.1 add"), listed("symbol", "add")][..])
+    );
 }

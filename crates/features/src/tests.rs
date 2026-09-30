@@ -37,3 +37,19 @@ fn every_trigger_belongs_to_one_feature() {
         }
     }
 }
+
+#[test]
+fn a_palette_entry_shows_only_a_chord_its_feature_is_bound_to() {
+    for feature in Feature::VARIANTS {
+        let triggers = feature.spec().triggers();
+        for trigger in triggers {
+            if let Trigger::Palette(label, Some(chord)) = trigger {
+                assert!(
+                    triggers.contains(&Trigger::Key(*chord)),
+                    "{feature:?} shows {chord:?} beside '{}' but no key triggers it",
+                    label.as_str()
+                );
+            }
+        }
+    }
+}

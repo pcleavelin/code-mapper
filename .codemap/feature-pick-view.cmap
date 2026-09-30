@@ -11,7 +11,7 @@ parent m2tf99
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 43 47
+lines 54 58
 hash d0f272934b1a49d8
 note Closing by losing the keyboard: after the keys, a picker whose field no longer has focus (escape, another field clicked) is closed.
 
@@ -70,7 +70,7 @@ parent m2tf99
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 75 82
+lines 76 83
 hash 08e29ba4ea3011c4
 note Trigger: + (pick/<n>) queues TogglePicker; opening starts the search empty with the keyboard, closing releases it.
 

@@ -93,6 +93,16 @@ fn exercised(trigger: Trigger, commands: &str, scripts: &str) -> bool {
             Gesture::ShiftClick => line.starts_with("click") && line.ends_with(" shift"),
             Gesture::BackButton | Gesture::ForwardButton => false,
         }),
+        Trigger::Palette(label, _) => lines.iter().any(|line| {
+            line.strip_prefix("text ").is_some_and(|typed| {
+                let typed = typed.trim_start_matches('>').trim();
+                !typed.is_empty()
+                    && label
+                        .as_str()
+                        .to_lowercase()
+                        .starts_with(&typed.to_lowercase())
+            })
+        }),
     }
 }
 

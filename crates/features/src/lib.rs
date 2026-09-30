@@ -94,6 +94,7 @@ pub enum Feature {
     CloseTab,
     PickView,
     OpenDiffRow,
+    CommandPalette,
 }
 
 impl Feature {
@@ -448,6 +449,8 @@ impl Feature {
                     [
                         Trigger::Click(Element::new("doc-collapse")),
                         Trigger::Click(Element::new("doc-expand")),
+                        Trigger::Palette(Text::new("hide all code"), None),
+                        Trigger::Palette(Text::new("show all code"), None),
                     ]
                 },
             ),
@@ -459,6 +462,8 @@ impl Feature {
                     [
                         Trigger::Click(Element::new("doc-fold")),
                         Trigger::Click(Element::new("doc-unfold")),
+                        Trigger::Palette(Text::new("fold all"), None),
+                        Trigger::Palette(Text::new("unfold all"), None),
                     ]
                 },
             ),
@@ -492,7 +497,12 @@ impl Feature {
                 Text::new("show-graph"),
                 Text::new("draw the path being read as a graph"),
                 Surface::Window,
-                &const { [Trigger::Click(Element::new("doc-graph"))] },
+                &const {
+                    [
+                        Trigger::Click(Element::new("doc-graph")),
+                        Trigger::Palette(Text::new("show path as graph"), None),
+                    ]
+                },
             ),
             Self::SwitchTab => Spec::new(
                 Text::new("switch-tab"),
@@ -514,6 +524,8 @@ impl Feature {
                         Trigger::Key(Chord::control(Key::Right)),
                         Trigger::Gesture(Gesture::BackButton, Element::new("window")),
                         Trigger::Gesture(Gesture::ForwardButton, Element::new("window")),
+                        Trigger::Palette(Text::new("go back"), Some(Chord::alt(Key::Left))),
+                        Trigger::Palette(Text::new("go forward"), Some(Chord::alt(Key::Right))),
                     ]
                 },
             ),
@@ -525,6 +537,10 @@ impl Feature {
                     [
                         Trigger::Click(Element::new("save")),
                         Trigger::Key(Chord::control(Key::Letter(Letter::new('s')))),
+                        Trigger::Palette(
+                            Text::new("save"),
+                            Some(Chord::control(Key::Letter(Letter::new('s')))),
+                        ),
                     ]
                 },
             ),
@@ -578,6 +594,7 @@ impl Feature {
                         Trigger::Click(Element::new("create-path")),
                         Trigger::Type(Element::new("field@new-path")),
                         Trigger::Type(Element::new("field@new-group")),
+                        Trigger::Palette(Text::new("new path"), None),
                     ]
                 },
             ),
@@ -590,6 +607,7 @@ impl Feature {
                         Trigger::Type(Element::new("field@search")),
                         Trigger::Click(Element::new("hit")),
                         Trigger::Click(Element::new("hitfile")),
+                        Trigger::Palette(Text::new("search every file"), None),
                     ]
                 },
             ),
@@ -734,7 +752,12 @@ impl Feature {
                 Text::new("auto-layout"),
                 Text::new("lay the graph out again, dropping dragged positions"),
                 Surface::Window,
-                &const { [Trigger::Click(Element::new("graph-auto"))] },
+                &const {
+                    [
+                        Trigger::Click(Element::new("graph-auto")),
+                        Trigger::Palette(Text::new("auto layout graph"), None),
+                    ]
+                },
             ),
             Self::FitGraph => Spec::new(
                 Text::new("fit-graph"),
@@ -744,6 +767,8 @@ impl Feature {
                     [
                         Trigger::Click(Element::new("graph-fit")),
                         Trigger::Click(Element::new("graph-1to1")),
+                        Trigger::Palette(Text::new("fit graph"), None),
+                        Trigger::Palette(Text::new("graph at 1:1"), None),
                     ]
                 },
             ),
@@ -787,7 +812,12 @@ impl Feature {
                 Text::new("turn-graph"),
                 Text::new("lay the graph out left to right or top to bottom"),
                 Surface::Window,
-                &const { [Trigger::Click(Element::new("graph-turn"))] },
+                &const {
+                    [
+                        Trigger::Click(Element::new("graph-turn")),
+                        Trigger::Palette(Text::new("turn graph direction"), None),
+                    ]
+                },
             ),
             Self::MoveView => Spec::new(
                 Text::new("move-view"),
@@ -811,6 +841,8 @@ impl Feature {
                     [
                         Trigger::Click(Element::new("split-across")),
                         Trigger::Click(Element::new("split-down")),
+                        Trigger::Palette(Text::new("split panel side by side"), None),
+                        Trigger::Palette(Text::new("split panel top and bottom"), None),
                     ]
                 },
             ),
@@ -846,6 +878,20 @@ impl Feature {
                     [
                         Trigger::Click(Element::new("diffrow")),
                         Trigger::Click(Element::new("diff-refresh")),
+                    ]
+                },
+            ),
+            Self::CommandPalette => Spec::new(
+                Text::new("palette"),
+                Text::new(
+                    "type to find a path, step, symbol, file or view and go to it, or an action and run it",
+                ),
+                Surface::Window,
+                &const {
+                    [
+                        Trigger::Key(Chord::control(Key::Letter(Letter::new('p')))),
+                        Trigger::Type(Element::new("field@palette")),
+                        Trigger::Click(Element::new("palette")),
                     ]
                 },
             ),

@@ -17,8 +17,8 @@ use crate::status::Status;
 use crate::theme::{
     self, ACCENT, BACKGROUND, BAR_PADDING, BORDER, BUTTON_PADDING, Cells, DANGER_HOVER,
     DOCUMENT_PADDING, DROP_BAND, FAINT, FIELD, FIELD_CARET_ROOM, FIELD_PADDING, GAP, HOVER,
-    INDENT_EXTRA, LABEL_PADDING, NAV_BUTTON, NAV_BUTTON_EXTRA, PANEL, PANEL_PADDING, RED,
-    ROW_PADDING, SELECTED, SMALL_BUTTON_EXTRA, SMALL_BUTTON_PADDING, SMALL_GAP, STATUS_GAP,
+    INDENT_EXTRA, LABEL_PADDING, NAV_BUTTON, NAV_BUTTON_EXTRA, PALETTE_TAG, PANEL, PANEL_PADDING,
+    RED, ROW_PADDING, SELECTED, SMALL_BUTTON_EXTRA, SMALL_BUTTON_PADDING, SMALL_GAP, STATUS_GAP,
     STEP_SPACER, TAB_PADDING, TAB_STRIP, TEXT, TIGHT_GAP, TOOLTIP_PADDING, WEAK, WIDE_GAP,
 };
 
@@ -82,6 +82,7 @@ pub(crate) enum Container {
     FillRow,
     Tooltip { at: Point },
     Picker { at: Point, width: Px },
+    Palette { at: Point, width: Px },
     PanelHeader,
 }
 
@@ -177,14 +178,18 @@ impl Container {
                 Style::background(PANEL).border(Sides::ALL, BORDER),
                 None,
             ),
-            Self::Picker { at, width } => Shape::new(
+            Self::Picker { at, width } | Self::Palette { at, width } => Shape::new(
                 Layout::column()
                     .floating(at)
                     .width(width)
                     .padding(TOOLTIP_PADDING)
                     .gap(TIGHT_GAP),
                 Style::background(PANEL).border(Sides::ALL, ACCENT),
-                Some(ids::picker()),
+                Some(if matches!(self, Self::Picker { .. }) {
+                    ids::picker()
+                } else {
+                    ids::palette_box()
+                }),
             ),
             Self::PanelHeader => Shape::new(
                 Layout::row().grow_width().cross(Align::Center),
@@ -585,6 +590,57 @@ impl Frame<'_> {
         });
         self.ui.close();
         RowClicks { row, action }
+    }
+
+    pub(crate) fn palette_row(
+        &mut self,
+        tag: Run,
+        runs: Vec<Run>,
+        chord: Option<Label>,
+        target: Target,
+        chosen: Chosen,
+    ) -> Interaction {
+        let id = target.id();
+        let hovered = self.ui.interaction(id).hovered();
+        let background = if chosen == Chosen::Chosen {
+            Some(SELECTED)
+        } else {
+            hovered.then_some(HOVER)
+        };
+        let size = self.metrics.font;
+        let row = self.ui.open(
+            Kind::None,
+            Layout::row().grow_width().cross(Align::Center),
+            Style {
+                background,
+                ..Style::NONE
+            },
+            Some(id),
+        );
+        self.ui.leaf(
+            text_kind(vec![tag], size, Wrap::Clip),
+            Layout::row()
+                .width(PALETTE_TAG.of(self.cell_width()))
+                .padding(ROW_PADDING),
+            Style::NONE,
+            None,
+        );
+        self.ui.leaf(
+            text_kind(runs, size, Wrap::Clip),
+            Layout::row().grow_width().padding(ROW_PADDING),
+            Style::NONE,
+            None,
+        );
+        if let Some(chord) = chord {
+            self.ui.leaf(
+                text_kind(vec![Run::new(chord, ACCENT)], size, Wrap::None),
+                Layout::row().padding(ROW_PADDING),
+                Style::NONE,
+                None,
+            );
+        }
+        self.ui.close();
+        row
     }
 
     pub(crate) fn link_text(

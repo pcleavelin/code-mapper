@@ -89,8 +89,8 @@ order 2
 author ai
 file crates/gui/src/model.rs
 symbol Model
-lines 0 29
-hash a381b21a27ecc432
+lines 0 30
+hash 14009f2837c6fc92
 note All the state a view can see, in one struct: the index and the map with its MapStore and disk state, the parent map for the Diff tab, Nav, the step views, the open directories and groups, the pinned peek, the server Queries, the panel tree, the scroll offsets (down and across), the graph's state, the fields, search results and whether they were cut at HIT_LIMIT, the measured heights of document steps (Measures), the output log, the status, WorkState, the font metrics and the frame time. gui-model has its values and queries.
 
 step 622pjb
@@ -165,8 +165,8 @@ order 6
 author ai
 file crates/gui/src/views.rs
 symbol build
-lines 0 13
-hash e4590209fd23c9e9
+lines 0 14
+hash 67dee6b96b93638f
 note Every view is a function of (&Model, &mut Frame): nothing a view does can change the Model, so the whole window is drawn from one consistent state, and a view that wants a change pushes an Action.
 
 step 98q001
@@ -193,8 +193,8 @@ order 26
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 192 228
-hash 1a4665b18c6d61cf
+lines 192 230
+hash 3faf5be0147f3cf8
 note Every measure counted in cells: button and field widths, column guesses before a panel has a size, the symbol table's columns, tooltip sizes, the gap before a danger button, the status bar's room for the map's place, the panels' floors and the picker's width.
 
 step an1gef
@@ -301,8 +301,8 @@ parent xjz44n
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 0 98
-hash 6c5b10630df01802
+lines 0 100
+hash 52f211504e67e3dd
 note The one place the Model changes during a frame. Each arm is a call into nav.rs, a field of the Model, or a method on the App for changes that need the Services (save, a server question, a command).
 
 step h4xmjq
@@ -447,8 +447,8 @@ parent 9pik9m
 author ai
 file crates/gui/src/ids.rs
 symbol CONTROLS
-lines 0 72
-hash 0210d0b562908241
+lines 0 74
+hash f14bd911bd693d85
 note Every control, for the test that checks them against the registry.
 
 step mjhubp
@@ -691,8 +691,8 @@ order 8
 author ai
 file crates/gui/src/action.rs
 symbol Action
-lines 0 49
-hash 50be276c40623ece
+lines 0 51
+hash de83bf48109f8275
 note Every change a gesture, a key, a script line or a view's measurement can cause, as data. A view names the change; it never makes it.
 
 step xypoz6

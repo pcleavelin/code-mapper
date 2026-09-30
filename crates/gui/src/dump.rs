@@ -10,6 +10,7 @@ use crate::graph::{GraphState, Hit, Node};
 use crate::ids;
 use crate::model::{Model, Scrolls, StepViews, ViewFlag};
 use crate::nav::Nav;
+use crate::palette::Palette;
 use crate::panels::Panels;
 use crate::peek::Peek;
 use crate::status::Status;
@@ -317,5 +318,28 @@ impl Dump for GraphState {
                 ));
             }
         }
+    }
+}
+
+impl Dump for Option<Palette> {
+    fn dump(&self, context: &Context<'_>, lines: &mut DumpLines) {
+        let Some(palette) = self else {
+            return;
+        };
+        let chosen = palette.entries.get(palette.selected.get()).map(|entry| {
+            format!(
+                "{} {}",
+                entry.kind.tag().as_str(),
+                Quoted(entry.name.as_str())
+            )
+        });
+        lines.line(format_args!(
+            "palette query={} rows={} selected={} top={} chosen={}",
+            Quoted(context.model.fields.get(Which::Palette).text().as_str()),
+            palette.entries.len(),
+            palette.selected.get(),
+            palette.top.get(),
+            Optional(chosen)
+        ));
     }
 }

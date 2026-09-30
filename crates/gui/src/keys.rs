@@ -213,3 +213,36 @@ pub(crate) fn wheeling(pointer: Pointer) -> Wheeling {
 pub(crate) fn scrolls_across(pointer: Pointer) -> bool {
     gestures(Feature::ScrollCode).any(|gesture| seen(gesture, Interaction::default(), pointer))
 }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum PaletteKey {
+    Move(Walk),
+    Run,
+    Close,
+}
+
+pub(crate) fn palette_toggled(input: &Input) -> bool {
+    chords(Feature::CommandPalette).any(|chord| chord_pressed(input, chord))
+}
+
+pub(crate) fn palette_keys(input: &Input) -> Vec<PaletteKey> {
+    input
+        .keys
+        .iter()
+        .filter(|press| !press.mods.ctrl() && !press.mods.alt())
+        .filter_map(|press| match press.key {
+            Key::Up => Some(PaletteKey::Move(Walk::Up)),
+            Key::Down => Some(PaletteKey::Move(Walk::Down)),
+            Key::Enter => Some(PaletteKey::Run),
+            Key::Escape => Some(PaletteKey::Close),
+            _ => None,
+        })
+        .collect()
+}
+
+pub(crate) fn palette_edits(input: &Input) -> Vec<Edit> {
+    edits(input)
+        .into_iter()
+        .filter(|edit| !matches!(edit, Edit::Enter | Edit::Escape | Edit::Older | Edit::Newer))
+        .collect()
+}

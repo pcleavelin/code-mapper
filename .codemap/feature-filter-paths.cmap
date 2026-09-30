@@ -61,7 +61,7 @@ parent z6m3sw
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 32 39
+lines 43 50
 hash de06bec86c783ce5
 note The typing: the keys phase hands edits and typed text to the path filter along with the symbol filter and go-to-line fields; only the focused field takes them.
 
@@ -121,8 +121,8 @@ parent lhcomc
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 30
-hash 6efdb8b3bc3f3335
+lines 0 31
+hash 93b44485cfbbff1d
 note An edit that changes the path filter's text scrolls the Paths list back to its top, so the matches are in view. The filter keeps its text on enter and has nothing to run.
 
 step y3c46y

@@ -40,7 +40,7 @@ parent 0wlosi
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 84 84
+lines 85 85
 hash 79bb258c8ad23a49
 note The apply arm.
 

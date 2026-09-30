@@ -157,7 +157,7 @@ author ai
 file crates/gui/src/tests.rs
 symbol every_control_is_named_by_its_feature
 lines 0 15
-hash b4f436d0d20bb1ff
+hash 033f6ad16b949fa1
 note Every Control in ids names an element its feature lists among its triggers in the registry, so a button's script id and the feature it triggers cannot drift apart.
 
 step kpixbm

@@ -455,7 +455,7 @@ parent wz1vr6
 author ai
 file crates/gui/src/field.rs
 symbol impl Fields
-lines 35 52
+lines 37 54
 hash 9aed5dd5fba1b9c9
 note start_empty clears a field and gives it the keyboard; fill sets a field's text without focusing it (the new-path form's group); release takes the keyboard away only if that field has it. The picker uses both, so its search starts empty each time it opens.
 
@@ -493,8 +493,8 @@ order 21
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 60 89
-hash d3d2ab03866daec9
+lines 61 91
+hash a4d1e09759f7ab10
 note The panel arms of apply: grab, resize, drag and release; split, close; the picker opened, closed or picked from. Opening the picker, by + or by a split, empties its search field and gives it the keyboard.
 
 step x1ugnu

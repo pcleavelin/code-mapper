@@ -41,7 +41,7 @@ parent las1d3
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 13 20
+lines 24 31
 hash d4da65bf6ddde953
 note Trigger: every frame the keys phase hands the frame's key edits and typed text to the command, search, name and group fields in turn.
 
@@ -100,8 +100,8 @@ parent 6bofi6
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 30
-hash 6efdb8b3bc3f3335
+lines 0 31
+hash 93b44485cfbbff1d
 note Only the focused field takes the edits. Both form fields keep their text on enter, since create_path reads both; a line submitted from either goes to create_path. A blank enter submits nothing, so the group field's enter creates only when it holds a group.
 
 step v7jz7w

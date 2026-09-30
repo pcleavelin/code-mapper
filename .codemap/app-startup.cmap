@@ -181,8 +181,8 @@ parent pucdnk
 author ai
 file crates/gui/src/model.rs
 symbol new
-lines 0 40
-hash dbb9334fec4aec92
+lines 0 41
+hash 79bbe6b562378209
 note The Model is built around the index, the map and its store, with every panel in its default state (Nav on the Path tab, the default panel tree, empty fields). The map's stamp is taken here, so the once-a-second disk poll starts out knowing the map as it was read.
 
 step yzu1mn

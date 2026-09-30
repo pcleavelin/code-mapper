@@ -12,7 +12,7 @@ author ai
 file crates/gui/src/tests.rs
 symbol every_control_is_named_by_its_feature
 lines 0 15
-hash b4f436d0d20bb1ff
+hash 033f6ad16b949fa1
 note Every Control's element is a click, type or gesture trigger of its feature, so the GUI cannot grow a control the registry does not know.
 
 step 4mvcr9
@@ -87,8 +87,8 @@ parent l04dki
 author ai
 file crates/features/src/lib.rs
 symbol spec
-lines 0 749
-hash d45a2a34ce782553
+lines 0 794
+hash 8eadfa6e4136a412
 note The registry itself: one match arm per feature, built at compile time from const data. A command feature has Surface::Command and exactly one trigger, its own name as a command; a window feature lists every click, key, typed field and gesture that fires it.
 
 step k761ua
@@ -105,8 +105,8 @@ order 0
 author ai
 file crates/features/src/lib.rs
 symbol Feature
-lines 0 89
-hash ced9035c31f3e956
+lines 0 90
+hash 9d79f611f57c1a98
 note One variant per user function, CLI commands first in help order, then the window's functions. The VariantArray derive lists them as Feature::VARIANTS in declaration order, for the tests that walk the registry.
 
 step lo42kd
@@ -173,9 +173,9 @@ parent lo42kd
 author ai
 file crates/features/src/spec.rs
 symbol Trigger
-lines 0 6
-hash 53bba201d9e721a5
-note One way to fire a feature. Command names the command word; Key a chord; Click and Type an element by its id name (the name given to ui::id, used by GUI scripts too); Gesture a pointer gesture on an element.
+lines 0 7
+hash 8ee71eda54a2530f
+note One way to fire a feature. Command names the command word; Key a chord; Click and Type an element by its id name (the name given to ui::id, used by GUI scripts too); Gesture a pointer gesture on an element; Palette an entry in the command palette, its label and the chord shown beside it (feature-palette).
 
 step zcgh2e
 order 15

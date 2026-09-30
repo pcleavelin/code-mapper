@@ -9,6 +9,7 @@ mod ids;
 mod keys;
 mod model;
 mod nav;
+mod palette;
 mod panels;
 mod peek;
 mod runtime;

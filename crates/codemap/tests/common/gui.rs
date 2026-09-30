@@ -119,6 +119,29 @@ shot {shots}/outline.png
 click-id doc-graph
 wait 3
 dump
+key p ctrl
+wait 2
+text >fold all
+wait 2
+dump
+shot {shots}/palette-actions.png
+key enter
+wait 3
+dump
+key p ctrl
+wait 2
+text total_a
+wait 2
+dump
+shot {shots}/palette-symbol.png
+key enter
+wait 3
+dump
+key p ctrl
+wait 2
+key escape
+wait 2
+dump
 quit
 ",
     }

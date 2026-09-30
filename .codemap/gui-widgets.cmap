@@ -29,9 +29,9 @@ order 13
 author ai
 file crates/gui/src/field.rs
 symbol Fields
-lines 0 10
-hash c6b4e061ff1fd0ba
-note The seven fields, one named member each, reached by Which; focused names the one with the keyboard, at most one, so taking focus is setting it.
+lines 0 11
+hash 0e7c23e707c4f48b
+note The eight fields, one named member each, reached by Which; focused names the one with the keyboard, at most one, so taking focus is setting it.
 
 step 2yp2r2
 order 5
@@ -134,9 +134,9 @@ parent rcazsr
 author ai
 file crates/gui/src/widgets.rs
 symbol shape
-lines 0 94
-hash 2e84119d9aeea50c
-note The one match that turns a Container into its layout, style and fixed id: the paddings, gaps and colours from theme, the accent bar on the left of a selected step row or code column, the panel header's TAB_STRIP background with no padding (its tabs carry their own), the id body the panel tree is laid out from, the picker's id, and the id a StepColumn carries.
+lines 0 98
+hash 7288b3bc90d532c1
+note The one match that turns a Container into its layout, style and fixed id: the paddings, gaps and colours from theme, the accent bar on the left of a selected step row or code column, the panel header's TAB_STRIP background with no padding (its tabs carry their own), the id body the panel tree is laid out from, the picker's and the palette box's ids, and the id a StepColumn carries.
 
 step aidqqn
 order 3
@@ -229,9 +229,9 @@ parent 2havd5
 author ai
 file crates/gui/src/field.rs
 symbol Which
-lines 0 9
-hash 3b0a3a2bc6fc40ae
-note The seven fields: search, the new path's name and group, the command line, the symbol filter, the path filter and go-to-line. Which::control is the field's Control in ids, whose element name is its script id: field@search, field@new-path, field@new-group, cmd, field@symbols, field@paths, field@goto-line.
+lines 0 10
+hash a8af1f1ac0975c25
+note The eight fields: search, the new path's name and group, the command line, the symbol filter, the path filter, go-to-line and the palette's query. Which::control is the field's Control in ids, whose element name is its script id: field@search, field@new-path, field@new-group, cmd, field@symbols, field@paths, field@goto-line, field@palette.
 
 step k73r2l
 order 25
@@ -345,9 +345,9 @@ order 1
 author ai
 file crates/gui/src/widgets.rs
 symbol Container
-lines 0 21
-hash 95b68957924e48cd
-note Every box that holds other elements is one of these: the window, the body, the centre, the bars, the toolbars, a panel column, a step row or code column (with its selected mark), the column holding one step of the document (StepColumn, carrying that step's id so its height can be measured), a tooltip, a panel header, the floating view picker. A view opens one with Frame::start and closes it with finish; it never spells out a layout or a style.
+lines 0 22
+hash 0ac43db6790d8179
+note Every box that holds other elements is one of these: the window, the body, the centre, the bars, the toolbars, a panel column, a step row or code column (with its selected mark), the column holding one step of the document (StepColumn, carrying that step's id so its height can be measured), a tooltip, a panel header, the floating view picker, the command palette's box. A view opens one with Frame::start and closes it with finish; it never spells out a layout or a style.
 
 step rs11uk
 order 14
