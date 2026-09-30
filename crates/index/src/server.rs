@@ -7,7 +7,10 @@ use domain::{
     Backend, Depth, FileId, Index, Language, Location, Program, Readiness, RelativePath, Root,
     SourceLine, Span, Symbol, SymbolId, SymbolKind, SymbolName, TextHash, TypeName,
 };
-use io_lsp::{Character, DocumentPosition, LspSession, Outline, OutlineKind, RangeEnd, StartError};
+use io_lsp::{
+    CallItem, Character, DocumentPosition, LspSession, Outline, OutlineKind, RangeEnd, Reply,
+    StartError,
+};
 
 use crate::build::save_cache;
 use crate::link::link;
@@ -217,23 +220,51 @@ impl Outlined {
     }
 }
 
-pub fn index_files(session: &mut LspSession, files: &[FileVersion]) -> Vec<ServerFile> {
+pub trait IndexQueries {
+    type Item;
+
+    fn outlines(&mut self, files: &[RelativePath]) -> Vec<Reply<Vec<Outline>>>;
+    fn call_items(&mut self, positions: &[DocumentPosition]) -> Vec<Reply<Vec<Self::Item>>>;
+    fn outgoing_targets(&mut self, items: &[Self::Item]) -> Vec<Reply<Vec<Location>>>;
+}
+
+impl IndexQueries for LspSession {
+    type Item = CallItem;
+
+    fn outlines(&mut self, files: &[RelativePath]) -> Vec<Reply<Vec<Outline>>> {
+        Self::outlines(self, files)
+    }
+
+    fn call_items(&mut self, positions: &[DocumentPosition]) -> Vec<Reply<Vec<CallItem>>> {
+        Self::call_items(self, positions)
+    }
+
+    fn outgoing_targets(&mut self, items: &[CallItem]) -> Vec<Reply<Vec<Location>>> {
+        Self::outgoing_targets(self, items)
+    }
+}
+
+pub fn index_files(session: &mut impl IndexQueries, files: &[FileVersion]) -> Vec<ServerFile> {
     let paths: Vec<RelativePath> = files.iter().map(|file| file.path.clone()).collect();
-    let mut outlined: Vec<Outlined> = session
-        .outlines(&paths)
-        .into_iter()
-        .zip(&paths)
-        .map(|(outlines, path)| {
-            let mut outlined = Outlined {
-                symbols: Vec::new(),
-                positions: Vec::new(),
-            };
-            for outline in &outlines {
-                outlined.push(path, outline, Depth::default(), None);
+    let mut unanswered: BTreeSet<usize> = BTreeSet::new();
+    let mut outlined: Vec<Outlined> = Vec::new();
+    for (file, (reply, path)) in session.outlines(&paths).into_iter().zip(&paths).enumerate() {
+        let mut each = Outlined {
+            symbols: Vec::new(),
+            positions: Vec::new(),
+        };
+        match reply {
+            Reply::Given(tree) => {
+                for outline in &tree {
+                    each.push(path, outline, Depth::default(), None);
+                }
             }
-            outlined
-        })
-        .collect();
+            Reply::Unanswered => {
+                unanswered.insert(file);
+            }
+        }
+        outlined.push(each);
+    }
     let mut position_owners = Vec::new();
     let mut positions = Vec::new();
     for (file, each) in outlined.iter().enumerate() {
@@ -245,18 +276,30 @@ pub fn index_files(session: &mut LspSession, files: &[FileVersion]) -> Vec<Serve
     let items = session.call_items(&positions);
     let mut item_owners = Vec::new();
     let mut asked = Vec::new();
-    for (owner, found) in position_owners.into_iter().zip(items) {
-        for item in found {
-            item_owners.push(owner);
-            asked.push(item);
+    for (owner, reply) in position_owners.into_iter().zip(items) {
+        match reply {
+            Reply::Given(found) => {
+                for item in found {
+                    item_owners.push(owner);
+                    asked.push(item);
+                }
+            }
+            Reply::Unanswered => {
+                unanswered.insert(owner.0);
+            }
         }
     }
     let mut targets: BTreeMap<(usize, usize), Vec<Location>> = BTreeMap::new();
-    for (owner, locations) in item_owners
+    for (owner, reply) in item_owners
         .into_iter()
         .zip(session.outgoing_targets(&asked))
     {
-        targets.entry(owner).or_default().extend(locations);
+        match reply {
+            Reply::Given(locations) => targets.entry(owner).or_default().extend(locations),
+            Reply::Unanswered => {
+                unanswered.insert(owner.0);
+            }
+        }
     }
     for (file, each) in outlined.iter_mut().enumerate() {
         for (symbol, entry) in each.symbols.iter_mut().enumerate() {
@@ -269,7 +312,9 @@ pub fn index_files(session: &mut LspSession, files: &[FileVersion]) -> Vec<Serve
     files
         .iter()
         .zip(outlined)
-        .map(|(file, each)| ServerFile {
+        .enumerate()
+        .filter(|(file, _)| !unanswered.contains(file))
+        .map(|(_, (file, each))| ServerFile {
             path: file.path.clone(),
             hash: file.hash,
             symbols: each.symbols,

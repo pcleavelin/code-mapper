@@ -13,7 +13,8 @@ server::pub enum ServerNotice { ToIndex { program: Program, files: FileCount }, 
 server::pub fn start_session(root: &Root, language: Language) -> Result<LspSession, StartError>
 server::pub fn versions(index: &Index, files: &[FileId]) -> Vec<FileVersion>
 server::pub fn apply(index: &mut Index, answer: ServerFile)
-server::pub fn index_files(session: &mut LspSession, files: &[FileVersion]) -> Vec<ServerFile>
+server::pub trait IndexQueries
+server::pub fn index_files(session: &mut impl IndexQueries, files: &[FileVersion]) -> Vec<ServerFile>
 server::pub fn name_position(index: &Index, id: SymbolId) -> Option<DocumentPosition>
 server::pub struct Servers { root: Root, live: BTreeMap<Language, Option<LspSession>>, report: Box<dyn FnMut(&ServerNotice)>, }
 server::pub fn new(root: &Root, report: impl FnMut(&ServerNotice) + 'static) -> Self

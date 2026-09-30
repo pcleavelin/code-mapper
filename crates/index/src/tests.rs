@@ -7,12 +7,16 @@ use std::process;
 use std::rc::Rc;
 
 use domain::{
-    Backend, Call, Depth, HighlightClass, Imports, Index, Qualifier, Readiness, RelativePath, Root,
-    Scope, SymbolId, SymbolName, SymbolQuery,
+    Backend, Call, Depth, HighlightClass, Imports, Index, Line, Location, Qualifier, Readiness,
+    RelativePath, Root, Scope, SymbolId, SymbolName, SymbolQuery, TextHash,
 };
+use io_lsp::{Character, DocumentPosition, Outline, OutlineKind, Position, RangeEnd, Reply};
 
 use crate::parse::{call_order, callee, record_import};
-use crate::{Contents, Parsers, ServerFile, ServerNotice, StartError, apply, build, link};
+use crate::{
+    Contents, FileVersion, IndexQueries, Parsers, ServerFile, ServerNotice, StartError, apply,
+    build, index_files, link,
+};
 
 const LEGACY_CACHE: &[u8] = include_bytes!("tests/fixture.cache");
 
@@ -888,3 +892,84 @@ int sum_squares(int n) {
     ("build/generated.rs", "fn ignored() {}\n"),
     ("data.bin", "\0\x01binary"),
 ];
+
+struct RefusingCallsIn(RelativePath);
+
+impl IndexQueries for RefusingCallsIn {
+    type Item = RelativePath;
+
+    fn outlines(&mut self, files: &[RelativePath]) -> Vec<Reply<Vec<Outline>>> {
+        files
+            .iter()
+            .map(|file| {
+                if file.as_str() == "empty.rs" {
+                    return Reply::Given(Vec::new());
+                }
+                if file.as_str() == "lost.rs" {
+                    return Reply::Unanswered;
+                }
+                Reply::Given(vec![Outline {
+                    name: SymbolName::new("go"),
+                    kind: OutlineKind::new(12),
+                    selection: Position {
+                        line: Line::new(0),
+                        character: Character::new(3),
+                    },
+                    end: Line::new(2),
+                    range_end: RangeEnd::Inside,
+                    children: Vec::new(),
+                }])
+            })
+            .collect()
+    }
+
+    fn call_items(&mut self, positions: &[DocumentPosition]) -> Vec<Reply<Vec<RelativePath>>> {
+        positions
+            .iter()
+            .map(|position| Reply::Given(vec![position.file.clone()]))
+            .collect()
+    }
+
+    fn outgoing_targets(&mut self, items: &[RelativePath]) -> Vec<Reply<Vec<Location>>> {
+        items
+            .iter()
+            .map(|file| {
+                if *file == self.0 {
+                    Reply::Unanswered
+                } else {
+                    Reply::Given(vec![Location {
+                        file: RelativePath::new("empty.rs"),
+                        line: Line::new(0),
+                    }])
+                }
+            })
+            .collect()
+    }
+}
+
+#[test]
+fn a_file_with_an_unanswered_request_is_left_out_so_it_stays_pending() {
+    let files: Vec<FileVersion> = ["a.rs", "refused.rs", "lost.rs", "empty.rs"]
+        .iter()
+        .map(|path| FileVersion {
+            path: RelativePath::new(path),
+            hash: TextHash::of(path.as_bytes()),
+        })
+        .collect();
+    let answered = index_files(
+        &mut RefusingCallsIn(RelativePath::new("refused.rs")),
+        &files,
+    );
+    let paths: Vec<&str> = answered.iter().map(|file| file.path.as_str()).collect();
+    assert_eq!(paths, ["a.rs", "empty.rs"]);
+    let targets: Vec<usize> = answered
+        .iter()
+        .map(|file| {
+            file.symbols
+                .iter()
+                .map(|symbol| symbol.targets().len())
+                .sum()
+        })
+        .collect();
+    assert_eq!(targets, [1, 0]);
+}

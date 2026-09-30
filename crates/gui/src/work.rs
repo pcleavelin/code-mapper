@@ -273,10 +273,11 @@ fn serve(root: &Root, language: Language, requests: &Receiver<Request>, answers:
                 if batch.is_empty() {
                     continue;
                 }
-                for file in index::index_files(&mut session, &batch) {
-                    done += 1;
-                    let progress = Label::new(format!("{program}: {done}/{total}"));
-                    drop(answers.send(Answer::Progress(progress)));
+                let answered = index::index_files(&mut session, &batch);
+                done += batch.len();
+                let progress = Label::new(format!("{program}: {done}/{total}"));
+                drop(answers.send(Answer::Progress(progress)));
+                for file in answered {
                     drop(answers.send(Answer::File(file)));
                 }
                 if queue.is_empty() {

@@ -70,8 +70,8 @@ author ai
 file crates/io-lsp/src/answer.rs
 symbol impl CallItem
 lines 0 8
-hash d992d47fafa9ba57
-note A call-hierarchy item as the server sent it: opaque JSON, handed back unchanged in the next request.
+hash 734f1ee097514bfd
+note A call-hierarchy item as the server sent it: opaque JSON, handed back unchanged in the next request. CallItem::new is public so a caller can build one; the index's IndexQueries does not need to, since its item type is associated.
 
 step 7mq2wh
 order 3
@@ -191,6 +191,16 @@ lines 0 23
 hash afc0dcbf7a6b9e27
 note One DocumentSymbol off the wire: name, kind number, where the name starts (the selection range), the range's end line and whether it ends at column 0, and children.
 
+step g0oqcq
+order 48
+parent sxws3k
+author ai
+file crates/io-lsp/src/session.rs
+symbol read_reply
+lines 0 8
+hash 4561940345eb6f8f
+note An answer as a Reply: Given what read makes of the value (a null answer reads as empty), Unanswered when the request was refused or lost. The batch methods go through it so a failure is never read as an empty answer.
+
 step g3usco
 order 28
 parent 3bn4hl
@@ -256,7 +266,7 @@ author ai
 file crates/io-lsp/src/session.rs
 symbol request_all
 lines 0 34
-hash cb204dcd1b22b4ef
+hash de4f1e147c88e38d
 note Many requests with up to 64 in flight, answers returned in the order asked by matching ids; a request unanswered two minutes after the previous answer is an Err, and so is every one after it; notifications and server requests that arrive meanwhile are handled as request does. This is what lets rust-analyzer answer on its own threads instead of one request at a time.
 
 step k7abu8
@@ -274,9 +284,9 @@ order 33
 author ai
 file crates/io-lsp/src/session.rs
 symbol outgoing_targets
-lines 0 9
-hash 78893256d46feb7a
-note callHierarchy/outgoingCalls for many call items at once through request_all: per item, the (file, line) of each callee's name inside the root. This is where a server-indexed symbol's targets come from.
+lines 0 13
+hash 161949cb9a4a69b3
+note callHierarchy/outgoingCalls for many call items at once through request_all: per item a Reply holding the (file, line) of each callee's name inside the root, or Unanswered. This is where a server-indexed symbol's targets come from.
 
 step kb6t09
 order 22
@@ -343,18 +353,18 @@ order 29
 author ai
 file crates/io-lsp/src/session.rs
 symbol outlines
-lines 0 14
-hash 6a5f22e412a08a3d
-note textDocument/documentSymbol for many files at once through request_all; per file the hierarchical symbols, empty when unanswered.
+lines 0 16
+hash 1880a115a1c64f25
+note textDocument/documentSymbol for many files at once through request_all; per file a Reply: the hierarchical symbols (possibly none), or Unanswered when the server refused the request or never answered it, so a caller can tell a file with no symbols from a file it has to ask again.
 
 step t433x5
 order 32
 author ai
 file crates/io-lsp/src/session.rs
 symbol call_items
-lines 0 20
-hash 7538bdc59fa74e95
-note textDocument/prepareCallHierarchy for many positions at once: per position, the call-hierarchy items there, kept opaque for outgoing_targets.
+lines 0 19
+hash ea946f799f19118f
+note textDocument/prepareCallHierarchy for many positions at once: per position a Reply holding the call-hierarchy items there (kept opaque for outgoing_targets), or Unanswered.
 
 step tko9f6
 order 43
@@ -365,6 +375,16 @@ symbol StartError
 lines 0 3
 hash 0bc06ea69d9abcd0
 note Why a server did not start: Missing (not on PATH) or Failed (would not spawn or initialize). Its Display is the text the CLI and the status line show.
+
+step tldj5n
+order 49
+parent sxws3k
+author ai
+file crates/io-lsp/src/answer.rs
+symbol Reply
+lines 0 3
+hash 958f3fbd6f840991
+note Given(value) or Unanswered: the difference between a server saying 'nothing here' and a server not saying anything.
 
 step tunqku
 order 38
@@ -392,7 +412,7 @@ author ai
 file crates/io-lsp/src/session.rs
 symbol request
 lines 0 13
-hash b50fc8c6adf11f82
+hash bc0716d3d6eeb8be
 note One request: waits up to two minutes for the matching id; everything else goes through handle. No answer (or a dead server) and an error answer both come back as Err.
 
 step vmzz2o
@@ -401,8 +421,8 @@ parent k7pht5
 author ai
 file crates/io-lsp/src/session.rs
 symbol located
-lines 0 5
-hash fbd1d5be597124ca
+lines 0 9
+hash ec34b312f47cc700
 note Wire locations to domain Locations against this session's root, an unanswered request reading as none.
 
 step wjp490

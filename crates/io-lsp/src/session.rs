@@ -9,7 +9,9 @@ use domain::{Language, Location, RelativePath};
 use io_process::{Argument, Process, ProcessError, Program};
 use serde_json::Value;
 
-use crate::answer::{CallItem, Definition, DocumentPosition, HoverText, Outline, StartError};
+use crate::answer::{
+    CallItem, Definition, DocumentPosition, HoverText, Outline, Reply, StartError,
+};
 use crate::convert::{self, Uri};
 use crate::wire::{self, LocationShape, Notice, Outgoing, ProgressKind};
 
@@ -66,7 +68,7 @@ enum ServerStatus {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Unanswered {
+pub(crate) enum WhyUnanswered {
     Gone,
     Refused,
 }
@@ -81,6 +83,16 @@ pub struct LspSession {
     last_progress: Instant,
     status: ServerStatus,
     root: PathBuf,
+}
+
+pub(crate) fn read_reply<T>(
+    answer: Result<Value, WhyUnanswered>,
+    read: impl FnOnce(&Value) -> T,
+) -> Reply<T> {
+    match answer {
+        Ok(value) => Reply::Given(read(&value)),
+        Err(_) => Reply::Unanswered,
+    }
 }
 
 #[expect(
@@ -162,25 +174,25 @@ impl LspSession {
         id
     }
 
-    fn request(&mut self, outgoing: Outgoing) -> Result<Value, Unanswered> {
+    fn request(&mut self, outgoing: Outgoing) -> Result<Value, WhyUnanswered> {
         let id = self.issue(outgoing);
         loop {
             let message = self
                 .messages
                 .recv_timeout(ANSWER_WAIT)
                 .ok()
-                .ok_or(Unanswered::Gone)?;
+                .ok_or(WhyUnanswered::Gone)?;
             if wire::answer_id(&message) == Some(id.value()) {
-                return wire::outcome(message).ok().ok_or(Unanswered::Refused);
+                return wire::outcome(message).ok().ok_or(WhyUnanswered::Refused);
             }
             self.handle(&message);
         }
     }
 
-    fn request_all(&mut self, requests: Vec<Outgoing>) -> Vec<Result<Value, Unanswered>> {
+    fn request_all(&mut self, requests: Vec<Outgoing>) -> Vec<Result<Value, WhyUnanswered>> {
         let count = requests.len();
         let first = self.last_id.next().value();
-        let mut answers: Vec<Option<Result<Value, Unanswered>>> =
+        let mut answers: Vec<Option<Result<Value, WhyUnanswered>>> =
             (0..count).map(|_| None).collect();
         let mut requests = requests.into_iter();
         let (mut sent, mut answered) = (0, 0);
@@ -201,7 +213,7 @@ impl LspSession {
                 .and_then(|offset| answers.get_mut(offset))
                 .filter(|slot| slot.is_none());
             if let Some(slot) = slot {
-                *slot = Some(wire::outcome(message).ok().ok_or(Unanswered::Refused));
+                *slot = Some(wire::outcome(message).ok().ok_or(WhyUnanswered::Refused));
                 answered += 1;
                 continue;
             }
@@ -209,7 +221,7 @@ impl LspSession {
         }
         answers
             .into_iter()
-            .map(|answer| answer.unwrap_or(Err(Unanswered::Gone)))
+            .map(|answer| answer.unwrap_or(Err(WhyUnanswered::Gone)))
             .collect()
     }
 
@@ -264,7 +276,7 @@ impl LspSession {
         Uri::of(&self.root.join(file.as_str()))
     }
 
-    pub fn outlines(&mut self, files: &[RelativePath]) -> Vec<Vec<Outline>> {
+    pub fn outlines(&mut self, files: &[RelativePath]) -> Vec<Reply<Vec<Outline>>> {
         let requests = files
             .iter()
             .map(|file| Outgoing::document_symbol(self.uri(file).as_str()))
@@ -272,15 +284,17 @@ impl LspSession {
         self.request_all(requests)
             .into_iter()
             .map(|answer| {
-                wire::symbols(&answer.unwrap_or(Value::Null))
-                    .into_iter()
-                    .map(convert::outline)
-                    .collect()
+                read_reply(answer, |value| {
+                    wire::symbols(value)
+                        .into_iter()
+                        .map(convert::outline)
+                        .collect()
+                })
             })
             .collect()
     }
 
-    pub fn call_items(&mut self, positions: &[DocumentPosition]) -> Vec<Vec<CallItem>> {
+    pub fn call_items(&mut self, positions: &[DocumentPosition]) -> Vec<Reply<Vec<CallItem>>> {
         let requests = positions
             .iter()
             .map(|position| {
@@ -294,29 +308,36 @@ impl LspSession {
         self.request_all(requests)
             .into_iter()
             .map(|answer| {
-                wire::items(&answer.unwrap_or(Value::Null))
-                    .into_iter()
-                    .map(CallItem::new)
-                    .collect()
+                read_reply(answer, |value| {
+                    wire::items(value).into_iter().map(CallItem::new).collect()
+                })
             })
             .collect()
     }
 
-    fn located(&self, answer: Result<Value, Unanswered>, shape: &LocationShape) -> Vec<Location> {
+    fn located(
+        &self,
+        answer: Result<Value, WhyUnanswered>,
+        shape: &LocationShape,
+    ) -> Vec<Location> {
         convert::locations(
             wire::locations(&answer.unwrap_or(Value::Null), shape),
             &self.root,
         )
     }
 
-    pub fn outgoing_targets(&mut self, items: &[CallItem]) -> Vec<Vec<Location>> {
+    pub fn outgoing_targets(&mut self, items: &[CallItem]) -> Vec<Reply<Vec<Location>>> {
         let requests = items
             .iter()
             .map(|item| Outgoing::outgoing_calls(item.as_value()))
             .collect();
         self.request_all(requests)
             .into_iter()
-            .map(|answer| self.located(answer, &LocationShape::Outgoing))
+            .map(|answer| {
+                read_reply(answer, |value| {
+                    convert::locations(wire::locations(value, &LocationShape::Outgoing), &self.root)
+                })
+            })
             .collect()
     }
 

@@ -10,8 +10,8 @@ order 0
 author ai
 file crates/io-cache/src/wire.rs
 lines 0 60
-hash 3ba17db72e79b0a7
-note The layout, version 1, rejected wholesale otherwise. "CMCH", u32 version, then a list of files: str path, u64 hash, u8 backend (1 = server, 0 = tree-sitter), a list of symbols (str name, str kind, u32 start, u32 end, u8 depth, str owner with empty meaning none, a list of calls each a str name, a u8 qualifier tag (0 plain, 1 self, 2 named) and a str only when 2, then targets and references each a list of (str path, u32 line)), a list of (str name, str module) imports, which come out sorted because Imports is ordered, so the same index writes the same bytes; then a list of lines, each a list of (u32 start, u32 end, u8 class) highlights, the class being its position in HighlightClass::VARIANTS. A list is a u32 count and its items, a str a u32 length plus UTF-8 bytes; everything is little-endian. The Cached* structs mirror this field for field.
+hash ce09ac90b96dd8c2
+note The layout, version 2, rejected wholesale otherwise; version 2 exists to discard the version 1 caches that hold files whose server requests went unanswered. "CMCH", u32 version, then a list of files: str path, u64 hash, u8 backend (1 = server, 0 = tree-sitter), a list of symbols (str name, str kind, u32 start, u32 end, u8 depth, str owner with empty meaning none, a list of calls each a str name, a u8 qualifier tag (0 plain, 1 self, 2 named) and a str only when 2, then targets and references each a list of (str path, u32 line)), a list of (str name, str module) imports, which come out sorted because Imports is ordered, so the same index writes the same bytes; then a list of lines, each a list of (u32 start, u32 end, u8 class) highlights, the class being its position in HighlightClass::VARIANTS. A list is a u32 count and its items, a str a u32 length plus UTF-8 bytes; everything is little-endian. The Cached* structs mirror this field for field.
 
 step 7n74ir
 order 2

@@ -116,7 +116,7 @@ fn the_layout_is_the_legacy_one() {
         Backend::Server,
     ));
     CacheStore::save(&index).unwrap();
-    let mut expected: Vec<u8> = b"CMCH\x01\0\0\0\x01\0\0\0".to_vec();
+    let mut expected: Vec<u8> = b"CMCH\x02\0\0\0\x01\0\0\0".to_vec();
     let text = |bytes: &mut Vec<u8>, text: &str| {
         bytes.extend_from_slice(&u32::try_from(text.len()).unwrap().to_le_bytes());
         bytes.extend_from_slice(text.as_bytes());
@@ -205,7 +205,7 @@ fn a_legacy_cache_loads_and_writes_back_the_same_bytes() {
 #[test]
 fn a_foreign_or_truncated_file_is_no_cache() {
     let root = scratch("foreign");
-    put(&root.join(".codemap-cache"), b"CMCH\x02\0\0\0\0\0\0\0");
+    put(&root.join(".codemap-cache"), b"CMCH\x01\0\0\0\0\0\0\0");
     assert!(CacheStore::load(&Root::new(&root)).is_none());
     put(&root.join(".codemap-cache"), &LEGACY[..LEGACY.len() - 1]);
     assert!(CacheStore::load(&Root::new(&root)).is_none());

@@ -74,5 +74,5 @@ order 0
 author ai
 file crates/index/src/lib.rs
 lines 5 13
-hash 6edfcc3e18756b4c
+hash 0bdb315b3067b400
 note The whole surface. build and save_cache for the index on disk; link for edges; Parsers for a file outside the walk (the GUI's peek parses a definition's file with it); Servers for the CLI; start_session, index_files, versions and apply for the GUI's server threads; name_position for pointing a server at a symbol. io-source's Contents, Stamps and read_outside and io-lsp's StartError are re-exported for the front ends.

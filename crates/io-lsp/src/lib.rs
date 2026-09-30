@@ -5,7 +5,7 @@ mod wire;
 
 pub use answer::{
     CallItem, Character, Definition, DocumentPosition, HoverText, Outline, OutlineKind, Position,
-    RangeEnd, StartError,
+    RangeEnd, Reply, StartError,
 };
 pub use session::LspSession;
 

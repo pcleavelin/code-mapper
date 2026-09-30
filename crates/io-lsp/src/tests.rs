@@ -5,9 +5,9 @@ use std::time::Duration;
 use domain::{Language, Line, Location, RelativePath};
 use serde_json::json;
 
-use crate::answer::{Character, HoverText, RangeEnd};
+use crate::answer::{Character, HoverText, RangeEnd, Reply};
 use crate::convert::{self, Uri, relative};
-use crate::session::LspSession;
+use crate::session::{LspSession, WhyUnanswered, read_reply};
 use crate::wire::{self, LocationShape};
 
 #[test]
@@ -154,10 +154,27 @@ fn rust_analyzer_answers() {
     let mut session = LspSession::start(Language::Rust, &root).expect("start");
     session.wait_ready(Duration::from_secs(120));
     let outlines = session.outlines(&[RelativePath::new("src/map.rs")]);
-    let names: Vec<&str> = outlines[0]
-        .iter()
-        .map(|outline| outline.name.as_str())
-        .collect();
+    let Some(Reply::Given(first)) = outlines.first() else {
+        panic!("no answer for src/map.rs");
+    };
+    let names: Vec<&str> = first.iter().map(|outline| outline.name.as_str()).collect();
     assert!(names.contains(&"Map"), "{names:?}");
     session.shutdown();
+}
+
+#[test]
+fn a_refused_or_lost_request_is_unanswered_and_a_null_answer_is_an_empty_one() {
+    let symbols = |value: &serde_json::Value| wire::symbols(value).len();
+    assert_eq!(
+        read_reply(Err(WhyUnanswered::Refused), symbols),
+        Reply::Unanswered
+    );
+    assert_eq!(
+        read_reply(Err(WhyUnanswered::Gone), symbols),
+        Reply::Unanswered
+    );
+    assert_eq!(
+        read_reply(Ok(serde_json::Value::Null), symbols),
+        Reply::Given(0)
+    );
 }

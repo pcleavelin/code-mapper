@@ -196,6 +196,16 @@ lines 0 3
 hash 987310bf246e9a3c
 note What Servers tells its caller: how many files a language's server is about to be asked, or that it is unavailable and its files keep the tree-sitter resolver. The CLI prints it.
 
+step obv2xp
+order 42
+parent ybptin
+author ai
+file crates/index/src/server.rs
+symbol IndexQueries
+lines 0 6
+hash 718589d46756838b
+note The three stages index_files asks for, as a trait so the stages can be answered by something other than a live server in a test. LspSession implements it with its own batch methods and CallItem as the item; the item type is associated because a call-hierarchy item is opaque server JSON a test has no need to build.
+
 step opvazu
 order 15
 parent mz27bi
@@ -348,9 +358,9 @@ parent wfyovg
 author ai
 file crates/index/src/server.rs
 symbol index_files
-lines 0 58
-hash 4723a8abbd0f3f39
-note Three stages against a running server, each sent whole through request_all: the batch's document symbols, a call-hierarchy item for every symbol, the outgoing calls of every item. The answers come back in the order asked and are matched to their file and symbol by position; each symbol's targets are sorted and deduplicated. One ServerFile per file asked, in order.
+lines 0 76
+hash a50e75fa754557c6
+note Three stages against a server (anything IndexQueries answers: an LspSession, or a test's stand-in), each sent whole through request_all: the batch's document symbols, a call-hierarchy item for every symbol, the outgoing calls of every item. The answers come back in the order asked and are matched to their file and symbol by position; each symbol's targets are sorted and deduplicated. One ServerFile per file whose every request was answered, in order. A file with any request refused or lost (rust-analyzer refuses with 'content modified' while files change under it) is left out rather than returned with the symbols or calls it is missing: returned, it would be cached as a server answer and never asked again, which left whole files with no callees.
 
 step ymvuc4
 order 18
@@ -358,9 +368,9 @@ parent ywt3nh
 author ai
 file crates/gui/src/work.rs
 symbol serve
-lines 0 61
-hash 33f0218ca952a2e4
-note A batch is queued and worked eight files at a time through index_files; progress and each finished file go back through the channel, Done when the queue empties. Hover, definition and reference requests are taken between batches, so the pointer waits behind eight files at most.
+lines 0 62
+hash 30e8edbeff89106c
+note A batch is queued and worked eight files at a time through index_files; progress (counted per file asked, answered or not) and each answered file go back through the channel, Done when the queue empties. A file index_files leaves out stays pending and is asked again the next time the backend starts, after a re-index. Hover, definition and reference requests are taken between batches, so the pointer waits behind eight files at most.
 
 step ywt3nh
 order 17

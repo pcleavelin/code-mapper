@@ -21,8 +21,8 @@ parent nq4lui
 author ai
 file crates/gui/src/work.rs
 symbol serve
-lines 0 61
-hash 33f0218ca952a2e4
+lines 0 62
+hash 30e8edbeff89106c
 note The thread: one LspSession for the language, a queue of files to index, and hover, definition and reference requests answered between batches of eight files, so the pointer never waits behind a whole batch. Answers go back on a channel as Answer values.
 
 step 18va46

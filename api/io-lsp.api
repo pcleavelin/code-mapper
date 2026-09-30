@@ -8,7 +8,9 @@ answer::pub const fn new(value: u64) -> Self
 answer::pub const fn value(self) -> u64
 answer::pub enum RangeEnd { LineStart, Inside, }
 answer::pub struct Outline { pub name: SymbolName, pub kind: OutlineKind, pub selection: Position, pub end: Line, pub range_end: RangeEnd, pub children: Vec<Outline>, }
+answer::pub enum Reply<T> { Given(T), Unanswered, }
 answer::pub struct CallItem(Value);
+answer::pub fn new(item: Value) -> Self
 answer::pub struct HoverText(String);
 answer::pub fn as_str(&self) -> &str
 answer::pub struct Definition { pub path: PathBuf, pub file: Option<RelativePath>, pub line: Line, pub character: Character, }
@@ -17,9 +19,9 @@ session::pub struct LspSession { child: Child, input: ChildStdin, messages: Rece
 session::pub fn start(language: Language, root: &Path) -> Result<Self, StartError>
 session::pub fn root(&self) -> &Path
 session::pub fn wait_ready(&mut self, longest: Duration)
-session::pub fn outlines(&mut self, files: &[RelativePath]) -> Vec<Vec<Outline>>
-session::pub fn call_items(&mut self, positions: &[DocumentPosition]) -> Vec<Vec<CallItem>>
-session::pub fn outgoing_targets(&mut self, items: &[CallItem]) -> Vec<Vec<Location>>
+session::pub fn outlines(&mut self, files: &[RelativePath]) -> Vec<Reply<Vec<Outline>>>
+session::pub fn call_items(&mut self, positions: &[DocumentPosition]) -> Vec<Reply<Vec<CallItem>>>
+session::pub fn outgoing_targets(&mut self, items: &[CallItem]) -> Vec<Reply<Vec<Location>>>
 session::pub fn references(&mut self, position: &DocumentPosition) -> Vec<Location>
 session::pub fn incoming_callers(&mut self, position: &DocumentPosition) -> Vec<Location>
 session::pub fn hover(&mut self, position: &DocumentPosition) -> Option<HoverText>

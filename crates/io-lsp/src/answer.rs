@@ -77,10 +77,16 @@ pub struct Outline {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Reply<T> {
+    Given(T),
+    Unanswered,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CallItem(Value);
 
 impl CallItem {
-    pub(crate) fn new(item: Value) -> Self {
+    pub fn new(item: Value) -> Self {
         Self(item)
     }
 
