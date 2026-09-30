@@ -669,7 +669,7 @@ impl App {
             Landing::Landed(indexed) => {
                 let Indexed { index, stamps } = indexed;
                 self.with_index_change(|app| app.model.index = index);
-                self.model.results.clear();
+                self.model.hits.clear();
                 self.model.status = Status::Reindexed(self.index_counts());
                 self.services.watch(stamps);
             }

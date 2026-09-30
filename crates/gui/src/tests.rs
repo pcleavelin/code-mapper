@@ -10,7 +10,7 @@ use io_map::MapStore;
 use strum::VariantArray;
 use ui::{Count, Label};
 
-use crate::action::{Action, Fold, Hide};
+use crate::action::{Action, Collapse, Hide};
 use crate::app::App;
 use crate::field::Which;
 use crate::graph::Parentage;
@@ -46,7 +46,7 @@ fn every_control_is_named_by_its_feature() {
 fn every_graph_button_is_named_by_its_feature() {
     for button in [
         Button::Preview,
-        Button::Listing,
+        Button::Source,
         Button::Callees,
         Button::Callers,
         Button::Above,
@@ -210,13 +210,21 @@ fn history_keeps_the_last_two_hundred_places() {
 }
 
 #[test]
-fn selecting_a_step_unfolds_its_ancestors() {
+fn selecting_a_step_expands_its_ancestors() {
     let mut model = model();
-    model.views.entry(key(0)).flags.set(ViewFlag::Folded, true);
-    model.views.entry(key(1)).flags.set(ViewFlag::Folded, true);
+    model
+        .views
+        .entry(key(0))
+        .flags
+        .set(ViewFlag::Collapsed, true);
+    model
+        .views
+        .entry(key(1))
+        .flags
+        .set(ViewFlag::Collapsed, true);
     model.select_step(key(2), Scrolling::Stay);
-    assert!(!model.views.get(key(0)).flags.has(ViewFlag::Folded));
-    assert!(!model.views.get(key(1)).flags.has(ViewFlag::Folded));
+    assert!(!model.views.get(key(0)).flags.has(ViewFlag::Collapsed));
+    assert!(!model.views.get(key(1)).flags.has(ViewFlag::Collapsed));
     assert_eq!(model.nav.scroll_to_step(), None);
 }
 
@@ -225,32 +233,38 @@ fn app() -> App {
 }
 
 #[test]
-fn hide_all_hides_every_step_and_show_all_unfolds_none() {
+fn hide_all_code_hides_every_step_and_show_all_code_expands_none() {
     let mut app = app();
-    app.apply(Action::Toggle(key(1), ViewFlag::Folded));
+    app.apply(Action::Toggle(key(1), ViewFlag::Collapsed));
     app.apply(Action::HideAll(PATH, Hide::Hide));
     for step in 0..4 {
         assert!(app.model.views.get(key(step)).flags.has(ViewFlag::Hidden));
     }
-    assert!(app.model.views.get(key(1)).flags.has(ViewFlag::Folded));
+    assert!(app.model.views.get(key(1)).flags.has(ViewFlag::Collapsed));
     app.apply(Action::HideAll(PATH, Hide::Show));
     for step in 0..4 {
         let flags = app.model.views.get(key(step)).flags;
         assert!(!flags.has(ViewFlag::Hidden));
-        assert!(!flags.has(ViewFlag::Folded));
+        assert!(!flags.has(ViewFlag::Collapsed));
     }
 }
 
 #[test]
-fn fold_all_folds_only_steps_with_children() {
+fn collapse_all_collapses_only_steps_with_children() {
     let mut app = app();
-    app.apply(Action::FoldAll(PATH, Fold::Fold));
-    let folded: Vec<bool> = (0..4)
-        .map(|step| app.model.views.get(key(step)).flags.has(ViewFlag::Folded))
+    app.apply(Action::CollapseAll(PATH, Collapse::Collapse));
+    let collapsed: Vec<bool> = (0..4)
+        .map(|step| {
+            app.model
+                .views
+                .get(key(step))
+                .flags
+                .has(ViewFlag::Collapsed)
+        })
         .collect();
-    assert_eq!(folded, [true, true, false, false]);
-    app.apply(Action::FoldAll(PATH, Fold::Unfold));
-    assert!(!app.model.views.get(key(0)).flags.has(ViewFlag::Folded));
+    assert_eq!(collapsed, [true, true, false, false]);
+    app.apply(Action::CollapseAll(PATH, Collapse::Expand));
+    assert!(!app.model.views.get(key(0)).flags.has(ViewFlag::Collapsed));
 }
 
 #[test]

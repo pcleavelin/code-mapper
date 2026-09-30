@@ -20,10 +20,10 @@ pub(crate) enum View {
     Path,
     Diff,
     Graph,
-    Listing,
-    Results,
-    Xrefs,
-    Output,
+    Source,
+    Search,
+    References,
+    Console,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -50,10 +50,10 @@ impl View {
             Self::Path => "Path",
             Self::Diff => "Diff",
             Self::Graph => "Graph",
-            Self::Listing => "Listing",
-            Self::Results => "Results",
-            Self::Xrefs => "Xrefs",
-            Self::Output => "Output",
+            Self::Source => "Source",
+            Self::Search => "Search",
+            Self::References => "References",
+            Self::Console => "Console",
         })
     }
 
@@ -62,9 +62,9 @@ impl View {
             Self::Path => Some(Tab::Path),
             Self::Diff => Some(Tab::Diff),
             Self::Graph => Some(Tab::Graph),
-            Self::Listing => Some(Tab::Listing),
-            Self::Results => Some(Tab::Results),
-            Self::Paths | Self::Symbols | Self::Files | Self::Xrefs | Self::Output => None,
+            Self::Source => Some(Tab::Source),
+            Self::Search => Some(Tab::Search),
+            Self::Paths | Self::Symbols | Self::Files | Self::References | Self::Console => None,
         }
     }
 
@@ -73,8 +73,8 @@ impl View {
             Tab::Path => Self::Path,
             Tab::Diff => Self::Diff,
             Tab::Graph => Self::Graph,
-            Tab::Listing => Self::Listing,
-            Tab::Results => Self::Results,
+            Tab::Source => Self::Source,
+            Tab::Search => Self::Search,
         }
     }
 
@@ -201,21 +201,21 @@ impl Panel {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(crate) enum Direction {
     #[default]
-    Across,
+    Right,
     Down,
 }
 
 impl Direction {
     pub(crate) const fn turned(self) -> Self {
         match self {
-            Self::Across => Self::Down,
-            Self::Down => Self::Across,
+            Self::Right => Self::Down,
+            Self::Down => Self::Right,
         }
     }
 
     const fn axis(self) -> Axis {
         match self {
-            Self::Across => Axis::Horizontal,
+            Self::Right => Axis::Horizontal,
             Self::Down => Axis::Vertical,
         }
     }
@@ -224,7 +224,7 @@ impl Direction {
 impl fmt::Display for Direction {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str(match self {
-            Self::Across => "across",
+            Self::Right => "right",
             Self::Down => "down",
         })
     }
@@ -242,7 +242,7 @@ pub(crate) struct Split {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct Divided {
     pub(crate) first: Rect,
-    pub(crate) sash: Rect,
+    pub(crate) divider: Rect,
     pub(crate) second: Rect,
 }
 
@@ -263,10 +263,10 @@ impl Split {
         &self.second
     }
 
-    pub(crate) fn divide(&self, rect: Rect, sash: Px, least: Extent) -> Divided {
+    pub(crate) fn divide(&self, rect: Rect, divider: Px, least: Extent) -> Divided {
         let axis = self.direction.axis();
         let whole = rect.extent().along(axis);
-        let room = (whole - sash).max(Px::ZERO);
+        let room = (whole - divider).max(Px::ZERO);
         let floor = least.along(axis).min(room / 2);
         let first = self.ratio.apply(room).clamp(floor, room - floor);
         let second = room - first;
@@ -280,16 +280,16 @@ impl Split {
         };
         Divided {
             first: at(Px::ZERO, first),
-            sash: at(first, sash.min(whole)),
-            second: at(first + sash, second),
+            divider: at(first, divider.min(whole)),
+            second: at(first + divider, second),
         }
     }
 
-    pub(crate) fn ratio_at(&self, rect: Rect, sash: Px, mouse: Point) -> Ratio {
+    pub(crate) fn ratio_at(&self, rect: Rect, divider: Px, mouse: Point) -> Ratio {
         let axis = self.direction.axis();
-        let room = rect.extent().along(axis) - sash;
+        let room = rect.extent().along(axis) - divider;
         Ratio::of(
-            mouse.along(axis) - rect.origin().along(axis) - sash / 2,
+            mouse.along(axis) - rect.origin().along(axis) - divider / 2,
             room,
         )
     }
@@ -472,19 +472,19 @@ impl Default for Panels {
             View::Path,
             View::Diff,
             View::Graph,
-            View::Listing,
-            View::Results,
+            View::Source,
+            View::Search,
         ]);
-        let xrefs = panels.panel(vec![View::Xrefs]);
-        let output = panels.panel(vec![View::Output]);
-        let right = panels.split(Direction::Across, DEFAULT_RIGHT, centre, xrefs);
-        let row = panels.split(Direction::Across, DEFAULT_LEFT, nav, right);
-        panels.root = panels.split(Direction::Down, DEFAULT_BOTTOM, row, output);
+        let references = panels.panel(vec![View::References]);
+        let console = panels.panel(vec![View::Console]);
+        let right = panels.split(Direction::Right, DEFAULT_RIGHT, centre, references);
+        let row = panels.split(Direction::Right, DEFAULT_LEFT, nav, right);
+        panels.root = panels.split(Direction::Down, DEFAULT_BOTTOM, row, console);
         panels
     }
 }
 
-pub(crate) fn sash_width(font: FontSize) -> Px {
+pub(crate) fn divider_width(font: FontSize) -> Px {
     Px::of_count(usize::try_from(font.get() / 2).unwrap_or(0)).max(SPLIT_LEAST)
 }
 
@@ -499,7 +499,7 @@ fn layout_of(branch: &Branch) -> LayoutTree {
         }
         Branch::Split(split) => LayoutTree::Split(LayoutSplit::new(
             match split.direction {
-                Direction::Across => SplitDirection::Across,
+                Direction::Right => SplitDirection::Right,
                 Direction::Down => SplitDirection::Down,
             },
             Share::permille(split.ratio.0).unwrap_or(Share::WHOLE),
@@ -542,7 +542,7 @@ impl Panels {
                 let first = self.restore(saved.first(), placed);
                 let second = self.restore(saved.second(), placed);
                 let direction = match saved.direction() {
-                    SplitDirection::Across => Direction::Across,
+                    SplitDirection::Right => Direction::Right,
                     SplitDirection::Down => Direction::Down,
                 };
                 self.split(direction, Ratio(saved.share().get()), first, second)
@@ -769,8 +769,8 @@ impl Panels {
         let fresh = self.fresh();
         let split = self.fresh();
         let (direction, before) = match side {
-            Edge::Left => (Direction::Across, true),
-            Edge::Right => (Direction::Across, false),
+            Edge::Left => (Direction::Right, true),
+            Edge::Right => (Direction::Right, false),
             Edge::Top => (Direction::Down, true),
             Edge::Bottom => (Direction::Down, false),
         };

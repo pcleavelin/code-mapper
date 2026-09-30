@@ -45,7 +45,7 @@ struct Spacing {
 impl Spacing {
     const fn of(direction: Direction) -> Self {
         match direction {
-            Direction::Across => Self {
+            Direction::Right => Self {
                 rank_gap: GRAPH_RANK_GAP_ACROSS,
                 sibling_gap: GRAPH_SIBLING_GAP_DOWN,
                 box_gap: GRAPH_BOX_GAP_DOWN,
@@ -111,28 +111,28 @@ impl CellBounds {
 
 const fn main_size(direction: Direction, size: CellSize) -> Cells {
     match direction {
-        Direction::Across => size.wide,
+        Direction::Right => size.wide,
         Direction::Down => size.tall,
     }
 }
 
 const fn cross_size(direction: Direction, size: CellSize) -> Cells {
     match direction {
-        Direction::Across => size.tall,
+        Direction::Right => size.tall,
         Direction::Down => size.wide,
     }
 }
 
 const fn cross_of(direction: Direction, at: CellPoint) -> Cells {
     match direction {
-        Direction::Across => at.down,
+        Direction::Right => at.down,
         Direction::Down => at.across,
     }
 }
 
 const fn point(direction: Direction, main: Cells, cross: Cells) -> CellPoint {
     match direction {
-        Direction::Across => CellPoint {
+        Direction::Right => CellPoint {
             across: main,
             down: cross,
         },

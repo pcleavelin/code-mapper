@@ -6,17 +6,17 @@ use crate::model::Model;
 use crate::theme::TEXT;
 use crate::widgets::{Container, Frame, Scroller};
 
-pub(super) fn output_panel(model: &Model, frame: &mut Frame<'_>) {
-    let id = ids::output();
-    frame.start(Container::OutputColumn);
+pub(super) fn console_panel(model: &Model, frame: &mut Frame<'_>) {
+    let id = ids::console();
+    frame.start(Container::ConsoleColumn);
     let mut offset = model.scrolls.get(id);
-    if model.output_bottom.get() > 0 {
-        frame.push(Action::OutputScrolled);
+    if model.console_bottom.get() > 0 {
+        frame.push(Action::ConsoleScrolled);
         offset = Px::LARGEST;
     }
     let scrolled = frame.scroll_column(id, offset, Scroller::Plain, None);
     let row_height = frame.row_height();
-    let count = model.output.line_count();
+    let count = model.console.line_count();
     let window = frame.rows_window(
         scrolled.offset,
         scrolled.interaction.rect(),
@@ -25,7 +25,7 @@ pub(super) fn output_panel(model: &Model, frame: &mut Frame<'_>) {
         Count::new(20),
     );
     for line in model
-        .output
+        .console
         .lines()
         .skip(window.first.get())
         .take(window.visible.get())

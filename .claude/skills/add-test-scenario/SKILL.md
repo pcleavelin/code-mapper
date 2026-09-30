@@ -16,7 +16,7 @@ gesture), and the behaviour a change adds is stated by a test written before the
    Every outcome of a command is a line (success and each error), followed by a read that
    shows the effect.
 3. GUI: a function `pub fn <name>() -> Scenario` in `tests/common/gui.rs`, then add `<name>`
-   to `gui_scenarios!`. The script aims at element ids (`click-id`, `hover-id`, `outline/<n>`
+   to `gui_scenarios!`. The script aims at element ids (`click-id`, `hover-id`, `steps/<n>`
    to bring a step into view, `<<DUMP ...|dx,dy>>` inside an element, resolved against the
    frame the line runs in); the window is a fixed 1600x1000 at scale 1. `pause <ms>` waits for
    wall-time polls. A gesture at an element out of view is refused and fails the scenario; to

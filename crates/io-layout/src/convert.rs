@@ -22,7 +22,7 @@ pub(crate) fn layout(wire: &WireTree) -> Option<LayoutTree> {
             second,
         } => {
             let direction = match direction {
-                WireDirection::Across => SplitDirection::Across,
+                WireDirection::Right => SplitDirection::Right,
                 WireDirection::Down => SplitDirection::Down,
             };
             Some(LayoutTree::Split(LayoutSplit::new(
@@ -49,7 +49,7 @@ pub(crate) fn wire(layout: &LayoutTree) -> WireTree {
         },
         LayoutTree::Split(split) => WireTree::Split {
             direction: match split.direction() {
-                SplitDirection::Across => WireDirection::Across,
+                SplitDirection::Right => WireDirection::Right,
                 SplitDirection::Down => WireDirection::Down,
             },
             share: split.share().get(),

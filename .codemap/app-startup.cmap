@@ -143,7 +143,7 @@ file crates/gui/src/app.rs
 symbol new
 lines 0 51
 hash c6ff626c0a56207e
-note Builds the whole application state before the first frame. The order matters: index first, then the map resolved against it, then the Model that holds both, with its panel tree from the user's layout file (none for a script or screenshot run unless CODEMAP_LAYOUT names one) and the Services with their watcher, then the first path selected so the document, outline, listing, xrefs and graph all have something in them, then the language servers and the parent map. A map that did not read leaves its error in the status line; otherwise the status line says how many files and symbols were indexed.
+note Builds the whole application state before the first frame. The order matters: index first, then the map resolved against it, then the Model that holds both, with its panel tree from the user's layout file (none for a script or screenshot run unless CODEMAP_LAYOUT names one) and the Services with their watcher, then the first path selected so the document, steps list, Source view, References panel and graph all have something in them, then the language servers and the parent map. A map that did not read leaves its error in the status line; otherwise the status line says how many files and symbols were indexed.
 
 step t4wzoi
 order 5
@@ -182,7 +182,7 @@ author ai
 file crates/gui/src/model.rs
 symbol new
 lines 0 41
-hash 79bbe6b562378209
+hash 91e7187277bb2f79
 note The Model is built around the index, the map and its store, with every panel in its default state (Nav on the Path tab, the default panel tree, empty fields). The map's stamp is taken here, so the once-a-second disk poll starts out knowing the map as it was read.
 
 step yzu1mn

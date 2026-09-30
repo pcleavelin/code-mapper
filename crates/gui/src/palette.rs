@@ -5,7 +5,7 @@ use features::{Chord, Feature, Key as ChordKey, Modifiers, Trigger};
 use strum::VariantArray;
 use ui::{Count, Label};
 
-use crate::action::{Action, Fold, Hide};
+use crate::action::{Action, Collapse, Hide};
 use crate::authoring::Authoring;
 use crate::field::{FieldText, Which};
 use crate::graph::GraphAction;
@@ -62,7 +62,7 @@ pub(crate) enum PaletteCommand {
     Back,
     Forward,
     Hide(Hide),
-    Fold(Fold),
+    Collapse(Collapse),
     ShowGraph,
     NewPath,
     Search,
@@ -79,20 +79,20 @@ pub(crate) const fn commands(feature: Feature) -> &'static [PaletteCommand] {
             PaletteCommand::Hide(Hide::Hide),
             PaletteCommand::Hide(Hide::Show),
         ],
-        Feature::FoldAll => &[
-            PaletteCommand::Fold(Fold::Fold),
-            PaletteCommand::Fold(Fold::Unfold),
+        Feature::CollapseAll => &[
+            PaletteCommand::Collapse(Collapse::Collapse),
+            PaletteCommand::Collapse(Collapse::Expand),
         ],
         Feature::ShowGraph => &[PaletteCommand::ShowGraph],
         Feature::GoBack => &[PaletteCommand::Back, PaletteCommand::Forward],
         Feature::Save => &[PaletteCommand::Save],
         Feature::NewPath => &[PaletteCommand::NewPath],
-        Feature::Search => &[PaletteCommand::Search],
+        Feature::SearchFiles => &[PaletteCommand::Search],
         Feature::AutoLayout => &[PaletteCommand::AutoLayout],
         Feature::FitGraph => &[PaletteCommand::Fit, PaletteCommand::OneToOne],
         Feature::TurnGraph => &[PaletteCommand::Turn],
         Feature::SplitPanel => &[
-            PaletteCommand::Split(Direction::Across),
+            PaletteCommand::Split(Direction::Right),
             PaletteCommand::Split(Direction::Down),
         ],
         _ => &[],
@@ -554,11 +554,11 @@ impl Model {
                 PaletteCommand::Hide(Hide::Show) => {
                     on_path(|path| Action::HideAll(path, Hide::Show))
                 }
-                PaletteCommand::Fold(Fold::Fold) => {
-                    on_path(|path| Action::FoldAll(path, Fold::Fold))
+                PaletteCommand::Collapse(Collapse::Collapse) => {
+                    on_path(|path| Action::CollapseAll(path, Collapse::Collapse))
                 }
-                PaletteCommand::Fold(Fold::Unfold) => {
-                    on_path(|path| Action::FoldAll(path, Fold::Unfold))
+                PaletteCommand::Collapse(Collapse::Expand) => {
+                    on_path(|path| Action::CollapseAll(path, Collapse::Expand))
                 }
                 PaletteCommand::ShowGraph => on_path(|path| Action::OpenPath(path, Tab::Graph)),
                 PaletteCommand::NewPath => vec![Action::Authoring(Authoring::ToggleNewPath)],

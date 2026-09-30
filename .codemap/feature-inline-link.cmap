@@ -1,0 +1,55 @@
+codemap 8
+path feature-inline-link
+kind flow
+author ai
+group features/gui
+note A step that links to another path has an 'inline' button. The reader reaches for it to read a linked path's steps in place, under the step that calls into it, instead of leaving the path being read. Pressed, the linked path's steps appear inline under the step, indented one level and numbered after it (1.2 › 1, 1.2 › 1.1), each with its own view buttons; 'un-inline' removes them. A link to a path already inlined further up shows 'inlined above' instead of a button, so a cycle of links cannot recurse.
+
+step a79171
+order 4
+parent vxhwtl
+author ai
+file crates/gui/src/views/document.rs
+symbol inline
+lines 0 25
+hash e56911020eaf3821
+note Draws the linked path with the same steps function, one occurrence deeper: the number prefix becomes the step's number and a ›, the indent base moves right by the step's depth, and the target joins the chain for the duration. Rows drawn here carry the occurrence in their ids, so their buttons are distinct from the linked path's own document.
+
+step e14fw6
+order 0
+author ai
+file crates/gui/src/action.rs
+symbol apply
+lines 7 7
+hash 8db399b6fb4b876f
+note The handler: the Toggle arm flips one flag in the step's view.
+
+step ui2oxp
+order 1
+parent e14fw6
+author ai
+file crates/gui/src/model.rs
+symbol toggle
+lines 0 2
+hash 5bb2fa45ec21a492
+note Flips the Inlined bit.
+
+step vxhwtl
+order 3
+parent e14fw6
+author ai
+file crates/gui/src/views/document.rs
+symbol steps
+lines 57 61
+hash b8f16c583a4a994c
+note The effect on the next frame: after drawing a step that is inlined, not collapsed, and not linking back into the chain, steps draws the target path under it.
+
+step xpysyc
+order 2
+parent e14fw6
+author ai
+file crates/gui/src/views/document.rs
+symbol link_buttons
+lines 17 31
+hash cdfb687577ecb773
+note Trigger: after the link's name button, the INLINE button queues Toggle with ViewFlag::Inlined, unless the target is on the chain of paths already being inlined, which gets the 'inlined above' label.

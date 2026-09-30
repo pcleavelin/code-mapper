@@ -14,11 +14,11 @@ use crate::model::Model;
 use crate::model::StepKey;
 use crate::panels::Direction;
 use crate::theme::{
-    ACCENT, BACK_EDGE, BORDER, CALL_TINT, EXPANSION_EDGE, FIELD, GRAPH_BEND, GRAPH_BOX_HEADER,
-    GRAPH_BUTTON_GAP, GRAPH_CODE_GAP, GRAPH_EDGE, GRAPH_EDGE_END, GRAPH_RANK_GAP_ACROSS,
-    GRAPH_RANK_GAP_DOWN, GRAPH_RULE, GRAPH_RULE_ABOVE, GRAPH_STEP_EDGE, GRAPH_THICK_BORDER,
-    GRAPH_THIN_BORDER, GREEN, HOVER, PANEL, PIXEL, RED, SIBLINGS_BORDER, SIBLINGS_FILL, SLICE,
-    STEP_BORDER, STEP_EDGE, TEXT, WEAK,
+    ACCENT, BACK_EDGE, BORDER, CALL_TINT, FIELD, GRAPH_BEND, GRAPH_BOX_HEADER, GRAPH_BUTTON_GAP,
+    GRAPH_CODE_GAP, GRAPH_EDGE, GRAPH_EDGE_END, GRAPH_RANK_GAP_ACROSS, GRAPH_RANK_GAP_DOWN,
+    GRAPH_RULE, GRAPH_RULE_ABOVE, GRAPH_STEP_EDGE, GRAPH_THICK_BORDER, GRAPH_THIN_BORDER, GREEN,
+    HOVER, PANEL, PIXEL, RED, REVEAL_EDGE, SIBLINGS_BORDER, SIBLINGS_FILL, SLICE, STEP_BORDER,
+    STEP_EDGE, TEXT, WEAK,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -319,7 +319,7 @@ struct Router {
 impl Router {
     fn of(direction: Direction, metrics: Metrics) -> Self {
         let reach = match direction {
-            Direction::Across => GRAPH_RANK_GAP_ACROSS.of(metrics.cell_width),
+            Direction::Right => GRAPH_RANK_GAP_ACROSS.of(metrics.cell_width),
             Direction::Down => GRAPH_RANK_GAP_DOWN.of(metrics.row_height),
         };
         Self {
@@ -338,7 +338,7 @@ impl Router {
             ((end.get() - start.get()).abs() * 0.5).max(self.reach.get()) * sign
         };
         match self.direction {
-            Direction::Across => {
+            Direction::Right => {
                 let pull = span(from.horizontal, to.horizontal);
                 [
                     from,
@@ -361,21 +361,21 @@ impl Router {
 
     fn entry(self, rect: Rect) -> Vector {
         match self.direction {
-            Direction::Across => vector(rect.left, rect.top + self.header_middle),
+            Direction::Right => vector(rect.left, rect.top + self.header_middle),
             Direction::Down => vector(rect.left + rect.width / 2, rect.top),
         }
     }
 
     fn ahead(self, from: Rect, to: Rect) -> bool {
         match self.direction {
-            Direction::Across => to.left >= from.right(),
+            Direction::Right => to.left >= from.right(),
             Direction::Down => to.top >= from.bottom(),
         }
     }
 
     fn back(self, from: Rect, to: Rect) -> [Vector; 4] {
         match self.direction {
-            Direction::Across => self.curve(
+            Direction::Right => self.curve(
                 vector(from.left, from.top + self.header_middle),
                 vector(to.right(), to.top + self.header_middle),
                 Bend::Back,
@@ -435,7 +435,7 @@ fn edges(input: &SceneInput<'_>, origin: Point, code_top: &BTreeMap<Node, Px>) -
             edges.push(if router.ahead(from, to) {
                 Edge {
                     points: router.curve(edge_out(*caller, name), router.entry(to), Bend::Ahead),
-                    color: EXPANSION_EDGE,
+                    color: REVEAL_EDGE,
                     width: GRAPH_EDGE,
                 }
             } else {
@@ -465,9 +465,9 @@ fn edges(input: &SceneInput<'_>, origin: Point, code_top: &BTreeMap<Node, Px>) -
 
 fn toward_parent(parentage: Parentage, direction: Direction) -> Icon {
     match (parentage, direction) {
-        (Parentage::Callers(_), Direction::Across) => Icon::Forward,
+        (Parentage::Callers(_), Direction::Right) => Icon::Forward,
         (Parentage::Callers(_), Direction::Down) => Icon::Down,
-        (_, Direction::Across) => Icon::Back,
+        (_, Direction::Right) => Icon::Back,
         (_, Direction::Down) => Icon::Up,
     }
 }

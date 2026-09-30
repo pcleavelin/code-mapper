@@ -101,14 +101,14 @@ pub(super) fn target_mark(model: &Model, step: StepSlot) -> Option<Label> {
     (model.target_under() == Some(step)).then(|| Label::new("  + adds here"))
 }
 
-pub(crate) fn outline_drop(model: &Model, ui: &Ui) -> Option<StepDrop> {
+pub(crate) fn step_list_drop(model: &Model, ui: &Ui) -> Option<StepDrop> {
     let grab = model.step_grab?;
     let mouse = ui.pointer().mouse;
     (0..model.step_count(grab.key.path).get())
         .map(StepSlot::new)
         .find_map(|step| {
             let row = ui
-                .interaction(ids::OUTLINE_ROW.id().nth(step.get()))
+                .interaction(ids::STEP_LIST_ROW.id().nth(step.get()))
                 .rect()?;
             row.contains(mouse).then(|| {
                 let zone = Zone::of(row, mouse);
@@ -121,7 +121,7 @@ pub(crate) fn outline_drop(model: &Model, ui: &Ui) -> Option<StepDrop> {
         })
 }
 
-pub(crate) fn outline_input(model: &Model, ui: &Ui) -> Vec<Action> {
+pub(crate) fn step_list_input(model: &Model, ui: &Ui) -> Vec<Action> {
     let Some(grab) = model.step_grab else {
         return Vec::new();
     };
@@ -130,18 +130,18 @@ pub(crate) fn outline_input(model: &Model, ui: &Ui) -> Vec<Action> {
     if !ui.pointer().down.contains(Button::Left) {
         let moving = grab.dragged_to(mouse).is_moving();
         actions.push(Action::Authoring(Authoring::DropStep(
-            outline_drop(model, ui).filter(|_| moving),
+            step_list_drop(model, ui).filter(|_| moving),
         )));
     }
     actions
 }
 
-pub(super) fn outline_band(model: &Model, frame: &mut Frame<'_>) {
+pub(super) fn step_list_band(model: &Model, frame: &mut Frame<'_>) {
     if !model.step_grab.is_some_and(StepGrab::is_moving) {
         return;
     }
     frame.cursor = Cursor::Grabbing;
-    if let Some(drop) = outline_drop(model, frame.ui) {
+    if let Some(drop) = step_list_drop(model, frame.ui) {
         frame.drop_band(drop.band);
     }
 }

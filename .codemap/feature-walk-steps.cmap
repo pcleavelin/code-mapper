@@ -3,7 +3,7 @@ path feature-walk-steps
 kind flow
 author ai
 group features/gui
-note With no text field holding the keyboard and the graph not holding it, Down selects the next step of the path being read and Up the previous one, in numbered order (the order the document and outline show), scrolling each to the top. The reader reaches for it to read a path step by step in order without clicking each row or scrolling to the next header. Down on the last step and Up on the first stay put. With no step selected, either key selects the first step. After a click in the graph the arrows walk the graph instead (feature-walk-graph).
+note With no text field holding the keyboard and the graph not holding it, Down selects the next step of the path being read and Up the previous one, in numbered order (the order the document and steps list show), scrolling each to the top. The reader reaches for it to read a path step by step in order without clicking each row or scrolling to the next header. Down on the last step and Up on the first stay put. With no step selected, either key selects the first step. After a click in the graph the arrows walk the graph instead (feature-walk-graph).
 
 step 17uw33
 order 0
@@ -31,9 +31,9 @@ author ai
 file crates/gui/src/nav.rs
 symbol select_step
 lines 0 53
-hash 4970f05ff13c3c88
+hash c309ed71b85c827e
 link feature-select-step
-note Selecting the neighbour is the same as clicking it in the outline.
+note Selecting the neighbour is the same as clicking it in the steps list.
 
 step hymyku
 order 4
@@ -63,4 +63,4 @@ file crates/gui/src/model.rs
 symbol numbered
 lines 0 15
 hash e433ffa5b0d15e30
-note The displayed order: the path's steps as the document and outline number them (domain's Path::numbered, which orders siblings by the line of their parent that calls them), as slots of the GUI's step list with depth and number.
+note The displayed order: the path's steps as the document and steps list number them (domain's Path::numbered, which orders siblings by the line of their parent that calls them), as slots of the GUI's step list with depth and number.

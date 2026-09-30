@@ -104,7 +104,7 @@ pub(crate) struct Nav {
     scroll_to: Option<LineRequest>,
     scroll_to_step: Option<StepRequest>,
     top_step: Option<StepSlot>,
-    outline_shown: Option<StepSlot>,
+    step_list_shown: Option<StepSlot>,
     ticket: Ticket,
     asked: Ticket,
     history: History,
@@ -123,7 +123,7 @@ impl Default for Nav {
             scroll_to: None,
             scroll_to_step: None,
             top_step: None,
-            outline_shown: None,
+            step_list_shown: None,
             ticket: Ticket(0),
             asked: Ticket(0),
             history: History::default(),
@@ -179,8 +179,8 @@ impl Nav {
         self.top_step
     }
 
-    pub(crate) const fn outline_shown(&self) -> Option<StepSlot> {
-        self.outline_shown
+    pub(crate) const fn step_list_shown(&self) -> Option<StepSlot> {
+        self.step_list_shown
     }
 
     pub(crate) fn can_go_back(&self) -> bool {
@@ -312,7 +312,7 @@ impl Model {
             self.nav.step = self.nav.step.and_then(&shift);
             self.nav.target = self.nav.target.and_then(&shift);
             self.nav.top_step = self.nav.top_step.and_then(&shift);
-            self.nav.outline_shown = None;
+            self.nav.step_list_shown = None;
         }
     }
 
@@ -423,7 +423,7 @@ impl Model {
                 step: parent,
             };
             if let Some(view) = self.views.existing(above) {
-                view.flags.set(ViewFlag::Folded, false);
+                view.flags.set(ViewFlag::Collapsed, false);
             }
             up = self.parent_of(above);
         }
@@ -461,7 +461,7 @@ impl Model {
                 ticket,
             });
         }
-        if matches!(self.nav.tab, Tab::Listing | Tab::Results | Tab::Diff) {
+        if matches!(self.nav.tab, Tab::Source | Tab::Search | Tab::Diff) {
             self.nav.show(Tab::Path);
         }
     }
@@ -490,7 +490,7 @@ impl Model {
             return;
         }
         if !matches!(self.nav.tab, Tab::Graph | Tab::Path) {
-            self.nav.show(Tab::Listing);
+            self.nav.show(Tab::Source);
         } else if let Some(path) = self.nav.path {
             let name = self.index.symbol(symbol).map(|found| found.name().clone());
             let path = self.path(path).map(|found| found.name().clone());
@@ -504,7 +504,7 @@ impl Model {
         self.select_symbol(symbol);
         let on_step = self.nav.step.is_some() && self.nav.tab == Tab::Path;
         if self.nav.tab != Tab::Graph && !on_step {
-            self.nav.show(Tab::Listing);
+            self.nav.show(Tab::Source);
         }
     }
 
@@ -512,7 +512,7 @@ impl Model {
         self.nav.file = Some(file);
         self.nav.lines = Some(LineSelection::one(line));
         self.nav.scroll_to_line(line);
-        self.nav.show(Tab::Listing);
+        self.nav.show(Tab::Source);
     }
 
     pub(crate) fn go_to_line(&mut self, line: Line) {
@@ -607,7 +607,7 @@ impl Model {
         self.nav.top_step = step;
     }
 
-    pub(crate) fn set_outline_shown(&mut self, step: StepSlot) {
-        self.nav.outline_shown = Some(step);
+    pub(crate) fn set_step_list_shown(&mut self, step: StepSlot) {
+        self.nav.step_list_shown = Some(step);
     }
 }

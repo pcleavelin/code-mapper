@@ -3,7 +3,7 @@ path gui-structure
 kind layer
 author ai
 group gui
-note How the gui crate is divided and the rules each part keeps. The App is what platform calls - once per frame, once per script line - and it owns four things: the Model, which is all the state a view can see (index, map, selection, panel state, fields, server questions, status); the Services, the threads and the channels to them, which no view sees; the Ui element tree; and the cache of drawn code grids. The rules: views (views.rs and views/) take &Model and push Actions onto the Frame's queue, and never change anything; apply is the one place state changes - it runs the keys' and dock's actions before the tree is built and the queue after it; nav.rs owns the selection, whose fields no other module can write; runtime.rs owns threads, since every background job and service is started there and the lint that forbids thread::spawn is lifted only there; work.rs sends questions to the threads and folds their answers into the Model at the top of the frame; widgets are Frame methods that take their sizes and colours from theme and name their elements through ids; keys decides which chord, click or wheel means what, from the feature registry, so no view tests a modifier itself; status.rs words everything the status line and the output log say; dump.rs prints what a script's dump asks, each part of the Model through the Dump trait. The one exception to 'nothing changes outside apply' is the Frame's Overlay, which carries what a view decided this frame to the views drawn after it.
+note How the gui crate is divided and the rules each part keeps. The App is what platform calls - once per frame, once per script line - and it owns four things: the Model, which is all the state a view can see (index, map, selection, panel state, fields, server questions, status); the Services, the threads and the channels to them, which no view sees; the Ui element tree; and the cache of drawn code grids. The rules: views (views.rs and views/) take &Model and push Actions onto the Frame's queue, and never change anything; apply is the one place state changes - it runs the keys' and dock's actions before the tree is built and the queue after it; nav.rs owns the selection, whose fields no other module can write; runtime.rs owns threads, since every background job and service is started there and the lint that forbids thread::spawn is lifted only there; work.rs sends questions to the threads and folds their answers into the Model at the top of the frame; widgets are Frame methods that take their sizes and colours from theme and name their elements through ids; keys decides which chord, click or wheel means what, from the feature registry, so no view tests a modifier itself; status.rs words everything the status line and the console log say; dump.rs prints what a script's dump asks, each part of the Model through the Dump trait. The one exception to 'nothing changes outside apply' is the Frame's Overlay, which carries what a view decided this frame to the views drawn after it.
 
 step 04jbr0
 order 48
@@ -12,7 +12,7 @@ author ai
 file crates/gui/src/status.rs
 symbol fmt
 lines 0 89
-hash 8712c8816419ffb1
+hash 9d6a90aa3a097965
 note The wording. Map refusals and load failures arrive already worded by cli, so the GUI and the CLI say the same thing.
 
 step 0fz3qy
@@ -90,8 +90,8 @@ author ai
 file crates/gui/src/model.rs
 symbol Model
 lines 0 30
-hash 14009f2837c6fc92
-note All the state a view can see, in one struct: the index and the map with its MapStore and disk state, the parent map for the Diff tab, Nav, the step views, the open directories and groups, the pinned peek, the server Queries, the panel tree, the scroll offsets (down and across), the graph's state, the fields, search results and whether they were cut at HIT_LIMIT, the measured heights of document steps (Measures), the output log, the status, WorkState, the font metrics and the frame time. gui-model has its values and queries.
+hash c89cbfec7555069e
+note All the state a view can see, in one struct: the index and the map with its MapStore and disk state, the parent map for the Diff tab, Nav, the step views, the open directories and groups, the kept peek, the server Queries, the panel tree, the scroll offsets (down and across), the graph's state, the fields, search hits and whether they were cut at HIT_LIMIT, the measured heights of document steps (Measures), the console log, the status, WorkState, the font metrics and the frame time. gui-model has its values and queries.
 
 step 622pjb
 order 25
@@ -99,7 +99,7 @@ parent l7bll4
 author ai
 file crates/gui/src/theme.rs
 lines 129 163
-hash f0f597ff28aca244
+hash f5fce2c56cf74249
 note Every padding, gap and fixed pixel measure the widgets and views use, named by where it is used.
 
 step 63vlrl
@@ -166,7 +166,7 @@ author ai
 file crates/gui/src/views.rs
 symbol build
 lines 0 14
-hash 67dee6b96b93638f
+hash 8c314ab96c8e770c
 note Every view is a function of (&Model, &mut Frame): nothing a view does can change the Model, so the whole window is drawn from one consistent state, and a view that wants a change pushes an Action.
 
 step 98q001
@@ -194,7 +194,7 @@ parent l7bll4
 author ai
 file crates/gui/src/theme.rs
 lines 192 230
-hash 3faf5be0147f3cf8
+hash 17b924302afe27a8
 note Every measure counted in cells: button and field widths, column guesses before a panel has a size, the symbol table's columns, tooltip sizes, the gap before a danger button, the status bar's room for the map's place, the panels' floors and the picker's width.
 
 step an1gef
@@ -222,9 +222,9 @@ order 53
 parent e7qp3v
 author ai
 file crates/gui/src/status.rs
-symbol impl OutputLog
+symbol impl ConsoleLog
 lines 0 37
-hash 999c2f5023b591b6
+hash f26d039f35e21d88
 note How a command's run is written into the log; clear empties it.
 
 step cv7mwt
@@ -241,10 +241,10 @@ step e7qp3v
 order 54
 author ai
 file crates/gui/src/status.rs
-symbol OutputLog
+symbol ConsoleLog
 lines 0 0
-hash 2893633bc29f2efb
-note The output panel's log: the commands typed with a > prefix, what they printed, and a line when one changed the map or failed.
+hash 80b5b8e9ca222e9d
+note The console's log: the commands typed with a > prefix, what they printed, and a line when one changed the map or failed.
 
 step f5bnk8
 order 49
@@ -302,7 +302,7 @@ author ai
 file crates/gui/src/action.rs
 symbol apply
 lines 0 100
-hash 52f211504e67e3dd
+hash 6aa2bab3baec6252
 note The one place the Model changes during a frame. Each arm is a call into nav.rs, a field of the Model, or a method on the App for changes that need the Services (save, a server question, a command).
 
 step h4xmjq
@@ -438,7 +438,7 @@ author ai
 file crates/gui/src/status.rs
 symbol authoring
 lines 0 38
-hash 266ab483710f5f5c
+hash 9ee960cf60cab072
 note The wording of path creation and step placement (new path, promote, add, move, the target), split out of fmt to keep it under the length limit; fmt hands every one of these variants here.
 
 step mch588
@@ -448,7 +448,7 @@ author ai
 file crates/gui/src/ids.rs
 symbol CONTROLS
 lines 0 74
-hash f14bd911bd693d85
+hash 6506a10c95039068
 note Every control, for the test that checks them against the registry.
 
 step mjhubp
@@ -506,7 +506,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol Nav
 lines 0 15
-hash 88d42f5e9347edb5
+hash 634a2b281ea0b8d6
 note The selection and everything that moves with it (see selection). Its fields are private to nav.rs, so the selection only changes through Model's methods there.
 
 step o9w0e6
@@ -565,7 +565,7 @@ author ai
 file crates/gui/src/dump.rs
 symbol dump
 lines 0 16
-hash 0b08c28fdd8440f4
+hash e7fab9210eec0076
 note Each scrolling panel's offset, rectangle and content size.
 
 step saeyu5
@@ -634,8 +634,8 @@ author ai
 file crates/gui/src/dump.rs
 symbol dump
 lines 0 27
-hash 2c0d7cbafb49667f
-note Every step view that differs from the default, as one line 'step-views <path>:<step>(<flags> +<above>/+<below>)': whole, hidden, folded and expanded, then the extra context lines above and below. No line when every view is the default, so a reset shows as the line going away.
+hash 6dc12be649c186f1
+note Every step view that differs from the default, as one line 'step-views <path>:<step>(<flags> +<above>/+<below>)': whole, hidden, collapsed and inlined, then the extra context lines above and below. No line when every view is the default, so a reset shows as the line going away.
 
 step vkbn4x
 order 20
@@ -664,7 +664,7 @@ file crates/gui/src/dump.rs
 symbol fmt
 lines 0 23
 hash 55398b6fa9c898ff
-note The pinned peek, in the form the scripts grep.
+note The kept peek, in the form the scripts grep.
 
 step xfp146
 order 55
@@ -692,7 +692,7 @@ author ai
 file crates/gui/src/action.rs
 symbol Action
 lines 0 51
-hash de83bf48109f8275
+hash 6d28e40ab679db9d
 note Every change a gesture, a key, a script line or a view's measurement can cause, as data. A view names the change; it never makes it.
 
 step xypoz6

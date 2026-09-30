@@ -10,7 +10,7 @@ use crate::panels::{
     self, Branch, BranchId, Direction, DropTarget, Grab, Panel, Panels, Split, View,
 };
 use crate::theme::{PANEL_LEAST_ACROSS, PANEL_LEAST_DOWN, PICKER_FIELD, PICKER_WIDTH, TEXT, WEAK};
-use crate::views::{center, document, left, output, xrefs};
+use crate::views::{center, console, document, left, references};
 use crate::widgets::{Chosen, Container, Frame};
 
 fn panel_id(panel: BranchId) -> ui::Id {
@@ -21,8 +21,8 @@ fn pair_id(split: BranchId) -> ui::Id {
     ids::pair().nth(split.number())
 }
 
-fn sash_target(split: BranchId) -> Target {
-    ids::SASH.nth(ui::Count::new(split.number()))
+fn divider_target(split: BranchId) -> Target {
+    ids::DIVIDER.nth(ui::Count::new(split.number()))
 }
 
 fn tab_target(view: View) -> Target {
@@ -41,16 +41,16 @@ fn drop_target(model: &Model, ui: &Ui) -> Option<DropTarget> {
 
 pub(crate) fn panel_input(model: &Model, ui: &Ui) -> Vec<Action> {
     let mut actions = Vec::new();
-    let sash = panels::sash_width(model.metrics.font);
+    let divider = panels::divider_width(model.metrics.font);
     let mouse = ui.pointer().mouse;
     for split in model.panels.splits() {
-        if !ui.interaction(sash_target(split.id()).id()).down() {
+        if !ui.interaction(divider_target(split.id()).id()).down() {
             continue;
         }
         if let Some(rect) = ui.interaction(pair_id(split.id())).rect() {
             actions.push(Action::Resize(
                 split.id(),
-                split.ratio_at(rect, sash, mouse),
+                split.ratio_at(rect, divider, mouse),
             ));
         }
     }
@@ -105,26 +105,26 @@ fn pair(
     rect: Rect,
     graph: &mut Option<GraphFrame>,
 ) {
-    let sash = panels::sash_width(model.metrics.font);
-    let divided = split.divide(rect, sash, least(model));
+    let thickness = panels::divider_width(model.metrics.font);
+    let divided = split.divide(rect, thickness, least(model));
     frame.pane(pair_id(split.id()), Some(split.direction()), rect);
     node(model, frame, split.first(), divided.first, graph);
-    sash_bar(frame, split, divided.sash);
+    divider_bar(frame, split, divided.divider);
     node(model, frame, split.second(), divided.second, graph);
     frame.finish();
 }
 
-fn sash_bar(frame: &mut Frame<'_>, split: &Split, rect: Rect) {
-    let target = sash_target(split.id());
+fn divider_bar(frame: &mut Frame<'_>, split: &Split, rect: Rect) {
+    let target = divider_target(split.id());
     let interaction = frame.ui.interaction(target.id());
     let left_down = frame.ui.pointer().down.contains(Button::Left);
     if interaction.down() || (interaction.hovered() && !left_down) {
         frame.cursor = match split.direction() {
-            Direction::Across => Cursor::ColumnResize,
+            Direction::Right => Cursor::ColumnResize,
             Direction::Down => Cursor::RowResize,
         };
     }
-    frame.sash(target, split.direction(), rect);
+    frame.divider(target, split.direction(), rect);
 }
 
 fn panel_box(
@@ -165,10 +165,10 @@ fn header(model: &Model, frame: &mut Frame<'_>, panel: &Panel) {
         frame.push(Action::TogglePicker(id));
     }
     if frame
-        .small_button(Icon::SplitAcross, numbered(ids::SPLIT_ACROSS, id))
+        .small_button(Icon::SplitRight, numbered(ids::SPLIT_RIGHT, id))
         .clicked()
     {
-        frame.push(Action::SplitPanel(id, Direction::Across));
+        frame.push(Action::SplitPanel(id, Direction::Right));
     }
     if frame
         .small_button(Icon::SplitDown, numbered(ids::SPLIT_DOWN, id))
@@ -189,13 +189,13 @@ fn header(model: &Model, frame: &mut Frame<'_>, panel: &Panel) {
 
 fn tab(model: &Model, frame: &mut Frame<'_>, view: View, chosen: Chosen) {
     let target = tab_target(view);
-    let label = if view == View::Results {
+    let label = if view == View::Search {
         let more = if model.hits_shown == HitsShown::First {
             "+"
         } else {
             ""
         };
-        format!("{} ({}{more})", view.name(), model.results.len())
+        format!("{} ({}{more})", view.name(), model.hits.len())
     } else {
         view.name().to_string()
     };
@@ -237,10 +237,10 @@ fn body(
         View::Path => document::path_document(model, frame),
         View::Diff => center::diff_view(model, frame),
         View::Graph => center::graph_tab(model, frame, graph.take()),
-        View::Listing => center::listing(model, frame),
-        View::Results => center::results_view(model, frame),
-        View::Xrefs => xrefs::xrefs_panel(model, frame, area),
-        View::Output => output::output_panel(model, frame),
+        View::Source => center::source(model, frame),
+        View::Search => center::search_view(model, frame),
+        View::References => references::references_panel(model, frame, area),
+        View::Console => console::console_panel(model, frame),
     }
 }
 

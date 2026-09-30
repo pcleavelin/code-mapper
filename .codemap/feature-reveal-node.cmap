@@ -1,9 +1,9 @@
 codemap 8
-path feature-expand-node
+path feature-reveal-node
 kind flow
 author ai
 group features/gui
-note Each graph node's header has 'callees > n' and 'n < callers' buttons, where n counts the calls not already on the canvas. The reader reaches for it to see a node's callers or callees on the canvas instead of leaving the graph for Xrefs. Pressed, the node's callees hang to its right or its callers to its left as off-path nodes, drawn distinctly, with grey edges; a revealed symbol that is also a step stays one node with an extra edge. The button then reads 'hide n callees' or 'hide n callers' and removes what it revealed. The node pressed stays where it is on screen while the layout changes around it, and a node the user had dragged returns to the automatic layout.
+note Each graph node's header has 'callees > n' and 'n < callers' buttons, where n counts the calls not already on the canvas. The reader reaches for it to see a node's callers or callees on the canvas instead of leaving the graph for References. Pressed, the node's callees hang to its right or its callers to its left as off-path nodes, drawn distinctly, with grey edges; a revealed symbol that is also a step stays one node with an extra edge. The button then reads 'hide n callees' or 'hide n callers' and removes what it revealed. The node pressed stays where it is on screen while the layout changes around it, and a node the user had dragged returns to the automatic layout.
 
 step 485fnx
 order 3
@@ -12,7 +12,7 @@ author ai
 file crates/gui/src/graph/input.rs
 symbol graph_click
 lines 12 38
-hash 09637e6a41b8a2f4
+hash 7d3acdd492d3207b
 note A click on a node button: Callees and Callers become Toggle for that side.
 
 step 6yml7l
@@ -35,7 +35,7 @@ symbol graph_layout
 lines 0 26
 hash 457dec97263ffbda
 link graph-model
-note The effect the same frame: the tree is rebuilt from the selection plus the expansion list, measured and placed, with dragged positions laid over the computed ones.
+note The effect the same frame: the tree is rebuilt from the selection plus the reveal list, measured and placed, with dragged positions laid over the computed ones.
 
 step b7x7sb
 order 4
@@ -44,8 +44,8 @@ author ai
 file crates/gui/src/graph/build.rs
 symbol header
 lines 56 72
-hash c2e4047aedcec306
-note Where the buttons come from: callees are the ones the node's lines name, callers the symbol's callers; each button shows the count still hidden, or 'hide n' once expanded, and is left out when there is nothing to reveal.
+hash a2148fbeb8f80ea2
+note Where the buttons come from: callees are the ones the node's lines name, callers the symbol's callers; each button shows the count still hidden, or 'hide n' once revealed, and is left out when there is nothing to reveal.
 
 step mi6y9f
 order 2
@@ -63,8 +63,8 @@ author ai
 file crates/gui/src/graph/input.rs
 symbol apply
 lines 23 33
-hash 89b72ff234159bfa
-note The handler: the Toggle arm adds the expansion (node, side) to the ordered list or removes it, after remembering where the node sits on screen, and drops any dragged position of the node.
+hash 2255eccf3772e90c
+note The handler: the Toggle arm adds the reveal (node, side) to the ordered list or removes it, after remembering where the node sits on screen, and drops any dragged position of the node.
 
 step t5du5n
 order 1

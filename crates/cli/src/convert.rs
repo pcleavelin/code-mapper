@@ -214,7 +214,7 @@ pub(crate) enum GroupPlacement {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum LinkView {
-    Expanded,
+    Inlined,
     Plain,
 }
 
@@ -227,7 +227,7 @@ pub(crate) enum Query {
         start: Option<LineNumber>,
         end: Option<LineNumber>,
     },
-    Grep(TextFragment),
+    Search(TextFragment),
     Notes(TextFragment),
     Callers(SymbolName),
     Callees(SymbolName),
@@ -340,7 +340,7 @@ impl From<Command> for Request {
             Command::Files(arguments) => Self::Query(Query::Files(arguments.into())),
             Command::Symbols(arguments) => Self::Query(Query::Symbols(arguments.into())),
             Command::Show(arguments) => Self::Query(arguments.into()),
-            Command::Grep(arguments) => Self::Query(Query::Grep(arguments.into())),
+            Command::Search(arguments) => Self::Query(Query::Search(arguments.into())),
             Command::Notes(arguments) => Self::Query(Query::Notes(arguments.into())),
             Command::Callers(arguments) => Self::Query(Query::Callers(arguments.into())),
             Command::Callees(arguments) => Self::Query(Query::Callees(arguments.into())),
@@ -421,8 +421,8 @@ impl From<PathArguments> for Query {
     fn from(arguments: PathArguments) -> Self {
         Self::Path {
             name: TextFragment::new(&arguments.name),
-            view: if arguments.expand {
-                LinkView::Expanded
+            view: if arguments.inline {
+                LinkView::Inlined
             } else {
                 LinkView::Plain
             },

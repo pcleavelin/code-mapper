@@ -58,7 +58,7 @@ impl Control {
 }
 
 pub(crate) const SEARCH_FIELD: Control =
-    Control::new(Feature::Search, Element::new("field@search"));
+    Control::new(Feature::SearchFiles, Element::new("field@search"));
 pub(crate) const NEW_PATH_FIELD: Control =
     Control::new(Feature::NewPath, Element::new("field@new-path"));
 pub(crate) const FILTER_FIELD: Control =
@@ -86,9 +86,9 @@ pub(crate) const TARGET_TOP: Control =
 pub(crate) const PROMOTE_FOCUS: Control =
     Control::new(Feature::PromoteSymbol, Element::new("promote-focus"));
 pub(crate) const SAVE: Control = Control::new(Feature::Save, Element::new("save"));
-pub(crate) const SASH: Control = Control::new(Feature::ResizePanel, Element::new("sash"));
-pub(crate) const SPLIT_ACROSS: Control =
-    Control::new(Feature::SplitPanel, Element::new("split-across"));
+pub(crate) const DIVIDER: Control = Control::new(Feature::ResizePanel, Element::new("divider"));
+pub(crate) const SPLIT_RIGHT: Control =
+    Control::new(Feature::SplitPanel, Element::new("split-right"));
 pub(crate) const SPLIT_DOWN: Control =
     Control::new(Feature::SplitPanel, Element::new("split-down"));
 pub(crate) const CLOSE_PANEL: Control =
@@ -99,7 +99,7 @@ pub(crate) const VIEW_ROW: Control = Control::new(Feature::PickView, Element::ne
 pub(crate) const VIEW_FIELD: Control = Control::new(Feature::PickView, Element::new("field@views"));
 pub(crate) const PATH_ROW: Control = Control::new(Feature::OpenPath, Element::new("paths"));
 pub(crate) const GROUP_ROW: Control = Control::new(Feature::OpenGroup, Element::new("group"));
-pub(crate) const OUTLINE_ROW: Control = Control::new(Feature::SelectStep, Element::new("outline"));
+pub(crate) const STEP_LIST_ROW: Control = Control::new(Feature::SelectStep, Element::new("steps"));
 pub(crate) const STEP_HEADER: Control = Control::new(Feature::SelectStep, Element::new("step"));
 pub(crate) const CRUMB: Control = Control::new(Feature::SelectStep, Element::new("crumb"));
 pub(crate) const FOUND_STEP: Control = Control::new(Feature::SelectStep, Element::new("found"));
@@ -117,26 +117,31 @@ pub(crate) const PEEK_GO: Control = Control::new(Feature::PeekDefinition, Elemen
 pub(crate) const PEEK_CLOSE: Control =
     Control::new(Feature::PeekDefinition, Element::new("peek-x"));
 pub(crate) const SHOW_GRAPH: Control = Control::new(Feature::ShowGraph, Element::new("doc-graph"));
-pub(crate) const HIDE_ALL: Control =
-    Control::new(Feature::HideAllCode, Element::new("doc-collapse"));
-pub(crate) const SHOW_ALL: Control = Control::new(Feature::HideAllCode, Element::new("doc-expand"));
-pub(crate) const FOLD_ALL: Control = Control::new(Feature::FoldAll, Element::new("doc-fold"));
-pub(crate) const UNFOLD_ALL: Control = Control::new(Feature::FoldAll, Element::new("doc-unfold"));
+pub(crate) const HIDE_ALL_CODE: Control =
+    Control::new(Feature::HideAllCode, Element::new("doc-hide-code"));
+pub(crate) const SHOW_ALL_CODE: Control =
+    Control::new(Feature::HideAllCode, Element::new("doc-show-code"));
+pub(crate) const COLLAPSE_ALL: Control =
+    Control::new(Feature::CollapseAll, Element::new("doc-collapse"));
+pub(crate) const EXPAND_ALL: Control =
+    Control::new(Feature::CollapseAll, Element::new("doc-expand"));
 pub(crate) const REMOVE_PATH: Control =
     Control::new(Feature::RemovePath, Element::new("doc-delete"));
 pub(crate) const LINKED_FROM: Control = Control::new(Feature::OpenLinkedPath, Element::new("from"));
-pub(crate) const FOLD: Control = Control::new(Feature::ToggleFold, Element::new("fold"));
+pub(crate) const COLLAPSE: Control =
+    Control::new(Feature::ToggleCollapse, Element::new("collapse"));
 pub(crate) const HIDE_CODE: Control = Control::new(Feature::ToggleCode, Element::new("hide"));
 pub(crate) const WHOLE: Control = Control::new(Feature::ToggleWholeSymbol, Element::new("whole"));
 pub(crate) const NO_CONTEXT: Control = Control::new(Feature::MoreContext, Element::new("ctx0"));
 pub(crate) const CONTEXT_ABOVE: Control = Control::new(Feature::MoreContext, Element::new("ctx-a"));
 pub(crate) const CONTEXT_BELOW: Control = Control::new(Feature::MoreContext, Element::new("ctx-b"));
 pub(crate) const LINK: Control = Control::new(Feature::OpenLinkedPath, Element::new("link"));
-pub(crate) const EXPAND: Control = Control::new(Feature::ExpandLink, Element::new("expand"));
+pub(crate) const INLINE: Control = Control::new(Feature::InlineLink, Element::new("inline"));
 pub(crate) const REMOVE_STEP: Control = Control::new(Feature::RemoveStep, Element::new("del"));
 pub(crate) const LINES: Control = Control::new(Feature::SelectLines, Element::new("lines"));
-pub(crate) const HIT_ROW: Control = Control::new(Feature::Search, Element::new("hit"));
-pub(crate) const HIT_FILE_ROW: Control = Control::new(Feature::Search, Element::new("hitfile"));
+pub(crate) const HIT_ROW: Control = Control::new(Feature::SearchFiles, Element::new("hit"));
+pub(crate) const HIT_FILE_ROW: Control =
+    Control::new(Feature::SearchFiles, Element::new("hitfile"));
 pub(crate) const DIFF_REFRESH: Control =
     Control::new(Feature::OpenDiffRow, Element::new("diff-refresh"));
 pub(crate) const DIFF_ROW: Control = Control::new(Feature::OpenDiffRow, Element::new("diffrow"));
@@ -176,8 +181,8 @@ pub(crate) const CONTROLS: &[Control] = &[
     TARGET_TOP,
     PROMOTE_FOCUS,
     SAVE,
-    SASH,
-    SPLIT_ACROSS,
+    DIVIDER,
+    SPLIT_RIGHT,
     SPLIT_DOWN,
     CLOSE_PANEL,
     CLOSE_TAB,
@@ -186,7 +191,7 @@ pub(crate) const CONTROLS: &[Control] = &[
     VIEW_FIELD,
     PATH_ROW,
     GROUP_ROW,
-    OUTLINE_ROW,
+    STEP_LIST_ROW,
     STEP_HEADER,
     CRUMB,
     FOUND_STEP,
@@ -201,20 +206,20 @@ pub(crate) const CONTROLS: &[Control] = &[
     PEEK_GO,
     PEEK_CLOSE,
     SHOW_GRAPH,
-    HIDE_ALL,
-    SHOW_ALL,
-    FOLD_ALL,
-    UNFOLD_ALL,
+    HIDE_ALL_CODE,
+    SHOW_ALL_CODE,
+    COLLAPSE_ALL,
+    EXPAND_ALL,
     REMOVE_PATH,
     LINKED_FROM,
-    FOLD,
+    COLLAPSE,
     HIDE_CODE,
     WHOLE,
     NO_CONTEXT,
     CONTEXT_ABOVE,
     CONTEXT_BELOW,
     LINK,
-    EXPAND,
+    INLINE,
     REMOVE_STEP,
     LINES,
     HIT_ROW,
@@ -254,8 +259,8 @@ pub(crate) fn files() -> Id {
     Id::new("files")
 }
 
-pub(crate) fn xrefs() -> Id {
-    Id::new("xrefs")
+pub(crate) fn references() -> Id {
+    Id::new("references")
 }
 
 pub(crate) fn peek() -> Id {
@@ -270,20 +275,20 @@ pub(crate) fn peek_outside() -> Id {
     Id::new("peekout")
 }
 
-pub(crate) fn output() -> Id {
-    Id::new("output")
+pub(crate) fn console() -> Id {
+    Id::new("console")
 }
 
 pub(crate) fn document() -> Id {
     Id::new("document")
 }
 
-pub(crate) fn listing() -> Id {
-    Id::new("listing")
+pub(crate) fn source() -> Id {
+    Id::new("source")
 }
 
-pub(crate) fn results() -> Id {
-    Id::new("results")
+pub(crate) fn search() -> Id {
+    Id::new("search")
 }
 
 pub(crate) fn diff() -> Id {

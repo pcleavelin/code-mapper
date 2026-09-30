@@ -141,7 +141,7 @@ impl Status {
                 "already step {} of '{path}' in that place",
                 number.as_str()
             ),
-            Self::SelectLinesFirst => formatter.write_str("select lines in the listing first"),
+            Self::SelectLinesFirst => formatter.write_str("select lines in the Source view first"),
             Self::SelectPathFirst => formatter.write_str("open a path to add steps to first"),
             Self::StepAdded {
                 number,
@@ -308,7 +308,7 @@ impl fmt::Display for Status {
                 line.as_str()
             ),
             Self::NoLineNumber(text) => write!(formatter, "'{}' is not a line number", text.as_str()),
-            Self::NoFileOpen => formatter.write_str("no file open in the listing"),
+            Self::NoFileOpen => formatter.write_str("no file open in the Source view"),
             Self::OffPathSymbol { symbol, path } => {
                 write!(formatter, "{symbol} selected; not a step of '{path}'")
             }
@@ -334,7 +334,7 @@ impl fmt::Display for Status {
                 formatter.write_str("re-index failed; the index in use is the old one")
             }
             Self::DiskChanged => formatter.write_str(
-                "map changed on disk while you have unsaved changes: save overwrites it, or use the command line to reload",
+                "map changed on disk while you have unsaved changes: save overwrites it, or use the console to reload",
             ),
             Self::MapUnreadableKept(error) => write!(
                 formatter,
@@ -351,15 +351,15 @@ impl fmt::Display for Status {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct OutputLog(String);
+pub(crate) struct ConsoleLog(String);
 
-impl Default for OutputLog {
+impl Default for ConsoleLog {
     fn default() -> Self {
         Self("type 'help' for commands; roots and promote live here\n".to_owned())
     }
 }
 
-impl OutputLog {
+impl ConsoleLog {
     pub(crate) fn lines(&self) -> impl Iterator<Item = &str> {
         self.0.lines()
     }

@@ -9,7 +9,7 @@ pub enum Feature {
     Files,
     Symbols,
     Show,
-    Grep,
+    Search,
     Notes,
     Callers,
     Callees,
@@ -48,11 +48,11 @@ pub enum Feature {
     WalkSteps,
     ToggleWholeSymbol,
     ToggleCode,
-    ToggleFold,
-    ExpandLink,
+    ToggleCollapse,
+    InlineLink,
     OpenLinkedPath,
     HideAllCode,
-    FoldAll,
+    CollapseAll,
     MoreContext,
     RemoveStep,
     RemovePath,
@@ -65,7 +65,7 @@ pub enum Feature {
     MoveStep,
     PromoteSymbol,
     NewPath,
-    Search,
+    SearchFiles,
     RunCommand,
     FilterSymbols,
     FilterPaths,
@@ -77,10 +77,10 @@ pub enum Feature {
     PeekDefinition,
     HoverInfo,
     ScrollCode,
-    ExpandNode,
+    RevealNode,
     MoveNode,
     NodeContext,
-    NodeListing,
+    NodeSource,
     AutoLayout,
     FitGraph,
     PanGraph,
@@ -126,11 +126,11 @@ impl Feature {
                 Surface::Command,
                 &const { [Trigger::Command(Text::new("show"))] },
             ),
-            Self::Grep => Spec::new(
-                Text::new("grep"),
+            Self::Search => Spec::new(
+                Text::new("search"),
                 Text::new("<regex>                          file:line: text"),
                 Surface::Command,
-                &const { [Trigger::Command(Text::new("grep"))] },
+                &const { [Trigger::Command(Text::new("search"))] },
             ),
             Self::Notes => Spec::new(
                 Text::new("notes"),
@@ -193,7 +193,7 @@ impl Feature {
             Self::Path => Spec::new(
                 Text::new("path"),
                 Text::new(
-                    "<name> [--expand]                print a path's note and every step's code, tree order; --expand prints linked paths inline",
+                    "<name> [--inline]                print a path's note and every step's code, tree order; --inline prints linked paths inline",
                 ),
                 Surface::Command,
                 &const { [Trigger::Command(Text::new("path"))] },
@@ -379,13 +379,13 @@ impl Feature {
             Self::SelectStep => Spec::new(
                 Text::new("select-step"),
                 Text::new(
-                    "select a step from its header, the outline, the breadcrumb or a step the paths filter found",
+                    "select a step from its header, the steps list, the breadcrumb or a step the paths filter found",
                 ),
                 Surface::Window,
                 &const {
                     [
                         Trigger::Click(Element::new("step")),
-                        Trigger::Click(Element::new("outline")),
+                        Trigger::Click(Element::new("steps")),
                         Trigger::Click(Element::new("crumb")),
                         Trigger::Click(Element::new("found")),
                     ]
@@ -418,17 +418,17 @@ impl Feature {
                 Surface::Window,
                 &const { [Trigger::Click(Element::new("hide"))] },
             ),
-            Self::ToggleFold => Spec::new(
-                Text::new("toggle-fold"),
-                Text::new("fold or unfold the steps under a step"),
+            Self::ToggleCollapse => Spec::new(
+                Text::new("toggle-collapse"),
+                Text::new("collapse or expand the steps under a step"),
                 Surface::Window,
-                &const { [Trigger::Click(Element::new("fold"))] },
+                &const { [Trigger::Click(Element::new("collapse"))] },
             ),
-            Self::ExpandLink => Spec::new(
-                Text::new("expand-link"),
+            Self::InlineLink => Spec::new(
+                Text::new("inline-link"),
                 Text::new("show the path a step links to inline under it"),
                 Surface::Window,
-                &const { [Trigger::Click(Element::new("expand"))] },
+                &const { [Trigger::Click(Element::new("inline"))] },
             ),
             Self::OpenLinkedPath => Spec::new(
                 Text::new("open-linked-path"),
@@ -447,23 +447,23 @@ impl Feature {
                 Surface::Window,
                 &const {
                     [
-                        Trigger::Click(Element::new("doc-collapse")),
-                        Trigger::Click(Element::new("doc-expand")),
+                        Trigger::Click(Element::new("doc-hide-code")),
+                        Trigger::Click(Element::new("doc-show-code")),
                         Trigger::Palette(Text::new("hide all code"), None),
                         Trigger::Palette(Text::new("show all code"), None),
                     ]
                 },
             ),
-            Self::FoldAll => Spec::new(
-                Text::new("fold-all"),
-                Text::new("fold every step with children, or unfold all"),
+            Self::CollapseAll => Spec::new(
+                Text::new("collapse-all"),
+                Text::new("collapse every step with children, or expand all"),
                 Surface::Window,
                 &const {
                     [
-                        Trigger::Click(Element::new("doc-fold")),
-                        Trigger::Click(Element::new("doc-unfold")),
-                        Trigger::Palette(Text::new("fold all"), None),
-                        Trigger::Palette(Text::new("unfold all"), None),
+                        Trigger::Click(Element::new("doc-collapse")),
+                        Trigger::Click(Element::new("doc-expand")),
+                        Trigger::Palette(Text::new("collapse all"), None),
+                        Trigger::Palette(Text::new("expand all"), None),
                     ]
                 },
             ),
@@ -547,7 +547,7 @@ impl Feature {
             Self::AddStep => Spec::new(
                 Text::new("add-step"),
                 Text::new(
-                    "add the lines selected in the listing, a symbol or a graph node as a step of the path being read",
+                    "add the lines selected in the Source view, a symbol or a graph node as a step of the path being read",
                 ),
                 Surface::Window,
                 &const {
@@ -572,10 +572,10 @@ impl Feature {
             Self::MoveStep => Spec::new(
                 Text::new("move-step"),
                 Text::new(
-                    "drag a step in the outline onto another step to hang it there, or onto an edge to place it beside",
+                    "drag a step in the steps list onto another step to hang it there, or onto an edge to place it beside",
                 ),
                 Surface::Window,
-                &const { [Trigger::Gesture(Gesture::Drag, Element::new("outline"))] },
+                &const { [Trigger::Gesture(Gesture::Drag, Element::new("steps"))] },
             ),
             Self::PromoteSymbol => Spec::new(
                 Text::new("promote-symbol"),
@@ -598,9 +598,9 @@ impl Feature {
                     ]
                 },
             ),
-            Self::Search => Spec::new(
-                Text::new("search"),
-                Text::new("grep every file for a regex; the hits open in the Results tab"),
+            Self::SearchFiles => Spec::new(
+                Text::new("search-files"),
+                Text::new("search every file for a regex; the hits open in the Search tab"),
                 Surface::Window,
                 &const {
                     [
@@ -613,7 +613,7 @@ impl Feature {
             ),
             Self::RunCommand => Spec::new(
                 Text::new("run-command"),
-                Text::new("run a CLI command in the output panel"),
+                Text::new("run a CLI command in the Console"),
                 Surface::Window,
                 &const { [Trigger::Type(Element::new("cmd"))] },
             ),
@@ -665,13 +665,13 @@ impl Feature {
             ),
             Self::GoToLine => Spec::new(
                 Text::new("go-to-line"),
-                Text::new("jump the listing to a line number"),
+                Text::new("jump the Source view to a line number"),
                 Surface::Window,
                 &const { [Trigger::Type(Element::new("field@goto-line"))] },
             ),
             Self::SelectLines => Spec::new(
                 Text::new("select-lines"),
-                Text::new("select a line, or extend the selection, in the listing"),
+                Text::new("select a line, or extend the selection, in the Source view"),
                 Surface::Window,
                 &const {
                     [
@@ -693,7 +693,9 @@ impl Feature {
             ),
             Self::PeekDefinition => Spec::new(
                 Text::new("peek-definition"),
-                Text::new("pin the definition of the identifier under the pointer above the xrefs"),
+                Text::new(
+                    "keep the definition of the identifier under the pointer above the references",
+                ),
                 Surface::Window,
                 &const {
                     [
@@ -717,8 +719,8 @@ impl Feature {
                 Surface::Window,
                 &const { [Trigger::Gesture(Gesture::ShiftWheel, Element::new("code"))] },
             ),
-            Self::ExpandNode => Spec::new(
-                Text::new("expand-node"),
+            Self::RevealNode => Spec::new(
+                Text::new("reveal-node"),
                 Text::new("reveal a graph node's callers or callees, or hide what it revealed"),
                 Surface::Window,
                 &const { [Trigger::Click(Element::new("node-button"))] },
@@ -742,11 +744,11 @@ impl Feature {
                     ]
                 },
             ),
-            Self::NodeListing => Spec::new(
-                Text::new("node-listing"),
-                Text::new("open a graph node's file in the listing"),
+            Self::NodeSource => Spec::new(
+                Text::new("node-source"),
+                Text::new("open a graph node's file in the Source view"),
                 Surface::Window,
-                &const { [Trigger::Click(Element::new("node-listing"))] },
+                &const { [Trigger::Click(Element::new("node-source"))] },
             ),
             Self::AutoLayout => Spec::new(
                 Text::new("auto-layout"),
@@ -829,20 +831,20 @@ impl Feature {
             ),
             Self::ResizePanel => Spec::new(
                 Text::new("resize-panel"),
-                Text::new("drag the sash between two panels to resize them"),
+                Text::new("drag the divider between two panels to resize them"),
                 Surface::Window,
-                &const { [Trigger::Gesture(Gesture::Drag, Element::new("sash"))] },
+                &const { [Trigger::Gesture(Gesture::Drag, Element::new("divider"))] },
             ),
             Self::SplitPanel => Spec::new(
                 Text::new("split-panel"),
-                Text::new("split a panel in two, side by side or one above the other"),
+                Text::new("split a panel in two, to the right or below"),
                 Surface::Window,
                 &const {
                     [
-                        Trigger::Click(Element::new("split-across")),
+                        Trigger::Click(Element::new("split-right")),
                         Trigger::Click(Element::new("split-down")),
-                        Trigger::Palette(Text::new("split panel side by side"), None),
-                        Trigger::Palette(Text::new("split panel top and bottom"), None),
+                        Trigger::Palette(Text::new("split panel right"), None),
+                        Trigger::Palette(Text::new("split panel down"), None),
                     ]
                 },
             ),

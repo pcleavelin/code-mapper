@@ -11,9 +11,9 @@ use crate::model::{Model, Openness, PathSlot, StepKey, Tab, ViewFlag};
 use crate::nav::Scrolling;
 use crate::text::{Clipped, Counted, Needle, Noun, Tag};
 use crate::theme::{
-    ACCENT, Cells, FAINT, FILTER_FIELD, GREEN, OUTLINE_TOP, PANEL_TEXT_ROOM, PATHS_GUESS,
-    PATHS_LEAST, PENDING, PIXEL, RED, ROW_EXTRA, SELECTED, SYMBOL_FIXED, SYMBOL_NAME,
-    SYMBOL_NAME_LEAST, SYMBOLS_GUESS, SYMBOLS_LEAST, TEXT, WEAK,
+    ACCENT, Cells, FAINT, FILTER_FIELD, GREEN, PANEL_TEXT_ROOM, PATHS_GUESS, PATHS_LEAST, PENDING,
+    PIXEL, RED, ROW_EXTRA, SELECTED, STEP_LIST_TOP, SYMBOL_FIXED, SYMBOL_NAME, SYMBOL_NAME_LEAST,
+    SYMBOLS_GUESS, SYMBOLS_LEAST, TEXT, WEAK,
 };
 use crate::widgets::{Chosen, Container, Frame, RowAction, Scroller};
 
@@ -47,9 +47,13 @@ fn group_row(
     let label = format!(
         "{}{} {}/",
         pad.as_str(),
-        if open { Icon::Unfolded } else { Icon::Folded }
-            .glyph()
-            .get(),
+        if open {
+            Icon::Expanded
+        } else {
+            Icon::Collapsed
+        }
+        .glyph()
+        .get(),
         group.last_segment(),
     );
     let tally = format!(
@@ -152,25 +156,25 @@ fn path_row(
     chosen
 }
 
-fn follow_outline(model: &Model, frame: &mut Frame<'_>, offset: Px) {
+fn follow_step_list(model: &Model, frame: &mut Frame<'_>, offset: Px) {
     let base = ids::paths();
     let (Some(step), Some(placement)) = (model.nav.top_step(), frame.ui.placement(base)) else {
         return;
     };
-    if model.nav.outline_shown() == Some(step) || frame.ui.dragging() {
+    if model.nav.step_list_shown() == Some(step) || frame.ui.dragging() {
         return;
     }
     let view = placement.rect;
     if let Some(row) = frame
         .ui
-        .interaction(ids::OUTLINE_ROW.id().nth(step.get()))
+        .interaction(ids::STEP_LIST_ROW.id().nth(step.get()))
         .rect()
         && (row.top < view.top || row.bottom() > view.bottom())
     {
         let moved = (offset + (row.top - view.top) - view.height / 3).max(Px::ZERO);
         frame.push(Action::Scroll(base, moved));
     }
-    frame.push(Action::OutlineShown(step));
+    frame.push(Action::StepListShown(step));
 }
 
 pub(super) fn paths_window(model: &Model, frame: &mut Frame<'_>) {
@@ -239,8 +243,8 @@ pub(super) fn paths_window(model: &Model, frame: &mut Frame<'_>) {
                     continue;
                 };
                 if path_row(model, frame, slot, &diffs, &pad, columns) == Chosen::Chosen {
-                    outline(model, frame, slot, &pad);
-                    follow_outline(model, frame, scrolled.offset);
+                    step_list(model, frame, slot, &pad);
+                    follow_step_list(model, frame, scrolled.offset);
                 } else {
                     found_step_rows(model, frame, slot, &pad);
                 }
@@ -289,7 +293,7 @@ fn found_step_rows(model: &Model, frame: &mut Frame<'_>, path: PathSlot, pad: &L
     }
 }
 
-fn outline(model: &Model, frame: &mut Frame<'_>, path: PathSlot, pad: &Label) {
+fn step_list(model: &Model, frame: &mut Frame<'_>, path: PathSlot, pad: &Label) {
     let pad = pad.as_str();
     let mut hide_below: Option<Depth> = None;
     for numbered in model.numbered(path) {
@@ -304,7 +308,7 @@ fn outline(model: &Model, frame: &mut Frame<'_>, path: PathSlot, pad: &Label) {
         let Some(step) = model.step(key) else {
             continue;
         };
-        let hidden = if model.views.get(key).flags.has(ViewFlag::Folded) {
+        let hidden = if model.views.get(key).flags.has(ViewFlag::Collapsed) {
             hide_below = Some(numbered.depth);
             model.descendants(key)
         } else {
@@ -329,7 +333,7 @@ fn outline(model: &Model, frame: &mut Frame<'_>, path: PathSlot, pad: &Label) {
         let marked = if model.nav.step() == Some(numbered.step) {
             Some(SELECTED)
         } else if at_top {
-            Some(OUTLINE_TOP)
+            Some(STEP_LIST_TOP)
         } else {
             None
         };
@@ -347,7 +351,7 @@ fn outline(model: &Model, frame: &mut Frame<'_>, path: PathSlot, pad: &Label) {
         if frame
             .marked_row(
                 runs,
-                ids::OUTLINE_ROW.nth(Count::new(numbered.step.get())),
+                ids::STEP_LIST_ROW.nth(Count::new(numbered.step.get())),
                 marked,
             )
             .clicked()
@@ -714,6 +718,11 @@ fn files_tree(
             })
             .unwrap_or_default();
         let open = (depth.get() == 0) ^ model.directories.contains(&Label::new(prefix.clone()));
+        let marker = if open {
+            Icon::Expanded
+        } else {
+            Icon::Collapsed
+        };
         let tally = if total > 0 {
             format!("  {covered}/{total}")
         } else {
@@ -723,13 +732,7 @@ fn files_tree(
             .row(
                 vec![
                     Run::new(
-                        format!(
-                            "{indent}{} {}/",
-                            if open { Icon::Unfolded } else { Icon::Folded }
-                                .glyph()
-                                .get(),
-                            directory.as_str()
-                        ),
+                        format!("{indent}{} {}/", marker.glyph().get(), directory.as_str()),
                         TEXT,
                     ),
                     Run::new(tally, WEAK),

@@ -1,9 +1,9 @@
 codemap 8
-path feature-node-listing
+path feature-node-source
 kind flow
 author ai
 group features/gui
-note A graph node's 'listing' button opens the node's file in the Listing tab, with the first line of the node's shown range selected and scrolled into view. The reader reaches for it to see a node's whole file with line numbers, since the graph shows only the node's own lines. It leaves the graph; back returns to it.
+note A graph node's 'source' button opens the node's file in the Source tab, with the first line of the node's shown range selected and scrolled into view. The reader reaches for it to see a node's whole file with line numbers, since the graph shows only the node's own lines. It leaves the graph; back returns to it.
 
 step 0m2cjy
 order 2
@@ -12,8 +12,8 @@ author ai
 file crates/gui/src/graph/input.rs
 symbol graph_click
 lines 15 19
-hash bebc51b5cc4fd55c
-note The Listing button defers GoTo at the start of the node's shown range.
+hash 54fa67ae2e9a5b57
+note The Source button defers GoTo at the start of the node's shown range.
 
 step 9fzkv2
 order 0
@@ -21,9 +21,9 @@ author ai
 file crates/gui/src/nav.rs
 symbol open_line
 lines 0 5
-hash cdfa051d42083245
-link listing-view
-note The handler: the file becomes current with the line selected and scrolled to, on the Listing tab.
+hash c19fb12e93c3ddc2
+link source-view
+note The handler: the file becomes current with the line selected and scrolled to, on the Source tab.
 
 step w2laus
 order 1

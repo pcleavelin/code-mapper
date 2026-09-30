@@ -42,7 +42,7 @@ author ai
 file crates/gui/src/panels.rs
 symbol drop_view
 lines 0 38
-hash 80b3445d36c9830c
+hash 8f3e1bd5f486433c
 note Join the stack in the middle, split on an edge; a panel's only view dropped on its own edge stays put.
 
 step j5h3es
@@ -62,7 +62,7 @@ author ai
 file crates/gui/src/views/panel_tree.rs
 symbol tab
 lines 0 28
-hash 1ac43aaefc0cfa71
+hash e2c1940ebd9b8f87
 note Trigger: a press on a tab queues Grab with the pointer position (and ShowView). The cursor is a closed hand while a moving tab is held.
 
 step vwjg3u
@@ -72,7 +72,7 @@ author ai
 file crates/gui/src/views/panel_tree.rs
 symbol panel_input
 lines 0 27
-hash d7c1ad0ab6996bcc
+hash e4321ac653e57c5e
 note The drag, read at the start of each frame before the views: while a tab is held, DragView follows the pointer; when the button is up, the drop target is computed on a copy moved to the pointer, kept only if the grab has started moving, and queued with Release.
 
 step wtqtdq

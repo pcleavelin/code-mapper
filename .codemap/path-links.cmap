@@ -3,7 +3,7 @@ path path-links
 kind flow
 author ai
 group map
-note How a step names another path that documents what its lines call, so shared code and work handed to another process are mapped once and read in place. The link is a field of the step, set by step-link and checked by Map::set_link: the target must exist and cannot be the step's own path. Renaming a path rewrites every link to it, a path that something links to cannot be removed, and check fails on a link to a missing path. path --expand and the GUI document show the linked path inline under the step.
+note How a step names another path that documents what its lines call, so shared code and work handed to another process are mapped once and read in place. The link is a field of the step, set by step-link and checked by Map::set_link: the target must exist and cannot be the step's own path. Renaming a path rewrites every link to it, a path that something links to cannot be removed, and check fails on a link to a missing path. path --inline and the GUI document show the linked path inline under the step.
 
 step 39fnt5
 order 14
@@ -11,9 +11,9 @@ author ai
 file crates/gui/src/views/document.rs
 symbol link_buttons
 lines 0 33
-hash 28ae22ba2d53efcb
+hash 415e8995940f0e5e
 link reader-gui
-note The link controls on a GUI step header: a button that opens the target (red and marked missing when the target is gone), and expand or collapse, or 'expanded above' when the target is already open around this step.
+note The link controls on a GUI step header: a button that opens the target (red and marked missing when the target is gone), and 'inline' or 'un-inline', or 'inlined above' when the target is already open around this step.
 
 step 4ehl92
 order 13
@@ -39,8 +39,8 @@ author ai
 file crates/cli/src/exec.rs
 symbol path
 lines 0 17
-hash c84b6e10b6fd8c1f
-note path: the header lists the steps that link here; the steps print through Document::steps, which expands links with --expand.
+hash f50d1b3f9f757865
+note path: the header lists the steps that link here; the steps print through Document::steps, which inlines links with --inline.
 
 step 5kun00
 order 10
@@ -67,8 +67,8 @@ author ai
 file crates/cli/src/exec.rs
 symbol steps
 lines 0 32
-hash 166ffee7925bbc55
-note Recursive: numbers the path's steps, prints each with its code, and hands each to expand. A linked path prints under the step one level deeper, numbered after it (1.2 › 1), each nested step naming its path.
+hash 4547b1fdf9262e75
+note Recursive: numbers the path's steps, prints each with its code, and hands each to inline_link. A linked path prints under the step one level deeper, numbered after it (1.2 › 1), each nested step naming its path.
 
 step 8j5bux
 order 7
@@ -105,10 +105,10 @@ order 12
 parent 7pnsug
 author ai
 file crates/cli/src/exec.rs
-symbol expand
-lines 0 20
-hash e23c68973a75e19d
-note Only with --expand. expanded holds the paths printed around this one, so a cycle prints an expanded-above line once instead of recursing; otherwise the target's steps print one level deeper, followed by an end-of line.
+symbol inline_link
+lines 0 26
+hash c4a17d86b35372ef
+note Only with --inline. inlined holds the paths printed around this one, so a cycle prints an inlined-above line once instead of recursing; otherwise the target's steps print one level deeper, followed by an end-of line.
 
 step he08im
 order 2
@@ -123,9 +123,9 @@ step jhgt6d
 order 15
 author ai
 file crates/gui/src/views/document.rs
-symbol expand
+symbol inline
 lines 0 25
-hash 31e2a67a331427fe
+hash e56911020eaf3821
 note The GUI's inline expansion: the target's steps drawn under the step one level deeper, numbered after it, with the chain of open paths extended so a cycle stops.
 
 step kl5svv

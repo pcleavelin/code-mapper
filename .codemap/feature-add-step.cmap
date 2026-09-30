@@ -3,17 +3,17 @@ path feature-add-step
 kind flow
 author ai
 group features/gui
-note Add code to the path being read, from wherever it is shown. The reader reaches for it to turn code already on screen into a step without switching to the CLI (the human builds paths by hand). In the Listing, select lines (click, shift-click) and press the toolbar's add button, which names them ('add lines 12-20 as a step'). On a Symbols row or an Xrefs caller or callee row, press '+ step', shown while the row is hovered, to add that symbol whole; 'add step' under the Xrefs heading adds the selected symbol. On an off-path graph node, '+ step' adds its symbol. The step is authored by the human and hangs under the target (see feature-choose-target), except a graph node revealed as a callee of a step, which hangs under that step. The same lines under the same parent again is refused with the step's number; adding moves neither the selection nor the target, so the next add lands beside this one. The status names the new step's number and parent.
+note Add code to the path being read, from wherever it is shown. The reader reaches for it to turn code already on screen into a step without switching to the CLI (the human builds paths by hand). In the Source view, select lines (click, shift-click) and press the toolbar's add button, which names them ('add lines 12-20 as a step'). On a Symbols row or a References caller or callee row, press '+ step', shown while the row is hovered, to add that symbol whole; 'add step' under the References heading adds the selected symbol. On an off-path graph node, '+ step' adds its symbol. The step is authored by the human and hangs under the target (see feature-choose-target), except a graph node revealed as a callee of a step, which hangs under that step. The same lines under the same parent again is refused with the step's number; adding moves neither the selection nor the target, so the next add lands beside this one. The status names the new step's number and parent.
 
 step 5dyo4y
 order 3
 parent 9kzjp8
 author ai
 file crates/gui/src/views/center.rs
-symbol listing_toolbar
+symbol source_toolbar
 lines 3 16
 hash e855bbd2e5218110
-note Trigger: the Listing toolbar's add button queues AddLines. It names the lines it will add ('add line 12 as a step', 'add lines 12-20 as a step'), or reads 'add step' while nothing is selected.
+note Trigger: the Source toolbar's add button queues AddLines. It names the lines it will add ('add line 12 as a step', 'add lines 12-20 as a step'), or reads 'add step' while nothing is selected.
 
 step 6qgteg
 order 7
@@ -43,18 +43,18 @@ file crates/gui/src/authoring.rs
 symbol add_lines
 lines 0 9
 hash 21f14249bdc80886
-note From the Listing: the file open there and its line selection, under the target. With no lines selected the status says to select some.
+note From the Source view: the file open there and its line selection, under the target. With no lines selected the status says to select some.
 
 step au5kh4
 order 4
 parent 9kzjp8
 author ai
 file crates/gui/src/views/center.rs
-symbol listing
+symbol source
 lines 75 80
 hash fd19b1328cd15b25
 link feature-select-lines
-note Where the lines come from: clicks in the listing set and extend the line selection.
+note Where the lines come from: clicks in the Source view set and extend the line selection.
 
 step c2ft8i
 order 2
@@ -84,17 +84,17 @@ file crates/gui/src/graph/input.rs
 symbol graph_click
 lines 20 32
 hash 01ab33b91d4e59c5
-note Trigger: the graph's '+ step' node button. A node revealed through a step's callees expansion hangs under that step, which is where it sits in the drawing; anything else hangs under the target.
+note Trigger: the graph's '+ step' node button. A node revealed through a step's callees reveal hangs under that step, which is where it sits in the drawing; anything else hangs under the target.
 
 step pcmyr1
 order 8
 parent d1xozt
 author ai
-file crates/gui/src/views/xrefs.rs
+file crates/gui/src/views/references.rs
 symbol call_row
 lines 0 41
 hash 2acb408b06371956
-note Trigger: each Xrefs caller and callee row has the same '+ step' action (add-xto/<n>, add-xfrom/<n>), shown while the row is hovered. Rows of a file still waiting for its server take no clicks.
+note Trigger: each References caller and callee row has the same '+ step' action (add-xto/<n>, add-xfrom/<n>), shown while the row is hovered. Rows of a file still waiting for its server take no clicks.
 
 step u849ck
 order 11
@@ -110,11 +110,11 @@ step ygjbuv
 order 9
 parent d1xozt
 author ai
-file crates/gui/src/views/xrefs.rs
+file crates/gui/src/views/references.rs
 symbol focus_actions
 lines 8 18
 hash 5e8a086ae535a519
-note Trigger: 'add step' under the Xrefs heading adds the selected symbol; hidden when that symbol is the selected step itself.
+note Trigger: 'add step' under the References heading adds the selected symbol; hidden when that symbol is the selected step itself.
 
 step zwrtqu
 order 0

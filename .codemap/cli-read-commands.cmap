@@ -3,7 +3,7 @@ path cli-read-commands
 kind layer
 author ai
 group cli
-note The read-only half of the CLI: the commands that answer questions about the source rather than the map. files, symbols, show and grep all walk the in-memory Index directly, and every one of them prints one item per line in a file:line shape so the output can be pasted back into another command or parsed like grep output. Each is a method on exec.rs's Run that walks the index, with the row formats in wire.rs. These four are what the agent falls back to when no path covers the code it needs.
+note The read-only half of the CLI: the commands that answer questions about the source rather than the map. files, symbols, show and search all walk the in-memory Index directly, and every one of them prints one item per line in a file:line shape so the output can be pasted back into another command or parsed like grep output. Each is a method on exec.rs's Run that walks the index, with the row formats in wire.rs. These four are what the agent falls back to when no path covers the code it needs.
 
 step 0dsrz5
 order 0
@@ -29,9 +29,9 @@ order 9
 parent z40dra
 author ai
 file crates/cli/src/wire.rs
-symbol grep_line
+symbol hit_line
 lines 0 2
-hash bedecc4c8f45c15a
+hash d4f06e3da9ac4efd
 note file:line: text, the line 1-based.
 
 step 9mg3jn
@@ -96,7 +96,7 @@ step z40dra
 order 5
 author ai
 file crates/cli/src/exec.rs
-symbol grep
+symbol search
 lines 0 8
-hash 69562559dc204847
-note grep: a Rust regex over the in-memory lines of every file, no threading and no ignore rules beyond the ones the walk already applied. The regex compiles through the same compile as notes, so a bad one is the same error.
+hash 40ef4345c6cf127a
+note search: a Rust regex over the in-memory lines of every file, no threading and no ignore rules beyond the ones the walk already applied. The regex compiles through the same compile as notes, so a bad one is the same error.

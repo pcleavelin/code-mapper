@@ -25,9 +25,9 @@ pub(crate) enum Hide {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum Fold {
-    Fold,
-    Unfold,
+pub(crate) enum Collapse {
+    Collapse,
+    Expand,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -44,7 +44,7 @@ pub(crate) enum Action {
     SelectStep(StepKey, Scrolling),
     Toggle(StepKey, ViewFlag),
     HideAll(PathSlot, Hide),
-    FoldAll(PathSlot, Fold),
+    CollapseAll(PathSlot, Collapse),
     RemoveStep(StepKey),
     RemovePath(PathSlot),
     GoTo(FileId, Line),
@@ -65,8 +65,8 @@ pub(crate) enum Action {
     ScrolledToLine(Ticket),
     ScrolledToStep(Ticket, Option<Tries>),
     TopStep(Option<StepSlot>),
-    OutlineShown(StepSlot),
-    OutputScrolled,
+    StepListShown(StepSlot),
+    ConsoleScrolled,
     TipShown(Option<Label>),
     Status(Status),
     RefreshBase,
@@ -100,7 +100,7 @@ impl App {
             Action::SelectStep(key, scrolling) => model.select_step(key, scrolling),
             Action::Toggle(key, flag) => model.views.entry(key).flags.toggle(flag),
             Action::HideAll(path, hide) => self.hide_all(path, hide),
-            Action::FoldAll(path, fold) => self.fold_all(path, fold),
+            Action::CollapseAll(path, collapse) => self.collapse_all(path, collapse),
             Action::RemoveStep(key) => self.remove_step(key),
             Action::RemovePath(path) => self.remove_path(path),
             Action::GoTo(file, line) => model.open_line(file, line),
@@ -138,9 +138,9 @@ impl App {
             Action::ScrolledToLine(ticket) => model.scrolled_to_line(ticket),
             Action::ScrolledToStep(ticket, retry) => model.scrolled_to_step(ticket, retry),
             Action::TopStep(step) => model.set_top_step(step),
-            Action::OutlineShown(step) => model.set_outline_shown(step),
-            Action::OutputScrolled => {
-                model.output_bottom = Count::new(model.output_bottom.get().saturating_sub(1));
+            Action::StepListShown(step) => model.set_step_list_shown(step),
+            Action::ConsoleScrolled => {
+                model.console_bottom = Count::new(model.console_bottom.get().saturating_sub(1));
             }
             Action::TipShown(tip) => model.tip_shown = tip,
             Action::Status(status) => model.status = status,
@@ -281,17 +281,17 @@ impl App {
         let hide = hide == Hide::Hide;
         model.views.each_of_path(path, |step, view| {
             view.flags.set(ViewFlag::Hidden, hide && step.get() < count);
-            let folded = view.flags.has(ViewFlag::Folded);
-            view.flags.set(ViewFlag::Folded, folded && hide);
+            let collapsed = view.flags.has(ViewFlag::Collapsed);
+            view.flags.set(ViewFlag::Collapsed, collapsed && hide);
         });
     }
 
-    fn fold_all(&mut self, path: PathSlot, fold: Fold) {
+    fn collapse_all(&mut self, path: PathSlot, collapse: Collapse) {
         let model = &mut self.model;
         let count = model.step_count(path).get();
         let with_children: Vec<bool> = (0..count)
             .map(|step| {
-                fold == Fold::Fold
+                collapse == Collapse::Collapse
                     && model
                         .descendants(StepKey {
                             path,
@@ -308,8 +308,8 @@ impl App {
             });
         }
         model.views.each_of_path(path, |step, view| {
-            let folded = with_children.get(step.get()).copied().unwrap_or(false);
-            view.flags.set(ViewFlag::Folded, folded);
+            let collapsed = with_children.get(step.get()).copied().unwrap_or(false);
+            view.flags.set(ViewFlag::Collapsed, collapsed);
         });
     }
 
@@ -422,7 +422,7 @@ impl App {
                 return;
             }
         };
-        model.results = model
+        model.hits = model
             .index
             .file_entries()
             .flat_map(|entry| {
@@ -441,18 +441,18 @@ impl App {
             })
             .take(HIT_LIMIT.get() + 1)
             .collect();
-        model.hits_shown = if model.results.len() > HIT_LIMIT.get() {
-            model.results.truncate(HIT_LIMIT.get());
+        model.hits_shown = if model.hits.len() > HIT_LIMIT.get() {
+            model.hits.truncate(HIT_LIMIT.get());
             HitsShown::First
         } else {
             HitsShown::All
         };
         model.status = Status::Hits {
-            count: Count::new(model.results.len()),
+            count: Count::new(model.hits.len()),
             pattern,
             shown: model.hits_shown,
         };
-        model.set_tab(Tab::Results);
+        model.set_tab(Tab::Search);
     }
 
     fn go_to_line(&mut self, line: &FieldText) {
@@ -492,19 +492,19 @@ impl App {
     fn run_command(&mut self, line: &FieldText) {
         let line = line.as_str();
         let model = &mut self.model;
-        if line.trim() == OutputCommand::Clear.name().as_str() {
-            model.output.clear();
+        if line.trim() == ConsoleCommand::Clear.name().as_str() {
+            model.console.clear();
             return;
         }
-        model.output.command(line);
-        model.output_bottom = Count::new(2);
+        model.console.command(line);
+        model.console_bottom = Count::new(2);
         let invocation = match cli::Invocation::parse(&cli::CommandLine::new(line).arguments()) {
             Ok(invocation) => invocation,
             Err(failure) => {
                 let text = failure.text();
                 model.status =
                     Status::CommandRejected(Label::new(text.as_str().lines().next().unwrap_or("")));
-                model.output.rejected(text.as_str());
+                model.console.rejected(text.as_str());
                 return;
             }
         };
@@ -517,17 +517,17 @@ impl App {
             None,
             &mut output,
         );
-        model.output.append(output.as_str());
+        model.console.append(output.as_str());
         match result {
             Ok(Some(_)) => {
                 model.disk.dirty = Dirty::Unsaved;
-                model.output.changed();
+                model.console.changed();
             }
             Ok(None) => {}
             Err(failure) => {
                 let text = failure.to_string();
                 model.status = Status::CommandFailed(Label::new(text.as_str()));
-                model.output.failed(&text);
+                model.console.failed(&text);
             }
         }
     }
@@ -543,11 +543,11 @@ impl Literal {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum OutputCommand {
+enum ConsoleCommand {
     Clear,
 }
 
-impl OutputCommand {
+impl ConsoleCommand {
     const fn name(self) -> Literal {
         Literal(match self {
             Self::Clear => "clear",

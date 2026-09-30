@@ -3,7 +3,7 @@ path feature-turn-graph
 kind flow
 author ai
 group features/gui
-note The Graph toolbar's direction button (graph-turn) turns the tree between left to right, the default, and top to bottom. The reader reaches for it when a tree reads better in the other direction for the window's shape, such as a very wide tree (commit ad88590; TODO.md GUI item 2). Its label names the direction it switches to. Turned, lanes become rows: a node's children sit in a box below it, side by side in call order, and edges leave a node's bottom edge and enter the next one's top. Every dragged position is dropped, since it was placed for the other direction, and the camera looks at the selected node again. The selection, the expansions and the zoom are untouched. The direction is not saved with the layout: a new window starts left to right.
+note The Graph toolbar's direction button (graph-turn) turns the tree between left to right, the default, and top to bottom. The reader reaches for it when a tree reads better in the other direction for the window's shape, such as a very wide tree (commit ad88590; TODO.md GUI item 2). Its label names the direction it switches to. Turned, lanes become rows: a node's children sit in a box below it, side by side in call order, and edges leave a node's bottom edge and enter the next one's top. Every dragged position is dropped, since it was placed for the other direction, and the camera looks at the selected node again. The selection, the reveals and the zoom are untouched. The direction is not saved with the layout: a new window starts left to right.
 
 step 5mwf54
 order 10
@@ -35,7 +35,7 @@ symbol place_nodes
 lines 1 1
 hash a593c5ebf66c0095
 link graph-layout
-note The layout takes its gaps for the direction; the rest of place_nodes works in main and cross coordinates and never names across or down.
+note The layout takes its gaps for the direction; the rest of place_nodes works in main and cross coordinates and never names right or down.
 
 step i00jgg
 order 8
@@ -44,7 +44,7 @@ author ai
 file crates/gui/src/graph/scene.rs
 symbol of
 lines 0 10
-hash 95ceecbae23865c3
+hash d284d3e3c645c442
 link graph-draw
 note The edges' Router for the direction: turned, a curve bows by a fraction of the rows between ranks and enters a node at the middle of its top edge.
 
@@ -55,7 +55,7 @@ author ai
 file crates/gui/src/views/center.rs
 symbol graph_tab
 lines 35 42
-hash cfea367c71886f32
+hash dfa905fc585c1639
 note Trigger: GRAPH_TURN (graph-turn) in the graph toolbar, after 'fit', labelled 'top to bottom' while the tree runs left to right and 'left to right' while it runs top to bottom; a click queues Graph(Turn).
 
 step kfh6eq
@@ -65,7 +65,7 @@ author ai
 file crates/gui/src/graph/place.rs
 symbol impl Spacing
 lines 0 23
-hash 7d514e5345c0034a
+hash a35cedc4683025ef
 note Down swaps which constants run along the lanes: GRAPH_RANK_GAP_DOWN between rows of ranks, GRAPH_SIBLING_GAP_ACROSS and GRAPH_BOX_GAP_ACROSS between siblings and boxes side by side.
 
 step lniwp3
@@ -95,8 +95,8 @@ author ai
 file crates/gui/src/panels.rs
 symbol turned
 lines 0 5
-hash 52c4b76807c7a2e4
-note Across and Down swap; the graph shares the panel tree's Direction.
+hash a43ae5f3eaebb180
+note Right and Down swap; the graph shares the panel tree's Direction.
 
 step rcnclb
 order 0
@@ -114,5 +114,5 @@ author ai
 file crates/gui/src/graph/place.rs
 symbol point
 lines 0 11
-hash c98de512de8f106a
-note Where main and cross become across and down: turned, the lane position is the row and the cross position the column.
+hash f612dbd36ee14a0f
+note Where main and cross become right and down: turned, the lane position is the row and the cross position the column.

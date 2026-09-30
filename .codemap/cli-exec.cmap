@@ -118,9 +118,9 @@ author ai
 file crates/cli/src/exec.rs
 symbol Document
 lines 0 5
-hash dd83b19f87e00529
+hash 1ac99abe1ccb3e0b
 link path-links
-note The path command's printer state. expanded is None without --expand; with it, the chain of paths being expanded, so a path already on the chain prints a pointer back instead of looping, and each expanded path ends with an end-of line.
+note The path command's printer state. inlined is None without --inline; with it, the chain of paths being inlined, so a path already on the chain prints a pointer back instead of looping, and each inlined path ends with an end-of line.
 
 step lwzwqw
 order 0
@@ -129,7 +129,7 @@ file crates/cli/src/exec.rs
 symbol Run
 lines 0 6
 hash 04bf1d42a5345426
-note One command's reach. servers is None in the GUI's command line, whose own threads index; every method checks it before asking a server, so the same code answers from the index as it stands there.
+note One command's reach. servers is None in the GUI's console, whose own threads index; every method checks it before asking a server, so the same code answers from the index as it stands there.
 
 step xu3fch
 order 8
@@ -138,4 +138,4 @@ file crates/cli/src/exec.rs
 symbol compile
 lines 0 2
 hash 80bda59028bcdcf4
-note A regex for grep and notes, or Failure::Regex.
+note A regex for search and notes, or Failure::Regex.

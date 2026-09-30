@@ -96,7 +96,7 @@ file crates/cli/src/exec.rs
 symbol callers
 lines 0 27
 hash a1c0477f03781680
-note callers: with servers (the CLI), the language server's incoming calls for the symbol, which cover files nothing has indexed, each turned into its calling symbol by by_line; without them (the GUI's command line), the callers link derived. Every symbol of that name is answered, so an unqualified ambiguous name shows all of them.
+note callers: with servers (the CLI), the language server's incoming calls for the symbol, which cover files nothing has indexed, each turned into its calling symbol by by_line; without them (the GUI's console), the callers link derived. Every symbol of that name is answered, so an unqualified ambiguous name shows all of them.
 
 step vhx9tz
 order 7
@@ -105,4 +105,4 @@ file crates/cli/src/exec.rs
 symbol references
 lines 0 36
 hash 8de52f6d31bc0c42
-note refs: asked of the language's server for the one symbol. The GUI's command line, which has no servers, prints what the xrefs panel already asked for when the file was answered by a server; otherwise it says which server is missing.
+note refs: asked of the language's server for the one symbol. The GUI's console, which has no servers, prints what the references panel already asked for when the file was answered by a server; otherwise it says which server is missing.

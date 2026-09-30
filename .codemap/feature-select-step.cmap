@@ -3,7 +3,7 @@ path feature-select-step
 kind flow
 author ai
 group features/gui
-note Click a step's header in the document, its row in the outline, or a crumb in the breadcrumb, and that step becomes the selection: it gets the accent bar, its file and lines become the current place, and the graph and xrefs follow its symbol. The reader needs it to set the one selection every view follows from wherever they are looking (one selection for the whole app). Clicked in the outline or the breadcrumb, the document scrolls the step's header to the top; clicked on its own header, the document stays where it is. A step inside a folded subtree is revealed by unfolding its ancestors. From the Listing, Results or Diff tab the centre switches back to the Path tab.
+note Click a step's header in the document, its row in the steps list, or a crumb in the breadcrumb, and that step becomes the selection: it gets the accent bar, its file and lines become the current place, and the graph and xrefs follow its symbol. The reader needs it to set the one selection every view follows from wherever they are looking (one selection for the whole app). Clicked in the steps list or the breadcrumb, the document scrolls the step's header to the top; clicked on its own header, the document stays where it is. A step inside a collapsed subtree is revealed by expanding its ancestors. From the Source, Search or Diff tab the centre switches back to the Path tab.
 
 step 1uqvmv
 order 5
@@ -31,8 +31,8 @@ author ai
 file crates/gui/src/nav.rs
 symbol select_step
 lines 0 53
-hash 4970f05ff13c3c88
-note The handler. Records the path and step and makes the step the target added steps hang under, unfolds every folded ancestor so the step is visible, then points file, lines and focus at the step. A step whose symbol resolves focuses that symbol; a bare line slice focuses the symbol enclosing its first line. Scrolling::Scroll leaves a ticketed request that the document answers once the header is laid out.
+hash c309ed71b85c827e
+note The handler. Records the path and step and makes the step the target added steps hang under, expands every collapsed ancestor so the step is visible, then points file, lines and focus at the step. A step whose symbol resolves focuses that symbol; a bare line slice focuses the symbol enclosing its first line. Scrolling::Scroll leaves a ticketed request that the document answers once the header is laid out.
 
 step c1bc11
 order 3
@@ -40,7 +40,7 @@ parent 9c84zs
 author ai
 file crates/gui/src/views/document.rs
 symbol step_header
-lines 33 43
+lines 40 50
 hash efd4f40df26377f7
 note Trigger in the document: the step header is a link text with the STEP_HEADER id numbered by the step's slot. A click on a step of the path being read queues SelectStep with Scrolling::Stay, so the page does not jump under the pointer; a click on a step shown inline under a link queues Scroll, because that step opens in its own path.
 
@@ -49,10 +49,10 @@ order 4
 parent 9c84zs
 author ai
 file crates/gui/src/views/left.rs
-symbol outline
+symbol step_list
 lines 55 66
-hash d021d22448bafd2c
-note Trigger in the outline: every row is an OUTLINE_ROW numbered by step slot, marked when it is the selection or the topmost step visible in the document. A click queues SelectStep with Scrolling::Scroll and GrabStep, which becomes a drag when the pointer travels (feature-move-step).
+hash c84a8d0bd2f49cd1
+note Trigger in the steps list: every row is a STEP_LIST_ROW numbered by step slot, marked when it is the selection or the topmost step visible in the document. A click queues SelectStep with Scrolling::Scroll and GrabStep, which becomes a drag when the pointer travels (feature-move-step).
 
 step moet1y
 order 2
@@ -63,7 +63,7 @@ symbol focus_symbol
 lines 0 12
 hash 8b98063109fcb5a0
 link selection
-note Sets file, the symbol's whole span as the line selection, the listing's scroll request and the focus, and tells the graph the focus moved. select_step then narrows the lines to the step's own slice.
+note Sets file, the symbol's whole span as the line selection, the Source view's scroll request and the focus, and tells the graph the focus moved. select_step then narrows the lines to the step's own slice.
 
 step movrj1
 order 6
@@ -73,4 +73,4 @@ file crates/gui/src/views/document.rs
 symbol track_steps
 lines 26 44
 hash a726a50d5cfd711a
-note The next frames: the document finds the requested step's header rectangle and moves its scroll offset so the header sits at the top, then answers the ticket. A header not laid out yet (folded, or below a lazily built part) is retried a few frames before the request is dropped.
+note The next frames: the document finds the requested step's header rectangle and moves its scroll offset so the header sits at the top, then answers the ticket. A header not laid out yet (collapsed, or below a lazily built part) is retried a few frames before the request is dropped.

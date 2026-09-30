@@ -32,7 +32,7 @@ not ticked. The CLI list is ordered by what cost the agents the most.
    Wanted: anchor to the first symbol with a span, or `symA..symB`.
 6. **`under` wants an index that batching cannot predict.** Accept a `file:sym` or
    `file:line` target.
-7. **`grep` has no file scope.**
+7. **`search` has no file scope.**
 8. **Absolute anchors render with an empty symbol slot** in `paths`.
 9. **"Intentionally unmapped" marker** (Deferred, below): a third of
     memejoin-rs is a dead previous version; `coverage` cannot distinguish explained from
@@ -90,7 +90,7 @@ Left open after the UX review of 2026-09-21 and the fixes that followed it.
 or a request for the map belongs (`// codemap: why does this retry three times?`). `prompts`
 lists every marker with file:line and text; the agent contract tells a session to answer
 each one in the map (a note, a step, a path) and remove the marker in the same commit; the
-GUI shows the open markers in the listing and counts them in the status bar. Done when: the
+GUI shows the open markers in the Source view and counts them in the status bar. Done when: the
 owner writes a question in a comment, the next agent session's map answers it, and the
 marker is gone from the diff.
 
@@ -103,13 +103,13 @@ written here first.
 |---|---|
 | A daemon holding the server sessions for the CLI | cold CLI runs on changed files are the bottleneck of an agent session |
 | Hand-written resolver for a language | a target repo uses it and has no server |
-| Links in the graph: a linked step expands the linked path's tree from its node | reading a journey across processes in the document is not enough |
+| Links in the graph: a linked step reveals the linked path's tree from its node | reading a journey across processes in the document is not enough |
 | "Intentionally unmapped" marker on symbols | `uncovered` is mostly things already decided not to matter |
 | Step-level review state | a long path gets one re-pinned step and rereading it all is a cost |
 | Kind-specific rendering | a list of 50 mixed-kind paths is unreadable |
 | Documentation panel for the focused symbol | per language: doc comments first, then external docs |
 | Detachable windows | one window's panel tree is not enough for a real session |
-| Multi-threaded grep | a search takes more than 100 ms |
+| Multi-threaded search | a search takes more than 100 ms |
 | Watch for new / deleted files | restarting for new files annoys |
 | Undo | a mis-click deletes something that took effort to build |
 | MCP server | the CLI is stable and the shell round trip is the bottleneck |

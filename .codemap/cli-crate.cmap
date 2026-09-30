@@ -3,7 +3,7 @@ path cli-crate
 kind layer
 author ai
 group cli
-note The cli crate: the command-line boundary both front ends drive. Its surface is small: Invocation::parse turns arguments into a checked command, exec runs it against an Index and a Map and writes its report to an Output, and every failure comes back as a Failure value, never as text. All wording lives in wire.rs (the clap types, every output line, every error message); convert.rs turns clap's plain strings and numbers into domain values; exec.rs does the work through Map and Index methods. The crate never prints and never saves: the binary decides where an Output goes (Channel) and whether to save, the GUI shows it in its output panel. What it guarantees: the CLI and the GUI's command line accept the same commands, with the same help and the same errors, because both go through this one parse and exec.
+note The cli crate: the command-line boundary both front ends drive. Its surface is small: Invocation::parse turns arguments into a checked command, exec runs it against an Index and a Map and writes its report to an Output, and every failure comes back as a Failure value, never as text. All wording lives in wire.rs (the clap types, every output line, every error message); convert.rs turns clap's plain strings and numbers into domain values; exec.rs does the work through Map and Index methods. The crate never prints and never saves: the binary decides where an Output goes (Channel) and whether to save, the GUI shows it in its console. What it guarantees: the CLI and the GUI's command line accept the same commands, with the same help and the same errors, because both go through this one parse and exec.
 
 step 1229g4
 order 0
@@ -78,7 +78,7 @@ file crates/cli/src/lib.rs
 symbol symbol_label
 lines 0 2
 hash 6a670bf7d731dfed
-note name file:start-end, the one way a symbol is printed; the GUI's xrefs panel uses it too.
+note name file:start-end, the one way a symbol is printed; the GUI's references panel uses it too.
 
 step fjhiij
 order 13

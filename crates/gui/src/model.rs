@@ -17,7 +17,7 @@ use crate::nav::Nav;
 use crate::palette::Palette;
 use crate::panels::Panels;
 use crate::peek::{Peek, Queries};
-use crate::status::{OutputLog, Status};
+use crate::status::{ConsoleLog, Status};
 use crate::text::Needle;
 use crate::theme;
 use crate::work::WorkState;
@@ -72,8 +72,8 @@ pub(crate) enum Tab {
     Path,
     Diff,
     Graph,
-    Listing,
-    Results,
+    Source,
+    Search,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -104,8 +104,8 @@ impl Tab {
             Self::Path => "path",
             Self::Diff => "diff",
             Self::Graph => "graph",
-            Self::Listing => "listing",
-            Self::Results => "results",
+            Self::Source => "source",
+            Self::Search => "search",
         })
     }
 
@@ -148,8 +148,8 @@ pub(crate) struct ViewFlags(u8);
 pub(crate) enum ViewFlag {
     Whole,
     Hidden,
-    Folded,
-    Expanded,
+    Collapsed,
+    Inlined,
 }
 
 impl ViewFlags {
@@ -157,8 +157,8 @@ impl ViewFlags {
         match flag {
             ViewFlag::Whole => 1,
             ViewFlag::Hidden => 2,
-            ViewFlag::Folded => 4,
-            ViewFlag::Expanded => 8,
+            ViewFlag::Collapsed => 4,
+            ViewFlag::Inlined => 8,
         }
     }
 
@@ -387,10 +387,10 @@ pub(crate) struct Model {
     pub(crate) palette: Option<Palette>,
     pub(crate) new_path: Option<PathKind>,
     pub(crate) step_grab: Option<StepGrab>,
-    pub(crate) results: Vec<Hit>,
+    pub(crate) hits: Vec<Hit>,
     pub(crate) hits_shown: HitsShown,
-    pub(crate) output: OutputLog,
-    pub(crate) output_bottom: Count,
+    pub(crate) console: ConsoleLog,
+    pub(crate) console_bottom: Count,
     pub(crate) status: Status,
     pub(crate) work: WorkState,
     pub(crate) metrics: Metrics,
@@ -427,10 +427,10 @@ impl Model {
             palette: None,
             new_path: None,
             step_grab: None,
-            results: Vec::new(),
+            hits: Vec::new(),
             hits_shown: HitsShown::All,
-            output: OutputLog::default(),
-            output_bottom: Count::ZERO,
+            console: ConsoleLog::default(),
+            console_bottom: Count::ZERO,
             status: Status::Nothing,
             work: WorkState::default(),
             metrics: Metrics {

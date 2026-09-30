@@ -12,7 +12,7 @@ author ai
 file crates/gui/src/model.rs
 symbol impl ViewFlags
 lines 0 25
-hash 4aac50707d43688d
+hash 3d96d3848e873a84
 note Test, toggle and set a flag.
 
 step 4gorgh
@@ -23,7 +23,7 @@ file crates/gui/src/model.rs
 symbol ViewFlags
 lines 0 0
 hash c04a46a315a03e36
-note The four flags as bits: whole symbol, code hidden, subtree folded, linked path expanded inline.
+note The four flags as bits: whole symbol, code hidden, subtree collapsed, linked path inlined.
 
 step 4rpslj
 order 18
@@ -93,7 +93,7 @@ file crates/gui/src/model.rs
 symbol LineSelection
 lines 0 3
 hash 7818e3b13199fbc4
-note The listing's selected lines, from the line clicked to the line shift-clicked; low and high order them.
+note The Source view's selected lines, from the line clicked to the line shift-clicked; low and high order them.
 
 step 7o39d7
 order 21
@@ -142,7 +142,7 @@ author ai
 file crates/gui/src/model.rs
 symbol new
 lines 0 41
-hash 79bbe6b562378209
+hash 91e7187277bb2f79
 note Every panel in its default state, the map's stamp taken from the store, the metrics at the starting font until the first frame measures the real one.
 
 step erlcdz
@@ -183,7 +183,7 @@ file crates/gui/src/model.rs
 symbol impl StepViews
 lines 0 38
 hash 0faf8d6b7cf55471
-note Read with the default, write through entry, change only existing entries (so unfolding ancestors creates nothing), change every view of one path, remap every key when steps or paths shift, and list the views that differ from the default for the dump.
+note Read with the default, write through entry, change only existing entries (so expanding ancestors creates nothing), change every view of one path, remap every key when steps or paths shift, and list the views that differ from the default for the dump.
 
 step i9wqui
 order 35
@@ -203,7 +203,7 @@ file crates/gui/src/model.rs
 symbol numbered
 lines 0 15
 hash e433ffa5b0d15e30
-note The path's steps in tree order with their depth and hierarchical number (1.2.3), in slots: the outline, the document and the graph all number steps through this, and walking up and down follows it.
+note The path's steps in tree order with their depth and hierarchical number (1.2.3), in slots: the steps list, the document and the graph all number steps through this, and walking up and down follows it.
 
 step kh0he1
 order 24
@@ -262,7 +262,7 @@ author ai
 file crates/gui/src/model.rs
 symbol ViewFlag
 lines 0 5
-hash 89c843b57b7181b6
+hash 2b246072319cc5d1
 note The flags by name.
 
 step ta3yo2
@@ -291,7 +291,7 @@ author ai
 file crates/gui/src/model.rs
 symbol Model
 lines 0 30
-hash 14009f2837c6fc92
+hash c89cbfec7555069e
 note All the state a view can see (gui-structure lists the fields). Views get &Model; apply gets &mut.
 
 step x5fqsj
@@ -302,7 +302,7 @@ file crates/gui/src/model.rs
 symbol descendants
 lines 0 8
 hash a77696f335213e88
-note How many steps hang under a step, at any depth: the folded count, and whether a step gets a fold arrow.
+note How many steps hang under a step, at any depth: the collapsed count, and whether a step gets a collapse arrow.
 
 step xu6ld0
 order 28
@@ -321,7 +321,7 @@ author ai
 file crates/gui/src/model.rs
 symbol Tab
 lines 0 6
-hash 808935b379d1e110
+hash 47a9e89f56984123
 note The five centre tabs; from_name reads one from CODEMAP_SHOT_TAB (a script's tab command names any view through View::named).
 
 step y3xlpg
@@ -332,7 +332,7 @@ file crates/gui/src/model.rs
 symbol StepSlot
 lines 0 0
 hash d5b6dfd947bdb991
-note A step's position in its path's step list: the n of step/n, fold/n and the other per-step element ids.
+note A step's position in its path's step list: the n of step/n, collapse/n and the other per-step element ids.
 
 step y4jba3
 order 32

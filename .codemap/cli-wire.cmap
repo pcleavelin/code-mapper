@@ -184,7 +184,7 @@ author ai
 file crates/cli/src/wire.rs
 symbol Command
 lines 0 74
-hash 4b587db07c70b7d6
+hash 9789a85ed63443ca
 note The command set, one variant per command Feature, in the order help lists them. Help is disabled as a flag and overridden as usage so the help text starts with the two ways to run codemap. note-edit, path-add and path-move allow negative numbers, since -1 means the path note or the root there.
 
 step h4ludh

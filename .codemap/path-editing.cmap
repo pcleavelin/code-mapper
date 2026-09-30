@@ -3,7 +3,7 @@ path path-editing
 kind flow
 author ai
 group cli
-note How the agent builds a path from the command line. Each command is one Edit, run by a method on exec.rs's Run that finds the path and step it names, calls one Map method, and returns Changed; the CLI then saves through MapStore and exits, while the GUI's command line marks the map unsaved. Every step and path created records the author the front end passed: Agent from the CLI, Human from the GUI's command line, so the owner can see what a session wrote. The shape of a flow is the agent's responsibility: path-add and path-move take an explicit parent and print a note when a step lands under something that does not call it, which is the one guard rail against a flow that does not read like a call tree.
+note How the agent builds a path from the command line. Each command is one Edit, run by a method on exec.rs's Run that finds the path and step it names, calls one Map method, and returns Changed; the CLI then saves through MapStore and exits, while the GUI's console marks the map unsaved. Every step and path created records the author the front end passed: Agent from the CLI, Human from the GUI's console, so the owner can see what a session wrote. The shape of a flow is the agent's responsibility: path-add and path-move take an explicit parent and print a note when a step lands under something that does not call it, which is the one guard rail against a flow that does not read like a call tree.
 
 step 1029p2
 order 3

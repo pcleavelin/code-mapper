@@ -53,9 +53,9 @@ author ai
 file crates/gui/src/nav.rs
 symbol select_step
 lines 0 53
-hash 4970f05ff13c3c88
+hash c309ed71b85c827e
 link feature-select-step
-note A step node: the same selection as clicking the step in the outline, scrolled to.
+note A step node: the same selection as clicking the step in the steps list, scrolled to.
 
 step h7oyei
 order 3
@@ -94,7 +94,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol go_to_symbol
 lines 0 14
-hash 84310461820f5965
+hash 44cd199b2a7a836e
 note An off-path node: its symbol becomes the focus with no step selected, the same as a Symbols row; in the Graph tab the tab stays.
 
 step rw4ydx
@@ -164,4 +164,4 @@ file crates/gui/src/graph/input.rs
 symbol neighbours
 lines 0 24
 hash 4f6ed895645aedbb
-note A node's tree neighbours: its parent (the parent step, or the node whose expansion revealed it), its children (steps under it and nodes it revealed) and the other members of any sibling box it sits in (Built.siblings, from the layout).
+note A node's tree neighbours: its parent (the parent step, or the node whose reveal revealed it), its children (steps under it and nodes it revealed) and the other members of any sibling box it sits in (Built.siblings, from the layout).

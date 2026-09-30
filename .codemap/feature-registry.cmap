@@ -3,7 +3,7 @@ path feature-registry
 kind type
 author ai
 group cli
-note The feature registry, crates/features: the one list of everything a user can do with codemap. Each Feature variant is one user function, and Feature::spec gives its Spec: the name (kebab-case, also the CLI command name), a one-line summary (the CLI help line or the GUI tooltip), the Surface it belongs to (Command for the CLI commands, which the GUI's command line runs too, Window for what only the GUI does) and every Trigger that fires it: a command word, a key Chord, a click or typing on a named GUI element, or a Gesture on an element. The crate depends on nothing and holds no behaviour; the front ends build from it. The CLI's clap Command takes each command's name and help line from the spec, so help and the registry cannot disagree. The GUI binds keys and gestures by reading a feature's triggers (keys.rs), and names every clickable element through a Control that pairs a Feature with an Element (ids.rs), so a button or key that is not in the registry cannot be written, which xtask lint enforces for key bindings. Tests here check that names are unique, every feature has a trigger and a summary, a command feature is triggered by exactly its own name, and no trigger fires two features; the GUI's tests check that every Control's element is a trigger of its feature. Adding a user function starts here (the add-feature skill).
+note The feature registry, crates/features: the one list of everything a user can do with codemap. Each Feature variant is one user function, and Feature::spec gives its Spec: the name (kebab-case, also the CLI command name), a one-line summary (the CLI help line or the GUI tooltip), the Surface it belongs to (Command for the CLI commands, which the GUI's console runs too, Window for what only the GUI does) and every Trigger that fires it: a command word, a key Chord, a click or typing on a named GUI element, or a Gesture on an element. The crate depends on nothing and holds no behaviour; the front ends build from it. The CLI's clap Command takes each command's name and help line from the spec, so help and the registry cannot disagree. The GUI binds keys and gestures by reading a feature's triggers (keys.rs), and names every clickable element through a Control that pairs a Feature with an Element (ids.rs), so a button or key that is not in the registry cannot be written, which xtask lint enforces for key bindings. Tests here check that names are unique, every feature has a trigger and a summary, a command feature is triggered by exactly its own name, and no trigger fires two features; the GUI's tests check that every Control's element is a trigger of its feature. Adding a user function starts here (the add-feature skill).
 
 step 2xdex6
 order 20
@@ -33,7 +33,7 @@ file crates/features/src/spec.rs
 symbol Surface
 lines 0 3
 hash 8e8a88f237065f2b
-note Command: a CLI command, also runnable from the GUI's output panel. Window: something only the GUI does.
+note Command: a CLI command, also runnable from the GUI's console. Window: something only the GUI does.
 
 step 78l1i4
 order 14
@@ -87,8 +87,8 @@ parent l04dki
 author ai
 file crates/features/src/lib.rs
 symbol spec
-lines 0 794
-hash 20c02131f8e3292b
+lines 0 796
+hash 6ce582a45d10dfb9
 note The registry itself: one match arm per feature, built at compile time from const data. A command feature has Surface::Command and exactly one trigger, its own name as a command; a window feature lists every click, key, typed field and gesture that fires it.
 
 step k761ua
@@ -106,7 +106,7 @@ author ai
 file crates/features/src/lib.rs
 symbol Feature
 lines 0 90
-hash 9d79f611f57c1a98
+hash 267b033bdbf5f09a
 note One variant per user function, CLI commands first in help order, then the window's functions. The VariantArray derive lists them as Feature::VARIANTS in declaration order, for the tests that walk the registry.
 
 step lo42kd

@@ -143,7 +143,7 @@ index::symbol::pub fn set_targets(&mut self, targets: Vec<Location>)
 index::symbol::pub fn set_references(&mut self, references: Vec<Location>)
 index::symbol::pub fn set_callees(&mut self, callees: Vec<SymbolId>)
 index::symbol::pub fn set_callers(&mut self, callers: Vec<SymbolId>)
-layout::pub enum SplitDirection { Across, Down, }
+layout::pub enum SplitDirection { Right, Down, }
 layout::pub struct Share(u16);
 layout::pub const WHOLE: Self = Self(1000);
 layout::pub fn permille(value: u16) -> Option<Self>

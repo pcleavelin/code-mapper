@@ -272,7 +272,7 @@ file crates/domain/src/index/language.rs
 symbol of
 lines 0 8
 hash 7b1aecd188bb9580
-note Extension to language, by the path's last dotted segment. None is what 'indexed for viewing and grep only' means, and a file with no language is never pending. Every language here has a bundled grammar, so a file with a language has symbols even without its server.
+note Extension to language, by the path's last dotted segment. None is what 'indexed for viewing and search only' means, and a file with no language is never pending. Every language here has a bundled grammar, so a file with a language has symbols even without its server.
 
 step y43lw6
 order 20

@@ -3,7 +3,7 @@ path cli-command
 kind flow
 author ai
 group cli
-note How one command line becomes an Invocation and runs. The process arguments after the root and the GUI output panel's input line both go through cli::Invocation::parse, which is clap over wire.rs's Command enum, so help and argument errors read the same in both. convert.rs turns the parsed Command into a Request (a Query, an Edit or a repin) of domain values, and cli::exec runs it against the Index and Map through exec.rs's Run, writing its lines to an Output and returning whether the map changed or a Failure. The CLI saves through MapStore and exits with a status; the GUI marks the map unsaved and leaves saving to ctrl+s. The two front ends share everything but the argument splitting, which the shell does for the CLI, and the author they pass: Agent from the CLI, Human from the GUI.
+note How one command line becomes an Invocation and runs. The process arguments after the root and the GUI console's input line both go through cli::Invocation::parse, which is clap over wire.rs's Command enum, so help and argument errors read the same in both. convert.rs turns the parsed Command into a Request (a Query, an Edit or a repin) of domain values, and cli::exec runs it against the Index and Map through exec.rs's Run, writing its lines to an Output and returning whether the map changed or a Failure. The CLI saves through MapStore and exits with a status; the GUI marks the map unsaved and leaves saving to ctrl+s. The two front ends share everything but the argument splitting, which the shell does for the CLI, and the author they pass: Agent from the CLI, Human from the GUI.
 
 step 0s6eim
 order 25
@@ -22,7 +22,7 @@ author ai
 file crates/cli/src/convert.rs
 symbol from
 lines 0 42
-hash 6b1511c0cb632a9a
+hash 35abf751bce2b9c2
 note Command to Request: the reading commands become a Query, the map edits an Edit, repin its own Request. Each argument struct converts through its own From, so names become PathName or TextFragment, numbers become StepIndex, Under, LineNumber, Levels or Count, and a name that cannot be a PathName is carried as the MapError for exec to report.
 
 step 7ad6e4
@@ -98,11 +98,11 @@ note Runs one Invocation. Ok(Some(Changed)) means the map changed and the caller
 step dtk6tf
 order 7
 author ai
-file crates/gui/src/views/output.rs
-symbol output_panel
+file crates/gui/src/views/console.rs
+symbol console_panel
 lines 0 30
-hash bbc90f1609609ccd
-note The GUI's command line. The Output view, in the panel along the bottom by default: the log scrolls in the upper part, virtualised to the visible rows, and is scrolled to its end while output_bottom counts down after a command (a command's output exists only after that frame's layout, so the second frame's pin is the one that lands on it); the input row sits under it and takes the keyboard when clicked.
+hash 962e25b70000d43f
+note The GUI's console. The Console view, in the panel along the bottom by default: the log scrolls in the upper part, virtualised to the visible rows, and is scrolled to its end while console_bottom counts down after a command (a command's output exists only after that frame's layout, so the second frame's pin is the one that lands on it); the input row sits under it and takes the keyboard when clicked.
 
 step f5fj9z
 order 23
@@ -121,7 +121,7 @@ author ai
 file crates/cli/src/wire.rs
 symbol Command
 lines 0 74
-hash 4b587db07c70b7d6
+hash 9789a85ed63443ca
 note The command set, one variant per command Feature. Each variant's name and about are the feature's name and summary from the registry, so the registry is the one list of commands and 'help' reads as a signature table. Arguments are plain strings and numbers here; converting them to domain values is convert.rs's job.
 
 step gejk1d
@@ -161,7 +161,7 @@ author ai
 file crates/cli/src/exec.rs
 symbol query
 lines 0 25
-hash d725e93acb0e5f81
+hash 4b612b26158f789d
 note One arm per reading command; the handlers are Run's methods, and the feature-<name> paths follow each one.
 
 step ly4k41
@@ -191,7 +191,7 @@ author ai
 file crates/gui/src/action.rs
 symbol run_command
 lines 0 41
-hash b0f1a1d0d48f8f9e
+hash 6c8d6863553d1fea
 note The GUI's side of the same parse then exec, reached when the command field returns a line. 'clear' empties the log without parsing. exec gets no servers here: the GUI's own threads index. A ParseFailure, help included, is printed into the log verbatim and its first line becomes the status; a Failure is logged as 'error: ...'; a change marks the map unsaved and logs a line saying ctrl+s saves it. The log is pinned to its end for the next two frames so the newest output shows.
 
 step uzpmmo
@@ -211,7 +211,7 @@ author ai
 file crates/cli/src/wire.rs
 symbol feature
 lines 0 38
-hash 5b9c95ab55f94cfa
+hash c22a268eaba7fcc6
 note Which registry Feature a parsed command is, kept on the Invocation so a front end can tell what ran.
 
 step wh8ryh

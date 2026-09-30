@@ -93,7 +93,7 @@ file crates/domain/src/map/path.rs
 symbol numbered
 lines 0 26
 hash fabc52c98627a0e7
-note The same walk keyed by call line, with the hierarchical numbers attached: (step, depth, 1.2.3) in reading order. The CLI document, the GUI outline, document, breadcrumb and graph nodes all number steps through this one function, so a step carries the same number wherever it is shown. A child with no symbol, or whose symbol no line of the parent's slice calls, sorts after its siblings that have a call line.
+note The same walk keyed by call line, with the hierarchical numbers attached: (step, depth, 1.2.3) in reading order. The CLI document, the GUI steps list, document, breadcrumb and graph nodes all number steps through this one function, so a step carries the same number wherever it is shown. A child with no symbol, or whose symbol no line of the parent's slice calls, sorts after its siblings that have a call line.
 
 step ehahwz
 order 19
@@ -133,7 +133,7 @@ file crates/domain/src/map/path.rs
 symbol descendants
 lines 0 9
 hash d51274eda710982d
-note Every step under this one at any depth, in tree order: the GUI's fold count, delete confirmation and subtree highlighting.
+note Every step under this one at any depth, in tree order: the GUI's collapse count, delete confirmation and subtree highlighting.
 
 step o5vpwn
 order 10
@@ -182,7 +182,7 @@ file crates/domain/src/map.rs
 symbol place
 lines 0 27
 hash f75276769ead0caf
-note Moving a step to another parent and place in the list, the GUI's outline drag: reparent, then swap_places it past its neighbours until it sits just before the given step (or at the end), so only the steps it passes change their order.
+note Moving a step to another parent and place in the list, the GUI's steps list drag: reparent, then swap_places it past its neighbours until it sits just before the given step (or at the end), so only the steps it passes change their order.
 
 step wbms9u
 order 2

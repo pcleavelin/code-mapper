@@ -154,7 +154,7 @@ file crates/gui/src/work.rs
 symbol Answer
 lines 0 8
 hash af850a06c3726283
-note What a server thread sends back: a finished file, a progress line, a language whose server failed to start, the end of a batch, hover and definition answers for the peek, and the references asked for the symbol in the xrefs panel.
+note What a server thread sends back: a finished file, a progress line, a language whose server failed to start, the end of a batch, hover and definition answers for the peek, and the references asked for the symbol in the references panel.
 
 step kn00gd
 order 32

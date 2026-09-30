@@ -3,7 +3,7 @@ path navigation
 kind flow
 author ai
 group gui
-note Back and forward, the way a browser does it. Nothing in the app calls a 'navigate' function: at the end of every frame, after the action queue has been applied, the current place is compared with the place at the end of the last frame, and if they differ the old one is pushed onto the history. So any click anywhere - a symbol in a list, a tab, an xref, a command in the output panel - becomes history for free, and no feature has to remember to record itself. A place is the centre tab, the current file, the line selection, the focused symbol as a stable key, and the selected path and step; a changed line selection alone does not count as a move. All of it lives in Nav, which only nav.rs changes.
+note Back and forward, the way a browser does it. Nothing in the app calls a 'navigate' function: at the end of every frame, after the action queue has been applied, the current place is compared with the place at the end of the last frame, and if they differ the old one is pushed onto the history. So any click anywhere - a symbol in a list, a tab, an xref, a command in the Console - becomes history for free, and no feature has to remember to record itself. A place is the centre tab, the current file, the line selection, the focused symbol as a stable key, and the selected path and step; a changed line selection alone does not count as a move. All of it lives in Nav, which only nav.rs changes.
 
 step 0tjy5k
 order 14
@@ -42,7 +42,7 @@ file crates/gui/src/nav.rs
 symbol walk
 lines 0 32
 hash 1a7f09d04bfbfe83
-note Up and down with no field focused: the selected step moves through the path in numbered order, the order the document and outline show, clamped at both ends; with nothing selected the first step.
+note Up and down with no field focused: the selected step moves through the path in numbered order, the order the document and steps list show, clamped at both ends; with nothing selected the first step.
 
 step 4wpg9r
 order 0
@@ -89,7 +89,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol select_step
 lines 0 53
-hash 4970f05ff13c3c88
+hash c309ed71b85c827e
 note A place that had a step is restored through the normal step selection, so the document scrolls and the graph follows exactly as if it had been clicked.
 
 step gq28ix
@@ -148,7 +148,7 @@ file crates/gui/src/nav.rs
 symbol same_place
 lines 0 6
 hash 49c701209cfb356f
-note The comparison that decides whether something was a navigation. The line selection is left out: moving the selection in the listing is not a move.
+note The comparison that decides whether something was a navigation. The line selection is left out: moving the selection in the Source view is not a move.
 
 step loikda
 order 8
@@ -165,8 +165,8 @@ author ai
 file crates/gui/src/nav.rs
 symbol go_to_symbol
 lines 0 14
-hash 84310461820f5965
-note The usual way a symbol is opened from a list or an xref (the Focus action): select it, and when it is not a step of the path being read, open the listing unless the graph or a document is showing - there the status line says the symbol is not a step of that path.
+hash 44cd199b2a7a836e
+note The usual way a symbol is opened from a list or an xref (the Focus action): select it, and when it is not a step of the path being read, open the Source view unless the graph or a document is showing - there the status line says the symbol is not a step of that path.
 
 step syqeay
 order 2
@@ -185,7 +185,7 @@ symbol definition
 lines 0 18
 hash d00af4bcb2673b16
 link peek
-note Go-to-definition from any code view: the identifier under the pointer is looked up by the language's server (or the index, for a grammar-only file) and, once the answer is in, selected or opened in the listing; a definition outside the repo is pinned in the peek panel instead, since there is no file to open.
+note Go-to-definition from any code view: the identifier under the pointer is looked up by the language's server (or the index, for a grammar-only file) and, once the answer is in, selected or opened in the Source view; a definition outside the repo is kept in the peek panel instead, since there is no file to open.
 
 step w39a81
 order 7

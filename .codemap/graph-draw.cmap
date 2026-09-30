@@ -61,8 +61,8 @@ author ai
 file crates/gui/src/views/center.rs
 symbol graph_tab
 lines 0 62
-hash dab193b53b2f807c
-note The view: the deferred actions pushed (a hover through push_hover), the tooltip set, then the toolbar - '1:1' which resets the zoom and re-centres, 'auto layout' which drops every dragged position, 'fit' which zooms out until the whole tree is on the canvas and centres it, the direction button (graph-turn, labelled with the direction it switches to: 'top to bottom' or 'left to right'), the zoom percentage, and one clipped caption: while a path is being read, its name and a legend drawn in the edge colours themselves (green step, dim expansion, orange call back up), then the pan and zoom gestures spelled out - then the canvas element whose closure paints the scene. The toolbar holds no authoring control; '+ step' lives on off-path nodes.
+hash eb9c86bdb8768e5c
+note The view: the deferred actions pushed (a hover through push_hover), the tooltip set, then the toolbar - '1:1' which resets the zoom and re-centres, 'auto layout' which drops every dragged position, 'fit' which zooms out until the whole tree is on the canvas and centres it, the direction button (graph-turn, labelled with the direction it switches to: 'top to bottom' or 'left to right'), the zoom percentage, and one clipped caption: while a path is being read, its name and a legend drawn in the edge colours themselves (green step, dim revealed, orange call back up), then the pan and zoom gestures spelled out - then the canvas element whose closure paints the scene. The toolbar holds no authoring control; '+ step' lives on off-path nodes.
 
 step 4yhd4f
 order 0
@@ -131,7 +131,7 @@ author ai
 file crates/gui/src/graph/scene.rs
 symbol toward_parent
 lines 0 7
-hash dd6e5683960a76eb
+hash d42bc56249d70703
 note The arrow icon for the parent button by box side and direction.
 
 step bg1dgf
@@ -141,7 +141,7 @@ author ai
 file crates/gui/src/graph/scene.rs
 symbol impl Router
 lines 0 71
-hash 9175ab4aa93bf6bf
+hash 97379444444d724a
 note curve bends a cubic from one point to another along the main axis, forward for Bend::Ahead and backward for Bend::Back, by half the distance or reach, whichever is more; entry is where an edge enters a node (the header's left end left to right, the top middle top to bottom); ahead says whether the target lies past the source along the direction; back is the whole curve for a call to a node behind its caller, from the caller's near side to the callee's far side.
 
 step cwr1zr
@@ -192,7 +192,7 @@ file crates/gui/src/grid.rs
 symbol get
 lines 0 16
 hash 207c0f189d9d999f
-note Node code is the same grid the document and the listing draw, taken from the shared cache keyed by file, file hash and span, so a node reads like the document and costs nothing per frame once built. The cache is cleared when it passes 512 grids.
+note Node code is the same grid the document and the Source view draw, taken from the shared cache keyed by file, file hash and span, so a node reads like the document and costs nothing per frame once built. The cache is cleared when it passes 512 grids.
 
 step kw4f0g
 order 18
@@ -261,8 +261,8 @@ author ai
 file crates/gui/src/graph.rs
 symbol Button
 lines 0 9
-hash 1ec2e4f3f14d7a83
-note The buttons a node header can carry: preview, listing, '+ step' (off-path nodes), expansions, and context above, below and none.
+hash c282a18378f5015e
+note The buttons a node header can carry: preview, source, '+ step' (off-path nodes), reveals, and context above, below and none.
 
 step osav6h
 order 21
@@ -292,7 +292,7 @@ author ai
 file crates/gui/src/graph/scene.rs
 symbol edges
 lines 0 72
-hash c4c4aac96f878ec1
+hash 834cea6528ddf3b5
 note The edges, routed by a Router for the graph's direction. Left to right a call edge leaves level with the line that makes the call when that line is shown, and from the header otherwise; top to bottom it leaves the middle of the node's bottom edge. An edge to a node ahead along the direction is a curve bowing forward into the target's entry (the header's left end, or the top middle), in EXPANSION_EDGE; a callee drawn behind its caller gets a BACK_EDGE curve bowing backwards between the facing sides instead of a wire across the canvas. Path edges, parent step to child step, are drawn last, thicker and in STEP_EDGE, and carry no label - the node's number is the label. A self-call and a callee that is already the caller's child step get no call edge.
 
 step pi32um
@@ -352,8 +352,8 @@ author ai
 file crates/gui/src/graph/input.rs
 symbol graph_click
 lines 0 67
-hash a5017feab3db021c
-note A press against last frame's hit: a button sends its action (preview, callees, callers, context) or defers a GoTo for listing, or an AddSymbol for '+ step' under the step the node was revealed from as a callee, else under the target; a header click grabs the node, defers selecting its step (or focusing its symbol off the path) and sends Steer(Steering::Click) so the camera stays put and the tree keeps its root; a press on a code line grabs the node and, with ctrl or alt, defers a definition jump or peek at the column under the pointer; a body press grabs the node; the background starts a pan.
+hash e22b2f48be3c7757
+note A press against last frame's hit: a button sends its action (preview, callees, callers, context) or defers a GoTo for source, or an AddSymbol for '+ step' under the step the node was revealed from as a callee, else under the target; a header click grabs the node, defers selecting its step (or focusing its symbol off the path) and sends Steer(Steering::Click) so the camera stays put and the tree keeps its root; a press on a code line grabs the node and, with ctrl or alt, defers a definition jump or peek at the column under the pointer; a body press grabs the node; the background starts a pan.
 
 step rgjxnq
 order 28

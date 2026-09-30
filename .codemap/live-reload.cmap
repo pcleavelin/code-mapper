@@ -3,7 +3,7 @@ path live-reload
 kind flow
 author ai
 group gui
-note Keeping the open window honest about what is on disk without ever stalling a frame. A watcher thread holds the indexed files' modification times and compares them against the disk once a second, so the main thread never stats the tree; it sends one message when something moved and then waits for the refreshed list. The frame itself only checks the map's directory, through MapStore::stamp: a map written by the CLI is reloaded silently when there is nothing unsaved, and with unsaved edits it is left alone and the status says so once, because saving would overwrite it. A map on disk that does not read, a merge conflict in it for instance, keeps the one in memory and stops saves until it reads. A changed source file starts a rebuild on a runtime::Job; the index in use is untouched until the new one arrives, and taking it invalidates every SymbolId and FileId in the Model - so the focused symbol, the pinned peek, the current file and what the graph shows are carried across by (file path, symbol name) identity and the map's anchors are re-resolved. Neither kind of reload is a navigation: the selection is kept where the new map still supports it and the graph's camera does not move. A deleted file reads as changed and the rebuild drops it; a created file is not noticed until some other file changes.
+note Keeping the open window honest about what is on disk without ever stalling a frame. A watcher thread holds the indexed files' modification times and compares them against the disk once a second, so the main thread never stats the tree; it sends one message when something moved and then waits for the refreshed list. The frame itself only checks the map's directory, through MapStore::stamp: a map written by the CLI is reloaded silently when there is nothing unsaved, and with unsaved edits it is left alone and the status says so once, because saving would overwrite it. A map on disk that does not read, a merge conflict in it for instance, keeps the one in memory and stops saves until it reads. A changed source file starts a rebuild on a runtime::Job; the index in use is untouched until the new one arrives, and taking it invalidates every SymbolId and FileId in the Model - so the focused symbol, the kept peek, the current file and what the graph shows are carried across by (file path, symbol name) identity and the map's anchors are re-resolved. Neither kind of reload is a navigation: the selection is kept where the new map still supports it and the graph's camera does not move. A deleted file reads as changed and the rebuild drops it; a created file is not noticed until some other file changes.
 
 step 174dll
 order 0
@@ -72,7 +72,7 @@ file crates/gui/src/work.rs
 symbol with_index_change
 lines 0 40
 hash 110cc69175b0242e
-note The carry-over, used by every index change (a re-index here, merged server answers in poll_backend). Symbol and file ids do not survive a new index, so the focused symbol, the pinned peek (a symbol or a line) and the current file are saved as (path, symbol name) keys first and looked up again after, the graph saves and restores what it shows the same way, and the map's anchors are re-resolved. Hovers are forgotten and the drawn grids dropped, since both were keyed on the old index. Anything whose symbol is gone is simply dropped.
+note The carry-over, used by every index change (a re-index here, merged server answers in poll_backend). Symbol and file ids do not survive a new index, so the focused symbol, the kept peek (a symbol or a line) and the current file are saved as (path, symbol name) keys first and looked up again after, the graph saves and restores what it shows the same way, and the map's anchors are re-resolved. Hovers are forgotten and the drawn grids dropped, since both were keyed on the old index. Anything whose symbol is gone is simply dropped.
 
 step du8yxm
 order 13
@@ -140,8 +140,8 @@ author ai
 file crates/gui/src/work.rs
 symbol poll_reindex
 lines 0 16
-hash 689369205ae9626d
-note Run from the top of every frame like poll_disk: when the rebuild's Job has an index, this is the frame that swaps it in. The whole cost of a re-index lands here - the carry-over, the re-resolve and the re-render - and it is one frame, not the whole rebuild. Search results are dropped because their file and line numbers no longer mean anything, the watcher gets the new stamps so it starts looking again, and whatever changed is sent to the servers. A rebuild thread that panicked leaves the old index in use, the status says so, and the watcher is handed its old stamps again.
+hash 8874bd5d2ad01fab
+note Run from the top of every frame like poll_disk: when the rebuild's Job has an index, this is the frame that swaps it in. The whole cost of a re-index lands here - the carry-over, the re-resolve and the re-render - and it is one frame, not the whole rebuild. Search hits are dropped because their file and line numbers no longer mean anything, the watcher gets the new stamps so it starts looking again, and whatever changed is sent to the servers. A rebuild thread that panicked leaves the old index in use, the status says so, and the watcher is handed its old stamps again.
 
 step smd4uj
 order 8

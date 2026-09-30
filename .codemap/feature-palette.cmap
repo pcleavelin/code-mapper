@@ -3,7 +3,7 @@ path feature-palette
 kind flow
 author ai
 group features/gui
-note Press ctrl+p and a box opens near the top of the window with a search field. Typing lists what matches, ranked: the paths, the steps of the path being read, the views, the actions the registry offers to the palette (save, fold all, hide all code, fit graph, split panel, go back...), and once something is typed every symbol and file. Each row has a kind tag, actions show their key chord. Up and down move, enter goes to the entry or runs it, a click does the same, esc or ctrl+p closes. A leading > keeps only actions. The reader needs it because reaching a symbol meant switching to the Symbols tab and filtering, and most actions are toolbar buttons that are only on screen in their own view; with the palette anything named is a few keystrokes away, and the action rows teach their chords.
+note Press ctrl+p and a box opens near the top of the window with a search field. Typing lists what matches, ranked: the paths, the steps of the path being read, the views, the actions the registry offers to the palette (save, collapse all, hide all code, fit graph, split panel, go back...), and once something is typed every symbol and file. Each row has a kind tag, actions show their key chord. Up and down move, enter goes to the entry or runs it, a click does the same, esc or ctrl+p closes. A leading > keeps only actions. The reader needs it because reaching a symbol meant switching to the Symbols tab and filtering, and most actions are toolbar buttons that are only on screen in their own view; with the palette anything named is a few keystrokes away, and the action rows teach their chords.
 
 step 04hhgt
 order 3
@@ -33,7 +33,7 @@ file crates/gui/src/palette.rs
 symbol map
 lines 0 48
 hash feaf2b32432b0aae
-note Every path, named by its name with its step count and group; then the steps of the path being read, matched by symbol name (or file for a step with no symbol) and shown with their outline number and file:line.
+note Every path, named by its name with its step count and group; then the steps of the path being read, matched by symbol name (or file for a step with no symbol) and shown with their steps-list number and file:line.
 
 step 3a0i3t
 order 23
@@ -72,8 +72,8 @@ author ai
 file crates/gui/src/palette.rs
 symbol PaletteCommand
 lines 0 14
-hash c7f71a8a7fd02788
-note The actions the palette can run, one per palette entry in the registry; two-way features (fold/unfold, back/forward, split across/down, fit/1:1, hide/show) have one per direction.
+hash b6c8caf3f30d8a84
+note The actions the palette can run, one per palette entry in the registry; two-way features (collapse/expand, back/forward, split right/down, fit/1:1, hide/show) have one per direction.
 
 step aiiie0
 order 33
@@ -112,7 +112,7 @@ author ai
 file crates/gui/src/palette.rs
 symbol commands
 lines 0 24
-hash 8e8d9e3006162ad1
+hash e223e4aff84e2fd3
 note Which PaletteCommand each palette entry of a feature runs, in the order the registry lists them. A gui test checks the counts agree, a features test checks a shown chord is one of the feature's Key triggers.
 
 step fgwbhk
@@ -182,8 +182,8 @@ author ai
 file crates/gui/src/palette.rs
 symbol palette_actions
 lines 0 43
-hash d055c440865530d8
-note Goal to actions. An action's PaletteCommand maps to the Action its button or key pushes (fold and hide act on the path being read, split on the panel showing the current tab); a path opens in the Path tab, a step is selected, a symbol goes to its definition as a jump does, a file opens in the Listing at its top, a view is shown.
+hash 4442a2bb373c7ff0
+note Goal to actions. An action's PaletteCommand maps to the Action its button or key pushes (collapse and hide act on the path being read, split on the panel showing the current tab); a path opens in the Path tab, a step is selected, a symbol goes to its definition as a jump does, a file opens in the Source view at its top, a view is shown.
 
 step ld2inb
 order 20
@@ -202,8 +202,8 @@ author ai
 file crates/gui/src/nav.rs
 symbol jumped_to_symbol
 lines 0 6
-hash 543017efdc030005
-note A symbol from the palette lands where a jump to definition lands: on its step when it is one in the path being read, else in the Listing (the graph stays where it is). Reached through Action::Jump.
+hash e448b09bc1f369c0
+note A symbol from the palette lands where a jump to definition lands: on its step when it is one in the path being read, else in the Source view (the graph stays where it is). Reached through Action::Jump.
 
 step o830hm
 order 9

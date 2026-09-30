@@ -39,7 +39,7 @@ pub(crate) enum Side {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) struct Expansion {
+pub(crate) struct Reveal {
     pub(crate) node: Node,
     pub(crate) side: Side,
 }
@@ -53,7 +53,7 @@ pub(crate) struct Around {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Button {
     Preview,
-    Listing,
+    Source,
     Add,
     Callees,
     Callers,
@@ -69,9 +69,9 @@ impl Button {
             Self::Preview | Self::Above | Self::Below | Self::NoContext => {
                 features::Feature::NodeContext
             }
-            Self::Listing => features::Feature::NodeListing,
+            Self::Source => features::Feature::NodeSource,
             Self::Add => features::Feature::AddStep,
-            Self::Callees | Self::Callers => features::Feature::ExpandNode,
+            Self::Callees | Self::Callers => features::Feature::RevealNode,
         }
     }
 
@@ -79,7 +79,7 @@ impl Button {
     pub(crate) const fn element(self) -> features::Element {
         match self {
             Self::Preview => features::Element::new("node-preview"),
-            Self::Listing => features::Element::new("node-listing"),
+            Self::Source => features::Element::new("node-source"),
             Self::Add => features::Element::new("node-add"),
             Self::Callees | Self::Callers => features::Element::new("node-button"),
             Self::Above | Self::Below | Self::NoContext => features::Element::new("node-context"),
@@ -147,7 +147,7 @@ pub(crate) struct Kept {
 
 #[derive(Clone, Debug)]
 pub(crate) struct GraphState {
-    expansions: Vec<Expansion>,
+    reveals: Vec<Reveal>,
     auto_open: Option<Node>,
     root: Option<Node>,
     collapsed: BTreeSet<Node>,
@@ -173,7 +173,7 @@ pub(crate) struct GraphState {
 impl Default for GraphState {
     fn default() -> Self {
         Self {
-            expansions: Vec::new(),
+            reveals: Vec::new(),
             auto_open: None,
             root: None,
             collapsed: BTreeSet::new(),
@@ -185,7 +185,7 @@ impl Default for GraphState {
             look: Wish::Settled,
             steering: None,
             glide: None,
-            direction: Direction::Across,
+            direction: Direction::Right,
             keyboard: Keyboard::Elsewhere,
             presence: Presence::Hidden,
             fit: Wish::Settled,
@@ -205,7 +205,7 @@ struct KeyedNode {
 }
 
 #[derive(Clone, Debug)]
-struct SavedExpansion {
+struct SavedReveal {
     node: KeyedNode,
     side: Side,
 }
@@ -224,7 +224,7 @@ struct SavedPlace {
 
 #[derive(Clone, Debug)]
 pub(crate) struct Saved {
-    expansions: Vec<SavedExpansion>,
+    reveals: Vec<SavedReveal>,
     collapsed: Vec<KeyedNode>,
     context: Vec<SavedAround>,
     manual: Vec<SavedPlace>,
@@ -315,13 +315,13 @@ impl GraphState {
             })
         };
         Saved {
-            expansions: self
-                .expansions
+            reveals: self
+                .reveals
                 .iter()
-                .filter_map(|expansion| {
-                    Some(SavedExpansion {
-                        node: keyed(&expansion.node)?,
-                        side: expansion.side,
+                .filter_map(|reveal| {
+                    Some(SavedReveal {
+                        node: keyed(&reveal.node)?,
+                        side: reveal.side,
                     })
                 })
                 .collect(),
@@ -358,11 +358,11 @@ impl GraphState {
                 step: keyed.step,
             })
         };
-        self.expansions = saved
-            .expansions
+        self.reveals = saved
+            .reveals
             .iter()
             .filter_map(|saved| {
-                Some(Expansion {
+                Some(Reveal {
                     node: node(&saved.node)?,
                     side: saved.side,
                 })
@@ -406,7 +406,7 @@ impl GraphState {
         }
     }
 
-    fn has_expansion(&self, node: Node, side: Side) -> bool {
-        self.expansions.contains(&Expansion { node, side })
+    fn has_reveal(&self, node: Node, side: Side) -> bool {
+        self.reveals.contains(&Reveal { node, side })
     }
 }

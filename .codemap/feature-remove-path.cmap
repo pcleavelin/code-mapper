@@ -11,7 +11,7 @@ parent z8ck9j
 author ai
 file crates/gui/src/views/document.rs
 symbol header_bar
-lines 41 47
+lines 49 55
 hash 710a0c730cd42a77
 note Trigger: REMOVE_PATH, a danger button set apart from the other header buttons by DANGER_GAP and red under the pointer, queues RemovePath for the path being read.
 

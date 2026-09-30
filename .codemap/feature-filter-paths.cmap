@@ -43,7 +43,7 @@ file crates/gui/src/model.rs
 symbol step_found
 lines 0 4
 hash 20a64ee5daac834e
-note A step passes when its symbol's name or its file's path contains the needle. The note is not searched: the filter matches what the outline rows show.
+note A step passes when its symbol's name or its file's path contains the needle. The note is not searched: the filter matches what the steps list rows show.
 
 step ij7fpw
 order 13
@@ -53,7 +53,7 @@ file crates/gui/src/views/left.rs
 symbol found_step_rows
 lines 0 24
 hash 37514d66e1632705
-note One row per step found_steps returns, indented under the path row, numbered as in the outline and red when stale. A click selects the step, which makes its path the one being read and shows it in the document. Ids are found@<path slot>:<step slot>, a trigger of select-step.
+note One row per step found_steps returns, indented under the path row, numbered as in the steps list and red when stale. A click selects the step, which makes its path the one being read and shows it in the document. Ids are found@<path slot>:<step slot>, a trigger of select-step.
 
 step lhcomc
 order 7
@@ -93,7 +93,7 @@ file crates/gui/src/model.rs
 symbol found_steps
 lines 0 16
 hash 7ba7ca9397af3e50
-note The steps to list under a path: none when the filter is empty or already matches the path's name (the name row says why it is listed), otherwise the path's steps in outline order that step_found accepts, numbered as the outline numbers them.
+note The steps to list under a path: none when the filter is empty or already matches the path's name (the name row says why it is listed), otherwise the path's steps in steps-list order that step_found accepts, numbered as the steps list numbers them.
 
 step tldqqa
 order 10
@@ -111,8 +111,8 @@ parent z6m3sw
 author ai
 file crates/gui/src/views/left.rs
 symbol group_row
-lines 0 53
-hash 95fb19551c540086
+lines 0 57
+hash 4c08e27cc9d2ae03
 note forced overrides the recorded and default openness; while it is set a click queues nothing, so a filter never records a group as closed.
 
 step wlbvu3
@@ -141,5 +141,5 @@ author ai
 file crates/gui/src/views/left.rs
 symbol paths_window
 lines 0 88
-hash 5b267d6b54877d31
+hash fad58c8899b417c5
 note Trigger and effect: the filter field sits in a toolbar above the list, beside the 'new path' button; its text is read while the list is built, so there is no filter action to apply. While it holds text the toolbar shows 'n of m' paths, and an empty result says 'no path name, step symbol or step file matches'. Under a path that is not the one being read, found_step_rows lists the steps the filter found. A non-empty filter forces every group open. The rows come from listed_rows instead of the whole map, and removed paths pass through lists, which reads names only.

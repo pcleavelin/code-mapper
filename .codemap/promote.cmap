@@ -63,7 +63,7 @@ file crates/cli/src/exec.rs
 symbol index_tree
 lines 0 16
 hash e34b196172ef6d3c
-note Asks the language servers for the files the call tree reaches, one round per answer: a newly indexed file can reveal deeper callees, so it repeats until the tree reaches no pending file. Without servers (the GUI's command line) it asks nothing and the tree is what the index already knows.
+note Asks the language servers for the files the call tree reaches, one round per answer: a newly indexed file can reveal deeper callees, so it repeats until the tree reaches no pending file. Without servers (the GUI's console) it asks nothing and the tree is what the index already knows.
 
 step e26eha
 order 11

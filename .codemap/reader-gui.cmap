@@ -3,7 +3,7 @@ path reader-gui
 kind flow
 author ai
 group gui
-note The human's surface as one frame. There is no retained widget tree: every frame the App polls the background work, turns the frame's keys into actions, then builds the element tree for the whole window from the Model - top bar, the panel tree with each panel's front view, status bar, floating picker and tooltip - and hands it to the layout and the renderer. A view never changes the Model: it takes &Model, and a click pushes an Action onto the frame's queue; apply runs the queue once the tree is built, so apply is the one place state changes during a frame. Editing is limited to what a reader needs - deleting a step or a path, pinning a selection from the listing, creating an empty path - and everything else is typed into the output panel as a CLI command. gui-structure lists the rules the modules keep.
+note The human's surface as one frame. There is no retained widget tree: every frame the App polls the background work, turns the frame's keys into actions, then builds the element tree for the whole window from the Model - top bar, the panel tree with each panel's front view, status bar, floating picker and tooltip - and hands it to the layout and the renderer. A view never changes the Model: it takes &Model, and a click pushes an Action onto the frame's queue; apply runs the queue once the tree is built, so apply is the one place state changes during a frame. Editing is limited to what a reader needs - deleting a step or a path, pinning a selection from the Source view, creating an empty path - and everything else is typed into the Console as a CLI command. gui-structure lists the rules the modules keep.
 
 step 05p818
 order 94
@@ -13,17 +13,17 @@ file crates/gui/src/views/document.rs
 symbol step_or_reserve
 lines 0 55
 hash 30216d3ff4fe7a01
-note One step in its StepColumn (step_column's id): the header, the note, the code and the gap after them. Built this way the column's height is known next frame, and an Action::Measured stores it in Measures with the step's StepShape. When a measured height for the current shape exists, the step is not selected or being scrolled to, and its column was more than a screen away from the view last frame (near), a reserve of that height stands in instead, so a long document builds only the steps around what is on screen and keeps its scroll extent. A reserved step still reports its link target, so an expansion under it is drawn.
+note One step in its StepColumn (step_column's id): the header, the note, the code and the gap after them. Built this way the column's height is known next frame, and an Action::Measured stores it in Measures with the step's StepShape. When a measured height for the current shape exists, the step is not selected or being scrolled to, and its column was more than a screen away from the view last frame (near), a reserve of that height stands in instead, so a long document builds only the steps around what is on screen and keeps its scroll extent. A reserved step still reports its link target, so an inlined link under it is drawn.
 
 step 0ewdra
 order 11
 parent 7n3jq4
 author ai
-file crates/gui/src/views/xrefs.rs
-symbol xrefs_panel
+file crates/gui/src/views/references.rs
+symbol references_panel
 lines 0 75
-hash 9f36dff52848e2b5
-note The xrefs panel, on the right by default: the pinned peek on top when there is one, then the focused symbol with 'add step' (unless it is the selected step) and 'new path from it', then callers, callees and references in one windowed list, each row clickable. References are asked of the server the first time a symbol is shown, once per text of its file (the probe carries the file hash), and the references title says so while the answer is out.
+hash 54b43e11bd174c73
+note The References panel, on the right by default: the kept peek on top when there is one, then the focused symbol with 'add step' (unless it is the selected step) and 'promote', then callers, callees and references in one windowed list, each row clickable. References are asked of the server the first time a symbol is shown, once per text of its file (the probe carries the file hash), and the references title says so while the answer is out.
 
 step 0n6ve6
 order 29
@@ -60,19 +60,19 @@ order 49
 parent 62vg11
 author ai
 file crates/gui/src/views/left.rs
-symbol follow_outline
+symbol follow_step_list
 lines 0 19
-hash 9b3f6f5f2178fd3a
-note When the step at the top of the document changes and its outline row is out of view, the Paths column scrolls it to the upper third, never while something is being dragged; OutlineShown records that it was done, so a row the reader scrolled away from stays away.
+hash 7e1122044cb18947
+note When the step at the top of the document changes and its steps list row is out of view, the Paths column scrolls it to the upper third, never while something is being dragged; StepListShown records that it was done, so a row the reader scrolled away from stays away.
 
 step 2yrnu9
 order 92
 parent folr8w
 author ai
-file crates/gui/src/views/xrefs.rs
-symbol XrefLine
+file crates/gui/src/views/references.rs
+symbol ReferenceLine
 lines 0 16
-hash 2bc3198ec497fa79
+hash 86d074cbdbbf5ac1
 note The four kinds of line: a title, a caller or callee (which list, its position in it, the symbol), a file heading its references with their count, and one reference (its position in the symbol's list, file and line). Calls says which list a call line is from, and so which ids its row and action take.
 
 step 37g7kf
@@ -121,10 +121,10 @@ order 48
 parent 62vg11
 author ai
 file crates/gui/src/views/left.rs
-symbol outline
+symbol step_list
 lines 0 68
-hash 4f79be498dcc1731
-note The outline of the selected path: one row per step in tree order, indented by depth, with the hierarchical number, the symbol and file, the link as an arrow and a hidden count on a folded subtree, whose steps are left out. The selected step has the selection background and the step at the top of the document a weaker one, so the outline follows scrolling. The target row ends in '+ adds here', and a press on a row grabs it for dragging (gui-authoring).
+hash 4d50f220c4b15d25
+note The steps list of the selected path: one row per step in tree order, indented by depth, with the hierarchical number, the symbol and file, the link as an arrow and a hidden count on a collapsed subtree, whose steps are left out. The selected step has the selection background and the step at the top of the document a weaker one, so the steps list follows scrolling. The target row ends in '+ adds here', and a press on a row grabs it for dragging (gui-authoring).
 
 step 4uwoav
 order 97
@@ -142,8 +142,8 @@ author ai
 file crates/gui/src/app.rs
 symbol frame
 lines 0 63
-hash 6d098937970a9094
-note The frame (platform::App::frame), in order: the font and cell size for this scale factor, the screenshot aid, the five polls, the keys, then panel_input, the outline's drag (outline_input) and the graph's own input phase (or, with the Graph view hidden, the graph marked Hidden and its keyboard Elsewhere, so a look snaps and the arrows walk the path), the element tree, layout and draw, the action queue, the reveal of the centre view navigation asked for, saving the layout if it changed, and the history snapshot. It asks the loop to come back at the ANIMATING rate while the graph camera is gliding, in 50 ms while any work is in flight, and in a second otherwise, so an idle window costs one frame per second.
+hash 181aa0490ea50ad1
+note The frame (platform::App::frame), in order: the font and cell size for this scale factor, the screenshot aid, the five polls, the keys, then panel_input, the steps list's drag (step_list_input) and the graph's own input phase (or, with the Graph view hidden, the graph marked Hidden and its keyboard Elsewhere, so a look snaps and the arrows walk the path), the element tree, layout and draw, the action queue, the reveal of the centre view navigation asked for, saving the layout if it changed, and the history snapshot. It asks the loop to come back at the ANIMATING rate while the graph camera is gliding, in 50 ms while any work is in flight, and in a second otherwise, so an idle window costs one frame per second.
 
 step 5aljhx
 order 3
@@ -153,7 +153,7 @@ file crates/gui/src/views/bars.rs
 symbol top_bar
 lines 0 50
 hash 714750632376d15f
-note The top bar: the search box, back and forward, then, right-aligned, an orange 'unsaved changes' while the map has unsaved edits, and 'save', which shows a star and the selected colour while it does. Every button here only pushes an Action. Authoring controls live where the code is shown: the Paths tab, the Listing, Symbols, Xrefs and the graph.
+note The top bar: the search box, back and forward, then, right-aligned, an orange 'unsaved changes' while the map has unsaved edits, and 'save', which shows a star and the selected colour while it does. Every button here only pushes an Action. Authoring controls live where the code is shown: the Paths tab, the Source view, Symbols, References and the graph.
 
 step 5j9xn1
 order 40
@@ -162,7 +162,7 @@ author ai
 file crates/gui/src/views/center.rs
 symbol graph_tab
 lines 0 62
-hash dab193b53b2f807c
+hash eb9c86bdb8768e5c
 link graph-draw
 note The Graph tab: the toolbar, and the scene the graph's input phase built, drawn on one canvas element. Actions the graph phase deferred are pushed here with the rest.
 
@@ -181,11 +181,11 @@ order 41
 parent bg9t38
 author ai
 file crates/gui/src/views/center.rs
-symbol listing
+symbol source
 lines 0 84
-hash fd622701603595ad
-link listing-view
-note The Listing tab: the current file.
+hash 641c4ad291c55489
+link source-view
+note The Source tab: the current file.
 
 step 62vg11
 order 5
@@ -194,14 +194,14 @@ author ai
 file crates/gui/src/views/left.rs
 symbol paths_window
 lines 0 88
-hash 5b267d6b54877d31
-note Paths: a filter field (feature-filter-paths) with 'n of m' while it holds text, and the 'new path' button with its form (feature-new-path), then the groups from Model::listed_rows as folders with their path counts, then one row per path, and the selected path expanded into its outline; under a path the filter found by its steps, those steps (feature-filter-paths). Every row under a closed group is skipped. Paths removed since the parent revision are listed at the end, greyed.
+hash fad58c8899b417c5
+note Paths: a filter field (feature-filter-paths) with 'n of m' while it holds text, and the 'new path' button with its form (feature-new-path), then the groups from Model::listed_rows as folders with their path counts, then one row per path, and the selected path expanded into its steps list; under a path the filter found by its steps, those steps (feature-filter-paths). Every row under a closed group is skipped. Paths removed since the parent revision are listed at the end, greyed.
 
 step 686o81
 order 93
 parent crdxve
 author ai
-file crates/gui/src/views/xrefs.rs
+file crates/gui/src/views/references.rs
 symbol call_row
 lines 0 41
 hash 2acb408b06371956
@@ -252,7 +252,7 @@ step 9s1sg4
 order 69
 parent 0ewdra
 author ai
-file crates/gui/src/views/xrefs.rs
+file crates/gui/src/views/references.rs
 symbol heading
 lines 0 29
 hash 68e140a1cd8a5854
@@ -296,8 +296,8 @@ author ai
 file crates/gui/src/views.rs
 symbol build
 lines 0 14
-hash 67dee6b96b93638f
-note The element tree for the whole window, from &Model into the Frame: the top bar, then the body holding the panel tree, then the status bar, then what floats over everything: the drop band of a tab or an outline row being dragged, the view picker, the command palette and the tooltip.
+hash 8c314ab96c8e770c
+note The element tree for the whole window, from &Model into the Frame: the top bar, then the body holding the panel tree, then the status bar, then what floats over everything: the drop band of a tab or a steps list row being dragged, the view picker, the command palette and the tooltip.
 
 step brwp9e
 order 82
@@ -307,7 +307,7 @@ file crates/gui/src/views/document.rs
 symbol Walk
 lines 0 7
 hash 986f4f6fcb7ac628
-note The walk through one path and its inline expansions: the depth and number prefix to add, the diff to mark changes with (the top path only), the chain of paths open above, the current occurrence and the next occurrence number.
+note The walk through one path and its inlined links: the depth and number prefix to add, the diff to mark changes with (the top path only), the chain of paths open above, the current occurrence and the next occurrence number.
 
 step c5i874
 order 25
@@ -316,7 +316,7 @@ author ai
 file crates/gui/src/work.rs
 symbol poll_reindex
 lines 0 16
-hash 689369205ae9626d
+hash 8874bd5d2ad01fab
 link live-reload
 note A finished re-index is swapped in.
 
@@ -354,11 +354,11 @@ step crdxve
 order 71
 parent 0ewdra
 author ai
-file crates/gui/src/views/xrefs.rs
-symbol xref_row
-lines 0 52
-hash 5a6ad7547371ef94
-note One XrefLine as a row: a title as dimmed text, a caller or callee through call_row, a file line with its path and reference count that opens the file, a reference as its right-aligned line number and the trimmed line, opening that line in the listing.
+file crates/gui/src/views/references.rs
+symbol reference_row
+lines 0 58
+hash bbbc16d2f9a7627e
+note One ReferenceLine as a row: a title as dimmed text, a caller or callee through call_row, a file line with its path and reference count that opens the file, a reference as its right-aligned line number and the trimmed line, opening that line in the Source view.
 
 step d5you8
 order 14
@@ -367,7 +367,7 @@ author ai
 file crates/gui/src/views/document.rs
 symbol path_document
 lines 0 50
-hash 77d56eb87747e4b8
+hash 5c35bf107de0aa3d
 note The document, the reader's landing view: the path header, the note, the steps that link here, and a sticky breadcrumb of the topmost visible step's ancestors, then the scrolling column of steps (an empty path says how to add some) and the steps removed since the parent revision. With no path selected it says how to get one.
 
 step dhyl4k
@@ -395,10 +395,10 @@ order 67
 parent sn1cn1
 author ai
 file crates/gui/src/action.rs
-symbol fold_all
+symbol collapse_all
 lines 0 25
-hash 5c9a86ad345e9a39
-note fold all and unfold all: every step with children is folded, or none is.
+hash 01aacfbeaa25d88c
+note collapse all and expand all: every step with children is collapsed, or none is.
 
 step ej2xuc
 order 2
@@ -427,9 +427,9 @@ parent 05p818
 author ai
 file crates/gui/src/views/document.rs
 symbol step_header
-lines 0 91
-hash fdb22219384dcee4
-note The header row: the fold arrow when the step has children, the title, the hide-code, whole-symbol and no-context toggles, the link controls, and the delete button (a danger button, red under the pointer) alone at the far right. Clicking the title of the path being read selects the step where it is (no scroll), while a step of an inline linked path is selected with a scroll. The toggle buttons keep one width whatever their label, so no button slides under a pointer that clicks twice.
+lines 0 98
+hash 6ccbc86ecc9d6ae0
+note The header row: the collapse arrow when the step has children, the title, the hide-code, whole-symbol and no-context toggles, the link controls, and the delete button (a danger button, red under the pointer) alone at the far right. Clicking the title of the path being read selects the step where it is (no scroll), while a step of an inlined path is selected with a scroll. The toggle buttons keep one width whatever their label, so no button slides under a pointer that clicks twice.
 
 step fe3dpd
 order 8
@@ -448,18 +448,18 @@ author ai
 file crates/gui/src/action.rs
 symbol hide_all
 lines 0 15
-hash 884677a634959444
-note hide all code and show all: every step of the path gets a view; hiding hides every step's code, showing unhides and unfolds every step.
+hash 3998ab9333f4ade8
+note hide all code and show all code: every step of the path gets a view; hiding hides every step's code, showing unhides and expands every step.
 
 step folr8w
 order 70
 parent 0ewdra
 author ai
-file crates/gui/src/views/xrefs.rs
-symbol xref_lines
+file crates/gui/src/views/references.rs
+symbol reference_lines
 lines 0 46
-hash c91dd7e45e291df5
-note Everything under the heading as one list of XrefLines: a 'Callers (n)' title and each caller, a 'Callees (n)' title and each callee, then the references title and the references grouped under a line per file with its count, in the server's order. References into files outside the index are left out. One flat list, so the panel is one windowed column however many references there are.
+hash 70da0512fee936d5
+note Everything under the heading as one list of ReferenceLines: a 'Callers (n)' title and each caller, a 'Callees (n)' title and each callee, then the 'Other references' title and the references grouped under a line per file with its count, in the server's order. References into files outside the index are left out. One flat list, so the panel is one windowed column however many references there are.
 
 step gqimnr
 order 55
@@ -529,8 +529,8 @@ author ai
 file crates/gui/src/views/document.rs
 symbol link_buttons
 lines 0 33
-hash 28ae22ba2d53efcb
-note The link controls: the name opens the linked path, the toggle flips the Expanded view flag, a link to a path already open further up says so instead, and one to a missing path shows red.
+hash 415e8995940f0e5e
+note The link controls: the name opens the linked path, the toggle flips the Inlined view flag, a link to a path already open further up says so instead, and one to a missing path shows red.
 
 step j7n739
 order 16
@@ -539,8 +539,8 @@ author ai
 file crates/gui/src/action.rs
 symbol Action
 lines 0 51
-hash de83bf48109f8275
-note What a gesture can ask for. Selection and navigation, the per-step view toggles, the path-wide toggles, the two deletions, the authoring gestures as one Authoring variant (add lines or a symbol, the target, grabbing, dragging and dropping an outline row, promote, the new-path form), opening a line or a definition, tabs, the fields' input, scroll offsets and what a view measured (the top step, a scroll done, a step's height), server questions, panel gestures and graph gestures. Adding a gesture means adding a variant here and an arm in apply, not threading a callback through the views. A StepKey is a (path, step) pair of slots in the map; Definition carries the intent, peek or jump; SelectLine says whether to extend; SelectStep whether to scroll the document; OpenPath selects the path unless it is the one being read and shows it in the given tab.
+hash 6d28e40ab679db9d
+note What a gesture can ask for. Selection and navigation, the per-step view toggles, the path-wide toggles, the two deletions, the authoring gestures as one Authoring variant (add lines or a symbol, the target, grabbing, dragging and dropping a steps list row, promote, the new-path form), opening a line or a definition, tabs, the fields' input, scroll offsets and what a view measured (the top step, a scroll done, a step's height), server questions, panel gestures and graph gestures. Adding a gesture means adding a variant here and an arm in apply, not threading a callback through the views. A StepKey is a (path, step) pair of slots in the map; Definition carries the intent, peek or jump; SelectLine says whether to extend; SelectStep whether to scroll the document; OpenPath selects the path unless it is the one being read and shows it in the given tab.
 
 step jd4cl1
 order 78
@@ -559,8 +559,8 @@ author ai
 file crates/gui/src/views/document.rs
 symbol steps
 lines 0 63
-hash e7898b68d4e07190
-note The steps of one path in tree order, each handed to step_or_reserve with the document's rectangle from last frame; a folded step's subtree is skipped. The same function draws a linked path inline: an Occurrence tells its element ids apart, the numbers carry the linking step's number as a prefix, and the chain stops a path from opening inside itself. Occurrence is None for the path being read; each inline expansion takes a fresh number, so its ids differ from the path's own and from another expansion of the same path.
+hash 458f0501f66ad1e9
+note The steps of one path in tree order, each handed to step_or_reserve with the document's rectangle from last frame; a collapsed step's subtree is skipped. The same function draws a linked path inline: an Occurrence tells its element ids apart, the numbers carry the linking step's number as a prefix, and the chain stops a path from opening inside itself. Occurrence is None for the path being read; each inlining takes a fresh number, so its ids differ from the path's own and from another inlining of the same path.
 
 step jjshc9
 order 43
@@ -576,7 +576,7 @@ step jkrf60
 order 99
 parent 2yrnu9
 author ai
-file crates/gui/src/views/xrefs.rs
+file crates/gui/src/views/references.rs
 symbol Calls
 lines 0 3
 hash e7633e2ca3cb591a
@@ -588,9 +588,9 @@ parent d5you8
 author ai
 file crates/gui/src/views/document.rs
 symbol header_bar
-lines 0 49
-hash 7cf8cf75abe72b74
-note The header: name, kind, author, step count, group, whether the path is new or changed since the parent revision, and the path-wide buttons: graph, hide all code, show all, fold all, unfold all, then, set apart, the danger button 'delete path'.
+lines 0 57
+hash db5cb8a0c8c79671
+note The header: name, kind, author, step count, group, whether the path is new or changed since the parent revision, and the path-wide buttons: graph, hide all code, show all code, collapse all, expand all, then, set apart, the danger button 'delete path'.
 
 step kfwd14
 order 46
@@ -598,8 +598,8 @@ parent 62vg11
 author ai
 file crates/gui/src/views/left.rs
 symbol group_row
-lines 0 53
-hash 95fb19551c540086
+lines 0 57
+hash 4c08e27cc9d2ae03
 note A group row: chevron and name, red when a path under it is stale, and its path count dimmed. A group never clicked is open while it holds the path being read; a click records it open or closed through OpenGroup. A non-empty Paths filter forces every group open.
 
 step lwf851
@@ -630,17 +630,17 @@ file crates/gui/src/views/document.rs
 symbol step_column
 lines 0 6
 hash 41136ff67c86b359
-note The column's id: stepcolumn/n for the path being read, linked/<occurrence>@stepcolumn/n inside an inline expansion, so every drawn step keeps its own measurement.
+note The column's id: stepcolumn/n for the path being read, linked/<occurrence>@stepcolumn/n inside an inlined link, so every drawn step keeps its own measurement.
 
 step mti9ps
 order 58
 parent jdewtv
 author ai
 file crates/gui/src/views/document.rs
-symbol expand
+symbol inline
 lines 0 25
-hash 31e2a67a331427fe
-note The inline expansion: the linked path's steps drawn by steps itself, one level deeper, under a fresh occurrence, while the step's own subtree is not folded.
+hash e56911020eaf3821
+note Inlining a link: the linked path's steps drawn by steps itself, one level deeper, under a fresh occurrence, while the step's own subtree is not collapsed.
 
 step myq0zo
 order 4
@@ -649,8 +649,8 @@ author ai
 file crates/gui/src/views/panel_tree.rs
 symbol body
 lines 0 25
-hash a09179738919fc50
-note What a panel shows, one match from View to its draw function: Paths, Symbols and Files (each in a panel-coloured column), the document, Diff, Graph, Listing, Results, Xrefs (told the panel's size) and Output. Which view a panel shows is its own; clicking a tab in its header changes it.
+hash 324899182a23852c
+note What a panel shows, one match from View to its draw function: Paths, Symbols and Files (each in a panel-coloured column), the document, Diff, Graph, Source, Search, References (told the panel's size) and Console. Which view a panel shows is its own; clicking a tab in its header changes it.
 
 step nn39t3
 order 60
@@ -670,7 +670,7 @@ file crates/gui/src/widgets/code.rs
 symbol code_block
 lines 0 93
 hash a07e2aa176e811fd
-note One block of code as one element, shared with the listing, the peek panel and the tooltip; the document passes the slice highlight as the row background.
+note One block of code as one element, shared with the Source view, the peek panel and the tooltip; the document passes the slice highlight as the row background.
 
 step o4p6no
 order 13
@@ -679,7 +679,7 @@ author ai
 file crates/gui/src/model.rs
 symbol Tab
 lines 0 6
-hash 808935b379d1e110
+hash 47a9e89f56984123
 note The five centre tabs. Navigation speaks in these: whenever it asks for one, that view is brought to front in whichever panel holds it (panel-tree).
 
 step omwlcn
@@ -688,9 +688,9 @@ parent x3sfq6
 author ai
 file crates/gui/src/views/left.rs
 symbol files_tree
-lines 0 104
-hash 95fbd354f0c78bda
-note The directory tree, derived rather than stored: the file list is sorted by path, so a run of entries sharing the next component is a directory and recursing one component deeper draws it. Top-level directories are open by default and the toggled set flips that, so no state is needed for the common case. A row shows its covered/total dimmed after its name, a directory's summed over its files, and none when there are no symbols; clicking a file opens it in the listing.
+lines 0 103
+hash 95ef6ff69fa7cfb4
+note The directory tree, derived rather than stored: the file list is sorted by path, so a run of entries sharing the next component is a directory and recursing one component deeper draws it. Top-level directories are open by default and the toggled set flips that, so no state is needed for the common case. A row shows its covered/total dimmed after its name, a directory's summed over its files, and none when there are no symbols; clicking a file opens it in the Source view.
 
 step p2ewms
 order 22
@@ -709,7 +709,7 @@ author ai
 file crates/gui/src/action.rs
 symbol search
 lines 0 43
-hash 1e1dec779941a868
+hash 9ea700a2505db91c
 link search
 note The search box's enter.
 
@@ -767,11 +767,11 @@ step qnrb07
 order 12
 parent 7n3jq4
 author ai
-file crates/gui/src/views/output.rs
-symbol output_panel
+file crates/gui/src/views/console.rs
+symbol console_panel
 lines 0 30
-hash bbc90f1609609ccd
-note The output panel, along the bottom by default: the command log, virtualised, and the input line that runs exactly the CLI's commands. After a command it stays pinned to its end for two frames, so the answer is in view once laid out. See cli-command for what happens to a line.
+hash 962e25b70000d43f
+note The Console, along the bottom by default: the command log, virtualised, and the input line that runs exactly the CLI's commands. After a command it stays pinned to its end for two frames, so the answer is in view once laid out. See cli-command for what happens to a line.
 
 step qwyo4n
 order 62
@@ -780,9 +780,9 @@ author ai
 file crates/gui/src/action.rs
 symbol run_command
 lines 0 41
-hash b0f1a1d0d48f8f9e
+hash 6c8d6863553d1fea
 link cli-command
-note The command line's enter: 'clear' empties the log; anything else is parsed and run by cli::exec against the window's index and map, authored Human, with its output appended to the log. A command that changed the map marks it unsaved; the save stays the human's.
+note The Console's enter: 'clear' empties the log; anything else is parsed and run by cli::exec against the window's index and map, authored Human, with its output appended to the log. A command that changed the map marks it unsaved; the save stays the human's.
 
 step r1wijl
 order 64
@@ -803,7 +803,7 @@ symbol add_step
 lines 0 58
 hash b2c50ca75023abdd
 link gui-authoring
-note Adding a step, the human's authoring gesture behind 'add step' in the Listing and '+ step' in Symbols, Xrefs and the graph: the lines become a step of the path being read, under the target (or the step a graph node hangs from). The same lines under the same parent are refused with the existing step's number. Neither the selection nor the target moves, so repeated adds build a fan of siblings.
+note Adding a step, the human's authoring gesture behind 'add step' in the Source view and '+ step' in Symbols, References and the graph: the lines become a step of the path being read, under the target (or the step a graph node hangs from). The same lines under the same parent are refused with the existing step's number. Neither the selection nor the target moves, so repeated adds build a fan of siblings.
 
 step rq8lmj
 order 34
@@ -820,12 +820,12 @@ step smxt9r
 order 68
 parent 0ewdra
 author ai
-file crates/gui/src/views/xrefs.rs
+file crates/gui/src/views/references.rs
 symbol peek_section
 lines 0 20
 hash 437b0396d1640a5e
 link peek
-note The pinned definition, when there is one.
+note The kept definition, when there is one.
 
 step sn1cn1
 order 38
@@ -834,7 +834,7 @@ author ai
 file crates/gui/src/action.rs
 symbol apply
 lines 0 100
-hash 52f211504e67e3dd
+hash 6aa2bab3baec6252
 note The action queue, drained once the tree is built; the keys and panel_input use it too, before the tree. apply is the only place the Model changes during a frame, which is what lets every view take the Model read-only. Most arms are one call into nav.rs or a Model field.
 
 step svoo3m
@@ -845,7 +845,7 @@ file crates/gui/src/model.rs
 symbol StepView
 lines 0 3
 hash 2c762515e02e7e47
-note How one step shows: flags for whole symbol, code hidden, subtree folded and linked path expanded inline, and the context lines asked for above and below. One map from (path, step) to this in the Model, missing meaning the default - the slice, code shown, subtree open, no context - so removing or renumbering steps remaps one collection and a toggle is a flag flip. A linked path shown inline uses the views of its own steps.
+note How one step shows: flags for whole symbol, code hidden, subtree collapsed and linked path inlined, and the context lines asked for above and below. One map from (path, step) to this in the Model, missing meaning the default - the slice, code shown, subtree open, no context - so removing or renumbering steps remaps one collection and a toggle is a flag flip. A linked path shown inline uses the views of its own steps.
 
 step u3791m
 order 39
@@ -876,7 +876,7 @@ file crates/gui/src/views/document.rs
 symbol element
 lines 0 6
 hash 25000a5857a8d2ae
-note A per-step element's id: control/n for the path being read, linked/<occurrence>@<element>/n inside an inline expansion, so every button of every expansion has its own name.
+note A per-step element's id: control/n for the path being read, linked/<occurrence>@<element>/n inside an inlined link, so every button of every inlining has its own name.
 
 step uvy2vt
 order 53
@@ -915,7 +915,7 @@ file crates/gui/src/app.rs
 symbol script
 lines 0 43
 hash 26c73d9e4854542b
-note The script commands the loop hands down (platform::App::script): idle, which retries until no server request, batch, merge, re-index or link is outstanding; tab; scroll a panel by id; shot the next frame; open a file at a line in the listing; rect, one element's rectangle by id name; and dump. Gestures and waits are the platform's; these are the app's.
+note The script commands the loop hands down (platform::App::script): idle, which retries until no server request, batch, merge, re-index or link is outstanding; tab; scroll a panel by id; shot the next frame; open a file at a line in the Source view; rect, one element's rectangle by id name; and dump. Gestures and waits are the platform's; these are the app's.
 
 step ve8uvy
 order 36
@@ -924,9 +924,9 @@ author ai
 file crates/gui/src/views/panel_tree.rs
 symbol panel_input
 lines 0 27
-hash d7c1ad0ab6996bcc
+hash e4321ac653e57c5e
 link panel-tree
-note Sash and tab drags, read before any panel is drawn so the frame draws the new layout.
+note Divider and tab drags, read before any panel is drawn so the frame draws the new layout.
 
 step vnygv8
 order 63
@@ -943,11 +943,11 @@ order 42
 parent bg9t38
 author ai
 file crates/gui/src/views/center.rs
-symbol results_view
+symbol search_view
 lines 0 90
-hash 6b385edfa630c1f3
+hash bec8e0966bfdca3b
 link search
-note The Results tab: the search hits.
+note The Search tab: the search hits.
 
 step wbv82v
 order 96
@@ -956,7 +956,7 @@ author ai
 file crates/gui/src/views/document.rs
 symbol step_note
 lines 0 8
-hash 494e43af67c9145e
+hash 738ce225e2dfe106
 note The step's note, wrapped, or '(no note)' dimmed.
 
 step x3sfq6
@@ -977,7 +977,7 @@ file crates/gui/src/views/left.rs
 symbol symbol_file_row
 lines 0 34
 hash ef4301384695e463
-note A file row: its path, clipped from the left so the file name survives, dimmed while pending, and covered/total for its symbols. A click opens the file in the Listing at its first line.
+note A file row: its path, clipped from the left so the file name survives, dimmed while pending, and covered/total for its symbols. A click opens the file in the Source view at its first line.
 
 step xltw88
 order 81

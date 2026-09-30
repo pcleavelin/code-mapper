@@ -8,7 +8,7 @@ fn rect(left: i32, top: i32, width: i32, height: i32) -> Rect {
     Rect::new(Px::new(left), Px::new(top), Px::new(width), Px::new(height))
 }
 
-const DEFAULT: &str = "down6(820 across5(220 0[Paths* Symbols Files] across4(740 1[Path* Diff Graph Listing Results] 2[Xrefs*])) 3[Output*])";
+const DEFAULT: &str = "down6(820 right5(220 0[Paths* Symbols Files] right4(740 1[Path* Diff Graph Source Search] 2[References*])) 3[Console*])";
 
 #[test]
 fn the_default_tree_holds_every_view_once() {
@@ -30,23 +30,23 @@ fn the_default_tree_holds_every_view_once() {
 #[test]
 fn a_split_opens_the_picker_on_an_empty_panel_and_a_pick_moves_the_view() {
     let mut panels = Panels::default();
-    panels.split_panel(BranchId(1), Direction::Across);
+    panels.split_panel(BranchId(1), Direction::Right);
     assert_eq!(panels.picker(), Some(BranchId(7)));
-    panels.pick(BranchId(7), View::Listing);
+    panels.pick(BranchId(7), View::Source);
     assert_eq!(panels.picker(), None);
     assert_eq!(
         panels.to_string(),
-        "down6(820 across5(220 0[Paths* Symbols Files] across4(740 across8(500 1[Path* Diff Graph Results] 7[Listing*]) 2[Xrefs*])) 3[Output*])"
+        "down6(820 right5(220 0[Paths* Symbols Files] right4(740 right8(500 1[Path* Diff Graph Search] 7[Source*]) 2[References*])) 3[Console*])"
     );
 }
 
 #[test]
 fn taking_the_last_view_from_a_panel_closes_it() {
     let mut panels = Panels::default();
-    panels.put(View::Xrefs, BranchId(0));
+    panels.put(View::References, BranchId(0));
     assert_eq!(
         panels.to_string(),
-        "down6(820 across5(220 0[Paths Symbols Files Xrefs*] 1[Path* Diff Graph Listing Results]) 3[Output*])"
+        "down6(820 right5(220 0[Paths Symbols Files References*] 1[Path* Diff Graph Source Search]) 3[Console*])"
     );
 }
 
@@ -58,10 +58,10 @@ fn a_drop_on_an_edge_splits_the_panel_on_that_side() {
         zone: Zone::Edge(Edge::Bottom),
         band: rect(0, 0, 1, 1),
     };
-    panels.drop_view(View::Output, target);
+    panels.drop_view(View::Console, target);
     assert_eq!(
         panels.to_string(),
-        "across5(220 down8(500 0[Paths* Symbols Files] 7[Output*]) across4(740 1[Path* Diff Graph Listing Results] 2[Xrefs*]))"
+        "right5(220 down8(500 0[Paths* Symbols Files] 7[Console*]) right4(740 1[Path* Diff Graph Source Search] 2[References*]))"
     );
     let alone = DropTarget {
         panel: BranchId(7),
@@ -69,7 +69,7 @@ fn a_drop_on_an_edge_splits_the_panel_on_that_side() {
         band: rect(0, 0, 1, 1),
     };
     let before = panels.to_string();
-    panels.drop_view(View::Output, alone);
+    panels.drop_view(View::Console, alone);
     assert_eq!(panels.to_string(), before);
 }
 
@@ -80,7 +80,7 @@ fn closing_a_panel_hands_its_place_to_its_sibling() {
     panels.close(BranchId(2));
     assert_eq!(
         panels.to_string(),
-        "across5(220 0[Paths* Symbols Files] 1[Path* Diff Graph Listing Results])"
+        "right5(220 0[Paths* Symbols Files] 1[Path* Diff Graph Source Search])"
     );
     panels.close(BranchId(0));
     assert!(panels.is_single());
@@ -92,18 +92,18 @@ fn closing_a_panel_hands_its_place_to_its_sibling() {
 fn navigation_reveals_a_hidden_view_next_to_the_last_one_it_showed() {
     let mut panels = Panels::default();
     panels.close(BranchId(1));
-    panels.reveal(Tab::Listing, Ticket::default());
-    assert_eq!(panels.holder(View::Listing), None);
+    panels.reveal(Tab::Source, Ticket::default());
+    assert_eq!(panels.holder(View::Source), None);
     let mut asked = Ticket::default();
     asked = asked.next();
-    panels.reveal(Tab::Listing, asked);
-    assert_eq!(panels.holder(View::Listing), Some(BranchId(0)));
-    assert!(panels.is_shown(View::Listing));
+    panels.reveal(Tab::Source, asked);
+    assert_eq!(panels.holder(View::Source), Some(BranchId(0)));
+    assert!(panels.is_shown(View::Source));
     panels.activate(View::Paths);
-    panels.reveal(Tab::Listing, asked);
+    panels.reveal(Tab::Source, asked);
     assert!(panels.is_shown(View::Paths));
-    panels.reveal(Tab::Listing, asked.next());
-    assert!(panels.is_shown(View::Listing));
+    panels.reveal(Tab::Source, asked.next());
+    assert!(panels.is_shown(View::Source));
 }
 
 #[test]
@@ -115,7 +115,7 @@ fn a_division_keeps_both_halves_above_the_floor() {
     let least = Extent::new(Px::new(96), Px::new(64));
     let divided = root.divide(rect(0, 30, 1600, 940), Px::new(8), least);
     assert_eq!(divided.first, rect(0, 30, 1600, 764));
-    assert_eq!(divided.sash, rect(0, 794, 1600, 8));
+    assert_eq!(divided.divider, rect(0, 794, 1600, 8));
     assert_eq!(divided.second, rect(0, 802, 1600, 168));
     let mut squeezed = panels.clone();
     squeezed.resize(BranchId(6), Ratio::permille(990));
@@ -147,8 +147,11 @@ fn a_grab_moves_once_the_pointer_leaves_its_reach() {
 
 #[test]
 fn views_are_found_by_name_in_any_case() {
-    assert_eq!(View::named(&Label::new("listing")), Some(View::Listing));
-    assert_eq!(View::named(&Label::new("XREFS")), Some(View::Xrefs));
+    assert_eq!(View::named(&Label::new("source")), Some(View::Source));
+    assert_eq!(
+        View::named(&Label::new("REFERENCES")),
+        Some(View::References)
+    );
     assert_eq!(View::named(&Label::new("nothing")), None);
 }
 
@@ -162,7 +165,7 @@ fn a_tree_survives_its_saved_layout() {
     assert_eq!(restored.layout(), panels.layout());
     assert_eq!(
         restored.to_string(),
-        "down8(700 across6(220 0[Paths* Symbols Files] across5(740 down3(500 1[Path* Diff Listing Results] 2[Graph*]) 4[Xrefs*])) 7[Output*])"
+        "down8(700 right6(220 0[Paths* Symbols Files] right5(740 down3(500 1[Path* Diff Source Search] 2[Graph*]) 4[References*])) 7[Console*])"
     );
 }
 
@@ -170,17 +173,17 @@ fn a_tree_survives_its_saved_layout() {
 fn a_saved_layout_drops_unknown_and_repeated_views() {
     let key = |name: &str| ViewKey::new(name).unwrap();
     let saved = LayoutTree::Split(LayoutSplit::new(
-        SplitDirection::Across,
+        SplitDirection::Right,
         Share::permille(300).unwrap(),
         LayoutTree::Panel(LayoutPanel::new(
             vec![key("Paths"), key("Gone"), key("Graph")],
             Some(key("Graph")),
         )),
-        LayoutTree::Panel(LayoutPanel::new(vec![key("Paths"), key("Output")], None)),
+        LayoutTree::Panel(LayoutPanel::new(vec![key("Paths"), key("Console")], None)),
     ));
     assert_eq!(
         Panels::from_layout(&saved).to_string(),
-        "across2(300 0[Paths Graph*] 1[Output*])"
+        "right2(300 0[Paths Graph*] 1[Console*])"
     );
 }
 
@@ -188,10 +191,10 @@ fn a_saved_layout_drops_unknown_and_repeated_views() {
 fn closing_a_panels_last_tab_closes_the_panel_but_never_the_last_panel() {
     let mut panels = Panels::default();
     panels.close_view(View::Diff);
-    panels.close_view(View::Xrefs);
+    panels.close_view(View::References);
     assert_eq!(
         panels.to_string(),
-        "down6(820 across5(220 0[Paths* Symbols Files] 1[Path* Graph Listing Results]) 3[Output*])"
+        "down6(820 right5(220 0[Paths* Symbols Files] 1[Path* Graph Source Search]) 3[Console*])"
     );
     for view in View::VARIANTS {
         panels.close_view(*view);

@@ -3,7 +3,7 @@ path graph-layout
 kind flow
 author ai
 group gui/graph
-note Where every node on the canvas ends up. The layout is recomputed from scratch every frame by Built::place_nodes; a node the reader dragged then has its position overwritten by the dragged one (App::graph_layout, in graph-draw). It works along two axes named by the graph's Direction: the main axis, across when the graph runs left to right and down when it is turned top to bottom, and the cross axis at right angles to it. Along the main axis a node sits in the lane of its Rank - its depth in the path tree, or one rank out from whatever expansion revealed it - and the lanes are laid out outward from rank 0 so the root of the path never moves. Along the cross axis the children of one node on one side are one Siblings box, stacked tightly in call order, with the box's first child level with the parent when that lane is free there and below the lane's last box otherwise; boxes in a lane never overlap and are placed breadth first, so siblings stay together however deep their own subtrees run. The roots are boxes too: the path's top-level steps in one, roots off the path in another below it. Everything is in cells and rows (theme::Cells), which no zoom changes; pixels appear only when a rectangle is asked for with this frame's cell size.
+note Where every node on the canvas ends up. The layout is recomputed from scratch every frame by Built::place_nodes; a node the reader dragged then has its position overwritten by the dragged one (App::graph_layout, in graph-draw). It works along two axes named by the graph's Direction: the main axis, right when the graph runs left to right and down when it is turned top to bottom, and the cross axis at right angles to it. Along the main axis a node sits in the lane of its Rank - its depth in the path tree, or one rank out from whatever reveal revealed it - and the lanes are laid out outward from rank 0 so the root of the path never moves. Along the cross axis the children of one node on one side are one Siblings box, stacked tightly in call order, with the box's first child level with the parent when that lane is free there and below the lane's last box otherwise; boxes in a lane never overlap and are placed breadth first, so siblings stay together however deep their own subtrees run. The roots are boxes too: the path's top-level steps in one, roots off the path in another below it. Everything is in cells and rows (theme::Cells), which no zoom changes; pixels appear only when a rectangle is asked for with this frame's cell size.
 
 step 11m7he
 order 3
@@ -52,7 +52,7 @@ file crates/gui/src/graph/place.rs
 symbol trees
 lines 0 40
 hash a414ff1de8039ba1
-note The forest place_nodes walks: a path step hangs off its parent step on the callee side, an expanded node off the node that revealed it, on the caller side for callers and the callee side for callees. Each parent's callee-side children are sorted by the line of its code that names them (Built::call_line), so siblings sit in call order and the step order breaks ties; the roots are the nodes with no parent, in step order.
+note The forest place_nodes walks: a path step hangs off its parent step on the callee side, a revealed node off the node that revealed it, on the caller side for callers and the callee side for callees. Each parent's callee-side children are sorted by the line of its code that names them (Built::call_line), so siblings sit in call order and the step order breaks ties; the roots are the nodes with no parent, in step order.
 
 step 85mf2y
 order 0
@@ -101,7 +101,7 @@ file crates/gui/src/graph/build.rs
 symbol impl Rank
 lines 0 14
 hash ffcaef55c90f137c
-note next and previous are one rank further along and one back, which is where an expansion's callees and callers go; of_depth turns a step's depth in the path tree into its rank.
+note next and previous are one rank further along and one back, which is where a reveal's callees and callers go; of_depth turns a step's depth in the path tree into its rank.
 
 step gxs2as
 order 9
@@ -121,7 +121,7 @@ file crates/gui/src/graph/place.rs
 symbol lane_starts
 lines 0 41
 hash 54439d31b70fb761
-note The lanes along the main axis: each rank's lane is as long as its longest node along that axis plus lead_main and pad_main; walking outward from rank 0 (clamped into the ranks present) in both directions, each lane starts rank_gap after the one before, so the path's root keeps its place when an expansion opens a lane before it.
+note The lanes along the main axis: each rank's lane is as long as its longest node along that axis plus lead_main and pad_main; walking outward from rank 0 (clamped into the ranks present) in both directions, each lane starts rank_gap after the one before, so the path's root keeps its place when a reveal opens a lane before it.
 
 step l634za
 order 4
@@ -170,8 +170,8 @@ author ai
 file crates/gui/src/graph/place.rs
 symbol impl Spacing
 lines 0 23
-hash 7d514e5345c0034a
-note Spacing::of picks the theme constants for Across or Down: GRAPH_RANK_GAP_*, GRAPH_SIBLING_GAP_*, GRAPH_BOX_GAP_* and GRAPH_PAD_*, the across ones for whichever axis runs across.
+hash a35cedc4683025ef
+note Spacing::of picks the theme constants for Right or Down: GRAPH_RANK_GAP_*, GRAPH_SIBLING_GAP_*, GRAPH_BOX_GAP_* and GRAPH_PAD_*, the across ones for whichever axis runs across.
 
 step sfz63q
 order 7
@@ -189,7 +189,7 @@ author ai
 file crates/gui/src/graph/place.rs
 symbol point
 lines 0 11
-hash c98de512de8f106a
+hash f612dbd36ee14a0f
 note Main and cross coordinates to a CellPoint: across and down left to right, the other way round top to bottom. main_size, cross_size and cross_of are the same mapping for sizes and points.
 
 step w18dsn

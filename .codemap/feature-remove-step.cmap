@@ -31,7 +31,7 @@ parent k5svvz
 author ai
 file crates/gui/src/views/document.rs
 symbol step_header
-lines 82 88
+lines 89 95
 hash a2f540b720aad8de
 note Trigger: REMOVE_STEP, a danger button (red under the pointer) at the far right of the header, drawn only for steps of the path being read (not inline occurrences), queues RemoveStep.
 

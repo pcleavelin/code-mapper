@@ -3,7 +3,7 @@ path feature-peek-definition
 kind flow
 author ai
 group features/gui
-note Alt-click an identifier in any code view to pin its definition at the top of the Xrefs view, above the xrefs, without leaving the place being read. The reader reaches for it to check what an identifier is without losing their place in the step or file being read. The peek shows the symbol's whole text, or the lines around a definition that is not a symbol's start, or a definition outside the repo read from disk. Its 'go' button goes there (a symbol is focused, a line opens in the Listing; an outside definition has no go), and 'x' closes it. The peek stays until closed or replaced.
+note Alt-click an identifier in any code view to keep its definition at the top of the References view, above the xrefs, without leaving the place being read. The reader reaches for it to check what an identifier is without losing their place in the step or file being read. The peek shows the symbol's whole text, or the lines around a definition that is not a symbol's start, or a definition outside the repo read from disk. Its 'go' button goes there (a symbol is focused, a line opens in the Source view; an outside definition has no go), and 'x' closes it. The peek stays until closed or replaced.
 
 step 1h923r
 order 1
@@ -29,7 +29,7 @@ step bgoi57
 order 11
 parent kctxha
 author ai
-file crates/gui/src/views/xrefs.rs
+file crates/gui/src/views/references.rs
 symbol peek_header
 lines 0 17
 hash 8c5587afee439e63
@@ -70,17 +70,17 @@ step kctxha
 order 9
 parent w7mvto
 author ai
-file crates/gui/src/views/xrefs.rs
+file crates/gui/src/views/references.rs
 symbol peek_section
 lines 0 20
 hash 437b0396d1640a5e
-note The effect: the Xrefs view draws the peek above the xrefs, its title and place clipped to the panel's width.
+note The effect: the References view draws the peek above the xrefs, its title and place clipped to the panel's width.
 
 step pwid7y
 order 10
 parent kctxha
 author ai
-file crates/gui/src/views/xrefs.rs
+file crates/gui/src/views/references.rs
 symbol peeked
 lines 0 54
 hash 0a150823767af1c7

@@ -262,7 +262,7 @@ fn focus_actions(model: &Model, frame: &mut Frame<'_>, symbol: SymbolId) {
         )));
     }
     if frame
-        .small_button("new path from it", ids::PROMOTE_FOCUS.target())
+        .small_button("promote", ids::PROMOTE_FOCUS.target())
         .clicked()
     {
         frame.push(Action::Authoring(Authoring::Promote(symbol)));
@@ -276,7 +276,7 @@ enum Calls {
     Callees,
 }
 
-enum XrefLine {
+enum ReferenceLine {
     Title(Label),
     Call {
         calls: Calls,
@@ -294,46 +294,46 @@ enum XrefLine {
     },
 }
 
-fn xref_lines(model: &Model, symbol: &Symbol, reference_title: Label) -> Vec<XrefLine> {
+fn reference_lines(model: &Model, symbol: &Symbol, reference_title: Label) -> Vec<ReferenceLine> {
     let mut lines = Vec::new();
     for (calls, title, list) in [
         (Calls::Callers, "Callers", symbol.callers()),
         (Calls::Callees, "Callees", symbol.callees()),
     ] {
-        lines.push(XrefLine::Title(Label::new(format!(
+        lines.push(ReferenceLine::Title(Label::new(format!(
             "{title} ({})",
             list.len()
         ))));
         lines.extend(
             list.iter()
                 .enumerate()
-                .map(|(position, other)| XrefLine::Call {
+                .map(|(position, other)| ReferenceLine::Call {
                     calls,
                     position: Count::new(position),
                     symbol: *other,
                 }),
         );
     }
-    lines.push(XrefLine::Title(reference_title));
+    lines.push(ReferenceLine::Title(reference_title));
     let mut header: Option<usize> = None;
     for (position, location) in symbol.references().iter().enumerate() {
         let Some(file) = model.index.find_file(&location.file) else {
             continue;
         };
         match header.and_then(|at| lines.get_mut(at)) {
-            Some(XrefLine::File {
+            Some(ReferenceLine::File {
                 file: open,
                 references,
             }) if *open == file => *references = Count::new(references.get() + 1),
             _ => {
                 header = Some(lines.len());
-                lines.push(XrefLine::File {
+                lines.push(ReferenceLine::File {
                     file,
                     references: Count::new(1),
                 });
             }
         }
-        lines.push(XrefLine::Reference {
+        lines.push(ReferenceLine::Reference {
             position: Count::new(position),
             file,
             line: location.line,
@@ -385,15 +385,21 @@ fn call_row(
     }
 }
 
-fn xref_row(model: &Model, frame: &mut Frame<'_>, line: &XrefLine, dimmed: Color, width: Count) {
+fn reference_row(
+    model: &Model,
+    frame: &mut Frame<'_>,
+    line: &ReferenceLine,
+    dimmed: Color,
+    width: Count,
+) {
     match line {
-        XrefLine::Title(title) => frame.row_text(vec![Run::new(title.clone(), WEAK)]),
-        XrefLine::Call {
+        ReferenceLine::Title(title) => frame.row_text(vec![Run::new(title.clone(), WEAK)]),
+        ReferenceLine::Call {
             calls,
             position,
             symbol,
         } => call_row(model, frame, *calls, *position, *symbol, dimmed),
-        XrefLine::File { file, references } => {
+        ReferenceLine::File { file, references } => {
             let Some(source) = model.index.file(*file) else {
                 return;
             };
@@ -412,7 +418,7 @@ fn xref_row(model: &Model, frame: &mut Frame<'_>, line: &XrefLine, dimmed: Color
                 frame.push(Action::GoTo(*file, Line::new(0)));
             }
         }
-        XrefLine::Reference {
+        ReferenceLine::Reference {
             position,
             file,
             line,
@@ -439,7 +445,7 @@ fn xref_row(model: &Model, frame: &mut Frame<'_>, line: &XrefLine, dimmed: Color
     }
 }
 
-pub(super) fn xrefs_panel(model: &Model, frame: &mut Frame<'_>, area: Extent) {
+pub(super) fn references_panel(model: &Model, frame: &mut Frame<'_>, area: Extent) {
     frame.start(Container::PanelColumn);
     peek_section(model, frame, area);
     let index = &model.index;
@@ -449,7 +455,7 @@ pub(super) fn xrefs_panel(model: &Model, frame: &mut Frame<'_>, area: Extent) {
         .and_then(|current| Some((current, index.symbol(current)?, index.file(current.file())?)))
     else {
         frame.label(
-            "no symbol selected: click one in Symbols, a path, or the listing",
+            "no symbol selected: click one in Symbols, a path, or the Source view",
             WEAK,
         );
         frame.finish();
@@ -482,18 +488,18 @@ pub(super) fn xrefs_panel(model: &Model, frame: &mut Frame<'_>, area: Extent) {
         .filter(|location| index.find_file(&location.file).is_some())
         .count();
     let title = Label::new(if asking && asked {
-        "References (asking the server)".to_owned()
+        "Other references (asking the server)".to_owned()
     } else {
-        format!("References ({shown})")
+        format!("Other references ({shown})")
     });
-    let lines = xref_lines(model, symbol, title);
+    let lines = reference_lines(model, symbol, title);
     let width = references
         .iter()
         .map(|location| location.line.number())
         .max()
         .map_or(Count::new(1), |number| Count::new(number.to_string().len()));
     let dimmed = if file.is_pending() { PENDING } else { TEXT };
-    let id = ids::xrefs();
+    let id = ids::references();
     let scrolled = frame.scroll_column(id, model.scrolls.get(id), Scroller::Plain, None);
     let row_height = frame.row_height() + ROW_EXTRA;
     let count = Count::new(lines.len());
@@ -509,7 +515,7 @@ pub(super) fn xrefs_panel(model: &Model, frame: &mut Frame<'_>, area: Extent) {
         .skip(window.first.get())
         .take(window.visible.get())
     {
-        xref_row(model, frame, line, dimmed, width);
+        reference_row(model, frame, line, dimmed, width);
     }
     frame.rows_after(count, &window, row_height, Px::ZERO);
     frame.finish();

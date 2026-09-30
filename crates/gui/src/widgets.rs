@@ -74,7 +74,7 @@ pub(crate) enum Container {
     Header,
     Breadcrumb,
     PanelColumn,
-    OutputColumn,
+    ConsoleColumn,
     Stack,
     StepRow { selected: Chosen },
     CodeColumn { selected: Chosen },
@@ -148,7 +148,7 @@ impl Container {
             Self::PanelColumn => {
                 Shape::new(Layout::column().grow(), Style::background(PANEL), None)
             }
-            Self::OutputColumn => {
+            Self::ConsoleColumn => {
                 Shape::new(Layout::column().grow(), Style::background(FIELD), None)
             }
             Self::Stack => Shape::new(
@@ -835,7 +835,7 @@ impl Frame<'_> {
 
     pub(crate) fn pane(&mut self, id: Id, direction: Option<Direction>, rect: Rect) {
         let layout = match direction {
-            Some(Direction::Across) => Layout::row(),
+            Some(Direction::Right) => Layout::row(),
             Some(Direction::Down) | None => Layout::column(),
         };
         self.ui.open(
@@ -849,11 +849,11 @@ impl Frame<'_> {
         );
     }
 
-    pub(crate) fn sash(&mut self, target: Target, direction: Direction, rect: Rect) {
+    pub(crate) fn divider(&mut self, target: Target, direction: Direction, rect: Rect) {
         let id = target.id();
         let interaction = self.ui.interaction(id);
         let sides = match direction {
-            Direction::Across => Sides::LEFT,
+            Direction::Right => Sides::LEFT,
             Direction::Down => Sides::TOP,
         };
         let style = if interaction.hovered() || interaction.down() {

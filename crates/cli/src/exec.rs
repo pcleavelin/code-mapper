@@ -76,7 +76,7 @@ impl Run<'_> {
             Query::Files(filter) => self.files(&filter),
             Query::Symbols(filter) => self.symbols(&filter),
             Query::Show { file, start, end } => self.show(&file, start, end)?,
-            Query::Grep(regex) => self.grep(&compile(&regex)?),
+            Query::Search(regex) => self.search(&compile(&regex)?),
             Query::Notes(regex) => self.notes(&compile(&regex)?),
             Query::Callees(symbol) => self.callees(&symbol)?,
             Query::Callers(symbol) => self.callers(&symbol)?,
@@ -173,11 +173,11 @@ impl Run<'_> {
         Ok(())
     }
 
-    fn grep(&mut self, regex: &Regex) {
+    fn search(&mut self, regex: &Regex) {
         for file in self.index.files() {
             for (line, text) in (0..).map(Line::new).zip(file.text().all()) {
                 if regex.is_match(text.as_str()) {
-                    wire::grep_line(self.output, file, line, text);
+                    wire::hit_line(self.output, file, line, text);
                 }
             }
         }
@@ -361,7 +361,7 @@ impl Run<'_> {
 
     fn path(&mut self, name: &TextFragment, view: LinkView) -> Result<(), Failure> {
         let name = find_path(self.map, name)?;
-        let expanded = (view == LinkView::Expanded).then(|| vec![name.clone()]);
+        let inlined = (view == LinkView::Inlined).then(|| vec![name.clone()]);
         let Some(path) = self.map.path(&name) else {
             return Ok(());
         };
@@ -372,7 +372,7 @@ impl Run<'_> {
             index: self.index,
             map: self.map,
             output: self.output,
-            expanded,
+            inlined,
         };
         document.steps(path, Depth::new(0), &[]);
         Ok(())
@@ -987,7 +987,7 @@ struct Document<'a> {
     index: &'a Index,
     map: &'a Map,
     output: &'a mut Output,
-    expanded: Option<Vec<PathName>>,
+    inlined: Option<Vec<PathName>>,
 }
 
 impl Document<'_> {
@@ -1021,27 +1021,33 @@ impl Document<'_> {
             {
                 wire::numbered_lines(self.output, source, step.span());
             }
-            self.expand(step, depth, prefix, &numbered.number);
+            self.inline_link(step, depth, prefix, &numbered.number);
         }
     }
 
-    fn expand(&mut self, step: &Step, depth: Depth, prefix: &[StepNumber], number: &StepNumber) {
+    fn inline_link(
+        &mut self,
+        step: &Step,
+        depth: Depth,
+        prefix: &[StepNumber],
+        number: &StepNumber,
+    ) {
         let map = self.map;
-        let (Some(link), Some(expanded)) = (step.link(), self.expanded.as_mut()) else {
+        let (Some(link), Some(inlined)) = (step.link(), self.inlined.as_mut()) else {
             return;
         };
         let Some(target) = map.path(link) else {
             return;
         };
-        if expanded.contains(link) {
-            wire::expanded_before(self.output, depth, link);
+        if inlined.contains(link) {
+            wire::inlined_before(self.output, depth, link);
             return;
         }
-        expanded.push(link.clone());
+        inlined.push(link.clone());
         let mut deeper: Vec<StepNumber> = prefix.to_vec();
         deeper.push(number.clone());
         self.steps(target, depth.deeper(), &deeper);
-        if let Some(shown) = self.expanded.as_mut() {
+        if let Some(shown) = self.inlined.as_mut() {
             shown.pop();
         }
         wire::end_of(self.output, depth, link);

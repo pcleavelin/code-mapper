@@ -68,10 +68,10 @@ order 12
 parent l5and2
 author ai
 file crates/gui/src/tests.rs
-symbol hide_all_hides_every_step_and_show_all_unfolds_none
+symbol hide_all_code_hides_every_step_and_show_all_code_expands_none
 lines 0 14
-hash a117e411b37237ea
-note hide all hides every step's code and keeps a fold; show all shows every step's code and leaves nothing folded.
+hash fec3348f7bcce275
+note hide all code hides every step's code and keeps a collapse; show all code shows every step's code and leaves nothing collapsed.
 
 step b6gbpm
 order 21
@@ -130,12 +130,12 @@ file crates/gui/src/tests.rs
 symbol walking_follows_the_tree_and_stops_at_the_ends
 lines 0 11
 hash 8bd3a7291f0fd38b
-note walk follows the path's numbered order, the one the outline shows, and stops at both ends.
+note walk follows the path's numbered order, the one the steps list shows, and stops at both ends.
 
 step hvkk6w
 order 20
 author ai
-file crates/gui/src/panels.rs
+file crates/io-lsp/src/lib.rs
 symbol tests
 lines 0 0
 hash b0307a5ca14bb937
@@ -183,20 +183,20 @@ order 13
 parent l5and2
 author ai
 file crates/gui/src/tests.rs
-symbol fold_all_folds_only_steps_with_children
-lines 0 9
-hash fd6c7f662601ce49
-note fold all folds only the steps that have children.
+symbol collapse_all_collapses_only_steps_with_children
+lines 0 15
+hash 5dacca165e9f3e05
+note collapse all collapses only the steps that have children.
 
 step ps5lmt
 order 11
 parent 4n3q0r
 author ai
 file crates/gui/src/tests.rs
-symbol selecting_a_step_unfolds_its_ancestors
-lines 0 8
-hash c7569da429f37df4
-note Selecting a step unfolds its folded ancestors.
+symbol selecting_a_step_expands_its_ancestors
+lines 0 16
+hash 2aa0b4d5ba9c344e
+note Selecting a step expands its collapsed ancestors.
 
 step psr7wo
 order 15

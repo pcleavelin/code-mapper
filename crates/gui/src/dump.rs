@@ -122,9 +122,9 @@ impl Dump for Scrolls {
     fn dump(&self, context: &Context<'_>, lines: &mut DumpLines) {
         for (name, id) in [
             ("document", ids::document()),
-            ("listing", ids::listing()),
+            ("source", ids::source()),
             ("paths", ids::paths()),
-            ("output", ids::output()),
+            ("console", ids::console()),
         ] {
             if let Some(placement) = context.ui.placement(id) {
                 lines.line(format_args!(
@@ -207,8 +207,8 @@ impl Dump for StepViews {
             let flags: Vec<&str> = [
                 (ViewFlag::Whole, "whole"),
                 (ViewFlag::Hidden, "hidden"),
-                (ViewFlag::Folded, "folded"),
-                (ViewFlag::Expanded, "expanded"),
+                (ViewFlag::Collapsed, "collapsed"),
+                (ViewFlag::Inlined, "inlined"),
             ]
             .into_iter()
             .filter(|(flag, _)| view.flags.has(*flag))

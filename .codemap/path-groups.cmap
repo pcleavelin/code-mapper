@@ -61,9 +61,9 @@ parent bthmeg
 author ai
 file crates/gui/src/views/left.rs
 symbol group_row
-lines 0 53
-hash 95fb19551c540086
-note One group row: an unfolded or folded chevron icon and the last part of the name, then the path count dimmed ('3 paths'). Open unless the reader closed it, and open by default when it holds the path being read. Red when any path inside it has a stale step. A click toggles it through Action::OpenGroup. While the Paths filter holds text every group is open and a click does nothing.
+lines 0 57
+hash 4c08e27cc9d2ae03
+note One group row: an expanded or collapsed chevron icon and the last part of the name, then the path count dimmed ('3 paths'). Open unless the reader closed it, and open by default when it holds the path being read. Red when any path inside it has a stale step. A click toggles it through Action::OpenGroup. While the Paths filter holds text every group is open and a click does nothing.
 
 step 7qw1be
 order 0
@@ -80,7 +80,7 @@ author ai
 file crates/gui/src/views/left.rs
 symbol paths_window
 lines 0 88
-hash 5b267d6b54877d31
+hash fad58c8899b417c5
 link reader-gui
 note The Paths tab walks the same rows, narrowed to the paths the filter field lists (feature-filter-paths), skipping everything under a closed group.
 

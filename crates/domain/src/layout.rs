@@ -1,6 +1,6 @@
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SplitDirection {
-    Across,
+    Right,
     Down,
 }
 

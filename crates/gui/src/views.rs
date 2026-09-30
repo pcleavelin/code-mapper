@@ -1,19 +1,19 @@
 mod authoring;
 mod bars;
 mod center;
+mod console;
 mod document;
 mod left;
-mod output;
 mod palette;
 mod panel_tree;
+mod references;
 mod tooltip;
-mod xrefs;
 
 use crate::graph::GraphFrame;
 use crate::model::Model;
 use crate::widgets::{Container, Frame};
 
-pub(crate) use authoring::outline_input;
+pub(crate) use authoring::step_list_input;
 pub(crate) use panel_tree::panel_input;
 
 pub(crate) fn build(model: &Model, frame: &mut Frame<'_>, graph: Option<GraphFrame>) {
@@ -26,7 +26,7 @@ pub(crate) fn build(model: &Model, frame: &mut Frame<'_>, graph: Option<GraphFra
     bars::status_bar(model, frame);
     frame.finish();
     panel_tree::drag_band(model, frame);
-    authoring::outline_band(model, frame);
+    authoring::step_list_band(model, frame);
     panel_tree::picker(model, frame);
     palette::palette(model, frame);
     tooltip::tooltip(model, frame);

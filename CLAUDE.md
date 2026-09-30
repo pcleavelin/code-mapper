@@ -9,8 +9,8 @@ diff.
 
 - **The agent** writes code and, in the same session, the map: which paths the change
   touched, what the new code is for, how the pieces relate. Its interface is the CLI.
-- **The human** reads the map, browses the codebase through the same tool (files, grep,
-  symbols, xrefs), and builds paths by hand where code is shown. Its interface is the GUI.
+- **The human** reads the map, browses the codebase through the same tool (files, search,
+  symbols, references), and builds paths by hand where code is shown. Its interface is the GUI.
 
 Goals: understanding an unfamiliar codebase, or a change you did not write, takes less
 friction through codemap than through an editor with an LSP; the map is a second channel
@@ -97,15 +97,15 @@ covering it: the code has no comments, so the map is the only prose about it.
   asks the server only about the files a command touches. The GUI merges server answers
   about once a second, since a merge re-resolves the map and drops every drawn grid.
 - **Links go through a step**, not text in a note, so they are checked, renamed with their
-  path, and expanded. A path that is linked to cannot be removed.
+  path, and inlined. A path that is linked to cannot be removed.
 - **Roots are strictly "no callers".** **`promote` prunes by measured rules** (depth 2; tests,
   accessors and trivial bodies left out; shared, other-package and mapped callees kept as
   leaves), chosen by scoring against this repo's hand-written feature paths; it is still a
   scaffold the agent trims and annotates. **Coverage is observable, never a `check` failure.**
   **No review state on paths.**
 - **The GUI is one selection** (a symbol, with a step behind it when reached through a path);
-  every view shows it, and the document, outline and graph are three views of one thing that
-  never disagree. The graph is derived (the selection plus an ordered list of expansions) and
+  every view shows it, and the document, steps list and graph are three views of one thing that
+  never disagree. The graph is derived (the selection plus an ordered list of reveals) and
   its camera moves only on explicit navigation.
 - **The UI is its own library** (`crates/ui`, in the shape of odin_editor's): elements opened
   and closed each frame, layout once at frame end, input answered from the previous frame's
@@ -117,7 +117,7 @@ covering it: the code has no comments, so the map is the only prose about it.
 `.codemap/`, `io-cache`, `io-layout`, `io-vcs` jj or git, `io-lsp`, `io-source`, `io-process`,
 `io-store`), `index` (tree-sitter resolvers, server orchestration), `features` (every function
 a user can reach; CLI commands and help, GUI buttons and keys are built from it), `cli` (text
-commands, also the GUI's Output view), `ui` (the element tree), `platform` (wgpu, fonts,
+commands, also the GUI's Console), `ui` (the element tree), `platform` (wgpu, fonts,
 winit, the script runner), `gui`, `codemap` (the binary and integration tests), `xtask` (the
 gate). The allowed edges are in `xtask/src/arch.rs`. `cli` and `gui` are two front ends over
 one `Index` and `Map`; anything that mutates the map is a method of `Map`.
@@ -133,7 +133,7 @@ target/release/codemap <root> <command> [args]
 ```
 
 1. `paths` to see what is already named. `path <name>` to read a code path as one
-   document instead of opening files (`--expand` reads linked paths inline). `notes <regex>`
+   document instead of opening files (`--inline` reads linked paths inline). `notes <regex>`
    to search what earlier sessions wrote. The `features/` groups hold one flow per thing a
    user can do; `tooling` explains the gate.
 2. `tree <sym>`, `callers <sym>`, `callees <sym>` to move along the graph, `refs <sym>`
@@ -176,7 +176,7 @@ build.
 
 Never claim a visual or interactive behaviour from reading the code; drive it and look.
 
-- `CODEMAP_SHOT=<file.png> [CODEMAP_SHOT_TAB=path|graph|listing|diff] [CODEMAP_SHOT_SCROLL=n]
+- `CODEMAP_SHOT=<file.png> [CODEMAP_SHOT_TAB=path|graph|source|diff] [CODEMAP_SHOT_SCROLL=n]
   target/release/codemap <root>` writes the first settled frame and quits.
 - `CODEMAP_SCRIPT=<file> target/release/codemap <root>` plays a script, one command per
   line, as real input, on a clock of its own (8 ms a frame, plus each pause), so animations land
@@ -192,13 +192,13 @@ Never claim a visual or interactive behaviour from reading the code; drive it an
   element shows in), `absent <id>` (fails only when the element is in view; passes when it is out of view or not drawn), `shot <file.png>`,
   `dump`. A `script:` line on stderr fails the scenario. Id names are the ones in
   `crates/gui/src/ids.rs`: `name`, `name/<n>` for rows, `name@<key>` (every view's tab
-  `tab@<View>`, e.g. `tab@Graph`, `tab@Symbols`; document steps `step/<n>`, `fold/<n>`,
-  `hide/<n>`, `whole/<n>`, `del/<n>`, `ctx-a/<n>`, `ctx-b/<n>`; paths list `paths/<n>`,
-  `outline/<n>`; text fields `field@search`, `field@new-path`, `field@symbols`,
+  `tab@<View>`, e.g. `tab@Graph`, `tab@Symbols`; document steps `step/<n>`, `collapse/<n>`,
+  `inline/<n>`, `hide/<n>`, `whole/<n>`, `del/<n>`, `ctx-a/<n>`, `ctx-b/<n>`; paths list `paths/<n>`,
+  `steps/<n>`; text fields `field@search`, `field@new-path`, `field@symbols`,
   `field@paths`, `field@goto-line`, `field@views`; symbol rows
-  `sym@<file index>:<symbol index>`; xrefs rows `xto/<i>`, `xfrom/<i>`, `xref/<i>`; panels
+  `sym@<file index>:<symbol index>`; references rows `xto/<i>`, `xfrom/<i>`, `xref/<i>`; panels
   by the number n `DUMP panels` prints: `panel/<n>`, header buttons `pick/<n>`,
-  `split-across/<n>`, `split-down/<n>`, `close-panel/<n>`, sashes `sash/<n>`, tab close
+  `split-right/<n>`, `split-down/<n>`, `close-panel/<n>`, dividers `divider/<n>`, tab close
   buttons `close-tab@<View>`; view picker
   rows `view/<n>`). Rects come from the previous frame, so `wait 1` after anything that
   changes the layout. `dump` prints the selection, scroll offsets, the panel tree, the

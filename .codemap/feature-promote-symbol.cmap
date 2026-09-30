@@ -3,17 +3,17 @@ path feature-promote-symbol
 kind flow
 author ai
 group features/gui
-note Under the Xrefs heading, 'new path from it' makes a flow path from the selected symbol: the symbol as the root step and the symbols it calls under it, one level deep, all authored by the human, named after the symbol. The reader reaches for it to scaffold a flow from a symbol instead of adding every step by hand. It is promote from the command line at depth 1. A path of that name already there is extended with whatever of those symbols it does not pin whole. The path opens on the Path tab with its first step selected, and the status gives its name and step count.
+note Under the References heading, 'promote' makes a flow path from the selected symbol: the symbol as the root step and the symbols it calls under it, one level deep, all authored by the human, named after the symbol. The reader reaches for it to scaffold a flow from a symbol instead of adding every step by hand. It is the CLI promote command at depth 1. A path of that name already there is extended with whatever of those symbols it does not pin whole. The path opens on the Path tab with its first step selected, and the status gives its name and step count.
 
 step am8c85
 order 2
 parent miupsu
 author ai
-file crates/gui/src/views/xrefs.rs
+file crates/gui/src/views/references.rs
 symbol focus_actions
 lines 19 24
-hash 332492c07f8d926c
-note Trigger: the 'new path from it' button (promote-focus) under the Xrefs heading queues Promote for the selected symbol.
+hash 5d6519ceffc3d6fa
+note Trigger: the 'promote' button (promote-focus) under the References heading queues Promote for the selected symbol.
 
 step f9ye7n
 order 3

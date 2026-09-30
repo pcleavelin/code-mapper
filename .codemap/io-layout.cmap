@@ -41,8 +41,8 @@ author ai
 file crates/domain/src/layout.rs
 symbol SplitDirection
 lines 0 3
-hash 18c8a2f93efa2be5
-note Across: side by side, a vertical sash. Down: one above the other.
+hash 123e26704413462c
+note Right: side by side, a vertical divider. Down: one above the other.
 
 step bsmdiv
 order 2
@@ -111,8 +111,8 @@ author ai
 file crates/io-layout/src/wire.rs
 symbol tree
 lines 0 38
-hash 584404d3d3c06f69
-note One branch at the given depth: 'panel' and its view names, a trailing * marking the one in front; or 'across' or 'down', its share, then exactly two branches one level deeper.
+hash 07938d2713deaff7
+note One branch at the given depth: 'panel' and its view names, a trailing * marking the one in front; or 'right' or 'down', its share, then exactly two branches one level deeper.
 
 step mcykpn
 order 7
@@ -150,7 +150,7 @@ author ai
 file crates/io-layout/src/wire.rs
 symbol print_tree
 lines 0 32
-hash e3971bde8764bbc6
+hash 8ed9b4f3f239f098
 note Indents two spaces per level; a panel's shown view gets its *.
 
 step uk1zx1
@@ -180,7 +180,7 @@ author ai
 file crates/io-layout/src/convert.rs
 symbol wire
 lines 0 22
-hash fb5f7658fe94d40c
+hash 049c25ec342c0b48
 note Domain to wire, the inverse of layout.
 
 step vo5pwd
@@ -199,7 +199,7 @@ author ai
 file crates/io-layout/src/convert.rs
 symbol layout
 lines 0 31
-hash c17b7d46c92727d7
+hash ed87269ee87c55ff
 note Wire to domain: a share above 1000 or a name that is not a ViewKey rejects the whole file. The first starred name is the one in front.
 
 step y7rqnw

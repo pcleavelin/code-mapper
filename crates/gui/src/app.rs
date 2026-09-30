@@ -272,7 +272,7 @@ impl platform::App for App {
         for action in views::panel_input(&self.model, &self.ui) {
             self.apply(action);
         }
-        for action in views::outline_input(&self.model, &self.ui) {
+        for action in views::step_list_input(&self.model, &self.ui) {
             self.apply(action);
         }
         let graph = if self.model.panels.is_shown(View::Graph) {

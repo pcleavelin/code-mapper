@@ -13,7 +13,7 @@ file crates/gui/src/graph/input.rs
 symbol apply
 lines 47 49
 hash f7f66bcd773e458f
-note Records the node's position in cells; it survives relayouts until auto layout or an expansion on that node clears it.
+note Records the node's position in cells; it survives relayouts until auto layout or a reveal on that node clears it.
 
 step 149ydv
 order 0

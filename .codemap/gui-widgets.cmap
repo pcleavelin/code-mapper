@@ -50,7 +50,7 @@ file crates/gui/src/widgets.rs
 symbol marked_row
 lines 0 19
 hash 90ffc9530c0a6fcd
-note A row with its own mark colour: the outline uses a weaker tint for the step at the top of the document than for the selected step, so the two never merge.
+note A row with its own mark colour: the steps list uses a weaker tint for the step at the top of the document than for the selected step, so the two never merge.
 
 step 5cq4dm
 order 29
@@ -126,7 +126,7 @@ file crates/gui/src/widgets.rs
 symbol command_row
 lines 0 27
 hash c76a4d61300f73b6
-note The output panel's input line: a prompt and the command field's runs across the full width, the whole row taking the keyboard when clicked.
+note The Console's input line: a prompt and the command field's runs across the full width, the whole row taking the keyboard when clicked.
 
 step 9dxpzk
 order 23
@@ -135,7 +135,7 @@ author ai
 file crates/gui/src/widgets.rs
 symbol shape
 lines 0 98
-hash 7288b3bc90d532c1
+hash 59899d0c04e73da5
 note The one match that turns a Container into its layout, style and fixed id: the paddings, gaps and colours from theme, the accent bar on the left of a selected step row or code column, the panel header's TAB_STRIP background with no padding (its tabs carry their own), the id body the panel tree is laid out from, the picker's and the palette box's ids, and the id a StepColumn carries.
 
 step aidqqn
@@ -202,8 +202,8 @@ order 0
 author ai
 file crates/gui/src/theme.rs
 lines 8 36
-hash 650f512dcd958a59
-note The palette, in theme: a dozen colours named by role - background, panel, field, border, text, weak, accent, green, red, orange, hover, selected, and the red background a danger button takes under the pointer - and below them the tints made from those by alpha (disabled, selected lines, the slice, the outline's top step, faint, pending, the drop band, the call tint), the graph's colours (STEP_EDGE, EXPANSION_EDGE, BACK_EDGE, STEP_BORDER, SIBLINGS_FILL, SIBLINGS_BORDER) and the panel header's TAB_STRIP. A colour decision is made once, here, and every view names one.
+hash 14ebfa1d66595a34
+note The palette, in theme: a dozen colours named by role - background, panel, field, border, text, weak, accent, green, red, orange, hover, selected, and the red background a danger button takes under the pointer - and below them the tints made from those by alpha (disabled, selected lines, the slice, the steps list's top step, faint, pending, the drop band, the call tint), the graph's colours (STEP_EDGE, EXPANSION_EDGE, BACK_EDGE, STEP_BORDER, SIBLINGS_FILL, SIBLINGS_BORDER) and the panel header's TAB_STRIP. A colour decision is made once, here, and every view names one.
 
 step hatq2a
 order 45
@@ -231,7 +231,7 @@ file crates/gui/src/field.rs
 symbol Which
 lines 0 10
 hash a8af1f1ac0975c25
-note The eight fields: search, the new path's name and group, the command line, the symbol filter, the path filter, go-to-line and the palette's query. Which::control is the field's Control in ids, whose element name is its script id: field@search, field@new-path, field@new-group, cmd, field@symbols, field@paths, field@goto-line, field@palette.
+note The eight fields: search, the new path's name and group, the Console, the symbol filter, the path filter, go-to-line and the palette's query. Which::control is the field's Control in ids, whose element name is its script id: field@search, field@new-path, field@new-group, cmd, field@symbols, field@paths, field@goto-line, field@palette.
 
 step k73r2l
 order 25
@@ -278,7 +278,7 @@ file crates/gui/src/widgets/code.rs
 symbol code_block
 lines 0 93
 hash a07e2aa176e811fd
-note The one code element in the GUI: a block of lines drawn from a cached grid by a custom element, with the hover, jump and peek gestures resolved to a (line, column) spot from the pointer. Per-row backgrounds and bars come from the two Marks closures, so the listing's selection and anchor bars and the document's slice highlight share it. Width::Wide takes the full width rather than the grid's. It returns the Interaction and the spot under the pointer, whose column is None over the gutter. Shift+wheel over a block whose lines are wider than it scrolls it sideways (kept in the Model's across scrolls, pushed as ScrollAcross), and while it is scrolled a thin weak bar on its left edge shows that the start of the lines is cut off. Which gesture is peek and which is jump comes from keys::code_gesture, that is from the feature registry.
+note The one code element in the GUI: a block of lines drawn from a cached grid by a custom element, with the hover, jump and peek gestures resolved to a (line, column) spot from the pointer. Per-row backgrounds and bars come from the two Marks closures, so the Source view's selection and anchor bars and the document's slice highlight share it. Width::Wide takes the full width rather than the grid's. It returns the Interaction and the spot under the pointer, whose column is None over the gutter. Shift+wheel over a block whose lines are wider than it scrolls it sideways (kept in the Model's across scrolls, pushed as ScrollAcross), and while it is scrolled a thin weak bar on its left edge shows that the start of the lines is cut off. Which gesture is peek and which is jump comes from keys::code_gesture, that is from the feature registry.
 
 step pwtsq2
 order 18
@@ -298,7 +298,7 @@ file crates/gui/src/widgets.rs
 symbol row_text
 lines 0 8
 hash 5bb7f8d01c2097d9
-note The same clipped growing text with a row's padding, for a row whose text sits beside buttons of its own (an Xrefs reference row).
+note The same clipped growing text with a row's padding, for a row whose text sits beside buttons of its own (a References reference row).
 
 step qceo1l
 order 19
@@ -346,7 +346,7 @@ author ai
 file crates/gui/src/widgets.rs
 symbol Container
 lines 0 22
-hash 0ac43db6790d8179
+hash b7ea6502cab5bef3
 note Every box that holds other elements is one of these: the window, the body, the centre, the bars, the toolbars, a panel column, a step row or code column (with its selected mark), the column holding one step of the document (StepColumn, carrying that step's id so its height can be measured), a tooltip, a panel header, the floating view picker, the command palette's box. A view opens one with Frame::start and closes it with finish; it never spells out a layout or a style.
 
 step rs11uk
@@ -385,7 +385,7 @@ file crates/gui/src/field.rs
 symbol apply
 lines 0 67
 hash ff9e76cd41f36d85
-note The keys a field understands, as Edits from keys::edits: editing, home and end, up and down through the history, enter to submit, ctrl+a to mark all, ctrl+u to clear, escape to drop the keyboard. Enter returns the line; a field that keeps its text (Enter::Keep: search, the symbol filter, go-to-line) marks it all so the next entry replaces it, one that clears (the command line, new path) empties. Left and right with ctrl or alt never become Edits: they are back and forward.
+note The keys a field understands, as Edits from keys::edits: editing, home and end, up and down through the history, enter to submit, ctrl+a to mark all, ctrl+u to clear, escape to drop the keyboard. Enter returns the line; a field that keeps its text (Enter::Keep: search, the symbol filter, go-to-line) marks it all so the next entry replaces it, one that clears (the Console, new path) empties. Left and right with ctrl or alt never become Edits: they are back and forward.
 
 step ug0bcn
 order 9
@@ -442,7 +442,7 @@ file crates/gui/src/widgets.rs
 symbol row
 lines 0 2
 hash 6927a95a29c20605
-note A selectable full-width row of coloured runs with a hover background and a selection background, its text cut with an ellipsis where the row ends (Wrap::Clip), so a long name never pushes a row wider than its panel. Every list in the app - paths, outline, symbols, files, xrefs, results, diff - is this one function in a loop.
+note A selectable full-width row of coloured runs with a hover background and a selection background, its text cut with an ellipsis where the row ends (Wrap::Clip), so a long name never pushes a row wider than its panel. Every list in the app - paths, steps list, symbols, files, references, hits, diff - is this one function in a loop.
 
 step z678b0
 order 31

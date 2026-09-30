@@ -228,7 +228,7 @@ fn repo_at(rev: &str, old: &Path, new: &Path, fails: &mut Vec<String>) {
             &["uncovered"],
             &["stale"],
             &["paths"],
-            &["grep", "fn [a-z_]+\\(&mut self"],
+            &["search", "fn [a-z_]+\\(&mut self"],
             &["notes", "stale"],
             &["tree", "frame", "3"],
             &["callers", "resolve"],
@@ -267,9 +267,9 @@ shot {shots}/symbols.png
 click-id tab@Files
 wait 3
 shot {shots}/files.png
-click-id tab@Listing
+click-id tab@Source
 wait 3
-shot {shots}/listing.png
+shot {shots}/source.png
 quit
 ",
     };

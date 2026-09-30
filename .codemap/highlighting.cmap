@@ -3,7 +3,7 @@ path highlighting
 kind flow
 author ai
 group index
-note Where syntax colours come from and where they are painted. tree-sitter does the colouring for every language regardless of which backend supplied the symbols: the grammar's own highlight query runs once per file during the parse, and its captures are bucketed into per-line byte spans with a small class byte. The spans are cached with the rest of the file, so nothing re-parses to draw. The second half of the path is the drawing side, shared by the path document, the listing and the graph nodes.
+note Where syntax colours come from and where they are painted. tree-sitter does the colouring for every language regardless of which backend supplied the symbols: the grammar's own highlight query runs once per file during the parse, and its captures are bucketed into per-line byte spans with a small class byte. The spans are cached with the rest of the file, so nothing re-parses to draw. The second half of the path is the drawing side, shared by the path document, the Source view and the graph nodes.
 
 step 1j2to9
 order 9
@@ -52,7 +52,7 @@ file crates/gui/src/widgets/code.rs
 symbol code_block
 lines 0 93
 hash a07e2aa176e811fd
-note The one code element in the GUI: a block of lines drawn from a cached grid by a custom element, with the hover, jump and peek gestures resolved to a (line, column) spot from the pointer. Per-row backgrounds and bars come from the two closures in Marks, so the listing's selection and anchor bars and the document's slice highlight all share it. Its sideways scroll is kept per block in the model.
+note The one code element in the GUI: a block of lines drawn from a cached grid by a custom element, with the hover, jump and peek gestures resolved to a (line, column) spot from the pointer. Per-row backgrounds and bars come from the two closures in Marks, so the Source view's selection and anchor bars and the document's slice highlight all share it. Its sideways scroll is kept per block in the model.
 
 step k0lp9q
 order 0

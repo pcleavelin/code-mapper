@@ -32,7 +32,7 @@ author ai
 file crates/gui/src/views/panel_tree.rs
 symbol header
 lines 0 40
-hash 1d68e53d6d216517
+hash 2d1a5a2eb3bd6816
 note Trigger: CLOSE_PANEL (Icon::Close), close-panel/<n>, drawn only when the root is a split.
 
 step za46tw

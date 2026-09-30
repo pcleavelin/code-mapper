@@ -3,16 +3,16 @@ path search
 kind flow
 author ai
 group gui
-note Grep, in the GUI. Enter in the search box runs a Rust regex over the lines already in memory - there is no file I/O and no index of its own - and puts the hits into the Model, capped at HIT_LIMIT (five thousand) so a pattern like a single dot cannot freeze the window, with HitsShown recording whether the list was cut so the Results view, its tab and the status all say so, then switches to the Results tab. The tab is drawn by the frame like any other, virtualised so only the visible hits become elements, and clicking one opens that line in the listing. A re-index drops the hits, since their file and line numbers belong to the old index. The CLI's grep and notes commands use the same regex engine.
+note Search, in the GUI. Enter in the search box runs a Rust regex over the lines already in memory - there is no file I/O and no index of its own - and puts the hits into the Model, capped at HIT_LIMIT (five thousand) so a pattern like a single dot cannot freeze the window, with HitsShown recording whether the list was cut so the Search view, its tab and the status all say so, then switches to the Search tab. The tab is drawn by the frame like any other, virtualised so only the visible hits become elements, and clicking one opens that line in the Source view. A re-index drops the hits, since their file and line numbers belong to the old index. The CLI's search and notes commands use the same regex engine.
 
 step 6tz50w
 order 1
 author ai
 file crates/gui/src/views/center.rs
-symbol results_view
+symbol search_view
 lines 0 90
-hash 6b385edfa630c1f3
-note The Results tab: a hint when there is nothing to show; an orange caption when the hits were cut at HIT_LIMIT; else the hits grouped under a row per file with its hit count (clicking it opens the file), each hit its right-aligned line number and the trimmed line (a click pushes GoTo). Only the rows in view are built.
+hash bec8e0966bfdca3b
+note The Search tab: a hint when there is nothing to show; an orange caption when the hits were cut at HIT_LIMIT; else the hits grouped under a row per file with its hit count (clicking it opens the file), each hit its right-aligned line number and the trimmed line (a click pushes GoTo). Only the rows in view are built.
 
 step d91liy
 order 5
@@ -21,8 +21,8 @@ author ai
 file crates/gui/src/views/center.rs
 symbol hit_lines
 lines 0 19
-hash 8b441c2cf01eae73
-note The Results rows as one flat list: a File line whenever the hits (in file order) enter a new file, counting its hits, then each hit by its position in the results. One list, so the rows can be windowed by index.
+hash 5153ef690da699a9
+note The Search rows as one flat list: a File line whenever the hits (in file order) enter a new file, counting its hits, then each hit by its position in the hits. One list, so the rows can be windowed by index.
 
 step eh20f2
 order 6
@@ -32,7 +32,7 @@ file crates/gui/src/views/center.rs
 symbol HitLine
 lines 0 3
 hash 521a6184c2a4b168
-note A file heading with its hit count, or a hit by its position in Model::results.
+note A file heading with its hit count, or a hit by its position in Model::hits.
 
 step iy8e1r
 order 3
@@ -52,7 +52,7 @@ file crates/gui/src/model.rs
 symbol HitsShown
 lines 0 3
 hash 40a758de613bfb6d
-note Whether the Results list holds every hit (All) or only the first HIT_LIMIT (First); the view, the Results tab ('5000+') and Status::Hits read it.
+note Whether the hits list holds every hit (All) or only the first HIT_LIMIT (First); the view, the Search tab ('5000+') and Status::Hits read it.
 
 step o1sh41
 order 2
@@ -61,8 +61,8 @@ author ai
 file crates/gui/src/nav.rs
 symbol open_line
 lines 0 5
-hash cdfa051d42083245
-note Opening a hit: applying GoTo selects that line in the listing, asks the listing to scroll to it and switches to the Listing tab. The only way from a search result into the code.
+hash c19fb12e93c3ddc2
+note Opening a hit: applying GoTo selects that line in the Source view, asks the Source view to scroll to it and switches to the Source tab. The only way from a search result into the code.
 
 step x7ce18
 order 0
@@ -70,5 +70,5 @@ author ai
 file crates/gui/src/action.rs
 symbol search
 lines 0 43
-hash 1e1dec779941a868
-note The search, run when the search field submits: the regex is compiled before the previous results are dropped, so a typo keeps the last hit list and only reports; the scan is over the lines already in memory, in file order, and the status line gives the count. One hit past HIT_LIMIT is collected to know whether there were more; the list is then truncated to the limit and hits_shown set to First, or All when everything fit.
+hash 9ea700a2505db91c
+note The search, run when the search field submits: the regex is compiled before the previous hits are dropped, so a typo keeps the last hit list and only reports; the scan is over the lines already in memory, in file order, and the status line gives the count. One hit past HIT_LIMIT is collected to know whether there were more; the list is then truncated to the limit and hits_shown set to First, or All when everything fit.

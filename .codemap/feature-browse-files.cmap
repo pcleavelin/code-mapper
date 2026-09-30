@@ -3,7 +3,7 @@ path feature-browse-files
 kind flow
 author ai
 group features/gui
-note The Files tab shows the indexed files as a tree with covered/total symbols per file and per directory. The reader reaches for it to browse by directory and see coverage per file when there is no symbol or path name to search by (browsing files). Top-level directories start open and deeper ones closed; clicking a directory flips it. Clicking a file opens it in the Listing at its first line; so does clicking a file row in the Symbols tab. Files where no symbol is covered are dimmed, and a file or directory without symbols shows no count. The header gives the total over the whole index.
+note The Files tab shows the indexed files as a tree with covered/total symbols per file and per directory. The reader reaches for it to browse by directory and see coverage per file when there is no symbol or path name to search by (browsing files). Top-level directories start open and deeper ones closed; clicking a directory flips it. Clicking a file opens it in the Source view at its first line; so does clicking a file row in the Symbols tab. Files where no symbol is covered are dimmed, and a file or directory without symbols shows no count. The header gives the total over the whole index.
 
 step 2c068k
 order 2
@@ -11,8 +11,8 @@ parent 2xm1wz
 author ai
 file crates/gui/src/views/left.rs
 symbol files_tree
-lines 0 104
-hash 95fbd354f0c78bda
+lines 0 103
+hash 95ef6ff69fa7cfb4
 note Trigger and effect: files come sorted by path, so a directory is a run of files with the same component at this depth. A FILE_ROW click queues GoTo line one; a DIRECTORY_ROW click queues ToggleDirectory. A directory is open when it is top level XOR flipped, and an open one draws its run one level deeper. Each row's covered/total comes from the Tally list files_window built (tally_of) and is left off when the total is zero.
 
 step 2xm1wz
@@ -21,9 +21,9 @@ author ai
 file crates/gui/src/nav.rs
 symbol open_line
 lines 0 5
-hash cdfa051d42083245
-link listing-view
-note The handler for a file click: the file becomes current with its first line selected and scrolled to, on the Listing tab.
+hash c19fb12e93c3ddc2
+link source-view
+note The handler for a file click: the file becomes current with its first line selected and scrolled to, on the Source tab.
 
 step joniwc
 order 1

@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 #[macro_export]
 macro_rules! gui_scenarios {
     ($m:ident) => {
-        $m! { gui: document, peek, listing, graph, panels, delete, diff, reload, layout, links, authoring }
+        $m! { gui: document, peek, source, graph, panels, delete, diff, reload, layout, links, authoring }
     };
 }
 
@@ -81,10 +81,10 @@ scroll document 0
 wait 2
 click-id hide/1
 wait 2
-click-id fold/1
+click-id collapse/1
 wait 2
 dump
-shot {shots}/fold.png
+shot {shots}/collapse.png
 key down
 wait 2
 key down
@@ -96,32 +96,32 @@ dump
 click-id crumb/0
 wait 2
 dump
+click-id doc-hide-code
+wait 2
+shot {shots}/code-hidden.png
+click-id doc-show-code
+wait 2
 click-id doc-collapse
 wait 2
-shot {shots}/collapsed.png
-click-id doc-expand
-wait 2
-click-id doc-fold
-wait 2
 dump
-shot {shots}/folded-all.png
-click-id doc-unfold
+shot {shots}/collapsed-all.png
+click-id doc-expand
 wait 2
 hover-id document
 wheel -300
 wait 3
 dump
 shot {shots}/scrolled.png
-click-id outline/6
+click-id steps/6
 wait 3
 dump
-shot {shots}/outline.png
+shot {shots}/steps.png
 click-id doc-graph
 wait 3
 dump
 key p ctrl
 wait 2
-text >fold all
+text >collapse all
 wait 2
 dump
 shot {shots}/palette-actions.png
@@ -196,7 +196,7 @@ quit
     }
 }
 
-pub(crate) fn listing() -> Scenario {
+pub(crate) fn source() -> Scenario {
     Scenario {
         setup: |bin, name| Ok(mapped(bin, name)),
         hook: no_hook,
@@ -270,7 +270,7 @@ shot {shots}/graph.png
 click <<DUMP button main 'callees>>
 wait 4
 dump
-shot {shots}/expanded.png
+shot {shots}/revealed.png
 click <<DUMP node new|30,8>>
 wait 4
 dump
@@ -348,7 +348,7 @@ pause 300
 wait 2
 dump
 shot {shots}/turned.png
-click <<DUMP button fill 'listing>>
+click <<DUMP button fill 'source>>
 wait 4
 dump
 quit
@@ -416,7 +416,7 @@ text self\\.\\w+
 key enter
 wait 3
 dump
-shot {shots}/results.png
+shot {shots}/search.png
 click-id hit/2
 wait 3
 dump
@@ -424,7 +424,7 @@ click-id cmd
 text paths startup
 key enter
 wait 3
-shot {shots}/output.png
+shot {shots}/console.png
 text path-new fresh layer
 key enter
 wait 3
@@ -443,7 +443,7 @@ text handmade
 key enter
 wait 3
 dump
-click-id tab@Listing
+click-id tab@Source
 wait 2
 click-id add-lines
 wait 2
@@ -489,7 +489,7 @@ dump
 shot {shots}/symbols.png
 click-id tab@Paths
 wait 2
-click-id outline/0
+click-id steps/0
 wait 3
 hover-id xfrom/0
 wait 1
@@ -518,8 +518,8 @@ dump
 click-id add-lines
 wait 2
 dump
-shot {shots}/listing.png
-click-id outline/0
+shot {shots}/source.png
+click-id steps/0
 wait 2
 click-id tab@Graph
 wait 4
@@ -536,20 +536,20 @@ wait 4
 dump
 click-id tab@Path
 wait 2
-rect outline/3
-rect outline/1
-drag <<DUMP rect outline/3|20,10>> <<DUMP rect outline/1|20,10>>
+rect steps/3
+rect steps/1
+drag <<DUMP rect steps/3|20,10>> <<DUMP rect steps/1|20,10>>
 wait 3
 dump
 shot {shots}/under.png
-rect outline/3
-rect outline/0
-drag <<DUMP rect outline/3|20,10>> <<DUMP rect outline/0|20,1>>
+rect steps/3
+rect steps/0
+drag <<DUMP rect steps/3|20,10>> <<DUMP rect steps/0|20,1>>
 wait 3
 dump
-rect outline/0
-rect outline/3
-drag <<DUMP rect outline/0|20,10>> <<DUMP rect outline/3|20,10>>
+rect steps/0
+rect steps/3
+drag <<DUMP rect steps/0|20,10>> <<DUMP rect steps/3|20,10>>
 wait 3
 dump
 shot {shots}/moved.png
@@ -667,7 +667,7 @@ pub(crate) fn layout() -> Scenario {
         after: &[],
         script: "SETTLE
 dump
-hover-id sash/5
+hover-id divider/5
 wait 1
 down
 wait 1
@@ -677,10 +677,10 @@ up
 wait 2
 dump
 shot {shots}/resized.png
-click-id split-across/1
+click-id split-right/1
 wait 3
 click-id field@views
-text lis
+text sou
 wait 3
 dump
 shot {shots}/picker.png
@@ -693,7 +693,7 @@ click-id view/8
 wait 3
 dump
 shot {shots}/split.png
-hover-id tab@Output
+hover-id tab@Console
 wait 1
 down
 wait 1
@@ -726,7 +726,7 @@ dump
 click-id close-tab@Diff
 wait 3
 dump
-tab listing
+tab source
 wait 3
 dump
 shot {shots}/revealed.png
@@ -765,13 +765,13 @@ dump
 click-id paths/2
 wait 3
 dump
-click-id outline/5
+click-id steps/5
 wait 3
 dump
-click-id expand/5
+click-id inline/5
 wait 3
 rect doccode/5
-shot {shots}/expanded.png
+shot {shots}/inlined.png
 click <<DUMP rect doccode/5|158,120>>
 wait 3
 dump
@@ -779,10 +779,10 @@ shot {shots}/nested.png
 click-id from/0
 wait 3
 dump
-click-id expand/5
+click-id inline/5
 wait 3
 rect doccode/5
-shot {shots}/collapsed.png
+shot {shots}/not-inlined.png
 click <<DUMP rect doccode/5|158,120>>
 wait 3
 dump

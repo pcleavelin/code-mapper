@@ -113,7 +113,7 @@ fn symbol_tip(model: &Model, frame: &mut Frame<'_>, at: Point, symbol: SymbolId)
                 );
             }
             frame.label(
-                "alt-click: pin in the peek panel   ctrl-click or double-click: go there",
+                "alt-click: keep in the peek panel   ctrl-click or double-click: go there",
                 WEAK,
             );
             frame.finish();
@@ -158,7 +158,7 @@ fn text_tip(frame: &mut Frame<'_>, at: Point, text: &Label, room: Count) -> Opti
                 );
             }
             frame.label(
-                "alt-click: pin the definition in the peek panel   ctrl-click or double-click: go to it",
+                "alt-click: keep the definition in the peek panel   ctrl-click or double-click: go to it",
                 WEAK,
             );
             frame.finish();

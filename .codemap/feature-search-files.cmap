@@ -1,0 +1,67 @@
+codemap 8
+path feature-search-files
+kind flow
+author ai
+group features/gui
+note Type a regex in the search field at the left of the top bar and press enter: every line of every indexed file is matched, up to 5000 hits (when there were more, the Search tab reads '5000+' and the view and the status bar say the list was cut), and the centre switches to the Search tab listing the hits under a row per file, each with its line number and the line's text. The reader reaches for it to find text anywhere in the repo, not only in what a path covers, without switching to an editor. The status bar gives the count. Clicking a hit opens its file in the Source view at that line; clicking a file row opens the file. A bad regex is refused in the status bar with the parser's last line. The field keeps its text, selected, so typing replaces it.
+
+step 5etsxq
+order 1
+parent q1l62e
+author ai
+file crates/gui/src/nav.rs
+symbol set_tab
+lines 0 2
+hash b0a74509ff198664
+note Shows the Search tab.
+
+step f1ux4a
+order 2
+parent q1l62e
+author ai
+file crates/gui/src/app.rs
+symbol keys
+lines 24 31
+hash d4da65bf6ddde953
+note Trigger: the keys phase hands the frame's edits and typed text to the search field among the others.
+
+step igzyv8
+order 5
+parent mysbs4
+author ai
+file crates/gui/src/nav.rs
+symbol open_line
+lines 0 5
+hash c19fb12e93c3ddc2
+note Opens the file in the Source view with the hit line selected and scrolled to.
+
+step mysbs4
+order 4
+parent q1l62e
+author ai
+file crates/gui/src/views/center.rs
+symbol search_view
+lines 0 90
+hash bec8e0966bfdca3b
+note Trigger in the Search tab: each visible hit is a HIT_ROW (hit/<n>) and a click queues GoTo for its file and line; each file row (hitfile/<file number>) queues GoTo for the file's first line.
+
+step q1l62e
+order 0
+author ai
+file crates/gui/src/action.rs
+symbol search
+lines 0 43
+hash 9ea700a2505db91c
+link search
+note The handler: compiles the field's text, scans the lines already in memory for every file, stores the hits up to HIT_LIMIT and whether that cut them, reports the count and shows the Search tab.
+
+step y9h82n
+order 3
+parent f1ux4a
+author ai
+file crates/gui/src/action.rs
+symbol typed
+lines 0 31
+hash 93b44485cfbbff1d
+link feature-new-path
+note The search field keeps its text on enter and marks it whole; a submitted line runs search.

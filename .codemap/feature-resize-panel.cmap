@@ -3,7 +3,7 @@ path feature-resize-panel
 kind flow
 author ai
 group features/gui
-note Drag the sash between two panels to move the boundary between them; the cursor shows the resize arrows while hovering or dragging. The reader reaches for it to give the room to whichever panel matters now, a wide graph or a tall outline, instead of an even split. The position is kept as a share of the split, so it follows the window when the window is resized, and each side keeps a floor of 12 columns across or 4 rows down. The new share is saved with the layout once the sash is let go.
+note Drag the divider between two panels to move the boundary between them; the cursor shows the resize arrows while hovering or dragging. The reader reaches for it to give the room to whichever panel matters now, a wide graph or a tall steps list, instead of an even split. The position is kept as a share of the split, so it follows the window when the window is resized, and each side keeps a floor of 12 columns across or 4 rows down. The new share is saved with the layout once the divider is let go.
 
 step 13x7m5
 order 0
@@ -21,8 +21,8 @@ author ai
 file crates/gui/src/panels.rs
 symbol ratio_at
 lines 0 7
-hash a7b42257c573e865
-note The pointer's position in the split, less half the sash, over the room.
+hash e50c29bbc9c1d0fd
+note The pointer's position in the split, less half the divider, over the room.
 
 step f2g7j8
 order 1
@@ -31,18 +31,18 @@ author ai
 file crates/gui/src/views/panel_tree.rs
 symbol panel_input
 lines 0 27
-hash d7c1ad0ab6996bcc
-note Trigger, read at the start of each frame before the views: for each split whose sash is held, Resize is queued with the ratio under the pointer, from last frame's rectangle of the split's box (pair/<n>), so the sash follows the pointer with no drift.
+hash e4321ac653e57c5e
+note Trigger, read at the start of each frame before the views: for each split whose divider is held, Resize is queued with the ratio under the pointer, from last frame's rectangle of the split's box (pair/<n>), so the divider follows the pointer with no drift.
 
 step wivzit
 order 3
 parent 13x7m5
 author ai
 file crates/gui/src/views/panel_tree.rs
-symbol sash_bar
+symbol divider_bar
 lines 0 11
-hash e50f04116607371c
-note The sash, one per split between its halves, with the resize cursor.
+hash f907b135cff0d08b
+note The divider, one per split between its halves, with the resize cursor.
 
 step zzo4tb
 order 4
@@ -51,5 +51,5 @@ author ai
 file crates/gui/src/panels.rs
 symbol divide
 lines 0 20
-hash 30f0be96bb714f5a
+hash 59ab08956fdfe0c4
 note The effect from the next frame: the ratio sets the first half's size, clamped to the floors.

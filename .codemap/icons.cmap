@@ -20,8 +20,8 @@ author ai
 file crates/ui/src/icon.rs
 symbol Icon
 lines 0 14
-hash 1cf5fd185b549b54
-note The icons the GUI draws, by what they mean rather than what they look like: Add (the picker), Close, SplitAcross and SplitDown, Back and Forward, Unfolded and Folded (a fold's or a group's chevron, named after ViewFlag::Folded and Fold/Unfold; Close is the dismiss icon, a different thing), MoreAbove and MoreBelow (context), Check (a symbol some path covers, in the Symbols tab). A new icon is a variant here and its Codicons codepoint in glyph.
+hash c105c6b0b09a3a66
+note The icons the GUI draws, by what they mean rather than what they look like: Add (the picker), Close, SplitRight and SplitDown, Back and Forward, Expanded and Collapsed (a collapse's or a group's chevron, named after ViewFlag::Collapsed and Collapse/Expand; Close is the dismiss icon, a different thing), MoreAbove and MoreBelow (context), Check (a symbol some path covers, in the Symbols tab). A new icon is a variant here and its Codicons codepoint in glyph.
 
 step 979nyy
 order 8
@@ -108,7 +108,7 @@ author ai
 file crates/ui/src/icon.rs
 symbol glyph
 lines 0 16
-hash 83180d98dfbc2731
+hash b18730a99afbbaab
 note Each icon's Codicons codepoint, from the font's own table (codicon.csv in the package): add EA60, close EA76, split-horizontal EB56, split-vertical EB57, arrow-left EA9B, arrow-right EA9C, chevron-down EAB4, chevron-right EAB6, fold-up EAF4, fold-down EAF3, check EAB2.
 
 step xe1trh

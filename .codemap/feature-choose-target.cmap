@@ -3,7 +3,7 @@ path feature-choose-target
 kind flow
 author ai
 group features/gui
-note Steps added from the Listing, Symbols or Xrefs hang under the target: the step last selected in the path being read. The reader needs it because without a target and a way back to top level, every added step would nest under whatever was selected last. The Listing and Symbols views show it in a strip under their toolbars ('adds to startup under 1.2 fill') and the Paths outline marks its row '+ adds here'. Press 'top level' in the strip and added steps go at the top level of the path instead, until a step is selected again. Moving the selection off the path (a symbol in Symbols, Xrefs or the graph) leaves the target where it was, which is what lets a reader collect several symbols under one step.
+note Steps added from the Source, Symbols or References hang under the target: the step last selected in the path being read. The reader needs it because without a target and a way back to top level, every added step would nest under whatever was selected last. The Source and Symbols views show it in a strip under their toolbars ('adds to startup under 1.2 fill') and the Paths steps list marks its row '+ adds here'. Press 'top level' in the strip and added steps go at the top level of the path instead, until a step is selected again. Moving the selection off the path (a symbol in Symbols, References or the graph) leaves the target where it was, which is what lets a reader collect several symbols under one step.
 
 step 9wotic
 order 1
@@ -52,7 +52,7 @@ file crates/gui/src/views/authoring.rs
 symbol target_strip
 lines 0 34
 hash 052aea45446863f8
-note Trigger and display: the strip under the Listing and Symbols toolbars names the path and the target ('under 1.2 fill' or 'at the top level'), and its 'top level' button (target-top) queues AddAtTopLevel. With no path being read it says to open one.
+note Trigger and display: the strip under the Source and Symbols toolbars names the path and the target ('under 1.2 fill' or 'at the top level'), and its 'top level' button (target-top) queues AddAtTopLevel. With no path being read it says to open one.
 
 step nioly0
 order 5
@@ -62,4 +62,4 @@ file crates/gui/src/views/authoring.rs
 symbol target_mark
 lines 0 2
 hash d61202146974db00
-note The outline's '+ adds here' after the target row.
+note The steps list's '+ adds here' after the target row.

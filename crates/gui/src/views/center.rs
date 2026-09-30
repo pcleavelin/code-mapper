@@ -12,13 +12,13 @@ use crate::panels::Direction;
 use crate::status::Status;
 use crate::text::{Counted, Noun, Tag};
 use crate::theme::{
-    FIELD, GREEN, LINE_FIELD, LINES_SELECTED, LISTING_GUESS, ORANGE, RED, ROW_EXTRA, TEXT, WEAK,
+    FIELD, GREEN, LINE_FIELD, LINES_SELECTED, ORANGE, RED, ROW_EXTRA, SOURCE_GUESS, TEXT, WEAK,
 };
 use crate::widgets::{Chosen, CodeBlock, Container, Frame, Marks, Scroller, Width};
 
 use super::authoring;
 
-fn listing_toolbar(model: &Model, frame: &mut Frame<'_>, path: &RelativePath) {
+fn source_toolbar(model: &Model, frame: &mut Frame<'_>, path: &RelativePath) {
     frame.start(Container::Toolbar);
     frame.label(path.as_str(), TEXT);
     let add = match model.nav.lines() {
@@ -49,7 +49,7 @@ fn listing_toolbar(model: &Model, frame: &mut Frame<'_>, path: &RelativePath) {
     frame.finish();
 }
 
-pub(super) fn listing(model: &Model, frame: &mut Frame<'_>) {
+pub(super) fn source(model: &Model, frame: &mut Frame<'_>) {
     let Some(file) = model.nav.file() else {
         frame.label("click a symbol to open its file", WEAK);
         return;
@@ -57,7 +57,7 @@ pub(super) fn listing(model: &Model, frame: &mut Frame<'_>) {
     let Some(source) = model.index.file(file) else {
         return;
     };
-    let id = ids::listing();
+    let id = ids::source();
     let row_height = frame.row_height();
     let count = source.text().count();
     let lines = Px::new(i32::try_from(count.value()).unwrap_or(0));
@@ -66,14 +66,14 @@ pub(super) fn listing(model: &Model, frame: &mut Frame<'_>) {
         let height = frame
             .ui
             .placement(id)
-            .map_or(LISTING_GUESS, |placement| placement.rect.height);
+            .map_or(SOURCE_GUESS, |placement| placement.rect.height);
         let above = Px::new(
             (i32::try_from(request.line.value()).unwrap_or(0) - 3).max(0) * row_height.get(),
         );
         offset = above.min((Px::new(lines.get() * row_height.get()) - height).max(Px::ZERO));
         frame.push(Action::ScrolledToLine(request.ticket));
     }
-    listing_toolbar(model, frame, source.path());
+    source_toolbar(model, frame, source.path());
     authoring::target_strip(model, frame);
     let scrolled = frame.scroll_column(id, offset, Scroller::Plain, Some(FIELD));
     let selection = model.nav.lines();
@@ -141,9 +141,9 @@ enum HitLine {
 }
 
 fn hit_lines(model: &Model) -> Vec<HitLine> {
-    let mut lines = Vec::with_capacity(model.results.len());
+    let mut lines = Vec::with_capacity(model.hits.len());
     let mut header: Option<usize> = None;
-    for (position, hit) in model.results.iter().enumerate() {
+    for (position, hit) in model.hits.iter().enumerate() {
         match header.and_then(|at| lines.get_mut(at)) {
             Some(HitLine::File { file, hits }) if *file == hit.file => {
                 *hits = Count::new(hits.get() + 1);
@@ -161,8 +161,8 @@ fn hit_lines(model: &Model) -> Vec<HitLine> {
     lines
 }
 
-pub(super) fn results_view(model: &Model, frame: &mut Frame<'_>) {
-    if model.results.is_empty() {
+pub(super) fn search_view(model: &Model, frame: &mut Frame<'_>) {
+    if model.hits.is_empty() {
         let search = model.fields.get(Which::Search).text();
         frame.label(
             if search.is_empty() {
@@ -185,7 +185,7 @@ pub(super) fn results_view(model: &Model, frame: &mut Frame<'_>) {
         frame.finish();
     }
     let lines = hit_lines(model);
-    let id = ids::results();
+    let id = ids::search();
     let row_height = frame.row_height() + ROW_EXTRA;
     let scrolled = frame.scroll_column(id, model.scrolls.get(id), Scroller::Plain, None);
     let count = Count::new(lines.len());
@@ -197,7 +197,7 @@ pub(super) fn results_view(model: &Model, frame: &mut Frame<'_>) {
         Count::new(60),
     );
     let width = model
-        .results
+        .hits
         .iter()
         .map(|hit| hit.line.number())
         .max()
@@ -228,7 +228,7 @@ pub(super) fn results_view(model: &Model, frame: &mut Frame<'_>) {
                 }
             }
             HitLine::Hit(position) => {
-                let Some(hit) = model.results.get(position.get()) else {
+                let Some(hit) = model.hits.get(position.get()) else {
                     continue;
                 };
                 let text = model
@@ -432,7 +432,7 @@ pub(super) fn graph_tab(model: &Model, frame: &mut Frame<'_>, graph: Option<Grap
         frame.push(Action::Graph(GraphAction::WantFit));
     }
     let turn = match model.graph.direction() {
-        Direction::Across => "top to bottom",
+        Direction::Right => "top to bottom",
         Direction::Down => "left to right",
     };
     if frame.small_button(turn, ids::GRAPH_TURN.target()).clicked() {
@@ -444,7 +444,7 @@ pub(super) fn graph_tab(model: &Model, frame: &mut Frame<'_>, graph: Option<Grap
         runs.extend([
             Run::new(format!("{}: ", path.name()), TEXT),
             Run::new("\u{2500} step  ", GREEN),
-            Run::new("\u{2500} expansion  ", WEAK),
+            Run::new("\u{2500} revealed  ", WEAK),
             Run::new("\u{2500} call back up  ", ORANGE),
         ]);
     }

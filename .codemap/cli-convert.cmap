@@ -12,7 +12,7 @@ author ai
 file crates/cli/src/convert.rs
 symbol Query
 lines 0 30
-hash f57f14fa7e8b93ed
+hash 8c97343ad6e6e9b5
 note The reading commands, each with the arguments it needs as domain values. None of them can change the map.
 
 step 1u3vma
@@ -150,7 +150,7 @@ author ai
 file crates/cli/src/convert.rs
 symbol from
 lines 0 42
-hash 6b1511c0cb632a9a
+hash 35abf751bce2b9c2
 note One arm per command. Each argument struct converts through its own From, so this match only says which kind of request a command is.
 
 step kuueng
@@ -160,8 +160,8 @@ author ai
 file crates/cli/src/convert.rs
 symbol LinkView
 lines 0 3
-hash f46bb02c2af7e3cb
-note path --expand: whether linked paths print inline.
+hash c3134ca624d4be23
+note path --inline: whether linked paths print inline.
 
 step ma3ca0
 order 12

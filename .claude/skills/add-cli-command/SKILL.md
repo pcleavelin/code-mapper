@@ -1,6 +1,6 @@
 ---
 name: add-cli-command
-description: Add or change a codemap CLI command (the agent's interface, also run from the GUI's output panel). Use after the feature exists in the registry (add-feature).
+description: Add or change a codemap CLI command (the agent's interface, also run from the GUI's Console). Use after the feature exists in the registry (add-feature).
 ---
 
 # Add a CLI command

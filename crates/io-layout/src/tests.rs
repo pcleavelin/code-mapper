@@ -6,12 +6,12 @@ use super::*;
 
 const SAMPLE: &str = "codemap layout 1
 down 820
-  across 220
+  right 220
     panel Paths* Symbols Files
-    across 740
-      panel Path Diff Graph* Listing Results
-      panel Xrefs*
-  panel Output*
+    right 740
+      panel Path Diff Graph* Source Search
+      panel References*
+  panel Console*
 ";
 
 fn scratch(name: &str) -> PathBuf {

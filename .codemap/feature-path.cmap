@@ -3,7 +3,7 @@ path feature-path
 kind flow
 author ai
 group features/cli
-note path <name> [--expand]: one path as a document to read top to bottom instead of opening files. The agent reaches for it to read a mapped workflow as one document instead of opening every file its steps point into. It prints the path's title and note, which other paths link to it, then every step in tree order with its note and its code as numbered lines. Steps are numbered like sections (1, 1.1, 1.2, 2) and a '-- back in <symbol> --' line marks the return to a shallower level, so a long flow reads like a book. With --expand, a step that links to another path is followed by that path's steps inline, numbered under the linking step; a path already open higher up is not expanded again, which keeps a link cycle finite.
+note path <name> [--inline]: one path as a document to read top to bottom instead of opening files. The agent reaches for it to read a mapped workflow as one document instead of opening every file its steps point into. It prints the path's title and note, which other paths link to it, then every step in tree order with its note and its code as numbered lines. Steps are numbered like sections (1, 1.1, 1.2, 2) and a '-- back in <symbol> --' line marks the return to a shallower level, so a long flow reads like a book. With --inline, a step that links to another path is followed by that path's steps inline, numbered under the linking step; a path already open higher up is not inlined again, which keeps a link cycle finite.
 
 step 0el8qw
 order 7
@@ -12,8 +12,8 @@ author ai
 file crates/cli/src/exec.rs
 symbol steps
 lines 0 32
-hash 166ffee7925bbc55
-note Walks the numbered steps: a back-in line when the depth decreases, the step title, its numbered source lines, then the linked path when expanding.
+hash 4547b1fdf9262e75
+note Walks the numbered steps: a back-in line when the depth decreases, the step title, its numbered source lines, then the linked path when inlining.
 
 step 0j3lcw
 order 5
@@ -63,7 +63,7 @@ file crates/cli/src/wire.rs
 symbol end_of
 lines 0 2
 hash 4bc713f4ef707f3d
-note '-- end of <path> --' after an expanded link.
+note '-- end of <path> --' after an inlined link.
 
 step eoh4yn
 order 8
@@ -120,9 +120,9 @@ order 13
 parent z5050n
 author ai
 file crates/cli/src/wire.rs
-symbol expanded_before
+symbol inlined_before
 lines 0 6
-hash 7a115caa12e447ef
+hash 48a329f9a83c6239
 note Printed instead of recursing when the linked path is already open above, which stops a cycle.
 
 step w9pwsw
@@ -131,16 +131,16 @@ author ai
 file crates/cli/src/exec.rs
 symbol path
 lines 0 17
-hash c84b6e10b6fd8c1f
-note Run::path: looks the name up and, for --expand, seeds the list of open paths with this one so a link back to it is not expanded; then prints the title, the 'linked from' line, and hands the steps to a Document that carries the index, map, output and the expanded list.
+hash f50d1b3f9f757865
+note Run::path: looks the name up and, for --inline, seeds the list of open paths with this one so a link back to it is not inlined; then prints the title, the 'linked from' line, and hands the steps to a Document that carries the index, map, output and the inlined list.
 
 step z5050n
 order 12
 parent 0el8qw
 author ai
 file crates/cli/src/exec.rs
-symbol expand
-lines 0 20
-hash e23c68973a75e19d
+symbol inline_link
+lines 0 26
+hash c4a17d86b35372ef
 link path-links
-note Only with --expand and a link to an existing path: recurses into steps with the target's steps one level deeper, prefixed with the linking step's number, then prints the end marker.
+note Only with --inline and a link to an existing path: recurses into steps with the target's steps one level deeper, prefixed with the linking step's number, then prints the end marker.

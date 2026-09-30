@@ -13,7 +13,7 @@ use crate::authoring::{Authoring, Hang};
 use crate::graph::build::{self, Built, CellPoint, Origin};
 use crate::graph::scene::{self, Drawn, Metrics, Scene, SceneInput};
 use crate::graph::{
-    Button, Drag, Expansion, Glide, GraphState, Hit, HitRect, Keyboard, Node, Presence, Side,
+    Button, Drag, Glide, GraphState, Hit, HitRect, Keyboard, Node, Presence, Reveal, Side,
     Steering, Wish,
 };
 use crate::grid::GUTTER;
@@ -103,12 +103,12 @@ impl GraphState {
             }
             GraphAction::Toggle(node, side) => {
                 self.keep_node(node);
-                let expansion = Expansion { node, side };
-                match self.expansions.iter().position(|found| *found == expansion) {
+                let reveal = Reveal { node, side };
+                match self.reveals.iter().position(|found| *found == reveal) {
                     Some(position) => {
-                        self.expansions.remove(position);
+                        self.reveals.remove(position);
                     }
-                    None => self.expansions.push(expansion),
+                    None => self.reveals.push(reveal),
                 }
                 self.manual.remove(&node);
             }
@@ -144,9 +144,9 @@ impl GraphState {
                 self.auto_open = Some(node);
                 self.root = Some(node);
                 for side in [Side::Callees, Side::Callers] {
-                    let expansion = Expansion { node, side };
-                    if !self.expansions.contains(&expansion) {
-                        self.expansions.push(expansion);
+                    let reveal = Reveal { node, side };
+                    if !self.reveals.contains(&reveal) {
+                        self.reveals.push(reveal);
                     }
                 }
             }
@@ -330,7 +330,7 @@ impl App {
         match hit {
             Some(Hit::Button(node, button)) => match button {
                 Button::Preview => self.graph(GraphAction::ToggleCollapsed(node)),
-                Button::Listing => {
+                Button::Source => {
                     if let Some(range) = self.model.graph.built.range(node) {
                         deferred.push(Action::GoTo(node.symbol.file(), range.start()));
                     }

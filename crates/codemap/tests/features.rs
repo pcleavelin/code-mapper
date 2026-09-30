@@ -110,7 +110,7 @@ fn graph_button(element: &str) -> Option<&'static str> {
     match element {
         "node-button" => Some("'callees"),
         "node-context" => Some("'[more-below]"),
-        "node-listing" => Some("'listing"),
+        "node-source" => Some("'source"),
         "node-preview" => Some("'less"),
         "node-add" => Some("'+ step"),
         "box-parent" => Some("DUMP parent "),

@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use domain::{Change, Depth, FileId, Line, Path, PathDiff, Span, Step, Symbol, SymbolName};
 use ui::{Count, Icon, Id, Label, Px, Run};
 
-use crate::action::{Action, ContextChange, Fold, Hide};
+use crate::action::{Action, Collapse, ContextChange, Hide};
 use crate::ids::{self, Control, Target};
 use crate::model::{
     Context, Measured, Model, Numbered, PathSlot, StepKey, StepShape, StepSlot, StepView, Tab,
@@ -12,7 +12,7 @@ use crate::model::{
 use crate::nav::Scrolling;
 use crate::text::{Counted, Noun, Tag};
 use crate::theme::{
-    ACCENT, DANGER_GAP, EXPAND_BUTTON, FAINT, FOLD_ROOM, GREEN, HIDE_BUTTON, INDENT, PENDING,
+    ACCENT, COLLAPSE_ROOM, DANGER_GAP, FAINT, GREEN, HIDE_BUTTON, INDENT, INLINE_BUTTON, PENDING,
     PIXEL, RED, SLICE, TEXT, WEAK, WHOLE_BUTTON,
 };
 use crate::widgets::{Chosen, CodeBlock, Container, Frame, Marks, Padding, Scroller, Width};
@@ -119,15 +119,23 @@ fn header_bar(frame: &mut Frame<'_>, path: PathSlot, found: &Path, diff: Option<
         ("graph", ids::SHOW_GRAPH, Action::OpenPath(path, Tab::Graph)),
         (
             "hide all code",
-            ids::HIDE_ALL,
+            ids::HIDE_ALL_CODE,
             Action::HideAll(path, Hide::Hide),
         ),
-        ("show all", ids::SHOW_ALL, Action::HideAll(path, Hide::Show)),
-        ("fold all", ids::FOLD_ALL, Action::FoldAll(path, Fold::Fold)),
         (
-            "unfold all",
-            ids::UNFOLD_ALL,
-            Action::FoldAll(path, Fold::Unfold),
+            "show all code",
+            ids::SHOW_ALL_CODE,
+            Action::HideAll(path, Hide::Show),
+        ),
+        (
+            "collapse all",
+            ids::COLLAPSE_ALL,
+            Action::CollapseAll(path, Collapse::Collapse),
+        ),
+        (
+            "expand all",
+            ids::EXPAND_ALL,
+            Action::CollapseAll(path, Collapse::Expand),
         ),
     ];
     for (label, control, action) in buttons {
@@ -250,7 +258,7 @@ pub(super) fn path_document(model: &Model, frame: &mut Frame<'_>) {
     else {
         frame.label(
             if model.map.paths().is_empty() {
-                "no paths yet: the agent writes them (path-new, path-add in the output panel)"
+                "no paths yet: the agent writes them (path-new, path-add in the console)"
             } else {
                 "pick a path on the left"
             },
@@ -276,7 +284,7 @@ pub(super) fn path_document(model: &Model, frame: &mut Frame<'_>) {
     frame.scroll_column(ids::document(), offset, Scroller::Document, None);
     if found.steps().is_empty() {
         frame.note(
-            "No steps yet. Select lines in the Listing and press 'add step', or press '+ step' on a row in Symbols or Xrefs, or on a node in the Graph. Drag steps in the Paths outline to rearrange them.",
+            "No steps yet. Select lines in the Source view and press 'add step', or press '+ step' on a row in Symbols or References, or on a node in the Graph. Drag steps in the Paths steps list to rearrange them.",
             WEAK,
             Padding::Path,
         );
@@ -394,18 +402,18 @@ fn link_buttons(
         frame.push(Action::OpenPath(target, Tab::Path));
     }
     if walk.chain.contains(&target) {
-        frame.label("expanded above", WEAK);
+        frame.label("inlined above", WEAK);
     } else {
-        let label = if row.has(ViewFlag::Expanded) {
-            "collapse"
+        let label = if row.has(ViewFlag::Inlined) {
+            "un-inline"
         } else {
-            "expand"
+            "inline"
         };
         if frame
-            .small_button_sized(label, Some(EXPAND_BUTTON), row.target(ids::EXPAND))
+            .small_button_sized(label, Some(INLINE_BUTTON), row.target(ids::INLINE))
             .clicked()
         {
-            frame.push(Action::Toggle(row.key, ViewFlag::Expanded));
+            frame.push(Action::Toggle(row.key, ViewFlag::Inlined));
         }
     }
     Some(target)
@@ -419,7 +427,7 @@ fn step_header(
     first: &mut First,
 ) -> Option<PathSlot> {
     let key = row.key;
-    let folded = row.has(ViewFlag::Folded);
+    let collapsed = row.has(ViewFlag::Collapsed);
     let hidden = row.has(ViewFlag::Hidden);
     let children = model.descendants(key);
     frame.start(Container::StepRow {
@@ -427,15 +435,22 @@ fn step_header(
     });
     frame.indent(row.indent);
     if children.get() > 0 {
-        let arrow = if folded { Icon::Folded } else { Icon::Unfolded };
-        if frame.small_button(arrow, row.target(ids::FOLD)).clicked() {
-            frame.push(Action::Toggle(key, ViewFlag::Folded));
+        let arrow = if collapsed {
+            Icon::Collapsed
+        } else {
+            Icon::Expanded
+        };
+        if frame
+            .small_button(arrow, row.target(ids::COLLAPSE))
+            .clicked()
+        {
+            frame.push(Action::Toggle(key, ViewFlag::Collapsed));
         }
     } else {
-        frame.cells_gap(FOLD_ROOM);
+        frame.cells_gap(COLLAPSE_ROOM);
     }
     let mut runs = title_runs(row, frame, walk);
-    if folded {
+    if collapsed {
         runs.insert(3, Run::new(format!("  +{children}"), WEAK));
     }
     if row.occurrence.is_some() && mem::replace(first, First::Done) == First::Pending {
@@ -506,7 +521,7 @@ fn step_header(
 
 fn step_note(frame: &mut Frame<'_>, row: &Row<'_>) {
     frame.start(Container::FillRow);
-    frame.indent(row.indent + FOLD_ROOM.of(frame.cell_width()));
+    frame.indent(row.indent + COLLAPSE_ROOM.of(frame.cell_width()));
     match row.step.note() {
         Some(note) => frame.note(note.as_str(), GREEN, Padding::Step),
         None => frame.note("(no note)", PENDING, Padding::Step),
@@ -691,19 +706,19 @@ fn steps(model: &Model, frame: &mut Frame<'_>, path: PathSlot, walk: &mut Walk<'
             },
         };
         let target = step_or_reserve(model, frame, &row, walk, &mut first, view);
-        let folded = row.has(ViewFlag::Folded);
-        if folded {
+        let collapsed = row.has(ViewFlag::Collapsed);
+        if collapsed {
             hide_below = Some(numbered.depth);
         }
-        if let Some(target) = target
-            .filter(|target| row.has(ViewFlag::Expanded) && !folded && !walk.chain.contains(target))
-        {
-            expand(model, frame, walk, &row, target, Count::new(depth));
+        if let Some(target) = target.filter(|target| {
+            row.has(ViewFlag::Inlined) && !collapsed && !walk.chain.contains(target)
+        }) {
+            inline(model, frame, walk, &row, target, Count::new(depth));
         }
     }
 }
 
-fn expand(
+fn inline(
     model: &Model,
     frame: &mut Frame<'_>,
     walk: &mut Walk<'_>,

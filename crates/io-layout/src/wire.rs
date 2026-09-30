@@ -2,7 +2,7 @@ use std::iter::Peekable;
 use std::vec::IntoIter;
 
 pub(crate) const HEADER: &str = "codemap layout 1";
-const ACROSS: &str = "across";
+const RIGHT: &str = "right";
 const DOWN: &str = "down";
 const PANEL: &str = "panel";
 const SHOWN: char = '*';
@@ -10,7 +10,7 @@ const INDENT: &str = "  ";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum WireDirection {
-    Across,
+    Right,
     Down,
 }
 
@@ -81,8 +81,8 @@ fn tree(rows: &mut Peekable<IntoIter<Row>>, depth: usize) -> Option<WireTree> {
             .collect();
         return Some(WireTree::Panel { views });
     }
-    let direction = if head == ACROSS {
-        WireDirection::Across
+    let direction = if head == RIGHT {
+        WireDirection::Right
     } else if head == DOWN {
         WireDirection::Down
     } else {
@@ -129,7 +129,7 @@ fn print_tree(tree: &WireTree, depth: usize, out: &mut String) {
             second,
         } => {
             let word = match direction {
-                WireDirection::Across => ACROSS,
+                WireDirection::Right => RIGHT,
                 WireDirection::Down => DOWN,
             };
             out.push_str(word);

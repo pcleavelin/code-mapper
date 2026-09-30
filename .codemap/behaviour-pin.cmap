@@ -12,7 +12,7 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol gui_scenarios
 lines 0 4
-hash 7699eb0b2afdbb2e
+hash b8c0240ab926d5e1
 note The GUI scenarios, listed once in the gui_scenarios macro that gui.rs and parity.rs both expand. Each settles with SETTLE first; its stderr and the output of its after commands go to ran, which fails on a crash or a script error.
 
 step 1wrmiq
@@ -33,7 +33,7 @@ file crates/codemap/tests/common/mod.rs
 symbol MAP
 lines 0 45
 hash f3681d2a8f8f8fa4
-note Four paths of every kind, with nested steps, a slice step and notes: enough for the document, the outline, the graph and the diff to have something to show.
+note Four paths of every kind, with nested steps, a slice step and notes: enough for the document, the steps list, the graph and the diff to have something to show.
 
 step 2kgy4u
 order 34
@@ -52,8 +52,8 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol graph
 lines 0 97
-hash ff2e7fea213363d3
-note The graph: the fitted start, a node's callees and hide buttons, an off-path node, shift-wheel and wheel, dragging a node, auto layout, ctrl-wheel zoom, fit, 1:1, panning, and a node's context and no-context buttons; then, after clicking an off-path node, the arrow keys down, left and right walking between nodes (a dump after each, once the glide has had time to land), and the graph-turn button laying the tree out top to bottom (turned.png); last, a node's listing button opening its file in the Listing.
+hash 0e81cc4949068369
+note The graph: the fitted start, a node's callees and hide buttons, an off-path node, shift-wheel and wheel, dragging a node, auto layout, ctrl-wheel zoom, fit, 1:1, panning, and a node's context and no-context buttons; then, after clicking an off-path node, the arrow keys down, left and right walking between nodes (a dump after each, once the glide has had time to land), and the graph-turn button laying the tree out top to bottom (turned.png); last, a node's source button opening its file in the Source view.
 
 step 5147ql
 order 23
@@ -62,7 +62,7 @@ author ai
 file crates/codemap/tests/common/cli.rs
 symbol edit
 lines 0 90
-hash 36f8d324511ce556
+hash f1b26648698e56b1
 note Every edit command on a scratch path: creating with a bad kind, adding by symbol and by lines with bad parents and ranges, notes and note-edit, moves and swaps, links (to a missing path and to itself), rename, groups and group-rename, path-pin with bad ranges, path-rm of a step and of a linked path, and promote with and without a name.
 
 step 57lpfq
@@ -70,10 +70,10 @@ order 40
 parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
-symbol listing
+symbol source
 lines 0 59
-hash f3a217be432cbca0
-note The listing: opening a file at a line, a shift-click range selection added to startup with 'add step' (checked by the after command), goto-line with good, past-the-end and non-numeric input, the tooltip, ctrl-click, and back and forward by button and by key.
+hash 1d8ff7256147e6c5
+note The Source view: opening a file at a line, a shift-click range selection added to startup with 'add step' (checked by the after command), goto-line with good, past-the-end and non-numeric input, the tooltip, ctrl-click, and back and forward by button and by key.
 
 step 62zoqn
 order 15
@@ -171,7 +171,7 @@ author ai
 file crates/codemap/tests/features.rs
 symbol graph_button
 lines 0 10
-hash 80046938e1ddbc97
+hash 2ac63a7e341c7b1b
 note The graph node buttons, which scripts click by the label a dump prints rather than by id.
 
 step bqbhzd
@@ -181,7 +181,7 @@ author ai
 file crates/codemap/tests/common/cli.rs
 symbol read
 lines 0 57
-hash 51069214390d1b66
+hash e9e1b7296703a912
 note Every read command on the mapped fixture, including a range past the end of a file, a missing file, a bad regex, an unknown symbol or path, and the refusals of a bad command line.
 
 step by7tn1
@@ -364,8 +364,8 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol layout
 lines 0 73
-hash 8b3ad5b8413938a8
-note The panel tree: resizing the left split by its sash, splitting the centre and picking the Listing by typing, splitting that down and picking Xrefs by clicking (its old panel closes), dragging Output onto the left edge of the Paths panel, a click on a tab that moves nothing, a drag released over the top bar that cancels, closing a panel, and a tab command that brings the Listing back into a panel.
+hash 50ec9b998e75870b
+note The panel tree: resizing the left split by its divider, splitting the centre and picking the Source by typing, splitting that down and picking References by clicking (its old panel closes), dragging Console onto the left edge of the Paths panel, a click on a tab that moves nothing, a drag released over the top bar that cancels, closing a panel, and a tab command that brings the Source back into a panel.
 
 step j8h125
 order 33
@@ -404,8 +404,8 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol document
 lines 0 93
-hash e3447eca17052124
-note The document: scrolling, selecting a step, whole-symbol and context toggles, hide and fold, arrow keys, the breadcrumb, collapse, fold and unfold all, wheel scrolling, the outline and the jump to the graph.
+hash cc090d7e238ab9b4
+note The document: scrolling, selecting a step, whole-symbol and context toggles, hide and collapse, arrow keys, the breadcrumb, hide and show all code, collapse and expand all, wheel scrolling, the steps list and the jump to the graph.
 
 step k23duj
 order 9
@@ -462,8 +462,8 @@ author ai
 file crates/codemap/tests/parity.rs
 symbol repo_at
 lines 0 72
-hash a96ce7a098cf8cdf
-note The repo as a second fixture: files, symbols, roots, coverage, uncovered, stale, paths, a grep, notes, a tree, callers and callees, then every path printed; then a GUI script opens the document, a long path scrolled, the graph and the graph fitted, and the symbol, file and listing views, all photographed.
+hash 756c261933cc1315
+note The repo as a second fixture: files, symbols, roots, coverage, uncovered, stale, paths, a search, notes, a tree, callers and callees, then every path printed; then a GUI script opens the document, a long path scrolled, the graph and the graph fitted, and the symbol, file and Source views, all photographed.
 
 step o4w5dz
 order 49
@@ -472,8 +472,8 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol links
 lines 0 57
-hash 005626a36c380763
-note Path groups and links: collapsing and expanding a group in the paths list (absent checks that a closed group lists none of its paths), a linked step expanded inline in the document and the code inside it, the linked-from row, collapsing the link again, and following the link.
+hash 748d1989c5d42556
+note Path groups and links: collapsing and expanding a group in the paths list (absent checks that a closed group lists none of its paths), a linked step inlined in the document and the code inside it, the linked-from row, collapsing the link again, and following the link.
 
 step q0lbe5
 order 42
@@ -482,8 +482,8 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol panels
 lines 0 100
-hash a8533df344f2f080
-note The side panels and command line: the symbol list and its filter, the file tree and a folder toggle, the paths list, search and a hit, commands typed into the command line (with a bad one and clear), a new path from the Paths tab's form, an 'add step' from the listing, and ctrl-s to save.
+hash d3b58208c368fda1
+note The side panels and console: the symbol list and its filter, the file tree and a folder toggle, the paths list, search and a hit, commands typed into the console (with a bad one and clear), a new path from the Paths tab's form, an 'add step' from the Source view, and ctrl-s to save.
 
 step rlmca4
 order 29
@@ -550,8 +550,8 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol AUTHORING
 lines 0 102
-hash 9226ac47a7263a44
-note The GUI authoring gestures on a fresh path: the new-path form (an empty name refused, kind and group chosen), '+ step' from Symbols and Xrefs, each row hovered first since its action shows only then (a repeat refused), the target strip's 'top level', 'add step' from the listing, '+ step' on an off-path graph node, three outline drags (under, before, under), 'new path from it', and a save; the after command prints the resulting path.
+hash d7a7705f3c463bc7
+note The GUI authoring gestures on a fresh path: the new-path form (an empty name refused, kind and group chosen), '+ step' from Symbols and References, each row hovered first since its action shows only then (a repeat refused), the target strip's 'top level', 'add step' from the Source view, '+ step' on an off-path graph node, three steps list drags (under, before, under), 'promote', and a save; the after command prints the resulting path.
 
 step wv4hxm
 order 17

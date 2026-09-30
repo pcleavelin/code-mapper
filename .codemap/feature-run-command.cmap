@@ -3,7 +3,7 @@ path feature-run-command
 kind flow
 author ai
 group features/gui
-note Click the command line at the bottom of the Output panel, type any CLI command (without the root) and press enter: it runs against the open index and map exactly as the CLI would, its output is appended to the log and the log scrolls to the end. The reader needs it for the map edits that have no control of their own yet (notes, links, kind, group) and for roots, without leaving for a terminal. A command that changes the map marks it unsaved instead of saving. 'clear' empties the log. Up and down recall earlier commands.
+note Click the command line at the bottom of the Console, type any CLI command (without the root) and press enter: it runs against the open index and map exactly as the CLI would, its output is appended to the log and the log scrolls to the end. The reader needs it for the map edits that have no control of their own yet (notes, links, kind, group) and for roots, without leaving for a terminal. A command that changes the map marks it unsaved instead of saving. 'clear' empties the log. Up and down recall earlier commands.
 
 step arolan
 order 3
@@ -21,7 +21,7 @@ author ai
 file crates/gui/src/action.rs
 symbol run_command
 lines 0 41
-hash b0f1a1d0d48f8f9e
+hash 6c8d6863553d1fea
 link cli-command
 note The handler. Echoes the line into the log and pins the log to its end for two frames, parses it with the CLI's own parser (a parse error, help included, goes into the log and the status bar), and runs cli::exec with the human as author and no language servers. A changed map marks it dirty; a failure goes to the log and status.
 

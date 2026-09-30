@@ -3,7 +3,7 @@ path feature-follow-xref
 kind flow
 author ai
 group features/gui
-note The Xrefs panel lists, under 'Callers', what calls the focused symbol, under 'Callees', what it calls, and under 'References' every reference the language's server reports, grouped by file. The reader reaches for it to move from a symbol to its callers, callees and references without grepping (browsing xrefs). Clicking a caller or callee focuses that symbol the way a Symbols row does: it selects the matching step of the path being read, or opens the Listing on it. Clicking a reference opens its file in the Listing at that line, and clicking a file row opens that file. While the symbol's file waits for its server, the rows are dimmed and caller and callee clicks do nothing.
+note The References panel lists, under 'Callers', what calls the focused symbol, under 'Callees', what it calls, and under 'Other references' every reference the language's server reports, grouped by file. The reader reaches for it to move from a symbol to its callers, callees and references without grepping (browsing xrefs). Clicking a caller or callee focuses that symbol the way a Symbols row does: it selects the matching step of the path being read, or opens the Source view on it. Clicking a reference opens its file in the Source view at that line, and clicking a file row opens that file. While the symbol's file waits for its server, the rows are dimmed and caller and callee clicks do nothing.
 
 step 56ca80
 order 0
@@ -11,7 +11,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol go_to_symbol
 lines 0 14
-hash 84310461820f5965
+hash 44cd199b2a7a836e
 note The handler for a caller or callee row: go_to_symbol, the same as a Symbols row.
 
 step 956vwm
@@ -21,35 +21,35 @@ author ai
 file crates/gui/src/nav.rs
 symbol open_line
 lines 0 5
-hash cdfa051d42083245
-note Opens the reference's file in the Listing with the line selected.
+hash c19fb12e93c3ddc2
+note Opens the reference's file in the Source view with the line selected.
 
 step exmctd
 order 6
 parent yn39qh
 author ai
-file crates/gui/src/views/xrefs.rs
-symbol xref_lines
+file crates/gui/src/views/references.rs
+symbol reference_lines
 lines 0 46
-hash c91dd7e45e291df5
+hash 70da0512fee936d5
 note The rows the references land in: after the call lists, each reference under a file row that counts them, so a merged answer shows up as rows next frame.
 
 step tpuq0j
 order 3
 parent 56ca80
 author ai
-file crates/gui/src/views/xrefs.rs
-symbol xref_row
-lines 0 52
-hash 5a6ad7547371ef94
+file crates/gui/src/views/references.rs
+symbol reference_row
+lines 0 58
+hash bbbc16d2f9a7627e
 note Trigger for references: references are grouped under a file row (xreffile/<file number>) with their count, which opens the file at its first line; each reference row (xref/<n>) shows its line number and the trimmed line, and a click queues GoTo, handled by open_line rather than go_to_symbol. Title lines take no clicks.
 
 step yn39qh
 order 5
 parent 56ca80
 author ai
-file crates/gui/src/views/xrefs.rs
-symbol xrefs_panel
+file crates/gui/src/views/references.rs
+symbol references_panel
 lines 16 35
 hash 536206437583a0e5
 note Where references come from: for a server-backed file with none recorded, the panel queues AskReferences once per probe, and the rows fill in when the answer is merged.
@@ -58,7 +58,7 @@ step yyf3u1
 order 2
 parent 56ca80
 author ai
-file crates/gui/src/views/xrefs.rs
+file crates/gui/src/views/references.rs
 symbol call_row
 lines 0 41
 hash 2acb408b06371956

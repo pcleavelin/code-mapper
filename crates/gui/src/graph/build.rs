@@ -4,7 +4,7 @@ use domain::{Index, Line, Span, SymbolId, SymbolName};
 use ui::{Count, Extent, Icon, Label, Point, Rect, Run};
 
 use crate::graph::place::Siblings;
-use crate::graph::{Around, Button, Expansion, GraphState, Node, Side};
+use crate::graph::{Around, Button, GraphState, Node, Reveal, Side};
 use crate::model::{Model, PathSlot, StepKey, StepSlot};
 use crate::panels::Direction;
 use crate::theme::{Cells, GRAPH_LEAST_COLUMNS, GRAPH_MOST_COLUMNS, GREEN, TEXT, WEAK};
@@ -252,7 +252,7 @@ impl Built {
                 label(Button::NoContext, "no context".to_owned());
             }
         }
-        label(Button::Listing, "listing".to_owned());
+        label(Button::Source, "source".to_owned());
         if off_path {
             label(Button::Add, "+ step".to_owned());
         }
@@ -262,13 +262,13 @@ impl Built {
                 .count()
         };
         let outgoing = self.callees_of(index, node);
-        if graph.has_expansion(node, Side::Callees) && !outgoing.is_empty() {
+        if graph.has_reveal(node, Side::Callees) && !outgoing.is_empty() {
             label(Button::Callees, format!("hide {} callees", outgoing.len()));
         } else if hidden(&outgoing) > 0 {
             label(Button::Callees, format!("callees > {}", hidden(&outgoing)));
         }
         let incoming = symbol.callers();
-        if graph.has_expansion(node, Side::Callers) && !incoming.is_empty() {
+        if graph.has_reveal(node, Side::Callers) && !incoming.is_empty() {
             label(Button::Callers, format!("hide {} callers", incoming.len()));
         } else if hidden(incoming) > 0 {
             label(Button::Callers, format!("{} < callers", hidden(incoming)));
@@ -353,9 +353,9 @@ pub(crate) fn rebuild(model: &Model) -> Built {
     {
         built.add(&model.index, root, Rank::ZERO, symbol.span());
     }
-    add_expansions(&mut built, model, model.graph.expansions.clone());
-    if let Some(expansions) = add_focus(&mut built, model) {
-        add_expansions(&mut built, model, expansions);
+    add_reveals(&mut built, model, model.graph.reveals.clone());
+    if let Some(reveals) = add_focus(&mut built, model) {
+        add_reveals(&mut built, model, reveals);
     }
     set_views(&mut built, model);
     built
@@ -406,7 +406,7 @@ fn add_path_nodes(built: &mut Built, model: &Model, path: PathSlot) {
     }
 }
 
-fn add_focus(built: &mut Built, model: &Model) -> Option<Vec<Expansion>> {
+fn add_focus(built: &mut Built, model: &Model) -> Option<Vec<Reveal>> {
     let graph = &model.graph;
     let index = &model.index;
     let focus = model.nav.focus()?;
@@ -416,34 +416,34 @@ fn add_focus(built: &mut Built, model: &Model) -> Option<Vec<Expansion>> {
     let symbol = index.symbol(focus)?;
     let node = Node::off_path(focus);
     built.add(index, node, Rank::ZERO, symbol.span());
-    let mut expansions = graph.expansions.clone();
+    let mut reveals = graph.reveals.clone();
     if graph.auto_open != Some(node) {
         built.auto_open = Some(node);
         for side in [Side::Callees, Side::Callers] {
-            let expansion = Expansion { node, side };
-            if !expansions.contains(&expansion) {
-                expansions.push(expansion);
+            let reveal = Reveal { node, side };
+            if !reveals.contains(&reveal) {
+                reveals.push(reveal);
             }
         }
     }
-    Some(expansions)
+    Some(reveals)
 }
 
-fn add_expansions(built: &mut Built, model: &Model, expansions: Vec<Expansion>) {
+fn add_reveals(built: &mut Built, model: &Model, reveals: Vec<Reveal>) {
     let index = &model.index;
-    for expansion in expansions {
-        let node = expansion.node;
+    for reveal in reveals {
+        let node = reveal.node;
         let Some(rank) = built.rank.get(&node).copied() else {
             continue;
         };
-        let list = match expansion.side {
+        let list = match reveal.side {
             Side::Callees => built.callees_of(index, node),
             Side::Callers => index
                 .symbol(node.symbol)
                 .map(|symbol| symbol.callers().to_vec())
                 .unwrap_or_default(),
         };
-        let rank = match expansion.side {
+        let rank = match reveal.side {
             Side::Callees => rank.next(),
             Side::Callers => rank.previous(),
         };
@@ -459,7 +459,7 @@ fn add_expansions(built: &mut Built, model: &Model, expansions: Vec<Expansion>) 
                 revealed,
                 Origin {
                     from: node,
-                    side: expansion.side,
+                    side: reveal.side,
                 },
             );
             built.add(index, revealed, rank, symbol.span());

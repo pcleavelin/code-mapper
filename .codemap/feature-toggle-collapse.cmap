@@ -1,0 +1,55 @@
+codemap 8
+path feature-toggle-collapse
+kind flow
+author ai
+group features/gui
+note The arrow at the left of a step header collapses the steps under it: they disappear from the document and the header shows how many are hidden (+n). The reader reaches for it to skip a branch already understood, or skim structure, instead of scrolling past every nested step. Pressed again it expands them. Only a step with children has the arrow. Selecting a step inside a collapsed subtree expands it.
+
+step 8a976r
+order 1
+parent hmusxe
+author ai
+file crates/gui/src/model.rs
+symbol toggle
+lines 0 2
+hash 5bb2fa45ec21a492
+note Flips the Collapsed bit.
+
+step hmusxe
+order 0
+author ai
+file crates/gui/src/action.rs
+symbol apply
+lines 7 7
+hash 8db399b6fb4b876f
+note The handler: the Toggle arm flips one flag in the step's view.
+
+step lccp10
+order 4
+parent hmusxe
+author ai
+file crates/gui/src/views/left.rs
+symbol step_list
+lines 15 17
+hash 7944a343a8e8a393
+note The steps list follows the same flag: a collapsed step's row shows +n and the rows under it are skipped.
+
+step liwn0w
+order 2
+parent hmusxe
+author ai
+file crates/gui/src/views/document.rs
+symbol step_header
+lines 15 33
+hash 654c309c82b56040
+note Trigger: the COLLAPSE arrow, drawn only when the step has descendants, queues Toggle with ViewFlag::Collapsed; a collapsed header gets the +n count of its descendants.
+
+step tmx9tb
+order 3
+parent hmusxe
+author ai
+file crates/gui/src/views/document.rs
+symbol steps
+lines 53 56
+hash 77ee7bdb55063e2e
+note The effect on the next frame: a collapsed step sets hide_below to its depth, and the loop at the top of steps skips every following step deeper than that until one at the same depth or shallower.

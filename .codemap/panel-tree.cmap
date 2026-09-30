@@ -3,7 +3,7 @@ path panel-tree
 kind flow
 author ai
 group gui
-note How the window is divided and how the reader rearranges it. Below the top bar and above the status bar, the window is one tree of panels: a split holds two branches side by side or one above the other at a ratio, and a leaf panel holds a stack of views shown as tabs. The ten views (Paths, Symbols, Files, Path, Diff, Graph, Listing, Results, Xrefs, Output) each live in at most one panel. The tree is Panels in the Model, laid out top-down every frame from the body's rectangle. The reader drags a sash to resize, drags a tab onto a panel to join it or onto a panel's edge to split it, splits a panel with its | and - buttons, closes it with x, and fills a panel from the picker behind +, a searchable list of views. Navigation still speaks in centre tabs: whatever switches the tab brings that view to front wherever it lives, and adds it back next to the last one shown if it was in no panel. Pointer gestures are read before the tree is built and applied at once, so the frame that sees a drag already draws it. The tree is saved to the user's layout file whenever it changes and no drag is held, and a launch starts from that file (the io-layout path), or from the default tree when there is none.
+note How the window is divided and how the reader rearranges it. Below the top bar and above the status bar, the window is one tree of panels: a split holds two branches side by side or one above the other at a ratio, and a leaf panel holds a stack of views shown as tabs. The ten views (Paths, Symbols, Files, Path, Diff, Graph, Source, Search, References, Console) each live in at most one panel. The tree is Panels in the Model, laid out top-down every frame from the body's rectangle. The reader drags a divider to resize, drags a tab onto a panel to join it or onto a panel's edge to split it, splits a panel with its | and - buttons, closes it with x, and fills a panel from the picker behind +, a searchable list of views. Navigation still speaks in centre tabs: whatever switches the tab brings that view to front wherever it lives, and adds it back next to the last one shown if it was in no panel. Pointer gestures are read before the tree is built and applied at once, so the frame that sees a drag already draws it. The tree is saved to the user's layout file whenever it changes and no drag is held, and a launch starts from that file (the io-layout path), or from the default tree when there is none.
 
 step 0b3yk5
 order 24
@@ -52,8 +52,8 @@ author ai
 file crates/gui/src/panels.rs
 symbol divide
 lines 0 20
-hash 30f0be96bb714f5a
-note Where the sash goes: the ratio of the room left after the sash, clamped so each half keeps the floor (12 columns across, 4 rows down) or half the room when there is less. The three rectangles tile the split's exactly.
+hash 59ab08956fdfe0c4
+note Where the divider goes: the ratio of the room left after the divider, clamped so each half keeps the floor (12 columns across, 4 rows down) or half the room when there is less. The three rectangles tile the split's exactly.
 
 step 1z0rk0
 order 8
@@ -62,8 +62,8 @@ author ai
 file crates/gui/src/views/panel_tree.rs
 symbol pair
 lines 0 14
-hash 9888c0088c8fda12
-note A split: its box with the split's id (pair/<n>, which resizing reads back), the first branch, the sash, the second branch.
+hash 70f9cfbd3ec308fc
+note A split: its box with the split's id (pair/<n>, which resizing reads back), the first branch, the divider, the second branch.
 
 step 267ikv
 order 55
@@ -100,7 +100,7 @@ author ai
 file crates/gui/src/panels.rs
 symbol layout_of
 lines 0 19
-hash 9d7d596e6ad38ad5
+hash ddfcda92adda004d
 note Views by name, the shown tab, a split's direction and ratio as a Share; branch ids are not saved, since a load numbers them afresh.
 
 step 5e9nxa
@@ -110,7 +110,7 @@ author ai
 file crates/gui/src/panels.rs
 symbol restore
 lines 0 30
-hash 5270188d0f199a82
+hash e18617b38e2838d8
 note A saved view name the GUI does not know is dropped, and so is a view already placed in an earlier panel, so a hand-edited file can never break one-of-each.
 
 step 5zemej
@@ -150,8 +150,8 @@ author ai
 file crates/gui/src/views/panel_tree.rs
 symbol tab
 lines 0 28
-hash 1ac43aaefc0cfa71
-note A tab is Frame::tab with the id tab@<View> and its close cross close-tab@<View>, labelled with the view's name; the Results tab adds its hit count, with a + when the hits were cut at HIT_LIMIT ('Results (5000+)'). A click on the cross closes the view; a press on the rest both shows the view and takes hold of it for a drag, and releasing without moving leaves only the show.
+hash e2c1940ebd9b8f87
+note A tab is Frame::tab with the id tab@<View> and its close cross close-tab@<View>, labelled with the view's name; the Search tab adds its hit count, with a + when the hits were cut at HIT_LIMIT ('Search (5000+)'). A click on the cross closes the view; a press on the rest both shows the view and takes hold of it for a drag, and releasing without moving leaves only the show.
 
 step aebgap
 order 38
@@ -160,8 +160,8 @@ author ai
 file crates/gui/src/widgets.rs
 symbol pane
 lines 0 14
-hash 994000ab5deb09d7
-note A branch's box: exact width and height, a row for an Across split, a column otherwise, clipped.
+hash 6437239c2032c068
+note A branch's box: exact width and height, a row for a Right split, a column otherwise, clipped.
 
 step aq57yc
 order 56
@@ -190,8 +190,8 @@ author ai
 file crates/gui/src/panels.rs
 symbol ratio_at
 lines 0 7
-hash a7b42257c573e865
-note The ratio that puts the sash's middle under the pointer.
+hash e50c29bbc9c1d0fd
+note The ratio that puts the divider's middle under the pointer.
 
 step bb44g6
 order 37
@@ -230,8 +230,8 @@ author ai
 file crates/gui/src/views/panel_tree.rs
 symbol header
 lines 0 40
-hash 1d68e53d6d216517
-note One row per panel: a tab per view, then a grow and a ToolbarSmall holding the add (picker), split-across, split-down and close icons, the last only when the panel is not the whole window, so the icons sit at the right end.
+hash 2d1a5a2eb3bd6816
+note One row per panel: a tab per view, then a grow and a ToolbarSmall holding the add (picker), split-right, split-down and close icons, the last only when the panel is not the whole window, so the icons sit at the right end.
 
 step cxcwck
 order 22
@@ -240,7 +240,7 @@ author ai
 file crates/gui/src/panels.rs
 symbol drop_view
 lines 0 38
-hash 80b3445d36c9830c
+hash 8f3e1bd5f486433c
 note A drop in the middle of a panel joins its stack. A drop on an edge takes the view from its panel and splits the target on that side, the view alone in the new half. Dropping a panel's only view on its own edge would leave an empty half, so it does nothing.
 
 step dpeebe
@@ -249,8 +249,8 @@ author ai
 file crates/gui/src/views/panel_tree.rs
 symbol panel_input
 lines 0 27
-hash d7c1ad0ab6996bcc
-note Called by App::frame right after the element tree begins, before anything is drawn, and applied at once, so a drag shows in the frame it happens. A held sash becomes a Resize to the ratio under the pointer, read from last frame's rectangle of its pair. A held tab is dragged; released, it becomes a Release carrying the drop target if the grab had started moving, and none otherwise.
+hash e4321ac653e57c5e
+note Called by App::frame right after the element tree begins, before anything is drawn, and applied at once, so a drag shows in the frame it happens. A held divider becomes a Resize to the ratio under the pointer, read from last frame's rectangle of its pair. A held tab is dragged; released, it becomes a Release carrying the drop target if the grab had started moving, and none otherwise.
 
 step dxzju5
 order 11
@@ -269,18 +269,18 @@ author ai
 file crates/gui/src/panels.rs
 symbol View
 lines 0 11
-hash 515bef6748992345
-note The ten things a panel can show. Each is in at most one panel at a time, so element ids (tab@Listing), scroll offsets and the one selection stay unambiguous; a view in no panel is hidden until picked or revealed. The five with a centre Tab (Path, Diff, Graph, Listing, Results) are the ones navigation switches between.
+hash 1f743ec5e093c0c0
+note The ten things a panel can show. Each is in at most one panel at a time, so element ids (tab@Source), scroll offsets and the one selection stay unambiguous; a view in no panel is hidden until picked or revealed. The five with a centre Tab (Path, Diff, Graph, Source, Search) are the ones navigation switches between.
 
 step ekaolx
 order 10
 parent 1z0rk0
 author ai
 file crates/gui/src/views/panel_tree.rs
-symbol sash_bar
+symbol divider_bar
 lines 0 11
-hash e50f04116607371c
-note The sash between the halves, with the resize cursor while hovered or held (unless another drag holds the mouse).
+hash f907b135cff0d08b
+note The divider between the halves, with the resize cursor while hovered or held (unless another drag holds the mouse).
 
 step eqlsww
 order 3
@@ -300,7 +300,7 @@ file crates/gui/src/panels.rs
 symbol Split
 lines 0 6
 hash 6912520de1bfe6e7
-note Two branches side by side (Across, a vertical sash between them) or one above the other (Down), with the first one's share of the room as a Ratio in thousandths. The ratio follows the window: resizing the window keeps the proportions.
+note Two branches side by side (Right, a vertical divider between them) or one above the other (Down), with the first one's share of the room as a Ratio in thousandths. The ratio follows the window: resizing the window keeps the proportions.
 
 step gxvqc1
 order 42
@@ -309,7 +309,7 @@ author ai
 file crates/gui/src/panels.rs
 symbol tab
 lines 0 9
-hash 8600dbd4901f2104
+hash 47c08d74021a78fc
 note The centre Tab a view stands for, if any: how navigation's tab and the panels' views meet.
 
 step he0ghg
@@ -368,8 +368,8 @@ author ai
 file crates/gui/src/views/panel_tree.rs
 symbol body
 lines 0 25
-hash a09179738919fc50
-note The one match from a view to what draws it. Paths, Symbols and Files sit in a panel-coloured column; Xrefs is told the panel's size, since its peek fits itself to it.
+hash 324899182a23852c
+note The one match from a view to what draws it. Paths, Symbols and Files sit in a panel-coloured column; References is told the panel's size, since its peek fits itself to it.
 
 step mp1y9p
 order 0
@@ -427,7 +427,7 @@ file crates/gui/src/app.rs
 symbol impl App
 lines 1 17
 hash c1152652d8bba913
-note Saving: at the end of each frame, once no drag or sash is held and the left button is up, the tree's layout() is compared with the last one written and saved when it differs. A failed write shows in the status line and is not retried until the layout changes again.
+note Saving: at the end of each frame, once no drag or divider is held and the left button is up, the tree's layout() is compared with the last one written and saved when it differs. A failed write shows in the status line and is not retried until the layout changes again.
 
 step qghrps
 order 44
@@ -476,7 +476,7 @@ file crates/gui/src/panels.rs
 symbol Branch
 lines 0 3
 hash 97949495d21965bd
-note A branch is a Panel (a leaf) or a Split of two branches. Every branch has a BranchId, the number the element ids and the dump use: panel/<n>, sash/<n>, pick/<n>.
+note A branch is a Panel (a leaf) or a Split of two branches. Every branch has a BranchId, the number the element ids and the dump use: panel/<n>, divider/<n>, pick/<n>.
 
 step ue7mqd
 order 6
@@ -485,8 +485,8 @@ author ai
 file crates/gui/src/panels.rs
 symbol default
 lines 0 23
-hash c7a17ee024d2ee1c
-note The layout a launch starts with: Paths/Symbols/Files on the left (22%), the five centre views in the middle, Xrefs on the right (26% of the rest), Output along the bottom (18%).
+hash ca8b217319bd7957
+note The layout a launch starts with: Paths/Symbols/Files on the left (22%), the five centre views in the middle, References on the right (26% of the rest), Console along the bottom (18%).
 
 step wz1vr6
 order 21
@@ -550,10 +550,10 @@ order 39
 parent ekaolx
 author ai
 file crates/gui/src/widgets.rs
-symbol sash
+symbol divider
 lines 0 18
-hash a64366a815c0edc4
-note The sash itself: the full size of its strip, with a border line on the side facing the first half; accent-coloured while hovered or held.
+hash 4c64cc13b5af5ac5
+note The divider itself: the full size of its strip, with a border line on the side facing the first half; accent-coloured while hovered or held.
 
 step yo7md6
 order 45

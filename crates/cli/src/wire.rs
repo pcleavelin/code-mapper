@@ -41,7 +41,7 @@ fn summary(feature: Feature) -> &'static str {
 #[command(
     name = PROGRAM,
     disable_help_flag = true,
-    override_usage = "codemap <root>                     open the GUI\n       codemap <root> <command> [args]    text mode (same commands work in the GUI output panel)"
+    override_usage = "codemap <root>                     open the GUI\n       codemap <root> <command> [args]    text mode (same commands work in the GUI Console)"
 )]
 pub(crate) enum Command {
     #[command(name = command_name(Feature::Files), about = summary(Feature::Files))]
@@ -50,8 +50,8 @@ pub(crate) enum Command {
     Symbols(FilterArguments),
     #[command(name = command_name(Feature::Show), about = summary(Feature::Show))]
     Show(ShowArguments),
-    #[command(name = command_name(Feature::Grep), about = summary(Feature::Grep))]
-    Grep(RegexArguments),
+    #[command(name = command_name(Feature::Search), about = summary(Feature::Search))]
+    Search(RegexArguments),
     #[command(name = command_name(Feature::Notes), about = summary(Feature::Notes))]
     Notes(RegexArguments),
     #[command(name = command_name(Feature::Callers), about = summary(Feature::Callers))]
@@ -163,7 +163,7 @@ pub(crate) struct PathsArguments {
 pub(crate) struct PathArguments {
     pub(crate) name: String,
     #[arg(long)]
-    pub(crate) expand: bool,
+    pub(crate) inline: bool,
 }
 
 #[derive(Args, Debug)]
@@ -288,7 +288,7 @@ impl Command {
             Self::Files(_) => Feature::Files,
             Self::Symbols(_) => Feature::Symbols,
             Self::Show(_) => Feature::Show,
-            Self::Grep(_) => Feature::Grep,
+            Self::Search(_) => Feature::Search,
             Self::Notes(_) => Feature::Notes,
             Self::Callers(_) => Feature::Callers,
             Self::Callees(_) => Feature::Callees,
@@ -508,7 +508,7 @@ pub(crate) fn symbol_row(output: &mut Output, file: &SourceFile, symbol: &Symbol
     );
 }
 
-pub(crate) fn grep_line(output: &mut Output, file: &SourceFile, line: Line, text: &SourceLine) {
+pub(crate) fn hit_line(output: &mut Output, file: &SourceFile, line: Line, text: &SourceLine) {
     write_line!(output, "{}:{}: {}", file.path(), line.number(), text);
 }
 
@@ -690,10 +690,10 @@ pub(crate) fn step_title(output: &mut Output, index: &Index, step: &Step, title:
     }
 }
 
-pub(crate) fn expanded_before(output: &mut Output, depth: Depth, link: &PathName) {
+pub(crate) fn inlined_before(output: &mut Output, depth: Depth, link: &PathName) {
     write_line!(
         output,
-        "\n{}-- {link} is expanded above --",
+        "\n{}-- {link} is inlined above --",
         padding(depth.value())
     );
 }
