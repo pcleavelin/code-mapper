@@ -19,7 +19,7 @@ prototypes that differ in shape, and exactly one survives.
    Workspaces keep the prototypes apart without `jj new`, which the commit guard refuses
    while the gate is red. The repo's own working copy stays untouched until step 6.
 3. Build each prototype far enough to run the feature end to end in the real binary: the
-   registry entry, the handler, the element. The map, goldens, `api/` and the naming review
+   registry entry, the handler, the element. The map, scenarios, `api/` and the naming review
    are skipped, and the gate is not run on a prototype. The designs are independent: spawn
    one subagent per prototype in the same turn, each given the second restatement from
    `understand`, its design's sketch and its workspace directory, and asked to return the

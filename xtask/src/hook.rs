@@ -115,14 +115,12 @@ impl ToolName {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum ProtectedPath {
     Map,
-    Golden,
 }
 
 impl ProtectedPath {
     const fn name(self) -> Literal {
         match self {
             Self::Map => Literal::new(".codemap/"),
-            Self::Golden => Literal::new("crates/codemap/tests/golden/"),
         }
     }
 }
@@ -281,11 +279,6 @@ fn guard_edit(root: &Root, path: &RepoPath) -> Decision {
         }
         return Decision::Deny(Message::new(
             "The map is written only through codemap commands (`codemap . help`): path-add, step-note, note-edit, path-pin, repin.",
-        ));
-    }
-    if path.starts_with(ProtectedPath::Golden.name().as_str()) {
-        return Decision::Deny(Message::new(
-            "Goldens are written only by the tests: CODEMAP_BLESS=1 cargo test --test <scenario file>.",
         ));
     }
     Decision::Allow

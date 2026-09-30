@@ -1,6 +1,8 @@
+use std::ffi::OsString;
+use std::path::Path;
 use std::process::Command;
 
-use crate::text::{Argument, Message, Program, Root};
+use crate::text::{Argument, Literal, Message, Program, Root};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Outcome {
@@ -14,14 +16,41 @@ pub(crate) struct Run {
     pub(crate) output: Message,
 }
 
+#[derive(Debug)]
+pub(crate) struct Setting {
+    name: Literal,
+    value: OsString,
+}
+
+impl Setting {
+    pub(crate) fn new(name: Literal, value: impl Into<OsString>) -> Self {
+        Self {
+            name,
+            value: value.into(),
+        }
+    }
+}
+
+pub(crate) fn run(root: &Root, program: Program, arguments: &[Argument]) -> Run {
+    run_in(root.path(), program, arguments, &[])
+}
+
 #[expect(
     clippy::disallowed_methods,
     reason = "xtask starts every process it runs here"
 )]
-pub(crate) fn run(root: &Root, program: Program, arguments: &[Argument]) -> Run {
+pub(crate) fn run_in(
+    directory: &Path,
+    program: Program,
+    arguments: &[Argument],
+    environment: &[Setting],
+) -> Run {
     let mut command = Command::new(program.as_str());
-    command.current_dir(root.path());
+    command.current_dir(directory);
     command.args(arguments.iter().map(Argument::as_str));
+    for setting in environment {
+        command.env(setting.name.as_str(), &setting.value);
+    }
     match command.output() {
         Ok(result) => Run {
             outcome: if result.status.success() {

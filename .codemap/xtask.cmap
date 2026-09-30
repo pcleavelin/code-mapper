@@ -11,9 +11,9 @@ parent 8n4pmn
 author ai
 file xtask/src/main.rs
 symbol parse
-lines 0 18
-hash 666300faf5aa804f
-note The argument grammar: the first word picks the task; gate takes --full (adds the CLI goldens); hook takes its event name. Anything unrecognised is Usage.
+lines 0 19
+hash 07bd6022a7ff0034
+note The argument grammar: the first word picks the task; gate takes --full (adds the CLI scenarios), parity takes an optional scenario name, hook takes its event name. Anything unrecognised is Usage.
 
 step 8n4pmn
 order 0
@@ -41,8 +41,8 @@ parent f926wy
 author ai
 file xtask/src/main.rs
 symbol USAGE
-lines 0 6
-hash a2ff73c711b5e970
+lines 0 7
+hash 48bc558a3916ce38
 note The usage text printed for an unknown task; it names what each gate step checks in one line, so the list of checks is discoverable from the tool itself.
 
 step e1h4v9
@@ -51,8 +51,8 @@ parent 1me7il
 author ai
 file xtask/src/main.rs
 symbol Task
-lines 0 6
-hash 4472cafaadf6f00a
+lines 0 7
+hash 8b8287cfcb50ebd4
 note One variant per task, carrying its already-parsed arguments, so perform never looks at a string.
 
 step f860cd
@@ -72,9 +72,9 @@ parent 8n4pmn
 author ai
 file xtask/src/main.rs
 symbol perform
-lines 0 10
-hash eddd8ebd5d3afd96
-note Runs one task. Each arm maps the task's own result into the Message pair main prints: gate: green, archlint: clean, api: recorded, or nothing for a hook (whose output is the JSON it already printed).
+lines 0 11
+hash 501e3d7047d3d6fc
+note Runs one task. Each arm maps the task's own result into the Message pair main prints: gate: green, archlint: clean, api: recorded, parity's own report of the scenarios that differ, or nothing for a hook (whose output is the JSON it already printed).
 
 step j1bqii
 order 8

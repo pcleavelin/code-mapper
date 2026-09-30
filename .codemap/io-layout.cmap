@@ -3,7 +3,7 @@ path io-layout
 kind layer
 author ai
 group gui
-note The io-layout crate: the user's saved panel layout, one indented text file per user. LayoutStore::find picks the file: CODEMAP_LAYOUT when set, else $XDG_CONFIG_HOME/codemap/layout, ~/.config/codemap/layout or %APPDATA%\\codemap\\layout; a script or screenshot run asks with Reach::OverrideOnly, so only CODEMAP_LAYOUT reaches it and goldens never read a user's layout. load gives None for a missing, unreadable or malformed file, and the GUI then starts from its default tree; save creates the folder and writes through io-store. The value is domain's LayoutTree, which knows view names only as ViewKeys; the GUI maps them to its View enum and drops names it does not know.
+note The io-layout crate: the user's saved panel layout, one indented text file per user. LayoutStore::find picks the file: CODEMAP_LAYOUT when set, else $XDG_CONFIG_HOME/codemap/layout, ~/.config/codemap/layout or %APPDATA%\\codemap\\layout; a script or screenshot run asks with Reach::OverrideOnly, so only CODEMAP_LAYOUT reaches it, and the user's real layout file is never read by one. load gives None for a missing, unreadable or malformed file, and the GUI then starts from its default tree; save creates the folder and writes through io-store. The value is domain's LayoutTree, which knows view names only as ViewKeys; the GUI maps them to its View enum and drops names it does not know.
 
 step 5pb8a4
 order 12

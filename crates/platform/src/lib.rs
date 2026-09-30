@@ -1,4 +1,5 @@
 mod atlas;
+mod background;
 mod error;
 mod font;
 mod gpu;

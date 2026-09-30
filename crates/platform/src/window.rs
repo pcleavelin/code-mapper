@@ -13,6 +13,7 @@ use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::keyboard::{Key as WindowKey, NamedKey};
 use winit::window::{CursorIcon, Window, WindowId};
 
+use crate::background;
 use crate::error::StartError;
 use crate::renderer::Renderer;
 use crate::report::report;
@@ -133,7 +134,7 @@ const FIXED_HEIGHT: Px = Px::new(1000);
 const DOUBLE_CLICK: Duration = Duration::from_millis(350);
 const DOUBLE_CLICK_REACH: Px = Px::new(4);
 const LINE_SCROLL: Coordinate = Coordinate::new(40.0);
-const SCRIPT_FRAME: Duration = Duration::from_millis(8);
+pub(crate) const SCRIPT_FRAME: Duration = Duration::from_millis(8);
 
 pub(crate) struct Runner<Application: App> {
     pub(crate) app: Application,
@@ -161,7 +162,8 @@ impl<Application: App> Runner<Application> {
                     FIXED_WIDTH.unsigned(),
                     FIXED_HEIGHT.unsigned(),
                 ))
-                .with_resizable(false),
+                .with_resizable(false)
+                .with_active(false),
             WindowMode::Maximised => attributes
                 .with_inner_size(LogicalSize::new(
                     f64::from(FIXED_WIDTH.get()),
@@ -293,7 +295,10 @@ impl<Application: App> Runner<Application> {
     }
 
     fn redraw(&mut self, event_loop: &ActiveEventLoop) {
-        self.input.time = self.start.elapsed();
+        self.input.time = self
+            .script
+            .as_ref()
+            .map_or_else(|| self.start.elapsed(), |script| script.clock);
         let scripted = self.step_script();
         let Some(renderer) = self.renderer.as_mut() else {
             return;
@@ -418,13 +423,17 @@ impl<Application: App> ApplicationHandler for Runner<Application> {
 }
 
 pub fn run<Application: App>(title: Title, app: Application) -> Result<(), StartError> {
-    let event_loop = EventLoop::new().map_err(StartError::EventLoop)?;
     let scripted = env::var_os("CODEMAP_SCRIPT").is_some();
     let mode = if scripted || env::var_os("CODEMAP_SHOT").is_some() {
         WindowMode::Fixed
     } else {
         WindowMode::Maximised
     };
+    let mut builder = EventLoop::builder();
+    if mode == WindowMode::Fixed {
+        background::launch_without_focus(&mut builder);
+    }
+    let event_loop = builder.build().map_err(StartError::EventLoop)?;
     let mut runner = Runner {
         app,
         title,

@@ -14,7 +14,7 @@ description: Add or change a codemap CLI command (the agent's interface, also ru
 4. The command's arm in `exec`: read and change the model only through `domain` methods; if
    one is missing, add it to `domain` with a unit test.
 5. `design.md` section 10: the command's line in the command table.
-6. `tests/golden`: add the command, every error it can give, and a follow-up read that shows
-   the effect to the fitting scenario in `tests/common/cli.rs`, then
-   `CODEMAP_BLESS=1 cargo test --release --test cli` and read the diff.
+6. The scenario: add the command, every error it can give, and a follow-up read that shows
+   the effect to the fitting scenario in `tests/common/cli.rs` (`add-test-scenario`), then
+   `cargo xtask parity cli` and read what it lists.
 7. `finish`.

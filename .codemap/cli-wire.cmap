@@ -3,7 +3,7 @@ path cli-wire
 kind layer
 author ai
 group cli
-note wire.rs: everything in the cli crate that is text. Inbound, the clap types: the Command enum, one variant per command feature named and described from the registry, and an argument struct per command holding plain strings and numbers (convert.rs makes them domain values). Outbound, every line a command prints and every error message: exec.rs never formats, it calls a wire function with values, and Failure, MapError, io-map's load, parse and save errors and repin's LeftStale are all worded here. So changing a message is a change to this file alone, and the golden transcripts under crates/codemap/tests pin every one of them. Output is grep-shaped: one item per line, file:line or file:start-end with 1-based lines, names that paste back into another command.
+note wire.rs: everything in the cli crate that is text. Inbound, the clap types: the Command enum, one variant per command feature named and described from the registry, and an argument struct per command holding plain strings and numbers (convert.rs makes them domain values). Outbound, every line a command prints and every error message: exec.rs never formats, it calls a wire function with values, and Failure, MapError, io-map's load, parse and save errors and repin's LeftStale are all worded here. So changing a message is a change to this file alone. Output is grep-shaped: one item per line, file:line or file:start-end with 1-based lines, names that paste back into another command.
 
 step 0p2lk9
 order 31

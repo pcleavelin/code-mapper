@@ -5,14 +5,13 @@ description: Change code without changing behaviour - move, rename, restructure,
 
 # Refactor with proof
 
-1. Before touching code, build the base: `cargo build --release -p codemap` and copy
-   `target/release/codemap` somewhere outside the repo (e.g. the system temp directory).
-   Note the current revision (`jj log -r @- --no-graph -T commit_id` or `git rev-parse HEAD`).
-2. Make the change. Keep goldens untouched: a golden diff means behaviour changed.
-3. `cargo build --release -p codemap`, then
-   `CODEMAP_BASE_BIN=<base binary> CODEMAP_PARITY_REV=<revision> cargo test --release --test parity -- --ignored`.
-   `CODEMAP_PARITY_ONLY=<name>` narrows it to one scenario. Differences are written under the
-   scratch directory it prints.
-4. A difference is a behaviour change: undo the part that caused it, or, if the change is
-   wanted, it is not a refactor: split it into its own commit and rebless there.
+1. Start from a committed parent: the parent revision (`@-` in jj, `HEAD` in git) is the
+   behaviour the refactor must keep.
+2. Make the change.
+3. `cargo xtask parity`. It builds the parent revision (cached under `target/parity`), plays
+   every scenario on both builds, and must list none. `cargo xtask parity <name>` narrows it
+   to one scenario while working.
+4. A listed scenario is a behaviour change: read its `old.txt`/`new.txt`, then undo the part
+   that caused it, or, if the change is wanted, it is not a refactor: split it into its own
+   commit.
 5. `finish`.

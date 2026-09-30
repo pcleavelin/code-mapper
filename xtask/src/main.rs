@@ -5,6 +5,7 @@ mod gate;
 mod hook;
 mod lint;
 mod manifest;
+mod parity;
 mod process;
 mod source;
 mod state;
@@ -21,7 +22,8 @@ use crate::text::{Argument, Literal, Message, RepoPath, Root};
 
 const USAGE: Literal = Literal::new(
     "cargo xtask <task>
-  gate [--full]             format, archlint, crate graph, API lock, clippy, unit tests, codemap check; --full adds the CLI goldens
+  gate [--full]             format, archlint, crate graph, API lock, clippy, unit tests, codemap check; --full adds the CLI scenarios
+  parity [scenario]         run every scenario against the parent revision's build and list the ones whose output differs
   lint [file...]            archlint over the workspace or the given files
   api                       record every library crate's public API in api/<crate>.api
   hook <event>              a Claude Code hook: pre-tool, post-tool, stop, session-start",
@@ -32,6 +34,7 @@ enum Task {
     Gate(Depth),
     Lint(Vec<RepoPath>),
     Api,
+    Parity(Option<Argument>),
     Hook(Event),
     Usage,
 }
@@ -41,17 +44,19 @@ enum TaskKind {
     Gate,
     Lint,
     Api,
+    Parity,
     Hook,
 }
 
 impl TaskKind {
-    const ALL: [Self; 4] = [Self::Gate, Self::Lint, Self::Api, Self::Hook];
+    const ALL: [Self; 5] = [Self::Gate, Self::Lint, Self::Api, Self::Parity, Self::Hook];
 
     const fn name(self) -> Literal {
         match self {
             Self::Gate => Literal::new("gate"),
             Self::Lint => Literal::new("lint"),
             Self::Api => Literal::new("api"),
+            Self::Parity => Literal::new("parity"),
             Self::Hook => Literal::new("hook"),
         }
     }
@@ -89,6 +94,7 @@ impl Task {
                 Self::Lint(rest.iter().map(|path| RepoPath::new(path)).collect())
             }
             Some(TaskKind::Api) => Self::Api,
+            Some(TaskKind::Parity) => Self::Parity(words.get(1).cloned()),
             Some(TaskKind::Hook) => words
                 .get(1)
                 .and_then(Event::parse)
@@ -105,6 +111,7 @@ fn perform(root: &Root, task: Task) -> Result<Message, Message> {
             .map_err(|failure| Message::new(failure.to_string())),
         Task::Lint(paths) => lint_files(root, &paths).map(|()| Message::new("archlint: clean")),
         Task::Api => api::record(root).map(|()| Message::new("api: recorded")),
+        Task::Parity(only) => parity::compare(root, only.as_ref()),
         Task::Hook(event) => hook::handle(root, event).map(|()| Message::default()),
         Task::Usage => Err(Message::new(USAGE.as_str())),
     }

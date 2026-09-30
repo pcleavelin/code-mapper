@@ -7,7 +7,8 @@ use std::time::{Duration, Instant};
 use ui::{Button, Coordinate, Glyph, Id, Key, Mods, Pinch, Point, Press, Px};
 
 use crate::report::report;
-use crate::window::{App, Exit, Runner, Visibility};
+
+use crate::window::{App, Exit, Runner, SCRIPT_FRAME, Visibility};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct ScriptLine(String);
@@ -187,6 +188,7 @@ pub(crate) struct Script {
     lines: VecDeque<ScriptLine>,
     wait: WaitFrames,
     until: Option<Instant>,
+    pub(crate) clock: Duration,
 }
 
 impl Script {
@@ -202,6 +204,7 @@ impl Script {
                 .collect(),
             wait: WaitFrames::default(),
             until: None,
+            clock: Duration::ZERO,
         })
     }
 
@@ -217,15 +220,16 @@ impl<Application: App> Runner<Application> {
         let Some(script) = self.script.as_mut() else {
             return Exit::Stay;
         };
-        if !script.wait.is_zero() {
-            script.wait = script.wait.previous();
-            return Exit::Stay;
-        }
         if let Some(until) = script.until {
             if Instant::now() < until {
                 return Exit::Stay;
             }
             script.until = None;
+        }
+        script.clock += SCRIPT_FRAME;
+        if !script.wait.is_zero() {
+            script.wait = script.wait.previous();
+            return Exit::Stay;
         }
         self.input.pointer.mods = self.mods;
         loop {
@@ -261,6 +265,7 @@ impl<Application: App> Runner<Application> {
             }
             Some(ScriptCommand::Pause) => {
                 if let Some(script) = self.script.as_mut() {
+                    script.clock += line.pause();
                     script.until = Some(Instant::now() + line.pause());
                 }
                 Flow::Yield

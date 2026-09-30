@@ -452,31 +452,31 @@ impl Transcript<'_> {
     }
 }
 
-pub(crate) fn golden(name: &str, played: Result<String, Missing>) {
-    let actual = match played {
-        Ok(text) => text.replace('\r', ""),
+pub(crate) fn ran(name: &str, played: Result<String, Missing>) {
+    let output = match played {
+        Ok(text) => text,
         Err(missing) => return skip(name, &missing),
     };
-    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("tests/golden")
-        .join(format!("{name}.txt"));
-    if env::var("CODEMAP_BLESS").is_ok_and(|bless| bless == "1") {
-        fs::create_dir_all(path.parent().unwrap()).unwrap();
-        fs::write(&path, &actual).unwrap();
-        return;
-    }
-    let want = fs::read_to_string(&path)
-        .unwrap_or_else(|_| panic!("no golden {}; run with CODEMAP_BLESS=1", path.display()))
-        .replace("\r\n", "\n");
-    if want != actual {
-        let first = first_difference(&want, &actual);
-        panic!(
-            "{name} differs from its golden at line {}:\n  want: {:?}\n  got:  {:?}\n--- got in full ---\n{actual}",
-            first + 1,
-            want.lines().nth(first),
-            actual.lines().nth(first)
-        );
-    }
+    let crashed: Vec<&str> = output
+        .lines()
+        .filter(|line| {
+            line.contains("panicked at") || *line == "[exit 101]" || *line == "[exit -1]"
+        })
+        .collect();
+    assert!(
+        crashed.is_empty(),
+        "{name}: codemap crashed:\n{}\n--- output in full ---\n{output}",
+        crashed.join("\n")
+    );
+    let failed: Vec<&str> = output
+        .lines()
+        .filter(|line| line.starts_with("script:"))
+        .collect();
+    assert!(
+        failed.is_empty(),
+        "{name}: the script failed:\n{}",
+        failed.join("\n")
+    );
 }
 
 pub(crate) fn first_difference(left: &str, right: &str) -> usize {
@@ -540,33 +540,6 @@ pub(crate) fn gui(
     let status = child.wait().unwrap();
     assert!(status.success(), "{name}: GUI exited with {status}\n{out}");
     rooted(&out, root)
-}
-
-pub(crate) fn gui_state(stderr: &str) -> String {
-    let mut out = String::new();
-    for line in stderr.lines() {
-        let keep = if line.starts_with("DUMP tab=")
-            || line.starts_with("DUMP panels ")
-            || line.starts_with("DUMP tip=")
-            || line.starts_with("DUMP backend")
-            || line.starts_with("DUMP paths ")
-            || line.starts_with("DUMP step-views ")
-            || line.starts_with("script:")
-        {
-            Some(line.to_owned())
-        } else if line.starts_with("DUMP node ") || line.starts_with("DUMP button ") {
-            Some(line.split(" rect=").next().unwrap_or(line).to_owned())
-        } else if line.starts_with("DUMP graph") {
-            Some(line.split(" pan=").next().unwrap_or(line).to_owned())
-        } else {
-            None
-        };
-        if let Some(kept) = keep {
-            out.push_str(&kept);
-            out.push('\n');
-        }
-    }
-    out
 }
 
 pub(crate) fn gui_parity(stderr: &str) -> String {

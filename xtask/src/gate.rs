@@ -25,7 +25,7 @@ pub(crate) enum Step {
     Test,
     Map,
     Features,
-    Goldens,
+    Scenarios,
     Record,
 }
 
@@ -40,7 +40,7 @@ impl fmt::Display for Step {
             Self::Test => "unit tests",
             Self::Map => "codemap check",
             Self::Features => "feature coverage (crates/codemap/tests/features.rs)",
-            Self::Goldens => "CLI goldens",
+            Self::Scenarios => "CLI scenarios (crates/codemap/tests/cli.rs)",
             Self::Record => "recording the gate state (target/xtask/gate)",
         })
     }
@@ -176,7 +176,7 @@ fn steps(root: &Root, depth: Depth) -> Result<(), Failure> {
     if depth == Depth::Full {
         command(
             root,
-            Step::Goldens,
+            Step::Scenarios,
             Program::CARGO,
             &Argument::list(&["test", "--quiet", "--package", "codemap", "--test", "cli"]),
         )?;

@@ -193,7 +193,7 @@ file xtask/src/lint/checks.rs
 symbol test_registry
 lines 0 11
 hash 6392029e0dbbbc29
-note L11: a scenario file (the CLI and GUI golden tests) must not hand-register a #[test]; its table's macro generates them, so a scenario is added in one place.
+note L11: a scenario file (the CLI and GUI scenario tests) must not hand-register a #[test]; its table's macro generates them, so a scenario is added in one place.
 
 step dbzwz0
 order 9

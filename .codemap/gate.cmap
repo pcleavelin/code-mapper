@@ -3,7 +3,7 @@ path gate
 kind flow
 author ai
 group tooling
-note cargo xtask gate: the single yes/no for whether the working copy is acceptable. Every rule the repo holds is a step here, run in a fixed order, cheapest first, stopping at the first failure; nothing is done until it is green. It exists so an agent cannot finish or commit code shaped any other way than the one the rules allow: the Stop hook runs it before a session may end, the pre-tool hook runs it before any commit, and each failing step reports in the words of the check that failed, so the agent learns the rule at the moment it breaks it instead of from a document. The steps: rustfmt, archlint, the crate graph, the API lock, clippy with warnings denied, the unit tests (archlint's fixtures among them), codemap check, the feature coverage test, and with --full the CLI goldens. The GUI goldens need a display and stay out. Every run records its result in the gate state, which the hooks read.
+note cargo xtask gate: the single yes/no for whether the working copy is acceptable. Every rule the repo holds is a step here, run in a fixed order, cheapest first, stopping at the first failure; nothing is done until it is green. It exists so an agent cannot finish or commit code shaped any other way than the one the rules allow: the Stop hook runs it before a session may end, the pre-tool hook runs it before any commit, and each failing step reports in the words of the check that failed, so the agent learns the rule at the moment it breaks it instead of from a document. The steps: rustfmt, archlint, the crate graph, the API lock, clippy with warnings denied, the unit tests (archlint's fixtures among them), codemap check, the feature coverage test, and with --full the CLI scenarios. The GUI scenarios need a display and stay out. Every run records its result in the gate state, which the hooks read.
 
 step 1hpban
 order 9
@@ -43,7 +43,7 @@ file xtask/src/gate.rs
 symbol steps
 lines 40 52
 hash eae5beaaa3361350
-note Feature coverage: crates/codemap/tests/features.rs checks that every Feature in the registry has its feature-<name> flow path with the handler as its one root, and that a golden scenario triggers it. It reads only the map and the test sources, so it runs in every gate.
+note Feature coverage: crates/codemap/tests/features.rs checks that every Feature in the registry has its feature-<name> flow path with the handler as its one root, and that some scenario triggers it. It reads only the map and the test sources, so it runs in every gate.
 
 step 7fhoz2
 order 27
@@ -75,7 +75,7 @@ file xtask/src/gate.rs
 symbol Depth
 lines 0 3
 hash f7cb7c3d7bdf0317
-note Fast (the default, what the hooks run) or Full (adds the CLI goldens).
+note Fast (the default, what the hooks run) or Full (adds the CLI scenarios).
 
 step 9v0tx0
 order 2
@@ -84,7 +84,7 @@ author ai
 file xtask/src/gate.rs
 symbol steps
 lines 0 62
-hash 4bc0d1e7c20a3a3e
+hash 18fa2686fddd5e11
 note The steps, in order. Each is either an external command (a Failure carrying its output) or an in-process check (a Failure carrying its Message); the ? after each is what stops the gate at the first red step.
 
 step atfkui
@@ -125,8 +125,8 @@ author ai
 file xtask/src/gate.rs
 symbol steps
 lines 53 60
-hash e53cfa758a09edcc
-note With --full, the CLI golden transcripts; the finish skill runs this and the GUI scenarios.
+hash cd535267e03d1f8d
+note With --full, the CLI scenarios (crates/codemap/tests/cli.rs); the finish skill runs this and the GUI scenarios.
 
 step jei1oc
 order 28
@@ -146,7 +146,7 @@ author ai
 file xtask/src/gate.rs
 symbol Step
 lines 0 11
-hash 16628ae4bcf92fed
+hash f51dbaf71d9966b4
 note The gate's steps, one variant each.
 
 step mu0fxx
@@ -218,7 +218,7 @@ author ai
 file xtask/src/gate.rs
 symbol impl fmt::Display for Step
 lines 0 15
-hash 524c6a16252cfe88
+hash 5ad3509d9db878fd
 note Each step's description names the command that reproduces it (cargo fmt --all, cargo xtask lint <file>, cargo xtask api) or the file that holds its rule, so a failure says how to check the fix.
 
 step vunl8x

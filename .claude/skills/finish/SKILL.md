@@ -23,8 +23,8 @@ session's first stop with nothing in flight is. This is the order that gets it g
    `refactor`), and say in your reply which you declined and why. Skip this step when the diff
    introduces no names.
 3. Tests. Spawn one Sonnet subagent, in the same turn as the naming one, with the change and
-   this brief: for each test the diff adds or changes (a unit test, a scenario step, a golden
-   line), name one plausible mistake in the code under test that makes it fail. A test with
+   this brief: for each test the diff adds or changes (a unit test, a scenario step, an
+   assertion), name one plausible mistake in the code under test that makes it fail. A test with
    no such mistake is tautological:
    - its expected value comes from the code under test, or from a copy of its logic;
    - it asserts a literal, a constant, or what a type already guarantees (a constructor's
@@ -56,8 +56,9 @@ session's first stop with nothing in flight is. This is the order that gets it g
    8. `uncovered <crate dir>` for the crates you touched lists only what you judge trivial;
       the owner audits that judgement.
 5. `cargo xtask api` if a library crate's public items changed, and include the `api/` diff.
-6. If the change was meant to alter output, rebless: `CODEMAP_BLESS=1 cargo test --release
-   --test cli` (and `--test gui` for GUI output), and read the golden diff before committing
-   it. If it was meant not to, run the `refactor` skill's parity check instead.
+6. `cargo xtask parity`. A change meant not to alter output must list no scenario (the
+   `refactor` skill). A change meant to alter output lists only the scenarios it meant to
+   alter: read each `old.txt`/`new.txt` against the `understand` restatement, and treat any
+   other listed scenario as a side effect to fix or to explain in the commit message.
 7. `cargo xtask gate` once more, then commit (`jj commit -m ...` or `git commit`). The
    message says what changed and why, for someone who did not see the session.

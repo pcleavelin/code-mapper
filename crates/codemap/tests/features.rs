@@ -13,24 +13,6 @@ fn read(relative: &str) -> String {
     fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join(relative)).unwrap_or_default()
 }
 
-fn goldens() -> String {
-    let mut text = String::new();
-    let folder = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/golden");
-    let mut files: Vec<PathBuf> = fs::read_dir(folder)
-        .map(|entries| {
-            entries
-                .filter_map(Result::ok)
-                .map(|entry| entry.path())
-                .collect()
-        })
-        .unwrap_or_default();
-    files.sort();
-    for file in files {
-        text.push_str(&fs::read_to_string(file).unwrap_or_default());
-    }
-    text
-}
-
 fn group_of(surface: Surface) -> &'static str {
     match surface {
         Surface::Command => "features/cli",
@@ -60,13 +42,17 @@ fn aims_at(line: &str, element: &str) -> bool {
     })
 }
 
-fn exercised(trigger: Trigger, goldens: &str, scripts: &str) -> bool {
+fn exercised(trigger: Trigger, commands: &str, scripts: &str) -> bool {
     let lines = script_lines(scripts);
     match trigger {
-        Trigger::Command(name) => goldens.lines().any(|line| {
-            line.strip_prefix("$ codemap ")
-                .is_some_and(|rest| rest.split_whitespace().next() == Some(name.as_str()))
-        }),
+        Trigger::Command(name) => {
+            let opening = format!("[\"{}\"", name.as_str());
+            commands.match_indices(&opening).any(|(at, _)| {
+                commands
+                    .get(at + opening.len()..)
+                    .is_some_and(|rest| rest.starts_with([',', ']']))
+            })
+        }
         Trigger::Click(element) | Trigger::Type(element) => {
             let name = element.as_str();
             lines.iter().any(|line| {
@@ -161,9 +147,9 @@ fn every_feature_has_its_flow_path_in_the_map() {
 }
 
 #[test]
-fn every_feature_is_exercised_by_a_golden_scenario() {
-    let goldens = goldens();
+fn every_feature_is_exercised_by_a_scenario() {
     let scripts = read("tests/common/gui.rs");
+    let commands = read("tests/common/cli.rs") + &scripts;
     let unexercised: Vec<&str> = Feature::ALL
         .into_iter()
         .filter(|feature| {
@@ -171,7 +157,7 @@ fn every_feature_is_exercised_by_a_golden_scenario() {
                 .spec()
                 .triggers()
                 .iter()
-                .any(|trigger| exercised(*trigger, &goldens, &scripts))
+                .any(|trigger| exercised(*trigger, &commands, &scripts))
         })
         .map(|feature| feature.spec().name().as_str())
         .collect();

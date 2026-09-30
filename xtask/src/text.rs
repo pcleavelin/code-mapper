@@ -274,6 +274,9 @@ pub(crate) struct Program(&'static str);
 impl Program {
     pub(crate) const CARGO: Self = Self("cargo");
     pub(crate) const RUSTFMT: Self = Self("rustfmt");
+    pub(crate) const JJ: Self = Self("jj");
+    pub(crate) const GIT: Self = Self("git");
+    pub(crate) const TAR: Self = Self("tar");
 
     pub(crate) const fn as_str(self) -> &'static str {
         self.0

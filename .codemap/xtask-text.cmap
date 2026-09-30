@@ -75,9 +75,9 @@ order 7
 author ai
 file xtask/src/text.rs
 symbol impl Program
-lines 0 7
-hash c5a43691348f8bed
-note The programs xtask runs: cargo, rustfmt, git, jj.
+lines 0 10
+hash 36781e557cef1ada
+note The programs xtask runs: cargo, rustfmt, git, jj, tar.
 
 step vlokdr
 order 9

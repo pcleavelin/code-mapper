@@ -90,6 +90,13 @@ fn compare_gui(name: &str, scenario: &Scenario, old: &Path, new: &Path, fails: &
         Err(missing) => return common::skip(name, &missing),
     };
     same(name, &played_old.text, &played_new.text, fails);
+    fails.extend(
+        played_new
+            .text
+            .lines()
+            .filter(|line| line.starts_with("script:"))
+            .map(|line| format!("{name}: the new build's script failed: {line}")),
+    );
     if played_old.shots.len() != played_new.shots.len()
         || played_old.shots.is_empty() && scenario.script.contains("shot ")
     {
@@ -239,17 +246,14 @@ fn repo_at(rev: &str, old: &Path, new: &Path, fails: &mut Vec<String>) {
         setup: |bin, name| Ok(setup(bin, name)),
         hook: |_, _, _| {},
         after: &[],
-        script: "SETTLE
+        script: "idle
 dump
 shot {shots}/document.png
-click-id paths/25
-wait 3
-dump
-shot {shots}/reader-gui.png
 hover-id document
 wheel -2000
 wait 3
-shot {shots}/reader-gui-scrolled.png
+dump
+shot {shots}/document-scrolled.png
 click-id tab@Graph
 wait 5
 dump
@@ -257,10 +261,10 @@ shot {shots}/graph.png
 click-id graph-fit
 wait 5
 shot {shots}/graph-fit.png
-click-id left@Symbols
+click-id tab@Symbols
 wait 3
 shot {shots}/symbols.png
-click-id left@Files
+click-id tab@Files
 wait 3
 shot {shots}/files.png
 click-id tab@Listing

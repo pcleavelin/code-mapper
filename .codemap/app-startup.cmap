@@ -60,10 +60,10 @@ parent dosvcv
 author ai
 file crates/platform/src/window.rs
 symbol run
-lines 0 31
-hash bb1109f7351e6329
+lines 0 35
+hash 7c8f3647e9d15655
 link platform-loop
-note The handover, in the platform crate: the event loop is created and owns the App from here; a script or screenshot run gets a fixed-size window, anything else a maximised one. The window itself is not made until the loop resumes, which is the first thing platform-loop does. Closing the window just exits the loop, so unsaved map edits are lost; the save button and ctrl+s are the only way out for them.
+note The handover, in the platform crate: the event loop is created and owns the App from here; a script or screenshot run gets a fixed-size window and, on macOS, an app that launches with the activation policy Prohibited so it never takes focus; anything else a maximised one. The window itself is not made until the loop resumes, which is the first thing platform-loop does. Closing the window just exits the loop, so unsaved map edits are lost; the save button and ctrl+s are the only way out for them.
 
 step dosvcv
 order 16

@@ -107,24 +107,34 @@ lines 0 15
 hash ac0f9dba220b4f4a
 note The wheel accumulates into the pointer in pixels: a line delta counts forty pixels a line, a pixel delta is taken as it is.
 
+step f84hec
+order 26
+parent h41g96
+author ai
+file crates/platform/src/background.rs
+symbol launch_without_focus
+lines 0 5
+hash 10da85d520d21d68
+note A script or screenshot run on macOS launches with the activation policy Prohibited and asks for no activation, and stays Prohibited: an app that may activate is activated by macOS as soon as its window is visible, taking the keyboard from whatever the user is typing in. The window still renders and screenshots still come out.
+
 step fhtrrf
 order 10
 parent o82jom
 author ai
 file crates/platform/src/window.rs
 symbol redraw
-lines 0 25
-hash ae3731358decff37
-note One frame: the elapsed time, the script's next lines, the app's frame, the Renderer presenting its DrawList, the cursor, and then the Input is cleared of everything that was momentary. The frame is timed here and the count, the worst and how many went over 16 ms accumulate on the runner, which is the only measurement of smoothness the tool has. Whatever the frame asked for becomes the next redraw deadline (a script instead runs a frame every 8 ms), and a frame or a script that asked to quit exits the loop.
+lines 0 28
+hash 7f35e355d9ebbaf2
+note One frame: input.time set from the script's clock while a script plays or from wall time otherwise, the script's next lines, the app's frame, the Renderer presenting its DrawList, the cursor, and then the Input is cleared of everything that was momentary. The frame is timed here and the count, the worst and how many went over 16 ms accumulate on the runner, which is the only measurement of smoothness the tool has. Whatever the frame asked for becomes the next redraw deadline (a script instead runs a frame every 8 ms), and a frame or a script that asked to quit exits the loop.
 
 step h41g96
 order 0
 author ai
 file crates/platform/src/window.rs
 symbol run
-lines 0 31
-hash bb1109f7351e6329
-note The entry the gui crate calls: create the event loop, pick the window mode from the environment, build the runner around the app and hand it to winit. It returns when the loop exits - the window closed or a frame asked to quit - and a failure to open the window or the GPU comes back as the StartError the runner kept, rather than a panic.
+lines 0 35
+hash 7c8f3647e9d15655
+note The entry the gui crate calls: pick the window mode from the environment, create the event loop (for a fixed window through background::launch_without_focus, so on macOS the run never activates and never takes the keyboard), build the runner around the app and hand it to winit. It returns when the loop exits - the window closed or a frame asked to quit - and a failure to open the window or the GPU comes back as the StartError the runner kept, rather than a panic.
 
 step ioalrb
 order 7
@@ -202,10 +212,10 @@ parent fhtrrf
 author ai
 file crates/platform/src/script.rs
 symbol step_script
-lines 0 29
-hash ae9f6a310c4911fa
+lines 0 30
+hash da7829dcfcf27875
 link platform-script
-note The test script's turn, before the app's frame (see platform-script): lines run until one produces input or waits, and that input reaches the app exactly as a real event would. It says whether the script asked to quit.
+note The test script's turn, before the app's frame (see platform-script): the script's clock advances by one frame, then lines run until one produces input or waits, and that input reaches the app exactly as a real event would. It says whether the script asked to quit.
 
 step qrcphm
 order 8
@@ -243,6 +253,6 @@ parent cd4qwy
 author ai
 file crates/platform/src/window.rs
 symbol open_window
-lines 0 26
-hash eef1088872f4071c
-note Creates the window - fixed at 1600x1000 physical pixels and not resizable for a script or screenshot, otherwise maximised - and builds the Renderer around it. A fixed window's scale is forced to one. Its size seeds the first Input.
+lines 0 27
+hash 11613744076976a1
+note Creates the window - fixed at 1600x1000 physical pixels not resizable and not active for a script or screenshot, otherwise maximised - and builds the Renderer around it. A fixed window's scale is forced to one. Its size seeds the first Input.

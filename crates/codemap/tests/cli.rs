@@ -17,7 +17,7 @@ macro_rules! tests {
         #[test]
         fn $s() {
             let name = concat!(stringify!($kind), "-", stringify!($s));
-            common::golden(name, common::cli::$s(&common::bin(), name).outcome());
+            common::ran(name, common::cli::$s(&common::bin(), name).outcome());
         }
     )*};
 }

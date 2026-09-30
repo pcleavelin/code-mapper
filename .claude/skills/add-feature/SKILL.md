@@ -22,8 +22,9 @@ cannot be written.
    - A GUI function: follow `add-gui-element`.
    - Anything that changes the map is a method on `domain::Map` first (`add-domain-type` if
      it needs a new concept).
-5. Tests: a CLI golden line for every outcome (success and each error), or a GUI scenario
-   step that triggers it (`add-test-scenario`).
+5. Tests: the behaviour stated before the code, as a unit test of the handler or domain method;
+   then a CLI scenario line for every outcome (success and each error), or a GUI scenario
+   step that triggers it and a dump that shows its effect (`add-test-scenario`).
 6. The map: a `flow` path named `feature-<name>` in group `features/cli` or `features/gui`,
    whose note is the need `understand` found, whose root step is the handler and whose steps
    follow what it calls (`codemap . promote <handler> 2 feature-<name>`, then `path-group`,

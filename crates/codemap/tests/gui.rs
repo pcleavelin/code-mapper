@@ -21,7 +21,7 @@ macro_rules! tests {
             let _one = ONE_WINDOW.lock().unwrap_or_else(|error| error.into_inner());
             let name = concat!(stringify!($kind), "-", stringify!($s));
             let played = common::gui::play(&common::bin(), name, &common::gui::$s());
-            common::golden(name, played.map(|(err, after)| common::gui_state(&err) + &after));
+            common::ran(name, played.map(|(err, after)| err + &after));
         }
     )*};
 }

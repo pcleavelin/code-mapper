@@ -70,22 +70,20 @@ a full re-query.
 
 ## Build and test
 
-`cargo build`, `cargo test`, `cargo xtask gate` (`--full` adds the CLI goldens). The GUI is
+`cargo build`, `cargo test`, `cargo xtask gate` (`--full` adds the CLI scenarios). The GUI is
 winit + wgpu + fontdue under the tool's own element tree (`crates/ui`); there is no UI
 framework underneath.
 
-`crates/codemap/tests` holds `cli.rs` (every command against a generated fixture, golden
-transcripts), `gui.rs` (scripted scenarios in real windows, one at a time), `features.rs`
-(every feature has its map path and a scenario that triggers it) and `parity.rs`. A change
-that means to alter output reblesses with `CODEMAP_BLESS=1` and the golden diff is part of the
-commit. A change that means not to (a refactor) proves it against the build before it:
-
-```
-CODEMAP_BASE_BIN=<old codemap> CODEMAP_PARITY_REV=<old rev> cargo test --release -p codemap --test parity -- --ignored
-```
-
-compares every transcript, GUI dump and screenshot byte for byte; `CODEMAP_PARITY_ONLY=<name>`
-narrows it to one scenario. `CODEMAP_BIN=<binary>` runs the tests against another build.
+`crates/codemap/tests` holds `cli.rs` (every command against a generated fixture), `gui.rs`
+(scripted scenarios in real windows, one at a time), `features.rs` (every feature has its map
+path and a scenario that triggers it) and `parity.rs`. A scenario fails when codemap crashes or
+a GUI script reports an error; nothing records its output in the repo. What a change does to
+output is shown by `cargo xtask parity [scenario]`: it builds the parent revision (cached under
+`target/parity`), plays every scenario on both builds, and lists each one whose transcript, GUI
+dump or screenshot differs, keeping `old.txt` and `new.txt` beside it. A refactor lists none; a
+change lists only the scenarios it meant to alter. Behaviour a change adds is pinned by a test
+that states it, written before the code. `CODEMAP_BIN=<binary>` runs the tests against another
+build.
 
 ## Testing the GUI without a hand on the mouse
 
@@ -94,7 +92,9 @@ Never claim a visual or interactive behaviour from reading the code; drive it an
 - `CODEMAP_SHOT=<file.png> [CODEMAP_SHOT_TAB=path|graph|listing|diff] [CODEMAP_SHOT_SCROLL=n]
   target/release/codemap <root>` writes the first settled frame and quits.
 - `CODEMAP_SCRIPT=<file> target/release/codemap <root>` plays a script, one command per
-  line, as real input: `wait n` (frames), `pause ms` (wall time), `mouse x y`, `down`, `up`,
+  line, as real input, on a clock of its own (8 ms a frame, plus each pause), so animations land
+  the same on every run: `wait n` (frames), `pause ms` (waits that long in wall time, for the
+  servers, and moves the clock by exactly that), `mouse x y`, `down`, `up`,
   `click x y [ctrl|alt|shift]`, `dblclick x y`, `drag x0 y0 x1 y1`, `wheel dy [ctrl|shift]`,
   `pinch n` (a trackpad pinch of n percent, negative to zoom out),
   `key <name> [ctrl] [alt]`, `text ...`, `quit`; app commands `tab <name>`,
@@ -121,10 +121,13 @@ Never claim a visual or interactive behaviour from reading the code; drive it an
   frames since the previous `dump`, and
   `DUMP backend progress=... indexing=... unmerged=<n> reindexing=<bool> linking=<bool>`.
   A script or screenshot run opens a fixed 1600x1000 window at scale 1 and ignores the real
-  mouse and keyboard, so runs and goldens match on every machine. It starts from the default
+  mouse and keyboard, so runs on every machine agree. It starts from the default
   panel layout and saves none, unless `CODEMAP_LAYOUT=<file>` names a layout file to load and
   save. Write script files with the
   Write tool and forward-slash paths: a heredoc mangles backslashes.
+- On macOS a script or screenshot run starts with the activation policy `Prohibited`
+  (`crates/platform/src/background.rs`), so its window renders without ever taking focus and
+  runs can play while the machine is in use.
 - On Linux, run GUI scenarios one at a time under a private headless compositor
   (`weston --backend=headless --renderer=pixman --shell=kiosk --socket=<name>`,
   `WAYLAND_DISPLAY=<name>`, a software Vulkan driver): a desktop window that is hidden stops

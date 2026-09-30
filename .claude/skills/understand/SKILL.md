@@ -23,8 +23,8 @@ message; caught after the change, it costs the change.
    A request that serves no goal, or runs into a non-goal, goes to the owner before anything
    else.
 3. How it is meant to work. The spec is, in this order: the owner's words, design.md, the
-   feature's summary in `crates/features/src/lib.rs`, its `features/` path, its goldens in
-   `crates/codemap/tests/golden`. Then see the current behaviour yourself: run the CLI
+   feature's summary in `crates/features/src/lib.rs`, its `features/` path, the scenarios in
+   `crates/codemap/tests/common` that drive it. Then see the current behaviour yourself: run the CLI
    command, or a GUI script with `dump` and `shot` (CLAUDE.md, "Testing the GUI"), and read
    the PNG. A bug is reproduced here, with the exact command or script that shows it; one
    that does not reproduce goes back to the owner with what you ran.

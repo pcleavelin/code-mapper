@@ -137,7 +137,7 @@ The layout is saved whenever it changes (once a drag is let go), to one file per
 and from the default when it is missing or unreadable. The file is indented text, one split
 (`across <share>` or `down <share>`, the share in thousandths) or `panel <View> <View>*` per
 line, `*` marking the tab in front. Script and screenshot runs use the file only when
-`CODEMAP_LAYOUT` names one, so goldens never depend on a user's layout.
+`CODEMAP_LAYOUT` names one, so scenario runs never depend on a user's layout.
 
 The status line under the panels answers the last thing done: green when it changed
 something, orange when it wants something first or stopped short, red when it failed; the

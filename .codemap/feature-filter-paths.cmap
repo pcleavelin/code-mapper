@@ -43,7 +43,7 @@ file crates/gui/src/dump.rs
 symbol impl Dump for Fields
 lines 0 13
 hash 29113b68ab1c98fd
-note What a script sees: the filter's text and how many paths listed_rows holds, as DUMP paths filter="..." listed=n; the GUI goldens keep this line.
+note What a script sees: the filter's text and how many paths listed_rows holds, as DUMP paths filter="..." listed=n; a script's dump prints this line.
 
 step o4hj70
 order 2

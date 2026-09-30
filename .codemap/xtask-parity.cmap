@@ -1,0 +1,65 @@
+codemap 8
+path xtask-parity
+kind flow
+author ai
+group tooling
+note cargo xtask parity [scenario]: finds the parent revision (jj log -r @- if jj answers, else git rev-parse HEAD), builds it once from a git archive into target/parity/source with CARGO_TARGET_DIR=target/parity/build, caches the release binary at target/parity/bin/<commit>/codemap, then runs cargo test --release --test parity -- --ignored with CODEMAP_BASE_BIN and CODEMAP_PARITY_REV set (and CODEMAP_PARITY_ONLY when a scenario is named), and prints the scenarios whose output differs.
+
+step 4i987m
+order 2
+parent bh7m5n
+author ai
+file xtask/src/parity.rs
+symbol base_binary
+lines 0 45
+hash a3a79be32011cba5
+note The base binary for the revision: the cached target/parity/bin/<commit>/codemap when a previous run already built it, otherwise a fresh target/parity/source filled from a git archive of the revision (tar -x into it), built there with cargo and CARGO_TARGET_DIR=target/parity/build, and the release binary copied into the cache.
+
+step bh7m5n
+order 0
+author ai
+file xtask/src/parity.rs
+symbol compare
+lines 0 35
+hash 048b3b9235712142
+note Runs cargo test --release --test parity -- --ignored, with CODEMAP_BASE_BIN and CODEMAP_PARITY_REV set to the base binary and the parent revision (and CODEMAP_PARITY_ONLY when a scenario is named). Success reports every scenario matches; failure reports the differing scenarios, with old.txt and new.txt kept at each path.
+
+step ft57k4
+order 5
+parent oiqqot
+author ai
+file xtask/src/parity.rs
+symbol CommitId
+lines 0 0
+hash 5edd78de768af191
+note The parent's resolved commit id, the key base builds are cached under; displayed as itself.
+
+step k1ds69
+order 3
+parent bh7m5n
+author ai
+file xtask/src/parity.rs
+symbol differences
+lines 0 11
+hash 5c40440f1bcd0b63
+note The lines worth showing from a failed parity run: any containing 'differences:', ' differs', ' screenshots old, ' or 'script failed:'; with none of those, the first 40 lines of the raw output.
+
+step oiqqot
+order 1
+parent bh7m5n
+author ai
+file xtask/src/parity.rs
+symbol parent_commit
+lines 0 20
+hash 6312da5b1ceebc52
+note The parent commit: jj log -r @- --no-graph -T commit_id, or git rev-parse HEAD when jj does not answer. A Message names the failure when neither answers.
+
+step v4qddo
+order 4
+parent 4i987m
+author ai
+file xtask/src/parity.rs
+symbol succeed
+lines 0 8
+hash 23e6d6a66e4c6b1d
+note Turns a Run's failure into a Message naming that building the base failed, so base_binary can use ? after each command it runs.

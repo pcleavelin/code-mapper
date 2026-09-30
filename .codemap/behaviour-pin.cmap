@@ -3,7 +3,7 @@ path behaviour-pin
 kind layer
 author ai
 group tests
-note How a change proves what it did to the tool's behaviour. The harness lives in crates/codemap/tests: common/ holds the fixture, the runners and every scenario; cli.rs and gui.rs turn the scenario lists into one #[test] each, parity.rs plays them against two builds, and features.rs checks the feature registry against the map and the goldens. cargo test replays every CLI command against a generated fixture repo and compares golden transcripts, and plays scripted GUI scenarios in real windows and compares the state after each step. A change that means to alter output reblesses the goldens (CODEMAP_BLESS=1) and the golden diff is the evidence; a refactor instead runs the parity test, which plays every scenario with the old build and the new one and compares transcripts, GUI dumps and screenshots byte for byte. Every run sees a PATH with jj and git and no language server, so every file is indexed by tree-sitter and the output is the same on every run; a scenario that needs jj or git skips itself, with the reason on stderr, when that tool is not installed.
+note How a change proves what it did to the tool's behaviour. The harness lives in crates/codemap/tests: common/ holds the fixture, the runners and every scenario; cli.rs and gui.rs turn the scenario lists into one #[test] each, parity.rs plays them against two builds, and features.rs checks the feature registry against the map. cargo test replays every CLI command against a generated fixture repo and plays scripted GUI scenarios in real windows, and ran fails a scenario that crashed or printed a script error; nothing compares output to a file. A refactor instead runs the parity test, which plays every scenario with the old build and the new one and compares transcripts, GUI dumps and screenshots byte for byte. Every run sees a PATH with jj and git and no language server, so every file is indexed by tree-sitter and the output is the same on every run; a scenario that needs jj or git skips itself, with the reason on stderr, when that tool is not installed.
 
 step 1hmv7q
 order 13
@@ -13,7 +13,7 @@ file crates/codemap/tests/common/gui.rs
 symbol gui_scenarios
 lines 0 4
 hash 7699eb0b2afdbb2e
-note The GUI scenarios, listed once in the gui_scenarios macro that gui.rs and parity.rs both expand. Each settles with SETTLE first; its golden gui-<fn> is the kept dump state followed by the output of its after commands.
+note The GUI scenarios, listed once in the gui_scenarios macro that gui.rs and parity.rs both expand. Each settles with SETTLE first; its stderr and the output of its after commands go to ran, which fails on a crash or a script error.
 
 step 1wrmiq
 order 25
@@ -43,7 +43,7 @@ file crates/codemap/tests/common/mod.rs
 symbol first_difference
 lines 0 5
 hash c59b120a30693c4f
-note The index of the first line where two texts differ, or the shorter one's length when one is a prefix of the other. golden and parity both report it.
+note The index of the first line where two texts differ, or the shorter one's length when one is a prefix of the other. parity reports it.
 
 step 4finuk
 order 41
@@ -74,15 +74,6 @@ symbol listing
 lines 0 59
 hash f3a217be432cbca0
 note The listing: opening a file at a line, a shift-click range selection added to startup with 'add step' (checked by the after command), goto-line with good, past-the-end and non-numeric input, the tooltip, ctrl-click, and back and forward by button and by key.
-
-step 5wnr0m
-order 30
-author ai
-file crates/codemap/tests/common/mod.rs
-symbol gui_state
-lines 0 25
-hash 909be89c4fe59f34
-note What a GUI golden keeps of stderr: the tab and selection line, the panel tree line, the Paths filter line, the step views line, the tooltip and peek line, backend state and script errors, graph node and button names without their rectangles and the graph line without its pan. What depends on the screen or timing stays out.
 
 step 62zoqn
 order 15
@@ -120,8 +111,8 @@ parent hdfzdl
 author ai
 file crates/codemap/tests/parity.rs
 symbol compare_gui
-lines 0 29
-hash 49e8263d03e61928
+lines 0 36
+hash 3f2b56eb4da1ecc7
 note Plays one GUI scenario with each build and compares their stderr (minus timings) and after output, then every screenshot byte for byte. A scenario that should have written screenshots and wrote none fails too, so a broken shot path cannot pass as parity. A missing tool skips it.
 
 step 9ci2st
@@ -151,8 +142,8 @@ author ai
 file crates/codemap/tests/gui.rs
 symbol tests
 lines 0 10
-hash 3232701989645e36
-note gui.rs's tests macro: one #[test] per scenario, each holding ONE_WINDOW so the windows open one at a time, playing the scenario and comparing gui_state of its stderr plus its after output with the golden.
+hash 6daf8eb37866c7eb
+note gui.rs's tests macro: one #[test] per scenario, each holding ONE_WINDOW so the windows open one at a time, playing the scenario and passing its stderr plus its after output to ran, which fails on a crash or a script error.
 
 step 9qiv44
 order 22
@@ -238,9 +229,9 @@ order 21
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol play
-lines 0 62
-hash f65371b4d026fb54
-note Plays a GUI scenario and returns its stderr and the output of its after commands. A script line aiming at <<prefix>> is resolved first by a probe run of the script up to that line, on a fresh fixture, which ends with a dump of the frame that line runs in, reading the rectangle from that dump (or an earlier rect line); the final run then starts from the same state. <<prefix>> stands for the centre of the last stderr line starting with prefix, <<prefix|dx,dy>> for a point offset from its top-left corner. Offsets are pixels: the scripts assume the fixed 1600x1000 script window at scale 1, 16 px rows. Any script: line in the final run's stderr fails the scenario before its golden is compared, so a missed gesture cannot be blessed. The screenshots land in shots(name).
+lines 0 53
+hash 6f38c61b20cb1ad3
+note Plays a GUI scenario and returns its stderr and the output of its after commands. A script line aiming at <<prefix>> is resolved first by a probe run of the script up to that line, on a fresh fixture, which ends with a dump of the frame that line runs in, reading the rectangle from that dump (or an earlier rect line); the final run then starts from the same state. <<prefix>> stands for the centre of the last stderr line starting with prefix, <<prefix|dx,dy>> for a point offset from its top-left corner. Offsets are pixels: the scripts assume the fixed 1600x1000 script window at scale 1, 16 px rows. A script: line in the final run's stderr is left in the returned text; ran fails the scenario on it, so a missed gesture cannot pass. The screenshots land in shots(name).
 
 step g4vgzv
 order 19
@@ -298,7 +289,7 @@ file crates/codemap/tests/common/gui.rs
 symbol Scenario
 lines 0 5
 hash 08ef493f4255ff87
-note A GUI scenario: its setup (a fixture root, or Missing when a tool is not on PATH), the script, a hook that sees every stderr line (a rect <marker> line in the script is its cue), and after, CLI commands run once the GUI quits with their output appended to the golden.
+note A GUI scenario: its setup (a fixture root, or Missing when a tool is not on PATH), the script, a hook that sees every stderr line (a rect <marker> line in the script is its cue), and after, CLI commands run once the GUI quits with their output appended to the stderr before both go to ran.
 
 step h9vmup
 order 58
@@ -306,18 +297,18 @@ parent hed6nt
 author ai
 file crates/codemap/tests/features.rs
 symbol exercised
-lines 0 47
-hash 3d18c72fddd02db9
-note Whether a script or golden fires one trigger: a command by its transcript line, a click or typed field by a click-id or dblclick-id aimed at the element (a graph node's buttons by their label in a <<DUMP button>> click), a key by a key line with its modifier, and a gesture by the script command that performs it. The back and forward mouse buttons have no script command, so they never count.
+lines 0 51
+hash d78ae563027b5a59
+note Whether the scenario sources fire one trigger: a command by an argument array in commands (cli.rs and gui.rs) starting with its name, a click or typed field by a click-id or dblclick-id aimed at the element (a graph node's buttons by their label in a <<DUMP button>> click), a key by a key line with its modifier, and a gesture by the script command that performs it. The back and forward mouse buttons have no script command, so they never count.
 
 step hbyc72
 order 20
 author ai
 file crates/codemap/tests/common/mod.rs
-symbol golden
+symbol ran
 lines 0 25
-hash 8fcbfb69dd01c5c3
-note Compares with tests/golden/<name>.txt and panics naming the first line that differs, with both lines and the whole output; CODEMAP_BLESS=1 writes the golden instead. A scenario that returned Missing is skipped with the reason on stderr, not compared.
+hash f0494fd9e1be7c6e
+note Fails the scenario when its output holds a crash (a 'panicked at' line, [exit 101] or [exit -1]) or a GUI script printed a 'script:' error; a scenario that returned Missing is skipped with the reason on stderr instead. Nothing here compares output to a file.
 
 step hdfzdl
 order 31
@@ -332,10 +323,10 @@ step hed6nt
 order 56
 author ai
 file crates/codemap/tests/features.rs
-symbol every_feature_is_exercised_by_a_golden_scenario
+symbol every_feature_is_exercised_by_a_scenario
 lines 0 18
-hash b5db328f2aa1cc8b
-note Every feature in the registry is triggered by some golden scenario: at least one of its triggers appears in a CLI golden or a GUI script. A feature no test reaches fails here.
+hash dcf4c9e322fdf1b3
+note Every feature in the registry is triggered by some scenario: at least one of its triggers appears in the CLI or GUI scenario sources. A feature no test reaches fails here.
 
 step hrljo7
 order 39
@@ -364,7 +355,7 @@ file crates/codemap/tests/common/cli.rs
 symbol cli_scenarios
 lines 0 4
 hash 9a8a912be26e3f4d
-note The CLI scenarios, listed once in the cli_scenarios macro, which takes the name of another macro and calls it with 'cli:' and the scenario names. cli.rs expands it into one #[test] each and parity.rs into its list, so a scenario added here runs in both. Each is a fn(bin, name) returning the transcript (or Missing), and its golden is cli-<fn>.
+note The CLI scenarios, listed once in the cli_scenarios macro, which takes the name of another macro and calls it with 'cli:' and the scenario names. cli.rs expands it into one #[test] each and parity.rs into its list, so a scenario added here runs in both. Each is a fn(bin, name) returning the transcript (or Missing).
 
 step j4zwo3
 order 48
@@ -384,7 +375,7 @@ file crates/codemap/tests/common/mod.rs
 symbol skip
 lines 0 6
 hash b6093e0be8a82561
-note Reports a skipped scenario on stderr ('name: skipped, jj is not on PATH'); golden and parity both use it, so a missing tool never fails a test and never passes as a comparison.
+note Reports a skipped scenario on stderr ('name: skipped, jj is not on PATH'); ran and parity both use it, so a missing tool never fails a test and never passes as a comparison.
 
 step j8ntek
 order 14
@@ -405,16 +396,6 @@ symbol group_of
 lines 0 5
 hash f3a6a88c243979d2
 note The group a feature's path belongs in: features/cli for a command, features/gui for a window feature.
-
-step jou14b
-order 57
-parent hed6nt
-author ai
-file crates/codemap/tests/features.rs
-symbol goldens
-lines 0 16
-hash 2135d161d0cbbe04
-note Every golden transcript concatenated, sorted by file name; a command trigger is exercised when a '$ codemap <name>' line in it runs that command.
 
 step js1rob
 order 38
@@ -480,8 +461,8 @@ parent hdfzdl
 author ai
 file crates/codemap/tests/parity.rs
 symbol repo_at
-lines 0 75
-hash 745133fbd0d8171a
+lines 0 72
+hash a96ce7a098cf8cdf
 note The repo as a second fixture: files, symbols, roots, coverage, uncovered, stale, paths, a grep, notes, a tree, callers and callees, then every path printed; then a GUI script opens the document, a long path scrolled, the graph and the graph fitted, and the symbol, file and listing views, all photographed.
 
 step o4w5dz
@@ -579,8 +560,8 @@ author ai
 file crates/codemap/tests/cli.rs
 symbol tests
 lines 0 8
-hash 905abc80d7f75e9b
-note cli.rs's tests macro: one #[test] per scenario, named after it, whose golden is cli-<name>; Outcome lets a scenario return a plain transcript or one that may be Missing.
+hash d779fe7281d7ac9f
+note cli.rs's tests macro: one #[test] per scenario, named after it. Outcome lets a scenario return a plain transcript or one that may be Missing.
 
 step xj023o
 order 45

@@ -5,6 +5,26 @@ author ai
 group tooling
 note Everything xtask does outside itself: starting a program, writing a file, printing. Each has one function, and the first two are the only places clippy's disallowed methods are expected in xtask (arch.rs EXPECTS), so xtask follows the same one-way rule it enforces on the workspace.
 
+step 14c4rs
+order 12
+parent u1bmm3
+author ai
+file xtask/src/files.rs
+symbol fresh_directory
+lines 0 6
+hash 900d9e0a134a9578
+note Makes a directory exist and empty: removes it first if it is already there, then creates it and its parents.
+
+step 20w5vh
+order 10
+parent jcwnlf
+author ai
+file xtask/src/process.rs
+symbol run_in
+lines 0 30
+hash 0ddb0d899ba7e5c6
+note Starts a program in the given directory with the given environment variables set on top of the inherited one, and collects its exit and output the same way run does; run is the plain case, calling it with the root directory and no extra settings. This is the one place clippy's disallowed methods are expected for starting a process.
+
 step 2owmqu
 order 2
 parent yn2565
@@ -38,9 +58,29 @@ order 0
 author ai
 file xtask/src/process.rs
 symbol run
-lines 0 22
-hash 901c09f89009c790
-note Runs a program in the root and collects its exit and its stdout and stderr as one message; a program that cannot start is a failure with the reason.
+lines 0 2
+hash 323a5a82dd263b07
+note Runs a program in the root, through run_in with no extra environment; collects its exit and its stdout and stderr as one message, and a program that cannot start is a failure with the reason.
+
+step szgxgo
+order 13
+parent u1bmm3
+author ai
+file xtask/src/files.rs
+symbol copy
+lines 0 8
+hash ee7f9210a5df4b80
+note Copies one file to another path, creating the destination's folder first.
+
+step t4jnaq
+order 11
+parent jcwnlf
+author ai
+file xtask/src/process.rs
+symbol Setting
+lines 0 3
+hash 13c8b4287ce8de5b
+note One environment variable a run_in call sets: a name and a value.
 
 step u1bmm3
 order 3
