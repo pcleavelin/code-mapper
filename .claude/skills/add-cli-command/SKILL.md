@@ -5,7 +5,7 @@ description: Add or change a codemap CLI command (the agent's interface, also ru
 
 # Add a CLI command
 
-1. The feature: `add-feature` step 1 (name = command name, summary = help line).
+1. The feature: `add-feature` step 3 (name = command name, summary = help line).
 2. `crates/cli/src/wire.rs`: the clap variant with its arguments (1-based lines and list
    positions are wire types here), the exhaustive `Command -> Feature` match, and every
    message the command prints, success and each error. Messages exist only in this file.

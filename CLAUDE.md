@@ -4,9 +4,11 @@ Read `design.md` first. It is the source of truth for what this tool is and why.
 
 Every change ends with the `finish` skill. The Stop hook runs `cargo xtask gate` and keeps the
 session going until it is green, and commits are refused while it is red; each failure says
-what to do. The other skills (`add-feature`, `add-cli-command`, `add-gui-element`,
-`add-domain-type`, `add-data-source`, `add-test-scenario`, `refactor`, `tripped`) are the
-steps for each kind of change.
+what to do. Every feature request and bug fix starts with the `understand` skill, and every
+new feature is chosen from several built by the `prototype` skill. The other skills
+(`add-feature`, `fix-bug`, `add-cli-command`, `add-gui-element`, `add-domain-type`,
+`add-data-source`, `add-test-scenario`, `refactor`, `tripped`) are the steps for each kind of
+change.
 
 ## Axioms
 

@@ -5,7 +5,7 @@ description: Add or change a view, panel, button, row, field or gesture in the c
 
 # Add a GUI element
 
-1. The feature, if the element does something: `add-feature` step 1, with its triggers
+1. The feature, if the element does something: `add-feature` step 3, with its triggers
    naming the element (`Trigger::Click(Element::new("<id name>"))`, a `Chord`, a `Gesture`).
 2. `crates/gui/src/ids.rs`: the element's id constant, named as scripts will address it
    (`name`, `name/<n>` for rows, `name@<key>`).
