@@ -116,7 +116,7 @@ fn the_layout_is_the_legacy_one() {
         Backend::Server,
     ));
     CacheStore::save(&index).unwrap();
-    let mut expected: Vec<u8> = b"CMCH\x02\0\0\0\x01\0\0\0".to_vec();
+    let mut expected: Vec<u8> = b"CMCH\x03\0\0\0\x01\0\0\0".to_vec();
     let text = |bytes: &mut Vec<u8>, text: &str| {
         bytes.extend_from_slice(&u32::try_from(text.len()).unwrap().to_le_bytes());
         bytes.extend_from_slice(text.as_bytes());

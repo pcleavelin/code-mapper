@@ -1,3 +1,4 @@
+use std::fs;
 use std::io::{BufReader, Write};
 use std::path::{self, Path, PathBuf};
 use std::process::{self, Child, ChildStdin, ChildStdout};
@@ -115,7 +116,10 @@ fn listen(output: ChildStdout) -> Receiver<Value> {
 impl LspSession {
     pub fn start(language: Language, root: &Path) -> Result<Self, StartError> {
         let failed = || StartError::Failed(language.program());
-        let root = path::absolute(root).ok().ok_or_else(failed)?;
+        let root = fs::canonicalize(root)
+            .or_else(|_| path::absolute(root))
+            .ok()
+            .ok_or_else(failed)?;
         let program = Program::new(language.program().as_str());
         let arguments: Vec<Argument> = language
             .arguments()

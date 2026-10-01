@@ -91,11 +91,12 @@ impl Uri {
 
 pub(crate) fn relative(path: &Path, root: &Path) -> Option<RelativePath> {
     let full = path.to_string_lossy().replace('\\', "/");
-    let base = root.to_string_lossy().replace('\\', "/");
+    let whole = root.to_string_lossy().replace('\\', "/");
+    let base = whole.trim_end_matches('/');
     let (compared, prefix) = if cfg!(windows) {
         (full.to_ascii_lowercase(), base.to_ascii_lowercase())
     } else {
-        (full.clone(), base)
+        (full.clone(), base.to_owned())
     };
     let tail = compared.strip_prefix(&prefix)?.strip_prefix('/')?;
     full.get(full.len() - tail.len()..).map(RelativePath::new)

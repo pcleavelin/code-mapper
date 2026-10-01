@@ -1,5 +1,5 @@
 const MAGIC: &[u8; 4] = b"CMCH";
-const VERSION: u32 = 2;
+const VERSION: u32 = 3;
 const PLAIN_TAG: u8 = 0;
 const SELF_TAG: u8 = 1;
 const NAMED_TAG: u8 = 2;

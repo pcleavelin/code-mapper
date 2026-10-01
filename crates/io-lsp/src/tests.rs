@@ -29,6 +29,22 @@ fn uris_round_trip() {
 }
 
 #[test]
+fn a_root_ending_in_a_separator_still_holds_its_files() {
+    let root = if cfg!(windows) {
+        Path::new("C:\\Users\\me\\repo\\")
+    } else {
+        Path::new("/home/me/repo/")
+    };
+    let file = Uri::of(&root.join("src").join("a.rs"));
+    assert_eq!(
+        Uri::new(file.as_str())
+            .path()
+            .and_then(|path| relative(&path, root)),
+        Some(RelativePath::new("src/a.rs"))
+    );
+}
+
+#[test]
 fn messages_are_framed_by_length() {
     let message = json!({"jsonrpc": "2.0", "id": 3, "result": [1, 2]});
     let mut framed = b"Content-Type: x\r\n\r\n".to_vec();
