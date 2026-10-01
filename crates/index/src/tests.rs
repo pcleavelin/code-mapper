@@ -728,7 +728,7 @@ fn rust_analyzer_indexes_the_files_a_command_touches() {
     let incoming = servers.incoming_calls(&index, check).unwrap();
     assert_eq!(incoming.len(), 1, "{incoming:?}");
     let references = servers.references(&index, check).unwrap();
-    assert!(!references.is_empty());
+    assert_ne!(references.len(), 0, "{references:?}");
     drop(servers);
     drop(fs::remove_dir_all(&root));
 }

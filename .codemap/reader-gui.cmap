@@ -161,8 +161,8 @@ parent bg9t38
 author ai
 file crates/gui/src/views/center.rs
 symbol graph_tab
-lines 0 62
-hash 5dd9113524580600
+lines 0 63
+hash a8fc48d122b08f45
 link graph-draw
 note The Graph tab: the toolbar, and the scene the graph's input phase built, drawn on one canvas element. Actions the graph phase deferred are pushed here with the rest.
 
@@ -193,8 +193,8 @@ parent myq0zo
 author ai
 file crates/gui/src/views/left.rs
 symbol tours_window
-lines 0 88
-hash acfdfedc1a8979b5
+lines 0 89
+hash b1aba5b407218fa0
 note Tours: a filter field (feature-filter-tours) with 'n of m' while it holds text, and the 'new tour' button with its form (feature-new-tour), then the groups from Model::listed_rows as folders with their tour counts, then one row per tour, and the selected tour expanded into its steps list; under a tour the filter found by its steps, those steps (feature-filter-tours). Every row under a closed group is skipped. Tours removed since the parent revision are listed at the end, greyed.
 
 step 686o81
@@ -376,8 +376,8 @@ parent j7n739
 author ai
 file crates/gui/src/authoring.rs
 symbol Authoring
-lines 0 11
-hash 506a10db20b77e2d
+lines 0 12
+hash 89859a6827fd1ff9
 note The authoring gestures as their own enum, carried by the one Action::Authoring variant so Action stays a list of kinds of change rather than every authoring detail (gui-authoring).
 
 step dshcm5
@@ -497,8 +497,8 @@ parent sn1cn1
 author ai
 file crates/gui/src/authoring.rs
 symbol author
-lines 0 13
-hash 6f4e34dc815e3e4e
+lines 0 14
+hash 152101ca14dff2f0
 link gui-authoring
 note Action::Authoring's arm: author, in authoring.rs, dispatches to the add, target, drag, promote and new-tour handlers.
 
@@ -538,8 +538,8 @@ parent sn1cn1
 author ai
 file crates/gui/src/action.rs
 symbol Action
-lines 0 51
-hash 26b6eaa99e5df9b3
+lines 0 52
+hash 66ae89f14288302a
 note What a gesture can ask for. Selection and navigation, the per-step view toggles, the tour-wide toggles, the two deletions, the authoring gestures as one Authoring variant (add lines or a symbol, the target, grabbing, dragging and dropping a steps list row, promote, the new-tour form), opening a line or a definition, tabs, the fields' input, scroll offsets and what a view measured (the top step, a scroll done, a step's height), server questions, panel gestures and graph gestures. Adding a gesture means adding a variant here and an arm in apply, not threading a callback through the views. A StepKey is a (tour, step) pair of slots in the map; Definition carries the intent, peek or jump; SelectLine says whether to extend; SelectStep whether to scroll the document; OpenTour selects the tour unless it is the one being read and shows it in the given tab.
 
 step jd4cl1
@@ -833,8 +833,8 @@ parent 50ozko
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 0 100
-hash a60720a022aa91fa
+lines 0 101
+hash fd1681fb00b2a69b
 note The action queue, drained once the tree is built; the keys and panel_input use it too, before the tree. apply is the only place the Model changes during a frame, which is what lets every view take the Model read-only. Most arms are one call into nav.rs or a Model field.
 
 step svoo3m
@@ -853,8 +853,8 @@ parent 50ozko
 author ai
 file crates/gui/src/nav.rs
 symbol track_navigation
-lines 0 23
-hash 3ed36dbc4f744cde
+lines 0 19
+hash 379a38b0b159beaf
 link navigation
 note Called last, after the queue and after the views have reported their scroll offsets: a back or forward asked for this frame is performed, then a place the reader moved from becomes history.
 

@@ -3,7 +3,7 @@ tour feature-walk-steps
 kind flow
 author ai
 group features/gui
-note With no text field holding the keyboard and the graph not holding it, Down selects the next step of the tour being read and Up the previous one, in numbered order (the order the document and steps list show), scrolling each to the top. The reader reaches for it to read a tour step by step in order without clicking each row or scrolling to the next header. Down on the last step and Up on the first stay put. A run of walks is one history entry, so back returns to where the run started. With no step selected, either key selects the first step. After a click in the graph the arrows walk the graph instead (feature-walk-graph).
+note With no text field holding the keyboard and the graph not holding it, Down selects the next step of the tour being read and Up the previous one, in numbered order (the order the document and steps list show), scrolling each to the top. The reader reaches for it to read a tour step by step in order without clicking each row or scrolling to the next header. Down on the last step and Up on the first stay put. Each walk is its own history place, so back returns to the previous step. With no step selected, either key selects the first step. After a click in the graph the arrows walk the graph instead (feature-walk-graph).
 
 step 17uw33
 order 0
@@ -12,7 +12,7 @@ file crates/gui/src/nav.rs
 symbol walk
 lines 0 33
 hash 7ff9703ccbcaca94
-note The handler. Finds the selected step's position in numbered order, moves one along, clamped to the ends, and selects that step with Scrolling::Scroll, marking the move a walk first so a run of walks is one history place. Nothing happens without a tour or on a tour with no steps.
+note The handler. Finds the selected step's position in numbered order, moves one along, clamped to the ends, and selects that step with Scrolling::Scroll, marking the move a walk first. Each walk that changes the step is its own history place. Nothing happens without a tour or on a tour with no steps.
 
 step df3ka7
 order 3
@@ -51,7 +51,7 @@ parent 17uw33
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 92 96
+lines 93 97
 hash 547c8bd0901ef4e5
 note The gate: a walk is dropped while any field is focused, so the arrows move the caret or the field's history there instead.
 

@@ -81,6 +81,7 @@ pub enum Feature {
     MoveNode,
     NodeContext,
     NodeSource,
+    ShowReferences,
     AutoLayout,
     FitGraph,
     PanGraph,
@@ -547,7 +548,7 @@ impl Feature {
             Self::AddStep => Spec::new(
                 Text::new("add-step"),
                 Text::new(
-                    "add the lines selected in the Source view, a symbol or a graph node as a step of the tour being read",
+                    "add the lines selected in the Source view, or the symbol in front of you, as a step of the tour being read",
                 ),
                 Surface::Window,
                 &const {
@@ -558,6 +559,8 @@ impl Feature {
                         Trigger::Click(Element::new("add-xto")),
                         Trigger::Click(Element::new("add-xfrom")),
                         Trigger::Click(Element::new("node-add")),
+                        Trigger::Click(Element::new("add-offer")),
+                        Trigger::Palette(Text::new("add step"), None),
                     ]
                 },
             ),
@@ -749,6 +752,12 @@ impl Feature {
                 Text::new("open a graph node's file in the Source view"),
                 Surface::Window,
                 &const { [Trigger::Click(Element::new("node-source"))] },
+            ),
+            Self::ShowReferences => Spec::new(
+                Text::new("show-references"),
+                Text::new("open the References view on the graph node under the pointer"),
+                Surface::Window,
+                &const { [Trigger::Gesture(Gesture::DoubleClick, Element::new("node"))] },
             ),
             Self::AutoLayout => Spec::new(
                 Text::new("auto-layout"),

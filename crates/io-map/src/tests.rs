@@ -105,7 +105,7 @@ fn every_committed_map_file_renders_to_its_own_bytes() {
     let root = repository_root();
     let mut store = MapStore::new(&Root::new(&root));
     let map = store.load().unwrap();
-    assert!(!map.tours().is_empty());
+    assert_ne!(map.tours().len(), 0);
     for tour in map.tours() {
         let file = root
             .join(".codemap")
@@ -249,7 +249,7 @@ fn a_parent_that_is_not_a_step_names_the_parent_line() {
 fn a_missing_directory_is_an_empty_map() {
     let scratch = Scratch::new("missing");
     let mut store = MapStore::new(&scratch.root());
-    assert!(store.load().unwrap().tours().is_empty());
+    assert_eq!(store.load().unwrap().tours().len(), 0);
     assert!(store.stamp().is_none());
 }
 

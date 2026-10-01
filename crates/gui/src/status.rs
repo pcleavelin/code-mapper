@@ -73,6 +73,7 @@ pub(crate) enum Status {
     TopLevelTarget(TourName),
     SelectLinesFirst,
     SelectTourFirst,
+    SelectSymbolOrLinesFirst,
     StepAdded {
         number: Label,
         tour: TourName,
@@ -129,6 +130,10 @@ impl fmt::Display for Under {
 }
 
 impl Status {
+    pub(crate) fn select_symbol_or_lines() -> Label {
+        Label::new("select another symbol, or lines in the Source view, to add a step")
+    }
+
     fn authoring(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::TourCreated(name) => write!(formatter, "tour '{name}' created (unsaved)"),
@@ -144,6 +149,9 @@ impl Status {
             ),
             Self::SelectLinesFirst => formatter.write_str("select lines in the Source view first"),
             Self::SelectTourFirst => formatter.write_str("open a tour to add steps to first"),
+            Self::SelectSymbolOrLinesFirst => {
+                formatter.write_str(Self::select_symbol_or_lines().as_str())
+            }
             Self::StepAdded {
                 number,
                 tour,
@@ -217,6 +225,7 @@ impl Status {
             | Self::AlreadyStep { .. }
             | Self::SelectLinesFirst
             | Self::SelectTourFirst
+            | Self::SelectSymbolOrLinesFirst
             | Self::LineOutside { .. }
             | Self::NoLineNumber(_)
             | Self::NoFileOpen
@@ -286,6 +295,7 @@ impl fmt::Display for Status {
             | Self::AlreadyStep { .. }
             | Self::SelectLinesFirst
             | Self::SelectTourFirst
+            | Self::SelectSymbolOrLinesFirst
             | Self::StepAdded { .. }
             | Self::StepPlaced { .. }
             | Self::TopLevelTarget(_) => self.authoring(formatter),

@@ -20,7 +20,7 @@ parent 23x47j
 author ai
 file crates/gui/src/views/center.rs
 symbol graph_tab
-lines 26 31
+lines 27 32
 hash 6183e39cfa05db4c
 note Trigger: GRAPH_AUTO in the graph toolbar queues Graph(AutoLayout).
 

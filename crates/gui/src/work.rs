@@ -16,7 +16,7 @@ use ui::{Count, Grid, Label};
 use crate::app::App;
 use crate::grid;
 use crate::model::TourSlot;
-use crate::model::{Dirty, Readable, StepKey, Warned};
+use crate::model::{Dirty, Readable, StepKey, Tab, Warned};
 use crate::panels::View;
 use crate::peek::{Intent, Peek, Probe};
 use crate::runtime::{self, Job, Landing, landed};
@@ -503,7 +503,13 @@ impl App {
 
     pub(crate) fn land(&mut self, found: Peek, intent: Intent) {
         match (intent, found) {
-            (Intent::Jump, Peek::Symbol(symbol)) => self.model.jumped_to_symbol(symbol),
+            (Intent::Jump, Peek::Symbol(symbol)) => {
+                let on_graph = self.model.nav.tab() == Tab::Graph;
+                self.model.jumped_to_symbol(symbol);
+                if on_graph {
+                    self.show_references();
+                }
+            }
             (Intent::Jump, Peek::Line { file, line }) => self.model.open_line(file, line),
             (_, found) => {
                 if let Peek::Outside { file, line, .. } = &found {

@@ -397,6 +397,7 @@ pub(super) fn diff_view(model: &Model, frame: &mut Frame<'_>) {
 }
 
 pub(super) fn graph_tab(model: &Model, frame: &mut Frame<'_>, graph: Option<GraphFrame>) {
+    authoring::target_strip(model, frame);
     let Some(GraphFrame {
         scene,
         deferred,

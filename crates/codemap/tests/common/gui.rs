@@ -481,6 +481,10 @@ wait 2
 click-id field@symbols
 text main
 wait 3
+click-id sym@3:0
+wait 2
+click-id add-offer
+wait 2
 hover-id sym@3:0
 wait 1
 click-id add-sym@3:0

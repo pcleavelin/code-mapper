@@ -279,7 +279,7 @@ fn tree_edits_keep_parents() {
     assert_eq!(numbers, ["1", "1.1", "1.1.1"]);
     let the_tour = map.tour(&tour).unwrap();
     assert_eq!(the_tour.descendants(&root).len(), 2);
-    assert!(the_tour.descendants(&leaf).is_empty());
+    assert_eq!(the_tour.descendants(&leaf).len(), 0);
     assert_eq!(
         the_tour.parent_label(&leaf),
         Some(ParentLabel::Symbol(SymbolName::new("b")))
@@ -573,7 +573,7 @@ fn links_follow_renames_and_hold_removal() {
     let mut broken_map = Map::new(broken).unwrap();
     assert_eq!(broken_map.dangling_links(), [address("flow", &step)]);
     let _unlinked = broken_map.set_link(&flow, &step, None).unwrap();
-    assert!(broken_map.dangling_links().is_empty());
+    assert_eq!(broken_map.dangling_links().len(), 0);
     assert!(broken_map.remove_tour(&common).is_ok());
     assert_eq!(
         broken_map.remove_tour(&common),
@@ -953,8 +953,8 @@ fn diff_reports_each_kind_of_change() {
     assert_eq!(removed_ids, [&removed]);
     assert_eq!(diffs[1].steps()[0].change, Some(StepChange::Added));
     assert!(!diffs[1].note_changed());
-    assert!(diffs[2].steps().is_empty());
-    assert!(diffs[2].removed().is_empty());
+    assert_eq!(diffs[2].steps().len(), 0);
+    assert_eq!(diffs[2].removed().len(), 0);
 }
 
 #[test]
@@ -1069,7 +1069,8 @@ fn promote_stops_at_code_another_tour_covers_and_names_the_tour_to_link() {
             .collect()
     };
     let all = promote(&mut map, first, "a-covering", Pruning::All);
-    assert!(all.links.is_empty() && all.stopped.is_empty());
+    assert_eq!(all.links.len(), 0);
+    assert_eq!(all.stopped.len(), 0);
     let only = promote(&mut map, first, "one", Pruning::Pruned);
     assert_eq!(
         only.stopped.values().copied().collect::<Vec<_>>(),
@@ -1085,5 +1086,5 @@ fn promote_stops_at_code_another_tour_covers_and_names_the_tour_to_link() {
         ambiguous.stopped.values().copied().collect::<Vec<_>>(),
         [Stop::Mapped]
     );
-    assert!(links(&map, &ambiguous).is_empty());
+    assert_eq!(links(&map, &ambiguous).len(), 0);
 }

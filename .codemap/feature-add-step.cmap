@@ -3,7 +3,17 @@ tour feature-add-step
 kind flow
 author ai
 group features/gui
-note Add code to the tour being read, from wherever it is shown. The reader reaches for it to turn code already on screen into a step without switching to the CLI (the human builds tours by hand). In the Source view, select lines (click, shift-click) and press the toolbar's add button, which names them ('add lines 12-20 as a step'). On a Symbols row or a References caller or callee row, press '+ step', shown while the row is hovered, to add that symbol whole; 'add step' under the References heading adds the selected symbol. On an off-tour graph node, '+ step' adds its symbol. The step is authored by the human and hangs under the target (see feature-choose-target), except a graph node revealed as a callee of a step, which hangs under that step. The same lines under the same parent again is refused with the step's number; adding moves neither the selection nor the target, so the next add lands beside this one. The status names the new step's number and parent.
+note Add code to the tour being read, from wherever it is shown. The reader reaches for it to turn code already on screen into a step without switching to the CLI (the human builds tours by hand). The target strip, on the Tours list, on Symbols, on Source and on the Graph tab, names the one add for what is in front of you. On the Source tab with lines selected it adds those lines. Otherwise it adds the focused symbol, and it offers nothing when that symbol is already the selected whole-symbol step. The palette entry 'add step' does the same thing. The hover '+ step' controls stay. In the Source view, select lines (click, shift-click) and press the toolbar's add button, which names them ('add lines 12-20 as a step'). On a Symbols row or a References caller or callee row, press '+ step', shown while the row is hovered, to add that symbol whole; 'add step' under the References heading adds the selected symbol. On an off-tour graph node, '+ step' adds its symbol. The step is authored by the human and hangs under the target (see feature-choose-target), except a graph node revealed as a callee of a step, which hangs under that step. The same lines under the same parent again is refused with the step's number; adding moves neither the selection nor the target, so the next add lands beside this one. The status names the new step's number and parent.
+
+step 4aiwmt
+order 12
+parent u849ck
+author ai
+file crates/gui/src/authoring.rs
+symbol add_offered
+lines 0 9
+hash 78b2a1876be067c7
+note Adds the lines selected in the Source view, or the focused symbol under the target. With no tour open the status says to select one. When the focused symbol is already the selected step, the status says to select another symbol or lines in the Source view.
 
 step 5dyo4y
 order 3
@@ -24,6 +34,16 @@ symbol symbol_row
 lines 0 65
 hash 5fb2fc57e5e94dbb
 note Trigger: a Symbols row carries a '+ step' action while a tour is being read, shown on the hovered or selected row; the action queues AddSymbol under the target, a click elsewhere on the row focuses the symbol.
+
+step 7f4nvw
+order 13
+parent 4aiwmt
+author ai
+file crates/gui/src/authoring.rs
+symbol add_offer
+lines 0 31
+hash a5f44e8f94a4da96
+note What the strip's button will add. Source lines win when that tab is showing and lines are selected. Otherwise the focused symbol, unless it is already the selected whole-symbol step.
 
 step 82hexj
 order 1
@@ -86,6 +106,16 @@ lines 20 32
 hash 01ab33b91d4e59c5
 note Trigger: the graph's '+ step' node button. A node revealed through a step's callees reveal hangs under that step, which is where it sits in the drawing; anything else hangs under the target.
 
+step hqso8z
+order 14
+parent 7f4nvw
+author ai
+file crates/gui/src/authoring.rs
+symbol AddOffer
+lines 0 3
+hash 5bbcb7d09dbd8032
+note The two things add-offer can pin. Lines carries the button label. Symbol carries the symbol and the label.
+
 step pcmyr1
 order 8
 parent d1xozt
@@ -102,9 +132,9 @@ parent zwrtqu
 author ai
 file crates/gui/src/authoring.rs
 symbol author
-lines 0 13
-hash 6f4e34dc815e3e4e
-note The route in: views push Action::Authoring(Authoring::AddLines or AddSymbol), apply hands it to author, and author calls add_lines or add_symbol, which both end in add_step.
+lines 0 14
+hash 152101ca14dff2f0
+note The route in: views push Action::Authoring, apply hands it to author, and author calls add_lines, add_symbol or add_focused, which all end in add_step.
 
 step ygjbuv
 order 9

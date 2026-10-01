@@ -174,6 +174,10 @@ fn fired(feature: Feature, interaction: Interaction, pointer: Pointer) -> bool {
     gestures(feature).any(|gesture| seen(gesture, interaction, pointer))
 }
 
+pub(crate) fn shows_references(interaction: Interaction, pointer: Pointer) -> bool {
+    fired(Feature::ShowReferences, interaction, pointer)
+}
+
 pub(crate) fn code_gesture(interaction: Interaction, pointer: Pointer) -> Option<CodeGesture> {
     if fired(Feature::PeekDefinition, interaction, pointer) {
         Some(CodeGesture::Peek)

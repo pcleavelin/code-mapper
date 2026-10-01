@@ -358,6 +358,9 @@ impl App {
                 self.graph(GraphAction::Grab(Some(Drag::Node(node))));
                 deferred.push(self.model.graph.built.select(node));
                 self.graph(GraphAction::Steer(Steering::Click));
+                if keys::shows_references(interaction, pointer) {
+                    deferred.push(Action::ShowReferences);
+                }
             }
             Some(Hit::Parent(node)) => {
                 deferred.push(self.model.graph.built.select(node));

@@ -77,7 +77,7 @@ fn peeked(model: &Model) -> Option<Peeked> {
             first,
             grid,
         } => Some(Peeked {
-            title: Label::new("Peek (outside)"),
+            title: Label::new("Defined outside this repo"),
             place: Label::new(format!(
                 "{}:{}",
                 file.display().to_string().replace('\\', "/"),

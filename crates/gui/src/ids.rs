@@ -79,6 +79,7 @@ pub(crate) const CREATE_TOUR: Control = Control::new(Feature::NewTour, Element::
 pub(crate) const ADD_LINES: Control = Control::new(Feature::AddStep, Element::new("add-lines"));
 pub(crate) const ADD_SYMBOL: Control = Control::new(Feature::AddStep, Element::new("add-sym"));
 pub(crate) const ADD_FOCUS: Control = Control::new(Feature::AddStep, Element::new("add-focus"));
+pub(crate) const ADD_OFFER: Control = Control::new(Feature::AddStep, Element::new("add-offer"));
 pub(crate) const ADD_CALLER: Control = Control::new(Feature::AddStep, Element::new("add-xto"));
 pub(crate) const ADD_CALLEE: Control = Control::new(Feature::AddStep, Element::new("add-xfrom"));
 pub(crate) const TARGET_TOP: Control =
@@ -176,6 +177,7 @@ pub(crate) const CONTROLS: &[Control] = &[
     ADD_LINES,
     ADD_SYMBOL,
     ADD_FOCUS,
+    ADD_OFFER,
     ADD_CALLER,
     ADD_CALLEE,
     TARGET_TOP,

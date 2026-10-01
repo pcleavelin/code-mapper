@@ -163,23 +163,11 @@ impl Built {
         span.lines().find(|line| source.call_site(*line, word))
     }
 
-    pub(crate) fn callees_of(&self, index: &Index, node: Node) -> Vec<SymbolId> {
-        let Some(symbol) = index.symbol(node.symbol) else {
-            return Vec::new();
-        };
-        if self.range(node) == Some(symbol.span()) {
-            return symbol.callees().to_vec();
-        }
-        symbol
-            .callees()
-            .iter()
-            .copied()
-            .filter(|callee| {
-                index
-                    .symbol(*callee)
-                    .is_some_and(|found| self.call_line(index, node, found.name()).is_some())
-            })
-            .collect()
+    pub(crate) fn callees_of(index: &Index, node: Node) -> Vec<SymbolId> {
+        index
+            .symbol(node.symbol)
+            .map(|symbol| symbol.callees().to_vec())
+            .unwrap_or_default()
     }
 
     fn add(&mut self, index: &Index, node: Node, rank: Rank, range: Span) {
@@ -261,7 +249,7 @@ impl Built {
                 .filter(|listed| !self.by_symbol.contains_key(listed))
                 .count()
         };
-        let outgoing = self.callees_of(index, node);
+        let outgoing = Self::callees_of(index, node);
         if graph.has_reveal(node, Side::Callees) && !outgoing.is_empty() {
             label(Button::Callees, format!("hide {} callees", outgoing.len()));
         } else if hidden(&outgoing) > 0 {
@@ -281,10 +269,16 @@ impl Built {
             runs.push(Run::new(format!("  waiting for {server}"), WEAK));
         } else {
             if outgoing.is_empty() {
-                runs.push(Run::new("  calls nothing", WEAK));
+                let named = !symbol.calls().is_empty() || !symbol.targets().is_empty();
+                let reason = if named {
+                    "  calls not in this repo"
+                } else {
+                    "  calls nothing"
+                };
+                runs.push(Run::new(reason, WEAK));
             }
             if incoming.is_empty() {
-                runs.push(Run::new("  no callers", WEAK));
+                runs.push(Run::new("  no callers in this repo", WEAK));
             }
         }
         Header { runs, buttons }
@@ -451,7 +445,7 @@ fn add_reveals(built: &mut Built, model: &Model, reveals: Vec<Reveal>) {
             continue;
         };
         let list = match reveal.side {
-            Side::Callees => built.callees_of(index, node),
+            Side::Callees => Built::callees_of(index, node),
             Side::Callers => index
                 .symbol(node.symbol)
                 .map(|symbol| symbol.callers().to_vec())

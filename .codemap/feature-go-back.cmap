@@ -3,7 +3,7 @@ tour feature-go-back
 kind flow
 author ai
 group features/gui
-note The back and forward arrow icons in the top bar, alt+left and alt+right, ctrl+left and ctrl+right, and the mouse's back and forward buttons move back and forward through the places visited, the way a browser does: a different tour, step, focused symbol or file, or a jump to other lines of the same file, is a place, and each comes back with the tab, line selection, scroll offsets and graph camera it was left with. Switching tabs or scrolling is not a place, and a run of arrow-key walks is one. The reader reaches for it to return to where a jump, an xref or a search started instead of finding the place again by hand, as an editor with an LSP allows. Nothing records a place explicitly; the end of every frame compares where the reader is with where they were. The arrow keys with a modifier are left to a focused text field, where they move the caret.
+note The back and forward arrow icons in the top bar, alt+left and alt+right, ctrl+left and ctrl+right, and the mouse's back and forward buttons move back and forward through the places visited, the way a browser does: a different tour, step, focused symbol, file or centre tab, or a jump to other lines of the same file, is a place, and each comes back with the tab, line selection, scroll offsets and graph camera it was left with. Switching the centre tab is its own place. Scrolling is not. Each arrow-key walk is its own place. The reader reaches for it to return to where a jump, an xref or a search started instead of finding the place again by hand, as an editor with an LSP allows. Nothing records a place explicitly; the end of every frame compares where the reader is with where they were. The arrow keys with a modifier are left to a focused text field, where they move the caret.
 
 step 1wvo6m
 order 6
@@ -11,9 +11,9 @@ parent y91rv4
 author ai
 file crates/gui/src/nav.rs
 symbol track_navigation
-lines 0 23
-hash 3ed36dbc4f744cde
-note What makes history: at the end of every frame a pending back or forward is performed, then the current place is compared with the last one, and when the reader moved the last one is pushed onto the back stack, unless this is a walk following a walk, and the forward stack is cleared.
+lines 0 19
+hash 379a38b0b159beaf
+note What makes history: at the end of every frame a pending back or forward is performed, then the current place is compared with the last one, and when the reader moved the last one is pushed onto the back stack, and the forward stack is cleared. A walk is not folded into the previous walk.
 
 step 4vzlbm
 order 7

@@ -64,6 +64,16 @@ lines 0 9
 hash feb7ce536ad51bf5
 note An answer's result, or its error message as Err. answer_id beside it tells an answer from a request the server made of us, which carries a method.
 
+step 6x3b9r
+order 52
+parent iq3ejv
+author ai
+file crates/io-lsp/src/convert.rs
+symbol canonical
+lines 0 10
+hash cd63d70c3ac68b31
+note When the string prefix misses, both paths are canonicalized and the root is stripped. An empty tail, the root itself, is still outside.
+
 step 79jsww
 order 41
 author ai
@@ -171,6 +181,16 @@ lines 0 3
 hash 71eb3b2e9c9c49d2
 note Content-Length header, a blank line, then the JSON body.
 
+step ch30no
+order 53
+parent iq3ejv
+author ai
+file crates/io-lsp/src/tests.rs
+symbol a_definition_through_the_real_path_of_a_symlinked_root_stays_inside
+lines 0 26
+hash 0f09ee35ffd713d1
+note A file reached through the real path of a symlinked root stays src/a.rs, not outside the repo.
+
 step expfh4
 order 42
 parent 3bn4hl
@@ -246,9 +266,9 @@ parent 9zii3n
 author ai
 file crates/io-lsp/src/convert.rs
 symbol relative
-lines 0 11
-hash 3eac967f74435b26
-note Absolute path under the root to a root-relative forward-slash path, or None outside it. A trailing separator on the root is trimmed first, so a root ending in one still holds its files. Server URIs come back as file:///c%3A/... on Windows; Uri::path decodes one to a path, and this prefix check against the root, case-insensitive on Windows, gives the repo-relative path every other part of the tool uses.
+lines 0 2
+hash 4aba8ffa2fbfc188
+note Absolute path under the root to a root-relative forward-slash path, or None outside it. The string prefix is tried first. When the server returns the real path and the opened root is a symlink, the canonical paths are compared instead, so a file inside the repo is not reported as outside it.
 
 step iughfk
 order 2
@@ -337,6 +357,16 @@ symbol definition
 lines 0 8
 hash 01a40dc23ce48f76
 note The target as an absolute path plus, when it is inside the root, the relative one, so the GUI can peek into std or a dependency as well as jump within the repo.
+
+step qslbxw
+order 51
+parent iq3ejv
+author ai
+file crates/io-lsp/src/convert.rs
+symbol prefixed
+lines 0 11
+hash 17b4f7d02180444a
+note The string prefix of the path under the root, with a trailing separator on the root trimmed, and case-insensitive on Windows.
 
 step qwrnwl
 order 14

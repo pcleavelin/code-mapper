@@ -13,6 +13,7 @@ use crate::theme::{DROP_BAND_WIDTH, GRAB_REACH};
 pub(crate) enum Authoring {
     AddLines,
     AddSymbol(SymbolId, Hang),
+    AddOffered,
     AddAtTopLevel,
     GrabStep(StepKey, Point),
     DragStep(Point),
@@ -27,6 +28,12 @@ pub(crate) enum Authoring {
 pub(crate) enum Hang {
     Target,
     Under(StepSlot),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum AddOffer {
+    Lines(Label),
+    Symbol(SymbolId, Label),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -129,6 +136,39 @@ impl Model {
             .target()
             .filter(|step| step.get() < self.step_count(tour).get())
     }
+
+    pub(crate) fn add_offer(&self) -> Option<AddOffer> {
+        self.nav.tour()?;
+        if self.nav.tab() == Tab::Source
+            && let Some(lines) = self.nav.lines()
+        {
+            let label = if lines.low() == lines.high() {
+                format!("add line {} as a step", lines.low().number())
+            } else {
+                format!(
+                    "add lines {}-{} as a step",
+                    lines.low().number(),
+                    lines.high().number()
+                )
+            };
+            return Some(AddOffer::Lines(Label::new(label)));
+        }
+        let symbol = self.nav.focus()?;
+        let on_step = self
+            .nav
+            .step_key()
+            .and_then(|key| self.step(key))
+            .and_then(domain::Step::resolved_symbol)
+            == Some(symbol);
+        if on_step {
+            return None;
+        }
+        let name = self.index.symbol(symbol)?.name();
+        Some(AddOffer::Symbol(
+            symbol,
+            Label::new(format!("add {name} as a step")),
+        ))
+    }
 }
 
 impl App {
@@ -136,6 +176,7 @@ impl App {
         match action {
             Authoring::AddLines => self.add_lines(),
             Authoring::AddSymbol(symbol, hang) => self.add_symbol(symbol, hang),
+            Authoring::AddOffered => self.add_offered(),
             Authoring::AddAtTopLevel => self.add_at_top_level(),
             Authoring::GrabStep(key, from) => self.grab_step(key, from),
             Authoring::DragStep(mouse) => self.drag_step(mouse),
@@ -144,6 +185,17 @@ impl App {
             Authoring::ToggleNewTour => self.toggle_new_tour(),
             Authoring::ChooseKind(kind) => self.choose_kind(kind),
             Authoring::CreateTour => self.create_tour(),
+        }
+    }
+
+    pub(crate) fn add_offered(&mut self) {
+        match self.model.add_offer() {
+            Some(AddOffer::Lines(_)) => self.add_lines(),
+            Some(AddOffer::Symbol(symbol, _)) => self.add_symbol(symbol, Hang::Target),
+            None if self.model.nav.tour().is_none() => {
+                self.model.status = Status::SelectTourFirst;
+            }
+            None => self.model.status = Status::SelectSymbolOrLinesFirst,
         }
     }
 

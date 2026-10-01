@@ -196,6 +196,7 @@ pub(super) fn tours_window(model: &Model, frame: &mut Frame<'_>) {
         frame.label(format!("{shown} of {}", model.map.tours().len()), WEAK);
     }
     frame.finish();
+    authoring::target_strip(model, frame);
     authoring::new_tour_form(model, frame);
     if rows.is_empty() {
         frame.label(

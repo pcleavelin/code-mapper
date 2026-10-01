@@ -154,7 +154,7 @@ fn every_feature_has_its_flow_tour_in_the_map() {
             }
         }
     }
-    assert!(missing.is_empty(), "feature tours:\n{}", missing.join("\n"));
+    assert_eq!(missing.len(), 0, "feature tours:\n{}", missing.join("\n"));
 }
 
 #[test]
@@ -173,8 +173,9 @@ fn every_feature_is_exercised_by_a_scenario() {
         })
         .map(|feature| feature.spec().name().as_str())
         .collect();
-    assert!(
-        unexercised.is_empty(),
+    assert_eq!(
+        unexercised.len(),
+        0,
         "features no scenario triggers: {unexercised:?}"
     );
 }

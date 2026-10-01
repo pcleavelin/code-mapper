@@ -60,9 +60,9 @@ order 6
 author ai
 file crates/gui/src/views/center.rs
 symbol graph_tab
-lines 0 62
-hash 5dd9113524580600
-note The view: the deferred actions pushed (a hover through push_hover), the tooltip set, then the toolbar - '1:1' which resets the zoom and re-centres, 'auto layout' which drops every dragged position, 'fit' which zooms out until the whole tree is on the canvas and centres it, the direction button (graph-turn, labelled with the direction it switches to: 'top to bottom' or 'left to right'), the zoom percentage, and one clipped caption: while a tour is being read, its name and a legend drawn in the edge colours themselves (green step, dim revealed, orange call back up), then the pan and zoom gestures spelled out - then the canvas element whose closure paints the scene. The toolbar holds no authoring control; '+ step' lives on off-tour nodes.
+lines 0 63
+hash a8fc48d122b08f45
+note The view: the deferred actions pushed (a hover through push_hover), the tooltip set, then the toolbar - '1:1' which resets the zoom and re-centres, 'auto layout' which drops every dragged position, 'fit' which zooms out until the whole tree is on the canvas and centres it, the direction button (graph-turn, labelled with the direction it switches to: 'top to bottom' or 'left to right'), the zoom percentage, and one clipped caption: while a tour is being read, its name and a legend drawn in the edge colours themselves (green step, dim revealed, orange call back up), then the pan and zoom gestures spelled out - then the canvas element whose closure paints the scene. The target strip above the toolbar offers add-offer. The toolbar itself holds no authoring control, and '+ step' still lives on off-tour nodes.
 
 step 4yhd4f
 order 0
@@ -230,8 +230,8 @@ parent pi32um
 author ai
 file crates/gui/src/graph/scene.rs
 symbol tinted
-lines 0 24
-hash 358428e8b9d7bc3a
+lines 0 23
+hash dea8c8fa87219b5e
 note The lines tinted as calls: a line is tinted when an edge leaves it. It names any node on the canvas the symbol calls, or one of its child steps, however either was revealed, so an off-tour caller shows the line that calls the node it hangs off. Lines past the shown ones are left out.
 
 step msyws5
@@ -292,7 +292,7 @@ author ai
 file crates/gui/src/graph/scene.rs
 symbol edges
 lines 0 72
-hash 834cea6528ddf3b5
+hash 8df0f1f07b62dd57
 note The edges, routed by a Router for the graph's direction. Left to right a call edge leaves level with the line that makes the call when that line is shown, and from the header otherwise; top to bottom it leaves the middle of the node's bottom edge. An edge to a node ahead along the direction is a curve bowing forward into the target's entry (the header's left end, or the top middle), in EXPANSION_EDGE; a callee drawn behind its caller gets a BACK_EDGE curve bowing backwards between the facing sides instead of a wire across the canvas. Tour edges, parent step to child step, are drawn last, thicker and in STEP_EDGE, and carry no label - the node's number is the label. A self-call and a callee that is already the caller's child step get no call edge.
 
 step pi32um
@@ -351,9 +351,9 @@ parent 4yhd4f
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_click
-lines 0 67
-hash e22b2f48be3c7757
-note A press against last frame's hit: a button sends its action (preview, callees, callers, context) or defers a GoTo for source, or an AddSymbol for '+ step' under the step the node was revealed from as a callee, else under the target; a header click grabs the node, defers selecting its step (or focusing its symbol off the tour) and sends Steer(Steering::Click) so the camera stays put and the tree keeps its root; a press on a code line grabs the node and, with ctrl or alt, defers a definition jump or peek at the column under the pointer; a body press grabs the node; the background starts a pan.
+lines 0 70
+hash c2f074c18ad14d41
+note A press against last frame's hit: a button sends its action (preview, callees, callers, context) or defers a GoTo for source, or an AddSymbol for '+ step' under the step the node was revealed from as a callee, else under the target; a header click grabs the node, defers selecting its step (or focusing its symbol off the tour) and sends Steer(Steering::Click) so the camera stays put and the tree keeps its root. A double-click on that header also opens References; a press on a code line grabs the node and, with ctrl or alt, defers a definition jump or peek at the column under the pointer; a body press grabs the node; the background starts a pan.
 
 step rgjxnq
 order 28

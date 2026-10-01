@@ -90,6 +90,10 @@ impl Uri {
 }
 
 pub(crate) fn relative(path: &Path, root: &Path) -> Option<RelativePath> {
+    prefixed(path, root).or_else(|| canonical(path, root))
+}
+
+fn prefixed(path: &Path, root: &Path) -> Option<RelativePath> {
     let full = path.to_string_lossy().replace('\\', "/");
     let whole = root.to_string_lossy().replace('\\', "/");
     let base = whole.trim_end_matches('/');
@@ -100,6 +104,18 @@ pub(crate) fn relative(path: &Path, root: &Path) -> Option<RelativePath> {
     };
     let tail = compared.strip_prefix(&prefix)?.strip_prefix('/')?;
     full.get(full.len() - tail.len()..).map(RelativePath::new)
+}
+
+fn canonical(path: &Path, root: &Path) -> Option<RelativePath> {
+    let full = path.canonicalize().ok()?;
+    let base = root.canonicalize().ok()?;
+    let tail = full.strip_prefix(base).ok()?;
+    let text = tail.to_string_lossy().replace('\\', "/");
+    if text.is_empty() {
+        None
+    } else {
+        Some(RelativePath::new(&text))
+    }
 }
 
 pub(crate) fn outline(symbol: WireSymbol) -> Outline {
