@@ -1,0 +1,242 @@
+#!/usr/bin/env bash
+# Drive and inspect codemap for verification. Agents call this; do not reverse-engineer.
+set -euo pipefail
+
+SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(cd "$SKILL_DIR/../../.." && pwd)"
+# skill lives at .cursor/skills/verify-codemap → repo is three levels up
+if [[ ! -f "$REPO_ROOT/Cargo.toml" ]]; then
+  REPO_ROOT="$(cd "$SKILL_DIR/../../.." && pwd)"
+fi
+if [[ ! -f "$REPO_ROOT/Cargo.toml" ]]; then
+  # fallback: walk up from cwd
+  REPO_ROOT="$(pwd)"
+  while [[ "$REPO_ROOT" != / && ! -f "$REPO_ROOT/Cargo.toml" ]]; do
+    REPO_ROOT="$(dirname "$REPO_ROOT")"
+  done
+fi
+
+RUN_ID="${CODEMAP_VERIFY_RUN:-$$}"
+VERIFY_DIR="${CODEMAP_VERIFY_DIR:-/tmp/codemap-verify-$RUN_ID}"
+STATE_DIR="$VERIFY_DIR/state"
+ARTIFACTS_DIR="${CODEMAP_VERIFY_ARTIFACTS:-$SKILL_DIR/artifacts}"
+BIN="${CODEMAP_BIN:-$REPO_ROOT/target/release/codemap}"
+ROOT="${CODEMAP_VERIFY_ROOT:-$REPO_ROOT}"
+LAYOUT="${CODEMAP_LAYOUT:-$STATE_DIR/layout.bin}"
+XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp/xdg-runtime-$(id -u)}"
+SOCKET_NAME="${CODEMAP_VERIFY_SOCKET:-codemap-verify-$RUN_ID}"
+WESTON_PID_FILE="$STATE_DIR/weston.pid"
+WESTON_LOG="$STATE_DIR/weston.log"
+VK_ICD_DEFAULT="/usr/share/vulkan/icd.d/lvp_icd.json"
+
+mkdir -p "$STATE_DIR" "$ARTIFACTS_DIR" "$XDG_RUNTIME_DIR"
+chmod 700 "$XDG_RUNTIME_DIR" 2>/dev/null || true
+
+die() { echo "control-codemap: $*" >&2; exit 1; }
+
+ensure_bin() {
+  if [[ ! -x "$BIN" ]]; then
+    die "missing binary at $BIN — run: cargo build --release -p codemap (rustc 1.85+ / edition 2024)"
+  fi
+}
+
+ensure_compositor_tools() {
+  command -v weston >/dev/null || die "weston not on PATH (apt install weston)"
+  [[ -f "${VK_DRIVER_FILES:-$VK_ICD_DEFAULT}" || -f "$VK_ICD_DEFAULT" ]] \
+    || die "lavapipe ICD missing (apt install mesa-vulkan-drivers); expected $VK_ICD_DEFAULT"
+}
+
+export_gui_env() {
+  export XDG_RUNTIME_DIR
+  export WAYLAND_DISPLAY="$SOCKET_NAME"
+  export VK_DRIVER_FILES="${VK_DRIVER_FILES:-$VK_ICD_DEFAULT}"
+  unset DISPLAY || true
+}
+
+compositor_up() {
+  [[ -S "$XDG_RUNTIME_DIR/$SOCKET_NAME" ]]
+}
+
+start_compositor() {
+  ensure_compositor_tools
+  if compositor_up; then
+    echo "control-codemap: compositor already up socket=$SOCKET_NAME"
+    return 0
+  fi
+  weston --backend=headless --renderer=pixman --shell=kiosk \
+    --socket="$SOCKET_NAME" --width=1600 --height=1000 \
+    >"$WESTON_LOG" 2>&1 &
+  echo $! >"$WESTON_PID_FILE"
+  local i=0
+  while ! compositor_up; do
+    i=$((i + 1))
+    [[ $i -lt 100 ]] || {
+      cat "$WESTON_LOG" >&2 || true
+      die "weston did not create socket $XDG_RUNTIME_DIR/$SOCKET_NAME"
+    }
+    sleep 0.05
+  done
+  echo "control-codemap: weston pid=$(cat "$WESTON_PID_FILE") socket=$SOCKET_NAME"
+}
+
+stop_compositor() {
+  if [[ -f "$WESTON_PID_FILE" ]]; then
+    local pid
+    pid="$(cat "$WESTON_PID_FILE")"
+    if kill -0 "$pid" 2>/dev/null; then
+      kill "$pid" 2>/dev/null || true
+      wait "$pid" 2>/dev/null || true
+    fi
+    rm -f "$WESTON_PID_FILE"
+  fi
+  rm -f "$XDG_RUNTIME_DIR/$SOCKET_NAME" 2>/dev/null || true
+  echo "control-codemap: compositor stopped (artifacts kept under $ARTIFACTS_DIR)"
+}
+
+cmd_doctor() {
+  local ok=0
+  echo "run_id=$RUN_ID"
+  echo "verify_dir=$VERIFY_DIR"
+  echo "artifacts=$ARTIFACTS_DIR"
+  echo "root=$ROOT"
+  echo "bin=$BIN"
+  echo "socket=$SOCKET_NAME"
+  echo "layout=$LAYOUT"
+  if [[ -x "$BIN" ]]; then
+    echo "bin_ok=yes"
+    echo "bin_version=$("$BIN" --version 2>/dev/null || echo unknown)"
+  else
+    echo "bin_ok=no"
+    ok=1
+  fi
+  if command -v weston >/dev/null; then
+    echo "weston_ok=yes ($(command -v weston))"
+  else
+    echo "weston_ok=no"
+    ok=1
+  fi
+  local icd="${VK_DRIVER_FILES:-$VK_ICD_DEFAULT}"
+  if [[ -f "$icd" ]]; then
+    echo "vulkan_icd_ok=yes ($icd)"
+  else
+    echo "vulkan_icd_ok=no ($icd)"
+    ok=1
+  fi
+  if compositor_up; then
+    echo "compositor=up"
+  else
+    echo "compositor=down"
+  fi
+  if [[ -d "$ROOT/.codemap" ]]; then
+    echo "map_ok=yes ($ROOT/.codemap)"
+  else
+    echo "map_ok=no (no .codemap under root — CLI/GUI still start; path features need a map)"
+  fi
+  # Refuse to claim health if we are not the owner of an up compositor for this run.
+  if compositor_up && [[ ! -f "$WESTON_PID_FILE" ]]; then
+    echo "compositor_owned=no (socket exists but this run did not start it — do not drive)"
+    ok=1
+  elif compositor_up; then
+    echo "compositor_owned=yes pid=$(cat "$WESTON_PID_FILE")"
+  else
+    echo "compositor_owned=n/a"
+  fi
+  exit "$ok"
+}
+
+cmd_launch() {
+  ensure_bin
+  start_compositor
+  export_gui_env
+  echo "CODEMAP_VERIFY_RUN=$RUN_ID"
+  echo "CODEMAP_VERIFY_DIR=$VERIFY_DIR"
+  echo "WAYLAND_DISPLAY=$WAYLAND_DISPLAY"
+  echo "VK_DRIVER_FILES=$VK_DRIVER_FILES"
+  echo "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR"
+  echo "ready=yes"
+}
+
+cmd_gui() {
+  ensure_bin
+  compositor_up || die "compositor down — run: control-codemap launch"
+  [[ -f "$WESTON_PID_FILE" ]] || die "socket exists but this run did not start it — refuse to drive"
+  export_gui_env
+  local script="" shot="" tab="" scroll=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --script) script="$2"; shift 2 ;;
+      --shot) shot="$2"; shift 2 ;;
+      --tab) tab="$2"; shift 2 ;;
+      --scroll) scroll="$2"; shift 2 ;;
+      *) die "gui unknown arg: $1" ;;
+    esac
+  done
+  [[ -n "$script" || -n "$shot" ]] || die "gui needs --script FILE and/or --shot FILE.png"
+  local -a env_args=()
+  env_args+=(CODEMAP_LAYOUT="$LAYOUT")
+  if [[ -n "$script" ]]; then
+    [[ -f "$script" ]] || die "script not found: $script"
+    env_args+=(CODEMAP_SCRIPT="$script")
+  fi
+  if [[ -n "$shot" ]]; then
+    mkdir -p "$(dirname "$shot")"
+    env_args+=(CODEMAP_SHOT="$shot")
+  fi
+  [[ -n "$tab" ]] && env_args+=(CODEMAP_SHOT_TAB="$tab")
+  [[ -n "$scroll" ]] && env_args+=(CODEMAP_SHOT_SCROLL="$scroll")
+  # Scripted/shot runs open a fixed 1600x1000 window, ignore real input, and quit themselves.
+  env "${env_args[@]}" "$BIN" "$ROOT"
+}
+
+cmd_cli() {
+  ensure_bin
+  # Pass-through: control-codemap cli -- paths | head
+  if [[ "${1:-}" == "--" ]]; then shift; fi
+  "$BIN" "$ROOT" "$@"
+}
+
+cmd_cleanup() {
+  stop_compositor
+  # Remove scratch state only; keep artifacts.
+  rm -rf "$STATE_DIR"
+  echo "control-codemap: cleaned state_dir=$STATE_DIR"
+}
+
+usage() {
+  cat <<EOF
+usage: control-codemap <command> [args]
+
+commands:
+  doctor              read-only health check (exit 0 = worth driving)
+  launch              start a private headless weston for this RUN_ID
+  gui --script FILE [--shot FILE.png] [--tab name] [--scroll n]
+  cli -- <codemap-args...>
+  cleanup             stop compositor started by launch; keep artifacts
+
+env:
+  CODEMAP_BIN                default: <repo>/target/release/codemap
+  CODEMAP_VERIFY_ROOT        default: repo root
+  CODEMAP_VERIFY_RUN         run id (default: \$\$)
+  CODEMAP_VERIFY_DIR         scratch dir (default: /tmp/codemap-verify-\$RUN)
+  CODEMAP_VERIFY_ARTIFACTS   proof dir (default: skill artifacts/)
+  CODEMAP_LAYOUT             layout file (default: \$VERIFY_DIR/state/layout.bin)
+  VK_DRIVER_FILES            lavapipe ICD (default: $VK_ICD_DEFAULT)
+EOF
+}
+
+main() {
+  local cmd="${1:-}"
+  [[ -n "$cmd" ]] || { usage; exit 2; }
+  shift || true
+  case "$cmd" in
+    doctor) cmd_doctor "$@" ;;
+    launch) cmd_launch "$@" ;;
+    gui) cmd_gui "$@" ;;
+    cli) cmd_cli "$@" ;;
+    cleanup) cmd_cleanup "$@" ;;
+    help|-h|--help) usage ;;
+    *) die "unknown command: $cmd" ;;
+  esac
+}
+
+main "$@"

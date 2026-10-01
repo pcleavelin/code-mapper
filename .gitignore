@@ -1,3 +1,4 @@
 target/
 .codemap-cache
 result
+.cursor/skills/verify-codemap/artifacts/
