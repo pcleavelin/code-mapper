@@ -14,8 +14,8 @@ This directory is the maintained source for verifying user-facing behavior of co
 ## Driving conventions
 
 - Start every recipe from a freshly launched compositor unless the feature says otherwise.
-- Prefer element ids (`click-id paths/0`, `click-id tab@Graph`) over coordinates.
-- Treat every command as literal. Keep quoted path names and flags unchanged.
+- Prefer element ids (`click-id tours/0`, `click-id tab@Graph`) over coordinates.
+- Treat every command as literal. Keep quoted tour names and flags unchanged.
 - Run GUI scripts through `control-codemap gui --script …`.
 - Run CLI through `control-codemap cli -- <command>`.
 - After layout-changing clicks, `wait 1` (or more) before the next `click-id` / `dump` / `shot`.
@@ -25,9 +25,9 @@ This directory is the maintained source for verifying user-facing behavior of co
 ## Proof and skip reporting
 
 - Capture the user action and the resulting state, not only the final screen.
-- GUI proof includes stderr `DUMP` lines (`DUMP tab=`, `DUMP paths`, `DUMP panels`, `DUMP backend`) and a PNG from `shot`.
+- GUI proof includes stderr `DUMP` lines (`DUMP tab=`, `DUMP tours`, `DUMP panels`, `DUMP backend`) and a PNG from `shot`.
 - CLI proof includes the command, stdout, stderr, and exit code.
-- Mutation proof includes a second read of the map (`cli -- path <name>` or reopen in the GUI).
+- Mutation proof includes a second read of the map (`cli -- tour <name>` or reopen in the GUI).
 - Record the feature ID and entry point with every artifact (filename prefix or `meta.txt`).
 - Report an unreachable path with the attempted command and the unmet precondition.
 - Do not report a skipped entry point as verified through a different path.
@@ -45,8 +45,8 @@ Keep implementation details out of the map. Name only user paths, stable handles
 
 ## Features
 
-- [Open a path](./open-path.md) covers Paths-list open, step selection, and CLI `path` / `paths`.
-- [Switch tab](./switch-tab.md) covers switching Path, Graph, Symbols, and Files views by tab id.
-- [Show graph](./show-graph.md) covers opening the call graph for the path being read.
+- [Open a tour](./open-tour.md) covers Tours-list open, step selection, and CLI `tour` / `tours`.
+- [Switch tab](./switch-tab.md) covers switching Tour, Graph, Symbols, and Files views by tab id.
+- [Show graph](./show-graph.md) covers opening the call graph for the tour being read.
 - [Browse files](./browse-files.md) covers the Files tab directory and file open.
-- [CLI read map](./cli-read-map.md) covers agent-facing `paths`, `path`, and `notes` without a window.
+- [CLI read map](./cli-read-map.md) covers agent-facing `tours`, `tour`, and `notes` without a window.

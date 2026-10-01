@@ -50,17 +50,17 @@ Helper: `.cursor/skills/verify-codemap/bin/control-codemap` (put it on `PATH` as
 control-codemap gui --script /path/to/script.txt --shot "$ART/after.png"
 ```
 
-Script commands (real input into the fixed window): `wait n`, `pause ms`, `mouse x y`, `down`, `up`, `click x y`, `dblclick x y`, `drag …`, `wheel dy`, `pinch n`, `key <name> [ctrl] [alt]`, `text …`, `quit`; app commands `tab <name>`, `open <file> [line]`, `scroll <panel> <n>`, `idle` (wait until indexing/merging settles), `rect <id>`, `click-id <id>`, `dblclick-id <id>`, `hover-id <id>`, `shot <file.png>`, `dump`.
+Script commands (real input into the fixed window): `wait n`, `pause ms`, `mouse x y`, `down`, `up`, `click x y`, `dblclick x y`, `drag …`, `wheel dy`, `pinch n`, `key <name> [ctrl] [alt]`, `text …`, `quit`; app commands `tab <name>`, `open <file> [line]`, `scroll <panel> <n>`, `idle` (wait until indexing/merging settles), `rect <id>`, `click-id <id>`, `dblclick-id <id>`, `hover-id <id>`, `absent <id>`, `shot <file.png>`, `dump`.
 
-Stable element ids (from `crates/gui/src/ids.rs`): path rows `paths/<n>`, group rows `group/<n>`, outline `outline/<n>`, document steps `step/<n>`, tabs `tab@Path` `tab@Graph` `tab@Symbols` `tab@Files` `tab@Diff` `tab@Output` `tab@Listing` `tab@Results` `tab@Xrefs`, fields `field@search` `field@paths` `field@symbols` `field@goto-line` `field@new-path`, graph button `doc-graph`, save `save`, panels `panel/<n>`. After anything that changes layout, `wait 1` before `rect` / `click-id` (rects come from the previous frame). Grep stderr for `^DUMP`.
+Stable element ids (from `crates/gui/src/ids.rs` and `CLAUDE.md`): tour rows `tours/<n>`, group rows `group/<n>`, outline `steps/<n>`, document steps `step/<n>`, tabs `tab@Tour` `tab@Graph` `tab@Symbols` `tab@Files` `tab@Diff` `tab@Source` `tab@Search` `tab@References` `tab@Console`, fields `field@search` `field@tours` `field@symbols` `field@goto-line` `field@new-tour`, graph button `doc-graph`, save `save`, panels `panel/<n>`. After anything that changes layout, `wait 1` before `rect` / `click-id` (rects come from the previous frame). Grep stderr for `^DUMP`.
 
 Prefer `click-id` over coordinates. Prefer `idle` before the first click when the root may still be indexing.
 
 **CLI** — same binary, text mode:
 
 ```bash
-control-codemap cli -- paths
-control-codemap cli -- path anchor
+control-codemap cli -- tours
+control-codemap cli -- tour anchor
 control-codemap cli -- notes 'anchor'
 ```
 
@@ -75,8 +75,8 @@ Named proof directory (survives cleanup):
 Override with `CODEMAP_VERIFY_ARTIFACTS`. For each proof:
 
 1. Exercise the real user path (GUI click-id / CLI command), not internal test hooks.
-2. Capture the action and the resulting state: stderr `DUMP` lines (tab, path, panels, paths listed, backend) plus a `shot` PNG; for CLI, stdout + stderr + exit code in a `.txt` transcript.
-3. Verify side effects when the feature mutates the map: re-read with `cli -- paths` / `cli -- path <name>`, or reopen in the GUI. Read-only features need DUMP/screenshot of the opened view.
+2. Capture the action and the resulting state: stderr `DUMP` lines (tab, tour, panels, tours listed, backend) plus a `shot` PNG; for CLI, stdout + stderr + exit code in a `.txt` transcript.
+3. Verify side effects when the feature mutates the map: re-read with `cli -- tours` / `cli -- tour <name>`, or reopen in the GUI. Read-only features need DUMP/screenshot of the opened view.
 4. Record the feature id and entry point in the artifact filenames or a sibling `meta.txt`.
 
 Proof standards: mocks only at production boundaries (language servers already isolate themselves). Do not claim visual behavior from reading code — drive it and look (Read the PNG).

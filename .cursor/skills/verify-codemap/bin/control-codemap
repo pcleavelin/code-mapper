@@ -130,7 +130,7 @@ cmd_doctor() {
   if [[ -d "$ROOT/.codemap" ]]; then
     echo "map_ok=yes ($ROOT/.codemap)"
   else
-    echo "map_ok=no (no .codemap under root — CLI/GUI still start; path features need a map)"
+    echo "map_ok=no (no .codemap under root — CLI/GUI still start; tour features need a map)"
   fi
   # Refuse to claim health if we are not the owner of an up compositor for this run.
   if compositor_up && [[ ! -f "$WESTON_PID_FILE" ]]; then
@@ -190,7 +190,7 @@ cmd_gui() {
 
 cmd_cli() {
   ensure_bin
-  # Pass-through: control-codemap cli -- paths | head
+  # Pass-through: control-codemap cli -- tours | head
   if [[ "${1:-}" == "--" ]]; then shift; fi
   "$BIN" "$ROOT" "$@"
 }
