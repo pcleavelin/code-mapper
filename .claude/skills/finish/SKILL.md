@@ -36,7 +36,14 @@ session's first stop with nothing in flight is. This is the order that gets it g
    For each test that survives the review, break the line it covers (flip the condition,
    return the default), watch it fail, and restore the line. Skip this step when the diff
    touches no tests.
-4. The map. Build the binary once (`cargo build --release -p codemap`) and use
+4. The case. When the diff adds a `Feature` variant, spawn one Sonnet subagent, in the same
+   turn as the two above, with the feature's tour note and CLAUDE.md's "Every feature makes
+   its case", and this brief: judge the note as the owner would before agreeing to build the
+   feature. Report each part of the case that is missing, asserted without evidence, or
+   already answered by something codemap has, and say whether the case convinces. It edits
+   nothing. Rewrite the note until it does; a feature whose case cannot be made goes to the
+   owner instead of into a commit.
+5. The map. Build the binary once (`cargo build --release -p codemap`) and use
    `target/release/codemap .` below.
    1. `stale` lists every step whose text changed. `repin` follows each one from the parent
       revision (after a rebase: `repin <pre-rebase commit>` from `jj evolog` / `git reflog`).
@@ -55,10 +62,10 @@ session's first stop with nothing in flight is. This is the order that gets it g
       read the map until no conflict is left.
    8. `uncovered <crate dir>` for the crates you touched lists only what you judge trivial;
       the owner audits that judgement.
-5. `cargo xtask api` if a library crate's public items changed, and include the `api/` diff.
-6. `cargo xtask parity`. A change meant not to alter output must list no scenario (the
+6. `cargo xtask api` if a library crate's public items changed, and include the `api/` diff.
+7. `cargo xtask parity`. A change meant not to alter output must list no scenario (the
    `refactor` skill). A change meant to alter output lists only the scenarios it meant to
    alter: read each `old.txt`/`new.txt` against the `understand` restatement, and treat any
    other listed scenario as a side effect to fix or to explain in the commit message.
-7. `cargo xtask gate` once more, then commit (`jj commit -m ...` or `git commit`). The
+8. `cargo xtask gate` once more, then commit (`jj commit -m ...` or `git commit`). The
    message says what changed and why, for someone who did not see the session.

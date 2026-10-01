@@ -11,9 +11,10 @@ prototypes that differ in shape, and exactly one survives.
 1. Sketch the designs: at least two, usually three. They differ in how the user meets the
    feature (which surface, which trigger, what they see) or in where it lives in the code
    (which crate, which type owns it), not in naming or detail. Give each a name and two
-   lines in the reply: what the user does and sees, and what code it adds or changes. A
-   design that breaks CLAUDE.md (a non-goal, a reason in "Why it is built this way", an
-   axiom) is dropped here, with the reason.
+   lines in the reply: what the user does and sees, and what code it adds or changes, plus
+   one line on how it removes the cost the case from `understand` names. A design that
+   breaks CLAUDE.md (a non-goal, a reason in "Why it is built this way", an axiom), or that
+   shows something without removing that cost, is dropped here, with the reason.
 2. One jj workspace per design, outside the repo (the session's scratch directory or the
    system temp directory), based on the current change:
    `jj workspace add <dir>/proto-<name> --name proto-<name> -r @`.
@@ -30,11 +31,12 @@ prototypes that differ in shape, and exactly one survives.
    script with `shot` and `dump`, and read the PNG. A prototype that cannot show the
    restated behaviour is scrapped here. If every one is scrapped, go back to step 1 with
    what the failures taught, or to the owner if they say the request itself cannot work.
-5. Choose among the survivors, comparing in this order: the behaviour matches the
-   restatement; the user's steps (fewer, and triggered the way existing features are);
-   fit with CLAUDE.md and the axioms (no second way, no new concept where one exists); the
-   size of the code and the number of crates it touches. State the winner in the reply, and
-   for every other design the reason it lost.
+5. Choose among the survivors, comparing in this order: the run removes the cost the case
+   names; the behaviour matches the restatement; the user's steps (fewer, and triggered the
+   way existing features are); fit with CLAUDE.md and the axioms (no second way, no new
+   concept where one exists); the size of the code and the number of crates it touches.
+   State the winner in the reply, and for every other design the reason it lost; the
+   winner's reason completes the case.
 6. Keep the winner, scrap the rest. In the repo, `jj restore --from proto-<winner>@` brings
    the winner's files into the current change. Then `jj abandon` every prototype's change
    (`proto-<name>@`), `jj workspace forget` every prototype workspace, and delete their

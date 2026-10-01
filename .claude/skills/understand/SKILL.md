@@ -21,7 +21,10 @@ message; caught after the change, it costs the change.
    - `codemap . notes <regex>` and `codemap . tour feature-<name>` for the area;
    - the `jj log` descriptions of the commits that built the area.
    A request that serves no goal, or runs into a non-goal, goes to the owner before anything
-   else.
+   else. For a feature, write its case in the reply (CLAUDE.md, "Every feature makes its
+   case"): the user and the moment, the goal, the cost today shown by a run of the tool in
+   step 3, and why nothing codemap has answers it. A case that rests on "it would be nice" or
+   "it looks good" is not finished; the owner hears what is missing.
 3. How it is meant to work. The spec is, in this order: the owner's words, CLAUDE.md, the
    feature's summary in `crates/features/src/lib.rs`, its `features/` tour, the scenarios in
    `crates/codemap/tests/common` that drive it. Then see the current behaviour yourself: run the CLI
@@ -32,7 +35,7 @@ message; caught after the change, it costs the change.
    the user will meet it, and each place the first restatement was wrong. If a question is
    left that only the owner can answer (which of two readings, a conflict with CLAUDE.md,
    a reported bug that is the spec's own behaviour), ask it and wait for the answer.
-5. The need from step 4 has one home: for a feature, the note of its `feature-<name>` tour
-   (`add-feature` step 6); for a bug, the fix's commit message.
+5. The need from step 4 has one home: for a feature, its case is the note of its
+   `feature-<name>` tour (`add-feature` step 6); for a bug, the fix's commit message.
 6. Go on with `prototype` for a new feature, `fix-bug` for a bug, or the skill for the kind
    of change.

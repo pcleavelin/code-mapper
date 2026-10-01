@@ -22,6 +22,14 @@ Never: editing source from codemap (it reads code, it does not write it), any we
 surface, multi-root or workspaces. What is planned or deferred, and what would pull a
 deferred item in, is in `TODO.md`.
 
+**Every feature makes its case.** A feature is built only after a written case that would
+convince the owner; that it looks good, or would be interesting to have, is not a case. The
+case names the user (the agent or the human) and the moment they meet the problem; the goal
+above that it serves; what going without it costs them today, seen in a run of the tool
+rather than supposed; why nothing codemap already has answers it; and, once the prototypes
+have run, why the kept design beats the others. It is the note of the feature's `features/`
+tour. A request whose case cannot be written goes back to the owner with what is missing.
+
 Every change ends with the `finish` skill. The Stop hook runs `cargo xtask gate` and keeps the
 session going until it is green, and commits are refused while it is red; each failure says
 what to do. Every feature request and bug fix starts with the `understand` skill, and every

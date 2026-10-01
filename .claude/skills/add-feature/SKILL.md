@@ -26,7 +26,8 @@ cannot be written.
    then a CLI scenario line for every outcome (success and each error), or a GUI scenario
    step that triggers it and a dump that shows its effect (`add-test-scenario`).
 6. The map: a `flow` tour named `feature-<name>` in group `features/cli` or `features/gui`,
-   whose note is the need `understand` found, whose root step is the handler and whose steps
+   whose note is the case (CLAUDE.md, "Every feature makes its case") as `understand` and
+   `prototype` completed it, whose root step is the handler and whose steps
    follow what it calls (`codemap . promote <handler> 2 feature-<name>`, then `tour-group`,
    `tour-note`, trim, annotate).
 7. `finish`.
