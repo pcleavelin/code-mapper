@@ -104,6 +104,9 @@ enum RepoArea {
     CratesPrefix,
     DomainCrate,
     GuiCrateSource,
+    CliCrate,
+    CliWire,
+    CliOutput,
 }
 
 impl RepoArea {
@@ -114,6 +117,9 @@ impl RepoArea {
             Self::CratesPrefix => Literal::new("crates/"),
             Self::DomainCrate => Literal::new("crates/domain/"),
             Self::GuiCrateSource => Literal::new("crates/gui/src/"),
+            Self::CliCrate => Literal::new("crates/cli/"),
+            Self::CliWire => Literal::new("crates/cli/src/wire.rs"),
+            Self::CliOutput => Literal::new("crates/cli/src/output.rs"),
         }
     }
 }
@@ -216,6 +222,21 @@ const PRINTING: [Literal; 5] = [
     Literal::new("dbg"),
 ];
 
+const WIRE_WORDING: [Literal; 2] = [Literal::new("write_line"), Literal::new("format")];
+
+const ENV_STD: Literal = Literal::new("std::env");
+const ENV_PATH: Literal = Literal::new("env::");
+const ENV_CONSTS: Literal = Literal::new("env::consts");
+
+const ENV_HOMES: [Literal; 6] = [
+    Literal::new("crates/platform/src/script.rs"),
+    Literal::new("crates/platform/src/window.rs"),
+    Literal::new("crates/gui/src/app.rs"),
+    Literal::new("crates/io-process/src/lib.rs"),
+    Literal::new("crates/io-layout/src/lib.rs"),
+    Literal::new("crates/codemap/src/main.rs"),
+];
+
 struct Report<'report> {
     file: &'report SourceFile,
     findings: &'report mut Vec<Finding>,
@@ -249,7 +270,9 @@ pub(super) fn check(
         Rule::Primitive => primitives(workspace, file, &mut report),
         Rule::NewtypeField => newtype_fields(file, &mut report),
         Rule::Indexing => indexing(file, &mut report),
+        Rule::WireWording => wire_wording(file, &mut report),
         Rule::Absence => absence(file, &mut report),
+        Rule::EnvAccess => env_access(file, &mut report),
         Rule::WireLeak => wire_leaks(workspace, file, &mut report),
         Rule::DomainIo => domain_io(file, &mut report),
         Rule::Suppression => suppressions(file, &mut report),
@@ -545,6 +568,66 @@ fn domain_io(file: &SourceFile, report: &mut Report<'_>) {
             _ => false,
         };
         if io {
+            report.add(
+                node,
+                format!("`{}`", text.lines().next().unwrap_or_default()),
+            );
+        }
+    }
+}
+
+fn wire_wording(file: &SourceFile, report: &mut Report<'_>) {
+    if !file.path.starts_with(RepoArea::CliCrate.name().as_str()) {
+        return;
+    }
+    if file.path.as_str() == RepoArea::CliWire.name().as_str()
+        || file.path.as_str() == RepoArea::CliOutput.name().as_str()
+    {
+        return;
+    }
+    for node in file.nodes() {
+        if !NodeKind::MacroInvocation.is(node) {
+            continue;
+        }
+        let Some(name) = node.child_by_field_name("macro") else {
+            continue;
+        };
+        let macro_name = file.text.of(name);
+        if WIRE_WORDING
+            .iter()
+            .any(|allowed| allowed.as_str() == macro_name)
+        {
+            report.add(node, format!("`{macro_name}!`"));
+        }
+    }
+}
+
+fn env_access(file: &SourceFile, report: &mut Report<'_>) {
+    if !file
+        .path
+        .starts_with(RepoArea::CratesPrefix.name().as_str())
+    {
+        return;
+    }
+    if ENV_HOMES
+        .iter()
+        .any(|home| file.path.as_str() == home.as_str())
+    {
+        return;
+    }
+    let std_env = ENV_STD.as_str();
+    let env_path = ENV_PATH.as_str();
+    let consts = ENV_CONSTS.as_str();
+    for node in file.nodes() {
+        let text = file.text.of(node);
+        let hits = match NodeKind::of(node) {
+            Some(NodeKind::UseDeclaration) => text.contains(std_env) && !text.contains(consts),
+            Some(NodeKind::ScopedIdentifier) => {
+                (text.starts_with(std_env) || text.starts_with(env_path)) && !text.contains(consts)
+            }
+            _ => false,
+        };
+        if hits {
             report.add(
                 node,
                 format!("`{}`", text.lines().next().unwrap_or_default()),

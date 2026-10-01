@@ -201,6 +201,68 @@ fn the_domain_does_no_io() {
 }
 
 #[test]
+fn cli_wording_stays_in_wire() {
+    assert_eq!(
+        rules_hit(&[(
+            "crates/cli/src/exec.rs",
+            "fn show(output: &mut Output) { write_line!(output, \"x\"); }"
+        )]),
+        [Rule::WireWording]
+    );
+    assert_eq!(
+        rules_hit(&[(
+            "crates/cli/src/exec.rs",
+            "fn label() { let _ = format!(\"x\"); }"
+        )]),
+        [Rule::WireWording]
+    );
+    assert_eq!(
+        rules_hit(&[(
+            "crates/cli/src/wire.rs",
+            "fn show(output: &mut Output) { write_line!(output, \"x\"); let _ = format!(\"x\"); }"
+        )]),
+        []
+    );
+    assert_eq!(
+        rules_hit(&[(
+            "crates/cli/src/output.rs",
+            "macro_rules! write_line { ($output:expr, $($format:tt)*) => { $output.line(format_args!($($format)*)) }; }"
+        )]),
+        []
+    );
+    assert_eq!(
+        rules_hit(&[(
+            "crates/gui/src/status.rs",
+            "fn label() { let _ = format!(\"x\"); }"
+        )]),
+        []
+    );
+}
+
+#[test]
+fn environment_reads_stay_in_their_homes() {
+    assert_eq!(
+        rules_hit(&[("crates/index/src/build.rs", "use std::env;")]),
+        [Rule::EnvAccess]
+    );
+    assert_eq!(
+        rules_hit(&[(
+            "crates/index/src/build.rs",
+            "fn read() { let _ = env::var_os(\"PATH\"); }"
+        )]),
+        [Rule::EnvAccess]
+    );
+    assert_eq!(rules_hit(&[("crates/gui/src/app.rs", "use std::env;")]), []);
+    assert_eq!(
+        rules_hit(&[(
+            "crates/codemap/src/main.rs",
+            "fn read() { let _ = env::args(); }"
+        )]),
+        []
+    );
+}
+
+#[test]
 fn suppressions_are_expectations_with_reasons_on_the_list() {
     assert_eq!(
         strict("#[allow(dead_code)]\nfn main() {}"),
