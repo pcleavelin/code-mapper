@@ -18,6 +18,9 @@ fi
 
 RUN_ID="${CODEMAP_VERIFY_RUN:-$$}"
 VERIFY_DIR="${CODEMAP_VERIFY_DIR:-/tmp/codemap-verify-$RUN_ID}"
+if [[ "$(basename "$VERIFY_DIR")" != "codemap-verify-$RUN_ID" ]]; then
+  VERIFY_DIR="/tmp/codemap-verify-$RUN_ID"
+fi
 STATE_DIR="$VERIFY_DIR/state"
 ARTIFACTS_DIR="${CODEMAP_VERIFY_ARTIFACTS:-$SKILL_DIR/artifacts}"
 BIN="${CODEMAP_BIN:-$REPO_ROOT/target/release/codemap}"
@@ -104,9 +107,14 @@ cmd_doctor() {
   echo "layout=$LAYOUT"
   if [[ -x "$BIN" ]]; then
     echo "bin_ok=yes"
-    echo "bin_version=$("$BIN" --version 2>/dev/null || echo unknown)"
   else
     echo "bin_ok=no"
+    ok=1
+  fi
+  if command -v cargo >/dev/null && [[ -f "$REPO_ROOT/xtask/src/lint.rs" ]]; then
+    echo "xtask_ok=yes"
+  else
+    echo "xtask_ok=no"
     ok=1
   fi
   if command -v weston >/dev/null; then
@@ -132,7 +140,6 @@ cmd_doctor() {
   else
     echo "map_ok=no (no .codemap under root — CLI/GUI still start; tour features need a map)"
   fi
-  # Refuse to claim health if we are not the owner of an up compositor for this run.
   if compositor_up && [[ ! -f "$WESTON_PID_FILE" ]]; then
     echo "compositor_owned=no (socket exists but this run did not start it — do not drive)"
     ok=1
@@ -142,6 +149,44 @@ cmd_doctor() {
     echo "compositor_owned=n/a"
   fi
   exit "$ok"
+}
+
+cmd_lint() {
+  cd "$REPO_ROOT"
+  local out="$ARTIFACTS_DIR/archlint/lint.txt"
+  mkdir -p "$(dirname "$out")"
+  if [[ $# -eq 0 ]]; then
+    set -- 
+  fi
+  # cargo xtask lint [file...] — empty means whole workspace
+  if cargo xtask lint "$@" >"$out" 2>&1; then
+    echo "lint_ok=yes"
+    echo "report=$out"
+    cat "$out"
+    exit 0
+  else
+    echo "lint_ok=no"
+    echo "report=$out"
+    cat "$out"
+    exit 1
+  fi
+}
+
+cmd_check_map() {
+  ensure_bin
+  local out="$ARTIFACTS_DIR/archlint/check.txt"
+  mkdir -p "$(dirname "$out")"
+  set +e
+  "$BIN" "$ROOT" check >"$out" 2>&1
+  local code=$?
+  set -e
+  cat "$out"
+  if [[ $code -eq 0 ]]; then
+    echo "map_check_ok=yes"
+  else
+    echo "map_check_ok=no"
+  fi
+  exit "$code"
 }
 
 cmd_launch() {
@@ -211,6 +256,8 @@ commands:
   launch              start a private headless weston for this RUN_ID
   gui --script FILE [--shot FILE.png] [--tab name] [--scroll n]
   cli -- <codemap-args...>
+  lint [file...]      archlint (cargo xtask lint); writes artifacts/archlint/lint.txt
+  check-map           codemap check (stale steps); writes artifacts/archlint/check.txt
   cleanup             stop compositor started by launch; keep artifacts
 
 env:
@@ -233,6 +280,8 @@ main() {
     launch) cmd_launch "$@" ;;
     gui) cmd_gui "$@" ;;
     cli) cmd_cli "$@" ;;
+    lint) cmd_lint "$@" ;;
+    check-map) cmd_check_map "$@" ;;
     cleanup) cmd_cleanup "$@" ;;
     help|-h|--help) usage ;;
     *) die "unknown command: $cmd" ;;

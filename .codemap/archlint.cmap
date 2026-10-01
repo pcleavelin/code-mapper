@@ -125,15 +125,35 @@ lines 0 4
 hash 451531ef43d46c5b
 note A finding sink bound to one file and one rule, so a check function only says which node and what matched.
 
+step 6wz2zw
+order 66
+parent dbzwz0
+author ai
+file xtask/src/lint/checks.rs
+symbol wire_wording
+lines 0 24
+hash 838bdbe62417efce
+note L5: in the cli crate, write_line! and format! live only in wire.rs (output.rs defines the helper). Exec and convert never format user-facing text.
+
 step 734zq6
 order 11
 parent svdoyl
 author ai
 file xtask/src/lint.rs
 symbol Rule
-lines 0 16
-hash 919a6b3c29106e9f
-note The rules. A code is a stable id printed with every finding; Widget and Theme share L12. The feature coverage rule is a test (crates/codemap/tests/features.rs), not an archlint rule. Lint runs them in declaration order, through Rule::VARIANTS (the VariantArray derive).
+lines 0 18
+hash 9b6ed30ccb6539d3
+note The rules. A code is a stable id printed with every finding; Widget and Theme share L12. L5 is WireWording; L7 is EnvAccess. The feature coverage rule is a test (crates/codemap/tests/features.rs), not an archlint rule. Lint runs them in declaration order, through Rule::VARIANTS (the VariantArray derive).
+
+step 7t60t9
+order 67
+parent dbzwz0
+author ai
+file xtask/src/lint/checks.rs
+symbol env_access
+lines 0 32
+hash 567afa442895b1d6
+note L7: under crates/, std::env and env:: reads are allowed only in the listed home files (platform script/window, gui/app, io-layout, io-process, codemap/main). Compile-time env::consts passes.
 
 step 7zl7if
 order 21
@@ -201,8 +221,8 @@ parent w2dj01
 author ai
 file xtask/src/lint/checks.rs
 symbol check
-lines 0 28
-hash 87a719bf6bb638a3
+lines 0 30
+hash 639f2f726141b2ef
 note Dispatches one rule to its check function. The GUI rules share three generic checks parameterised by their home module and the calls or paths they own.
 
 step dtblhv
@@ -225,6 +245,16 @@ lines 0 6
 hash fe1ff5c557e2099d
 note L4: no indexing or slicing outside test code; a collection is read through get, iter or a typed id.
 
+step ed4fmq
+order 69
+parent 2dbizk
+author ai
+file xtask/src/lint/tests.rs
+symbol environment_reads_stay_in_their_homes
+lines 0 20
+hash 9a07409513189e77
+note L7 fixtures: use std::env and env::var_os fail outside the homes, pass in gui/app.rs and codemap/main.rs.
+
 step exfmz3
 order 15
 parent svdoyl
@@ -244,6 +274,16 @@ symbol compared
 lines 0 13
 hash 033fee8928337bd7
 note L17: a string literal is never matched or compared: not as a pattern (a match arm or a matches! pattern), not as either operand of == or != except "" (L6 owns that one), and not as the pattern argument of a str search method named in PatternMethod. A literal used as a value - a name() match arm, a format string, a message, or a constructor argument - passes.
+
+step g6s8jl
+order 68
+parent 2dbizk
+author ai
+file xtask/src/lint/tests.rs
+symbol cli_wording_stays_in_wire
+lines 0 36
+hash 0f887ab2410957b2
+note L5 fixtures: write_line! and format! fail in exec.rs, pass in wire.rs and outside cli.
 
 step h10rsq
 order 50
@@ -433,9 +473,9 @@ parent 734zq6
 author ai
 file xtask/src/lint.rs
 symbol one_way
-lines 0 44
-hash 99839ce23d817a8a
-note The one way, as one sentence per rule: what to write instead, and where the sanctioned exception lives when there is one (convert.rs, arch.rs EXPECTS, widgets.rs, theme.rs, ids.rs, keys.rs). This text is the rule's whole documentation.
+lines 0 50
+hash 34001425a575b3c7
+note The one way, as one sentence per rule: what to write instead, and where the sanctioned exception lives when there is one (convert.rs, arch.rs EXPECTS, widgets.rs, theme.rs, ids.rs, keys.rs, wire.rs, the env home files). This text is the rule's whole documentation.
 
 step orc9vn
 order 2
@@ -591,6 +631,6 @@ parent 734zq6
 author ai
 file xtask/src/lint.rs
 symbol code
-lines 0 17
-hash 1e508e7c5afa9f4a
+lines 0 19
+hash e3be6c36bcd17146
 note The rule's code, printed in every finding.

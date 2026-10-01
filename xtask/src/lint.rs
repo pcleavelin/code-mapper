@@ -15,7 +15,9 @@ pub(crate) enum Rule {
     Primitive,
     NewtypeField,
     Indexing,
+    WireWording,
     Absence,
+    EnvAccess,
     WireLeak,
     DomainIo,
     Suppression,
@@ -35,7 +37,9 @@ impl Rule {
             Self::Primitive => "L2",
             Self::NewtypeField => "L3",
             Self::Indexing => "L4",
+            Self::WireWording => "L5",
             Self::Absence => "L6",
+            Self::EnvAccess => "L7",
             Self::WireLeak => "L8",
             Self::DomainIo => "L9",
             Self::Suppression => "L10",
@@ -62,7 +66,13 @@ impl Rule {
             Self::Indexing => {
                 "no indexing or slicing: read the collection through its interface (get, iter, a typed id)"
             }
+            Self::WireWording => {
+                "cli wording lives in crates/cli/src/wire.rs: format text and write_line! there (output.rs defines the helper)"
+            }
             Self::Absence => "absence is Option: no \"\", -1 or MAX standing for none",
+            Self::EnvAccess => {
+                "environment variables are read in one place per concern: add the read next to the other env reads in platform, io-layout, io-process, gui/app.rs or codemap/main.rs"
+            }
             Self::WireLeak => {
                 "wire types stay inside their crate: convert to a domain type in convert.rs before it leaves"
             }

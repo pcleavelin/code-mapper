@@ -1,11 +1,11 @@
 ---
 name: verify-codemap
-description: Drive the codemap GUI (scripted headless window) and CLI to prove user-facing behavior. Use when verifying a change against the real app, capturing screenshots/DUMP transcripts, or checking a mapped feature end to end.
+description: Drive the codemap GUI (scripted headless window) and CLI to prove user-facing behavior, and run archlint. Use when verifying a change against the real app, capturing screenshots/DUMP transcripts, checking mapped features, or proving code shape against xtask archlint.
 ---
 
 # Verify codemap
 
-codemap is a native desktop app (winit + wgpu) plus a CLI. Humans browse the map in the GUI; agents use the CLI. This skill drives both through a private headless compositor — never the developer's interactive window.
+codemap is a native desktop app (winit + wgpu) plus a CLI. Humans browse the map in the GUI; agents use the CLI. Shape of the code is enforced by archlint (`cargo xtask lint`), not by prose. This skill drives the app through a private headless compositor and runs that linter. Never drive the developer's interactive window.
 
 Read `features/README.md`, then the feature file for the behavior you are proving. Proof that hits one convenient entry point is incomplete when the map lists others.
 
@@ -28,7 +28,7 @@ control-codemap launch
 
 Ready when stdout contains `ready=yes` and `control-codemap doctor` reports `compositor=up` and `compositor_owned=yes`.
 
-Default root is the repo (`CODEMAP_VERIFY_ROOT`). Scripted/shot GUI runs open a fixed 1600×1000 window at scale 1, ignore the real mouse and keyboard, and quit themselves — there is no long-lived GUI server. CLI commands are short-lived processes.
+Default root is the repo (`CODEMAP_VERIFY_ROOT`). Scripted/shot GUI runs open a fixed 1600×1000 window at scale 1, ignore the real mouse and keyboard, and quit themselves. CLI and lint commands are short-lived processes.
 
 Teardown: `control-codemap cleanup` (stops only the weston this run started; keeps artifacts).
 
@@ -38,11 +38,27 @@ Teardown: `control-codemap cleanup` (stops only the weston this run started; kee
 control-codemap doctor
 ```
 
-Exit 0 means this instance is worth driving. Check `bin_ok`, `weston_ok`, `vulkan_icd_ok`, and — before GUI — `compositor_owned=yes`. If a Wayland socket exists but this run did not start it (`compositor_owned=no`), refuse to drive: another session owns that compositor.
+Exit 0 means the instance is worth driving. Require `bin_ok=yes`, `xtask_ok=yes`, and for GUI `compositor_owned=yes`. `compositor_owned=no` means refuse to drive.
+
+Doctor does not run archlint. Shape proof is `control-codemap lint`.
+
+## Architecture (archlint)
+
+The custom linter is `cargo xtask lint` (tour `archlint`). Each finding is `file:line: L#: <one way> (<match>)`. The sentence is the fix. Rules live in `xtask/src/lint.rs` and `xtask/src/lint/checks.rs`. The crate graph is `xtask/src/arch.rs` DEPENDENCIES. Clippy + `clippy.toml` cover unwrap, print, process/thread/fs one-ways the AST linter does not.
+
+```bash
+control-codemap lint              # whole workspace; report in artifacts/archlint/lint.txt
+control-codemap lint crates/gui/src/app.rs
+control-codemap check-map         # stale steps; artifacts/archlint/check.txt
+```
+
+Exit 0 and `lint_ok=yes` / `archlint: clean` before claiming a code-shape change is done. A red lint is fixed by writing the one way the finding names, not by weakening the rule. New shape rules go in archlint fixtures (`xtask/src/lint/tests.rs`), not in this skill's prose.
+
+Gate (format, archlint, crate graph, API lock, clippy, tests, map check): `cargo xtask gate`. Use when finishing a change. GUI scenarios need the compositor setup from Launch.
 
 ## Drive
 
-Helper: `.cursor/skills/verify-codemap/bin/control-codemap` (put it on `PATH` as above).
+Helper: `.cursor/skills/verify-codemap/bin/control-codemap`.
 
 **GUI** — write a script file (forward-slash paths; one command per line), then:
 
@@ -50,13 +66,11 @@ Helper: `.cursor/skills/verify-codemap/bin/control-codemap` (put it on `PATH` as
 control-codemap gui --script /path/to/script.txt --shot "$ART/after.png"
 ```
 
-Script commands (real input into the fixed window): `wait n`, `pause ms`, `mouse x y`, `down`, `up`, `click x y`, `dblclick x y`, `drag …`, `wheel dy`, `pinch n`, `key <name> [ctrl] [alt]`, `text …`, `quit`; app commands `tab <name>`, `open <file> [line]`, `scroll <panel> <n>`, `idle` (wait until indexing/merging settles), `rect <id>`, `click-id <id>`, `dblclick-id <id>`, `hover-id <id>`, `absent <id>`, `shot <file.png>`, `dump`.
+Script commands: `wait n`, `pause ms`, `mouse x y`, `down`, `up`, `click x y`, `dblclick x y`, `drag …`, `wheel dy`, `pinch n`, `key <name> [ctrl] [alt]`, `text …`, `quit`; app commands `tab <name>`, `open <file> [line]`, `scroll <panel> <n>`, `idle`, `rect <id>`, `click-id <id>`, `dblclick-id <id>`, `hover-id <id>`, `absent <id>`, `shot <file.png>`, `dump`.
 
-Stable element ids (from `crates/gui/src/ids.rs` and `CLAUDE.md`): tour rows `tours/<n>`, group rows `group/<n>`, outline `steps/<n>`, document steps `step/<n>`, tabs `tab@Tour` `tab@Graph` `tab@Symbols` `tab@Files` `tab@Diff` `tab@Source` `tab@Search` `tab@References` `tab@Console`, fields `field@search` `field@tours` `field@symbols` `field@goto-line` `field@new-tour`, graph button `doc-graph`, save `save`, panels `panel/<n>`. After anything that changes layout, `wait 1` before `rect` / `click-id` (rects come from the previous frame). Grep stderr for `^DUMP`.
+Stable ids (`crates/gui/src/ids.rs`, `CLAUDE.md`): `tours/<n>`, `group/<n>`, `steps/<n>`, `step/<n>`, `tab@Tour` `tab@Graph` `tab@Symbols` `tab@Files` `tab@Diff` `tab@Source` `tab@Search` `tab@References` `tab@Console`, `field@search` `field@tours` `field@symbols` `field@goto-line` `field@new-tour`, `doc-graph`, `save`, `panel/<n>`. After layout changes, `wait 1` before the next `click-id`. Grep stderr for `^DUMP`.
 
-Prefer `click-id` over coordinates. Prefer `idle` before the first click when the root may still be indexing.
-
-**CLI** — same binary, text mode:
+**CLI**
 
 ```bash
 control-codemap cli -- tours
@@ -64,22 +78,18 @@ control-codemap cli -- tour anchor
 control-codemap cli -- notes 'anchor'
 ```
 
-Exit codes: `0` ok, `1` save/window failure, `2` refused (usage, bad map, command Failure).
+Exit codes: `0` ok, `1` save/window failure, `2` refused.
 
 ## Evidence
 
-Named proof directory (survives cleanup):
+`.cursor/skills/verify-codemap/artifacts/<feature-id>/` (override with `CODEMAP_VERIFY_ARTIFACTS`). Survives cleanup.
 
-`.cursor/skills/verify-codemap/artifacts/<feature-id>/`
+1. Exercise the real user path (GUI click-id / CLI / `lint`), not internal test hooks.
+2. GUI: DUMP lines plus a `shot` PNG. CLI: stdout, stderr, exit code. Lint: `artifacts/archlint/lint.txt` with `lint_ok=yes`.
+3. Mutations: second read via `cli -- tour <name>` or reopen in the GUI.
+4. Record feature id and entry point in filenames or `meta.txt`.
 
-Override with `CODEMAP_VERIFY_ARTIFACTS`. For each proof:
-
-1. Exercise the real user path (GUI click-id / CLI command), not internal test hooks.
-2. Capture the action and the resulting state: stderr `DUMP` lines (tab, tour, panels, tours listed, backend) plus a `shot` PNG; for CLI, stdout + stderr + exit code in a `.txt` transcript.
-3. Verify side effects when the feature mutates the map: re-read with `cli -- tours` / `cli -- tour <name>`, or reopen in the GUI. Read-only features need DUMP/screenshot of the opened view.
-4. Record the feature id and entry point in the artifact filenames or a sibling `meta.txt`.
-
-Proof standards: mocks only at production boundaries (language servers already isolate themselves). Do not claim visual behavior from reading code — drive it and look (Read the PNG).
+Do not claim visual behavior from reading code. Drive it and Read the PNG.
 
 ## Cleanup
 
@@ -87,15 +97,15 @@ Proof standards: mocks only at production boundaries (language servers already i
 control-codemap cleanup
 ```
 
-Kills only the weston PID this run wrote under `$CODEMAP_VERIFY_DIR/state/weston.pid`. Removes `$CODEMAP_VERIFY_DIR/state`. Never deletes `artifacts/`. Never `pkill weston` by name.
+Kills only this run's weston PID file. Removes `$CODEMAP_VERIFY_DIR/state`. Never deletes `artifacts/`. Never `pkill weston` by name.
 
 ## Isolate
 
-- One private Wayland socket per `CODEMAP_VERIFY_RUN`. Do not share sockets across agents.
-- GUI scripts load/save layout only via `CODEMAP_LAYOUT` (default: the run's `state/layout.bin`), so they do not touch the developer's layout.
-- Mutating map edits: set `CODEMAP_VERIFY_ROOT` to a disposable copy of a fixture (or a throwaway clone), never the developer's live `.codemap` unless the feature under test is read-only and the script does not save edits.
-- On Linux, never run two GUI windows on one compositor for concurrent scripts — one scripted window at a time under this run's weston.
-- Required host packages for GUI: `weston`, `mesa-vulkan-drivers` (lavapipe ICD at `/usr/share/vulkan/icd.d/lvp_icd.json`). Set `VK_DRIVER_FILES` to that ICD.
+- One private Wayland socket per `CODEMAP_VERIFY_RUN`.
+- GUI layout only via `CODEMAP_LAYOUT` (default under the run's state dir).
+- Map mutations: disposable `CODEMAP_VERIFY_ROOT`, not the live `.codemap`, unless the recipe is read-only.
+- One scripted GUI window at a time under this run's weston.
+- Host packages: `weston`, `mesa-vulkan-drivers` (lavapipe at `/usr/share/vulkan/icd.d/lvp_icd.json`).
 
 ## Helpers
 
@@ -103,8 +113,10 @@ Kills only the weston PID this run wrote under `$CODEMAP_VERIFY_DIR/state/weston
 |---|---|
 | `control-codemap doctor` | Health check |
 | `control-codemap launch` | Start owned headless weston |
-| `control-codemap gui --script F [--shot P]` | Run scripted GUI / single shot |
-| `control-codemap cli -- <args>` | Run CLI against the verify root |
+| `control-codemap gui --script F [--shot P]` | Scripted GUI / shot |
+| `control-codemap cli -- <args>` | CLI against the verify root |
+| `control-codemap lint [file...]` | archlint |
+| `control-codemap check-map` | `codemap check` |
 | `control-codemap cleanup` | Tear down compositor + scratch state |
 
 Script path: `.cursor/skills/verify-codemap/bin/control-codemap`.

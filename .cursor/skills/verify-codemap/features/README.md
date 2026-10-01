@@ -7,7 +7,7 @@ This directory is the maintained source for verifying user-facing behavior of co
 - Build `target/release/codemap` (`cargo build --release -p codemap`, Rust 1.85+).
 - Put `.cursor/skills/verify-codemap/bin` on `PATH`.
 - Set `CODEMAP_VERIFY_RUN` to a unique id (for example `vfy-$$`).
-- Run `control-codemap launch`, then `control-codemap doctor` and require `bin_ok=yes`, `weston_ok=yes`, `vulkan_icd_ok=yes`, `compositor=up`, `compositor_owned=yes`, and `map_ok=yes` when the feature needs a map.
+- Run `control-codemap launch`, then `control-codemap doctor` and require `bin_ok=yes`, `xtask_ok=yes`, `weston_ok=yes`, `vulkan_icd_ok=yes`, `compositor=up`, `compositor_owned=yes`, and `map_ok=yes` when the feature needs a map. Shape features use `control-codemap lint` and do not need the compositor.
 - Default root is the repo. For map mutations, point `CODEMAP_VERIFY_ROOT` at a disposable tree instead.
 - Never drive a Wayland socket this run did not start. Never drive the developer's interactive GUI.
 
@@ -45,6 +45,7 @@ Keep implementation details out of the map. Name only user paths, stable handles
 
 ## Features
 
+- [Archlint](./archlint.md) covers `cargo xtask lint`, file-scoped lint, and map `check`.
 - [Open a tour](./open-tour.md) covers Tours-list open, step selection, and CLI `tour` / `tours`.
 - [Switch tab](./switch-tab.md) covers switching Tour, Graph, Symbols, and Files views by tab id.
 - [Show graph](./show-graph.md) covers opening the call graph for the tour being read.
