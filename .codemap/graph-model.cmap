@@ -170,8 +170,8 @@ parent 1fwzx4
 author ai
 file crates/gui/src/graph.rs
 symbol save
-lines 0 42
-hash 342dd6d347e9749c
+lines 0 37
+hash 0aab2f40aa9acf16
 note A re-index renumbers a file's symbols, so every node key in the reader's state goes dead. This writes that state out keyed by SymbolKey and step slot instead, which survives one; work.rs calls it before a re-index is merged and restore after.
 
 step e0f0cd
@@ -180,8 +180,8 @@ parent 1fwzx4
 author ai
 file crates/gui/src/graph.rs
 symbol restore
-lines 0 30
-hash 413b39c5e2f4b3e1
+lines 0 25
+hash 9ff6f375b37daf8a
 note Reads it back onto the new index, dropping whatever no longer has a symbol. The camera is not part of it: a re-index is not a navigation and must not move the view.
 
 step g6xcxo
@@ -404,6 +404,16 @@ lines 0 3
 hash 27372895c9856336
 note A button and its label, before the scene gives it a rectangle.
 
+step sn1747
+order 48
+parent dqdb3u
+author ai
+file crates/gui/src/graph.rs
+symbol keyed
+lines 0 5
+hash cdb79dec08ec5bf8
+note A node as a KeyedNode: its symbol's SymbolKey and its step slot, or nothing when the symbol has no key. save and save_camera key nodes through it.
+
 step ssh3rn
 order 21
 parent yn4pco
@@ -414,15 +424,25 @@ lines 0 16
 hash cc57497df839d588
 note Adds a node at a rank, ignoring a node that is already placed. First placement wins the rank, which is what stops a reveal from dragging a tour step out of its depth. The range is clamped to the file's last line, and by_symbol keeps the first node for the symbol.
 
+step v8gf3h
+order 49
+parent e0f0cd
+author ai
+file crates/gui/src/graph.rs
+symbol node_of
+lines 0 5
+hash c4d1ab36e1d16590
+note The way back from a KeyedNode to a Node on the current index, or nothing when no symbol has that key any more. restore and restore_camera use it.
+
 step vz67qx
 order 12
 parent yxmrlu
 author ai
 file crates/gui/src/graph/build.rs
 symbol header
-lines 0 74
-hash b93b1017f5736c44
-note The header runs and the button list, built here for both measuring and drawing: step number, name, off-tour tag, file:lines; then more/less when the view is longer than PREVIEW_LINES, context above, below and none (never while cut to a preview, and above or below only when the file has more lines there), source, '+ step' on an off-tour node while a tour is read, and the two reveals. A reveal that is open says 'hide N' and closes on a click; a closed one is offered only when it would reveal something, so a button whose targets are all on the canvas already is not drawn at all rather than doing nothing when pressed.
+lines 0 88
+hash 5c3649b1189588b4
+note The header runs and the button list, built here for both measuring and drawing: step number, name, off-tour tag, file:lines; then more/less when the view is longer than PREVIEW_LINES, context above, below and none (never while cut to a preview, and above or below only when the file has more lines there), source, '+ step' on an off-tour node while a tour is read, and the two reveals. A reveal that is open says 'hide N' and closes on a click; a closed one is offered only when it would reveal something, so a button whose targets are all on the canvas already is not drawn at all rather than doing nothing when pressed. While the node's file waits for its language server the header says 'waiting for <server>'; otherwise a node with no callees at all says 'calls nothing' and one with no callers 'no callers', so a missing button reads as an answer.
 
 step wu5v06
 order 14

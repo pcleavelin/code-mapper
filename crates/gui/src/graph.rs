@@ -198,7 +198,7 @@ impl Default for GraphState {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 struct KeyedNode {
     key: SymbolKey,
     step: Option<StepSlot>,
@@ -230,6 +230,27 @@ pub(crate) struct Saved {
     manual: Vec<SavedPlace>,
     auto_open: Option<KeyedNode>,
     root: Option<KeyedNode>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct Camera {
+    pan: Point,
+    zoom: Zoom,
+    root: Option<KeyedNode>,
+}
+
+fn keyed(index: &Index, node: &Node) -> Option<KeyedNode> {
+    index.symbol_key(node.symbol).map(|key| KeyedNode {
+        key,
+        step: node.step,
+    })
+}
+
+fn node_of(index: &Index, keyed: &KeyedNode) -> Option<Node> {
+    index.by_key(&keyed.key).map(|symbol| Node {
+        symbol,
+        step: keyed.step,
+    })
 }
 
 pub(crate) struct CameraText<'graph>(&'graph GraphState);
@@ -307,31 +328,45 @@ impl GraphState {
         DragText(self.drag)
     }
 
+    pub(crate) fn save_camera(&self, index: &Index) -> Camera {
+        Camera {
+            pan: self.pan,
+            zoom: self.zoom,
+            root: self.root.as_ref().and_then(|root| keyed(index, root)),
+        }
+    }
+
+    pub(crate) fn restore_camera(&mut self, index: &Index, camera: &Camera) {
+        self.pan = camera.pan;
+        self.zoom = camera.zoom;
+        self.root = camera.root.as_ref().and_then(|root| node_of(index, root));
+        self.look = Wish::Settled;
+        self.fit = Wish::Settled;
+        self.glide = None;
+        self.keep = None;
+        self.steering = None;
+    }
+
     pub(crate) fn save(&self, index: &Index) -> Saved {
-        let keyed = |node: &Node| {
-            index.symbol_key(node.symbol).map(|key| KeyedNode {
-                key,
-                step: node.step,
-            })
-        };
+        let key_of = |node: &Node| keyed(index, node);
         Saved {
             reveals: self
                 .reveals
                 .iter()
                 .filter_map(|reveal| {
                     Some(SavedReveal {
-                        node: keyed(&reveal.node)?,
+                        node: key_of(&reveal.node)?,
                         side: reveal.side,
                     })
                 })
                 .collect(),
-            collapsed: self.collapsed.iter().filter_map(keyed).collect(),
+            collapsed: self.collapsed.iter().filter_map(key_of).collect(),
             context: self
                 .context
                 .iter()
                 .filter_map(|(node, around)| {
                     Some(SavedAround {
-                        node: keyed(node)?,
+                        node: key_of(node)?,
                         around: *around,
                     })
                 })
@@ -341,23 +376,18 @@ impl GraphState {
                 .iter()
                 .filter_map(|(node, at)| {
                     Some(SavedPlace {
-                        node: keyed(node)?,
+                        node: key_of(node)?,
                         at: *at,
                     })
                 })
                 .collect(),
-            auto_open: self.auto_open.as_ref().and_then(keyed),
-            root: self.root.as_ref().and_then(keyed),
+            auto_open: self.auto_open.as_ref().and_then(key_of),
+            root: self.root.as_ref().and_then(key_of),
         }
     }
 
     pub(crate) fn restore(&mut self, index: &Index, saved: &Saved) {
-        let node = |keyed: &KeyedNode| {
-            index.by_key(&keyed.key).map(|symbol| Node {
-                symbol,
-                step: keyed.step,
-            })
-        };
+        let node = |keyed: &KeyedNode| node_of(index, keyed);
         self.reveals = saved
             .reveals
             .iter()

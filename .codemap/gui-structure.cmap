@@ -11,8 +11,8 @@ parent saeyu5
 author ai
 file crates/gui/src/status.rs
 symbol fmt
-lines 0 89
-hash a75149d7f6ba0f0f
+lines 0 94
+hash 22603635186ad7fe
 note The wording. Map refusals and load failures arrive already worded by cli, so the GUI and the CLI say the same thing.
 
 step 0fz3qy
@@ -302,7 +302,7 @@ author ai
 file crates/gui/src/action.rs
 symbol apply
 lines 0 100
-hash c9400f4a16d375f6
+hash a60720a022aa91fa
 note The one place the Model changes during a frame. Each arm is a call into nav.rs, a field of the Model, or a method on the App for changes that need the Services (save, a server question, a command).
 
 step h4xmjq
@@ -505,8 +505,8 @@ order 9
 author ai
 file crates/gui/src/nav.rs
 symbol Nav
-lines 0 15
-hash 20dc4d474ba59098
+lines 0 17
+hash 543b35b1dc937cee
 note The selection and everything that moves with it (see selection). Its fields are private to nav.rs, so the selection only changes through Model's methods there.
 
 step o9w0e6
@@ -573,8 +573,8 @@ order 52
 author ai
 file crates/gui/src/status.rs
 symbol Status
-lines 0 78
-hash e90b3e3bd8401350
+lines 0 79
+hash edf574197767d265
 note Everything the status line can say, as data: each outcome of a save, a command, a search, an edit, a definition lookup, a server, a re-index or a disk change. Views and apply set one; nothing formats a message where it happens.
 
 step sbpnbg

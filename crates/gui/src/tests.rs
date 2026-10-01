@@ -8,17 +8,17 @@ use domain::{
 use features::{Feature, Trigger};
 use io_map::MapStore;
 use strum::VariantArray;
-use ui::{Count, Label};
+use ui::{Count, Label, Px};
 
 use crate::action::{Action, Collapse, Hide};
 use crate::app::App;
 use crate::field::Which;
 use crate::graph::Parentage;
 use crate::graph::build::{Built, CellSize, Rank, StepInfo};
-use crate::graph::{Button, Node};
-use crate::ids::CONTROLS;
+use crate::graph::{Button, GraphState, Node};
+use crate::ids::{self, CONTROLS};
 use crate::keys::Walk;
-use crate::model::{Model, Readable, StepKey, StepSlot, Tab, TourSlot, ViewFlag};
+use crate::model::{LineSelection, Model, Readable, StepKey, StepSlot, Tab, TourSlot, ViewFlag};
 use crate::nav::Scrolling;
 use crate::palette::{Palette, commands};
 use crate::panels::Direction;
@@ -171,7 +171,7 @@ fn walking_follows_the_tree_and_stops_at_the_ends() {
 }
 
 #[test]
-fn back_and_forward_return_to_the_places_visited() {
+fn back_and_forward_return_to_the_places_visited_as_they_were_left() {
     let mut model = model();
     model.select_tour(TOUR);
     model.track_navigation();
@@ -179,17 +179,100 @@ fn back_and_forward_return_to_the_places_visited() {
     model.track_navigation();
     model.set_tab(Tab::Graph);
     model.track_navigation();
-    assert!(model.nav.can_go_back());
+    model.select_step(key(1), Scrolling::Scroll);
+    model.track_navigation();
     model.back();
-    assert_eq!(model.nav.tab(), Tab::Tour);
+    assert_eq!(model.nav.tab(), Tab::Graph);
     assert_eq!(model.nav.step(), Some(StepSlot::new(2)));
     model.back();
+    assert_eq!(model.nav.tab(), Tab::Tour);
     assert_eq!(model.nav.step(), Some(StepSlot::new(0)));
     assert!(!model.nav.can_go_back());
     model.forward();
     model.forward();
-    assert_eq!(model.nav.tab(), Tab::Graph);
+    assert_eq!(model.nav.step(), Some(StepSlot::new(1)));
     assert!(!model.nav.can_go_forward());
+}
+
+#[test]
+fn switching_tabs_alone_is_not_a_new_place() {
+    let mut model = model();
+    model.select_tour(TOUR);
+    model.track_navigation();
+    model.set_tab(Tab::Graph);
+    model.track_navigation();
+    model.set_tab(Tab::Source);
+    model.track_navigation();
+    assert!(!model.nav.can_go_back());
+}
+
+#[test]
+fn a_run_of_walks_is_one_place_and_back_returns_to_where_it_started() {
+    let mut model = model();
+    model.select_tour(TOUR);
+    model.track_navigation();
+    for _ in 0..3 {
+        model.walk(Walk::Down);
+        model.track_navigation();
+    }
+    model.select_step(key(1), Scrolling::Scroll);
+    model.track_navigation();
+    model.back();
+    assert_eq!(model.nav.step(), Some(StepSlot::new(3)));
+    model.back();
+    assert_eq!(model.nav.step(), Some(StepSlot::new(0)));
+    assert!(!model.nav.can_go_back());
+}
+
+#[test]
+fn a_jump_within_one_file_is_a_place() {
+    let mut model = model();
+    let file = model
+        .index
+        .find_file(&RelativePath::new("src/main.rs"))
+        .unwrap();
+    model.open_line(file, Line::new(1));
+    model.track_navigation();
+    model.open_line(file, Line::new(5));
+    model.track_navigation();
+    model.back();
+    assert_eq!(model.nav.lines(), Some(LineSelection::one(Line::new(1))));
+}
+
+#[test]
+fn back_restores_the_scroll_the_place_was_left_at() {
+    let mut model = model();
+    model.select_tour(TOUR);
+    model.scrolls.set(ids::document(), Px::new(500));
+    model.track_navigation();
+    model.select_step(key(2), Scrolling::Scroll);
+    model.scrolls.set(ids::document(), Px::new(40));
+    model.track_navigation();
+    model.back();
+    assert_eq!(model.scrolls.get(ids::document()), Px::new(500));
+    assert_eq!(model.nav.scroll_to_step(), None);
+}
+
+#[test]
+fn history_finds_its_tour_by_name_after_the_map_is_reloaded() {
+    let mut model = model();
+    model.select_step(key(2), Scrolling::Scroll);
+    model.track_navigation();
+    model.select_step(key(1), Scrolling::Scroll);
+    model.track_navigation();
+    let mut map = model.map.clone();
+    assert!(
+        map.add_tour(TourName::new("aaa").unwrap(), TourKind::Flow, Author::Human)
+            .is_ok()
+    );
+    let mut tours = map.tours().to_vec();
+    tours.rotate_right(1);
+    model.map = Map::new(tours).unwrap();
+    model.map.resolve_all(&model.index);
+    model.reselect(Some(TourSlot::new(1)), Some(StepSlot::new(1)));
+    model.back();
+    assert_eq!(model.nav.tour(), Some(TourSlot::new(1)));
+    assert_eq!(model.nav.step(), Some(StepSlot::new(2)));
 }
 
 #[test]
@@ -526,4 +609,14 @@ fn the_palette_ranks_a_step_of_the_tour_being_read_above_the_symbol_it_pins() {
         found.get(..2),
         Some(&[listed("step", "1.1.1 add"), listed("symbol", "add")][..])
     );
+}
+
+#[test]
+fn a_graph_node_with_no_calls_says_so_instead_of_leaving_its_buttons_out() {
+    let model = model();
+    let built = built(&model, &[(10, 4), (10, 4)]);
+    let header = built.header(&model, &GraphState::default(), built.nodes[1]);
+    let text: String = header.runs.iter().map(|run| run.text.as_str()).collect();
+    assert!(text.contains("calls nothing"), "{text}");
+    assert!(text.contains("no callers"), "{text}");
 }

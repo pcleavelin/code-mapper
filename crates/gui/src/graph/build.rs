@@ -273,6 +273,20 @@ impl Built {
         } else if hidden(incoming) > 0 {
             label(Button::Callers, format!("{} < callers", hidden(incoming)));
         }
+        if source.is_pending() {
+            let server = source.language().map_or_else(
+                || "its server".to_owned(),
+                |language| language.program().to_string(),
+            );
+            runs.push(Run::new(format!("  waiting for {server}"), WEAK));
+        } else {
+            if outgoing.is_empty() {
+                runs.push(Run::new("  calls nothing", WEAK));
+            }
+            if incoming.is_empty() {
+                runs.push(Run::new("  no callers", WEAK));
+            }
+        }
         Header { runs, buttons }
     }
 

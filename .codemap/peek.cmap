@@ -3,7 +3,7 @@ tour peek
 kind flow
 author ai
 group gui
-note Looking at a definition without leaving the place you are reading. Hover an identifier in any code view - the document, the Source view, the peek panel, the tooltip or a graph node - and what the language's server knows about it (signature, type, docs) appears as a floating tooltip; ctrl-click or double-click goes to its definition, alt-click keeps the definition at the top of the References panel. The server is asked live on its language's thread, which stays for the session, and the answer shows a frame or more later. A code view never asks anything itself: it reads what the Model already knows (Queries) and pushes a Hover or Definition action, and apply sends the request. A definition inside the repo lands on the symbol, or on the line when it is inside one; one outside the repo is shown as a grid of its lines, read from disk and drawn on the server thread. A language with a grammar but no server falls back to the symbol of that name; prose files answer nothing.
+note Looking at a definition without leaving the place you are reading. Hover an identifier in any code view - the document, the Source view, the peek panel, the tooltip or a graph node - and what the language's server knows about it (signature, type, docs) appears as a floating tooltip; ctrl-click or double-click goes to its definition, alt-click keeps the definition at the top of the References panel, which is brought into sight for it. The server is asked live on its language's thread, which stays for the session, and the answer shows a frame or more later. A code view never asks anything itself: it reads what the Model already knows (Queries) and pushes a Hover or Definition action, and apply sends the request. A definition inside the repo lands on the symbol, or on the line when it is inside one; one outside the repo is shown as a grid of its lines, read from disk and drawn on the server thread. A language with a grammar but no server falls back to the symbol of that name; prose files answer nothing.
 
 step 0a4zs3
 order 13
@@ -11,9 +11,9 @@ parent 3fy396
 author ai
 file crates/gui/src/work.rs
 symbol land
-lines 0 14
-hash 18408dde89f15741
-note What a definition does for each intent, given as the Peek the panel would show: a jump selects the symbol (or opens the line in the Source view), a peek keeps it; a definition outside the repo is kept either way and the status line says where it is.
+lines 0 16
+hash 1d99433708bbd7b4
+note What a definition does for each intent, given as the Peek the panel would show: a jump selects the symbol (or opens the line in the Source view), a peek keeps it; a definition outside the repo is kept either way and the status line says where it is. Whatever is kept as a peek brings the References view into sight (Panels::bring), so the peek is never drawn where the reader cannot see it.
 
 step 174e9e
 order 8
@@ -41,9 +41,9 @@ parent kaqitd
 author ai
 file crates/gui/src/action.rs
 symbol definition
-lines 0 18
-hash d00af4bcb2673b16
-note Go-to and peek share this, run when the Definition action is applied: the word under the pointer decides who answers. A server is sent a Definition request and the intent remembered in Queries until poll_backend has the answer; a grammar-only file answers from the index at once, or says there is no definition of that word in the repo.
+lines 0 19
+hash 73ef9887b52192ed
+note Go-to and peek share this, run when the Definition action is applied: the word under the pointer decides who answers. A server is sent a Definition request and the intent remembered in Queries until poll_backend has the answer, and the status line says the word is being looked up; a grammar-only file answers from the index at once, or says there is no definition of that word in the repo.
 
 step 3p7p2m
 order 18
@@ -54,6 +54,16 @@ symbol push_hover
 lines 0 8
 hash a80623c0c7604288
 note Pushes the Hover action. When the question will actually be sent this frame, the overlay counts it and shows the server as starting, so the status line and the References heading agree with it in the same frame.
+
+step 3xb88t
+order 36
+parent 0a4zs3
+author ai
+file crates/gui/src/panels.rs
+symbol bring
+lines 0 11
+hash fee7de323a3a28c1
+note Brings the References view into sight: its tab activated where a panel holds it, else a new panel split off to the right of the centre view with References in it.
 
 step 4yvy4t
 order 10
@@ -270,9 +280,9 @@ parent uee3m8
 author ai
 file crates/gui/src/work.rs
 symbol definition_landed
-lines 0 16
-hash 3b233d0dcc209a88
-note The awaited definition, resolved to a symbol, a line inside an indexed file, or a place outside the repo, then landed with its intent. No answer says no definition was found.
+lines 0 19
+hash f1bb29b44c02d755
+note The awaited definition, resolved to a symbol, a line inside an indexed file, or a place outside the repo, then landed with its intent. It first clears the looking-up status; no answer says no definition was found.
 
 step ssx29b
 order 28

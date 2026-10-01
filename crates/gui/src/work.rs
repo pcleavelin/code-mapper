@@ -17,6 +17,7 @@ use crate::app::App;
 use crate::grid;
 use crate::model::TourSlot;
 use crate::model::{Dirty, Readable, StepKey, Warned};
+use crate::panels::View;
 use crate::peek::{Intent, Peek, Probe};
 use crate::runtime::{self, Job, Landing, landed};
 use crate::status::{IndexCounts, Status};
@@ -468,6 +469,9 @@ impl App {
     }
 
     fn definition_landed(&mut self, found: Option<Found>, intent: Intent) {
+        if matches!(self.model.status, Status::LookingUp(_)) {
+            self.model.status = Status::Nothing;
+        }
         let Some(found) = found else {
             self.model.status = Status::NoDefinition;
             return;
@@ -509,6 +513,8 @@ impl App {
                     };
                 }
                 self.model.peek = Some(found);
+                let beside = View::of_tab(self.model.nav.tab());
+                self.model.panels.bring(View::References, beside);
             }
         }
     }

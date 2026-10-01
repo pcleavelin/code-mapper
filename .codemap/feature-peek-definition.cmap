@@ -3,7 +3,7 @@ tour feature-peek-definition
 kind flow
 author ai
 group features/gui
-note Alt-click an identifier in any code view to keep its definition at the top of the References view, above the xrefs, without leaving the place being read. The reader reaches for it to check what an identifier is without losing their place in the step or file being read. The peek shows the symbol's whole text, or the lines around a definition that is not a symbol's start, or a definition outside the repo read from disk. Its 'go' button goes there (a symbol is focused, a line opens in the Source view; an outside definition has no go), and 'x' closes it. The peek stays until closed or replaced.
+note Alt-click an identifier in any code view to keep its definition at the top of the References view, above the xrefs, without leaving the place being read. The References view is brought into sight for it: its tab activated, or, when no panel holds it, a new panel split off to the right of the centre view. The reader reaches for it to check what an identifier is without losing their place in the step or file being read. The peek shows the symbol's whole text, or the lines around a definition that is not a symbol's start, or a definition outside the repo read from disk. Its 'go' button goes there (a symbol is focused, a line opens in the Source view; an outside definition has no go), and 'x' closes it. The peek stays until closed or replaced.
 
 step 1h923r
 order 1
@@ -25,6 +25,16 @@ lines 0 8
 hash 9fbf707f28fe56f5
 note The PeekDefinition gesture, alt-click, is tested before the jump gestures.
 
+step b1mao7
+order 12
+parent bnbuz9
+author ai
+file crates/gui/src/panels.rs
+symbol bring
+lines 0 11
+hash fee7de323a3a28c1
+note Activates the References tab where a panel holds it; with no panel holding it, splits a new panel off to the right of the one holding the centre view and puts References there.
+
 step bgoi57
 order 11
 parent kctxha
@@ -41,9 +51,9 @@ parent w7mvto
 author ai
 file crates/gui/src/work.rs
 symbol land
-lines 0 14
-hash 18408dde89f15741
-note With Intent::Peek every kind of definition becomes model.peek; an outside one also sets a status naming its file and line.
+lines 0 16
+hash 1d99433708bbd7b4
+note With Intent::Peek every kind of definition becomes model.peek; an outside one also sets a status naming its file and line. Then the References view is brought into sight with Panels::bring.
 
 step h3pn83
 order 5
@@ -101,9 +111,9 @@ order 0
 author ai
 file crates/gui/src/action.rs
 symbol definition
-lines 0 18
-hash d00af4bcb2673b16
-note The handler, shared with jump-to-definition, here with Intent::Peek: ask the server, or resolve the word to a symbol and land it straight away.
+lines 0 19
+hash 73ef9887b52192ed
+note The handler, shared with jump-to-definition, here with Intent::Peek: ask the server, or resolve the word to a symbol and land it straight away. While the server has not answered, the status line says the word is being looked up.
 
 step wq172j
 order 3

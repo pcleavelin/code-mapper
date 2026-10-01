@@ -114,7 +114,7 @@ file crates/gui/src/action.rs
 symbol remove_tour
 lines 0 19
 hash 6d4043ee04612f1f
-note delete tour: refused, with the reason, when another tour links to it; otherwise its views and history go and later tours shift down.
+note delete tour: refused, with the reason, when another tour links to it; otherwise its views go and later tours shift down.
 
 step 4r8j6m
 order 48
@@ -143,7 +143,7 @@ file crates/gui/src/app.rs
 symbol frame
 lines 0 63
 hash 181aa0490ea50ad1
-note The frame (platform::App::frame), in order: the font and cell size for this scale factor, the screenshot aid, the five polls, the keys, then panel_input, the steps list's drag (step_list_input) and the graph's own input phase (or, with the Graph view hidden, the graph marked Hidden and its keyboard Elsewhere, so a look snaps and the arrows walk the tour), the element tree, layout and draw, the action queue, the reveal of the centre view navigation asked for, saving the layout if it changed, and the history snapshot. It asks the loop to come back at the ANIMATING rate while the graph camera is gliding, in 50 ms while any work is in flight, and in a second otherwise, so an idle window costs one frame per second.
+note The frame (platform::App::frame), in order: the font and cell size for this scale factor, the screenshot aid, the five polls, the keys, then panel_input, the steps list's drag (step_list_input) and the graph's own input phase (or, with the Graph view hidden, the graph marked Hidden and its keyboard Elsewhere, so a look snaps and the arrows walk the tour), the element tree, layout and draw, the action queue, the reveal of the centre view navigation asked for, saving the layout if it changed, and the history snapshot, which first performs a back or forward asked for this frame. It asks the loop to come back at the ANIMATING rate while the graph camera is gliding, in 50 ms while any work is in flight, and in a second otherwise, so an idle window costs one frame per second.
 
 step 5aljhx
 order 3
@@ -792,7 +792,7 @@ file crates/gui/src/action.rs
 symbol remove_step
 lines 0 18
 hash cf003649ba79559c
-note The document's delete: the step goes from the map, the selection forgets it, the step views and history shift, and the status line names what was deleted. Unsaved until saved.
+note The document's delete: the step goes from the map, the selection forgets it, the step views shift, and the status line names what was deleted. Unsaved until saved.
 
 step rdm4l3
 order 26
@@ -834,7 +834,7 @@ author ai
 file crates/gui/src/action.rs
 symbol apply
 lines 0 100
-hash c9400f4a16d375f6
+hash a60720a022aa91fa
 note The action queue, drained once the tree is built; the keys and panel_input use it too, before the tree. apply is the only place the Model changes during a frame, which is what lets every view take the Model read-only. Most arms are one call into nav.rs or a Model field.
 
 step svoo3m
@@ -853,10 +853,10 @@ parent 50ozko
 author ai
 file crates/gui/src/nav.rs
 symbol track_navigation
-lines 0 13
-hash e56492ba685dda58
+lines 0 23
+hash 3ed36dbc4f744cde
 link navigation
-note Called last, after the queue: a changed place becomes history.
+note Called last, after the queue and after the views have reported their scroll offsets: a back or forward asked for this frame is performed, then a place the reader moved from becomes history.
 
 step ujbodh
 order 27

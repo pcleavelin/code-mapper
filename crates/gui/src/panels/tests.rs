@@ -203,3 +203,18 @@ fn closing_a_panels_last_tab_closes_the_panel_but_never_the_last_panel() {
     assert_eq!(panels.panels().len(), 1);
     assert!(panels.panels().iter().all(|panel| panel.views().is_empty()));
 }
+
+#[test]
+fn a_closed_view_is_brought_back_in_a_split_beside_the_view_it_serves() {
+    let mut panels = Panels::default();
+    panels.close_view(View::References);
+    panels.bring(View::References, View::Source);
+    assert_eq!(
+        panels.to_string(),
+        "down6(820 right5(220 0[Tours* Symbols Files] right8(500 1[Tour* Diff Graph Source Search] 7[References*])) 3[Console*])"
+    );
+    panels.activate(View::Symbols);
+    panels.bring(View::Tours, View::Source);
+    assert!(panels.is_shown(View::Tours));
+    assert_eq!(panels.holder(View::Tours), Some(BranchId(0)));
+}

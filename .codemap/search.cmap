@@ -60,8 +60,8 @@ parent 6tz50w
 author ai
 file crates/gui/src/nav.rs
 symbol open_line
-lines 0 5
-hash c19fb12e93c3ddc2
+lines 0 6
+hash 668146bf248e9bde
 note Opening a hit: applying GoTo selects that line in the Source view, asks the Source view to scroll to it and switches to the Source tab. The only way from a search result into the code.
 
 step x7ce18

@@ -57,9 +57,9 @@ order 0
 author ai
 file crates/gui/src/nav.rs
 symbol Nav
-lines 0 15
-hash 20dc4d474ba59098
-note The selection and everything that moves with it: the centre tab and the ticket of the last request for it, the tour and step (as slots in the map), the target step added steps hang under, the focused symbol, the open file and its line selection, the pending scrolls of the Source view and the document (each with a ticket, so an older request cannot clear a newer one), the step at the top of the document and the one the steps list last scrolled to, and the history. Views read it through accessors; only nav.rs writes it.
+lines 0 17
+hash 543b35b1dc937cee
+note The selection and everything that moves with it: the centre tab and the ticket of the last request for it, the tour and step (as slots in the map), the target step added steps hang under, the focused symbol, the open file and its line selection, the pending scrolls of the Source view and the document (each with a ticket, so an older request cannot clear a newer one), the step at the top of the document and the one the steps list last scrolled to, the kind of move this frame made and a back or forward waiting for the frame end, and the history. Views read it through accessors; only nav.rs writes it.
 
 step hot70l
 order 7

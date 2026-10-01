@@ -99,9 +99,9 @@ parent hskjme
 author ai
 file crates/gui/src/nav.rs
 symbol steps_moved
-lines 0 26
-hash ef1bb66d80ebcd4f
-note Every slot-keyed thing on a tour follows a change of slots: step views, history places, and on the tour being read the selection, the target and the top step; the steps list's last scroll is forgotten so it scrolls again. step_removed is this with one slot gone.
+lines 0 21
+hash aa0eac18a8621592
+note Every slot-keyed thing on a tour follows a change of slots: step views, and on the tour being read the selection, the target and the top step; the steps list's last scroll is forgotten so it scrolls again. step_removed is this with one slot gone. History places name their step by StepId, so they need none of it.
 
 step 8itbvj
 order 9

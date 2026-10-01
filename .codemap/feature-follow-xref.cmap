@@ -20,8 +20,8 @@ parent tpuq0j
 author ai
 file crates/gui/src/nav.rs
 symbol open_line
-lines 0 5
-hash c19fb12e93c3ddc2
+lines 0 6
+hash 668146bf248e9bde
 note Opens the reference's file in the Source view with the line selected.
 
 step exmctd

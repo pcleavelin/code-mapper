@@ -3,7 +3,7 @@ tour navigation
 kind flow
 author ai
 group gui
-note Back and forward, the way a browser does it. Nothing in the app calls a 'navigate' function: at the end of every frame, after the action queue has been applied, the current place is compared with the place at the end of the last frame, and if they differ the old one is pushed onto the history. So any click anywhere - a symbol in a list, a tab, an xref, a command in the Console - becomes history for free, and no feature has to remember to record itself. A place is the centre tab, the current file, the line selection, the focused symbol as a stable key, and the selected tour and step; a changed line selection alone does not count as a move. All of it lives in Nav, which only nav.rs changes.
+note Back and forward, the way a browser does it. Nothing in the app calls a 'navigate' function: at the end of every frame, after the action queue has been applied and the views have reported their scroll offsets, the current place is compared with the place at the end of the last frame, and if the reader moved the old one is pushed onto the history. So any click anywhere - a symbol in a list, an xref, a step, a command in the Console - becomes history for free, and no feature has to remember to record itself. A place is the tour by name, the step by StepId, the focused symbol as a SymbolKey and the file by path, so the history survives a re-index, a reload of the map and steps moving. Beside it a place keeps its Viewport - the centre tab, the line selection, the document's and the Source view's scroll and the graph camera - which is never compared, only restored: switching tabs or scrolling updates the place being left instead of making a new one, and back returns to a place as it was left. A jump (go-to-definition, go-to-line) that changes only the line selection is a move; a run of walks (the arrow keys through the tour or the graph) is one entry, so back returns to where the run started. All of it lives in Nav, which only nav.rs changes.
 
 step 0tjy5k
 order 14
@@ -12,7 +12,7 @@ file crates/gui/src/nav.rs
 symbol step_removed
 lines 0 6
 hash 1ebcf8db2d0957f6
-note Removing a step shifts the slot of every step after it in that tour. steps_moved does the remapping for any change of slots: the step views and every history entry of the tour follow, and the removed step's own entries lose their step, so back never lands on the wrong step.
+note Removing a step shifts the slot of every step after it in that tour. steps_moved does the remapping for any change of slots: the step views, the selection, the target and the top step follow. The history needs none of it, since a place names its step by StepId.
 
 step 3ig36u
 order 13
@@ -40,18 +40,18 @@ parent 5hqfou
 author ai
 file crates/gui/src/nav.rs
 symbol walk
-lines 0 32
-hash 85e918f902876dfc
-note Up and down with no field focused: the selected step moves through the tour in numbered order, the order the document and steps list show, clamped at both ends; with nothing selected the first step.
+lines 0 33
+hash 7ff9703ccbcaca94
+note Up and down with no field focused: the selected step moves through the tour in numbered order, the order the document and steps list show, clamped at both ends; with nothing selected the first step. The move is marked a walk first, so a run of walks is one history entry.
 
 step 4wpg9r
 order 0
 author ai
 file crates/gui/src/nav.rs
 symbol Place
-lines 0 7
-hash 24e7710aa924d3a8
-note What counts as a place. The file is kept as its path and the focused symbol as a SymbolKey (file path, symbol name) rather than ids, so the history survives a re-index.
+lines 0 6
+hash c6606436a22aba73
+note What counts as a place: the tour by TourName, the step by StepId, the focused symbol as a SymbolKey (file path, symbol name) and the file by its path, never slots or ids, so an entry still finds its place after a re-index, a reload of the map, or steps moving or being removed. The viewport rides along to be restored and takes no part in the comparison.
 
 step 5hqfou
 order 12
@@ -68,19 +68,9 @@ parent syqeay
 author ai
 file crates/gui/src/nav.rs
 symbol here
-lines 0 13
-hash 544f5b6828acb3e7
-note Snapshots the current place from Nav. Used for the comparison and for both stacks.
-
-step 6ixm0n
-order 19
-parent 0tjy5k
-author ai
-file crates/gui/src/nav.rs
-symbol places_mut
-lines 0 5
-hash 603398673f5fc6cf
-note Every place the history holds - both stacks and the last-frame snapshot - so a removal rewrites them all in one loop.
+lines 0 21
+hash 006f55dc9e66a5e7
+note Snapshots the current place from Nav: the tour's name and the step's id looked up from their slots, the focus's SymbolKey and the file's path, and the viewport from the scroll offsets and GraphState::save_camera. Used for the comparison and for both stacks.
 
 step c5wt5k
 order 6
@@ -90,7 +80,17 @@ file crates/gui/src/nav.rs
 symbol select_step
 lines 0 53
 hash d8e961f7c6c62ddd
-note A place that had a step is restored through the normal step selection, so the document scrolls and the graph follows exactly as if it had been clicked.
+note A place that had a step is restored through the normal step selection, with Scrolling::Stay: the ancestors expand and the graph follows as if it had been clicked, while the scroll offsets go back to where the reader left them.
+
+step f98dsu
+order 24
+parent ju7j2n
+author ai
+file crates/gui/src/nav.rs
+symbol reachable
+lines 0 12
+hash 6b2091665667476d
+note Pops entries off a stack until one is worth going to: its tour, if it had one, still exists by name, and it is a different place from where the reader is, compared as a jump so a different line selection counts. The entries popped past are dropped, so a removed tour or a place equal to here never costs a press that goes nowhere.
 
 step gq28ix
 order 5
@@ -98,18 +98,18 @@ parent ju7j2n
 author ai
 file crates/gui/src/nav.rs
 symbol go
-lines 0 22
-hash 790c196df450f7c2
-note Restoring a place without it counting as a new navigation: it overwrites the last-frame snapshot, so track_navigation sees no difference at the end of this frame. A tour that disappeared since is dropped, and a step past the end of its tour restores only the symbol. The tab is set last, because selecting a step switches the tab on its own.
+lines 0 23
+hash 624b1902dba265a2
+note Restoring a place without it counting as a new navigation: it overwrites the last-frame snapshot, so track_navigation sees no difference at the end of this frame. The tour is found by name and the step by StepId; when either is gone only the symbol is restored. The step is selected with Scrolling::Stay and the pending scroll requests are cleared, then the document and Source scroll offsets and the graph camera (restore_camera, so nothing looks, glides or fits) are set to what they were when the place was left. The tab is set last, because selecting a step switches the tab on its own.
 
 step hbxizr
 order 15
 author ai
 file crates/gui/src/nav.rs
 symbol tour_removed
-lines 0 19
-hash 9008f15ca6f1fc6e
-note Removing a tour drops its history entries and step views and shifts later tours down one, so nothing of another tour is lost or reattached.
+lines 0 13
+hash 4e0eea9b21e8735d
+note Removing a tour drops its step views, shifts later tours' views down one and forgets the top step, so nothing of another tour is lost or reattached. The history is left as it is: a place names its tour, and reachable skips an entry whose tour is gone.
 
 step hdsnp8
 order 16
@@ -127,37 +127,37 @@ parent syqeay
 author ai
 file crates/gui/src/nav.rs
 symbol History
-lines 0 4
-hash 65e91796392332e8
-note The back and forward stacks and the place at the end of the last frame, which is what track_navigation compares against.
+lines 0 5
+hash f9b3cb2a9a1b46f7
+note The back and forward stacks, the place at the end of the last frame (what track_navigation compares against), and the kind of the last move that changed the place, so a walk can tell it follows a walk.
 
 step ju7j2n
 order 4
 author ai
 file crates/gui/src/nav.rs
 symbol back
-lines 0 7
-hash 62ffaec576a23e5e
-note Back: pop the history, push where we are onto the forward stack, go. Reached by the Back action, which the back arrow, alt+left and the mouse's back button push.
+lines 0 10
+hash 1d972457dd6c96ee
+note Back: pop past every entry reachable rejects, push where we are onto the forward stack, go. Reached by the Back action, which the back arrow, alt+left and the mouse's back button push, through go_at_frame_end.
 
 step kv8kwg
 order 1
 parent 4wpg9r
 author ai
 file crates/gui/src/nav.rs
-symbol same_place
+symbol moved_from
 lines 0 6
-hash 783ac6d6f22d18ff
-note The comparison that decides whether something was a navigation. The line selection is left out: moving the selection in the Source view is not a move.
+hash 45abffbbc464a7ec
+note The comparison that decides whether the reader moved: a different tour, step, focused symbol or file. The line selection counts only for a Move::Jump, so a jump within one file is a place while moving the selection in the Source view is not. The viewport never counts, so switching tabs or scrolling is not a move.
 
 step loikda
 order 8
 author ai
 file crates/gui/src/nav.rs
 symbol forward
-lines 0 7
-hash d330435f581d1796
-note Forward: the mirror image, valid only until the next real navigation clears the stack.
+lines 0 10
+hash 94f2741b76fd8902
+note Forward: the mirror image, valid only until the next move clears the stack.
 
 step qab7b7
 order 9
@@ -168,24 +168,63 @@ lines 0 14
 hash 2431deb63e24562e
 note The usual way a symbol is opened from a list or an xref (the Focus action): select it, and when it is not a step of the tour being read, open the Source view unless the graph or a document is showing - there the status line says the symbol is not a step of that tour.
 
+step qo6hy8
+order 20
+parent syqeay
+author ai
+file crates/gui/src/nav.rs
+symbol Move
+lines 0 4
+hash 74a324c663e199f5
+note What kind of move the frame made, set while it happens and read once by track_navigation: Walk from walk and graph_walk (through walked), Jump from jumped_to_symbol, open_line and go_to_line, Select for everything else. A Jump makes a changed line selection count; a Walk after a Walk extends the run instead of pushing.
+
+step rynizw
+order 21
+parent 4woh4j
+author ai
+file crates/gui/src/nav.rs
+symbol walked
+lines 0 2
+hash 642bb66dacffcd25
+note Marks this frame's move as a walk. walk calls it, and so does graph_walk after its selection, so the graph's arrow walk makes runs the same way.
+
 step syqeay
 order 2
 author ai
 file crates/gui/src/nav.rs
 symbol track_navigation
-lines 0 13
-hash e56492ba685dda58
-note Called by the frame once at the very end, after the frame's actions have been applied. A difference from last frame pushes the old place and drops the forward stack, exactly like a browser; the history keeps the last two hundred places.
+lines 0 23
+hash 3ed36dbc4f744cde
+note Called by the frame once at the very end, after the frame's actions have been applied and the views have reported their scroll offsets. A back or forward asked for this frame (go_at_frame_end) is performed first. Then the kind of move the frame made is read and reset to Select, and when the place moved from last frame's, the old place, with the viewport it was left at, is pushed and the forward stack dropped, exactly like a browser; a walk that follows a walk pushes nothing, so a run of arrow-key walks is one entry. The snapshot is refreshed every frame either way, so the place being left always carries its latest tab and scroll. The history keeps the last two hundred places.
 
 step t1zqws
 order 11
 author ai
 file crates/gui/src/action.rs
 symbol definition
-lines 0 18
-hash d00af4bcb2673b16
+lines 0 19
+hash 73ef9887b52192ed
 link peek
-note Go-to-definition from any code view: the identifier under the pointer is looked up by the language's server (or the index, for a grammar-only file) and, once the answer is in, selected or opened in the Source view; a definition outside the repo is kept in the peek panel instead, since there is no file to open.
+note Go-to-definition from any code view: the identifier under the pointer is looked up by the language's server (or the index, for a grammar-only file) and, once the answer is in, selected or opened in the Source view as a Move::Jump, so even a jump to another line of the same file is a place; a definition outside the repo is kept in the peek panel instead, since there is no file to open.
+
+step uqwhjy
+order 19
+parent 4wpg9r
+author ai
+file crates/gui/src/nav.rs
+symbol Viewport
+lines 0 6
+hash ed97442ee0edff1a
+note How a place looked when the reader left it: the centre tab, the line selection, the document's and the Source view's scroll offsets and the graph Camera. go restores all of it.
+
+step vhfwcn
+order 22
+author ai
+file crates/gui/src/nav.rs
+symbol go_at_frame_end
+lines 0 2
+hash 26ed6c5b4acc29cc
+note Where the Back and Forward actions land: the move is only recorded in Nav, and track_navigation performs it at the end of the frame, after the views have reported this frame's scroll offsets, so the offsets go restores are not overwritten by them.
 
 step w39a81
 order 7
@@ -196,3 +235,13 @@ symbol focus_symbol
 lines 0 12
 hash 8b98063109fcb5a0
 note A place with no step restores only the symbol, looked up again by its key.
+
+step y7aot0
+order 23
+parent vhfwcn
+author ai
+file crates/gui/src/nav.rs
+symbol Going
+lines 0 3
+hash 1c53dd4a120e2931
+note Which way a pending history move goes, held in Nav until the frame end.

@@ -680,6 +680,12 @@ impl Panels {
     }
 
     pub(crate) fn split_panel(&mut self, panel: BranchId, direction: Direction) {
+        if let Some(fresh) = self.split_off(panel, direction) {
+            self.picker = Some(fresh);
+        }
+    }
+
+    fn split_off(&mut self, panel: BranchId, direction: Direction) -> Option<BranchId> {
         let fresh = self.fresh();
         let split = self.fresh();
         let replaced = self.root.replace(panel, &mut |old| {
@@ -691,8 +697,19 @@ impl Panels {
                 second: Box::new(Branch::Panel(Panel::new(fresh, Vec::new()))),
             })
         });
-        if replaced {
-            self.picker = Some(fresh);
+        replaced.then_some(fresh)
+    }
+
+    pub(crate) fn bring(&mut self, view: View, beside: View) {
+        if self.holder(view).is_some() {
+            self.activate(view);
+            return;
+        }
+        let panel = self
+            .holder(beside)
+            .or_else(|| self.panels().first().map(|panel| panel.id));
+        if let Some(fresh) = panel.and_then(|panel| self.split_off(panel, Direction::Right)) {
+            self.put(view, fresh);
         }
     }
 

@@ -30,8 +30,8 @@ parent 1a0bgg
 author ai
 file crates/gui/src/nav.rs
 symbol go_to_line
-lines 0 3
-hash 9cc590ad79fb9c4b
+lines 0 4
+hash ab4e3a9dd673ef9b
 note Selects the single line and leaves a ticketed scroll request for the Source view.
 
 step urcirn

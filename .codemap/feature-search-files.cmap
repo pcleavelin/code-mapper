@@ -31,8 +31,8 @@ parent mysbs4
 author ai
 file crates/gui/src/nav.rs
 symbol open_line
-lines 0 5
-hash c19fb12e93c3ddc2
+lines 0 6
+hash 668146bf248e9bde
 note Opens the file in the Source view with the hit line selected and scrolled to.
 
 step mysbs4

@@ -52,7 +52,7 @@ file crates/gui/src/action.rs
 symbol remove_step
 lines 0 18
 hash cf003649ba79559c
-note The handler. Takes the step's number and identity for the status message before removing it by id from the map, then clears the selected step, shifts the per-step view state and history, and marks the map dirty.
+note The handler. Takes the step's number and identity for the status message before removing it by id from the map, then clears the selected step, shifts the per-step view state, and marks the map dirty.
 
 step mlcebf
 order 4
@@ -62,4 +62,4 @@ file crates/gui/src/nav.rs
 symbol step_removed
 lines 0 6
 hash 1ebcf8db2d0957f6
-note Slots after the removed one shift down by one, through steps_moved: view flags and context stay with their steps, the removed step's own view is dropped, history entries on this tour shift the same way, and so do the selected step, the target and the top step.
+note Slots after the removed one shift down by one, through steps_moved: view flags and context stay with their steps, the removed step's own view is dropped, and the selected step, the target and the top step shift the same way. History needs no shift, since its places name their step by StepId.

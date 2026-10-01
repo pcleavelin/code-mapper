@@ -11,7 +11,7 @@ use crate::model::{
     Context, Dirty, HIT_LIMIT, Hit, HitsShown, Measured, Openness, Readable, StepKey, StepSlot,
     Tab, TourSlot, ViewFlag, Warned,
 };
-use crate::nav::{Scrolling, Ticket, Tries};
+use crate::nav::{Going, Scrolling, Ticket, Tries};
 use crate::palette::{Palette, PaletteAction};
 use crate::panels::{BranchId, Direction, DropTarget, Ratio, View};
 use crate::peek::{HoverStep, Intent, Peek, Probe, Probing, WantedDefinition};
@@ -128,8 +128,8 @@ impl App {
                 model.groups.insert(group, openness);
             }
             Action::ShowView(view) => model.show_view(view),
-            Action::Back => model.back(),
-            Action::Forward => model.forward(),
+            Action::Back => model.go_at_frame_end(Going::Back),
+            Action::Forward => model.go_at_frame_end(Going::Forward),
             Action::Save => self.save(),
             Action::Authoring(action) => self.author(action),
             Action::Scroll(id, offset) => model.scrolls.set(id, offset),
@@ -259,6 +259,7 @@ impl App {
                     self.model
                         .queries
                         .definition_sent(WantedDefinition { probe, intent });
+                    self.model.status = Status::LookingUp(word.text);
                 }
             }
             Probing::Resolver => match self.model.symbol_at(file, line, column) {

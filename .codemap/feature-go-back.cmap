@@ -3,7 +3,7 @@ tour feature-go-back
 kind flow
 author ai
 group features/gui
-note The back and forward arrow icons in the top bar, alt+left and alt+right, ctrl+left and ctrl+right, and the mouse's back and forward buttons move back and forward through the places visited, the way a browser does: tab, file, selected lines, focused symbol, tour and step. The reader reaches for it to return to where a jump, an xref or a search started instead of finding the place again by hand, as an editor with an LSP allows. Nothing records a place explicitly; the end of every frame compares where the reader is with where they were. The arrow keys with a modifier are left to a focused text field, where they move the caret.
+note The back and forward arrow icons in the top bar, alt+left and alt+right, ctrl+left and ctrl+right, and the mouse's back and forward buttons move back and forward through the places visited, the way a browser does: a different tour, step, focused symbol or file, or a jump to other lines of the same file, is a place, and each comes back with the tab, line selection, scroll offsets and graph camera it was left with. Switching tabs or scrolling is not a place, and a run of arrow-key walks is one. The reader reaches for it to return to where a jump, an xref or a search started instead of finding the place again by hand, as an editor with an LSP allows. Nothing records a place explicitly; the end of every frame compares where the reader is with where they were. The arrow keys with a modifier are left to a focused text field, where they move the caret.
 
 step 1wvo6m
 order 6
@@ -11,9 +11,19 @@ parent y91rv4
 author ai
 file crates/gui/src/nav.rs
 symbol track_navigation
-lines 0 13
-hash e56492ba685dda58
-note What makes history: at the end of every frame the current place is compared with the last one, and when it differs the last one is pushed onto the back stack and the forward stack is cleared.
+lines 0 23
+hash 3ed36dbc4f744cde
+note What makes history: at the end of every frame a pending back or forward is performed, then the current place is compared with the last one, and when the reader moved the last one is pushed onto the back stack, unless this is a walk following a walk, and the forward stack is cleared.
+
+step 4vzlbm
+order 7
+parent y91rv4
+author ai
+file crates/gui/src/nav.rs
+symbol go_at_frame_end
+lines 0 2
+hash 26ed6c5b4acc29cc
+note Where the Back and Forward actions' apply arms go: the move waits in Nav for the end of the frame, after the views have reported their scroll offsets, so the offsets it restores stand.
 
 step 580y0f
 order 1
@@ -21,9 +31,9 @@ parent y91rv4
 author ai
 file crates/gui/src/nav.rs
 symbol go
-lines 0 22
-hash 790c196df450f7c2
-note Restores a place: the tour if it still exists, the step through select_step (scrolled to) when it still exists, otherwise the focused symbol found again by its key; then file, lines with a scroll request, and the tab. It records the restored place as the last one so the frame end does not push it again.
+lines 0 23
+hash 624b1902dba265a2
+note Restores a place: the tour by name if it still exists, the step by StepId through select_step with Scrolling::Stay when it still exists, otherwise the focused symbol found again by its key; then file and lines, the document and Source scroll offsets and the graph camera as they were when the place was left, and the tab. It records the restored place as the last one so the frame end does not push it again.
 
 step 7ygu48
 order 2
@@ -31,8 +41,8 @@ parent y91rv4
 author ai
 file crates/gui/src/nav.rs
 symbol forward
-lines 0 7
-hash d330435f581d1796
+lines 0 10
+hash 94f2741b76fd8902
 note The handler for forward, the mirror of back.
 
 step d1o8nr
@@ -60,10 +70,10 @@ order 0
 author ai
 file crates/gui/src/nav.rs
 symbol back
-lines 0 7
-hash 62ffaec576a23e5e
+lines 0 10
+hash 1d972457dd6c96ee
 link navigation
-note The handler for back: pops the last place, pushes the current one onto the forward stack and goes there. With nothing behind, nothing happens and the button is drawn disabled.
+note The handler for back, run at the end of the frame: pops past entries whose tour is gone or that equal where the reader is, pushes the current place onto the forward stack and goes there. With nothing behind, nothing happens and the button is drawn disabled.
 
 step ynjc7s
 order 4

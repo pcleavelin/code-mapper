@@ -201,8 +201,8 @@ parent kmr9zj
 author ai
 file crates/gui/src/nav.rs
 symbol jumped_to_symbol
-lines 0 6
-hash 03eafa6ac7be3975
+lines 0 7
+hash beb8c9e64f4ea87d
 note A symbol from the palette lands where a jump to definition lands: on its step when it is one in the tour being read, else in the Source view (the graph stays where it is). Reached through Action::Jump.
 
 step o830hm

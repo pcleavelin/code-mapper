@@ -21,9 +21,9 @@ parent z8ck9j
 author ai
 file crates/gui/src/nav.rs
 symbol tour_removed
-lines 0 19
-hash 9008f15ca6f1fc6e
-note Slots after the removed tour shift down by one: view state is remapped, history entries on the removed tour are dropped and the rest shifted, and the topmost visible step is forgotten.
+lines 0 13
+hash 4e0eea9b21e8735d
+note Slots after the removed tour shift down by one: view state is remapped and the topmost visible step is forgotten. History is untouched: its places name their tour, and back or forward skips one whose tour is gone.
 
 step xw4x3m
 order 2
@@ -52,4 +52,4 @@ file crates/gui/src/action.rs
 symbol remove_tour
 lines 0 19
 hash 6d4043ee04612f1f
-note The handler. Removes the tour by name; on success it records the status, clears the selection, drops the tour's view state and history, and marks the map dirty. A refusal from the map becomes the status line.
+note The handler. Removes the tour by name; on success it records the status, clears the selection, drops the tour's view state, and marks the map dirty. A refusal from the map becomes the status line.

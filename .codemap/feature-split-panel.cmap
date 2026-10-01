@@ -10,19 +10,29 @@ order 0
 author ai
 file crates/gui/src/panels.rs
 symbol split_panel
-lines 0 15
-hash e3bab6a753d2ac07
-note The handler: the panel is replaced in the tree by a split of it and a new empty panel, and the picker opens on the new one.
+lines 0 4
+hash 31825d914e2ddde0
+note The handler: split_off replaces the panel in the tree by a split of it and a new empty panel, and the picker opens on the new one.
 
 step 36t0jg
 order 1
-parent 2rwmch
+parent ghc32v
 author ai
 file crates/gui/src/panels.rs
 symbol replace
 lines 0 12
 hash d7c2086211b04f78
 note Swaps one branch of the tree for what the closure builds from it.
+
+step ghc32v
+order 4
+parent 2rwmch
+author ai
+file crates/gui/src/panels.rs
+symbol split_off
+lines 0 13
+hash a2ecefc067a60ea5
+note The split itself, with no picker: the panel and a new empty one after it, half each, in the given direction; it returns the new panel's id, or nothing when the panel is not in the tree.
 
 step msyg83
 order 3

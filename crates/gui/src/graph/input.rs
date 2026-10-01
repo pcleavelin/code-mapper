@@ -718,5 +718,6 @@ impl App {
                 .select_step(StepKey { tour, step }, Scrolling::Scroll),
             _ => self.model.go_to_symbol(to.symbol),
         }
+        self.model.walked();
     }
 }

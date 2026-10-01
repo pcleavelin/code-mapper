@@ -3,7 +3,7 @@ tour feature-jump-to-definition
 kind flow
 author ai
 group features/gui
-note Ctrl-click or double-click an identifier in any code view (document, source, peek, graph node) to go to its definition. The reader reaches for it to reach a definition without searching for it, as an editor with an LSP allows. A definition that is a symbol in the repo lands on that symbol: the matching step of the tour being read when there is one, otherwise the Source view. A definition inside a symbol (a field, a local) opens the Source view on its line. One outside the repo cannot be jumped to and is shown in the peek panel instead, with a status line saying where it is. With a language server the answer arrives a few frames later; without one, the symbol of that name is used; prose files do nothing. No definition found is reported in the status bar.
+note Ctrl-click or double-click an identifier in any code view (document, source, peek, graph node) to go to its definition. The reader reaches for it to reach a definition without searching for it, as an editor with an LSP allows. A definition that is a symbol in the repo lands on that symbol: the matching step of the tour being read when there is one, otherwise the Source view. A definition inside a symbol (a field, a local) opens the Source view on its line. One outside the repo cannot be jumped to and is shown in the peek at the top of the References view instead, with a status line saying where it is; the References view is brought into sight for it, split off beside the centre view when no panel holds it. With a language server the answer arrives a few frames later, and until it does the status line says the word is being looked up; without one, the symbol of that name is used; prose files do nothing. No definition found is reported in the status bar.
 
 step 0qrr3m
 order 8
@@ -21,18 +21,28 @@ parent oyeq3k
 author ai
 file crates/gui/src/nav.rs
 symbol open_line
-lines 0 5
-hash c19fb12e93c3ddc2
-note A definition that is not a symbol's first line opens the Source view on its line.
+lines 0 6
+hash 668146bf248e9bde
+note A definition that is not a symbol's first line opens the Source view on its line, as a Move::Jump, so even another line of the same file is a history place.
+
+step 6csfy5
+order 14
+parent oyeq3k
+author ai
+file crates/gui/src/panels.rs
+symbol bring
+lines 0 11
+hash fee7de323a3a28c1
+note References is brought into sight: its tab activated where a panel holds it, or a new panel split off to the right of the one holding the centre view, so a peek is never drawn into a view the reader cannot see.
 
 step 7x9zhl
 order 0
 author ai
 file crates/gui/src/action.rs
 symbol definition
-lines 0 18
-hash d00af4bcb2673b16
-note The handler, shared with peek-definition and told apart by the Intent. Finds the word under the pointer, then either asks the language's server for the definition (remembering what the answer is for) or, for a language with a grammar but no server, resolves the word to a symbol at once and lands on it.
+lines 0 19
+hash 73ef9887b52192ed
+note The handler, shared with peek-definition and told apart by the Intent. Finds the word under the pointer, then either asks the language's server for the definition (remembering what the answer is for) or, for a language with a grammar but no server, resolves the word to a symbol at once and lands on it. Asking a server sets the status to LookingUp the word, so a slow server reads as waiting rather than as nothing happening.
 
 step griplk
 order 12
@@ -40,9 +50,9 @@ parent iw967s
 author ai
 file crates/gui/src/work.rs
 symbol definition_landed
-lines 0 16
-hash 3b233d0dcc209a88
-note Turns the answer into a place, then lands it with the intent that was asked for. No answer is reported as no definition.
+lines 0 19
+hash f1bb29b44c02d755
+note Turns the answer into a place, then lands it with the intent that was asked for. It first clears the looking-up status; no answer is reported as no definition.
 
 step iw967s
 order 11
@@ -61,9 +71,9 @@ parent oyeq3k
 author ai
 file crates/gui/src/nav.rs
 symbol jumped_to_symbol
-lines 0 6
-hash 03eafa6ac7be3975
-note Selects the symbol, which picks the matching step of the tour being read when there is one; unless that put the reader on a step in the document, or the graph is showing, the Source view is shown.
+lines 0 7
+hash beb8c9e64f4ea87d
+note Selects the symbol, which picks the matching step of the tour being read when there is one; unless that put the reader on a step in the document, or the graph is showing, the Source view is shown. The move is a Move::Jump, so it becomes a history place.
 
 step oduobc
 order 13
@@ -91,9 +101,9 @@ parent 7x9zhl
 author ai
 file crates/gui/src/work.rs
 symbol land
-lines 0 14
-hash 18408dde89f15741
-note Where both routes end. With Intent::Jump a symbol lands through jumped_to_symbol and a line through open_line; an outside definition cannot be jumped to and falls through to the peek panel.
+lines 0 16
+hash 1d99433708bbd7b4
+note Where both routes end. With Intent::Jump a symbol lands through jumped_to_symbol and a line through open_line; an outside definition cannot be jumped to and falls through to the peek, and a peek brings the References view, which draws it, into sight beside the centre tab's view.
 
 step p4u95c
 order 9

@@ -1,10 +1,13 @@
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
+use std::mem;
 
-use domain::{FileId, Line, RelativePath, SymbolId, SymbolKey};
-use ui::Count;
+use domain::{FileId, Line, RelativePath, StepId, SymbolId, SymbolKey, TourName};
+use ui::{Count, Px};
 
 use crate::field::Which;
+use crate::graph::Camera;
+use crate::ids;
 use crate::keys::{Extend, Walk};
 use crate::model::{LineSelection, Model, StepKey, StepSlot, Tab, TourSlot, ViewFlag};
 use crate::panels::{BranchId, View};
@@ -48,42 +51,68 @@ pub(crate) struct StepRequest {
     pub(crate) ticket: Ticket,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Move {
+    Select,
+    Walk,
+    Jump,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Going {
+    Back,
+    Forward,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+struct Viewport {
+    tab: Tab,
+    lines: Option<LineSelection>,
+    document: Px,
+    source: Px,
+    camera: Camera,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Place {
-    tab: Tab,
-    file: Option<RelativePath>,
-    lines: Option<LineSelection>,
+    tour: Option<TourName>,
+    step: Option<StepId>,
     focus: Option<SymbolKey>,
-    tour: Option<TourSlot>,
-    step: Option<StepSlot>,
+    file: Option<RelativePath>,
+    view: Viewport,
 }
 
 impl Place {
-    fn same_place(&self, other: &Self) -> bool {
-        self.tab == other.tab
-            && self.file == other.file
-            && self.focus == other.focus
-            && self.tour == other.tour
-            && self.step == other.step
+    fn moved_from(&self, other: &Self, how: Move) -> bool {
+        self.tour != other.tour
+            || self.step != other.step
+            || self.focus != other.focus
+            || self.file != other.file
+            || (how == Move::Jump && self.view.lines != other.view.lines)
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 struct History {
     back: Vec<Place>,
     forward: Vec<Place>,
     last: Option<Place>,
+    last_move: Move,
+}
+
+impl Default for History {
+    fn default() -> Self {
+        Self {
+            back: Vec::new(),
+            forward: Vec::new(),
+            last: None,
+            last_move: Move::Select,
+        }
+    }
 }
 
 impl History {
     const LONGEST: Count = Count::new(200);
-
-    fn places_mut(&mut self) -> impl Iterator<Item = &mut Place> {
-        self.back
-            .iter_mut()
-            .chain(self.forward.iter_mut())
-            .chain(self.last.iter_mut())
-    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -107,6 +136,8 @@ pub(crate) struct Nav {
     step_list_shown: Option<StepSlot>,
     ticket: Ticket,
     asked: Ticket,
+    moving: Move,
+    going: Option<Going>,
     history: History,
 }
 
@@ -126,6 +157,8 @@ impl Default for Nav {
             step_list_shown: None,
             ticket: Ticket(0),
             asked: Ticket(0),
+            moving: Move::Select,
+            going: None,
             history: History::default(),
         }
     }
@@ -211,35 +244,78 @@ impl Model {
     fn here(&self) -> Place {
         let nav = &self.nav;
         Place {
-            tab: nav.tab,
+            tour: nav
+                .tour
+                .and_then(|tour| self.tour(tour))
+                .map(|tour| tour.name().clone()),
+            step: nav.step_key().and_then(|key| self.step_id(key)),
+            focus: nav.focus.and_then(|symbol| self.index.symbol_key(symbol)),
             file: nav
                 .file
                 .and_then(|file| self.index.file(file))
                 .map(|file| file.path().clone()),
-            lines: nav.lines,
-            focus: nav.focus.and_then(|symbol| self.index.symbol_key(symbol)),
-            tour: nav.tour,
-            step: nav.step,
+            view: Viewport {
+                tab: nav.tab,
+                lines: nav.lines,
+                document: self.scrolls.get(ids::document()),
+                source: self.scrolls.get(ids::source()),
+                camera: self.graph.save_camera(&self.index),
+            },
         }
+    }
+
+    pub(crate) const fn go_at_frame_end(&mut self, going: Going) {
+        self.nav.going = Some(going);
     }
 
     pub(crate) fn track_navigation(&mut self) {
+        match self.nav.going.take() {
+            Some(Going::Back) => self.back(),
+            Some(Going::Forward) => self.forward(),
+            None => {}
+        }
+        let how = mem::replace(&mut self.nav.moving, Move::Select);
         let now = self.here();
-        if let Some(previous) = self.nav.history.last.take()
-            && !previous.same_place(&now)
+        let history = &mut self.nav.history;
+        if let Some(previous) = history.last.take()
+            && now.moved_from(&previous, how)
         {
-            let history = &mut self.nav.history;
-            history.back.push(previous);
+            let walking_on = how == Move::Walk && history.last_move == Move::Walk;
+            if !walking_on {
+                history.back.push(previous);
+                if history.back.len() > History::LONGEST.get() {
+                    history.back.remove(0);
+                }
+            }
             history.forward.clear();
-            if history.back.len() > History::LONGEST.get() {
-                history.back.remove(0);
+            history.last_move = how;
+        }
+        history.last = Some(now);
+    }
+
+    pub(crate) const fn walked(&mut self) {
+        self.nav.moving = Move::Walk;
+    }
+
+    fn reachable(&self, stack: &mut Vec<Place>) -> Option<Place> {
+        let here = self.here();
+        while let Some(place) = stack.pop() {
+            let tour_exists = place
+                .tour
+                .as_ref()
+                .is_none_or(|name| self.find_tour(name).is_some());
+            if tour_exists && place.moved_from(&here, Move::Jump) {
+                return Some(place);
             }
         }
-        self.nav.history.last = Some(now);
+        None
     }
 
     pub(crate) fn back(&mut self) {
-        let Some(place) = self.nav.history.back.pop() else {
+        let mut back = mem::take(&mut self.nav.history.back);
+        let found = self.reachable(&mut back);
+        self.nav.history.back = back;
+        let Some(place) = found else {
             return;
         };
         let here = self.here();
@@ -248,7 +324,10 @@ impl Model {
     }
 
     pub(crate) fn forward(&mut self) {
-        let Some(place) = self.nav.history.forward.pop() else {
+        let mut forward = mem::take(&mut self.nav.history.forward);
+        let found = self.reachable(&mut forward);
+        self.nav.history.forward = forward;
+        let Some(place) = found else {
             return;
         };
         let here = self.here();
@@ -257,26 +336,27 @@ impl Model {
     }
 
     fn go(&mut self, place: Place) {
-        self.nav.tour = place
-            .tour
-            .filter(|tour| tour.get() < self.tour_count().get());
-        match (self.nav.tour, place.step) {
-            (Some(tour), Some(step)) if step.get() < self.step_count(tour).get() => {
-                self.select_step(StepKey { tour, step }, Scrolling::Scroll);
-            }
-            _ => {
-                self.nav.step = None;
-                if let Some(symbol) = place.focus.and_then(|key| self.index.by_key(&key)) {
-                    self.focus_symbol(symbol);
-                }
+        let tour = place.tour.as_ref().and_then(|name| self.find_tour(name));
+        self.nav.tour = tour;
+        let step = tour
+            .zip(place.step.as_ref())
+            .and_then(|(tour, id)| self.step_slot(tour, id));
+        if let (Some(tour), Some(step)) = (tour, step) {
+            self.select_step(StepKey { tour, step }, Scrolling::Stay);
+        } else {
+            self.nav.step = None;
+            if let Some(symbol) = place.focus.and_then(|key| self.index.by_key(&key)) {
+                self.focus_symbol(symbol);
             }
         }
         self.nav.file = place.file.and_then(|path| self.index.find_file(&path));
-        self.nav.lines = place.lines;
-        if let Some(lines) = place.lines {
-            self.nav.scroll_to_line(lines.from);
-        }
-        self.nav.show(place.tab);
+        self.nav.lines = place.view.lines;
+        self.nav.scroll_to = None;
+        self.nav.scroll_to_step = None;
+        self.scrolls.set(ids::document(), place.view.document);
+        self.scrolls.set(ids::source(), place.view.source);
+        self.graph.restore_camera(&self.index, &place.view.camera);
+        self.nav.show(place.view.tab);
         self.nav.history.last = Some(self.here());
     }
 
@@ -303,11 +383,6 @@ impl Model {
                 Some(key)
             }
         });
-        for place in self.nav.history.places_mut() {
-            if place.tour == Some(tour) {
-                place.step = place.step.and_then(&shift);
-            }
-        }
         if self.nav.tour == Some(tour) {
             self.nav.step = self.nav.step.and_then(&shift);
             self.nav.target = self.nav.target.and_then(&shift);
@@ -332,16 +407,11 @@ impl Model {
                 step: key.step,
             })
         });
-        let history = &mut self.nav.history;
-        history.back.retain(|place| place.tour != Some(removed));
-        history.forward.retain(|place| place.tour != Some(removed));
-        for place in history.places_mut() {
-            place.tour = place.tour.and_then(shift);
-        }
         self.nav.top_step = None;
     }
 
     pub(crate) fn walk(&mut self, walk: Walk) {
+        self.walked();
         let Some(tour) = self
             .nav
             .tour
@@ -501,6 +571,7 @@ impl Model {
     }
 
     pub(crate) fn jumped_to_symbol(&mut self, symbol: SymbolId) {
+        self.nav.moving = Move::Jump;
         self.select_symbol(symbol);
         let on_step = self.nav.step.is_some() && self.nav.tab == Tab::Tour;
         if self.nav.tab != Tab::Graph && !on_step {
@@ -509,6 +580,7 @@ impl Model {
     }
 
     pub(crate) fn open_line(&mut self, file: FileId, line: Line) {
+        self.nav.moving = Move::Jump;
         self.nav.file = Some(file);
         self.nav.lines = Some(LineSelection::one(line));
         self.nav.scroll_to_line(line);
@@ -516,6 +588,7 @@ impl Model {
     }
 
     pub(crate) fn go_to_line(&mut self, line: Line) {
+        self.nav.moving = Move::Jump;
         self.nav.lines = Some(LineSelection::one(line));
         self.nav.scroll_to_line(line);
     }

@@ -104,6 +104,7 @@ pub(crate) enum Status {
         line: Line,
     },
     NoDefinition,
+    LookingUp(Label),
     Starting(Program),
     ServerFailed(Label),
     Reindexing,
@@ -322,6 +323,11 @@ impl fmt::Display for Status {
                 line.number()
             ),
             Self::NoDefinition => formatter.write_str("no definition found"),
+            Self::LookingUp(word) => write!(
+                formatter,
+                "looking up '{}'; the language server has not answered yet",
+                word.as_str()
+            ),
             Self::Starting(program) => write!(formatter, "{program}: starting"),
             Self::ServerFailed(error) => write!(
                 formatter,

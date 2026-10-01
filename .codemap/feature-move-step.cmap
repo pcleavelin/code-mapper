@@ -90,9 +90,9 @@ parent 0jxud1
 author ai
 file crates/gui/src/nav.rs
 symbol steps_moved
-lines 0 26
-hash ef1bb66d80ebcd4f
-note steps_moved: views, history, selection, target and top step follow a slot remapping; step_removed is the same with the removed slot mapped to nothing.
+lines 0 21
+hash aa0eac18a8621592
+note steps_moved: views, selection, target and top step follow a slot remapping; step_removed is the same with the removed slot mapped to nothing. History places name their step by StepId and need no remapping.
 
 step oet3q1
 order 9

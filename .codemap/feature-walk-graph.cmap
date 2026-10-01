@@ -3,7 +3,7 @@ tour feature-walk-graph
 kind flow
 author ai
 group features/gui
-note After a click inside the graph's canvas, the arrow keys move the selection between graph nodes instead of walking the tour: Left and Right (this feature's keys) and Up and Down (walk-steps' keys, which the graph borrows while it holds the keyboard) go to the parent, a child or a sibling lying that way first, and to the nearest node that way when none of those does. The reader reaches for it to explore the graph node by node from the keyboard instead of clicking each node (commit ad88590). A step node selects its step, an off-tour node focuses its symbol; the tree keeps its root and the camera glides to the new node over a few frames. Nothing happens while a text field holds the keyboard or when no node lies that way. A press outside the canvas, or hiding the Graph view, gives the arrows back to walking the tour (feature-walk-steps).
+note After a click inside the graph's canvas, the arrow keys move the selection between graph nodes instead of walking the tour: Left and Right (this feature's keys) and Up and Down (walk-steps' keys, which the graph borrows while it holds the keyboard) go to the parent, a child or a sibling lying that way first, and to the nearest node that way when none of those does. The reader reaches for it to explore the graph node by node from the keyboard instead of clicking each node (commit ad88590). A step node selects its step, an off-tour node focuses its symbol; the tree keeps its root and the camera glides to the new node over a few frames. Nothing happens while a text field holds the keyboard or when no node lies that way. A run of walks is one history entry, the same run as feature-walk-steps' walks, so back returns to where it started. A press outside the canvas, or hiding the Graph view, gives the arrows back to walking the tour (feature-walk-steps).
 
 step 04ic65
 order 15
@@ -122,9 +122,9 @@ order 0
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_walk
-lines 0 20
-hash 51c070f1f62d3630
-note The handler, one call per arrow press. Does nothing while a text field is focused or with no node under the selection (Built::focus_node); otherwise asks toward for the node that way from the focus node, sends Steer(Steering::Keys) so the focus change that follows glides the camera and keeps the root, then selects the node: its step when it is a step of the drawn tour, else its symbol through go_to_symbol.
+lines 0 21
+hash fa62a67bae7a15f9
+note The handler, one call per arrow press. Does nothing while a text field is focused or with no node under the selection (Built::focus_node); otherwise asks toward for the node that way from the focus node, sends Steer(Steering::Keys) so the focus change that follows glides the camera and keeps the root, then selects the node: its step when it is a step of the drawn tour, else its symbol through go_to_symbol; then it marks the move a walk (Model::walked), so a run of walks is one history place.
 
 step ufb37d
 order 1
