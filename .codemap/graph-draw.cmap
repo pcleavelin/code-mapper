@@ -61,8 +61,8 @@ author ai
 file crates/gui/src/views/center.rs
 symbol graph_tab
 lines 0 63
-hash a8fc48d122b08f45
-note The view: the deferred actions pushed (a hover through push_hover), the tooltip set, then the toolbar - '1:1' which resets the zoom and re-centres, 'auto layout' which drops every dragged position, 'fit' which zooms out until the whole tree is on the canvas and centres it, the direction button (graph-turn, labelled with the direction it switches to: 'top to bottom' or 'left to right'), the zoom percentage, and one clipped caption: while a tour is being read, its name and a legend drawn in the edge colours themselves (green step, dim revealed, orange call back up), then the pan and zoom gestures spelled out - then the canvas element whose closure paints the scene. The target strip above the toolbar offers add-offer. The toolbar itself holds no authoring control, and '+ step' still lives on off-tour nodes.
+hash c4c892bcc2c13c6e
+note The view: the deferred actions pushed (a hover through push_hover), the tooltip set, then the toolbar - '1:1' which resets the zoom and re-centres, 'auto layout' which drops every dragged position, 'fit' which zooms out until the whole tree is on the canvas and centres it, the direction button (graph-turn, labelled with the direction it switches to: 'top to bottom' or 'left to right'), the zoom percentage, and one clipped caption: while a tour is being read, its name and a legend drawn in the edge colours themselves (green step, dim revealed, orange call back up), then the pan and zoom gestures spelled out - then the canvas element whose closure paints the scene. The target strip above the toolbar offers add-offer@Graph. The toolbar itself holds no authoring control, and '+ step' still lives on off-tour nodes.
 
 step 4yhd4f
 order 0

@@ -12,7 +12,7 @@ author ai
 file crates/gui/src/views/left.rs
 symbol tours_window
 lines 0 89
-hash b1aba5b407218fa0
+hash 7c266353b360b778
 note The effect in the list: a closed group sets closed_at to its depth and every following row deeper than that is skipped.
 
 step 71087f

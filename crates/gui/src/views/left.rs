@@ -9,6 +9,7 @@ use crate::field::Which;
 use crate::ids;
 use crate::model::{Model, Openness, StepKey, Tab, TourSlot, ViewFlag};
 use crate::nav::Scrolling;
+use crate::panels::View;
 use crate::text::{Clipped, Counted, Needle, Noun, Tag};
 use crate::theme::{
     ACCENT, Cells, FAINT, FILTER_FIELD, GREEN, PANEL_TEXT_ROOM, PENDING, PIXEL, RED, ROW_EXTRA,
@@ -196,7 +197,7 @@ pub(super) fn tours_window(model: &Model, frame: &mut Frame<'_>) {
         frame.label(format!("{shown} of {}", model.map.tours().len()), WEAK);
     }
     frame.finish();
-    authoring::target_strip(model, frame);
+    authoring::target_strip(model, frame, View::Tours);
     authoring::new_tour_form(model, frame);
     if rows.is_empty() {
         frame.label(
@@ -435,7 +436,7 @@ pub(super) fn symbols_window(model: &Model, frame: &mut Frame<'_>) {
         Run::new(" in a tour", WEAK),
     ]);
     frame.finish();
-    authoring::target_strip(model, frame);
+    authoring::target_strip(model, frame, View::Symbols);
     if lines.is_empty() {
         frame.label(
             if needle.is_empty() {

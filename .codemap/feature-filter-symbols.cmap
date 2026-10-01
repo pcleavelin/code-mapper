@@ -83,7 +83,7 @@ author ai
 file crates/gui/src/views/left.rs
 symbol symbols_window
 lines 0 70
-hash d4fbce21f46697af
+hash f17b761beff266a5
 note Trigger and filter: the filter field's text becomes a Needle and symbol_lines matches it while the list is built, so there is no filter action to apply. The toolbar shows the count, 'n of m' while filtering, or says nothing matches. Rows are virtualised to the visible window; file lines are drawn by symbol_file_row, symbols by symbol_row.
 
 step xfe8cr

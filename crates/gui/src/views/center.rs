@@ -8,7 +8,7 @@ use crate::graph::{GraphAction, GraphFrame, draw_scene};
 use crate::ids;
 use crate::keys;
 use crate::model::{HIT_LIMIT, HitsShown, Model, StepKey, Tab, TourSlot};
-use crate::panels::Direction;
+use crate::panels::{Direction, View};
 use crate::status::Status;
 use crate::text::{Counted, Noun, Tag};
 use crate::theme::{
@@ -74,7 +74,7 @@ pub(super) fn source(model: &Model, frame: &mut Frame<'_>) {
         frame.push(Action::ScrolledToLine(request.ticket));
     }
     source_toolbar(model, frame, source.path());
-    authoring::target_strip(model, frame);
+    authoring::target_strip(model, frame, View::Source);
     let scrolled = frame.scroll_column(id, offset, Scroller::Plain, Some(FIELD));
     let selection = model.nav.lines();
     let anchors: Vec<(domain::Span, bool)> = model
@@ -397,7 +397,7 @@ pub(super) fn diff_view(model: &Model, frame: &mut Frame<'_>) {
 }
 
 pub(super) fn graph_tab(model: &Model, frame: &mut Frame<'_>, graph: Option<GraphFrame>) {
-    authoring::target_strip(model, frame);
+    authoring::target_strip(model, frame, View::Graph);
     let Some(GraphFrame {
         scene,
         deferred,

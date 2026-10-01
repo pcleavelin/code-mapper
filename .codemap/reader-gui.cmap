@@ -162,7 +162,7 @@ author ai
 file crates/gui/src/views/center.rs
 symbol graph_tab
 lines 0 63
-hash a8fc48d122b08f45
+hash c4c892bcc2c13c6e
 link graph-draw
 note The Graph tab: the toolbar, and the scene the graph's input phase built, drawn on one canvas element. Actions the graph phase deferred are pushed here with the rest.
 
@@ -183,7 +183,7 @@ author ai
 file crates/gui/src/views/center.rs
 symbol source
 lines 0 84
-hash 8d4fefa4435ef5d3
+hash 90fe100f3c4de553
 link source-view
 note The Source tab: the current file.
 
@@ -194,7 +194,7 @@ author ai
 file crates/gui/src/views/left.rs
 symbol tours_window
 lines 0 89
-hash b1aba5b407218fa0
+hash 7c266353b360b778
 note Tours: a filter field (feature-filter-tours) with 'n of m' while it holds text, and the 'new tour' button with its form (feature-new-tour), then the groups from Model::listed_rows as folders with their tour counts, then one row per tour, and the selected tour expanded into its steps list; under a tour the filter found by its steps, those steps (feature-filter-tours). Every row under a closed group is skipped. Tours removed since the parent revision are listed at the end, greyed.
 
 step 686o81
@@ -720,7 +720,7 @@ author ai
 file crates/gui/src/views/left.rs
 symbol symbols_window
 lines 0 70
-hash d4fbce21f46697af
+hash f17b761beff266a5
 note Symbols: a filter box (a Needle matched against symbol names and file paths) with the symbol count, or 'n of m' while filtering, then the symbols grouped under a row per file, each symbol with a check when a tour covers it, dimmed while its file waits for its server, and '+ step' on the hovered or selected row while a tour is open, under the target strip. symbol_lines flattens files and symbols into one list first; only the rows on screen become elements, with a spacer above and below standing in for the rest, so the table is the same cost at ten symbols or ten thousand. The Coverage is built once per frame and handed to every row.
 
 step pjv3q6

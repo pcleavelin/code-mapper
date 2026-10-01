@@ -266,6 +266,9 @@ pub(crate) fn graph() -> Scenario {
 click-id tab@Graph
 wait 4
 dump
+dblclick <<DUMP node main|30,8>>
+wait 2
+dump
 shot {shots}/graph.png
 click <<DUMP button main 'callees>>
 wait 4
@@ -483,7 +486,7 @@ text main
 wait 3
 click-id sym@3:0
 wait 2
-click-id add-offer
+click-id add-offer@Symbols
 wait 2
 hover-id sym@3:0
 wait 1
@@ -516,7 +519,7 @@ click <<DUMP rect lines|200,8>>
 wait 2
 click <<DUMP rect lines|200,40>> shift
 wait 2
-click-id target-top
+click-id target-top@Source
 wait 2
 dump
 click-id add-lines

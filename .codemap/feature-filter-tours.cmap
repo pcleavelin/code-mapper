@@ -141,5 +141,5 @@ author ai
 file crates/gui/src/views/left.rs
 symbol tours_window
 lines 0 89
-hash b1aba5b407218fa0
+hash 7c266353b360b778
 note Trigger and effect: the filter field sits in a toolbar above the list, beside the 'new tour' button; its text is read while the list is built, so there is no filter action to apply. While it holds text the toolbar shows 'n of m' tours, and an empty result says 'no tour name, step symbol or step file matches'. Under a tour that is not the one being read, found_step_rows lists the steps the filter found. A non-empty filter forces every group open. The rows come from listed_rows instead of the whole map, and removed tours pass through lists, which reads names only.
