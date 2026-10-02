@@ -463,8 +463,9 @@ pub(crate) fn ran(name: &str, played: Result<String, Missing>) {
             line.contains("panicked at") || *line == "[exit 101]" || *line == "[exit -1]"
         })
         .collect();
-    assert!(
-        crashed.is_empty(),
+    assert_eq!(
+        crashed.len(),
+        0,
         "{name}: codemap crashed:\n{}\n--- output in full ---\n{output}",
         crashed.join("\n")
     );
@@ -472,8 +473,9 @@ pub(crate) fn ran(name: &str, played: Result<String, Missing>) {
         .lines()
         .filter(|line| line.starts_with("script:"))
         .collect();
-    assert!(
-        failed.is_empty(),
+    assert_eq!(
+        failed.len(),
+        0,
         "{name}: the script failed:\n{}",
         failed.join("\n")
     );

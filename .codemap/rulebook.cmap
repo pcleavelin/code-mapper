@@ -156,7 +156,7 @@ file xtask/src/arch.rs
 symbol EXPECTS
 lines 0 109
 hash dc288f512a2c5241
-note Every sanctioned suppression, by file and lint: the files that start processes or write files (disallowed_methods), the feature registry's one long function, the GPU's unsafe code, and the integration tests, which may unwrap, panic and index.
+note Every sanctioned suppression, by file and lint. The files that start processes or write files (disallowed_methods), the feature registry's one long function, the GPU's unsafe code, and the integration tests, which may unwrap, panic and index.
 
 step wqu9s5
 order 12

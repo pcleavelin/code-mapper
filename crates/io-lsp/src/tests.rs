@@ -28,6 +28,36 @@ fn uris_round_trip() {
     assert_eq!(rel("file:///elsewhere/x.rs"), None);
 }
 
+#[cfg(unix)]
+#[test]
+fn a_definition_through_the_real_path_of_a_symlinked_root_stays_inside() {
+    use std::env;
+    use std::fs::{self, OpenOptions};
+    use std::io::Write;
+    use std::os::unix::fs::symlink;
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    let root = env::temp_dir().join(format!("codemap-rel-{nanos}"));
+    let link = env::temp_dir().join(format!("codemap-rel-link-{nanos}"));
+    drop(fs::remove_dir_all(&root));
+    fs::create_dir_all(root.join("src")).unwrap();
+    let file = root.join("src").join("a.rs");
+    OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(true)
+        .open(&file)
+        .unwrap()
+        .write_all(b"fn a() {}\n")
+        .unwrap();
+    symlink(&root, &link).unwrap();
+    let real = file.canonicalize().unwrap();
+    assert_eq!(relative(&real, &link), Some(RelativePath::new("src/a.rs")));
+}
+
 #[test]
 fn a_root_ending_in_a_separator_still_holds_its_files() {
     let root = if cfg!(windows) {

@@ -10,9 +10,10 @@ fn every_feature_has_a_unique_name_and_a_trigger() {
     for feature in Feature::VARIANTS {
         let spec = feature.spec();
         assert!(names.insert(spec.name()), "{feature:?} repeats a name");
-        assert!(!spec.triggers().is_empty(), "{feature:?} has no trigger");
-        assert!(
-            !spec.summary().as_str().is_empty(),
+        assert_ne!(spec.triggers().len(), 0, "{feature:?} has no trigger");
+        assert_ne!(
+            spec.summary().as_str().len(),
+            0,
             "{feature:?} has no summary"
         );
     }

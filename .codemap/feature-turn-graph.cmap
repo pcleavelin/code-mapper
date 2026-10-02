@@ -54,7 +54,7 @@ parent rcnclb
 author ai
 file crates/gui/src/views/center.rs
 symbol graph_tab
-lines 35 42
+lines 36 43
 hash dfa905fc585c1639
 note Trigger: GRAPH_TURN (graph-turn) in the graph toolbar, after 'fit', labelled 'top to bottom' while the tree runs left to right and 'left to right' while it runs top to bottom; a click queues Graph(Turn).
 

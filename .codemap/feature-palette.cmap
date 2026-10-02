@@ -71,8 +71,8 @@ parent ecrorf
 author ai
 file crates/gui/src/palette.rs
 symbol PaletteCommand
-lines 0 14
-hash 8273bb27b01d5c4f
+lines 0 15
+hash 33e3196beb7bcb34
 note The actions the palette can run, one per palette entry in the registry; two-way features (collapse/expand, back/forward, split right/down, fit/1:1, hide/show) have one per direction.
 
 step aiiie0
@@ -111,8 +111,8 @@ parent 5julak
 author ai
 file crates/gui/src/palette.rs
 symbol commands
-lines 0 24
-hash 51659396a2e4dd95
+lines 0 25
+hash c27fba146eb7cbe4
 note Which PaletteCommand each palette entry of a feature runs, in the order the registry lists them. A gui test checks the counts agree, a features test checks a shown chord is one of the feature's Key triggers.
 
 step fgwbhk
@@ -181,8 +181,8 @@ parent 0hd3o2
 author ai
 file crates/gui/src/palette.rs
 symbol palette_actions
-lines 0 43
-hash b615dba30fcfa17e
+lines 0 44
+hash 317bf20bbad86a42
 note Goal to actions. An action's PaletteCommand maps to the Action its button or key pushes (collapse and hide act on the tour being read, split on the panel showing the current tab); a tour opens in the Tour tab, a step is selected, a symbol goes to its definition as a jump does, a file opens in the Source view at its top, a view is shown.
 
 step ld2inb

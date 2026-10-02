@@ -201,7 +201,9 @@ fn closing_a_panels_last_tab_closes_the_panel_but_never_the_last_panel() {
     }
     assert!(panels.is_single());
     assert_eq!(panels.panels().len(), 1);
-    assert!(panels.panels().iter().all(|panel| panel.views().is_empty()));
+    for panel in panels.panels() {
+        assert_eq!(panel.views().len(), 0);
+    }
 }
 
 #[test]

@@ -12,16 +12,17 @@ use ui::{Count, Label, Px};
 
 use crate::action::{Action, Collapse, Hide};
 use crate::app::App;
+use crate::authoring::Authoring;
 use crate::field::Which;
 use crate::graph::Parentage;
 use crate::graph::build::{Built, CellSize, Rank, StepInfo};
 use crate::graph::{Button, GraphState, Node};
 use crate::ids::{self, CONTROLS};
-use crate::keys::Walk;
+use crate::keys::{Extend, Walk};
 use crate::model::{LineSelection, Model, Readable, StepKey, StepSlot, Tab, TourSlot, ViewFlag};
 use crate::nav::Scrolling;
 use crate::palette::{Palette, commands};
-use crate::panels::Direction;
+use crate::panels::{Direction, View};
 use crate::theme::Cells;
 
 #[test]
@@ -186,16 +187,21 @@ fn back_and_forward_return_to_the_places_visited_as_they_were_left() {
     assert_eq!(model.nav.step(), Some(StepSlot::new(2)));
     model.back();
     assert_eq!(model.nav.tab(), Tab::Tour);
+    assert_eq!(model.nav.step(), Some(StepSlot::new(2)));
+    model.back();
+    assert_eq!(model.nav.tab(), Tab::Tour);
     assert_eq!(model.nav.step(), Some(StepSlot::new(0)));
     assert!(!model.nav.can_go_back());
     model.forward();
     model.forward();
+    model.forward();
     assert_eq!(model.nav.step(), Some(StepSlot::new(1)));
+    assert_eq!(model.nav.tab(), Tab::Graph);
     assert!(!model.nav.can_go_forward());
 }
 
 #[test]
-fn switching_tabs_alone_is_not_a_new_place() {
+fn switching_tabs_is_its_own_place() {
     let mut model = model();
     model.select_tour(TOUR);
     model.track_navigation();
@@ -203,11 +209,15 @@ fn switching_tabs_alone_is_not_a_new_place() {
     model.track_navigation();
     model.set_tab(Tab::Source);
     model.track_navigation();
+    model.back();
+    assert_eq!(model.nav.tab(), Tab::Graph);
+    model.back();
+    assert_eq!(model.nav.tab(), Tab::Tour);
     assert!(!model.nav.can_go_back());
 }
 
 #[test]
-fn a_run_of_walks_is_one_place_and_back_returns_to_where_it_started() {
+fn each_walk_is_its_own_place() {
     let mut model = model();
     model.select_tour(TOUR);
     model.track_navigation();
@@ -215,10 +225,10 @@ fn a_run_of_walks_is_one_place_and_back_returns_to_where_it_started() {
         model.walk(Walk::Down);
         model.track_navigation();
     }
-    model.select_step(key(1), Scrolling::Scroll);
-    model.track_navigation();
     model.back();
-    assert_eq!(model.nav.step(), Some(StepSlot::new(3)));
+    assert_eq!(model.nav.step(), Some(StepSlot::new(2)));
+    model.back();
+    assert_eq!(model.nav.step(), Some(StepSlot::new(1)));
     model.back();
     assert_eq!(model.nav.step(), Some(StepSlot::new(0)));
     assert!(!model.nav.can_go_back());
@@ -367,12 +377,93 @@ fn removing_a_step_moves_later_views_up_and_clears_the_selection() {
 }
 
 #[test]
+fn adding_the_focused_symbol_hangs_it_under_the_target() {
+    let mut app = app();
+    let text = FileText::from("fn helper() {}\n");
+    let highlights = vec![Vec::new(); text.all().len()];
+    let hash = text.whole_hash();
+    app.model.index.push(SourceFile::new(
+        RelativePath::new("src/helper.rs"),
+        text,
+        highlights,
+        vec![symbol("helper", 0, 0)],
+        Imports::new(),
+        hash,
+        Backend::TreeSitter,
+    ));
+    app.apply(Action::OpenTour(TOUR, Tab::Graph));
+    let helper = app
+        .model
+        .index
+        .symbol_ids()
+        .find(|id| {
+            app.model
+                .index
+                .symbol(*id)
+                .is_some_and(|found| found.name().as_str() == "helper")
+        })
+        .unwrap();
+    app.apply(Action::Focus(helper));
+    app.apply(Action::Authoring(Authoring::AddOffered));
+    assert_eq!(app.model.step_count(TOUR), Count::new(5));
+    let added = app
+        .model
+        .tour(TOUR)
+        .and_then(|tour| {
+            tour.steps()
+                .iter()
+                .find(|step| step.symbol().is_some_and(|name| name.as_str() == "helper"))
+        })
+        .unwrap();
+    assert_eq!(added.parent().map(StepId::as_str), Some("aaaaaa"));
+    assert_eq!(
+        app.model.status.to_string(),
+        "step 1.3 added to 'startup' under 1"
+    );
+}
+
+#[test]
+fn adding_selected_source_lines_uses_the_same_control() {
+    let mut app = app();
+    app.apply(Action::OpenTour(TOUR, Tab::Source));
+    app.model.select_line(Line::new(1), Extend::Replace);
+    app.apply(Action::Authoring(Authoring::AddOffered));
+    assert_eq!(app.model.step_count(TOUR), Count::new(5));
+    assert!(
+        app.model.status.to_string().contains("added"),
+        "{}",
+        app.model.status
+    );
+}
+
+#[test]
+fn the_focused_step_itself_is_not_offered_again() {
+    let mut app = app();
+    app.apply(Action::OpenTour(TOUR, Tab::Graph));
+    app.apply(Action::Authoring(Authoring::AddOffered));
+    assert_eq!(app.model.step_count(TOUR), Count::new(4));
+    assert_eq!(
+        app.model.status.to_string(),
+        "select another symbol, or lines in the Source view, to add a step"
+    );
+}
+
+#[test]
+fn show_references_opens_the_view_after_it_was_closed() {
+    let mut app = app();
+    app.model.panels.close_view(View::References);
+    assert!(!app.model.panels.is_shown(View::References));
+    app.apply(Action::ShowReferences);
+    assert!(app.model.panels.is_shown(View::References));
+}
+
+#[test]
 fn removing_the_tour_forgets_it() {
     let mut app = app();
     app.apply(Action::OpenTour(TOUR, Tab::Tour));
     app.apply(Action::RemoveTour(TOUR));
     assert_eq!(app.model.nav.tour(), None);
-    assert!(app.model.map.tours().is_empty());
+    assert_eq!(app.model.map.tours().len(), 0);
     assert_eq!(
         app.model.status.to_string(),
         "deleted tour 'startup' (4 steps); unsaved"
@@ -618,5 +709,47 @@ fn a_graph_node_with_no_calls_says_so_instead_of_leaving_its_buttons_out() {
     let header = built.header(&model, &GraphState::default(), built.nodes[1]);
     let text: String = header.runs.iter().map(|run| run.text.as_str()).collect();
     assert!(text.contains("calls nothing"), "{text}");
-    assert!(text.contains("no callers"), "{text}");
+    assert!(text.contains("no callers in this repo"), "{text}");
+    assert!(!text.contains("calls not in this repo"), "{text}");
+}
+
+#[test]
+fn a_graph_node_names_calls_the_index_could_not_place_in_the_repo() {
+    let mut model = model();
+    let symbol = model.index.symbol_ids().next().unwrap();
+    model
+        .index
+        .symbol_mut(symbol)
+        .unwrap()
+        .set_targets(vec![domain::Location {
+            file: RelativePath::new("library/std/vec.rs"),
+            line: Line::new(0),
+        }]);
+    let built = built(&model, &[(10, 4), (10, 4)]);
+    let header = built.header(&model, &GraphState::default(), built.nodes[0]);
+    let text: String = header.runs.iter().map(|run| run.text.as_str()).collect();
+    assert!(text.contains("calls not in this repo"), "{text}");
+    assert!(!text.contains("calls nothing"), "{text}");
+}
+
+#[test]
+fn a_graph_node_offers_callees_of_the_symbol_even_when_the_step_shows_other_lines() {
+    let mut model = model();
+    let symbols: Vec<_> = model.index.symbol_ids().collect();
+    model
+        .index
+        .symbol_mut(symbols[1])
+        .unwrap()
+        .set_callees(vec![symbols[3]]);
+    let built = built(&model, &[(10, 4), (10, 4)]);
+    let header = built.header(&model, &GraphState::default(), built.nodes[1]);
+    let labels: Vec<_> = header
+        .buttons
+        .iter()
+        .map(|labelled| labelled.label.as_str().to_owned())
+        .collect();
+    assert!(
+        labels.iter().any(|label| label.contains("callees")),
+        "{labels:?}"
+    );
 }

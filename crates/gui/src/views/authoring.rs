@@ -4,15 +4,18 @@ use strum::VariantArray;
 use ui::{Button, Icon, Label, Ui};
 
 use crate::action::Action;
-use crate::authoring::{Authoring, StepDrop, StepGrab, Zone};
+use crate::authoring::{AddOffer, Authoring, StepDrop, StepGrab, Zone};
 use crate::field::Which;
 use crate::ids;
 use crate::model::{Model, StepKey, StepSlot};
+use crate::panels::View;
+use crate::status::Status;
 use crate::text::Tag;
 use crate::theme::{ACCENT, NEW_TOUR_FIELD, TEXT, WEAK};
 use crate::widgets::{Chosen, Container, Frame};
 
-pub(super) fn target_strip(model: &Model, frame: &mut Frame<'_>) {
+pub(super) fn target_strip(model: &Model, frame: &mut Frame<'_>, view: View) {
+    let place = Label::new(view.name().as_str());
     frame.start(Container::ToolbarSmall);
     match model
         .nav
@@ -35,13 +38,27 @@ pub(super) fn target_strip(model: &Model, frame: &mut Frame<'_>) {
                         ACCENT,
                     );
                     if frame
-                        .small_button("top level", ids::TARGET_TOP.target())
+                        .small_button("top level", ids::TARGET_TOP.with(&place))
                         .clicked()
                     {
                         frame.push(Action::Authoring(Authoring::AddAtTopLevel));
                     }
                 }
                 None => frame.label("at the top level", ACCENT),
+            }
+            let offer = match model.add_offer() {
+                Some(AddOffer::Lines(label) | AddOffer::Symbol(_, label)) => Some(label),
+                None => None,
+            };
+            if let Some(label) = offer {
+                if frame
+                    .small_button(label, ids::ADD_OFFER.with(&place))
+                    .clicked()
+                {
+                    frame.push(Action::Authoring(Authoring::AddOffered));
+                }
+            } else {
+                frame.label(Status::select_symbol_or_lines(), WEAK);
             }
         }
     }

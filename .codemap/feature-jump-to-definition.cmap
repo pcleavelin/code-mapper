@@ -101,9 +101,9 @@ parent 7x9zhl
 author ai
 file crates/gui/src/work.rs
 symbol land
-lines 0 16
-hash 1d99433708bbd7b4
-note Where both routes end. With Intent::Jump a symbol lands through jumped_to_symbol and a line through open_line; an outside definition cannot be jumped to and falls through to the peek, and a peek brings the References view, which draws it, into sight beside the centre tab's view.
+lines 0 22
+hash 8b6d2cf815b317be
+note Where both routes end. With Intent::Jump a symbol lands through jumped_to_symbol, and when that jump started on the Graph tab the References view is brought beside it, because the graph does not leave. A line lands through open_line; an outside definition cannot be jumped to and falls through to the peek, and a peek brings the References view, which draws it, into sight beside the centre tab's view.
 
 step p4u95c
 order 9
@@ -141,7 +141,7 @@ parent 7x9zhl
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_click
-lines 48 63
+lines 51 66
 hash 69cc41c96fbf5f8a
 note Trigger on a graph node's code line: the same gestures, with the column computed from the node's line rectangle; the Definition action is deferred to the graph tab's frame.
 

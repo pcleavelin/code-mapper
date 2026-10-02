@@ -50,9 +50,9 @@ parent dclwsq
 author ai
 file crates/gui/src/views/authoring.rs
 symbol target_strip
-lines 0 34
-hash 2558507f47778620
-note Trigger and display: the strip under the Source and Symbols toolbars names the tour and the target ('under 1.2 fill' or 'at the top level'), and its 'top level' button (target-top) queues AddAtTopLevel. With no tour being read it says to open one.
+lines 0 49
+hash 65c9ea6d0fc00de6
+note Trigger and display: the strip on the Tours list, under the Source and Symbols toolbars, and above the graph names the tour and the target ('under 1.2 fill' or 'at the top level'), offers add-offer@<view> for the lines or symbol in front of you, and its 'top level' button (target-top@<view>). The view name is part of the id because Tours and the centre tab are on screen together, and one shared id would run the click twice. That button queues AddAtTopLevel. With no tour being read it says to open one.
 
 step nioly0
 order 5

@@ -92,10 +92,10 @@ fn find_symbols_reads_every_qualifier_form() {
     assert_eq!(find(&index, "a::new"), ["src/a.rs:new"]);
     assert_eq!(find(&index, "b:new"), ["src/b.rs:new"]);
     assert_eq!(find(&index, "a:A::new"), ["src/a.rs:new"]);
-    assert!(find(&index, "b:A::new").is_empty());
+    assert_eq!(find(&index, "b:A::new").len(), 0);
     assert_eq!(find(&index, "src\\a.rs:helper"), ["src/a.rs:helper"]);
     assert_eq!(find(&index, "a.rs:helper"), ["src/a.rs:helper"]);
-    assert!(find(&index, "missing").is_empty());
+    assert_eq!(find(&index, "missing").len(), 0);
 }
 
 #[test]
@@ -217,7 +217,7 @@ fn languages_come_from_the_last_dotted_part() {
             .collect::<Vec<_>>(),
         ["--stdio"]
     );
-    assert!(Language::Rust.arguments().is_empty());
+    assert_eq!(Language::Rust.arguments().len(), 0);
 }
 
 #[test]
@@ -241,7 +241,7 @@ fn replaced_text_keeps_one_highlight_row_per_line() {
     let mut source = file("a.rs", "a\nb", Vec::new());
     source.set_text(FileText::from("a\nb\nc\n"));
     assert_eq!(source.highlights().len(), 3);
-    assert!(source.highlights_on(Line::new(7)).is_empty());
+    assert_eq!(source.highlights_on(Line::new(7)).len(), 0);
     assert_eq!(source.hash(), TextHash::of(b"a\nb"));
 }
 
@@ -251,7 +251,7 @@ fn edges_move_between_indexes_of_the_same_files() {
     let run = id(&index, "src/b.rs", "run");
     let new_a = id(&index, "src/a.rs", "new");
     let mut linked = index.symbols_only();
-    assert!(linked.file(run.file()).unwrap().text().all().is_empty());
+    assert_eq!(linked.file(run.file()).unwrap().text().all().len(), 0);
     linked.connect(&[Edge {
         from: run,
         to: new_a,

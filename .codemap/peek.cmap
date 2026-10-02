@@ -11,9 +11,9 @@ parent 3fy396
 author ai
 file crates/gui/src/work.rs
 symbol land
-lines 0 16
-hash 1d99433708bbd7b4
-note What a definition does for each intent, given as the Peek the panel would show: a jump selects the symbol (or opens the line in the Source view), a peek keeps it; a definition outside the repo is kept either way and the status line says where it is. Whatever is kept as a peek brings the References view into sight (Panels::bring), so the peek is never drawn where the reader cannot see it.
+lines 0 22
+hash 8b6d2cf815b317be
+note What a definition does for each intent, given as the Peek the panel would show: a jump selects the symbol (or opens the line in the Source view), and a jump that started on the Graph tab also brings References. A peek keeps the definition; a definition outside the repo is kept either way and the status line says where it is. Whatever is kept as a peek brings the References view into sight (Panels::bring), so the peek is never drawn where the reader cannot see it.
 
 step 174e9e
 order 8
@@ -231,8 +231,8 @@ author ai
 file crates/gui/src/views/references.rs
 symbol peeked
 lines 0 54
-hash 0a150823767af1c7
-note What the kept Peek shows: a symbol's whole span, 6 lines above to 20 below a line with that line marked, or the outside grid; and what 'go' does (Focus the symbol, GoTo the line, nothing outside).
+hash a56355dba24a8b46
+note What the kept Peek shows: a symbol's whole span, 6 lines above to 20 below a line with that line marked, or the outside grid, titled 'Defined outside this repo'; and what 'go' does (Focus the symbol, GoTo the line, nothing outside).
 
 step pf9u6d
 order 30

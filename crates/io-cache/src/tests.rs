@@ -156,7 +156,7 @@ fn the_layout_is_the_legacy_one() {
 
     let mut cache = CacheStore::load(&Root::new(&root)).unwrap();
     let loaded = cache.take(&RelativePath::new("a.rs")).unwrap();
-    assert!(cache.is_empty());
+    assert_eq!(cache, Cache::default());
     let original = index
         .file(index.find_file(&RelativePath::new("a.rs")).unwrap())
         .unwrap();

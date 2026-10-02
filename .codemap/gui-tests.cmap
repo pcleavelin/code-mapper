@@ -11,9 +11,9 @@ parent kpixbm
 author ai
 file crates/gui/src/tests.rs
 symbol a_graph_node_with_no_calls_says_so_instead_of_leaving_its_buttons_out
-lines 0 7
-hash ac00b4411d20dfcf
-note A graph node with no callees and no callers says 'calls nothing' and 'no callers' in its header.
+lines 0 8
+hash 2568515cf467511b
+note A graph node with no call names and no callers says 'calls nothing' and 'no callers in this repo', and does not say 'calls not in this repo'.
 
 step 0w1f2d
 order 2
@@ -34,6 +34,26 @@ symbol removing_a_step_moves_later_views_up_and_clears_the_selection
 lines 0 13
 hash 16146a00254e6280
 note Removing a step shifts the views of the steps after it and clears the selection.
+
+step 43i1gl
+order 29
+parent l5and2
+author ai
+file crates/gui/src/tests.rs
+symbol adding_the_focused_symbol_hangs_it_under_the_target
+lines 0 43
+hash 29902643135a4553
+note AddOffered on a focused symbol that is not the current step hangs it under that step, and the status names the new step number and its parent.
+
+step 4moxsj
+order 33
+parent kpixbm
+author ai
+file crates/gui/src/tests.rs
+symbol a_graph_node_names_calls_the_index_could_not_place_in_the_repo
+lines 0 16
+hash 3793d852f043ae71
+note A symbol with a target the index could not place says 'calls not in this repo' and does not say 'calls nothing'.
 
 step 4n3q0r
 order 1
@@ -78,10 +98,10 @@ order 23
 parent 4n3q0r
 author ai
 file crates/gui/src/tests.rs
-symbol switching_tabs_alone_is_not_a_new_place
-lines 0 9
-hash 5c50eaf139ad495f
-note Switching the centre tab, with nothing else changed, leaves the back stack empty.
+symbol switching_tabs_is_its_own_place
+lines 0 13
+hash 57ca18f63876f782
+note Switching the centre tab is its own place. Back from Source returns to Graph, and back again to Tour, with nothing behind that.
 
 step 9hxjt5
 order 12
@@ -111,6 +131,16 @@ symbol a_tour_linked_from_elsewhere_is_refused_with_the_linking_steps
 lines 0 41
 hash 3c945190acd503fb
 note A tour that another tour links to is not removed, and the status line names the linking step.
+
+step dh2uxk
+order 30
+parent l5and2
+author ai
+file crates/gui/src/tests.rs
+symbol adding_selected_source_lines_uses_the_same_control
+lines 0 11
+hash 7168156ac85e9469
+note On the Source tab, AddOffered adds the selected line and the step count grows.
 
 step ea3gtj
 order 19
@@ -170,6 +200,16 @@ lines 870 870
 hash b0307a5ca14bb937
 note The panel tree's arithmetic and edits: the default tree holds every view once, a split opens the picker and a pick moves the view, a panel emptied by a move closes, an edge drop splits (and a panel's only view on its own edge stays), closing hands the room to the sibling and never the root, navigation reveals a hidden view next to the last one shown once per ticket, a division keeps both halves above the floor, the nearest edge within a quarter picks the side, a grab moves only past its reach, views are named in any case, and a view brought into sight while in no panel opens in a split beside the view it serves, while one already in a panel is only activated.
 
+step iibo2b
+order 34
+parent kpixbm
+author ai
+file crates/gui/src/tests.rs
+symbol a_graph_node_offers_callees_of_the_symbol_even_when_the_step_shows_other_lines
+lines 0 19
+hash 10c7e1aa990caca5
+note A callee of the symbol is offered even when the node's shown lines do not contain the call.
+
 step iqrjoh
 order 25
 parent 4n3q0r
@@ -179,6 +219,16 @@ symbol a_jump_within_one_file_is_a_place
 lines 0 12
 hash 139c014f8d73f85d
 note Opening another line of the same file is a place, so back restores the first line selection.
+
+step iwy1av
+order 32
+parent l5and2
+author ai
+file crates/gui/src/tests.rs
+symbol show_references_opens_the_view_after_it_was_closed
+lines 0 6
+hash 14d12ffafb42b721
+note ShowReferences brings the References view back after it was closed.
 
 step k20hss
 order 10
@@ -244,7 +294,7 @@ author ai
 file crates/gui/src/tests.rs
 symbol removing_the_tour_forgets_it
 lines 0 10
-hash e65e4a2cf03a231b
+hash 2b2deb59fae7c3ff
 note Removing a tour forgets it and its selection.
 
 step r5j43v
@@ -262,10 +312,10 @@ order 24
 parent 4n3q0r
 author ai
 file crates/gui/src/tests.rs
-symbol a_run_of_walks_is_one_place_and_back_returns_to_where_it_started
+symbol each_walk_is_its_own_place
 lines 0 15
-hash d9721ced28ac2e6e
-note Three walks down are one entry: back from a later step returns to where the run ended, and back again to where it started, with nothing behind that.
+hash 54ab69d76942ef39
+note Three walks down are three places. Back returns to step 2, then step 1, then step 0, with nothing behind that.
 
 step uvzrve
 order 9
@@ -273,9 +323,9 @@ parent 4n3q0r
 author ai
 file crates/gui/src/tests.rs
 symbol back_and_forward_return_to_the_places_visited_as_they_were_left
-lines 0 21
-hash e5701f4d81d12d21
-note back and forward return to the places track_navigation recorded, each with the tab it was left on.
+lines 0 26
+hash f6acf9fe64da5b44
+note back and forward return to the places track_navigation recorded. A tab switch is its own place, and each place comes back on the tab it was left on.
 
 step vsyqxn
 order 26
@@ -286,3 +336,13 @@ symbol back_restores_the_scroll_the_place_was_left_at
 lines 0 11
 hash 1a624d071bc2446b
 note Back restores the document scroll the place was left at, and asks for no step scroll that would override it.
+
+step zjhrtr
+order 31
+parent l5and2
+author ai
+file crates/gui/src/tests.rs
+symbol the_focused_step_itself_is_not_offered_again
+lines 0 9
+hash bb52210ca2c6a798
+note AddOffered on the step already selected adds nothing and says to select another symbol, or lines in the Source view, to add a step.

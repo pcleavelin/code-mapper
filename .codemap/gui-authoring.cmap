@@ -3,16 +3,16 @@ tour gui-authoring
 kind layer
 author ai
 group gui
-note How a human builds a tour in the GUI. The tour being read is the one steps go into; Nav's target is the step they hang under (None = top level). Selecting a step sets the target, moving the selection off the tour keeps it, and the 'top level' button in the target strip clears it, so a reader can collect several symbols under one step. Every add goes through App::add_step: the Source view's 'add step' (selected lines), '+ step' on Symbols and References rows (Frame::row_with_action), 'add step' under the References heading, and '+ step' on an off-tour graph node, which hangs under the step it was revealed from as a callee. Adding moves neither the selection nor the target. Rearranging is a drag in the Tours steps list: a press grabs a row (StepGrab), travel past GRAB_REACH makes it a drag, and the release drops it onto a row's zone - top quarter before, bottom quarter after, the middle under - through Map::place; steps_moved then carries every slot-keyed thing (views, history, selection, target) to the steps' new slots. The Tours tab's 'new tour' form and the 'promote' button (promote at depth 1) make tours. The feature-add-step, feature-choose-target, feature-move-step, feature-new-tour and feature-promote-symbol tours follow each gesture. Notes, links, kind and group are written through the Console; the GUI has no text editor for them.
+note How a human builds a tour in the GUI. The tour being read is the one steps go into; Nav's target is the step they hang under (None = top level). Selecting a step sets the target, moving the selection off the tour keeps it, and the 'top level' button in the target strip clears it, so a reader can collect several symbols under one step. Every add goes through App::add_step. The target strip's add-offer@<view> button, also the palette's 'add step', adds the selected Source lines or the focused symbol. The other adds are the Source view's 'add step' (selected lines), '+ step' on Symbols and References rows (Frame::row_with_action), 'add step' under the References heading, and '+ step' on an off-tour graph node, which hangs under the step it was revealed from as a callee. Adding moves neither the selection nor the target. Rearranging is a drag in the Tours steps list: a press grabs a row (StepGrab), travel past GRAB_REACH makes it a drag, and the release drops it onto a row's zone - top quarter before, bottom quarter after, the middle under - through Map::place; steps_moved then carries every slot-keyed thing (views, history, selection, target) to the steps' new slots. The Tours tab's 'new tour' form and the 'promote' button (promote at depth 1) make tours. The feature-add-step, feature-choose-target, feature-move-step, feature-new-tour and feature-promote-symbol tours follow each gesture. Notes, links, kind and group are written through the Console; the GUI has no text editor for them.
 
 step 1ctrkp
 order 28
 author ai
 file crates/gui/src/authoring.rs
 symbol Authoring
-lines 0 11
-hash 506a10db20b77e2d
-note Every authoring gesture as data: the adds (AddLines, AddSymbol with its Hang), AddAtTopLevel, the steps list drag (GrabStep, DragStep, DropStep), Promote, and the new-tour form (ToggleNewTour, ChooseKind, CreateTour). Views push Action::Authoring(Authoring::X); apply routes it here.
+lines 0 12
+hash 89859a6827fd1ff9
+note Every authoring gesture as data: the adds (AddLines, AddSymbol with its Hang, AddOffered), AddAtTopLevel, the steps list drag (GrabStep, DragStep, DropStep), Promote, and the new-tour form (ToggleNewTour, ChooseKind, CreateTour). Views push Action::Authoring(Authoring::X); apply routes it here.
 
 step 1yd8ve
 order 12
@@ -119,9 +119,9 @@ parent nxbjm2
 author ai
 file crates/gui/src/views/authoring.rs
 symbol target_strip
-lines 0 34
-hash 2558507f47778620
-note The strip under the Source view's and Symbols' toolbars: 'adds to <tour> under <n> <symbol>' with a 'top level' button, 'at the top level', or 'open a tour to add steps to it'.
+lines 0 49
+hash 65c9ea6d0fc00de6
+note The strip on the Tours list, under the Source and Symbols toolbars, and above the graph. It says 'adds to <tour> under <n> <symbol>' with a 'top level' button, 'at the top level', or 'open a tour to add steps to it'. While a tour is open it also offers add-offer@<view>, labelled with the lines or the symbol it will add, or says to select another symbol or lines in the Source view.
 
 step df8kp7
 order 13
@@ -167,8 +167,8 @@ parent 1ctrkp
 author ai
 file crates/gui/src/authoring.rs
 symbol author
-lines 0 13
-hash 6f4e34dc815e3e4e
+lines 0 14
+hash 152101ca14dff2f0
 note The dispatch from apply: one arm per Authoring variant, each a call to the App method below.
 
 step hjplhc

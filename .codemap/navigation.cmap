@@ -3,7 +3,7 @@ tour navigation
 kind flow
 author ai
 group gui
-note Back and forward, the way a browser does it. Nothing in the app calls a 'navigate' function: at the end of every frame, after the action queue has been applied and the views have reported their scroll offsets, the current place is compared with the place at the end of the last frame, and if the reader moved the old one is pushed onto the history. So any click anywhere - a symbol in a list, an xref, a step, a command in the Console - becomes history for free, and no feature has to remember to record itself. A place is the tour by name, the step by StepId, the focused symbol as a SymbolKey and the file by path, so the history survives a re-index, a reload of the map and steps moving. Beside it a place keeps its Viewport - the centre tab, the line selection, the document's and the Source view's scroll and the graph camera - which is never compared, only restored: switching tabs or scrolling updates the place being left instead of making a new one, and back returns to a place as it was left. A jump (go-to-definition, go-to-line) that changes only the line selection is a move; a run of walks (the arrow keys through the tour or the graph) is one entry, so back returns to where the run started. All of it lives in Nav, which only nav.rs changes.
+note Back and forward, the way a browser does it. Nothing in the app calls a 'navigate' function: at the end of every frame, after the action queue has been applied and the views have reported their scroll offsets, the current place is compared with the place at the end of the last frame, and if the reader moved the old one is pushed onto the history. So any click anywhere - a symbol in a list, an xref, a step, a command in the Console - becomes history for free, and no feature has to remember to record itself. A place is the tour by name, the step by StepId, the focused symbol as a SymbolKey and the file by path, so the history survives a re-index, a reload of the map and steps moving. Beside it a place keeps its Viewport - the centre tab, the line selection, the document's and the Source view's scroll and the graph camera - The centre tab is part of what is compared, so switching tabs is its own place and back undoes that switch. Scroll offsets and the graph camera are restored and are not compared, so scrolling updates the place being left. A jump (go-to-definition, go-to-line) that changes only the line selection is a move. Each arrow-key walk is its own place, so back undoes one step of the walk. All of it lives in Nav, which only nav.rs changes.
 
 step 0tjy5k
 order 14
@@ -42,7 +42,7 @@ file crates/gui/src/nav.rs
 symbol walk
 lines 0 33
 hash 7ff9703ccbcaca94
-note Up and down with no field focused: the selected step moves through the tour in numbered order, the order the document and steps list show, clamped at both ends; with nothing selected the first step. The move is marked a walk first, so a run of walks is one history entry.
+note Up and down with no field focused: the selected step moves through the tour in numbered order, the order the document and steps list show, clamped at both ends; with nothing selected the first step. The move is marked a walk first. Each walk that changes the step is its own history place.
 
 step 4wpg9r
 order 0
@@ -51,7 +51,7 @@ file crates/gui/src/nav.rs
 symbol Place
 lines 0 6
 hash c6606436a22aba73
-note What counts as a place: the tour by TourName, the step by StepId, the focused symbol as a SymbolKey (file path, symbol name) and the file by its path, never slots or ids, so an entry still finds its place after a re-index, a reload of the map, or steps moving or being removed. The viewport rides along to be restored and takes no part in the comparison.
+note What counts as a place: the tour by TourName, the step by StepId, the focused symbol as a SymbolKey (file path, symbol name) and the file by its path, never slots or ids, so an entry still finds its place after a re-index, a reload of the map, or steps moving or being removed. The centre tab is compared, so a tab switch is a place. Scroll offsets, the line selection and the camera ride along to be restored. Only a jump counts a changed line selection.
 
 step 5hqfou
 order 12
@@ -127,9 +127,9 @@ parent syqeay
 author ai
 file crates/gui/src/nav.rs
 symbol History
-lines 0 5
-hash f9b3cb2a9a1b46f7
-note The back and forward stacks, the place at the end of the last frame (what track_navigation compares against), and the kind of the last move that changed the place, so a walk can tell it follows a walk.
+lines 0 4
+hash 65e91796392332e8
+note The back and forward stacks, and the place at the end of the last frame, which track_navigation compares against.
 
 step ju7j2n
 order 4
@@ -146,9 +146,9 @@ parent 4wpg9r
 author ai
 file crates/gui/src/nav.rs
 symbol moved_from
-lines 0 6
-hash 45abffbbc464a7ec
-note The comparison that decides whether the reader moved: a different tour, step, focused symbol or file. The line selection counts only for a Move::Jump, so a jump within one file is a place while moving the selection in the Source view is not. The viewport never counts, so switching tabs or scrolling is not a move.
+lines 0 7
+hash f5119f4b8417abf2
+note The comparison that decides whether the reader moved: a different tour, step, focused symbol or file. The line selection counts only for a Move::Jump, so a jump within one file is a place while moving the selection in the Source view is not. The centre tab counts, so switching tabs is a move. Scroll offsets and the camera do not.
 
 step loikda
 order 8
@@ -176,7 +176,7 @@ file crates/gui/src/nav.rs
 symbol Move
 lines 0 4
 hash 74a324c663e199f5
-note What kind of move the frame made, set while it happens and read once by track_navigation: Walk from walk and graph_walk (through walked), Jump from jumped_to_symbol, open_line and go_to_line, Select for everything else. A Jump makes a changed line selection count; a Walk after a Walk extends the run instead of pushing.
+note What kind of move the frame made, set while it happens and read once by track_navigation: Walk from walk and graph_walk (through walked), Jump from jumped_to_symbol, open_line and go_to_line, Select for everything else. A Jump makes a changed line selection count. Walk marks an arrow-key move and does not collapse a run into one entry.
 
 step rynizw
 order 21
@@ -186,16 +186,16 @@ file crates/gui/src/nav.rs
 symbol walked
 lines 0 2
 hash 642bb66dacffcd25
-note Marks this frame's move as a walk. walk calls it, and so does graph_walk after its selection, so the graph's arrow walk makes runs the same way.
+note Marks this frame's move as a walk. walk calls it, and so does graph_walk after its selection. Each walk that changes the place is recorded on its own.
 
 step syqeay
 order 2
 author ai
 file crates/gui/src/nav.rs
 symbol track_navigation
-lines 0 23
-hash 3ed36dbc4f744cde
-note Called by the frame once at the very end, after the frame's actions have been applied and the views have reported their scroll offsets. A back or forward asked for this frame (go_at_frame_end) is performed first. Then the kind of move the frame made is read and reset to Select, and when the place moved from last frame's, the old place, with the viewport it was left at, is pushed and the forward stack dropped, exactly like a browser; a walk that follows a walk pushes nothing, so a run of arrow-key walks is one entry. The snapshot is refreshed every frame either way, so the place being left always carries its latest tab and scroll. The history keeps the last two hundred places.
+lines 0 19
+hash 379a38b0b159beaf
+note Called by the frame once at the very end, after the frame's actions have been applied and the views have reported their scroll offsets. A back or forward asked for this frame (go_at_frame_end) is performed first. Then the kind of move the frame made is read and reset to Select, and when the place moved from last frame's, the old place, with the viewport it was left at, is pushed and the forward stack dropped, exactly like a browser; every such move is pushed, a walk and a tab switch included. The snapshot is refreshed every frame either way, so a scroll updates the place being left without becoming its own entry. The history keeps the last two hundred places.
 
 step t1zqws
 order 11

@@ -1,0 +1,36 @@
+codemap 9
+tour feature-show-references
+kind flow
+author ai
+group features/gui
+note The human is reading the graph and double-clicks a function to see its callers and callees. That serves the goal of browsing the codebase in this tool, from CLAUDE.md. With References closed, a header click only selected the node, and a jump that starts on the Graph tab stays on the graph, so the double-click changed nothing. The user hit that. The test show_references_opens_the_view_after_it_was_closed closes the view and checks that the action brings it back. Opening References by hand and clicking the node again was the only way to the list. The header buttons already reveal callers and callees on the canvas, and they stay the way to do that on the canvas. They do not open the References list after the user has closed it. The source button leaves the graph. Alt-click peeks one identifier. A single click stays select and move, because that gesture already drags the node. A separate button would be another control to find. The default layout already shows References, so leaving it in the layout does not help once the user closes it. Double-click on the node header selects the node and brings References beside the graph, splitting a panel when References was closed. A jump to a definition that starts on the Graph tab does the same, because that double-click was already asking where a call goes, and the list is the answer while the graph stays put.
+
+step o6qaay
+order 0
+author ai
+file crates/gui/src/action.rs
+symbol show_references
+lines 0 3
+hash b0fd15cb03ee6d4a
+note The handler. Brings the References view beside the centre tab, splitting a panel to the right when References is in no panel.
+
+step t711nu
+order 2
+parent o6qaay
+author ai
+file crates/gui/src/panels.rs
+symbol bring
+lines 0 11
+hash fee7de323a3a28c1
+link panel-tree
+note Brings a view to the front, or splits it in beside the named neighbour when no panel holds it yet.
+
+step wpifm9
+order 1
+parent o6qaay
+author ai
+file crates/gui/src/panels.rs
+symbol of_tab
+lines 0 8
+hash 7fc0b1f67dee19c6
+note The view that sits beside References. It is the centre tab's view, so the graph stays the neighbour.

@@ -11,8 +11,8 @@ parent saeyu5
 author ai
 file crates/gui/src/status.rs
 symbol fmt
-lines 0 94
-hash 22603635186ad7fe
+lines 0 95
+hash 6da4e07892bdd496
 note The wording. Map refusals and load failures arrive already worded by cli, so the GUI and the CLI say the same thing.
 
 step 0fz3qy
@@ -21,8 +21,8 @@ parent saeyu5
 author ai
 file crates/gui/src/status.rs
 symbol tone
-lines 0 38
-hash 973e2c5a52de353a
+lines 0 39
+hash c78c5f8df060dcac
 note How the status bar colours each Status: Done for what the reader asked and got (saved, created, added, moved, removed, reloaded, re-indexed), Warning for what needs the reader's attention but broke nothing (a refused gesture, a clamped line, missing input, cut search hits, a change on disk), Problem for a failure (an unreadable map, a refused or failed save or command, a bad regex, a server or re-index failure), Plain for the rest.
 
 step 2e645j
@@ -169,6 +169,16 @@ lines 0 14
 hash 8c314ab96c8e770c
 note Every view is a function of (&Model, &mut Frame): nothing a view does can change the Model, so the whole window is drawn from one consistent state, and a view that wants a change pushes an Action.
 
+step 97d0g8
+order 76
+parent lz9k89
+author ai
+file crates/gui/src/status.rs
+symbol select_symbol_or_lines
+lines 0 2
+hash 2d7c5795f8e784a4
+note The one sentence for an open tour with nothing new to pin. The status line and the target strip both show it.
+
 step 98q001
 order 64
 parent 7579zm
@@ -301,8 +311,8 @@ parent xjz44n
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 0 100
-hash a60720a022aa91fa
+lines 0 101
+hash fd1681fb00b2a69b
 note The one place the Model changes during a frame. Each arm is a call into nav.rs, a field of the Model, or a method on the App for changes that need the Services (save, a server question, a command).
 
 step h4xmjq
@@ -437,8 +447,8 @@ parent 04jbr0
 author ai
 file crates/gui/src/status.rs
 symbol authoring
-lines 0 38
-hash 90424ed59c53140c
+lines 0 41
+hash ab19c6851e25dae6
 note The wording of tour creation and step placement (new tour, promote, add, move, the target), split out of fmt to keep it under the length limit; fmt hands every one of these variants here.
 
 step mch588
@@ -447,8 +457,8 @@ parent 9pik9m
 author ai
 file crates/gui/src/ids.rs
 symbol CONTROLS
-lines 0 74
-hash a194a1f94e9be340
+lines 0 75
+hash 8879728c62396d50
 note Every control, for the test that checks them against the registry.
 
 step mjhubp
@@ -573,8 +583,8 @@ order 52
 author ai
 file crates/gui/src/status.rs
 symbol Status
-lines 0 79
-hash edf574197767d265
+lines 0 80
+hash 52a0cfc67335b441
 note Everything the status line can say, as data: each outcome of a save, a command, a search, an edit, a definition lookup, a server, a re-index or a disk change. Views and apply set one; nothing formats a message where it happens.
 
 step sbpnbg
@@ -691,8 +701,8 @@ order 8
 author ai
 file crates/gui/src/action.rs
 symbol Action
-lines 0 51
-hash 26b6eaa99e5df9b3
+lines 0 52
+hash 66ae89f14288302a
 note Every change a gesture, a key, a script line or a view's measurement can cause, as data. A view names the change; it never makes it.
 
 step xypoz6

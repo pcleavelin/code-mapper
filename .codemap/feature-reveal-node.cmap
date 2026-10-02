@@ -43,9 +43,9 @@ parent ohhidl
 author ai
 file crates/gui/src/graph/build.rs
 symbol header
-lines 56 86
-hash d980821ca9e3c0e0
-note Where the buttons come from: callees are the ones the node's lines name, callers the symbol's callers; each button shows the count still hidden, or 'hide n' once revealed, and is left out when there is nothing to reveal. Then the header says why a button may be missing: 'waiting for <server>' while the node's file waits for its language server, otherwise 'calls nothing' for a node with no callees and 'no callers' for one with no callers.
+lines 56 92
+hash 7f9adab8be5120d3
+note Where the buttons come from: callees are the symbol's own callees, not only the names inside the node's shown lines, and callers are the symbol's callers. Each button shows the count still hidden, or 'hide n' once revealed, and is left out when every one is already a node. While the node's file waits for its language server the header says 'waiting for <server>' and does not claim the node calls nothing. Otherwise an empty callee list says 'calls not in this repo' when the symbol has call names or targets the index could not place, and 'calls nothing' when it has neither. An empty caller list says 'no callers in this repo'.
 
 step mi6y9f
 order 2

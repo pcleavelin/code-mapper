@@ -41,6 +41,6 @@ parent 9fzkv2
 author ai
 file crates/gui/src/views/center.rs
 symbol graph_tab
-lines 10 15
+lines 11 16
 hash 368e9ec1452321f2
 note Deferred actions from the graph phase are queued by the graph tab while the views are built, so they apply after the frame like any click.

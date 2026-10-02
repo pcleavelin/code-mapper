@@ -21,7 +21,7 @@ parent za46tw
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 75 75
+lines 76 76
 hash 59997f946bcbef4e
 note The arm.
 

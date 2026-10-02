@@ -55,6 +55,7 @@ pub(crate) enum Action {
     ToggleDirectory(Label),
     OpenGroup(GroupName, Openness),
     ShowView(View),
+    ShowReferences,
     Back,
     Forward,
     Save,
@@ -91,6 +92,11 @@ pub(crate) enum Action {
 }
 
 impl App {
+    pub(crate) fn show_references(&mut self) {
+        let beside = View::of_tab(self.model.nav.tab());
+        self.model.panels.bring(View::References, beside);
+    }
+
     pub(crate) fn apply(&mut self, action: Action) {
         let model = &mut self.model;
         match action {
@@ -128,6 +134,7 @@ impl App {
                 model.groups.insert(group, openness);
             }
             Action::ShowView(view) => model.show_view(view),
+            Action::ShowReferences => self.show_references(),
             Action::Back => model.go_at_frame_end(Going::Back),
             Action::Forward => model.go_at_frame_end(Going::Forward),
             Action::Save => self.save(),

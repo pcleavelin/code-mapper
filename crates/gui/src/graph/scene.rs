@@ -176,8 +176,7 @@ fn border(input: &SceneInput<'_>, node: Node) -> Outline {
 fn tinted(input: &SceneInput<'_>, node: Node, shown: Option<Span>) -> BTreeSet<Line> {
     let built = input.built;
     let index = &input.model.index;
-    let mut targets: Vec<SymbolId> = built
-        .callees_of(index, node)
+    let mut targets: Vec<SymbolId> = Built::callees_of(index, node)
         .into_iter()
         .filter(|callee| *callee != node.symbol && built.by_symbol.contains_key(callee))
         .collect();
@@ -418,7 +417,7 @@ fn edges(input: &SceneInput<'_>, origin: Point, code_top: &BTreeMap<Node, Px>) -
     };
     let mut edges = Vec::new();
     for caller in &built.nodes {
-        for callee in built.callees_of(index, *caller) {
+        for callee in Built::callees_of(index, *caller) {
             let Some(target) = built.by_symbol.get(&callee).copied() else {
                 continue;
             };

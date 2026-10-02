@@ -71,6 +71,7 @@ pub(crate) enum PaletteCommand {
     OneToOne,
     Turn,
     Split(Direction),
+    AddStep,
 }
 
 pub(crate) const fn commands(feature: Feature) -> &'static [PaletteCommand] {
@@ -86,6 +87,7 @@ pub(crate) const fn commands(feature: Feature) -> &'static [PaletteCommand] {
         Feature::ShowGraph => &[PaletteCommand::ShowGraph],
         Feature::GoBack => &[PaletteCommand::Back, PaletteCommand::Forward],
         Feature::Save => &[PaletteCommand::Save],
+        Feature::AddStep => &[PaletteCommand::AddStep],
         Feature::NewTour => &[PaletteCommand::NewTour],
         Feature::SearchFiles => &[PaletteCommand::Search],
         Feature::AutoLayout => &[PaletteCommand::AutoLayout],
@@ -546,6 +548,7 @@ impl Model {
         match goal {
             Goal::Run(command) => match command {
                 PaletteCommand::Save => vec![Action::Save],
+                PaletteCommand::AddStep => vec![Action::Authoring(Authoring::AddOffered)],
                 PaletteCommand::Back => vec![Action::Back],
                 PaletteCommand::Forward => vec![Action::Forward],
                 PaletteCommand::Hide(Hide::Hide) => {

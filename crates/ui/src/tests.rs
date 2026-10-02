@@ -507,7 +507,8 @@ fn keys_match_ctrl_and_alt_but_not_shift() {
     );
     frame.pointer.pressed.insert(Button::Back);
     frame.end_frame();
-    assert!(frame.keys.is_empty() && !frame.pointer.pressed.contains(Button::Back));
+    assert_eq!(frame.keys.len(), 0);
+    assert!(!frame.pointer.pressed.contains(Button::Back));
 }
 
 #[test]

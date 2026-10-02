@@ -88,27 +88,16 @@ impl Place {
             || self.step != other.step
             || self.focus != other.focus
             || self.file != other.file
+            || self.view.tab != other.view.tab
             || (how == Move::Jump && self.view.lines != other.view.lines)
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 struct History {
     back: Vec<Place>,
     forward: Vec<Place>,
     last: Option<Place>,
-    last_move: Move,
-}
-
-impl Default for History {
-    fn default() -> Self {
-        Self {
-            back: Vec::new(),
-            forward: Vec::new(),
-            last: None,
-            last_move: Move::Select,
-        }
-    }
 }
 
 impl History {
@@ -280,15 +269,11 @@ impl Model {
         if let Some(previous) = history.last.take()
             && now.moved_from(&previous, how)
         {
-            let walking_on = how == Move::Walk && history.last_move == Move::Walk;
-            if !walking_on {
-                history.back.push(previous);
-                if history.back.len() > History::LONGEST.get() {
-                    history.back.remove(0);
-                }
+            history.back.push(previous);
+            if history.back.len() > History::LONGEST.get() {
+                history.back.remove(0);
             }
             history.forward.clear();
-            history.last_move = how;
         }
         history.last = Some(now);
     }

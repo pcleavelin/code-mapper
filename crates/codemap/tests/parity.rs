@@ -169,8 +169,9 @@ fn old_and_new_agree() {
     {
         repo_at(&rev, &old, &new, &mut fails);
     }
-    assert!(
-        fails.is_empty(),
+    assert_eq!(
+        fails.len(),
+        0,
         "{} differences:\n{}",
         fails.len(),
         fails.join("\n")

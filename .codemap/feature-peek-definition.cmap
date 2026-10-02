@@ -51,8 +51,8 @@ parent w7mvto
 author ai
 file crates/gui/src/work.rs
 symbol land
-lines 0 16
-hash 1d99433708bbd7b4
+lines 0 22
+hash 8b6d2cf815b317be
 note With Intent::Peek every kind of definition becomes model.peek; an outside one also sets a status naming its file and line. Then the References view is brought into sight with Panels::bring.
 
 step h3pn83
@@ -93,8 +93,8 @@ author ai
 file crates/gui/src/views/references.rs
 symbol peeked
 lines 0 54
-hash 0a150823767af1c7
-note What each kind of peek shows and where 'go' leads: a symbol shows its span and goes by Focus, a line shows from six above to twenty below with the line marked and goes by GoTo, an outside file shows its grid and has no go.
+hash a56355dba24a8b46
+note What each kind of peek shows and where 'go' leads: a symbol shows its span and goes by Focus, a line shows from six above to twenty below with the line marked and goes by GoTo, an outside file shows its grid under the title 'Defined outside this repo' and has no go.
 
 step r2p9ok
 order 7
@@ -102,7 +102,7 @@ parent w7mvto
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_click
-lines 48 63
+lines 51 66
 hash 69cc41c96fbf5f8a
 note Trigger on a graph node's code line, deferred to the graph tab's frame.
 
