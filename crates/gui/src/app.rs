@@ -54,6 +54,20 @@ const ANIMATING: Duration = Duration::from_millis(8);
 const BUSY: Duration = Duration::from_millis(50);
 const IDLE: Duration = Duration::from_millis(1000);
 
+pub(crate) fn opening_panels(store: Option<&LayoutStore>) -> Panels {
+    let Some(store) = store else {
+        return Panels::default();
+    };
+    if let Some(saved) = store.load() {
+        return Panels::from_layout(&saved);
+    }
+    let mut panels = Panels::default();
+    if let Some(home) = panels.holder(View::References) {
+        panels.put(View::Help, home);
+    }
+    panels
+}
+
 impl App {
     pub(crate) fn new(root: &Root) -> Self {
         let indexed = index::build(root);
@@ -76,9 +90,7 @@ impl App {
                 Reach::User
             };
         let layout_store = LayoutStore::find(reach);
-        if let Some(saved) = layout_store.as_ref().and_then(LayoutStore::load) {
-            model.panels = Panels::from_layout(&saved);
-        }
+        model.panels = opening_panels(layout_store.as_ref());
         let layout = KeptLayout {
             saved: Some(model.panels.layout()),
             store: layout_store,

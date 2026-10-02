@@ -11,19 +11,17 @@ fn rect(left: i32, top: i32, width: i32, height: i32) -> Rect {
 const DEFAULT: &str = "down6(820 right5(220 0[Tours* Symbols Files] right4(740 1[Tour* Diff Graph Source Search] 2[References*])) 3[Console*])";
 
 #[test]
-fn the_default_tree_holds_every_view_once() {
+fn the_default_tree_holds_every_view_once_and_help_opens_into_it() {
     let panels = Panels::default();
     assert_eq!(panels.to_string(), DEFAULT);
     for view in View::VARIANTS {
-        assert_eq!(
-            panels
-                .panels()
-                .iter()
-                .filter(|panel| panel.holds(*view))
-                .count(),
-            1,
-            "{view:?}"
-        );
+        let held = panels
+            .panels()
+            .iter()
+            .filter(|panel| panel.holds(*view))
+            .count();
+        let expected = usize::from(*view != View::Help);
+        assert_eq!(held, expected, "{view:?}");
     }
 }
 
@@ -165,7 +163,7 @@ fn a_tree_survives_its_saved_layout() {
     assert_eq!(restored.layout(), panels.layout());
     assert_eq!(
         restored.to_string(),
-        "down8(700 right6(220 0[Tours* Symbols Files] right5(740 down3(500 1[Tour* Diff Source Search] 2[Graph*]) 4[References*])) 7[Console*])"
+        "down8(700 right7(220 0[Tours* Symbols Files] right6(740 down5(500 1[Tour* Diff Source Search] 2[Graph*]) 3[References*])) 4[Console*])"
     );
 }
 

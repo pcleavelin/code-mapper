@@ -321,7 +321,7 @@ impl Query {
     }
 }
 
-fn chord_label(chord: Chord) -> Label {
+pub(crate) fn chord_label(chord: Chord) -> Label {
     let modifier = match chord.modifiers() {
         Modifiers::Plain => "",
         Modifiers::Control => "ctrl+",

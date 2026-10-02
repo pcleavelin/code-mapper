@@ -158,6 +158,7 @@ pub(crate) const PALETTE_FIELD: Control =
     Control::new(Feature::CommandPalette, Element::new("field@palette"));
 pub(crate) const PALETTE_ROW: Control =
     Control::new(Feature::CommandPalette, Element::new("palette"));
+pub(crate) const HELP: Control = Control::new(Feature::ShowHelp, Element::new("help"));
 
 #[cfg(test)]
 pub(crate) const CONTROLS: &[Control] = &[
@@ -235,6 +236,7 @@ pub(crate) const CONTROLS: &[Control] = &[
     GRAPH_CANVAS,
     PALETTE_FIELD,
     PALETTE_ROW,
+    HELP,
 ];
 
 pub(crate) fn body() -> Id {
@@ -322,4 +324,8 @@ pub(crate) fn tour_buttons() -> Id {
 
 pub(crate) fn palette_box() -> Id {
     Id::new("palette-box")
+}
+
+pub(crate) fn help_list() -> Id {
+    Id::new("help-list")
 }

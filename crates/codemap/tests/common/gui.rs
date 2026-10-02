@@ -566,6 +566,9 @@ dump
 key s ctrl
 wait 3
 dump
+click-id help
+wait 2
+dump
 quit
 ";
 

@@ -50,6 +50,9 @@ pub(super) fn top_bar(model: &Model, frame: &mut Frame<'_>) {
     if unsaved {
         frame.label("unsaved changes", ORANGE);
     }
+    if frame.control("help", ids::HELP).clicked() {
+        frame.push(Action::ShowHelp);
+    }
     let (save, chosen) = if unsaved {
         ("save *", Chosen::Chosen)
     } else {

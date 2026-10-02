@@ -3,6 +3,7 @@ mod bars;
 mod center;
 mod console;
 mod document;
+mod help;
 mod left;
 mod palette;
 mod panel_tree;

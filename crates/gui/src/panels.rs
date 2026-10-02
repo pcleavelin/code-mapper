@@ -24,6 +24,7 @@ pub(crate) enum View {
     Search,
     References,
     Console,
+    Help,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -54,6 +55,7 @@ impl View {
             Self::Search => "Search",
             Self::References => "References",
             Self::Console => "Console",
+            Self::Help => "Help",
         })
     }
 
@@ -64,7 +66,12 @@ impl View {
             Self::Graph => Some(Tab::Graph),
             Self::Source => Some(Tab::Source),
             Self::Search => Some(Tab::Search),
-            Self::Tours | Self::Symbols | Self::Files | Self::References | Self::Console => None,
+            Self::Tours
+            | Self::Symbols
+            | Self::Files
+            | Self::References
+            | Self::Console
+            | Self::Help => None,
         }
     }
 
@@ -509,43 +516,58 @@ fn layout_of(branch: &Branch) -> LayoutTree {
     }
 }
 
+struct SavedPanel {
+    views: Vec<View>,
+    active: Option<View>,
+}
+
 impl Panels {
     pub(crate) fn from_layout(layout: &LayoutTree) -> Self {
-        let mut panels = Self::default();
+        let mut saved = Vec::new();
         let mut placed = Vec::new();
-        panels.next = BranchId(0);
-        panels.root = panels.restore(layout, &mut placed);
+        gather_panels(layout, &mut saved, &mut placed);
+        let mut panels = Self {
+            root: Branch::placeholder(),
+            next: BranchId(u32::try_from(saved.len()).unwrap_or(0)),
+            grab: None,
+            picker: None,
+            revealed: Tab::Tour,
+            answered: Ticket::default(),
+        };
+        let mut panel_at = 0;
+        panels.root = panels.rebuild(layout, &saved, &mut panel_at);
         panels
     }
 
-    fn restore(&mut self, layout: &LayoutTree, placed: &mut Vec<View>) -> Branch {
+    fn rebuild(
+        &mut self,
+        layout: &LayoutTree,
+        saved: &[SavedPanel],
+        panel_at: &mut usize,
+    ) -> Branch {
         match layout {
-            LayoutTree::Panel(saved) => {
-                let named = |key: &ViewKey| View::named(&Label::new(key.as_str()));
-                let views: Vec<View> = saved
-                    .views()
-                    .iter()
-                    .filter_map(named)
-                    .filter(|view| !placed.contains(view))
-                    .collect();
-                placed.extend(views.iter().copied());
-                let id = self.fresh();
-                let mut panel = Panel::new(id, views);
-                if let Some(shown) = saved.shown().and_then(named)
-                    && panel.holds(shown)
+            LayoutTree::Panel(_) => {
+                let Some(SavedPanel { views, active }) = saved.get(*panel_at) else {
+                    return Branch::placeholder();
+                };
+                *panel_at += 1;
+                let id = BranchId(u32::try_from(*panel_at - 1).unwrap_or(0));
+                let mut panel = Panel::new(id, views.clone());
+                if let Some(shown) = active
+                    && panel.holds(*shown)
                 {
-                    panel.active = Some(shown);
+                    panel.active = Some(*shown);
                 }
                 Branch::Panel(panel)
             }
-            LayoutTree::Split(saved) => {
-                let first = self.restore(saved.first(), placed);
-                let second = self.restore(saved.second(), placed);
-                let direction = match saved.direction() {
+            LayoutTree::Split(stored) => {
+                let first = self.rebuild(stored.first(), saved, panel_at);
+                let second = self.rebuild(stored.second(), saved, panel_at);
+                let direction = match stored.direction() {
                     SplitDirection::Right => Direction::Right,
                     SplitDirection::Down => Direction::Down,
                 };
-                self.split(direction, Ratio(saved.share().get()), first, second)
+                self.split(direction, Ratio(stored.share().get()), first, second)
             }
         }
     }
@@ -580,7 +602,30 @@ impl Panels {
             second: Box::new(second),
         })
     }
+}
 
+fn gather_panels(layout: &LayoutTree, saved: &mut Vec<SavedPanel>, placed: &mut Vec<View>) {
+    match layout {
+        LayoutTree::Panel(stored) => {
+            let named = |key: &ViewKey| View::named(&Label::new(key.as_str()));
+            let views: Vec<View> = stored
+                .views()
+                .iter()
+                .filter_map(named)
+                .filter(|view| !placed.contains(view))
+                .collect();
+            placed.extend(views.iter().copied());
+            let active = stored.shown().and_then(named);
+            saved.push(SavedPanel { views, active });
+        }
+        LayoutTree::Split(stored) => {
+            gather_panels(stored.first(), saved, placed);
+            gather_panels(stored.second(), saved, placed);
+        }
+    }
+}
+
+impl Panels {
     pub(crate) const fn root(&self) -> &Branch {
         &self.root
     }

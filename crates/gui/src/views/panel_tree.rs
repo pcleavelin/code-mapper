@@ -10,7 +10,7 @@ use crate::panels::{
     self, Branch, BranchId, Direction, DropTarget, Grab, Panel, Panels, Split, View,
 };
 use crate::theme::{PANEL_LEAST_ACROSS, PANEL_LEAST_DOWN, PICKER_FIELD, PICKER_WIDTH, TEXT, WEAK};
-use crate::views::{center, console, document, left, references};
+use crate::views::{center, console, document, help, left, references};
 use crate::widgets::{Chosen, Container, Frame};
 
 fn panel_id(panel: BranchId) -> ui::Id {
@@ -241,6 +241,7 @@ fn body(
         View::Search => center::search_view(model, frame),
         View::References => references::references_panel(model, frame, area),
         View::Console => console::console_panel(model, frame),
+        View::Help => help::help_view(model, frame),
     }
 }
 

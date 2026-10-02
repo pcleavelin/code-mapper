@@ -307,13 +307,17 @@ impl Frame<'_> {
     }
 
     pub(crate) fn note(&mut self, text: impl Into<Label>, color: ui::Color, padding: Padding) {
+        self.paragraph(vec![Run::new(text, color)], padding);
+    }
+
+    pub(crate) fn paragraph(&mut self, runs: Vec<Run>, padding: Padding) {
         let size = self.metrics.font;
         let padding = match padding {
             Padding::Tour => PANEL_PADDING,
             Padding::Step => LABEL_PADDING,
         };
         self.ui.leaf(
-            text_kind(vec![Run::new(text, color)], size, Wrap::Words),
+            text_kind(runs, size, Wrap::Words),
             Layout::row().grow_width().padding(padding),
             Style::NONE,
             None,

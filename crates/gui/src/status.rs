@@ -350,7 +350,7 @@ impl fmt::Display for Status {
                 formatter.write_str("re-index failed; the index in use is the old one")
             }
             Self::DiskChanged => formatter.write_str(
-                "map changed on disk while you have unsaved changes: save overwrites it, or use the console to reload",
+                "map changed on disk while you have unsaved changes. Save overwrites it. With nothing unsaved the map reloads on its own",
             ),
             Self::MapUnreadableKept(error) => write!(
                 formatter,

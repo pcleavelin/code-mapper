@@ -1,5 +1,55 @@
-use features::{Feature, Gesture, Trigger};
+use features::{Feature, Gesture, Surface, Trigger};
+use strum::VariantArray;
 use ui::Label;
+
+const BY_HAND: &[Feature] = &[
+    Feature::NewTour,
+    Feature::OpenTour,
+    Feature::AddStep,
+    Feature::ChooseTarget,
+    Feature::Save,
+    Feature::WalkSteps,
+];
+
+const CONSOLE_COMMANDS: &[Feature] = &[
+    Feature::TourNote,
+    Feature::StepNote,
+    Feature::StepLink,
+    Feature::Stale,
+    Feature::Repin,
+];
+
+const TO_FIND: &[Feature] = &[
+    Feature::CommandPalette,
+    Feature::JumpToDefinition,
+    Feature::PeekDefinition,
+    Feature::GoBack,
+];
+
+pub(crate) fn by_hand() -> &'static [Feature] {
+    BY_HAND
+}
+
+pub(crate) fn console_commands() -> &'static [Feature] {
+    CONSOLE_COMMANDS
+}
+
+pub(crate) fn to_find() -> &'static [Feature] {
+    TO_FIND
+}
+
+pub(crate) fn the_rest() -> Vec<Feature> {
+    let listed = |feature: Feature| {
+        BY_HAND.contains(&feature)
+            || CONSOLE_COMMANDS.contains(&feature)
+            || TO_FIND.contains(&feature)
+    };
+    Feature::VARIANTS
+        .iter()
+        .copied()
+        .filter(|feature| feature.spec().surface() == Surface::Window && !listed(*feature))
+        .collect()
+}
 
 use crate::palette::chord_label;
 

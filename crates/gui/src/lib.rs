@@ -5,6 +5,7 @@ mod dump;
 mod field;
 mod graph;
 mod grid;
+mod help;
 mod ids;
 mod keys;
 mod model;

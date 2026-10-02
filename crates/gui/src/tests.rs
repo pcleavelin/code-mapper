@@ -1,4 +1,7 @@
-use std::path::Path as FsPath;
+use std::env;
+use std::fs;
+use std::path::{Path as FsPath, PathBuf};
+use std::process;
 
 use domain::{
     Anchor, Author, Backend, Depth, FileText, Imports, Index, Line, Map, RelativePath, Root, Row,
@@ -6,23 +9,25 @@ use domain::{
     TourName,
 };
 use features::{Feature, Trigger};
+use io_layout::LayoutStore;
 use io_map::MapStore;
 use strum::VariantArray;
 use ui::{Count, Label, Px};
 
 use crate::action::{Action, Collapse, Hide};
-use crate::app::App;
+use crate::app::{App, opening_panels};
 use crate::authoring::Authoring;
 use crate::field::Which;
 use crate::graph::Parentage;
 use crate::graph::build::{Built, CellSize, Rank, StepInfo};
 use crate::graph::{Button, GraphState, Node};
+use crate::help;
 use crate::ids::{self, CONTROLS};
 use crate::keys::{Extend, Walk};
 use crate::model::{LineSelection, Model, Readable, StepKey, StepSlot, Tab, TourSlot, ViewFlag};
 use crate::nav::Scrolling;
 use crate::palette::{Palette, commands};
-use crate::panels::{Direction, View};
+use crate::panels::{Direction, Panels, View};
 use crate::theme::Cells;
 
 #[test]
@@ -455,6 +460,100 @@ fn show_references_opens_the_view_after_it_was_closed() {
     assert!(!app.model.panels.is_shown(View::References));
     app.apply(Action::ShowReferences);
     assert!(app.model.panels.is_shown(View::References));
+}
+
+fn scratch(name: &str) -> PathBuf {
+    let folder = env::temp_dir().join(format!("gui-{name}-{}", process::id()));
+    drop(fs::remove_dir_all(&folder));
+    folder
+}
+
+#[test]
+fn the_first_launch_opens_on_help_and_a_kept_layout_opens_as_it_was_left() {
+    let store = LayoutStore::at(scratch("first-launch").join("layout"));
+    let first = opening_panels(Some(&store));
+    assert!(first.is_shown(View::Help));
+    assert_eq!(first.holder(View::Help), first.holder(View::References));
+    assert_eq!(
+        first.to_string(),
+        "down6(820 right5(220 0[Tours* Symbols Files] right4(740 1[Tour* Diff Graph Source Search] 2[References Help*])) 3[Console*])"
+    );
+    store.save(&Panels::default().layout()).unwrap();
+    let kept = opening_panels(Some(&store));
+    assert!(kept.holder(View::Help).is_none());
+    assert!(kept.is_shown(View::References));
+    assert_eq!(kept.to_string(), Panels::default().to_string());
+    let unstored = opening_panels(None);
+    assert!(unstored.holder(View::Help).is_none());
+    assert!(unstored.is_shown(View::Tour));
+}
+
+#[test]
+fn show_help_opens_the_help_tab_beside_references() {
+    let mut app = app();
+    app.apply(Action::ShowHelp);
+    assert_eq!(
+        app.model.panels.to_string(),
+        "down6(820 right5(220 0[Tours* Symbols Files] right4(740 1[Tour* Diff Graph Source Search] 2[References Help*])) 3[Console*])"
+    );
+    app.model.panels.close_view(View::Help);
+    app.apply(Action::ShowHelp);
+    assert_eq!(
+        app.model.panels.to_string(),
+        "down6(820 right5(220 0[Tours* Symbols Files] right4(740 1[Tour* Diff Graph Source Search] 2[References Help*])) 3[Console*])"
+    );
+}
+
+#[test]
+fn the_help_guide_starts_with_making_a_tour_by_hand() {
+    let names = |features: &[Feature]| {
+        features
+            .iter()
+            .map(|feature| feature.spec().name().as_str())
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(
+        names(help::by_hand()),
+        [
+            "new-tour",
+            "open-tour",
+            "add-step",
+            "choose-target",
+            "save",
+            "walk-steps"
+        ]
+    );
+    assert_eq!(
+        names(help::console_commands()),
+        ["tour-note", "step-note", "step-link", "stale", "repin"]
+    );
+    assert_eq!(
+        names(help::to_find()),
+        [
+            "palette",
+            "jump-to-definition",
+            "peek-definition",
+            "go-back"
+        ]
+    );
+    assert!(!help::the_rest().contains(&Feature::NewTour));
+    assert!(help::the_rest().contains(&Feature::ShowHelp));
+}
+
+#[test]
+fn the_help_names_each_function_by_its_keys_and_gestures() {
+    assert_eq!(
+        help::how(Feature::GoBack),
+        Some(Label::new(
+            "alt+left · alt+right · ctrl+left · ctrl+right · mouse back · mouse forward · ctrl+p"
+        ))
+    );
+    assert_eq!(
+        help::how(Feature::ZoomGraph),
+        Some(Label::new("pinch · ctrl+wheel"))
+    );
+    assert_eq!(help::how(Feature::HideAllCode), Some(Label::new("ctrl+p")));
+    assert_eq!(help::how(Feature::OpenTour), None);
 }
 
 #[test]
