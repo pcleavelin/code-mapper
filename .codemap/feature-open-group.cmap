@@ -30,6 +30,6 @@ order 0
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 33 35
+lines 24 26
 hash 9e18adf391d892d8
 note The handler: records the wanted openness for the group by its full name. Once recorded it overrides the default of following the tour being read.

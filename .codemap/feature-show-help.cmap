@@ -1,0 +1,160 @@
+codemap 9
+tour feature-show-help
+kind flow
+author ai
+group features/gui
+note The human opens the window for the first time, or comes back to make a tour by hand and cannot find the next move. The goal is that understanding an unfamiliar codebase takes less friction here than in an editor with a language server, and the first friction is this window's own gestures. A first frame of this repo, shot before this tab existed, names none of ctrl+p, the arrow-key walk, or jump to definition. An empty map said the agent writes the tours, while + new tour is already in the Tours list. + step appears only while the pointer is on a symbol. A console note with spaces and no quotes is refused as extra arguments, seen when step-note was given the words builds and running. Typing help in the palette finds a file named help, and the console help command lists CLI commands. Nothing already in the window names the gestures. The Help tab sits beside References. The first launch, when no layout has been saved, puts it in front. The help button brings it back. The tab leads with making a tour by hand, then the console commands that path needs, then palette, jump, peek and back, then every other function of the window. Each line is that function's registry summary and its keys and gestures, so the tab cannot drift from the registry. A coach of seven lessons was built and dropped. It left the other functions unnamed and needed a second mapping from actions to features. A palette that opens already filtered to help was built and dropped. It has to be closed before the gesture can be tried, the palette caps the list, and those rows do nothing on enter.
+
+step 3uj7ap
+order 7
+parent dets7v
+author ai
+file crates/gui/src/views/help.rs
+symbol help_view
+lines 0 30
+hash 9c94b08e95c64e61
+note The tab. It draws the hand-authoring path, then the console commands, then palette, jump, peek and back, then every other function of the window. Each row is the registry name, the keys and gestures, and the summary.
+
+step 7hlm3r
+order 3
+parent dets7v
+author ai
+file crates/gui/src/panels.rs
+symbol activate
+lines 0 6
+hash 944d50956d2b8d7d
+link feature-switch-tab
+note Brings Help's tab forward without moving it.
+
+step 9ii8ys
+order 12
+parent 3uj7ap
+author ai
+file crates/gui/src/help.rs
+symbol the_rest
+lines 0 11
+hash bbf31299e3c903d4
+note Every other function of the window, in registry order, skipping the rows already shown.
+
+step 9vh865
+order 10
+parent 3uj7ap
+author ai
+file crates/gui/src/help.rs
+symbol console_commands
+lines 0 2
+hash 0cd1c22ce52c22f3
+note The console commands the hand-authoring path needs. tour-note, step-note, step-link, stale, repin. The tab says to quote a note that has spaces.
+
+step a580rc
+order 4
+parent dets7v
+author ai
+file crates/gui/src/panels.rs
+symbol put
+lines 0 5
+hash 678fb601b3f0d18c
+link panel-tree
+note Adds Help to the References panel and makes that tab the one in front.
+
+step dets7v
+order 0
+author ai
+file crates/gui/src/action.rs
+symbol show_help
+lines 0 11
+hash b97a47f2a4bd2ebf
+note The handler. If a panel already holds Help, that tab comes forward. Otherwise Help is put in the References panel. If References is closed, Help is split in beside the centre tab.
+
+step gsuw2w
+order 11
+parent 3uj7ap
+author ai
+file crates/gui/src/help.rs
+symbol to_find
+lines 0 2
+hash 1d8be3a43d5efd73
+note palette, jump-to-definition, peek-definition, go-back.
+
+step p6embc
+order 13
+parent y8qu8m
+author ai
+file crates/gui/src/help.rs
+symbol how
+lines 0 13
+hash ffabc65c581bb386
+note The keys and gestures for one function, joined. A click or a typed field adds no word, because the summary names the control. A palette entry shows as ctrl+p.
+
+step plooym
+order 2
+parent dets7v
+author ai
+file crates/gui/src/panels.rs
+symbol holder
+lines 0 5
+hash b019b3bdcc82d9f4
+link panel-tree
+note The panel that already holds a view.
+
+step pwxgm4
+order 6
+parent dets7v
+author ai
+file crates/gui/src/app.rs
+symbol opening_panels
+lines 0 12
+hash 1676a5a4cb24b62a
+note First launch. When a layout file is configured and nothing has been saved, Help is put in front of References. A saved layout opens as it was left. A run with no layout store, which is every scripted scenario, keeps the default panels and does not open Help.
+
+step s71dpu
+order 5
+parent dets7v
+author ai
+file crates/gui/src/panels.rs
+symbol bring
+lines 0 11
+hash fee7de323a3a28c1
+link panel-tree
+note Splits a new panel to the right when Help is in no panel yet.
+
+step xjb3kq
+order 9
+parent dets7v
+author ai
+file crates/gui/src/views/bars.rs
+symbol top_bar
+lines 41 43
+hash 92a081a06576cbb2
+note Trigger. The help button in the top bar queues ShowHelp.
+
+step xstei0
+order 1
+parent dets7v
+author ai
+file crates/gui/src/panels.rs
+symbol of_tab
+lines 0 8
+hash 7fc0b1f67dee19c6
+link feature-show-references
+note The centre tab, used only when References is closed, so the split sits beside what the reader is looking at.
+
+step y8qu8m
+order 14
+parent 3uj7ap
+author ai
+file crates/gui/src/views/help.rs
+symbol entry
+lines 0 8
+hash 7f1cad4b6b4d5d38
+note One row. The name, then the keys and gestures in blue, then the summary.
+
+step zyrldj
+order 8
+parent 3uj7ap
+author ai
+file crates/gui/src/help.rs
+symbol by_hand
+lines 0 2
+hash 3ba2fd2f541d8737
+note The hand-authoring order. new-tour, open-tour, add-step, choose-target, save, walk-steps.

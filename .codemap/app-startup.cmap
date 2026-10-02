@@ -141,9 +141,9 @@ parent dosvcv
 author ai
 file crates/gui/src/app.rs
 symbol new
-lines 0 51
-hash 12566b3766b17069
-note Builds the whole application state before the first frame. The order matters: index first, then the map resolved against it, then the Model that holds both, with its panel tree from the user's layout file (none for a script or screenshot run unless CODEMAP_LAYOUT names one) and the Services with their watcher, then the first tour selected so the document, steps list, Source view, References panel and graph all have something in them, then the language servers and the parent map. A map that did not read leaves its error in the status line; otherwise the status line says how many files and symbols were indexed.
+lines 0 49
+hash 35d704d723084034
+note Builds the whole application state before the first frame. The order matters: index first, then the map resolved against it, then the Model that holds both, with its panel tree from the user's layout file (none for a script or screenshot run unless CODEMAP_LAYOUT names one; when the file has nothing saved yet, Help is put in front of References) and the Services with their watcher, then the first tour selected so the document, steps list, Source view, References panel and graph all have something in them, then the language servers and the parent map. A map that did not read leaves its error in the status line; otherwise the status line says how many files and symbols were indexed.
 
 step t4wzoi
 order 5

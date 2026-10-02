@@ -89,9 +89,9 @@ order 53
 author ai
 file crates/gui/src/panels.rs
 symbol from_layout
-lines 0 6
-hash 2b7409fe994684f3
-note Loading: builds the tree from a saved layout with fresh ids, no picker and no grab. App::new calls it when the user's layout file reads.
+lines 0 15
+hash eaa0d84c6b59b509
+note Loading: builds the tree from a saved layout with fresh ids, no picker and no grab. opening_panels calls it when a saved layout reads.
 
 step 4hv76a
 order 52
@@ -108,9 +108,8 @@ order 54
 parent 3z8x11
 author ai
 file crates/gui/src/panels.rs
-symbol restore
-lines 0 30
-hash e18617b38e2838d8
+lines 638 657
+hash 1512c74f8b3ce1c8
 note A saved view name the GUI does not know is dropped, and so is a view already placed in an earlier panel, so a hand-edited file can never break one-of-each.
 
 step 5zemej
@@ -278,9 +277,9 @@ parent ou10qk
 author ai
 file crates/gui/src/panels.rs
 symbol View
-lines 0 11
-hash 03b31a684cf0818a
-note The ten things a panel can show. Each is in at most one panel at a time, so element ids (tab@Source), scroll offsets and the one selection stay unambiguous; a view in no panel is hidden until picked or revealed. The five with a centre Tab (Tour, Diff, Graph, Source, Search) are the ones navigation switches between.
+lines 0 12
+hash d5e012df0d758b5b
+note Each view a panel can show. Each is in at most one panel at a time, so element ids (tab@Source), scroll offsets and the one selection stay unambiguous; a view in no panel is hidden until picked or revealed. The five with a centre Tab (Tour, Diff, Graph, Source, Search) are the ones navigation switches between.
 
 step ekaolx
 order 10
@@ -318,8 +317,8 @@ parent ec5woa
 author ai
 file crates/gui/src/panels.rs
 symbol tab
-lines 0 9
-hash ae87e417380544e5
+lines 0 14
+hash f217cd4b29ee2a92
 note The centre Tab a view stands for, if any: how navigation's tab and the panels' views meet.
 
 step he0ghg
@@ -386,9 +385,9 @@ parent dxzju5
 author ai
 file crates/gui/src/views/panel_tree.rs
 symbol body
-lines 0 25
-hash 608b0d29fb8c55ac
-note The one match from a view to what draws it. Tours, Symbols and Files sit in a panel-coloured column; References is told the panel's size, since its peek fits itself to it.
+lines 0 26
+hash a01dc6d2946211ae
+note The one match from a view to what draws it. Tours, Symbols and Files sit in a panel-coloured column; Help is the guide. References is told the panel's size, since its peek fits itself to it.
 
 step mp1y9p
 order 0
@@ -512,7 +511,7 @@ order 21
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 62 92
+lines 54 84
 hash a4d1e09759f7ab10
 note The panel arms of apply: grab, resize, drag and release; split, close; the picker opened, closed or picked from. Opening the picker, by + or by a split, empties its search field and gives it the keyboard.
 

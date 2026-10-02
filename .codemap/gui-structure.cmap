@@ -12,7 +12,7 @@ author ai
 file crates/gui/src/status.rs
 symbol fmt
 lines 0 95
-hash 6da4e07892bdd496
+hash 3266e8d54516409b
 note The wording. Map refusals and load failures arrive already worded by cli, so the GUI and the CLI say the same thing.
 
 step 0fz3qy
@@ -311,8 +311,8 @@ parent xjz44n
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 0 101
-hash fd1681fb00b2a69b
+lines 0 93
+hash afa5a2c9609bd1a5
 note The one place the Model changes during a frame. Each arm is a call into nav.rs, a field of the Model, or a method on the App for changes that need the Services (save, a server question, a command).
 
 step h4xmjq
@@ -457,8 +457,8 @@ parent 9pik9m
 author ai
 file crates/gui/src/ids.rs
 symbol CONTROLS
-lines 0 75
-hash 8879728c62396d50
+lines 0 76
+hash 5e11c4385d8e3023
 note Every control, for the test that checks them against the registry.
 
 step mjhubp
@@ -701,8 +701,8 @@ order 8
 author ai
 file crates/gui/src/action.rs
 symbol Action
-lines 0 52
-hash 66ae89f14288302a
+lines 0 53
+hash 972e2b4ec5d5411e
 note Every change a gesture, a key, a script line or a view's measurement can cause, as data. A view names the change; it never makes it.
 
 step xypoz6

@@ -232,7 +232,7 @@ author ai
 file crates/gui/src/palette.rs
 symbol chord_label
 lines 0 14
-hash 00ebf6ff59fc11d7
+hash 26795065e4aa88c6
 note A chord as the row shows it: ctrl+ or alt+ and the key.
 
 step rgityw

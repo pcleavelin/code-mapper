@@ -30,8 +30,8 @@ order 0
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 18 27
-hash 28236fcdc5146bb2
+lines 18 18
+hash 34e7e6e6f66e3eb9
 note The handler: the Context arm adds Context::LINES (ten) to the above or below count of the step's view, or resets both to zero.
 
 step ydud8f

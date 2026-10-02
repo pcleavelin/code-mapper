@@ -182,10 +182,10 @@ order 16
 parent 0tlkjk
 author ai
 file crates/gui/src/widgets.rs
-symbol note
-lines 0 12
-hash a2124443f4853e94
-note Wrapped text, grown to the width the element ends up with, with a tour's or a step's padding. Tour notes and step notes are the only things drawn this way, because they are the only prose in the app.
+symbol impl Frame<'_>
+lines 73 85
+hash 9601532651a34ff0
+note Wrapped text, grown to the width the element ends up with, with a tour's or a step's padding. Tour notes, step notes and the Help tab are drawn this way. note is one run of paragraph, and paragraph puts several runs on one line, which is how a help row puts the keys in blue beside the name.
 
 step ezv639
 order 36

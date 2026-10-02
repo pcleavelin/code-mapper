@@ -10,7 +10,7 @@ order 0
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 65 71
+lines 57 63
 hash b8b73eaa6fa880a7
 link panel-tree
 note The handler: on release, a grab that had a drop target moves the view there; one without just lets go.
