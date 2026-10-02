@@ -29,5 +29,7 @@ cannot be written.
    whose note is the case (CLAUDE.md, "Every feature makes its case") as `understand` and
    `prototype` completed it, whose root step is the handler and whose steps
    follow what it calls (`codemap . promote <handler> 2 feature-<name>`, then `tour-group`,
-   `tour-note`, trim, annotate).
+   `tour-note`, trim, annotate). For help, an out-of-box flow, or onboarding, the note
+   keeps the Walk line from `understand`, and `finish` rejects the note while the walk
+   fails on the surface.
 7. `finish`.

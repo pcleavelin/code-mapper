@@ -29,6 +29,11 @@ above that it serves; what going without it costs them today, seen in a run of t
 rather than supposed; why nothing codemap already has answers it; and, once the prototypes
 have run, why the kept design beats the others. It is the note of the feature's `features/`
 tour. A request whose case cannot be written goes back to the owner with what is missing.
+A follow-up in the same request is a separate backlog unless the owner says it drives
+this feature. For help, an out-of-box flow, or onboarding, the case fails when the
+surface leaves out a primary gesture of the moment the case names. The chord that opens
+the palette is a primary gesture. A green gate leaves that case unfinished. A panel that
+lists nearby rows leaves it unfinished.
 
 Every change ends with the `finish` skill. The Stop hook runs `cargo xtask gate` and keeps the
 session going until it is green, and commits are refused while it is red; each failure says
