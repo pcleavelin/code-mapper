@@ -12,7 +12,7 @@ pub(super) fn help_view(model: &Model, frame: &mut Frame<'_>) {
     frame.start(Container::PanelColumn);
     frame.scroll_column(id, model.scrolls.get(id), Scroller::Plain, None);
     frame.note(
-        "Making a tour by hand. Keys and gestures are in blue. The help button brings this tab back.",
+        "Making a tour by hand. Keys and gestures are in blue. Save before you close the window, or the orange unsaved changes are dropped. The help button brings this tab back.",
         WEAK,
         Padding::Step,
     );
@@ -20,7 +20,7 @@ pub(super) fn help_view(model: &Model, frame: &mut Frame<'_>) {
         entry(frame, *feature);
     }
     frame.note(
-        "In the console. Quote a note that has spaces.",
+        "In the console. Quote a note that has spaces. Use the number in brackets from `tours`, not the 1.1 shown in the window.",
         WEAK,
         Padding::Step,
     );

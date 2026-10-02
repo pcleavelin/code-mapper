@@ -12,7 +12,7 @@ author ai
 file crates/gui/src/views/help.rs
 symbol help_view
 lines 0 30
-hash 9c94b08e95c64e61
+hash 5ee6d824e39a91e9
 note The tab. It draws the hand-authoring path, then the console commands, then palette, jump, peek and back, then every other function of the window. Each row is the registry name, the keys and gestures, and the summary.
 
 step 7hlm3r

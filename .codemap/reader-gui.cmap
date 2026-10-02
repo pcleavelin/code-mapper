@@ -367,7 +367,7 @@ author ai
 file crates/gui/src/views/document.rs
 symbol tour_document
 lines 0 50
-hash 03b2b2f78e0221d4
+hash a98a35217e1cb3c7
 note The document, the reader's landing view: the tour header, the note, the steps that link here, and a sticky breadcrumb of the topmost visible step's ancestors, then the scrolling column of steps (an empty tour says how to add some) and the steps removed since the parent revision. With no tour selected it says how to get one.
 
 step dhyl4k

@@ -293,7 +293,7 @@ pub(super) fn tour_document(model: &Model, frame: &mut Frame<'_>) {
     else {
         frame.label(
             if model.map.tours().is_empty() {
-                "no tours yet: + new tour in the Tours list, or tour-new in the console"
+                "no tours yet: + new tour in the Tours list"
             } else {
                 "pick a tour on the left"
             },
