@@ -61,5 +61,5 @@ message; caught after the change, it costs the change.
 5. The need from step 4 has one home: for a feature, its case is the note of its
    `feature-<name>` tour (`add-feature` step 6); for a bug, the fix's commit message.
 6. Go on with `prototype` for a new feature, `fix-bug` for a bug, or the skill for the kind
-   of change. Carry the Goal, Reading, Follow-ups, and Walk lines into that skill. A design
-   that drops them starts again at step 1.
+   of change. Carry the Goal, Reading, and Follow-ups lines into that skill, and the Walk
+   line when step 2 wrote one. A design that drops a line it was given starts again at step 1.
