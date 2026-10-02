@@ -48,14 +48,14 @@ note The console commands the hand-authoring path needs. tour-note, step-note, s
 
 step a580rc
 order 4
-parent dets7v
+parent s71dpu
 author ai
 file crates/gui/src/panels.rs
 symbol put
 lines 0 5
 hash 678fb601b3f0d18c
 link panel-tree
-note Adds Help to the References panel and makes that tab the one in front.
+note Adds Help to the panel bring just split off, and makes that tab the one in front.
 
 step dets7v
 order 0
