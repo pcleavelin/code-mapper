@@ -14,7 +14,10 @@ prototypes that differ in shape, and exactly one survives.
    lines in the reply: what the user does and sees, and what code it adds or changes, plus
    one line on how it removes the cost the case from `understand` names. A design that
    breaks CLAUDE.md (a non-goal, a reason in "Why it is built this way", an axiom), or that
-   shows something without removing that cost, is dropped here, with the reason.
+   shows something without removing that cost, is dropped here, with the reason. Drop a
+   design that builds a follow-up marked `separate backlog`, or that follows a reading
+   other than the Goal line from `understand`. For help, an out-of-box flow, or onboarding,
+   drop a sketch that cannot pass the Walk line.
 2. One jj workspace per design, outside the repo (the session's scratch directory or the
    system temp directory), based on the current change:
    `jj workspace add <dir>/proto-<name> --name proto-<name> -r @`.
@@ -23,18 +26,22 @@ prototypes that differ in shape, and exactly one survives.
 3. Build each prototype far enough to run the feature end to end in the real binary: the
    registry entry, the handler, the element. The map, scenarios, `api/` and the naming review
    are skipped, and the gate is not run on a prototype. The designs are independent: spawn
-   one subagent per prototype in the same turn, each given the second restatement from
-   `understand`, its design's sketch and its workspace directory, and asked to return the
+   one subagent per prototype in the same turn, each given the Goal line, the Follow-ups
+   marks, the Walk line when there is one, the second restatement from `understand`, its
+   design's sketch and its workspace directory, and asked to return the
    diff stat, what it had to change beyond the sketch, and the demonstration from step 4.
 4. Demonstrate each with the prototype's own binary
    (`<dir>/proto-<name>/target/release/codemap`): the CLI command and its output, or a GUI
    script with `shot` and `dump`, and read the PNG. A prototype that cannot show the
-   restated behaviour is scrapped here. If every one is scrapped, go back to step 1 with
+   restated behaviour is scrapped here. For help, an out-of-box flow, or onboarding, scrap a
+   run whose surface leaves out a gesture on the Walk line. A panel on screen does not
+   satisfy that line. If every one is scrapped, go back to step 1 with
    what the failures taught, or to the owner if they say the request itself cannot work.
 5. Choose among the survivors, comparing in this order: the run removes the cost the case
-   names; the behaviour matches the restatement; the user's steps (fewer, and triggered the
-   way existing features are); fit with CLAUDE.md and the axioms (no second way, no new
-   concept where one exists); the size of the code and the number of crates it touches.
+   names; the behaviour matches the restatement; the Walk line, when `understand` wrote one;
+   the user's steps (fewer, and triggered the way existing features are); fit with CLAUDE.md
+   and the axioms (no second way, no new concept where one exists); the size of the code and
+   the number of crates it touches.
    State the winner in the reply, and for every other design the reason it lost; the
    winner's reason completes the case.
 6. Keep the winner, scrap the rest. In the repo, `jj restore --from proto-<winner>@` brings

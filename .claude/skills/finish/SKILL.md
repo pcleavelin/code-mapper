@@ -42,7 +42,11 @@ session's first stop with nothing in flight is. This is the order that gets it g
    feature. Report each part of the case that is missing, asserted without evidence, or
    already answered by something codemap has, and say whether the case convinces. It edits
    nothing. Rewrite the note until it does; a feature whose case cannot be made goes to the
-   owner instead of into a commit.
+   owner instead of into a commit. When the feature is help, an out-of-box flow, or
+   onboarding, pass the note only when its moment, walked on the shipped surface, shows
+   every gesture on the Walk line from `understand`. Fail the note when that surface
+   omits a gesture, including when the gate is green or a panel is on screen. Fail it
+   when a follow-up marked `separate backlog` is what the surface answers.
 5. The map. Build the binary once (`cargo build --release -p codemap`) and use
    `target/release/codemap .` below.
    1. `stale` lists every step whose text changed. `repin` follows each one from the parent
