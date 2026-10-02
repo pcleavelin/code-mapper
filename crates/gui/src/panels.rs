@@ -516,6 +516,29 @@ fn layout_of(branch: &Branch) -> LayoutTree {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+struct SavedPanelAt(usize);
+
+impl SavedPanelAt {
+    const fn new(position: usize) -> Self {
+        Self(position)
+    }
+
+    const fn get(self) -> usize {
+        self.0
+    }
+
+    fn advance(&mut self) {
+        self.0 += 1;
+    }
+}
+
+impl fmt::Display for SavedPanelAt {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "{}", self.0)
+    }
+}
+
 struct SavedPanel {
     views: Vec<View>,
     active: Option<View>,
@@ -534,7 +557,7 @@ impl Panels {
             revealed: Tab::Tour,
             answered: Ticket::default(),
         };
-        let mut panel_at = 0;
+        let mut panel_at = SavedPanelAt::new(0);
         panels.root = panels.rebuild(layout, &saved, &mut panel_at);
         panels
     }
@@ -543,15 +566,16 @@ impl Panels {
         &mut self,
         layout: &LayoutTree,
         saved: &[SavedPanel],
-        panel_at: &mut usize,
+        panel_at: &mut SavedPanelAt,
     ) -> Branch {
         match layout {
             LayoutTree::Panel(_) => {
-                let Some(SavedPanel { views, active }) = saved.get(*panel_at) else {
+                let index = panel_at.get();
+                let Some(SavedPanel { views, active }) = saved.get(index) else {
                     return Branch::placeholder();
                 };
-                *panel_at += 1;
-                let id = BranchId(u32::try_from(*panel_at - 1).unwrap_or(0));
+                panel_at.advance();
+                let id = BranchId(u32::try_from(index).unwrap_or(0));
                 let mut panel = Panel::new(id, views.clone());
                 if let Some(shown) = active
                     && panel.holds(*shown)
