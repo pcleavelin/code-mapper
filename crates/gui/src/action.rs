@@ -56,6 +56,7 @@ pub(crate) enum Action {
     OpenGroup(GroupName, Openness),
     ShowView(View),
     ShowReferences,
+    ShowHelp,
     Back,
     Forward,
     Save,
@@ -97,6 +98,29 @@ impl App {
         self.model.panels.bring(View::References, beside);
     }
 
+    fn show_help(&mut self) {
+        if self.model.panels.holder(View::Help).is_some() {
+            self.model.panels.activate(View::Help);
+            return;
+        }
+        if let Some(home) = self.model.panels.holder(View::References) {
+            self.model.panels.put(View::Help, home);
+            return;
+        }
+        let beside = View::of_tab(self.model.nav.tab());
+        self.model.panels.bring(View::Help, beside);
+    }
+
+    fn context_change(&mut self, key: StepKey, change: ContextChange) {
+        let context = &mut self.model.views.entry(key).context;
+        let more = |count: LineCount| LineCount::new(count.value() + Context::LINES.value());
+        match change {
+            ContextChange::Reset => *context = Context::default(),
+            ContextChange::Above => context.above = more(context.above),
+            ContextChange::Below => context.below = more(context.below),
+        }
+    }
+
     pub(crate) fn apply(&mut self, action: Action) {
         let model = &mut self.model;
         match action {
@@ -115,16 +139,7 @@ impl App {
             }
             Action::SelectLine(line, extend) => model.select_line(line, extend),
             Action::ClosePeek => model.peek = None,
-            Action::Context(key, change) => {
-                let context = &mut model.views.entry(key).context;
-                let more =
-                    |count: LineCount| LineCount::new(count.value() + Context::LINES.value());
-                match change {
-                    ContextChange::Reset => *context = Context::default(),
-                    ContextChange::Above => context.above = more(context.above),
-                    ContextChange::Below => context.below = more(context.below),
-                }
-            }
+            Action::Context(key, change) => self.context_change(key, change),
             Action::ToggleDirectory(directory) => {
                 if !model.directories.remove(&directory) {
                     model.directories.insert(directory);
@@ -135,6 +150,7 @@ impl App {
             }
             Action::ShowView(view) => model.show_view(view),
             Action::ShowReferences => self.show_references(),
+            Action::ShowHelp => self.show_help(),
             Action::Back => model.go_at_frame_end(Going::Back),
             Action::Forward => model.go_at_frame_end(Going::Forward),
             Action::Save => self.save(),
