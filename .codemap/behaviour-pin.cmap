@@ -551,7 +551,7 @@ file crates/codemap/tests/common/gui.rs
 symbol AUTHORING
 lines 0 109
 hash 309de9234053d72f
-note The GUI authoring gestures on a fresh tour: the new-tour form (an empty name refused, kind and group chosen), add-offer@Symbols from the Symbols strip after a symbol is focused, then '+ step' from Symbols and References, each row hovered first since its action shows only then (a repeat refused), the target strip's 'top level', 'add step' from the Source view, '+ step' on an off-tour graph node, three steps list drags (under, before, under), 'promote', a save, and the help button, which opens Help beside References; the after command prints the resulting tour.
+note The GUI authoring gestures on a fresh tour: the new-tour form (an empty name refused, kind and group chosen), add-offer@Symbols from the Symbols strip after a symbol is focused, then '+ step' from Symbols and References, each row hovered first since its action shows only then (a repeat refused), the target strip's 'top level', 'add step' from the Source view, '+ step' on an off-tour graph node, three steps list drags (under, before, under), 'promote', a save, and the help button, which opens Help beside the tour; the after command prints the resulting tour.
 
 step wv4hxm
 order 17

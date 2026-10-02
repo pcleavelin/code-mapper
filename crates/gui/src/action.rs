@@ -103,11 +103,11 @@ impl App {
             self.model.panels.activate(View::Help);
             return;
         }
-        if let Some(home) = self.model.panels.holder(View::References) {
-            self.model.panels.put(View::Help, home);
-            return;
-        }
-        let beside = View::of_tab(self.model.nav.tab());
+        let beside = if self.model.panels.holder(View::Tour).is_some() {
+            View::Tour
+        } else {
+            View::of_tab(self.model.nav.tab())
+        };
         self.model.panels.bring(View::Help, beside);
     }
 

@@ -910,7 +910,7 @@ impl Feature {
             Self::ShowHelp => Spec::new(
                 Text::new("show-help"),
                 Text::new(
-                    "open the Help tab beside References, with how to make a tour by hand and then every other function of the window",
+                    "open the Help tab beside the tour, with how to make a tour by hand and then every other function of the window",
                 ),
                 Surface::Window,
                 &const { [Trigger::Click(Element::new("help"))] },

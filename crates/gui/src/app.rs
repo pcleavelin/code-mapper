@@ -62,9 +62,7 @@ pub(crate) fn opening_panels(store: Option<&LayoutStore>) -> Panels {
         return Panels::from_layout(&saved);
     }
     let mut panels = Panels::default();
-    if let Some(home) = panels.holder(View::References) {
-        panels.put(View::Help, home);
-    }
+    panels.bring(View::Help, View::Tour);
     panels
 }
 

@@ -3,7 +3,7 @@ tour feature-show-help
 kind flow
 author ai
 group features/gui
-note The human opens the window for the first time, or comes back to make a tour by hand and cannot find the next move. The goal is that understanding an unfamiliar codebase takes less friction here than in an editor with a language server, and the first friction is this window's own gestures. A first frame of this repo, shot before this tab existed, names none of ctrl+p, the arrow-key walk, or jump to definition. An empty map said the agent writes the tours, while + new tour is already in the Tours list. + step appears only while the pointer is on a symbol. A console note with spaces and no quotes is refused as extra arguments, seen when step-note was given the words builds and running. Typing help in the palette finds a file named help, and the console help command lists CLI commands. Nothing already in the window names the gestures. The Help tab sits beside References. The first launch, when no layout has been saved, puts it in front. The help button brings it back. The tab leads with making a tour by hand, then the console commands that path needs, then palette, jump, peek and back, then every other function of the window. Each line is that function's registry summary and its keys and gestures, so the tab cannot drift from the registry. A coach of seven lessons was built and dropped. It left the other functions unnamed and needed a second mapping from actions to features. A palette that opens already filtered to help was built and dropped. It has to be closed before the gesture can be tried, the palette caps the list, and those rows do nothing on enter.
+note The human opens the window for the first time, or comes back to make a tour by hand and cannot find the next move. The goal is that understanding an unfamiliar codebase takes less friction here than in an editor with a language server, and the first friction is this window's own gestures. A first frame of this repo, shot before this tab existed, names none of ctrl+p, the arrow-key walk, or jump to definition. An empty map said the agent writes the tours, while + new tour is already in the Tours list. + step appears only while the pointer is on a symbol. A console note with spaces and no quotes is refused as extra arguments, seen when step-note was given the words builds and running. Typing help in the palette finds a file named help, and the console help command lists CLI commands. Nothing already in the window names the gestures. The Help tab sits beside the tour document. The first launch, when no layout has been saved, opens it beside the tour. The help button brings it back. The tab leads with making a tour by hand, then the console commands that path needs, then palette, jump, peek and back, then every other function of the window. Each line is that function's registry summary and its keys and gestures, so the tab cannot drift from the registry. A coach of seven lessons was built and dropped. It left the other functions unnamed and needed a second mapping from actions to features. A palette that opens already filtered to help was built and dropped. It has to be closed before the gesture can be tried, the palette caps the list, and those rows do nothing on enter.
 
 step 3uj7ap
 order 7
@@ -63,8 +63,8 @@ author ai
 file crates/gui/src/action.rs
 symbol show_help
 lines 0 11
-hash b97a47f2a4bd2ebf
-note The handler. If a panel already holds Help, that tab comes forward. Otherwise Help is put in the References panel. If References is closed, Help is split in beside the centre tab.
+hash bc1467c1d62bbe7c
+note The handler. If a panel already holds Help, that tab comes forward. Otherwise Help is split in beside the tour panel when that panel exists, else beside the centre tab.
 
 step gsuw2w
 order 11
@@ -103,9 +103,9 @@ parent dets7v
 author ai
 file crates/gui/src/app.rs
 symbol opening_panels
-lines 0 12
-hash 1676a5a4cb24b62a
-note First launch. When a layout file is configured and nothing has been saved, Help is put in front of References. A saved layout opens as it was left. A run with no layout store, which is every scripted scenario, keeps the default panels and does not open Help.
+lines 0 10
+hash a0409ed931877783
+note First launch. When a layout file is configured and nothing has been saved, Help is split in beside the tour panel. A saved layout opens as it was left. A run with no layout store, which is every scripted scenario, keeps the default panels and does not open Help.
 
 step s71dpu
 order 5
@@ -137,7 +137,7 @@ symbol of_tab
 lines 0 8
 hash 7fc0b1f67dee19c6
 link feature-show-references
-note The centre tab, used only when References is closed, so the split sits beside what the reader is looking at.
+note The centre tab, used when no tour panel exists yet, so the split sits beside what the reader is looking at.
 
 step y8qu8m
 order 14

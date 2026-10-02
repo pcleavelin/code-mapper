@@ -473,11 +473,8 @@ fn the_first_launch_opens_on_help_and_a_kept_layout_opens_as_it_was_left() {
     let store = LayoutStore::at(scratch("first-launch").join("layout"));
     let first = opening_panels(Some(&store));
     assert!(first.is_shown(View::Help));
-    assert_eq!(first.holder(View::Help), first.holder(View::References));
-    assert_eq!(
-        first.to_string(),
-        "down6(820 right5(220 0[Tours* Symbols Files] right4(740 1[Tour* Diff Graph Source Search] 2[References Help*])) 3[Console*])"
-    );
+    assert!(first.is_shown(View::Tour));
+    assert_ne!(first.holder(View::Help), first.holder(View::References));
     store.save(&Panels::default().layout()).unwrap();
     let kept = opening_panels(Some(&store));
     assert!(kept.holder(View::Help).is_none());
@@ -489,18 +486,21 @@ fn the_first_launch_opens_on_help_and_a_kept_layout_opens_as_it_was_left() {
 }
 
 #[test]
-fn show_help_opens_the_help_tab_beside_references() {
+fn show_help_opens_beside_the_tour_and_comes_back_after_it_is_closed() {
     let mut app = app();
     app.apply(Action::ShowHelp);
     assert_eq!(
         app.model.panels.to_string(),
-        "down6(820 right5(220 0[Tours* Symbols Files] right4(740 1[Tour* Diff Graph Source Search] 2[References Help*])) 3[Console*])"
+        "down6(820 right5(220 0[Tours* Symbols Files] right4(740 right8(500 1[Tour* Diff Graph Source Search] 7[Help*]) 2[References*])) 3[Console*])"
     );
     app.model.panels.close_view(View::Help);
+    assert!(app.model.panels.holder(View::Help).is_none());
     app.apply(Action::ShowHelp);
-    assert_eq!(
-        app.model.panels.to_string(),
-        "down6(820 right5(220 0[Tours* Symbols Files] right4(740 1[Tour* Diff Graph Source Search] 2[References Help*])) 3[Console*])"
+    assert!(app.model.panels.is_shown(View::Help));
+    assert!(app.model.panels.is_shown(View::Tour));
+    assert_ne!(
+        app.model.panels.holder(View::Help),
+        app.model.panels.holder(View::References)
     );
 }
 
