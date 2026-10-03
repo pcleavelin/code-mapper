@@ -52,7 +52,7 @@ author ai
 file crates/gui/src/views/wizard.rs
 symbol ticked_tree
 lines 0 23
-hash fa7fa784528376d1
+hash 3e812b054e1a71df
 note The ticked entries in walk order, indented by depth: what create will hang.
 
 step 3hhho6
@@ -141,9 +141,9 @@ parent cz6242
 author ai
 file crates/gui/src/views/wizard.rs
 symbol branch_runs
-lines 0 63
-hash 97b34c5669842349
-note A branch row's text: a cycle as 'calls back into X'; otherwise, while editing, the step number (green 'new' for a call to add), then the name and place, ticked rows in text and unticked weak, and the status word, with the path squeezed to leave room for the reason and '+N calls'.
+lines 0 62
+hash e7e9e132f869a4dc
+note A branch row's text: a cycle as 'calls back into X'; otherwise, while editing, the step number (green 'new' for a call to add), then the name and place, ticked rows' names in their source colour and unticked rows weak, and the status word, with the path squeezed to leave room for the reason and '+N calls'.
 
 step 7nnbsz
 order 40
@@ -192,7 +192,7 @@ author ai
 file crates/gui/src/views/wizard.rs
 symbol matches
 lines 0 91
-hash 1b9f6d64c8d24b08
+hash 84441082384a8f00
 note The search field and its matches: with nothing typed, the entry points outside tests; otherwise every symbol whose name holds the text. A click on a row makes it the start; past the rows shown, how many more match.
 
 step a7104e
@@ -394,9 +394,9 @@ parent cz6242
 author ai
 file crates/gui/src/views/wizard.rs
 symbol place_runs
-lines 0 22
-hash 2516d303648c81c1
-note A place as the runs of a tree row: its name after the given indent, padded to the name column, then its file and line clipped from the left and padded to the path room. tree_runs does the same for a ticked entry.
+lines 0 26
+hash 5275d216ed42010f
+note A place as the runs of a tree row: its name after the given indent, padded to the name column, in its source colour while ticked and weak while not, then its file and line clipped from the left and padded to the path room. tree_runs does the same for a ticked entry.
 
 step hzqskv
 order 53
@@ -404,9 +404,9 @@ parent mcyqva
 author ai
 file crates/gui/src/views/wizard.rs
 symbol wizard_strip
-lines 0 45
-hash 58c00b8e3ca0475e
-note While the wizard is open, the target strip of Source and Graph says which tour is being built and, on the Start page, the chosen start ('click a symbol' when none); elsewhere the page it is on. 'back to the wizard' brings the Tour view forward. While a tour is being edited it says 'editing <tour>' with 'back to the edit'.
+lines 0 48
+hash 60d2ac7928037589
+note While the wizard is open, the target strip of Source and Graph says which tour is being built and, on the Start page, the chosen start, its name in its source colour ('click a symbol' when none); elsewhere the page it is on. 'back to the wizard' brings the Tour view forward. While a tour is being edited it says 'editing <tour>' with 'back to the edit'.
 
 step idkgl4
 order 56
@@ -535,7 +535,7 @@ author ai
 file crates/gui/src/views/wizard.rs
 symbol focus_choice
 lines 0 33
-hash 6ea030b9473a2497
+hash 3d0f9ed96c24f1f4
 note The chosen start, and the focused symbol with 'use it' when it is not already the start.
 
 step qf8u06
@@ -544,9 +544,9 @@ parent q36cpw
 author ai
 file crates/gui/src/views/wizard.rs
 symbol place
-lines 0 12
-hash 9ac368bd5611d32e
-note A symbol's name, kind and file:line, for the start, the focus and the search matches.
+lines 0 13
+hash c206de50d81ba324
+note A symbol's name, in the colour the source view draws it in (name_class), its kind and file:line, for the start, the focus and the search matches.
 
 step qp8o5f
 order 8

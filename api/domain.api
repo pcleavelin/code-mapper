@@ -82,6 +82,7 @@ index::file::pub fn set_readiness(&mut self, readiness: Readiness)
 index::file::pub fn without_text(&self) -> Self
 index::file::pub fn innermost(&self, span: Span) -> Option<SymbolIndex>
 index::file::pub fn first_named(&self, name: &SymbolName) -> Option<SymbolIndex>
+index::file::pub fn name_class(&self, symbol: &Symbol) -> HighlightClass
 index::file::pub fn call_site(&self, line: Line, name: &SymbolName) -> bool
 index::language::pub struct Extension(&'static str);
 index::language::pub const fn as_str(self) -> &'static str

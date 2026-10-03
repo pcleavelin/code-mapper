@@ -14,7 +14,7 @@ use crate::model::Model;
 use crate::panels::View;
 use crate::text::{Clipped, Counted, Needle, Noun, Tag};
 use crate::theme::{
-    ACCENT, Cells, EXPANDER_BUTTON, GREEN, PANEL_PADDING, PANEL_TEXT_ROOM, PIXEL, RED,
+    self, ACCENT, Cells, EXPANDER_BUTTON, GREEN, PANEL_PADDING, PANEL_TEXT_ROOM, PIXEL, RED,
     START_PAGE_WIDTH, TEXT, WEAK,
 };
 use crate::welcome::Spell;
@@ -182,6 +182,7 @@ fn name_page(model: &Model, wizard: &Wizard, frame: &mut Frame<'_>) {
 
 struct Place {
     name: Label,
+    name_color: ui::Color,
     kind: Label,
     at: Label,
 }
@@ -191,6 +192,7 @@ fn place(model: &Model, symbol: SymbolId) -> Option<Place> {
     let file = model.index.file(symbol.file())?;
     Some(Place {
         name: Label::new(found.name().as_str()),
+        name_color: theme::highlight(file.name_class(found)),
         kind: Label::new(found.kind().as_str()),
         at: Label::new(format!(
             "{}:{}",
@@ -219,7 +221,7 @@ fn focus_choice(model: &Model, wizard: &Wizard, frame: &mut Frame<'_>) {
     frame.row_text(match chosen {
         Some(found) => vec![
             Run::new(row_caption(&Spell::new("start")), WEAK),
-            Run::new(found.name, ACCENT),
+            Run::new(found.name, found.name_color),
             Run::new(
                 format!("  {}  {}", found.kind.as_str(), found.at.as_str()),
                 WEAK,
@@ -235,7 +237,7 @@ fn focus_choice(model: &Model, wizard: &Wizard, frame: &mut Frame<'_>) {
     {
         frame.start(Container::ToolbarSmall);
         frame.plain_line(caption(&Spell::new("focus")), WEAK);
-        frame.label(found.name, TEXT);
+        frame.label(found.name, found.name_color);
         frame.label(found.at, WEAK);
         if wizard.start() == Some(focus) {
             frame.label("chosen", ACCENT);
@@ -311,7 +313,7 @@ fn matches(model: &Model, wizard: &Wizard, frame: &mut Frame<'_>, columns: &Colu
     for (row, (id, spot)) in places.iter().enumerate() {
         let runs = vec![
             Run::new(" ".repeat(ROW_CELLS.get()), WEAK),
-            Run::new(padded(&spot.name, Count::new(widest)), TEXT),
+            Run::new(padded(&spot.name, Count::new(widest)), spot.name_color),
             Run::new(
                 format!(
                     "  {}  {}",
@@ -373,7 +375,11 @@ struct Room {
     path: Count,
 }
 
-fn place_runs(found: &Place, indent: Count, room: &Room, color: ui::Color) -> Vec<Run> {
+fn place_runs(found: &Place, indent: Count, room: &Room, tick: Tick) -> Vec<Run> {
+    let color = match tick {
+        Tick::Ticked => found.name_color,
+        Tick::Unticked => WEAK,
+    };
     let named = Label::new(format!(
         "{}{}",
         " ".repeat(indent.get()),
@@ -397,9 +403,9 @@ fn place_runs(found: &Place, indent: Count, room: &Room, color: ui::Color) -> Ve
     ]
 }
 
-fn tree_runs(model: &Model, entry: TreeEntry, room: &Room, color: ui::Color) -> Vec<Run> {
+fn tree_runs(model: &Model, entry: TreeEntry, room: &Room, tick: Tick) -> Vec<Run> {
     place(model, entry.symbol).map_or_else(Vec::new, |found| {
-        place_runs(&found, indent_of(entry.depth), room, color)
+        place_runs(&found, indent_of(entry.depth), room, tick)
     })
 }
 
@@ -412,6 +418,7 @@ fn lines_place(model: &Model, wizard: &Wizard, step: &StepId) -> Option<Place> {
     let found = model.map.step(tour, step)?;
     Some(Place {
         name: Label::new("(lines)"),
+        name_color: TEXT,
         kind: Label::default(),
         at: Label::new(format!(
             "{}:{}",
@@ -598,7 +605,6 @@ impl Tree<'_> {
     fn branch_runs(&self, branch: &Branch, indent: Count) -> Vec<Run> {
         let model = self.model;
         let room = self.room_left(indent);
-        let ticked = branch.tick == Tick::Ticked;
         if branch.verdict() == Verdict::Cycle {
             return vec![
                 Run::new(" ".repeat(BOX_CELLS.get()), WEAK),
@@ -648,7 +654,7 @@ impl Tree<'_> {
                 &found,
                 Count::ZERO,
                 &Room { name, path },
-                if ticked { TEXT } else { WEAK },
+                branch.tick,
             ));
         }
         if !status.text.as_str().is_empty() {
@@ -822,7 +828,7 @@ fn ticked_tree(model: &Model, wizard: &Wizard, frame: &mut Frame<'_>, columns: &
     };
     for entry in ticked {
         let mut runs = vec![Run::new(" ".repeat(ROW_CELLS.get()), WEAK)];
-        runs.extend(tree_runs(model, entry, &room, TEXT));
+        runs.extend(tree_runs(model, entry, &room, Tick::Ticked));
         frame.row_text(runs);
     }
 }
@@ -936,13 +942,13 @@ fn preview(model: &Model, wizard: &Wizard, frame: &mut Frame<'_>, columns: &Colu
 }
 
 pub(super) fn wizard_strip(model: &Model, wizard: &Wizard, frame: &mut Frame<'_>, view: View) {
-    let place = Label::new(view.name().as_str());
+    let view_name = Label::new(view.name().as_str());
     frame.start(Container::ToolbarSmall);
     if let Mode::EditTour(tour) = wizard.mode() {
         frame.label("editing", WEAK);
         frame.label(tour.as_str(), TEXT);
         if frame
-            .small_button("back to the edit", ids::WIZARD_RETURN.with(&place))
+            .small_button("back to the edit", ids::WIZARD_RETURN.with(&view_name))
             .clicked()
         {
             frame.push(Action::Wizard(WizardAct::Return));
@@ -959,8 +965,11 @@ pub(super) fn wizard_strip(model: &Model, wizard: &Wizard, frame: &mut Frame<'_>
     }
     if wizard.page() == Page::Start {
         frame.label("  start =", WEAK);
-        match wizard.start().and_then(|symbol| location_of(model, symbol)) {
-            Some(name) => frame.label(name, ACCENT),
+        match wizard.start().and_then(|symbol| place(model, symbol)) {
+            Some(found) => {
+                frame.label(found.name, found.name_color);
+                frame.label(found.at, WEAK);
+            }
             None => frame.label("click a symbol", WEAK),
         }
     } else {
@@ -974,21 +983,12 @@ pub(super) fn wizard_strip(model: &Model, wizard: &Wizard, frame: &mut Frame<'_>
         );
     }
     if frame
-        .small_button("back to the wizard", ids::WIZARD_RETURN.with(&place))
+        .small_button("back to the wizard", ids::WIZARD_RETURN.with(&view_name))
         .clicked()
     {
         frame.push(Action::Wizard(WizardAct::Return));
     }
     frame.finish();
-}
-
-fn location_of(model: &Model, symbol: SymbolId) -> Option<Label> {
-    let found = place(model, symbol)?;
-    Some(Label::new(format!(
-        "{}  {}",
-        found.name.as_str(),
-        found.at.as_str()
-    )))
 }
 
 fn edit_page(model: &Model, wizard: &Wizard, tour: &TourName, frame: &mut Frame<'_>, area: Extent) {

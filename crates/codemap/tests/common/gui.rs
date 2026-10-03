@@ -983,6 +983,7 @@ wait 2
 click-id field@wizard-search
 text fill
 wait 2
+shot {shots}/wizard-search.png
 click-id wizard-sym/0
 wait 2
 dump

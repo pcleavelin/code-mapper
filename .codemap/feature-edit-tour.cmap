@@ -291,8 +291,8 @@ parent 5yxrki
 author ai
 file crates/gui/src/views/wizard.rs
 symbol lines_place
-lines 0 14
-hash 2440a7c4ced5038a
+lines 0 15
+hash e9b5e0943bb3c83a
 note A lines step as '(lines)' at its file and first line, read from the map.
 
 step ig90lu
