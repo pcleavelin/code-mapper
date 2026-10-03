@@ -316,6 +316,7 @@ impl platform::App for App {
         self.model.now = input.time;
         self.keys(input);
         self.model.refresh_palette();
+        keys::turn_wheel(&mut input.pointer);
         self.ui.begin(input);
         for action in views::panel_input(&self.model, &self.ui) {
             self.apply(action);

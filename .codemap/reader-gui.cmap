@@ -141,8 +141,8 @@ order 0
 author ai
 file crates/gui/src/app.rs
 symbol frame
-lines 0 63
-hash 181aa0490ea50ad1
+lines 0 64
+hash 3630c27e5ba33061
 note The frame (platform::App::frame), in order: the font and cell size for this scale factor, the screenshot aid, the five polls, the keys, then panel_input, the steps list's drag (step_list_input) and the graph's own input phase (or, with the Graph view hidden, the graph marked Hidden and its keyboard Elsewhere, so a look snaps and the arrows walk the tour), the element tree, layout and draw, the action queue, the reveal of the centre view navigation asked for, saving the layout if it changed, and the history snapshot, which first performs a back or forward asked for this frame. It asks the loop to come back at the ANIMATING rate while the graph camera is gliding, in 50 ms while any work is in flight, and in a second otherwise, so an idle window costs one frame per second.
 
 step 5aljhx
@@ -658,8 +658,8 @@ parent 4uwoav
 author ai
 file crates/gui/src/widgets/code.rs
 symbol code_block
-lines 0 93
-hash a07e2aa176e811fd
+lines 0 72
+hash 6d9364c6c6c175e5
 note One block of code as one element, shared with the Source view, the peek panel and the tooltip; the document passes the slice highlight as the row background.
 
 step o4p6no

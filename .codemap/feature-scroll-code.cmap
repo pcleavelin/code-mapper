@@ -3,22 +3,61 @@ tour feature-scroll-code
 kind flow
 author ai
 group features/gui
-note Shift+wheel over a code block scrolls it sideways, for lines wider than the view. The reader reaches for it to see the end of a line wider than the panel, since code is shown at full length without wrapping. The offset is kept per code block, clamped so the text cannot scroll past its end, and a thin mark on the block's left edge shows it is scrolled. In the graph, shift+wheel pans the canvas sideways instead.
+note The reader meets code wider than where it is shown - a long line in the Source view, a tour step in the Tour document, a reference's code, all more common in a split panel - and needs to see the end of the line. Without this the line is cut at the panel edge with nothing showing more exists (a run on a file of 250-column lines shows it), and the only way sideways was a hidden shift+wheel that read only the vertical wheel: a trackpad's sideways swipe and macOS's shift+mouse-wheel, which arrives as a horizontal delta, did nothing, and the same wheel also scrolled the column around the block. It serves the first goal, reading unfamiliar code through codemap with less friction than an editor. Nothing else answers it: code is never wrapped, so a line stays one row and line numbers, anchors and selections hold, and the graph's pan moves only the graph. Every code block wider than its rectangle now has a horizontal scrollbar along the bottom of the part of it that shows, with room made under its last line: drag the thumb, click the track to jump, swipe sideways, or shift+wheel, which keys::turn_wheel turns sideways once per frame from the registry's ShiftWheel gesture so the column does not also scroll. The offset is kept per block in the Model's across scrolls. The bar is the ui's one scrollbar, opted into per element with Scrollbars::HORIZONTAL, so both directions look and behave the same. Of three prototypes this one was kept: a bar drawn and hit-tested by the code widget (block) and one bar per panel moving all its blocks together (panel) each needed a second implementation of thumb drag and track click beside the ui's, and the panel's bar sat far below a short document and shifted steps at different indents by the same pixels.
 
-step 7cxi2o
-order 4
-parent vso1s4
+step 1mx9u6
+order 5
+parent rd9sp9
 author ai
-file crates/gui/src/graph/input.rs
-symbol graph_wheel
-lines 42 50
-hash 1c29e9d9f7c4d1e4
-link graph-camera
-note In the graph the same gesture is read by keys::wheeling as Across, and the wheel pans the camera horizontally.
+file crates/ui/src/tree.rs
+symbol scrollbar_room
+lines 0 12
+hash f002abda5b6169a0
+note In the fit pass, a block of fitted height that scrolls sideways and whose content is wider than it grows by one bar width, so the bar sits under its last line instead of over it.
 
-step 83z692
+step 4nka6a
+order 3
+parent 75j99i
+author ai
+file crates/ui/src/tree.rs
+symbol drag_scrollbar
+lines 0 41
+hash e4b34b210373c095
+note One axis's bar: a press on the thumb records the grab and the axis, a press elsewhere on the track jumps so the clicked point is centred, and while the grab is held the offset follows the mouse along that axis.
+
+step 75j99i
 order 2
-parent vso1s4
+parent rd9sp9
+author ai
+file crates/ui/src/tree.rs
+symbol scroll_by_wheel
+lines 0 24
+hash 14287f6d046fc7e8
+note Scrolls the offset on both axes by the wheel when the element is hit or under the mouse, then each axis goes through drag_scrollbar, which clamps it to that axis's overflow; an axis the element did not opt into has none, so a vertical column ignores a sideways swipe and a code block ignores the vertical wheel, which the column around it takes.
+
+step 7wnogw
+order 6
+parent rd9sp9
+author ai
+file crates/ui/src/tree.rs
+symbol of
+lines 0 33
+hash 9fc80e7204277049
+note The bar's geometry, shared by drawing and hit-testing: a horizontal track along the bottom of the part of the element that shows, so the Source view's block, which runs past the panel's bottom, still shows its bar at the panel's edge; a block barely showing keeps the bar on its own rows rather than over what is above it.
+
+step aspnlc
+order 1
+parent rd9sp9
+author ai
+file crates/gui/src/keys.rs
+symbol turn_wheel
+lines 0 8
+hash 5582d9f2861dbf12
+note Before the ui sees the frame's input, App::frame passes the pointer through here: while the registry's ShiftWheel gesture for ScrollCode is held (and ControlWheel zoom is not), the vertical wheel is added to the horizontal one and cleared, so every scroller and the graph read shift+wheel as sideways.
+
+step jpbuaj
+order 4
+parent rd9sp9
 author ai
 file crates/gui/src/action.rs
 symbol apply
@@ -26,31 +65,22 @@ lines 43 43
 hash c5a6628c1b2c605e
 note Stores the offset under the block's id, so the next frame starts from it.
 
-step huq5e1
-order 3
-parent vso1s4
-author ai
-file crates/gui/src/widgets/code.rs
-symbol code_block
-lines 54 60
-hash 24e4b1606a2defb3
-note The effect: the grid is drawn shifted left by the offset, with the scrolled mark on the left edge.
-
-step ux6g3j
-order 1
-parent vso1s4
-author ai
-file crates/gui/src/keys.rs
-symbol scrolls_across
-lines 0 2
-hash f6c6611d061b99d1
-note Whether the registry's ScrollCode gesture, shift+wheel, is held.
-
-step vso1s4
+step rd9sp9
 order 0
 author ai
 file crates/gui/src/widgets/code.rs
-symbol code_block
-lines 20 32
-hash 647eb278bb50b1ac
-note The handler, run as the code block is built: when the block was hovered last frame and the ScrollCode gesture is held, the wheel moves the block's across offset by a fixed number of columns per notch; the offset is clamped to the text's overflow and queued as ScrollAcross.
+symbol scrolled_code
+lines 0 39
+hash 5d3c218d89723e6b
+note The handler, run as each code block is built: the block's across offset goes through Ui::scroll_by_wheel under the block's id and is queued as ScrollAcross; the block is a clipping row scrolled by that offset that only scrolls and shows a bar sideways, holding one custom leaf at the grid's full width (an exact width, so nothing squeezes it). While the pointer is on the bar, or any scrollbar is being dragged, the block reports no interaction, so a press on the bar neither selects a line nor peeks.
+
+step wbxy54
+order 7
+parent rd9sp9
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_wheel
+lines 42 46
+hash ec5a28160473fd90
+link graph-camera
+note In the graph the wheel pans the camera by both components, so shift+wheel, turned sideways above, pans it sideways.

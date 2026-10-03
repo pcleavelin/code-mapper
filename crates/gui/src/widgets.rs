@@ -860,8 +860,8 @@ impl Frame<'_> {
         scroller: Scroller,
         background: Option<ui::Color>,
     ) -> Scrolled {
-        let mut offset = start;
-        let offset = self.ui.scroll_by_wheel(id, &mut offset);
+        let mut offset = Point::new(Px::ZERO, start);
+        let offset = self.ui.scroll_by_wheel(id, &mut offset).vertical;
         self.push(Action::Scroll(id, offset));
         let layout = match scroller {
             Scroller::Plain => Layout::column().grow().padding(PANEL_PADDING),

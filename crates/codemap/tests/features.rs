@@ -85,6 +85,7 @@ fn exercised(trigger: Trigger, commands: &str, scripts: &str) -> bool {
                 line.starts_with("wheel ") && !line.contains("ctrl") && !line.contains("shift")
             }
             Gesture::ShiftWheel => line.starts_with("wheel ") && line.contains("shift"),
+            Gesture::Swipe => line.starts_with("swipe "),
             Gesture::ControlWheel => line.starts_with("wheel ") && line.contains("ctrl"),
             Gesture::Pinch => line.starts_with("pinch "),
             Gesture::DoubleClick => line.starts_with("dblclick"),

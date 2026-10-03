@@ -11,9 +11,9 @@ parent jcl12n
 author ai
 file crates/platform/src/script.rs
 symbol run_line
-lines 0 78
-hash 695473858d237cd5
-note One line. Input commands write the Input directly - mouse moves the pointer, down presses and holds the left button (twice makes it a double click, carried on the press since that is the frame the app sees it on) with the modifiers named after it, up releases it, wheel adds to the wheel, pinch n adds a pinch of n percent, key pushes a Press, text appends typed text - and all but mouse yield, so each is a frame of its own. wait and pause yield for their duration, and pause also adds its length to the script's clock at once. click, dblclick and drag queue their expansion; the -id forms aim first; absent checks an element is not in view. quit ends the run. Anything else goes to the app.
+lines 0 87
+hash 6dfca5d3c09dc33f
+note One line. Input commands write the Input directly - mouse moves the pointer, down presses and holds the left button (twice makes it a double click, carried on the press since that is the frame the app sees it on) with the modifiers named after it, up releases it, wheel adds to the vertical wheel, swipe dx dy to both axes as a trackpad would, pinch n adds a pinch of n percent, key pushes a Press, text appends typed text - and all but mouse yield, so each is a frame of its own. wait and pause yield for their duration, and pause also adds its length to the script's clock at once. click, dblclick and drag queue their expansion; the -id forms aim first; absent checks an element is not in view. quit ends the run. Anything else goes to the app.
 
 step 09hitd
 order 7
@@ -60,8 +60,8 @@ parent i1u3a4
 author ai
 file crates/platform/src/script.rs
 symbol impl ScriptCommand
-lines 0 30
-hash 10ad9fecd3fdac19
+lines 0 31
+hash 13c0570d9f8940d4
 note named finds the command whose name is the line's first word, so run_line's match and the fallback to hand_to_app both go through one lookup instead of comparing the word against each command in turn.
 
 step dk4cd8
@@ -100,8 +100,8 @@ parent 006u4m
 author ai
 file crates/platform/src/script.rs
 symbol ScriptCommand
-lines 0 18
-hash 24431912a1b9cfa9
+lines 0 19
+hash 66b2d272337fd623
 note Every line word run_line and hand_to_app dispatch on: the input and timing commands, the click/drag/aim forms, and quit.
 
 step jcl12n

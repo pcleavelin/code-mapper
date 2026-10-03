@@ -33,6 +33,17 @@ lines 0 15
 hash 0eeb907f8db2227f
 note The eleven named fields, one member each, plus step_notes, a field per edit-tour outline row made on first write (an unwritten one reads as blank), reached by Which; focused names the one with the keyboard, at most one, so taking focus is setting it.
 
+step 2l481u
+order 48
+parent pk9re7
+author ai
+file crates/gui/src/widgets/code.rs
+symbol scrolled_code
+lines 0 39
+hash 5d3c218d89723e6b
+link feature-scroll-code
+note The block as elements: a clipping row scrolled sideways by the block's across offset with a horizontal scrollbar only, its marks painted pinned, holding one leaf at the grid's exact width that draws the grid. The offset goes through Ui::scroll_by_wheel and back as ScrollAcross; a press on the bar, or any scrollbar drag, leaves the block without an interaction.
+
 step 2yp2r2
 order 5
 author ai
@@ -306,9 +317,9 @@ order 21
 author ai
 file crates/gui/src/widgets/code.rs
 symbol code_block
-lines 0 93
-hash a07e2aa176e811fd
-note The one code element in the GUI: a block of lines drawn from a cached grid by a custom element, with the hover, jump and peek gestures resolved to a (line, column) spot from the pointer. Per-row backgrounds and bars come from the two Marks closures, so the Source view's selection and anchor bars and the document's slice highlight share it. Width::Wide takes the full width rather than the grid's. It returns the Interaction and the spot under the pointer, whose column is None over the gutter. Shift+wheel over a block whose lines are wider than it scrolls it sideways (kept in the Model's across scrolls, pushed as ScrollAcross), and while it is scrolled a thin weak bar on its left edge shows that the start of the lines is cut off. Which gesture is peek and which is jump comes from keys::code_gesture, that is from the feature registry.
+lines 0 72
+hash 6d9364c6c6c175e5
+note The one code element in the GUI: a block of lines drawn from a cached grid by a custom element, with the hover, jump and peek gestures resolved to a (line, column) spot from the pointer. Per-row backgrounds and bars come from the two Marks closures, so the Source view's selection and anchor bars and the document's slice highlight share it. Width::Wide takes the full width rather than the grid's. It returns the Interaction and the spot under the pointer, whose column is None over the gutter. A block whose lines are wider than it scrolls sideways with a horizontal scrollbar (scrolled_code, kept in the Model's across scrolls, pushed as ScrollAcross). Which gesture is peek and which is jump comes from keys::code_gesture, that is from the feature registry.
 
 step pwtsq2
 order 18
@@ -394,7 +405,7 @@ author ai
 file crates/gui/src/widgets.rs
 symbol scroll_column
 lines 0 32
-hash c0489573512de0c7
+hash feb10acaefa8856a
 note Opens a scrolling column whose offset lives in the Model's Scrolls by id: the wheel moves it, the result goes back as a Scroll action, and the caller closes the column with finish. The tree clamps the offset against what the column showed last frame, so a panel that shrank cannot stay scrolled past its end. Scroller picks the shape: a panel, the document (wider padding), or a fixed height, which the peek uses.
 
 step t1pqtr

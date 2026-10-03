@@ -18,7 +18,7 @@ use crate::graph::Parentage;
 use crate::graph::build::{Built, CellSize, Rank, StepInfo};
 use crate::graph::{Button, GraphState, Node};
 use crate::ids::{self, CONTROLS};
-use crate::keys::{Extend, Walk};
+use crate::keys::{Extend, Walk, turn_wheel};
 use crate::model::{LineSelection, Model, Readable, StepKey, StepSlot, Tab, TourSlot, ViewFlag};
 use crate::nav::Scrolling;
 use crate::palette::{Palette, commands};
@@ -1395,4 +1395,29 @@ fn a_field_without_the_keyboard_shows_the_start_of_its_text_cut_with_an_ellipsis
         (focused.before.as_str(), focused.after.as_str()),
         ("abcdefghij", "")
     );
+}
+
+fn turned(mods: ui::Mods) -> ui::Vector {
+    let mut pointer = ui::Pointer {
+        mods,
+        wheel: ui::Vector::new(ui::Coordinate::new(5.0), ui::Coordinate::new(-120.0)),
+        ..ui::Pointer::default()
+    };
+    turn_wheel(&mut pointer);
+    pointer.wheel
+}
+
+#[test]
+fn shift_turns_the_wheel_sideways() {
+    assert_eq!(
+        turned(ui::Mods::SHIFT),
+        ui::Vector::new(ui::Coordinate::new(-115.0), ui::Coordinate::new(0.0))
+    );
+}
+
+#[test]
+fn the_plain_and_the_control_wheel_keep_their_direction() {
+    let wheel = ui::Vector::new(ui::Coordinate::new(5.0), ui::Coordinate::new(-120.0));
+    assert_eq!(turned(ui::Mods::NONE), wheel);
+    assert_eq!(turned(ui::Mods::CTRL.with(ui::Mods::SHIFT)), wheel);
 }

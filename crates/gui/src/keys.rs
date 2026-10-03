@@ -1,5 +1,5 @@
 use features::{Chord, Feature, Gesture, Key as ChordKey, Modifiers, Trigger};
-use ui::{Button, Glyph, Input, Interaction, Key, Mods, Pointer, Press};
+use ui::{Button, Coordinate, Glyph, Input, Interaction, Key, Mods, Pointer, Press, Vector};
 
 use crate::field::Edit;
 use crate::graph::Heading;
@@ -163,6 +163,7 @@ fn seen(gesture: Gesture, interaction: Interaction, pointer: Pointer) -> bool {
         Gesture::Drag => interaction.drag().is_some(),
         Gesture::Wheel => interaction.wheel().vertical.get() != 0.0,
         Gesture::ShiftWheel => mods.shift(),
+        Gesture::Swipe => interaction.wheel().horizontal.get() != 0.0,
         Gesture::ControlWheel => mods.ctrl(),
         Gesture::Pinch => interaction.pinch().get() != 0.0,
         Gesture::BackButton => pointer.pressed.contains(Button::Back),
@@ -214,8 +215,14 @@ pub(crate) fn wheeling(pointer: Pointer) -> Wheeling {
     }
 }
 
-pub(crate) fn scrolls_across(pointer: Pointer) -> bool {
-    gestures(Feature::ScrollCode).any(|gesture| seen(gesture, Interaction::default(), pointer))
+pub(crate) fn turn_wheel(pointer: &mut Pointer) {
+    if wheeling(*pointer) == Wheeling::Across {
+        let wheel = pointer.wheel;
+        pointer.wheel = Vector::new(
+            Coordinate::new(wheel.horizontal.get() + wheel.vertical.get()),
+            Coordinate::ZERO,
+        );
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

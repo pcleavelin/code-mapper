@@ -707,7 +707,13 @@ impl Feature {
                 Text::new("scroll-code"),
                 Text::new("scroll a code block sideways"),
                 Surface::Window,
-                &const { [Trigger::Gesture(Gesture::ShiftWheel, Element::new("code"))] },
+                &const {
+                    [
+                        Trigger::Gesture(Gesture::ShiftWheel, Element::new("code")),
+                        Trigger::Gesture(Gesture::Swipe, Element::new("code")),
+                        Trigger::Gesture(Gesture::Drag, Element::new("code-scrollbar")),
+                    ]
+                },
             ),
             Self::RevealNode => Spec::new(
                 Text::new("reveal-node"),

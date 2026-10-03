@@ -149,7 +149,6 @@ pub(crate) const STEP_SPACER: Px = Px::new(6);
 pub(crate) const INDENT_EXTRA: Px = Px::new(4);
 pub(crate) const PIXEL: Px = Px::new(1);
 pub(crate) const SELECTED_BAR: Px = PIXEL;
-pub(crate) const SCROLLED_MARK: Px = Px::new(2);
 pub(crate) const ROW_EXTRA: Px = Px::new(4);
 pub(crate) const PANEL_TEXT_ROOM: Px = Px::new(8);
 pub(crate) const PEEK_EXTRA: Px = Px::new(8);
@@ -188,7 +187,6 @@ pub(crate) const GRAPH_BEND: Coordinate = Coordinate::new(0.8);
 pub(crate) const GRAPH_THIN_BORDER: Px = PIXEL;
 pub(crate) const GRAPH_THICK_BORDER: Px = Px::new(2);
 const WHEEL_NOTCH: Coordinate = Coordinate::new(40.0);
-pub(crate) const WHEEL_ACROSS: Cells = Cells::new(3);
 
 pub(crate) const NAV_BUTTON: Cells = Cells::new(3);
 pub(crate) const COLLAPSE_ROOM: Cells = Cells::new(3);

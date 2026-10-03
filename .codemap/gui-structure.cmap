@@ -98,8 +98,8 @@ order 25
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 129 163
-hash f5fce2c56cf74249
+lines 129 162
+hash aba20606e053638e
 note Every padding, gap and fixed pixel measure the widgets and views use, named by where it is used.
 
 step 63vlrl
@@ -203,7 +203,7 @@ order 26
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 192 231
+lines 190 229
 hash 1fcedfb9e782142a
 note Every measure counted in cells: button and field widths, column guesses before a panel has a size, the symbol table's columns, tooltip sizes, the gap before a danger button, the status bar's room for the map's place, the panels' floors and the picker's width.
 
@@ -243,9 +243,9 @@ parent uhm8r4
 author ai
 file crates/gui/src/keys.rs
 symbol seen
-lines 0 16
-hash f3783d45d4ab0ab4
-note Whether a gesture happened to an element this frame: alt, ctrl or shift click, double click, hover, drag, wheel (plain, shift or ctrl), pinch, and the mouse's side buttons.
+lines 0 17
+hash d9b77b88e9751319
+note Whether a gesture happened to an element this frame: alt, ctrl or shift click, double click, hover, drag, wheel (plain, shift or ctrl), a sideways swipe, pinch, and the mouse's side buttons.
 
 step e7qp3v
 order 54
@@ -271,10 +271,10 @@ order 43
 parent nk2647
 author ai
 file crates/gui/src/keys.rs
-symbol scrolls_across
-lines 0 2
-hash f6c6611d061b99d1
-note Whether shift is held, so the wheel scrolls a code block sideways.
+symbol turn_wheel
+lines 0 8
+hash 5582d9f2861dbf12
+note Turns shift+wheel sideways before the ui sees the frame: while ScrollCode's ShiftWheel gesture is held, the vertical wheel moves to the horizontal one.
 
 step fzwmd4
 order 11
@@ -584,9 +584,9 @@ parent 7579zm
 author ai
 file crates/gui/src/dump.rs
 symbol dump
-lines 0 16
-hash 9b7d5472e971a798
-note Each scrolling panel's offset, rectangle and content size.
+lines 0 33
+hash 6a51a76dc4db4143
+note Each scrolling panel's offset, rectangle and content size, then each code block that scrolls sideways (the Source view's and the first document steps'), its thumb first so a script can aim a drag at it.
 
 step saeyu5
 order 52

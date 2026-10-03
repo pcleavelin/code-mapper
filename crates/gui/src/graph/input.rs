@@ -301,14 +301,10 @@ impl App {
             return;
         }
         let step = |delta: f32| round(Coordinate::new(delta));
-        let pan = if keys::wheeling(pointer) == Wheeling::Across {
-            Point::new(pan.horizontal + step(wheel.vertical.get()), pan.vertical)
-        } else {
-            Point::new(
-                pan.horizontal + step(wheel.horizontal.get()),
-                pan.vertical + step(wheel.vertical.get()),
-            )
-        };
+        let pan = Point::new(
+            pan.horizontal + step(wheel.horizontal.get()),
+            pan.vertical + step(wheel.vertical.get()),
+        );
         self.graph(GraphAction::Camera {
             zoom: self.model.graph.zoom,
             pan,

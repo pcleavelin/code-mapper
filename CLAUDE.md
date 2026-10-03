@@ -191,6 +191,7 @@ Never claim a visual or interactive behaviour from reading the code; drive it an
   the same on every run: `wait n` (frames), `pause ms` (waits that long in wall time, for the
   servers, and moves the clock by exactly that), `mouse x y`, `down`, `up`,
   `click x y [ctrl|alt|shift]`, `dblclick x y`, `drag x0 y0 x1 y1`, `wheel dy [ctrl|shift]`,
+  `swipe dx dy` (a trackpad two-finger swipe, both axes in pixels),
   `pinch n` (a trackpad pinch of n percent, negative to zoom out),
   `key <name> [ctrl] [alt]`, `text ...`, `quit`; app commands `tab <name>`,
   `open <file> [line]`, `scroll <panel> <n>`, `idle` (waits until every server request is

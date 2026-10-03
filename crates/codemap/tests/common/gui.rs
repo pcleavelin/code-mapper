@@ -256,6 +256,26 @@ dump
 key right ctrl
 wait 2
 dump
+click-id split-right/1
+wait 3
+open src/store.rs 1
+wait 3
+rect lines
+hover-id lines
+swipe -20 0
+wait 3
+dump
+shot {shots}/sideways.png
+drag <<DUMP rect lines|22,516>> <<DUMP rect lines|-178,516>>
+wait 3
+dump
+hover-id lines
+wheel -10 shift
+wait 3
+dump
+click <<DUMP rect lines|429,516>>
+wait 3
+dump
 click-id save
 wait 2
 quit

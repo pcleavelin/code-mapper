@@ -314,6 +314,15 @@ impl<Application: App> Runner<Application> {
                 pointer.mods = line.mods_from(2);
                 Flow::Yield
             }
+            Some(ScriptCommand::Swipe) => {
+                let horizontal =
+                    pointer.wheel.horizontal.get() + Coordinate::of_integer(line.number(1)).get();
+                let vertical =
+                    pointer.wheel.vertical.get() + Coordinate::of_integer(line.number(2)).get();
+                pointer.wheel.horizontal = Coordinate::new(horizontal);
+                pointer.wheel.vertical = Coordinate::new(vertical);
+                Flow::Yield
+            }
             Some(ScriptCommand::Pinch) => {
                 let amount = Coordinate::of_integer(line.number(1)).get();
                 pointer.pinch = pointer.pinch.plus(Pinch::new(amount / 100.0));
@@ -436,6 +445,7 @@ enum ScriptCommand {
     Absent,
     Drag,
     Wheel,
+    Swipe,
     Pinch,
     Key,
     Text,
@@ -458,6 +468,7 @@ impl ScriptCommand {
             Self::Absent => "absent",
             Self::Drag => "drag",
             Self::Wheel => "wheel",
+            Self::Swipe => "swipe",
             Self::Pinch => "pinch",
             Self::Key => "key",
             Self::Text => "text",

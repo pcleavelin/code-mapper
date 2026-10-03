@@ -62,9 +62,9 @@ parent uyp9xc
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_wheel
-lines 42 54
-hash 23f77ea97dd57a33
-note The handler for the wheel, once zoom is ruled out: the pan moves by the wheel's pixel delta, whatever the zoom, so content follows a trackpad's two-finger swipe one to one; with the ScrollCode gesture (shift) the vertical wheel pans across instead.
+lines 15 50
+hash 0c5138e9522bcc8d
+note The handler for the wheel, once zoom is ruled out: the pan moves by the wheel's pixel delta on both axes, whatever the zoom, so content follows a trackpad's two-finger swipe one to one; shift+wheel arrives here already turned sideways by keys::turn_wheel (the ScrollCode gesture), so it pans across.
 
 step uyp9xc
 order 0

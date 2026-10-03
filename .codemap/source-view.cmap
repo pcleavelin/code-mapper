@@ -50,8 +50,8 @@ parent 2h2qhv
 author ai
 file crates/gui/src/widgets/code.rs
 symbol code_block
-lines 0 93
-hash a07e2aa176e811fd
+lines 0 72
+hash 6d9364c6c6c175e5
 note The code element: the rows drawn from a cached grid, the gutter, the marks, and the spot under the pointer.
 
 step mlu0tc

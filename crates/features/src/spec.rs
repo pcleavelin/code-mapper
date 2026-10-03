@@ -100,6 +100,7 @@ pub enum Gesture {
     Drag,
     Wheel,
     ShiftWheel,
+    Swipe,
     ControlWheel,
     Pinch,
     BackButton,

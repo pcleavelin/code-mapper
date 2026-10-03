@@ -14,7 +14,7 @@ pub use geometry::{Axis, Coordinate, Count, Extent, FontSize, Point, Px, Rect, S
 pub use icon::{Icon, IconName};
 pub use id::Id;
 pub use input::{Button, Buttons, Clicks, Glyph, Input, Key, Mods, Pinch, Pointer, Press, Typed};
-pub use layout::{Align, Direction, Layout, Sides, Size, Style};
+pub use layout::{Align, Direction, Layout, Scrollbars, Sides, Size, Style};
 pub use text::{Cell, Grid, Label, Run, Text, Wrap};
 pub use tree::{Draw, Interaction, Kind, Placement, Scrollbar, Ui};
 

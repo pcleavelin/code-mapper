@@ -1,6 +1,7 @@
 use domain::{Column, FileId, Language, Line, Span};
 use ui::{
-    Button, Canvas, Color, Coordinate, Count, Draw, Id, Interaction, Kind, Layout, Px, Rect, Style,
+    Button, Canvas, Color, Count, Draw, Extent, Id, Interaction, Kind, Layout, Point, Px, Rect,
+    Scrollbars, Style,
 };
 
 use crate::action::Action;
@@ -9,8 +10,8 @@ use crate::keys::{self, CodeGesture};
 use crate::model::Model;
 use crate::peek::{Hovering, Intent, Probe};
 use crate::status::Status;
-use crate::theme::{SCROLLED_MARK, SELECTED_BAR, WEAK, WHEEL_ACROSS};
-use crate::widgets::{Frame, TipAt};
+use crate::theme::SELECTED_BAR;
+use crate::widgets::{Frame, Scrolled, TipAt};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Width {
@@ -85,21 +86,8 @@ impl Frame<'_> {
         let grid = self.grids.get(block.file, source, span);
         let size = self.metrics.font;
         let cell = self.metrics.cell;
-        let width = cell.width * grid.columns();
-        let height = cell.height * grid.rows();
-        let previous = self.ui.interaction(block.id);
+        let extent = Extent::new(cell.width * grid.columns(), cell.height * grid.rows());
         let pointer = self.ui.pointer();
-        let mut across = model.across.get(block.id);
-        let wheel = pointer.wheel.vertical.get();
-        if previous.hovered() && keys::scrolls_across(pointer) && wheel != 0.0 {
-            let notch = wheel * Coordinate::of_integer(WHEEL_ACROSS.get()).get();
-            across -= Coordinate::new(notch * cell.width.float()).truncate();
-        }
-        let most = previous
-            .rect()
-            .map_or(Px::ZERO, |rect| (width - rect.width).max(Px::ZERO));
-        let across = across.clamp(Px::ZERO, most);
-        self.push(Action::ScrollAcross(block.id, across));
         let rows: Vec<RowMarks> = span
             .lines()
             .map(|line| RowMarks {
@@ -107,7 +95,7 @@ impl Frame<'_> {
                 bar: (block.marks.bar)(line),
             })
             .collect();
-        let draw = move |canvas: &mut Canvas<'_>, rect: Rect| {
+        let marks = move |canvas: &mut Canvas<'_>, rect: Rect| {
             let mut top = rect.top;
             for marks in &rows {
                 if let Some(color) = marks.background {
@@ -121,22 +109,14 @@ impl Frame<'_> {
                 }
                 top += cell.height;
             }
-            canvas.grid(ui::Point::new(rect.left - across, rect.top), size, &grid);
-            if across > Px::ZERO {
-                canvas.rect(
-                    Rect::new(rect.left, rect.top, SCROLLED_MARK, rect.height),
-                    WEAK,
-                );
-            }
         };
-        let layout = match block.width {
-            Width::Wide => Layout::row().grow_width().height(height),
-            Width::Fit => Layout::row().width(width).height(height),
+        let code = move |canvas: &mut Canvas<'_>, rect: Rect| {
+            canvas.grid(rect.origin(), size, &grid);
         };
-        let draw: Box<dyn Draw> = Box::new(draw);
-        let interaction = self
-            .ui
-            .leaf(Kind::Custom(draw), layout, Style::NONE, Some(block.id));
+        let Scrolled {
+            interaction,
+            offset: across,
+        } = self.scrolled_code(model, block, extent, Box::new(marks), Box::new(code));
         let spot = interaction
             .rect()
             .filter(|_| interaction.hovered())
@@ -160,6 +140,47 @@ impl Frame<'_> {
             }
         }
         Coded { interaction, spot }
+    }
+
+    fn scrolled_code(
+        &mut self,
+        model: &Model,
+        block: &CodeBlock<'_>,
+        extent: Extent,
+        marks: Box<dyn Draw>,
+        code: Box<dyn Draw>,
+    ) -> Scrolled {
+        let mut offset = Point::new(model.across.get(block.id), Px::ZERO);
+        let across = self.ui.scroll_by_wheel(block.id, &mut offset).horizontal;
+        self.push(Action::ScrollAcross(block.id, across));
+        let layout = match block.width {
+            Width::Wide => Layout::row().grow_width(),
+            Width::Fit => Layout::row().width(extent.width),
+        };
+        let interaction = self.ui.open(
+            Kind::Custom(marks),
+            layout
+                .scroll(Point::new(across, Px::ZERO))
+                .scrollbars(Scrollbars::HORIZONTAL),
+            Style::NONE,
+            Some(block.id),
+        );
+        self.ui.leaf(
+            Kind::Custom(code),
+            Layout::row().width(extent.width).height(extent.height),
+            Style::NONE,
+            None,
+        );
+        self.ui.close();
+        let interaction = if self.ui.on_scrollbar(block.id) || self.ui.dragging() {
+            Interaction::default()
+        } else {
+            interaction
+        };
+        Scrolled {
+            interaction,
+            offset: across,
+        }
     }
 
     pub(crate) fn hover(&mut self, model: &Model, file: FileId, line: Line, column: Column) {

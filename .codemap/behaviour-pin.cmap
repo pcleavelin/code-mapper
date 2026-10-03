@@ -81,9 +81,9 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol source
-lines 0 60
-hash 7c7ba34729bee8ed
-note The Source view: opening a file at a line, a shift-click range selection added to startup with 'add step' (checked by the after command), goto-line with good, past-the-end and non-numeric input, the tooltip, ctrl-click, and back and forward by button and by key.
+lines 0 80
+hash d1c3e8df1f65d0ba
+note The Source view: opening a file at a line, a shift-click range selection added to startup with 'add step' (checked by the after command), goto-line with good, past-the-end and non-numeric input, the tooltip, ctrl-click, back and forward by button and by key, then a split that narrows the panel and the sideways scrollbar: a swipe, a thumb drag, shift+wheel and a track click, each followed by a dump.
 
 step 62zoqn
 order 15
@@ -307,8 +307,8 @@ parent hed6nt
 author ai
 file crates/codemap/tests/features.rs
 symbol exercised
-lines 0 61
-hash 031314f767b7efd1
+lines 0 62
+hash 5afa32eab3e54cfc
 note Whether the scenario sources fire one trigger: a command by an argument array in commands (cli.rs and gui.rs) starting with its name, a click or typed field by a click-id or dblclick-id aimed at the element (a graph node's buttons by their label in a <<DUMP button>> click), a key by a key line with its modifier, a gesture by the script command that performs it, and a palette entry by a text line whose words, after an optional >, begin its label ignoring case. The back and forward mouse buttons have no script command, so they never count.
 
 step hbyc72

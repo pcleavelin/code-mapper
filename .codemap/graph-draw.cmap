@@ -371,9 +371,9 @@ parent 4yhd4f
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_wheel
-lines 0 55
-hash c3ea092899281f12
-note The wheel, when the canvas is hovered or a drag is in progress: a pinch or ctrl+wheel zooms in proportion to the gesture and keeps the cell under the mouse still, computed from the old and new cell sizes rather than the zoom factor; the plain wheel pans by its pixel delta and shift+wheel does the same sideways. Both send a Camera action.
+lines 0 51
+hash 481fa99dc819a2e2
+note The wheel, when the canvas is hovered or a drag is in progress: a pinch or ctrl+wheel zooms in proportion to the gesture and keeps the cell under the mouse still, computed from the old and new cell sizes rather than the zoom factor; the wheel pans by its pixel delta on both axes, and shift+wheel, turned sideways by keys::turn_wheel before the frame, pans across. Both send a Camera action.
 
 step sj6fsf
 order 3

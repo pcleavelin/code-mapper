@@ -1,9 +1,10 @@
 use std::fmt::{self, Write as _};
 use std::io::{self, Write as _};
+use std::iter;
 
 use domain::Row;
 use platform::ScriptLine;
-use ui::{Id, Ui};
+use ui::{Axis, Count, Id, Ui};
 
 use crate::field::{Fields, Which};
 use crate::graph::{GraphState, Hit, Node};
@@ -135,8 +136,27 @@ impl Dump for Scrolls {
                 ));
             }
         }
+        let code = ids::DOCUMENT_CODE.as_str();
+        let steps = (0..).map(|step| (format!("{code}/{step}"), Id::from_name(code).nth(step)));
+        let source = (String::from("lines"), ids::LINES.id());
+        for (name, id) in iter::once(source).chain(steps.take(DUMPED_STEP_BLOCKS.get())) {
+            if let Some(placement) = context.ui.placement(id)
+                && let Some(bar) =
+                    placement.scrollbar(Axis::Horizontal, placement.scroll_offset.horizontal)
+            {
+                lines.line(format_args!(
+                    "across {name} thumb={:?} off={} rect={:?} content={:?}",
+                    bar.thumb,
+                    placement.scroll_offset.horizontal,
+                    placement.rect,
+                    placement.content
+                ));
+            }
+        }
     }
 }
+
+const DUMPED_STEP_BLOCKS: Count = Count::new(8);
 
 impl Dump for Option<Wizard> {
     fn dump(&self, context: &Context<'_>, lines: &mut DumpLines) {
