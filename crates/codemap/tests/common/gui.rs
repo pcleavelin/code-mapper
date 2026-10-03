@@ -1,10 +1,12 @@
-use super::{Missing, Transcript, codemap, edit_file, fixture, gui, jj_commit, needs, scratch};
+use super::{
+    FirstScreen, Missing, Transcript, codemap, edit_file, fixture, gui, jj_commit, needs, scratch,
+};
 use std::path::{Path, PathBuf};
 
 #[macro_export]
 macro_rules! gui_scenarios {
     ($m:ident) => {
-        $m! { gui: document, peek, source, graph, panels, delete, diff, reload, layout, links, authoring }
+        $m! { gui: document, peek, source, graph, panels, delete, diff, reload, layout, links, authoring, welcome }
     };
 }
 
@@ -13,6 +15,7 @@ pub(crate) struct Scenario {
     pub script: &'static str,
     pub hook: fn(&Path, &Path, &str),
     pub after: &'static [&'static [&'static str]],
+    pub first: FirstScreen,
 }
 
 fn mapped(bin: &Path, name: &str) -> PathBuf {
@@ -54,6 +57,7 @@ const SETTLE: &str = "idle\nclick-id save\nclick-id tours/2\nwait 2\n";
 
 pub(crate) fn document() -> Scenario {
     Scenario {
+        first: FirstScreen::Workspace,
         setup: |bin, name| Ok(mapped(bin, name)),
         hook: no_hook,
         after: &[],
@@ -149,6 +153,7 @@ quit
 
 pub(crate) fn peek() -> Scenario {
     Scenario {
+        first: FirstScreen::Workspace,
         setup: |bin, name| Ok(mapped(bin, name)),
         hook: no_hook,
         after: &[],
@@ -198,6 +203,7 @@ quit
 
 pub(crate) fn source() -> Scenario {
     Scenario {
+        first: FirstScreen::Workspace,
         setup: |bin, name| Ok(mapped(bin, name)),
         hook: no_hook,
         after: &[&["tours", "startup"]],
@@ -259,6 +265,7 @@ quit
 
 pub(crate) fn graph() -> Scenario {
     Scenario {
+        first: FirstScreen::Workspace,
         setup: |bin, name| Ok(mapped(bin, name)),
         hook: no_hook,
         after: &[],
@@ -361,6 +368,7 @@ quit
 
 pub(crate) fn panels() -> Scenario {
     Scenario {
+        first: FirstScreen::Workspace,
         setup: |bin, name| Ok(mapped(bin, name)),
         hook: no_hook,
         after: &[&["tours"]],
@@ -571,6 +579,7 @@ quit
 
 pub(crate) fn authoring() -> Scenario {
     Scenario {
+        first: FirstScreen::Workspace,
         setup: |bin, name| Ok(mapped(bin, name)),
         hook: no_hook,
         after: &[&["tours", "handmade"]],
@@ -580,6 +589,7 @@ pub(crate) fn authoring() -> Scenario {
 
 pub(crate) fn delete() -> Scenario {
     Scenario {
+        first: FirstScreen::Workspace,
         setup: |bin, name| Ok(mapped(bin, name)),
         hook: no_hook,
         after: &[&["tours"]],
@@ -612,6 +622,7 @@ quit
 
 pub(crate) fn diff() -> Scenario {
     Scenario {
+        first: FirstScreen::Workspace,
         setup: with_parent,
         hook: no_hook,
         after: &[],
@@ -645,6 +656,7 @@ quit
 
 pub(crate) fn reload() -> Scenario {
     Scenario {
+        first: FirstScreen::Workspace,
         setup: |bin, name| Ok(mapped(bin, name)),
         hook: reload_hook,
         after: &[],
@@ -669,6 +681,7 @@ quit
 
 pub(crate) fn layout() -> Scenario {
     Scenario {
+        first: FirstScreen::Workspace,
         setup: |bin, name| Ok(mapped(bin, name)),
         hook: no_hook,
         after: &[],
@@ -746,6 +759,7 @@ quit
 
 pub(crate) fn links() -> Scenario {
     Scenario {
+        first: FirstScreen::Workspace,
         setup: |bin, name| {
             let root = mapped(bin, name);
             for args in [
@@ -821,7 +835,7 @@ pub(crate) fn play(
             };
             let probe = lines[..line_index].join("\n") + "\ndump\nquit\n";
             let root = (scenario.setup)(bin, name)?;
-            let err = gui(bin, &root, name, &probe, &mut |line| {
+            let err = gui(bin, &root, name, &probe, scenario.first, &mut |line| {
                 (scenario.hook)(bin, &root, line);
             });
             let (left, top, width, height) = last_rect(&err, &prefix).unwrap_or_else(|| {
@@ -844,9 +858,16 @@ pub(crate) fn play(
         }
     }
     let root = (scenario.setup)(bin, name)?;
-    let err = gui(bin, &root, name, &(lines.join("\n") + "\n"), &mut |line| {
-        (scenario.hook)(bin, &root, line);
-    });
+    let err = gui(
+        bin,
+        &root,
+        name,
+        &(lines.join("\n") + "\n"),
+        scenario.first,
+        &mut |line| {
+            (scenario.hook)(bin, &root, line);
+        },
+    );
     let mut after = Transcript {
         bin,
         root,
@@ -871,6 +892,51 @@ fn last_rect(stderr: &str, prefix: &str) -> Option<(i32, i32, i32, i32)> {
             .ok()
     };
     Some((field("x")?, field("y")?, field("w")?, field("h")?))
+}
+
+pub(crate) fn welcome() -> Scenario {
+    Scenario {
+        first: FirstScreen::Welcome,
+        setup: |bin, name| Ok(mapped(bin, name)),
+        hook: no_hook,
+        after: &[&["tours", "startup-hand"]],
+        script: "idle
+wait 2
+dump
+shot {shots}/board.png
+absent tab@Tour
+click-id welcome-guide
+wait 2
+dump
+shot {shots}/guide-new.png
+click-id new-tour
+wait 2
+dump
+text startup-hand
+click-id kind@flow
+wait 1
+click-id create-tour
+wait 3
+dump
+shot {shots}/guide-add.png
+hover-id sym@3:0
+wait 1
+click-id add-sym@3:0
+wait 2
+dump
+click-id tab@Tours
+wait 2
+click-id steps/0
+wait 2
+dump
+shot {shots}/guide-save.png
+click-id save
+wait 2
+dump
+shot {shots}/workspace.png
+quit
+",
+    }
 }
 
 pub(crate) fn shots(name: &str) -> PathBuf {

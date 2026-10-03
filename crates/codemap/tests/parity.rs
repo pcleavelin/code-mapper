@@ -10,6 +10,7 @@
 
 mod common;
 
+use common::FirstScreen;
 use common::Missing;
 use common::Outcome;
 use common::gui::Scenario;
@@ -244,6 +245,7 @@ fn repo_at(rev: &str, old: &Path, new: &Path, fails: &mut Vec<String>) {
     };
     same("repo-cli", &transcript(old), &transcript(new), fails);
     let scenario = Scenario {
+        first: FirstScreen::Workspace,
         setup: |bin, name| Ok(setup(bin, name)),
         hook: |_, _, _| {},
         after: &[],

@@ -23,6 +23,7 @@ use crate::panels::{Panels, View};
 use crate::status::Status;
 use crate::theme::{self, BACKGROUND, TEXT};
 use crate::views;
+use crate::welcome::Opening;
 use crate::widgets::{Frame, Overlay};
 use crate::work::Services;
 
@@ -45,6 +46,16 @@ pub(crate) struct App {
 struct KeptLayout {
     store: Option<LayoutStore>,
     saved: Option<LayoutTree>,
+}
+
+fn opening_shape() -> Opening {
+    if let Ok(value) = env::var("CODEMAP_OPENING") {
+        return Opening::named(&Label::new(&value));
+    }
+    if env::var_os("CODEMAP_SCRIPT").is_some() {
+        return Opening::Workspace;
+    }
+    Opening::Board
 }
 
 const SHOT_TAB_FRAME: Count = Count::new(3);
@@ -78,6 +89,12 @@ impl App {
         let layout_store = LayoutStore::find(reach);
         if let Some(saved) = layout_store.as_ref().and_then(LayoutStore::load) {
             model.panels = Panels::from_layout(&saved);
+        } else {
+            let opening = opening_shape();
+            model.welcome = opening.welcome();
+            if let Some(panels) = opening.panels() {
+                model.panels = panels;
+            }
         }
         let layout = KeptLayout {
             saved: Some(model.panels.layout()),
@@ -234,7 +251,7 @@ impl App {
             ui: &self.ui,
             services: &self.services,
         };
-        let parts: [&dyn Dump; 9] = [
+        let parts: [&dyn Dump; 10] = [
             &model.nav,
             &model.scrolls,
             &model.panels,
@@ -244,6 +261,7 @@ impl App {
             &model.work,
             &model.graph,
             &model.palette,
+            &model.welcome,
         ];
         for part in parts {
             part.dump(&context, &mut lines);

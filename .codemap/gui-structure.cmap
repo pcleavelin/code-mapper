@@ -89,8 +89,8 @@ order 2
 author ai
 file crates/gui/src/model.rs
 symbol Model
-lines 0 30
-hash 77ab741ea3a77988
+lines 0 31
+hash 58185743b70e7a1b
 note All the state a view can see, in one struct: the index and the map with its MapStore and disk state, the parent map for the Diff tab, Nav, the step views, the open directories and groups, the kept peek, the server Queries, the panel tree, the scroll offsets (down and across), the graph's state, the fields, search hits and whether they were cut at HIT_LIMIT, the measured heights of document steps (Measures), the console log, the status, WorkState, the font metrics and the frame time. gui-model has its values and queries.
 
 step 622pjb
@@ -165,8 +165,8 @@ order 6
 author ai
 file crates/gui/src/views.rs
 symbol build
-lines 0 14
-hash 8c314ab96c8e770c
+lines 0 18
+hash bb37a5e72c4b0e46
 note Every view is a function of (&Model, &mut Frame): nothing a view does can change the Model, so the whole window is drawn from one consistent state, and a view that wants a change pushes an Action.
 
 step 97d0g8
@@ -311,8 +311,8 @@ parent xjz44n
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 0 101
-hash fd1681fb00b2a69b
+lines 0 99
+hash 81345deebad53c86
 note The one place the Model changes during a frame. Each arm is a call into nav.rs, a field of the Model, or a method on the App for changes that need the Services (save, a server question, a command).
 
 step h4xmjq
@@ -457,8 +457,8 @@ parent 9pik9m
 author ai
 file crates/gui/src/ids.rs
 symbol CONTROLS
-lines 0 75
-hash 8879728c62396d50
+lines 0 82
+hash 457db60d17bac688
 note Every control, for the test that checks them against the registry.
 
 step mjhubp
@@ -701,8 +701,8 @@ order 8
 author ai
 file crates/gui/src/action.rs
 symbol Action
-lines 0 52
-hash 66ae89f14288302a
+lines 0 53
+hash f222882cf343839d
 note Every change a gesture, a key, a script line or a view's measurement can cause, as data. A view names the change; it never makes it.
 
 step xypoz6

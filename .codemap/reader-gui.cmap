@@ -41,9 +41,9 @@ parent vc7u1p
 author ai
 file crates/gui/src/app.rs
 symbol dump
-lines 0 23
-hash ff714cdbb177f4a4
-note dump: the selection, the scroll offsets, the panel tree, the tooltip, peek and status, the Tours filter and how many tours it lists, the palette's query and selected row while it is open, every step view that differs from the default, how far the servers have got, the graph camera and every node and node button rectangle, to stderr as DUMP lines a script can grep. Each part of the Model prints itself through the Dump trait.
+lines 0 24
+hash b8c1853b916ec29d
+note dump: the selection, the scroll offsets, the panel tree, the tooltip, peek and status, the Tours filter and how many tours it lists, the palette's query and selected row while it is open, the welcome arrival and the palette chord while the welcome is on screen, every step view that differs from the default, how far the servers have got, the graph camera and every node and node button rectangle, to stderr as DUMP lines a script can grep. Each part of the Model prints itself through the Dump trait.
 
 step 25fyn8
 order 44
@@ -295,8 +295,8 @@ parent 50ozko
 author ai
 file crates/gui/src/views.rs
 symbol build
-lines 0 14
-hash 8c314ab96c8e770c
+lines 0 18
+hash bb37a5e72c4b0e46
 note The element tree for the whole window, from &Model into the Frame: the top bar, then the body holding the panel tree, then the status bar, then what floats over everything: the drop band of a tab or a steps list row being dragged, the view picker, the command palette and the tooltip.
 
 step brwp9e
@@ -538,8 +538,8 @@ parent sn1cn1
 author ai
 file crates/gui/src/action.rs
 symbol Action
-lines 0 52
-hash 66ae89f14288302a
+lines 0 53
+hash f222882cf343839d
 note What a gesture can ask for. Selection and navigation, the per-step view toggles, the tour-wide toggles, the two deletions, the authoring gestures as one Authoring variant (add lines or a symbol, the target, grabbing, dragging and dropping a steps list row, promote, the new-tour form), opening a line or a definition, tabs, the fields' input, scroll offsets and what a view measured (the top step, a scroll done, a step's height), server questions, panel gestures and graph gestures. Adding a gesture means adding a variant here and an arm in apply, not threading a callback through the views. A StepKey is a (tour, step) pair of slots in the map; Definition carries the intent, peek or jump; SelectLine says whether to extend; SelectStep whether to scroll the document; OpenTour selects the tour unless it is the one being read and shows it in the given tab.
 
 step jd4cl1
@@ -833,8 +833,8 @@ parent 50ozko
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 0 101
-hash fd1681fb00b2a69b
+lines 0 99
+hash 81345deebad53c86
 note The action queue, drained once the tree is built; the keys and panel_input use it too, before the tree. apply is the only place the Model changes during a frame, which is what lets every view take the Model read-only. Most arms are one call into nav.rs or a Model field.
 
 step svoo3m
@@ -944,8 +944,8 @@ parent sn1cn1
 author ai
 file crates/gui/src/action.rs
 symbol save
-lines 0 21
-hash 067e19114a5a97a9
+lines 0 22
+hash 4e4ef60e9f09eacc
 note Ctrl+s and the save button: refused while the map on disk does not read, otherwise the map is written by MapStore and its stamp recorded so the disk poll does not take the write for somebody else's.
 
 step w3xzw2

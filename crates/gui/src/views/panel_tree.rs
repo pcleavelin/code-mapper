@@ -10,7 +10,7 @@ use crate::panels::{
     self, Branch, BranchId, Direction, DropTarget, Grab, Panel, Panels, Split, View,
 };
 use crate::theme::{PANEL_LEAST_ACROSS, PANEL_LEAST_DOWN, PICKER_FIELD, PICKER_WIDTH, TEXT, WEAK};
-use crate::views::{center, console, document, left, references};
+use crate::views::{center, console, document, left, references, welcome};
 use crate::widgets::{Chosen, Container, Frame};
 
 fn panel_id(panel: BranchId) -> ui::Id {
@@ -134,11 +134,15 @@ fn panel_box(
     rect: Rect,
     graph: &mut Option<GraphFrame>,
 ) {
+    let bare = model.welcome.fills_panel() && panel.views().is_empty();
     frame.pane(panel_id(panel.id()), None, rect);
-    header(model, frame, panel);
+    if !bare {
+        header(model, frame, panel);
+    }
     frame.start(Container::Center);
     match panel.active() {
         Some(view) => body(model, frame, view, rect.extent(), graph),
+        None if bare => welcome::surface(model, frame),
         None => frame.label("no view here: press + to choose one", WEAK),
     }
     frame.finish();

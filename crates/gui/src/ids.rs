@@ -158,6 +158,17 @@ pub(crate) const PALETTE_FIELD: Control =
     Control::new(Feature::CommandPalette, Element::new("field@palette"));
 pub(crate) const PALETTE_ROW: Control =
     Control::new(Feature::CommandPalette, Element::new("palette"));
+pub(crate) const WELCOME_PALETTE: Control =
+    Control::new(Feature::CommandPalette, Element::new("welcome-palette"));
+pub(crate) const WELCOME_SAVE: Control = Control::new(Feature::Save, Element::new("welcome-save"));
+pub(crate) const WELCOME_BACK: Control =
+    Control::new(Feature::GoBack, Element::new("welcome-back"));
+pub(crate) const WELCOME_GUIDE: Control =
+    Control::new(Feature::Welcome, Element::new("welcome-guide"));
+pub(crate) const WELCOME_WORK: Control =
+    Control::new(Feature::Welcome, Element::new("welcome-work"));
+pub(crate) const GUIDE_SKIP: Control = Control::new(Feature::Welcome, Element::new("guide-skip"));
+pub(crate) const GUIDE_CLOSE: Control = Control::new(Feature::Welcome, Element::new("guide-close"));
 
 #[cfg(test)]
 pub(crate) const CONTROLS: &[Control] = &[
@@ -235,6 +246,13 @@ pub(crate) const CONTROLS: &[Control] = &[
     GRAPH_CANVAS,
     PALETTE_FIELD,
     PALETTE_ROW,
+    WELCOME_PALETTE,
+    WELCOME_SAVE,
+    WELCOME_BACK,
+    WELCOME_GUIDE,
+    WELCOME_WORK,
+    GUIDE_SKIP,
+    GUIDE_CLOSE,
 ];
 
 pub(crate) fn body() -> Id {
@@ -322,4 +340,8 @@ pub(crate) fn tour_buttons() -> Id {
 
 pub(crate) fn palette_box() -> Id {
     Id::new("palette-box")
+}
+
+pub(crate) fn guide() -> Id {
+    Id::new("guide")
 }

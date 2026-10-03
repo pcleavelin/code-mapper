@@ -1,0 +1,284 @@
+codemap 9
+tour feature-welcome
+kind flow
+author ai
+group features/gui
+note A cold human opens the window with no saved layout. The shot of this repo at that moment is the tabbed workspace: Tours, an open tour, References, the Console, and a save button, and no key chord. The palette is ctrl+p, but nothing on that screen says so, so a symbol or an action stays hidden until they already know the key. Adding a tour by hand is already possible, with + new tour, a name and a kind, + step, a click on the step, and save, but those controls sit on different tabs and nothing walks them in order. The palette, the new-tour button and the Console each do a piece of this. None of them is a first panel with no tabs that lists the actions with their chords, and none of them points at the real controls one step at a time. The manual-tour pain inventory is a separate backlog, not the design of this screen. The guide names a dead end only where a step would otherwise teach one: a note is still tour-note or step-note in the Console, and the index is the one the tours command prints, not the 1.1 numbers in the window. Closing the window drops unsaved work, so the last step is save. Three openings were run on the real window. The board is one panel and the dump is panels 0[], tab@Tour is absent, and the palette row shows ctrl+p from the registry, with save as ctrl+s and back as alt+left. Add a tour replaces that panel with the working layout and a bar that names the next real control. The bar moves to the next step only when that control has been used: the form opens, the tour count grows, a step is added, the target is the step, then save. A scripted run on the fixture creates startup-hand, adds main, saves, and the bar is gone. The coach opening puts that same bar on the tabbed workspace immediately, so the first screen still has tabs. The checklist opening is tabless, but it copies + new tour into the panel, says the real Tours list and Symbols and save are not there, and does not show the palette chord. The board is the opening that meets the first screen and still teaches the controls where they already live.
+
+step 02lv34
+order 9
+parent ngtyco
+author ai
+file crates/gui/src/nav.rs
+symbol show_view
+lines 0 5
+hash 02faf9fa554fecd0
+link feature-switch-tab
+
+step 2urwku
+order 14
+parent jybka5
+author ai
+file crates/gui/src/welcome.rs
+symbol follow_welcome
+lines 0 5
+hash 8d34cf298cdc8493
+note apply calls this after every action. The guide advances one step only when the fact for that step has changed.
+
+step 3mq0my
+order 3
+parent jybka5
+author ai
+file crates/gui/src/welcome.rs
+symbol begin_guide
+lines 0 2
+hash e45f01dcaed357a2
+note The guide starts on the new-tour step.
+
+step 3t35mr
+order 16
+parent jybka5
+author ai
+file crates/gui/src/views/welcome.rs
+symbol coach
+lines 0 29
+hash b9a73b547723ee71
+note The bar floats over the window while a guide step is current, so it does not squeeze the panels.
+
+step 40vzsa
+order 15
+parent jybka5
+author ai
+file crates/gui/src/welcome.rs
+symbol note_saved
+lines 0 9
+hash 299fddfe887811c9
+note save calls this. It finishes the guide only on the save step.
+
+step 45aoik
+order 7
+parent 5ekrbu
+author ai
+file crates/gui/src/welcome.rs
+symbol next
+lines 0 8
+hash 58b0c03f67bea824
+
+step 53edqt
+order 1
+parent jybka5
+author ai
+file crates/gui/src/panels.rs
+symbol is_bare
+lines 0 2
+hash 8fcc8e79963e39cc
+note The welcome panel is bare when every panel it holds has no view.
+
+step 5ekrbu
+order 6
+parent jybka5
+author ai
+file crates/gui/src/welcome.rs
+symbol skip
+lines 0 16
+hash 4a91a1f6e0cf312a
+note Skip moves one guide step without the real action, and remembers the counts so the next real action is not mistaken for a finished step.
+
+step 5mnyhg
+order 28
+parent hdrikw
+author ai
+file crates/gui/src/welcome.rs
+symbol chord
+lines 0 7
+hash 8788ca9471bd095b
+
+step 6dos8i
+order 10
+parent ngtyco
+author ai
+file crates/gui/src/welcome.rs
+symbol view
+lines 0 6
+hash 7c375f958ca2928c
+
+step 6y7nq3
+order 19
+parent 2urwku
+author ai
+file crates/gui/src/welcome.rs
+symbol follow
+lines 0 11
+hash a7c882b9be0f1291
+note New tour waits for the form. The name waits for another tour. A step waits for another step. The target waits until a step is chosen.
+
+step ah2x7r
+order 11
+parent jybka5
+author ai
+file crates/gui/src/welcome.rs
+symbol welcome_seen
+lines 0 18
+hash 98d777894291fb8b
+note The facts the guide watches. The form, the tour count, the step count, and whether a step is the target.
+
+step bxrpyj
+order 18
+parent jybka5
+author ai
+file crates/gui/src/views/welcome.rs
+symbol surface
+lines 0 4
+hash c5a1b169cf18af41
+note Drawn in place of an empty panel's body while the welcome fills the panel.
+
+step ck3wwq
+order 17
+parent jybka5
+author ai
+file crates/gui/src/views/welcome.rs
+symbol ring
+lines 0 8
+hash 72c4aa2a81e4fd97
+note A ring around the control the step names. It is drawn from the control's rectangle, so a missing control draws nothing.
+
+step hdrikw
+order 22
+parent jbb5in
+author ai
+file crates/gui/src/views/welcome.rs
+symbol row
+lines 0 16
+hash 46e2dcd61eef6b9f
+note One row. A click runs that action. The palette row opens the palette. Add a tour starts the guide.
+
+step jbb5in
+order 20
+parent bxrpyj
+author ai
+file crates/gui/src/views/welcome.rs
+symbol board
+lines 0 19
+hash 21baef560e9b01e9
+note The action list. Each row is a title, its chord when the feature has a key, and a line about what it does.
+
+step jybka5
+order 0
+author ai
+file crates/gui/src/welcome.rs
+symbol welcome
+lines 0 20
+hash 9bf69e95c9432615
+note Start the guide, leave it, or skip one step. Starting and leaving install the working layout when the panel is still bare.
+
+step m5b01d
+order 4
+parent 3mq0my
+author ai
+file crates/gui/src/welcome.rs
+symbol start
+lines 0 6
+hash 799160ea16293690
+
+step ma6ucj
+order 26
+parent 5mnyhg
+author ai
+file crates/gui/src/welcome.rs
+symbol palette_chord
+lines 0 9
+hash b93a90ef682ee956
+
+step ngtyco
+order 8
+parent jybka5
+author ai
+file crates/gui/src/welcome.rs
+symbol reveal_guide
+lines 0 4
+hash 0c421198277f0b82
+note Bring forward the view the current step points at. New tour, the form and the target use Tours. Adding a step uses Symbols.
+
+step nunfgu
+order 27
+parent 6y7nq3
+author ai
+file crates/gui/src/welcome.rs
+symbol advanced
+lines 0 8
+hash d51502c0a0aea3b0
+note One step forward, and only that step, when the watched fact has changed.
+
+step og4yyh
+order 23
+parent 3t35mr
+author ai
+file crates/gui/src/views/welcome.rs
+symbol chord_line
+lines 0 9
+hash c118a31b0a090c3c
+
+step pk24y0
+order 2
+parent 53edqt
+author ai
+file crates/gui/src/panels.rs
+symbol panels
+lines 0 4
+hash 1ca3fbe09b53f32c
+
+step pva2wg
+order 24
+parent 3t35mr
+author ai
+file crates/gui/src/welcome.rs
+symbol sentence
+lines 0 18
+hash 1d431aaeb0cd87db
+note The sentence for the step. The save step says that closing drops unsaved work and that a note is still a Console command.
+
+step qu6jyy
+order 25
+parent ck3wwq
+author ai
+file crates/gui/src/welcome.rs
+symbol spotlight
+lines 0 10
+hash 9e886178027fd74f
+
+step qzswuh
+order 21
+parent ck3wwq
+author ai
+file crates/gui/src/widgets.rs
+symbol mark_rect
+lines 0 17
+hash 1d25904652d4037e
+
+step xw38qb
+order 12
+parent ah2x7r
+author ai
+file crates/gui/src/authoring.rs
+symbol target_under
+lines 0 5
+hash f941d0e31638e116
+
+step z70d5j
+order 5
+parent 3mq0my
+author ai
+file crates/gui/src/welcome.rs
+symbol Arrival
+lines 0 4
+hash 7b63d8b4605dc376
+
+step zlryxd
+order 13
+parent jybka5
+author ai
+file crates/gui/src/welcome.rs
+symbol open_workspace_panels
+lines 0 4
+hash d9fd71f1b2b8d8a6
+note A panel with no views becomes the ordinary split layout, so the real controls are on screen.

@@ -86,6 +86,7 @@ pub(crate) enum Container {
     Picker { at: Point, width: Px },
     Palette { at: Point, width: Px },
     PanelHeader,
+    Coach { at: Point, width: Px },
 }
 
 struct Shape {
@@ -202,6 +203,15 @@ impl Container {
                 } else {
                     ids::palette_box()
                 }),
+            ),
+            Self::Coach { at, width } => Shape::new(
+                Layout::column()
+                    .floating(at)
+                    .width(width)
+                    .padding(PANEL_PADDING)
+                    .gap(TIGHT_GAP),
+                Style::background(PANEL).border(Sides::ALL, ACCENT),
+                Some(ids::guide()),
             ),
             Self::PanelHeader => Shape::new(
                 Layout::row().grow_width().cross(Align::Center),
@@ -323,6 +333,39 @@ impl Frame<'_> {
     pub(crate) fn grow(&mut self) {
         self.ui
             .leaf(Kind::None, Layout::row().grow_width(), Style::NONE, None);
+    }
+
+    pub(crate) fn spring(&mut self) {
+        self.ui
+            .leaf(Kind::None, Layout::column().grow(), Style::NONE, None);
+    }
+
+    pub(crate) fn mark_rect(&mut self, rect: Rect) {
+        let thick = TIGHT_GAP;
+        if rect.width < thick || rect.height < thick {
+            return;
+        }
+        self.solid(Point::new(rect.left, rect.top), rect.width, thick);
+        self.solid(
+            Point::new(rect.left, rect.bottom() - thick),
+            rect.width,
+            thick,
+        );
+        self.solid(Point::new(rect.left, rect.top), thick, rect.height);
+        self.solid(
+            Point::new(rect.right() - thick, rect.top),
+            thick,
+            rect.height,
+        );
+    }
+
+    fn solid(&mut self, at: Point, width: Px, height: Px) {
+        self.ui.leaf(
+            Kind::None,
+            Layout::row().floating(at).width(width).height(height),
+            Style::background(ACCENT),
+            None,
+        );
     }
 
     pub(crate) fn spacer(&mut self, height: Px) {

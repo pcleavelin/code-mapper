@@ -8,6 +8,7 @@ mod palette;
 mod panel_tree;
 mod references;
 mod tooltip;
+mod welcome;
 
 use crate::graph::GraphFrame;
 use crate::model::Model;
@@ -25,6 +26,10 @@ pub(crate) fn build(model: &Model, frame: &mut Frame<'_>, graph: Option<GraphFra
     frame.finish();
     bars::status_bar(model, frame);
     frame.finish();
+    if let Some(step) = model.welcome.guide_step() {
+        welcome::coach(frame, step);
+    }
+    welcome::ring(model, frame);
     panel_tree::drag_band(model, frame);
     authoring::step_list_band(model, frame);
     panel_tree::picker(model, frame);

@@ -10,9 +10,9 @@ order 0
 author ai
 file crates/gui/src/action.rs
 symbol save
-lines 0 21
-hash 067e19114a5a97a9
-note The handler. Refuses when the map on disk was unreadable, so a broken map is not overwritten with an empty one. On success it clears the dirty flag and the disk-changed warning and records the directory's stamp, so the next disk poll sees no outside change.
+lines 0 22
+hash 4e4ef60e9f09eacc
+note The handler. Refuses when the map on disk was unreadable, so a broken map is not overwritten with an empty one. On success it clears the dirty flag and the disk-changed warning and records the directory's stamp, so the next disk poll sees no outside change. If the guide is on its save step, that success ends the guide.
 
 step 8q577r
 order 3
