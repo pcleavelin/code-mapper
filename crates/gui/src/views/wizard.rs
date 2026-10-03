@@ -903,10 +903,14 @@ fn buttons(frame: &mut Frame<'_>, page: Page) {
         frame.push(Action::Wizard(WizardAct::Cancel));
     }
     frame.label(
-        if page == Page::Create {
-            "enter creates"
-        } else {
-            "enter goes on; escape cancels if nothing is entered"
+        match page {
+            Page::Create => "enter creates",
+            Page::Note => {
+                "enter breaks the line, ctrl+enter goes on; escape cancels if nothing is entered"
+            }
+            Page::Name | Page::Start | Page::Steps => {
+                "enter goes on; escape cancels if nothing is entered"
+            }
         },
         WEAK,
     );

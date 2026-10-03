@@ -14,6 +14,7 @@ use winit::keyboard::{Key as WindowKey, NamedKey};
 use winit::window::{CursorIcon, Window, WindowId};
 
 use crate::background;
+use crate::clipboard::{Clip, Clipboard};
 use crate::error::StartError;
 use crate::renderer::Renderer;
 use crate::report::report;
@@ -52,6 +53,7 @@ pub struct Frame {
     pub clear: Color,
     pub cursor: Cursor,
     pub drawing: DrawList,
+    pub clip: Clip,
 }
 
 pub trait App {
@@ -149,6 +151,7 @@ pub(crate) struct Runner<Application: App> {
     cursor: Cursor,
     pub(crate) script: Option<Script>,
     mode: WindowMode,
+    clipboard: Clipboard,
     pub(crate) statistics: FrameStatistics,
     failure: Option<StartError>,
 }
@@ -313,6 +316,16 @@ impl<Application: App> Runner<Application> {
         self.statistics.record(began.elapsed());
         self.input.end_frame();
         self.redraw = Redraw::Idle;
+        match frame.clip {
+            Clip::Keep => {}
+            Clip::Copy(text) => self.clipboard.copy(text),
+            Clip::Paste => {
+                if let Some(text) = self.clipboard.paste() {
+                    self.input.typed.push_str(text.as_str());
+                    self.redraw = Redraw::Pending;
+                }
+            }
+        }
         self.next_redraw = Instant::now()
             + if self.script.is_some() {
                 SCRIPT_FRAME
@@ -447,6 +460,11 @@ pub fn run<Application: App>(title: Title, app: Application) -> Result<(), Start
         cursor: Cursor::Default,
         script: Script::load(),
         mode,
+        clipboard: if mode == WindowMode::Fixed {
+            Clipboard::kept()
+        } else {
+            Clipboard::system()
+        },
         statistics: FrameStatistics::default(),
         failure: None,
     };

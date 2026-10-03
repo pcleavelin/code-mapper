@@ -1013,6 +1013,27 @@ click-id wizard-next
 wait 2
 click-id field@wizard-note
 text Hand-built from main, three calls down to Store::check.
+key enter
+text It stops where the map is read.
+key home shift
+key c ctrl
+key end ctrl
+key enter
+key v ctrl
+wait 1
+key left alt
+key backspace alt
+wait 1
+dump
+shot {shots}/wizard-note.png
+dblclick-id field@wizard-note
+wait 1
+key x ctrl
+key v ctrl
+wait 1
+click-id field@wizard-note shift
+wait 1
+dump
 click-id wizard-next
 wait 2
 dump

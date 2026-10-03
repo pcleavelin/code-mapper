@@ -20,8 +20,8 @@ parent j766na
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 50
-hash d5a408d608ebd0ca
+lines 0 54
+hash 06df82d7a2ce2876
 link gui-widgets
 note An edit that changes the symbol filter's text scrolls the Symbols list back to its top, so the first match is in view. The filter keeps its text on enter and has nothing to run; the field's text is all the filter needs.
 
@@ -72,8 +72,8 @@ parent 0pe1eq
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 54 77
-hash 62d74cf5370ace51
+lines 58 87
+hash 304d83261fa0050d
 note The typing: after the walks, the keys phase hands edits and typed text to the symbol filter, tour filter and go-to-line fields.
 
 step w6a3u3

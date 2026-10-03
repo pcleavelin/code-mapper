@@ -209,8 +209,8 @@ parent 006u4m
 author ai
 file crates/platform/src/script.rs
 symbol key
-lines 0 17
-hash 339ecca1c82daf50
+lines 0 20
+hash 0752f0058e0a7db8
 note A key name to ui's Key: the few named keys a scenario uses, otherwise the first character.
 
 step wxv2lb

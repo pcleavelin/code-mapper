@@ -11,8 +11,8 @@ parent i8plan
 author ai
 file crates/gui/src/widgets.rs
 symbol command_row
-lines 0 32
-hash ffdb18d20a6f3a67
+lines 0 27
+hash c76a4d61300f73b6
 note Trigger: the command row under the log; a click queues FocusField for the command field.
 
 step i8plan
@@ -31,8 +31,8 @@ parent t1jwoo
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 50
-hash d5a408d608ebd0ca
+lines 0 54
+hash 06df82d7a2ce2876
 link gui-widgets
 note The command field clears on enter; a submitted line goes to run_command.
 
@@ -42,6 +42,6 @@ parent i8plan
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 40 42
+lines 44 46
 hash 554151a630b57545
 note Trigger: the keys phase hands the frame's edits and typed text to the command field first.

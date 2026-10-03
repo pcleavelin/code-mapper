@@ -1,9 +1,10 @@
 use domain::{Author, Column, FileId, GroupName, Language, Line, LineCount, SymbolId};
+use platform::Clip;
 use ui::{Count, Id, Label, Point, Px, Typed};
 
 use crate::app::App;
 use crate::authoring::Authoring;
-use crate::field::{Edit, Enter, FieldText, Which};
+use crate::field::{Edit, Enter, FieldAct, FieldText, Which};
 use crate::graph::{GraphAction, Heading};
 use crate::ids;
 use crate::keys::{Extend, PaletteKey, Walk};
@@ -88,6 +89,7 @@ pub(crate) enum Action {
     ClosePicker,
     Palette(PaletteAction),
     Type(Which, Vec<Edit>, Typed),
+    Field(Which, FieldAct),
     WalkWhenIdle(Walk),
     GraphWalk(Heading),
     Graph(GraphAction),
@@ -194,6 +196,7 @@ impl App {
             }
             Action::Palette(action) => self.palette(action),
             Action::Type(which, edits, typed) => self.typed(which, &edits, &typed),
+            Action::Field(which, act) => model.fields.act(which, act),
             Action::WalkWhenIdle(walk) => self.walk_when_idle(walk),
             Action::GraphWalk(heading) => self.graph_walk(heading),
             Action::Graph(action) => model.graph.apply(action),
@@ -409,7 +412,11 @@ impl App {
             Which::Command | Which::ViewSearch => Enter::Clear,
         };
         let before = self.model.fields.get(which).text().clone();
-        let entered = self.model.fields.handle(which, edits, typed, enter);
+        let handled = self.model.fields.handle(which, edits, typed, enter);
+        if handled.clip != Clip::Keep {
+            self.clip = handled.clip;
+        }
+        let entered = handled.submitted;
         if *self.model.fields.get(which).text() != before {
             match which {
                 Which::SymbolFilter => self.model.scrolls.set(ids::symbols(), Px::ZERO),

@@ -50,8 +50,8 @@ order 1
 author ai
 file crates/gui/src/app.rs
 symbol App
-lines 0 8
-hash 86e32590eec1d404
+lines 0 9
+hash 180532adfb91775f
 note What platform::App is implemented on: the Model, the Services, the element tree and the grid cache, plus the screenshot aid. frame, script and locate are its three methods; all state changes funnel through its apply.
 
 step 3foimq
@@ -98,8 +98,8 @@ order 25
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 129 163
-hash f5fce2c56cf74249
+lines 129 165
+hash 774c76c2db722b71
 note Every padding, gap and fixed pixel measure the widgets and views use, named by where it is used.
 
 step 63vlrl
@@ -203,7 +203,7 @@ order 26
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 192 231
+lines 194 233
 hash 1fcedfb9e782142a
 note Every measure counted in cells: button and field widths, column guesses before a panel has a size, the symbol table's columns, tooltip sizes, the gap before a danger button, the status bar's room for the map's place, the panels' floors and the picker's width.
 
@@ -311,8 +311,8 @@ parent xjz44n
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 0 100
-hash 6bafd9825263f527
+lines 0 101
+hash 2ccb50dfcf47114a
 note The one place the Model changes during a frame. Each arm is a call into nav.rs, a field of the Model, or a method on the App for changes that need the Services (save, a server question, a command).
 
 step h4xmjq
@@ -721,8 +721,8 @@ order 8
 author ai
 file crates/gui/src/action.rs
 symbol Action
-lines 0 54
-hash d887280b95863e1a
+lines 0 55
+hash 4f981e0cf9e68ad4
 note Every change a gesture, a key, a script line or a view's measurement can cause, as data. A view names the change; it never makes it.
 
 step xypoz6
@@ -740,9 +740,9 @@ order 47
 author ai
 file crates/gui/src/keys.rs
 symbol edit_of
-lines 0 18
-hash 59f1d667b587a954
-note A key press as a field edit; ctrl or alt with left or right is not one, since those are back and forward.
+lines 0 29
+hash 81dc78d26509a539
+note A key press as a field edit: ctrl or alt makes a move or a delete go by word, shift makes a move extend the selection, ctrl with home or end goes to the text's ends, and the clipboard letters are the edit-text chords in the registry. While a field has the keyboard, ctrl or alt with left or right is this word move and keys::going does not go back or forward.
 
 step y65w9m
 order 46

@@ -83,7 +83,7 @@ parent ub828q
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 94 94
+lines 95 95
 hash da347408f9b6ea7b
 note The apply arm.
 
@@ -142,7 +142,7 @@ parent ub828q
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 43 52
+lines 47 56
 hash fc9a4dd80b236834
 note Trigger: the keys phase, while the Graph view is shown and the graph holds the keyboard, queues one GraphWalk per arrow pressed this frame; the tour walk (WalkWhenIdle) gets no arrows then.
 

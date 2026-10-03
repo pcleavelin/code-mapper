@@ -7,6 +7,7 @@ edition = "2024"
 strum = { version = "0.28", features = ["derive"] }
 ui = { path = "../ui" }
 io-store = { path = "../io-store" }
+io-clipboard = { path = "../io-clipboard" }
 winit = "0.30"
 wgpu = "27"
 fontdue = "0.9"

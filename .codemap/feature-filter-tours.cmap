@@ -61,8 +61,8 @@ parent z6m3sw
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 54 77
-hash 62d74cf5370ace51
+lines 58 87
+hash 304d83261fa0050d
 note The typing: the keys phase hands edits and typed text to the tour filter along with the symbol filter and go-to-line fields; only the focused field takes them.
 
 step mb3pyj
@@ -71,9 +71,9 @@ parent z6m3sw
 author ai
 file crates/gui/src/dump.rs
 symbol impl Dump for Fields
-lines 0 13
-hash 16b4f07c0ca836e2
-note What a script sees: the filter's text and how many tours listed_rows holds, as DUMP tours filter="..." listed=n; a script's dump prints this line.
+lines 0 26
+hash dc22e1e9f81650e5
+note What a script sees: the filter's text and how many tours listed_rows holds, as DUMP tours filter="..." listed=n; a script's dump prints this line, and a line for the field with the keyboard, if any: its caret, selection, first shown row, row count and text.
 
 step o4hj70
 order 2
@@ -121,8 +121,8 @@ parent lhcomc
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 50
-hash d5a408d608ebd0ca
+lines 0 54
+hash 06df82d7a2ce2876
 note An edit that changes the tour filter's text scrolls the Tours list back to its top, so the matches are in view. The filter keeps its text on enter and has nothing to run.
 
 step y3c46y

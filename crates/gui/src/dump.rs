@@ -275,6 +275,19 @@ impl Dump for Fields {
             "tours filter={} listed={listed}",
             Quoted(self.get(Which::TourFilter).text().as_str())
         ));
+        if let Some(which) = self.focused() {
+            let field = self.get(which);
+            let selection = field.selection().map_or_else(String::new, |chosen| {
+                format!(" selection={}..{}", chosen.from.get(), chosen.to.get())
+            });
+            lines.line(format_args!(
+                "field {which:?} caret={}{selection} first={} rows={} text={}",
+                field.caret().get(),
+                field.first(),
+                field.rows(which.lines()).len(),
+                Quoted(field.text().as_str())
+            ));
+        }
     }
 }
 

@@ -98,6 +98,7 @@ pub enum Feature {
     Welcome,
     BuildTour,
     EditTour,
+    EditText,
 }
 
 impl Feature {
@@ -955,6 +956,24 @@ impl Feature {
                         Trigger::Click(Element::new("edit-more")),
                         Trigger::Type(Element::new("edit-note")),
                         Trigger::Palette(Text::new("edit tour"), None),
+                    ]
+                },
+            ),
+            Self::EditText => Spec::new(
+                Text::new("edit-text"),
+                Text::new(
+                    "write a note over several lines: enter breaks the line and ctrl+enter goes on, the arrows, home and end move by row, shift selects, alt or ctrl moves and deletes by word, a click places the caret and a drag selects, ctrl+c, ctrl+x and ctrl+v copy, cut and paste",
+                ),
+                Surface::Window,
+                &const {
+                    [
+                        Trigger::Key(Chord::control(Key::Letter(Letter::new('c')))),
+                        Trigger::Key(Chord::control(Key::Letter(Letter::new('x')))),
+                        Trigger::Key(Chord::control(Key::Letter(Letter::new('v')))),
+                        Trigger::Gesture(Gesture::Drag, Element::new("field@wizard-note")),
+                        Trigger::Gesture(Gesture::ShiftClick, Element::new("field@wizard-note")),
+                        Trigger::Gesture(Gesture::DoubleClick, Element::new("field@wizard-note")),
+                        Trigger::Gesture(Gesture::Wheel, Element::new("field@wizard-note")),
                     ]
                 },
             ),

@@ -118,8 +118,8 @@ parent l5and2
 author ai
 file crates/gui/src/app.rs
 symbol of_model
-lines 0 10
-hash 286e3a15c3f36beb
+lines 0 11
+hash 2ddf4d19e9b89356
 note An App from a ready Model with fresh Services and no screenshot aid, for tests; the Services start only the idle watcher thread.
 
 step 84oxa7
@@ -431,8 +431,8 @@ order 47
 author ai
 file crates/gui/src/tests.rs
 symbol a_field_without_the_keyboard_shows_the_start_of_its_text_cut_with_an_ellipsis
-lines 0 15
-hash 0da33b9507d0a596
+lines 0 11
+hash 76ad7c296ce84c85
 note An unfocused field shows the start of its text cut to its room with an ellipsis; focused, the whole text split at the caret.
 
 step ulvmts

@@ -196,8 +196,8 @@ parent agulfb
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 69 77
-hash 168017996e789dda
+lines 78 87
+hash f8996b2ceaa89a3e
 note Escape reaches the wizard only while no field has the keyboard: in a field, escape only leaves the field. Ctrl+enter is Apply from anywhere the wizard's keys are read.
 
 step calkls
@@ -215,9 +215,9 @@ order 48
 parent ohmpoo
 author ai
 file crates/gui/src/field.rs
-symbol shown
-lines 0 27
-hash aeab813f4bdef60b
+symbol idle_text
+lines 0 2
+hash b50af46da1a53e95
 link gui-widgets
 note An unfocused note field shows its text from the start, clipped to the field, so every note on the page reads from its first word; only the focused field follows its caret.
 

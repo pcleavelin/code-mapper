@@ -1,0 +1,98 @@
+codemap 9
+tour feature-edit-text
+kind flow
+author ai
+group features/gui
+note The human writing a tour's note on the Note page of the build-tour wizard, the one place the GUI takes prose: the Tour view has no note editor, and the CLI's tour-note takes the note as one argument. A tour note is the map's prose about a workflow: the 2626 notes in this repo's map average 203 characters and 866 run past 200. The note field was one line: in a run of the wizard on 2026-10-02 a 200-character note showed only its last 60 characters, scrolled sideways; enter left the page (the dump read page=Create), so no paragraph break could be written, and on the Create page enter creates the tour; the middle was reachable only one character at a time; there was no selection and no paste, which TODO.md logged as GUI item 1 ('nothing pastes into a field'). It serves the map as a second channel of prose beside the source, written by the human where tours are built by hand. Two designs were built and run: enter breaks the line and ctrl+enter goes on, in a box that grows from 3 to 12 rows and then scrolls with the caret; and shift+enter breaks the line while enter goes on as on every other wizard page, in a fixed 8-row box. The first was kept: a line break is the key prose needs most, and under the second an enter between paragraphs moves to the Create page, where the next enter creates the tour, as the first run showed; a growing box keeps a short note to three rows. Handing the note to $EDITOR was dropped before building: it leaves the one window, cannot be driven by a script, and needs an editor on PATH. Every text field is one Field type (one concept, one type), so word moves and deletes with alt or ctrl, shift selection, a click that places the caret, a drag that selects, and ctrl+c, ctrl+x and ctrl+v reach the one-line fields too; that is also where TODO's paste item was logged. A script or screenshot run keeps a clipboard of its own, so it never touches the user's.
+
+step 1vf63s
+order 4
+parent 4t25bo
+author ai
+file crates/gui/src/field.rs
+symbol follow
+lines 0 12
+hash ef5cf133c0270105
+link gui-widgets
+note The shown rows follow the caret, so a note longer than the box scrolls as the caret moves.
+
+step 4t25bo
+order 0
+author ai
+file crates/gui/src/field.rs
+symbol handle
+lines 0 27
+hash 6888c8ec235b562e
+note Applies a frame's edits and typed text to the field with the keyboard and returns what came of it: the submitted line and the Clip (copy this, or paste) that App::typed hands to the platform.
+
+step 55pcd5
+order 8
+parent 4t25bo
+author ai
+file crates/platform/src/clipboard.rs
+symbol impl Clipboard
+lines 0 44
+hash 68eba1509ba399cc
+note The clipboard the platform copies to and pastes from: the system's in a real run, a private one in a script run.
+
+step 7g6y3g
+order 2
+parent 4t25bo
+author ai
+file crates/gui/src/field.rs
+symbol apply
+lines 0 57
+hash 145308956df1e88a
+link gui-widgets
+note Each edit: line break or submit, deletes and moves by character, word, row and text, with shift extending the selection, copy, cut and paste.
+
+step cs99ym
+order 5
+parent 4t25bo
+author ai
+file crates/gui/src/keys.rs
+symbol edit_of
+lines 0 29
+hash 81dc78d26509a539
+note Trigger: the keys, as edits; alt or ctrl means by word, shift means select, and the clipboard chords come from this feature's registry entry.
+
+step jp438m
+order 7
+parent 4t25bo
+author ai
+file crates/gui/src/widgets.rs
+symbol field_pointer
+lines 0 27
+hash ac859b643f358d6a
+note Trigger: a click places the caret, a drag or shift-click selects, a double-click selects a word.
+
+step t6ehm9
+order 1
+parent 4t25bo
+author ai
+file crates/gui/src/field.rs
+symbol lines
+lines 0 15
+hash df16999e1cda55e9
+note Which fields hold many lines: the wizard's note. Enter breaks the line there, up and down move by row, and the field wraps to its width.
+
+step xgxp4v
+order 3
+parent 4t25bo
+author ai
+file crates/gui/src/field.rs
+symbol type_text
+lines 0 17
+hash e4857d6c60bf73c1
+link gui-widgets
+note Typed and pasted text replaces the selection; a one-line field flattens newlines.
+
+step zu4jif
+order 6
+parent 4t25bo
+author ai
+file crates/gui/src/widgets.rs
+symbol note_field
+lines 0 71
+hash 0fdbb8b87861ef82
+note Trigger and view: the note field, wrapped and growing, which tells the field its width so moving by row knows where rows break.

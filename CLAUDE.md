@@ -123,7 +123,7 @@ covering it: the code has no comments, so the map is the only prose about it.
 
 `domain` (the model, no I/O), `io-*` (one crate per outside format or program: `io-map`
 `.codemap/`, `io-cache`, `io-layout`, `io-vcs` jj or git, `io-lsp`, `io-source`, `io-process`,
-`io-store`), `index` (tree-sitter resolvers, server orchestration), `features` (every function
+`io-store`, `io-clipboard`), `index` (tree-sitter resolvers, server orchestration), `features` (every function
 a user can reach; CLI commands and help, GUI buttons and keys are built from it), `cli` (text
 commands, also the GUI's Console), `ui` (the element tree), `platform` (wgpu, fonts,
 winit, the script runner), `gui`, `codemap` (the binary and integration tests), `xtask` (the

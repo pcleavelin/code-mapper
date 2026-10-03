@@ -57,8 +57,8 @@ not ticked. The CLI list is ordered by what cost the agents the most.
 
 Left open after the UX review of 2026-09-21 and the fixes that followed it.
 
-1. No clipboard: ctrl and alt drop text input, nothing pastes into a field or copies out
-   of a code view.
+1. No copy out of a code view: ctrl+c, ctrl+x and ctrl+v work in text fields only; the
+   Source, Tour and Graph code has no text selection to copy.
 2. The 0.3 zoom floor is not reachable: `graph_px` floors the node font at 6 px, so on a
    14 px UI the real floor is about 0.43 and `fit` cannot show a very tall tree
    (`legacy-v1`, 5400 px); it lands at the floor, top-left aligned. Readable text and a

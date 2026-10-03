@@ -1,4 +1,5 @@
 use std::env;
+use std::mem;
 use std::path::PathBuf;
 use std::time::Duration;
 
@@ -6,13 +7,15 @@ use domain::LayoutTree;
 use domain::{Line, Map, RelativePath, Root};
 use io_layout::{LayoutStore, Reach};
 use io_map::MapStore;
-use platform::{Cursor, Exit, Frame as PlatformFrame, Outcome, Renderer, ScriptLine, Visibility};
+use platform::{
+    Clip, Cursor, Exit, Frame as PlatformFrame, Outcome, Renderer, ScriptLine, Visibility,
+};
 use strum::VariantArray;
 use ui::{Button, Count, Id, Input, Label, Measure, Px, Ui};
 
 use crate::action::Action;
 use crate::dump::{self, Context, Dump, DumpLines};
-use crate::field::Which;
+use crate::field::{Lines, Which};
 use crate::graph::{GraphAction, Keyboard, Presence};
 use crate::grid::Grids;
 use crate::ids;
@@ -25,7 +28,7 @@ use crate::theme::{self, BACKGROUND, TEXT};
 use crate::views;
 use crate::welcome::Opening;
 use crate::widgets::{Frame, Overlay};
-use crate::wizard::WizardAct;
+use crate::wizard::{Mode, WizardAct};
 use crate::work::Services;
 
 struct Shot {
@@ -41,6 +44,7 @@ pub(crate) struct App {
     shot: Option<Shot>,
     shot_next: Option<PathBuf>,
     layout: KeptLayout,
+    pub(crate) clip: Clip,
 }
 
 #[derive(Debug, Default)]
@@ -113,6 +117,7 @@ impl App {
             }),
             shot_next: None,
             layout,
+            clip: Clip::Keep,
         };
         app.model.status = match unreadable {
             Some(error) => Status::MapUnreadable(Label::new(cli::Failure::Load(error).to_string())),
@@ -137,6 +142,7 @@ impl App {
             shot: None,
             shot_next: None,
             layout: KeptLayout::default(),
+            clip: Clip::Keep,
         }
     }
 
@@ -208,7 +214,10 @@ impl App {
                         | Which::StepNote(_)
                 )
             }) {
-            keys::wizard_keys(input)
+            keys::wizard_keys(
+                input,
+                self.model.fields.focused().map_or(Lines::One, Which::lines),
+            )
         } else {
             Vec::new()
         };
@@ -218,10 +227,11 @@ impl App {
         if keys::save(input) {
             actions.push(Action::Save);
         }
-        if keys::going(input, Going::Back) {
+        let typing = self.model.fields.focused();
+        if keys::going(input, Going::Back, typing) {
             actions.push(Action::Back);
         }
-        if keys::going(input, Going::Forward) {
+        if keys::going(input, Going::Forward, typing) {
             actions.push(Action::Forward);
         }
         for which in [Which::Command, Which::Search] {
@@ -253,9 +263,15 @@ impl App {
         if let Some(which @ Which::StepNote(_)) = self.model.fields.focused() {
             actions.push(Action::Type(which, edits.clone(), typed.clone()));
         }
+        let building = self
+            .model
+            .wizard
+            .as_ref()
+            .is_some_and(|wizard| matches!(wizard.mode(), Mode::Build));
         for key in wizard_keys {
             let act = match key {
                 WizardKey::Next => WizardAct::Next,
+                WizardKey::Apply if building => WizardAct::Next,
                 WizardKey::Apply => WizardAct::Apply,
                 WizardKey::Escape if field_held => continue,
                 WizardKey::Escape => WizardAct::Escape,
@@ -363,6 +379,7 @@ impl platform::App for App {
             clear: BACKGROUND,
             cursor,
             drawing,
+            clip: mem::take(&mut self.clip),
         }
     }
 

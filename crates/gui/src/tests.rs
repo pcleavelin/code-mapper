@@ -7,18 +7,22 @@ use domain::{
 };
 use features::{Feature, Trigger};
 use io_map::MapStore;
+use platform::Clip;
 use strum::VariantArray;
-use ui::{Count, Input, Key, Label, Mods, Press, Px};
+use ui::{Count, Input, Key, Label, Mods, Press, Px, Typed};
 
 use crate::action::{Action, Collapse, Hide};
 use crate::app::App;
 use crate::authoring::Authoring;
-use crate::field::{Attention, FieldRoom, Fields, Which};
+use crate::field::{
+    Attention, Edit, Enter, FieldAct, Fields, Handled, Motion, Pointing, Unit, Viewport,
+    Which,
+};
 use crate::graph::Parentage;
 use crate::graph::build::{Built, CellSize, Rank, StepInfo};
 use crate::graph::{Button, GraphState, Node};
 use crate::ids::{self, CONTROLS};
-use crate::keys::{Extend, Walk};
+use crate::keys::{self, Extend, Walk};
 use crate::model::{LineSelection, Model, Readable, StepKey, StepSlot, Tab, TourSlot, ViewFlag};
 use crate::nav::Scrolling;
 use crate::palette::{Palette, commands};
@@ -1382,17 +1386,258 @@ fn ctrl_enter_applies_the_edit_and_plain_enter_in_a_step_note_does_not() {
 #[test]
 fn a_field_without_the_keyboard_shows_the_start_of_its_text_cut_with_an_ellipsis() {
     let mut fields = Fields::default();
-    fields.fill(Which::WizardNote, &Label::new("abcdefghij"));
-    let field = fields.get(Which::WizardNote);
-    let room = FieldRoom::Cells(Count::new(5));
-    let idle = field.shown(Attention::Idle, room);
-    assert_eq!(
-        (idle.before.as_str(), idle.after.as_str()),
-        ("abcd\u{2026}", "")
+    fields.fill(Which::WizardName, &Label::new("abcdefghij"));
+    let field = fields.get(Which::WizardName);
+    assert_eq!(field.idle_text(Count::new(5)).as_str(), "abcd\u{2026}");
+    let focused: String = field
+        .pieces(field.whole(), Attention::Focused)
+        .iter()
+        .map(|piece| piece.text.as_str())
+        .collect();
+    assert_eq!(focused, "abcdefghij\u{258f}");
+}
+
+fn typed_text(text: &str) -> Typed {
+    let mut typed = Typed::default();
+    typed.push_str(text);
+    typed
+}
+
+fn written(which: Which, text: &str, columns: usize) -> Fields {
+    let mut fields = Fields::default();
+    fields.focus(which);
+    fields.act(
+        which,
+        FieldAct::Fit(Viewport {
+            columns: Count::new(columns + 1),
+            rows: Count::new(3),
+        }),
     );
-    let focused = field.shown(Attention::Focused, room);
+    fields.handle(which, &[], &typed_text(text), Enter::Keep);
+    fields
+}
+
+fn pressed(fields: &mut Fields, which: Which, edits: &[Edit]) -> Handled {
+    fields.handle(which, edits, &Typed::default(), Enter::Keep)
+}
+
+fn row_texts(fields: &Fields, which: Which) -> Vec<String> {
+    let field = fields.get(which);
+    field
+        .rows(which.lines())
+        .iter()
+        .map(|row| field.text().between(row.start, row.end).as_str().to_owned())
+        .collect()
+}
+
+#[test]
+fn a_note_wraps_after_the_last_space_that_fits_and_breaks_at_each_newline() {
+    let fields = written(Which::WizardNote, "alpha beta gamma\ndelta", 11);
     assert_eq!(
-        (focused.before.as_str(), focused.after.as_str()),
-        ("abcdefghij", "")
+        row_texts(&fields, Which::WizardNote),
+        ["alpha beta ", "gamma", "delta"]
+    );
+}
+
+#[test]
+fn a_single_line_field_never_wraps() {
+    let fields = written(Which::Search, "alpha beta gamma delta", 11);
+    assert_eq!(
+        row_texts(&fields, Which::Search),
+        ["alpha beta gamma delta"]
+    );
+}
+
+#[test]
+fn up_and_down_move_by_wrapped_row_and_come_back_to_the_same_column() {
+    let note = Which::WizardNote;
+    let mut fields = written(note, "alpha beta gamma delta", 11);
+    pressed(
+        &mut fields,
+        note,
+        &[
+            Edit::Move(Motion::RowStart, Extend::Replace),
+            Edit::Move(Motion::Right(Unit::Character), Extend::Replace),
+            Edit::Move(Motion::Right(Unit::Character), Extend::Replace),
+            Edit::Move(Motion::Up, Extend::Replace),
+        ],
+    );
+    assert_eq!(fields.get(note).caret().get(), 2);
+    pressed(
+        &mut fields,
+        note,
+        &[Edit::Move(Motion::Down, Extend::Replace)],
+    );
+    assert_eq!(fields.get(note).caret().get(), 13);
+}
+
+#[test]
+fn enter_breaks_the_line_in_a_note_and_control_enter_submits_it() {
+    let note = Which::WizardNote;
+    let mut fields = written(note, "first", 40);
+    let plain = pressed(&mut fields, note, &[Edit::Enter(crate::field::Held::Plain)]);
+    assert!(plain.submitted.is_none());
+    assert_eq!(fields.get(note).text().as_str(), "first\n");
+    let control = pressed(&mut fields, note, &[Edit::Enter(crate::field::Held::Control)]);
+    assert!(control.submitted.is_some());
+    let mut search = written(Which::Search, "first", 40);
+    let entered = pressed(&mut search, Which::Search, &[Edit::Enter(crate::field::Held::Plain)]);
+    assert!(entered.submitted.is_some());
+    assert_eq!(search.get(Which::Search).text().as_str(), "first");
+}
+
+#[test]
+fn word_moves_skip_the_spaces_and_word_backspace_takes_the_word_before() {
+    let note = Which::WizardNote;
+    let mut fields = written(note, "one two three", 40);
+    pressed(
+        &mut fields,
+        note,
+        &[Edit::Move(Motion::Left(Unit::Word), Extend::Replace)],
+    );
+    assert_eq!(fields.get(note).caret().get(), 8);
+    pressed(&mut fields, note, &[Edit::Backspace(Unit::Word)]);
+    assert_eq!(fields.get(note).text().as_str(), "one three");
+    pressed(
+        &mut fields,
+        note,
+        &[
+            Edit::Move(Motion::Start, Extend::Replace),
+            Edit::Move(Motion::Right(Unit::Word), Extend::Replace),
+        ],
+    );
+    assert_eq!(fields.get(note).caret().get(), 3);
+}
+
+#[test]
+fn shift_moves_select_copy_hands_out_the_selection_and_cut_removes_it() {
+    let note = Which::WizardNote;
+    let mut fields = written(note, "hello world", 40);
+    pressed(
+        &mut fields,
+        note,
+        &[
+            Edit::Move(Motion::Start, Extend::Replace),
+            Edit::Move(Motion::Right(Unit::Word), Extend::Extend),
+        ],
+    );
+    let copied = pressed(&mut fields, note, &[Edit::Copy]);
+    assert_eq!(copied.clip, Clip::Copy(Label::new("hello")));
+    assert_eq!(fields.get(note).text().as_str(), "hello world");
+    let cut = pressed(&mut fields, note, &[Edit::Cut]);
+    assert_eq!(cut.clip, Clip::Copy(Label::new("hello")));
+    assert_eq!(fields.get(note).text().as_str(), " world");
+    let paste = pressed(&mut fields, note, &[Edit::Paste]);
+    assert_eq!(paste.clip, Clip::Paste);
+}
+
+#[test]
+fn typing_over_a_selection_replaces_it_across_rows() {
+    let note = Which::WizardNote;
+    let mut fields = written(note, "one\ntwo\nthree", 40);
+    pressed(
+        &mut fields,
+        note,
+        &[
+            Edit::Move(Motion::Up, Extend::Extend),
+            Edit::Move(Motion::Up, Extend::Extend),
+        ],
+    );
+    fields.handle(note, &[], &typed_text("X"), Enter::Keep);
+    assert_eq!(fields.get(note).text().as_str(), "oneX");
+}
+
+#[test]
+fn pasted_newlines_become_spaces_in_a_single_line_field_and_stay_in_a_note() {
+    let search = written(Which::Search, "a\r\nb\tc", 40);
+    assert_eq!(search.get(Which::Search).text().as_str(), "a b c");
+    let note = written(Which::WizardNote, "a\r\nb", 40);
+    assert_eq!(note.get(Which::WizardNote).text().as_str(), "a\nb");
+}
+
+#[test]
+fn a_click_on_a_wrapped_row_puts_the_caret_in_that_row_and_a_drag_selects_from_it() {
+    let note = Which::WizardNote;
+    let mut fields = written(note, "alpha beta gamma delta", 11);
+    let field = fields.get(note);
+    let at = field.caret_at(note.lines(), Count::new(1), Count::new(3), Attention::Idle);
+    assert_eq!(at.get(), 14);
+    let start = field.caret_at(note.lines(), Count::new(0), Count::new(1), Attention::Idle);
+    fields.act(note, FieldAct::Point(start, Pointing::Press));
+    fields.act(note, FieldAct::Point(at, Pointing::Drag));
+    let selection = fields
+        .get(note)
+        .selection()
+        .map(|chosen| (chosen.from.get(), chosen.to.get()));
+    assert_eq!(selection, Some((1, 14)));
+}
+
+#[test]
+fn the_shown_rows_follow_the_caret_past_the_last_row_and_back() {
+    let note = Which::WizardNote;
+    let mut fields = written(note, "1\n2\n3\n4\n5", 40);
+    assert_eq!(fields.get(note).first(), Count::new(2));
+    pressed(
+        &mut fields,
+        note,
+        &[Edit::Move(Motion::Start, Extend::Replace)],
+    );
+    assert_eq!(fields.get(note).first(), Count::ZERO);
+}
+
+#[test]
+fn up_through_a_short_row_comes_back_to_the_column_it_left() {
+    let note = Which::WizardNote;
+    let mut fields = written(note, "abcdef\nab\nabcdef", 40);
+    pressed(
+        &mut fields,
+        note,
+        &[Edit::Move(Motion::Up, Extend::Replace)],
+    );
+    assert_eq!(fields.get(note).caret().get(), 9);
+    pressed(
+        &mut fields,
+        note,
+        &[Edit::Move(Motion::Up, Extend::Replace)],
+    );
+    assert_eq!(fields.get(note).caret().get(), 6);
+}
+
+#[test]
+fn a_click_right_of_a_drawn_caret_skips_the_column_the_caret_takes() {
+    let note = Which::WizardNote;
+    let mut fields = written(note, "abcdef", 40);
+    pressed(
+        &mut fields,
+        note,
+        &[
+            Edit::Move(Motion::RowStart, Extend::Replace),
+            Edit::Move(Motion::Right(Unit::Character), Extend::Replace),
+            Edit::Move(Motion::Right(Unit::Character), Extend::Replace),
+        ],
+    );
+    let field = fields.get(note);
+    let focused = field.caret_at(note.lines(), Count::ZERO, Count::new(4), Attention::Focused);
+    let idle = field.caret_at(note.lines(), Count::ZERO, Count::new(4), Attention::Idle);
+    assert_eq!((focused.get(), idle.get()), (3, 4));
+}
+
+#[test]
+fn alt_shift_left_selects_a_word_and_control_c_copies() {
+    let mut input = ui::Input::default();
+    input.keys.push(ui::Press {
+        key: ui::Key::Left,
+        mods: ui::Mods::ALT.with(ui::Mods::SHIFT),
+    });
+    input.keys.push(ui::Press {
+        key: ui::Key::Character(ui::Glyph::new('c')),
+        mods: ui::Mods::CTRL,
+    });
+    assert_eq!(
+        keys::edits(&input),
+        [
+            Edit::Move(Motion::Left(Unit::Word), Extend::Extend),
+            Edit::Copy
+        ]
     );
 }

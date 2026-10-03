@@ -125,7 +125,7 @@ const EXPECTS: [Allowance; 27] = [
     },
 ];
 
-const DEPENDENCIES: [Allowed; 17] = [
+const DEPENDENCIES: [Allowed; 18] = [
     Allowed {
         package: Literal::new("xtask"),
         dependencies: &[
@@ -147,6 +147,10 @@ const DEPENDENCIES: [Allowed; 17] = [
     Allowed {
         package: Literal::new("io-store"),
         dependencies: &[],
+    },
+    Allowed {
+        package: Literal::new("io-clipboard"),
+        dependencies: &[Literal::new("arboard")],
     },
     Allowed {
         package: Literal::new("io-source"),
@@ -229,6 +233,7 @@ const DEPENDENCIES: [Allowed; 17] = [
             Literal::new("strum"),
             Literal::new("ui"),
             Literal::new("io-store"),
+            Literal::new("io-clipboard"),
             Literal::new("winit"),
             Literal::new("wgpu"),
             Literal::new("fontdue"),

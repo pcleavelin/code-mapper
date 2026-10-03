@@ -141,8 +141,8 @@ order 0
 author ai
 file crates/gui/src/app.rs
 symbol frame
-lines 0 63
-hash 181aa0490ea50ad1
+lines 0 64
+hash 4434f248ff6ad866
 note The frame (platform::App::frame), in order: the font and cell size for this scale factor, the screenshot aid, the five polls, the keys, then panel_input, the steps list's drag (step_list_input) and the graph's own input phase (or, with the Graph view hidden, the graph marked Hidden and its keyboard Elsewhere, so a look snaps and the arrows walk the tour), the element tree, layout and draw, the action queue, the reveal of the centre view navigation asked for, saving the layout if it changed, and the history snapshot, which first performs a back or forward asked for this frame. It asks the loop to come back at the ANIMATING rate while the graph camera is gliding, in 50 ms while any work is in flight, and in a second otherwise, so an idle window costs one frame per second.
 
 step 5aljhx
@@ -264,8 +264,8 @@ parent sn1cn1
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 50
-hash d5a408d608ebd0ca
+lines 0 54
+hash 06df82d7a2ce2876
 note A field's keys: the edits and text go to the field, a changed filter scrolls its list to the top, a changed wizard field (a step note too) clears the wizard's refusal and refreshes its pending edit, a Console command refreshes it too since it may change the map, and a submitted line runs what that field is for.
 
 step a4si22
@@ -274,8 +274,8 @@ parent 50ozko
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 0 86
-hash ce8c6cbb021a6b6b
+lines 0 96
+hash c60e0e1de048adb1
 note Everything the input says before a single element exists, as actions applied at once: the palette's chord, and every key while the palette has the keyboard; the Save chord, back and forward, every field fed the frame's edits and typed text (only the focused one takes them; enter runs the command, the search or a line jump), enter, ctrl+enter and escape for the wizard while it is open and the keyboard is in no field or one of its own (escape in a field only leaves the field), and the arrows: a GraphWalk per arrow while the Graph view is shown and holds the keyboard, else up and down walking the tour when no field has the keyboard. The chords come from the feature registry through keys.
 
 step bdljdg
@@ -528,8 +528,8 @@ parent sn1cn1
 author ai
 file crates/gui/src/action.rs
 symbol Action
-lines 0 54
-hash d887280b95863e1a
+lines 0 55
+hash 4f981e0cf9e68ad4
 note What a gesture can ask for. Selection and navigation, the per-step view toggles, the tour-wide toggles, the two deletions, the authoring gestures as one Authoring variant (add lines or a symbol, the target, grabbing, dragging and dropping a steps list row, promote), opening a line or a definition, tabs, the fields' input, scroll offsets and what a view measured (the top step, a scroll done, a step's height), server questions, panel gestures, graph gestures, the start page's acts and the build-tour wizard's acts. Adding a gesture means adding a variant here and an arm in apply, not threading a callback through the views. A StepKey is a (tour, step) pair of slots in the map; Definition carries the intent, peek or jump; SelectLine says whether to extend; SelectStep whether to scroll the document; OpenTour selects the tour unless it is the one being read and shows it in the given tab.
 
 step jd4cl1
@@ -823,8 +823,8 @@ parent 50ozko
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 0 100
-hash 6bafd9825263f527
+lines 0 101
+hash 2ccb50dfcf47114a
 note The action queue, drained once the tree is built; the keys and panel_input use it too, before the tree. apply is the only place the Model changes during a frame, which is what lets every view take the Model read-only. Most arms are one call into nav.rs or a Model field.
 
 step svoo3m

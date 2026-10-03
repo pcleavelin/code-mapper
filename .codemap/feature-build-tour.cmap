@@ -171,8 +171,8 @@ parent lgtkew
 author ai
 file crates/gui/src/views/wizard.rs
 symbol buttons
-lines 0 32
-hash 46c4f0c0fd4942ab
+lines 0 36
+hash 16c5f97a2225da59
 note back (not on page 1), next or create, cancel, and a hint for the keys: enter goes on (or creates), escape cancels if nothing is entered.
 
 step 9h15aw
@@ -374,9 +374,9 @@ parent pvqpnt
 author ai
 file crates/gui/src/keys.rs
 symbol wizard_keys
-lines 0 13
-hash 7e8b0ebee59941e1
-note Enter goes on, ctrl+enter applies an edit and escape asks to leave, while the wizard is open and the keyboard is in no field or in one of the wizard's own; the keys phase drops escape while any field has the keyboard, since there escape only leaves the field.
+lines 0 14
+hash d587d2756fd51eec
+note Enter goes on, ctrl+enter applies an edit (while building it goes on as enter does) and escape asks to leave, while the wizard is open and the keyboard is in no field or in one of the wizard's own. In the note, which holds many lines, plain enter breaks the line instead (Lines::breaks), so there ctrl+enter is the way on. The keys phase drops escape while any field has the keyboard, since there escape only leaves the field.
 
 step hdfkb8
 order 39

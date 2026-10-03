@@ -271,8 +271,8 @@ parent wsviek
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 0 86
-hash ce8c6cbb021a6b6b
+lines 0 96
+hash c60e0e1de048adb1
 note The keys phase: ctrl+p toggles the palette before anything else; while it is open and its field has the keyboard, every key goes to it; a palette left without the keyboard closes on the next key.
 
 step wsviek

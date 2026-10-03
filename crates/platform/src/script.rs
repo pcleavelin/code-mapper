@@ -68,6 +68,9 @@ impl ScriptLine {
             Some(NamedKey::Right) => Key::Right,
             Some(NamedKey::Up) => Key::Up,
             Some(NamedKey::Down) => Key::Down,
+            Some(NamedKey::Home) => Key::Home,
+            Some(NamedKey::End) => Key::End,
+            Some(NamedKey::Delete) => Key::Remove,
             None => Key::Character(Glyph::new(
                 self.word(1)
                     .unwrap_or_default()
@@ -397,6 +400,9 @@ enum NamedKey {
     Right,
     Up,
     Down,
+    Home,
+    End,
+    Delete,
 }
 
 impl NamedKey {
@@ -409,6 +415,9 @@ impl NamedKey {
             Self::Right => "right",
             Self::Up => "up",
             Self::Down => "down",
+            Self::Home => "home",
+            Self::End => "end",
+            Self::Delete => "delete",
         })
     }
 
