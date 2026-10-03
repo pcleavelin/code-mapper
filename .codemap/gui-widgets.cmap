@@ -30,8 +30,19 @@ author ai
 file crates/gui/src/field.rs
 symbol Fields
 lines 0 15
-hash 0eeb907f8db2227f
-note The eleven named fields, one member each, plus step_notes, a field per edit-tour outline row made on first write (an unwritten one reads as blank), reached by Which; focused names the one with the keyboard, at most one, so taking focus is setting it.
+hash 12197f2f96265789
+note The eleven named fields, one member each, plus step_notes, a field per edit-tour outline row made on first write (an unwritten one reads as blank), reached by Which; focused names the one with the keyboard and the element it was focused through (Holding), at most one, so taking focus is setting it. A left press anywhere but on the focused field releases it (press), keeping its text, the same as escape.
+
+step 2l481u
+order 48
+parent pk9re7
+author ai
+file crates/gui/src/widgets/code.rs
+symbol scrolled_code
+lines 0 39
+hash 5d3c218d89723e6b
+link feature-scroll-code
+note The block as elements: a clipping row scrolled sideways by the block's across offset with a horizontal scrollbar only, its marks painted pinned, holding one leaf at the grid's exact width that draws the grid. The offset goes through Ui::scroll_by_wheel and back as ScrollAcross; a press on the bar, or any scrollbar drag, leaves the block without an interaction.
 
 step 2yp2r2
 order 5
@@ -41,6 +52,16 @@ symbol small_button
 lines 0 2
 hash 3ecefe125dd90536
 note The same in the tighter form used inside rows and headers, with no selected state.
+
+step 3zt6q7
+order 52
+parent ulzrgg
+author ai
+file crates/gui/src/field.rs
+symbol caret_at
+lines 0 20
+hash 5bf37a405e462194
+note A row and column on screen to a caret: the column past the row's last character lands on its end, and on the caret's own row a column right of the drawn caret glyph is one cell left in the text.
 
 step 454ebz
 order 20
@@ -70,14 +91,24 @@ lines 0 7
 hash f7cedb2ab92c5d12
 note An empty full-width element of a given height with an id: what the document draws in place of a step far from the view, so the column keeps its height and its scroll offset without building the step.
 
+step 5nvm5a
+order 53
+parent tstdq3
+author ai
+file crates/gui/src/field.rs
+symbol target
+lines 0 33
+hash d07490167b671f80
+note Where a move lands: by character, by word (spaces skipped, then one class of word characters or of marks), to the row's ends, a row up or down at the column the first of a run of up and down presses left from, or to the text's ends. Up from the first row goes to the start, down from the last to the end.
+
 step 61fj7h
 order 40
 parent tstdq3
 author ai
 file crates/gui/src/field.rs
 symbol Edit
-lines 0 13
-hash b9324a756c396d69
+lines 0 11
+hash b2ef3aeb5bc20837
 note The edits a field understands, from keys::edits.
 
 step 65k6cz
@@ -106,9 +137,9 @@ parent 2havd5
 author ai
 file crates/gui/src/field.rs
 symbol handle
-lines 0 23
-hash ce9dd1e24140c389
-note Keys go to one field: nothing happens unless it has the keyboard. Its Edits apply in order, then the typed text is inserted at the caret; escape gives the keyboard up. Returns the submitted line, if enter was pressed.
+lines 0 27
+hash 098e46e8ca9d2a06
+note Keys go to one field: nothing happens unless it has the keyboard. Its Edits apply in order, then the typed text goes in at the caret, then the shown rows follow the caret; escape gives the keyboard up. Returns what came of it as Handled: the submitted line, if enter submitted, and the Clip the platform is to copy or paste.
 
 step 7mnsht
 order 11
@@ -117,15 +148,15 @@ file crates/gui/src/widgets.rs
 symbol field
 lines 0 2
 hash 825164163948a025
-note A text field under its Which's own id (field_named does the work): a box of fixed width in cells that clips its text and scrolls it sideways so the caret stays in view while it has the keyboard, and shows its start when it does not, bordered in the accent colour while it has the keyboard. Clicking it takes the keyboard from the other fields. The field only draws: keys reach it through the Type actions the frame pushes, applied before the tree is built.
+note A text field under its Which's own id (field_named does the work). A field of one line is a box of fixed width in cells that clips its text and scrolls it sideways so the caret stays in view while it has the keyboard, and shows its start when it does not (Field::idle_text), bordered in the accent colour while it has the keyboard. Clicking it takes the keyboard from the other fields; a click places the caret, a drag or shift-click selects. A field of many lines is drawn by note_field instead. The field only draws: keys reach it through the Type actions the frame pushes, applied before the tree is built.
 
 step 94dj1i
 order 28
 author ai
 file crates/gui/src/widgets.rs
 symbol command_row
-lines 0 32
-hash ffdb18d20a6f3a67
+lines 0 27
+hash c76a4d61300f73b6
 note The Console's input line: a prompt and the command field's runs across the full width, the whole row taking the keyboard when clicked.
 
 step 9dxpzk
@@ -134,8 +165,8 @@ parent rcazsr
 author ai
 file crates/gui/src/widgets.rs
 symbol shape
-lines 0 89
-hash 1f4be56ae86e9adb
+lines 0 91
+hash 07715d4b9e5083cc
 note The one match that turns a Container into its layout, style and fixed id: the paddings, gaps and colours from theme, the accent bar on the left of a selected step row or code column, the panel header's TAB_STRIP background with no padding (its tabs carry their own), the id body the panel tree is laid out from, the picker's and the palette box's ids, and the id a StepColumn carries.
 
 step aidqqn
@@ -146,6 +177,16 @@ symbol label
 lines 0 8
 hash d4f95b65b299977d
 note A line of text in one colour with a little padding and no interaction; the most-used widget. plain_line is the same without the padding, and title the same at the title font.
+
+step azaeen
+order 51
+parent ulzrgg
+author ai
+file crates/gui/src/field.rs
+symbol rows
+lines 0 36
+hash e8beb55b79ac02e2
+note The text cut into rows at newlines and, given a width, after the last space that fits; a word longer than the width is cut at the width. A row knows whether it ended at a newline or was wrapped, since a caret at the end of a wrapped row belongs to the next one.
 
 step bceb8i
 order 43
@@ -167,14 +208,24 @@ lines 0 10
 hash 041e3507af985fb8
 note Cuts from the end with an ellipsis, so a symbol's name fits its column and the symbol table stays a table.
 
+step cun5fu
+order 58
+parent ulzrgg
+author ai
+file crates/gui/src/field.rs
+symbol selection
+lines 0 13
+hash eeebd284224f0645
+note The selection is the span between the anchor and the caret, in text order; an anchor on the caret selects nothing, which is how a press without a drag leaves no selection behind.
+
 step d4axwo
 order 38
 parent tstdq3
 author ai
 file crates/gui/src/field.rs
 symbol recall
-lines 0 20
-hash 5e526c4116dab16f
+lines 0 21
+hash 33b6151a2a12fe32
 note Up and down: the first press recalls the newest line, each further up an older one, down a newer one, and down past the newest clears the field.
 
 step d8mfok
@@ -183,8 +234,8 @@ parent 7mnsht
 author ai
 file crates/gui/src/widgets.rs
 symbol field_named
-lines 0 51
-hash feba486e70adb2a2
+lines 0 69
+hash 70693fd7db4ae254
 note The field under a given element id, which field passes as the field's own Control id: a list of fields of one Which kind (the edit page's step notes) names each by its row, so a click on one takes the keyboard for that row's field.
 
 step e2sdhm
@@ -212,10 +263,10 @@ order 49
 parent k73r2l
 author ai
 file crates/gui/src/field.rs
-symbol FieldRoom
-lines 0 3
-hash a90f3bb62b34645f
-note How much an unfocused field may show: Cells for a field box (its width less one), Open for the Console's line, which grows.
+symbol idle_text
+lines 0 2
+hash b50af46da1a53e95
+note What a one-line field without the keyboard shows: its text from the start, cut with an ellipsis to the room it is given (the box's width less one), so an unfocused field always shows the beginning of what it holds.
 
 step gjm6fk
 order 0
@@ -224,6 +275,16 @@ file crates/gui/src/theme.rs
 lines 8 36
 hash 14ebfa1d66595a34
 note The palette, in theme: a dozen colours named by role - background, panel, field, border, text, weak, accent, green, red, orange, hover, selected, and the red background a danger button takes under the pointer - and below them the tints made from those by alpha (disabled, selected lines, the slice, the steps list's top step, faint, pending, the drop band, the call tint), the graph's colours (STEP_EDGE, EXPANSION_EDGE, BACK_EDGE, STEP_BORDER, SIBLINGS_FILL, SIBLINGS_BORDER) and the panel header's TAB_STRIP. A colour decision is made once, here, and every view names one.
+
+step gp3at7
+order 49
+parent rs11uk
+author ai
+file crates/gui/src/widgets.rs
+symbol take_focus_within
+lines 0 9
+hash f9b2a1bb61ab1ff2
+note For a field inside a floating popup (the palette, the view picker): a left press anywhere inside the popup's box gives the keyboard back to its field, so a press on the popup's padding or labels does not count as outside. Tested against the box's rectangle rather than the element under the mouse, because the hit test does not prefer the floating layer and an element underneath can be the one under the mouse.
 
 step h1v6z6
 order 48
@@ -253,6 +314,46 @@ lines 0 10
 hash b72ff8088652789b
 note Cuts from the front and keeps the tail: file paths are cut this way in the Symbols tab and the peek header, so the file name and line survive.
 
+step i1gj5i
+order 57
+parent ulzrgg
+author ai
+file crates/gui/src/field.rs
+symbol point
+lines 0 19
+hash 51ab3723c51ee027
+note A pointer gesture at a caret: a press drops the anchor and the caret there, so a drag that follows moves only the caret and selects from the press; shift-click keeps the anchor (or the caret, if none) and moves the caret; a double-click selects the word around the point.
+
+step i9nud2
+order 50
+parent 7mnsht
+author ai
+file crates/gui/src/widgets.rs
+symbol field_pieces
+lines 0 23
+hash 078eb9543bfa9f12
+note The pieces of a row as elements: selected text on the selection background, the caret glyph in the accent colour, an empty row still a row high.
+
+step ifevfy
+order 55
+parent ulzrgg
+author ai
+file crates/gui/src/field.rs
+symbol act
+lines 0 6
+hash 523c8d9e697061fc
+note What the widgets ask of a field outside the keys: fit to a viewport, a pointer gesture at a caret, a wheel step.
+
+step in95c7
+order 48
+parent 7mnsht
+author ai
+file crates/gui/src/widgets.rs
+symbol note_field
+lines 0 71
+hash 6f64b4208296a78f
+note A field of many lines (the wizard's note): its text wrapped to the box's width, one element per row, in a box that grows from NOTE_ROWS_LEAST to NOTE_ROWS_MOST rows and then scrolls to the field's first shown row. It tells the field its viewport in cells when that changes, since moving by row and following the caret depend on the width the rows wrap at; the wheel over it scrolls a row at a time.
+
 step jb1qok
 order 12
 parent 2havd5
@@ -263,15 +364,25 @@ lines 0 13
 hash c8f8e0985f865bb4
 note The eleven named fields: search, the Console, the symbol filter, the tour filter, the view picker's search, go-to-line, the palette's query, and the wizard's name, group, search and note; and StepNote(BranchId), one note field per outline row of the edit-tour page. Which::control is the field's Control in ids, whose element name is its script id: field@search, cmd, field@symbols, field@tours, field@views, field@goto-line, field@palette, field@wizard-name, field@wizard-group, field@wizard-search, field@wizard-note, and edit-note; the edit page draws each step note through Frame::field_named as edit-note/<n>, numbered by the visible row.
 
+step k22fkd
+order 54
+parent 6wdt9w
+author ai
+file crates/gui/src/field.rs
+symbol follow
+lines 0 12
+hash ef5cf133c0270105
+note Keeps the caret's row among the rows shown: the first shown row moves up or down only as far as the caret needs, and never past the last full page.
+
 step k73r2l
 order 25
 parent zo7d1b
 author ai
 file crates/gui/src/field.rs
-symbol shown
-lines 0 27
-hash aeab813f4bdef60b
-note What the field looks like for its focus: with the keyboard, marked when the whole text is marked, else plain, split at the caret; without it, the hint when empty, else the text from its start, cut with an ellipsis to the field's room (FieldRoom::Cells; the Console's line is Open), so an unfocused field always shows the beginning of what it holds.
+symbol pieces
+lines 0 38
+hash ec26164f1689eaba
+note One row of the field cut into pieces at the selection's ends and the caret: plain text, selected text, and the caret glyph where the caret sits while the field has the keyboard. A caret at the end of a wrapped row is drawn at the start of the next, where typing would put its character.
 
 step kleb0l
 order 46
@@ -292,6 +403,16 @@ lines 0 8
 hash 5ce94e0a424fe9d1
 note A prepared list of coloured runs as one element, fitted or growing: anything that is more than one colour on a line, such as a field's text with the caret in the middle.
 
+step lozghr
+order 60
+parent 2havd5
+author ai
+file crates/gui/src/field.rs
+symbol focus_at
+lines 0 2
+hash 69f8007653ebee6e
+note Gives a field the keyboard through a given element; focus is focus_at through the field's own id, for every field drawn under it.
+
 step o7593r
 order 27
 author ai
@@ -301,14 +422,24 @@ lines 0 17
 hash 66c99ab664a7a0b3
 note Text runs that are clickable but look like text: a step's header and a breadcrumb, with the selected background when chosen.
 
+step oqvtc9
+order 61
+parent rs11uk
+author ai
+file crates/gui/src/widgets.rs
+symbol take_focus_at
+lines 0 3
+hash fd65d7d4498134c7
+note Takes the keyboard through the element the field is drawn under: field_named and note_field pass their id, so a step note's row element is the one recorded.
+
 step pk9re7
 order 21
 author ai
 file crates/gui/src/widgets/code.rs
 symbol code_block
-lines 0 93
-hash a07e2aa176e811fd
-note The one code element in the GUI: a block of lines drawn from a cached grid by a custom element, with the hover, jump and peek gestures resolved to a (line, column) spot from the pointer. Per-row backgrounds and bars come from the two Marks closures, so the Source view's selection and anchor bars and the document's slice highlight share it. Width::Wide takes the full width rather than the grid's. It returns the Interaction and the spot under the pointer, whose column is None over the gutter. Shift+wheel over a block whose lines are wider than it scrolls it sideways (kept in the Model's across scrolls, pushed as ScrollAcross), and while it is scrolled a thin weak bar on its left edge shows that the start of the lines is cut off. Which gesture is peek and which is jump comes from keys::code_gesture, that is from the feature registry.
+lines 0 78
+hash 226406ddab4e15b5
+note The one code element in the GUI: a block of lines drawn from a cached grid by a custom element, with the hover, jump and peek gestures resolved to a (line, column) spot from the pointer. Per-row backgrounds and bars come from the two Marks closures, so the Source view's selection and anchor bars and the document's slice highlight share it. Width::Wide takes the full width rather than the grid's. It returns the Interaction, the spot under the pointer, whose column is None over the gutter, and while a press drags, the line under the pointer. A block whose lines are wider than it scrolls sideways with a horizontal scrollbar (scrolled_code, kept in the Model's across scrolls, pushed as ScrollAcross). Which gesture is peek and which is jump comes from keys::code_gesture, that is from the feature registry.
 
 step pwtsq2
 order 18
@@ -340,6 +471,16 @@ lines 0 26
 hash 7db00acc635312ac
 note Back and forward: three cells wide, greyed out when their stack is empty so the reader sees there is nowhere to go.
 
+step qmctdw
+order 56
+parent tstdq3
+author ai
+file crates/gui/src/keys.rs
+symbol clipboard_edit
+lines 0 14
+hash b66d465105061bb3
+note Copy, cut and paste: a press is one when it matches an edit-text chord in the registry, the letter saying which.
+
 step qs75tx
 order 41
 parent aidqqn
@@ -350,15 +491,25 @@ lines 0 8
 hash 5f0dc3304a617d27
 note Text that grows to the width it is given and is cut there with an ellipsis (Wrap::Clip), with a label's padding: toolbar notes and legends, the status bar's message, a heading, anything that must not widen its bar.
 
+step r4efvv
+order 48
+parent 2havd5
+author ai
+file crates/gui/src/field.rs
+symbol press
+lines 0 4
+hash 8231fd019e0a7f71
+note Called by the frame on every left press with the element under the mouse: the focused field keeps the keyboard only when the press lands on the element it was focused through, otherwise it loses it. Its text, caret and history stay, as with escape, so a click away loses no typing; clicking back resumes where it was.
+
 step r5th9i
 order 39
 parent 6wdt9w
 author ai
 file crates/gui/src/field.rs
 symbol type_text
-lines 0 9
-hash 517e64a9d412fae1
-note Typed text is inserted at the caret, replacing the whole text first when it is marked.
+lines 0 17
+hash e4857d6c60bf73c1
+note Typed or pasted text replaces the selection and goes in at the caret. A field of one line turns newlines and tabs into spaces; carriage returns are dropped everywhere.
 
 step r73ytr
 order 32
@@ -375,8 +526,8 @@ order 1
 author ai
 file crates/gui/src/widgets.rs
 symbol Container
-lines 0 26
-hash 15b621f15f83c1aa
+lines 0 27
+hash 5dbadfa5f9630816
 note Every box that holds other elements is one of these: the window, the body, the centre, the bars, the toolbars, a panel column, a step row or code column (with its selected mark), the column holding one step of the document (StepColumn, carrying that step's id so its height can be measured), a tooltip, a panel header, the floating view picker, the command palette's box, and the start page's centred column (Centered around StartPage, which carries the column's width). A view opens one with Frame::start and closes it with finish; it never spells out a layout or a style.
 
 step rs11uk
@@ -384,9 +535,19 @@ order 14
 author ai
 file crates/gui/src/widgets.rs
 symbol take_focus
+lines 0 2
+hash eee3abe97d6c6f2f
+note Taking the keyboard: the overlay records it for the rest of this frame and FocusField, carrying the element it was taken through (take_focus_at), sets it on the Model when the queue is applied (Fields::focus_at).
+
+step ry0h5x
+order 59
+parent 2havd5
+author ai
+file crates/gui/src/field.rs
+symbol Holding
 lines 0 3
-hash e6dbf549639df7cf
-note Taking the keyboard: the overlay records it for the rest of this frame and FocusField sets it on the Model when the queue is applied.
+hash 66532826dafedb0d
+note Who has the keyboard: the field and the element it was focused through. A step note is drawn under its row's edit-note/<n>, not its Which's own id, so press needs the element to tell a press on the focused field from one beside it.
 
 step sycnk6
 order 15
@@ -394,7 +555,7 @@ author ai
 file crates/gui/src/widgets.rs
 symbol scroll_column
 lines 0 32
-hash c0489573512de0c7
+hash feb10acaefa8856a
 note Opens a scrolling column whose offset lives in the Model's Scrolls by id: the wheel moves it, the result goes back as a Scroll action, and the caller closes the column with finish. The tree clamps the offset against what the column showed last frame, so a panel that shrank cannot stay scrolled past its end. Scroller picks the shape: a panel, the document (wider padding), or a fixed height, which the peek uses.
 
 step t1pqtr
@@ -413,9 +574,19 @@ parent ulzrgg
 author ai
 file crates/gui/src/field.rs
 symbol apply
-lines 0 67
-hash ff9e76cd41f36d85
-note The keys a field understands, as Edits from keys::edits: editing, home and end, up and down through the history, enter to submit, ctrl+a to mark all, ctrl+u to clear, escape to drop the keyboard. Enter returns the line; a field that keeps its text (Enter::Keep: search, the symbol filter, go-to-line) marks it all so the next entry replaces it, one that clears (the Console, the view picker's search) empties. Left and right with ctrl or alt never become Edits: they are back and forward.
+lines 0 57
+hash 145308956df1e88a
+note The keys a field understands, as Edits from keys::edits: deletes and moves by character or, with alt or ctrl, by word; moves to the row's ends and, with ctrl, the text's ends; shift makes any move extend the selection. Up and down move by row in a field of many lines and recall the history in a field of one. Enter submits, except in a field of many lines, where it breaks the line and ctrl+enter submits (Lines::breaks). Ctrl+a selects all, ctrl+u clears, escape drops the keyboard. Ctrl+c and ctrl+x hand the selection out as a Clip for the platform to copy, ctrl+v asks it to paste, and the pasted text comes back next frame as typed text. A field that keeps its text on enter (Enter::Keep) selects it all so the next entry replaces it; one that clears (the Console, the view picker's search) empties.
+
+step ubhhdj
+order 49
+parent 7mnsht
+author ai
+file crates/gui/src/widgets.rs
+symbol field_pointer
+lines 0 27
+hash ac859b643f358d6a
+note A press, drag, shift-click or double-click on a field as a caret position: the pointer's offset in the box last frame, plus the field's scroll, in rows and cells, handed to Field::caret_at, then pushed as a Point act with what the gesture means (place, extend from the press, extend from the caret, select the word).
 
 step ug0bcn
 order 9
@@ -433,9 +604,9 @@ parent 7mnsht
 author ai
 file crates/gui/src/field.rs
 symbol Field
-lines 0 6
-hash 8df2adeb84eb2f11
-note The one widget with state: the text, the caret in characters, whether the whole text is marked so the next character typed replaces it, and the submitted lines with which one of them up and down have recalled. Eleven of these, and one per row of the edit-tour outline, live in Fields on the Model.
+lines 0 9
+hash 9a1ac46b3d01dd02
+note The one widget with state: the text, the caret in characters, the anchor that spans the selection with the caret, the column up and down aim for while they repeat, the viewport in cells and the first row shown, and the submitted lines with which one up and down have recalled. Eleven of these, and one per row of the edit-tour outline, live in Fields on the Model; Which::lines says which hold one line and which many (the wizard's note).
 
 step v1qf6b
 order 4
@@ -490,6 +661,6 @@ parent ulzrgg
 author ai
 file crates/gui/src/widgets.rs
 symbol field_runs
-lines 0 22
-hash 96a34896fef80077
-note The field as runs: the text before the caret, the caret itself when focused, the text after, in the accent colour while the whole text is marked. An empty unfocused field shows its hint instead; a filled unfocused one its start, clipped to the room it is given.
+lines 0 17
+hash e3e1536fd5332367
+note The Console's line as runs: the field's pieces, the caret and the selection in the accent colour. An empty unfocused field shows its hint instead.

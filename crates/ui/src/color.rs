@@ -43,3 +43,28 @@ impl Color {
         self.alpha() == 0
     }
 }
+
+const fn unchanged(color: Color) -> Color {
+    color
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Repaint(fn(Color) -> Color);
+
+impl Repaint {
+    pub const NONE: Self = Self(unchanged);
+
+    pub const fn new(paint: fn(Color) -> Color) -> Self {
+        Self(paint)
+    }
+
+    pub fn paint(self, color: Color) -> Color {
+        (self.0)(color)
+    }
+}
+
+impl Default for Repaint {
+    fn default() -> Self {
+        Self::NONE
+    }
+}

@@ -140,7 +140,7 @@ impl Ratio {
         Self(u16::try_from(value).unwrap_or(HALF.0))
     }
 
-    fn apply(self, whole: Px) -> Px {
+    pub(crate) fn apply(self, whole: Px) -> Px {
         Px::of_wide(whole.wide() * i64::from(self.0) / i64::from(RATIO_WHOLE.0))
     }
 }
@@ -217,6 +217,20 @@ impl Direction {
         match self {
             Self::Right => Axis::Horizontal,
             Self::Down => Axis::Vertical,
+        }
+    }
+
+    pub(crate) const fn saved(self) -> SplitDirection {
+        match self {
+            Self::Right => SplitDirection::Right,
+            Self::Down => SplitDirection::Down,
+        }
+    }
+
+    pub(crate) const fn of_saved(saved: SplitDirection) -> Self {
+        match saved {
+            SplitDirection::Right => Self::Right,
+            SplitDirection::Down => Self::Down,
         }
     }
 }
@@ -498,10 +512,7 @@ fn layout_of(branch: &Branch) -> LayoutTree {
             ))
         }
         Branch::Split(split) => LayoutTree::Split(LayoutSplit::new(
-            match split.direction {
-                Direction::Right => SplitDirection::Right,
-                Direction::Down => SplitDirection::Down,
-            },
+            split.direction.saved(),
             Share::permille(split.ratio.0).unwrap_or(Share::WHOLE),
             layout_of(&split.first),
             layout_of(&split.second),
@@ -541,10 +552,7 @@ impl Panels {
             LayoutTree::Split(saved) => {
                 let first = self.restore(saved.first(), placed);
                 let second = self.restore(saved.second(), placed);
-                let direction = match saved.direction() {
-                    SplitDirection::Right => Direction::Right,
-                    SplitDirection::Down => Direction::Down,
-                };
+                let direction = Direction::of_saved(saved.direction());
                 self.split(direction, Ratio(saved.share().get()), first, second)
             }
         }

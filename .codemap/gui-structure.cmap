@@ -11,8 +11,8 @@ parent saeyu5
 author ai
 file crates/gui/src/status.rs
 symbol fmt
-lines 0 96
-hash d87d4b8bb67ce075
+lines 0 100
+hash 8b284b18b4522fac
 note The wording. Map refusals and load failures arrive already worded by cli, so the GUI and the CLI say the same thing.
 
 step 0fz3qy
@@ -21,8 +21,8 @@ parent saeyu5
 author ai
 file crates/gui/src/status.rs
 symbol tone
-lines 0 40
-hash 78ad3ddba4c8ce7d
+lines 0 42
+hash 4c02604d592efca1
 note How the status bar colours each Status: Done for what the reader asked and got (saved, created, added, moved, removed, reloaded, re-indexed), Warning for what needs the reader's attention but broke nothing (a refused gesture, a clamped line, missing input, cut search hits, a change on disk), Problem for a failure (an unreadable map, a refused or failed save or command, a bad regex, a server or re-index failure), Plain for the rest.
 
 step 2e645j
@@ -50,8 +50,8 @@ order 1
 author ai
 file crates/gui/src/app.rs
 symbol App
-lines 0 8
-hash 86e32590eec1d404
+lines 0 10
+hash 90ef79aa387e966a
 note What platform::App is implemented on: the Model, the Services, the element tree and the grid cache, plus the screenshot aid. frame, script and locate are its three methods; all state changes funnel through its apply.
 
 step 3foimq
@@ -89,8 +89,8 @@ order 2
 author ai
 file crates/gui/src/model.rs
 symbol Model
-lines 0 30
-hash c3293445ef8a3d71
+lines 0 34
+hash 75f67bfcc4168dfe
 note All the state a view can see, in one struct: the index and the map with its MapStore and disk state, the parent map for the Diff tab, Nav, the step views, the open directories and groups, the kept peek, the server Queries, the panel tree, the scroll offsets (down and across), the graph's state, the fields, search hits and whether they were cut at HIT_LIMIT, the measured heights of document steps (Measures), the console log, the status, WorkState, the font metrics, the frame time, and the build-tour wizard while one is open. gui-model has its values and queries.
 
 step 622pjb
@@ -98,8 +98,8 @@ order 25
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 129 163
-hash f5fce2c56cf74249
+lines 193 228
+hash fe6487cbe20ed276
 note Every padding, gap and fixed pixel measure the widgets and views use, named by where it is used.
 
 step 63vlrl
@@ -165,8 +165,8 @@ order 6
 author ai
 file crates/gui/src/views.rs
 symbol build
-lines 0 14
-hash 8c314ab96c8e770c
+lines 0 15
+hash 4440359b22770170
 note Every view is a function of (&Model, &mut Frame): nothing a view does can change the Model, so the whole window is drawn from one consistent state, and a view that wants a change pushes an Action.
 
 step 97d0g8
@@ -203,8 +203,8 @@ order 26
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 192 231
-hash 1fcedfb9e782142a
+lines 258 300
+hash de6480a2979dd050
 note Every measure counted in cells: button and field widths, column guesses before a panel has a size, the symbol table's columns, tooltip sizes, the gap before a danger button, the status bar's room for the map's place, the panels' floors and the picker's width.
 
 step an1gef
@@ -243,9 +243,9 @@ parent uhm8r4
 author ai
 file crates/gui/src/keys.rs
 symbol seen
-lines 0 16
-hash f3783d45d4ab0ab4
-note Whether a gesture happened to an element this frame: alt, ctrl or shift click, double click, hover, drag, wheel (plain, shift or ctrl), pinch, and the mouse's side buttons.
+lines 0 17
+hash d9b77b88e9751319
+note Whether a gesture happened to an element this frame: alt, ctrl or shift click, double click, hover, drag, wheel (plain, shift or ctrl), a sideways swipe, pinch, and the mouse's side buttons.
 
 step e7qp3v
 order 54
@@ -271,10 +271,10 @@ order 43
 parent nk2647
 author ai
 file crates/gui/src/keys.rs
-symbol scrolls_across
-lines 0 2
-hash f6c6611d061b99d1
-note Whether shift is held, so the wheel scrolls a code block sideways.
+symbol turn_wheel
+lines 0 8
+hash 5582d9f2861dbf12
+note Turns shift+wheel sideways before the ui sees the frame: while ScrollCode's ShiftWheel gesture is held, the vertical wheel moves to the horizontal one.
 
 step fzwmd4
 order 11
@@ -311,8 +311,8 @@ parent xjz44n
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 0 100
-hash 6bafd9825263f527
+lines 0 94
+hash a2ef9e642997b9e4
 note The one place the Model changes during a frame. Each arm is a call into nav.rs, a field of the Model, or a method on the App for changes that need the Services (save, a server question, a command).
 
 step h4xmjq
@@ -457,8 +457,8 @@ parent 9pik9m
 author ai
 file crates/gui/src/ids.rs
 symbol CONTROLS
-lines 0 99
-hash ae3ea2ad8a943df3
+lines 0 106
+hash d78d9d81f40cd8c1
 note Every control, for the test that checks them against the registry.
 
 step mjhubp
@@ -507,8 +507,8 @@ author ai
 file crates/gui/src/theme.rs
 symbol font
 lines 0 2
-hash b2725ef31977de54
-note The font size for the display's scale factor, never under 8 pixels. The frame sets it on the Model, with the cell size the renderer measures for it, before anything is built.
+hash 77a3eabb501ec2cd
+note The font size for the display's scale factor: the settings' BaseFontSize times the scale, never under 8 pixels. The frame sets it on the Model, with the cell size the renderer measures for it, before anything is built.
 
 step o1zcz0
 order 9
@@ -584,17 +584,17 @@ parent 7579zm
 author ai
 file crates/gui/src/dump.rs
 symbol dump
-lines 0 16
-hash 9b7d5472e971a798
-note Each scrolling panel's offset, rectangle and content size.
+lines 0 33
+hash 6a51a76dc4db4143
+note Each scrolling panel's offset, rectangle and content size, then each code block that scrolls sideways (the Source view's and the first document steps'), its thumb first so a script can aim a drag at it.
 
 step saeyu5
 order 52
 author ai
 file crates/gui/src/status.rs
 symbol Status
-lines 0 81
-hash cf10f665f7596662
+lines 0 83
+hash 9b5b259f9cce0136
 note Everything the status line can say, as data: each outcome of a save, a command, a search, an edit, a definition lookup, a server, a re-index or a disk change. Views and apply set one; nothing formats a message where it happens.
 
 step sbpnbg
@@ -721,8 +721,8 @@ order 8
 author ai
 file crates/gui/src/action.rs
 symbol Action
-lines 0 54
-hash d887280b95863e1a
+lines 0 57
+hash 3bdafbdee53e226d
 note Every change a gesture, a key, a script line or a view's measurement can cause, as data. A view names the change; it never makes it.
 
 step xypoz6
@@ -731,8 +731,8 @@ parent 9pik9m
 author ai
 file crates/gui/src/ids.rs
 symbol impl Control
-lines 0 39
-hash 130e59ef971201ec
+lines 0 38
+hash bcb60fe673dc4eea
 note Ids from a Control: the plain id, the nth for a row, with a suffix for a named row, and nested for a step of a linked tour shown inline (linked/<occurrence>@<element>/<n>).
 
 step y37wqf
@@ -740,9 +740,9 @@ order 47
 author ai
 file crates/gui/src/keys.rs
 symbol edit_of
-lines 0 18
-hash 59f1d667b587a954
-note A key press as a field edit; ctrl or alt with left or right is not one, since those are back and forward.
+lines 0 29
+hash 81dc78d26509a539
+note A key press as a field edit: ctrl or alt makes a move or a delete go by word, shift makes a move extend the selection, ctrl with home or end goes to the text's ends, and the clipboard letters are the edit-text chords in the registry. While a field has the keyboard, ctrl or alt with left or right is this word move and keys::going does not go back or forward.
 
 step y65w9m
 order 46

@@ -326,6 +326,7 @@ impl App {
             || self.services.base.is_some()
             || self.services.reindex.is_some()
             || self.services.link.is_some()
+            || self.settings.scanning()
     }
 
     pub(crate) fn load_base(&mut self) {

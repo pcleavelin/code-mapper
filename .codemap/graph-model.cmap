@@ -90,8 +90,8 @@ parent k3ulx8
 author ai
 file crates/gui/src/panels.rs
 symbol impl Direction
-lines 0 14
-hash 48932b3980b18c09
+lines 0 28
+hash 903bf1f015190d11
 note turned is the other direction, what the toolbar's direction button switches the graph to.
 
 step 5mmllx

@@ -98,6 +98,8 @@ pub enum Feature {
     Welcome,
     BuildTour,
     EditTour,
+    EditText,
+    Settings,
 }
 
 impl Feature {
@@ -661,12 +663,12 @@ impl Feature {
             ),
             Self::SelectLines => Spec::new(
                 Text::new("select-lines"),
-                Text::new("select a line, or extend the selection, in the Source view"),
+                Text::new("select a line, or drag over lines to select them, in the Source view"),
                 Surface::Window,
                 &const {
                     [
                         Trigger::Click(Element::new("lines")),
-                        Trigger::Gesture(Gesture::ShiftClick, Element::new("lines")),
+                        Trigger::Gesture(Gesture::Drag, Element::new("lines")),
                     ]
                 },
             ),
@@ -707,7 +709,13 @@ impl Feature {
                 Text::new("scroll-code"),
                 Text::new("scroll a code block sideways"),
                 Surface::Window,
-                &const { [Trigger::Gesture(Gesture::ShiftWheel, Element::new("code"))] },
+                &const {
+                    [
+                        Trigger::Gesture(Gesture::ShiftWheel, Element::new("code")),
+                        Trigger::Gesture(Gesture::Swipe, Element::new("code")),
+                        Trigger::Gesture(Gesture::Drag, Element::new("code-scrollbar")),
+                    ]
+                },
             ),
             Self::RevealNode => Spec::new(
                 Text::new("reveal-node"),
@@ -955,6 +963,47 @@ impl Feature {
                         Trigger::Click(Element::new("edit-more")),
                         Trigger::Type(Element::new("edit-note")),
                         Trigger::Palette(Text::new("edit tour"), None),
+                    ]
+                },
+            ),
+            Self::EditText => Spec::new(
+                Text::new("edit-text"),
+                Text::new(
+                    "write a note over several lines: enter breaks the line and ctrl+enter goes on, the arrows, home and end move by row, shift selects, alt or ctrl moves and deletes by word, a click places the caret and a drag selects, ctrl+c, ctrl+x and ctrl+v copy, cut and paste",
+                ),
+                Surface::Window,
+                &const {
+                    [
+                        Trigger::Key(Chord::control(Key::Letter(Letter::new('c')))),
+                        Trigger::Key(Chord::control(Key::Letter(Letter::new('x')))),
+                        Trigger::Key(Chord::control(Key::Letter(Letter::new('v')))),
+                        Trigger::Gesture(Gesture::Drag, Element::new("field@wizard-note")),
+                        Trigger::Gesture(Gesture::ShiftClick, Element::new("field@wizard-note")),
+                        Trigger::Gesture(Gesture::DoubleClick, Element::new("field@wizard-note")),
+                        Trigger::Gesture(Gesture::Wheel, Element::new("field@wizard-note")),
+                    ]
+                },
+            ),
+            Self::Settings => Spec::new(
+                Text::new("settings"),
+                Text::new(
+                    "a box over the window to choose the theme, the font, the font size and which way the graph grows; kept per user across launches",
+                ),
+                Surface::Window,
+                &const {
+                    [
+                        Trigger::Key(Chord::control(Key::Letter(Letter::new(',')))),
+                        Trigger::Click(Element::new("settings")),
+                        Trigger::Click(Element::new("settings-close")),
+                        Trigger::Click(Element::new("settings-theme")),
+                        Trigger::Click(Element::new("settings-smaller")),
+                        Trigger::Click(Element::new("settings-larger")),
+                        Trigger::Click(Element::new("settings-font")),
+                        Trigger::Click(Element::new("settings-graph")),
+                        Trigger::Palette(
+                            Text::new("settings"),
+                            Some(Chord::control(Key::Letter(Letter::new(',')))),
+                        ),
                     ]
                 },
             ),

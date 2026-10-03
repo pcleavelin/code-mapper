@@ -13,6 +13,7 @@ use crate::keys::{PaletteKey, Walk};
 use crate::model::{Model, StepKey, Tab, TourSlot};
 use crate::nav::Scrolling;
 use crate::panels::{Direction, View};
+use crate::settings::SettingsAct;
 use crate::welcome::WelcomeAct;
 use crate::wizard::WizardAct;
 
@@ -76,6 +77,7 @@ pub(crate) enum PaletteCommand {
     BuildTour,
     EditTour,
     StartPage,
+    Settings,
 }
 
 pub(crate) const fn commands(feature: Feature) -> &'static [PaletteCommand] {
@@ -99,6 +101,7 @@ pub(crate) const fn commands(feature: Feature) -> &'static [PaletteCommand] {
         Feature::Welcome => &[PaletteCommand::StartPage],
         Feature::BuildTour => &[PaletteCommand::BuildTour],
         Feature::EditTour => &[PaletteCommand::EditTour],
+        Feature::Settings => &[PaletteCommand::Settings],
         Feature::SplitPanel => &[
             PaletteCommand::Split(Direction::Right),
             PaletteCommand::Split(Direction::Down),
@@ -570,7 +573,9 @@ impl Model {
                     on_tour(|tour| Action::CollapseAll(tour, Collapse::Expand))
                 }
                 PaletteCommand::ShowGraph => on_tour(|tour| Action::OpenTour(tour, Tab::Graph)),
-                PaletteCommand::Search => vec![Action::FocusField(Which::Search)],
+                PaletteCommand::Search => {
+                    vec![Action::FocusField(Which::Search, Which::Search.id())]
+                }
                 PaletteCommand::AutoLayout => vec![Action::Graph(GraphAction::AutoLayout)],
                 PaletteCommand::Fit => vec![Action::Graph(GraphAction::WantFit)],
                 PaletteCommand::OneToOne => vec![Action::Graph(GraphAction::OneToOne)],
@@ -578,6 +583,7 @@ impl Model {
                 PaletteCommand::BuildTour => vec![Action::Welcome(WelcomeAct::BuildTour)],
                 PaletteCommand::EditTour => on_tour(|tour| Action::Wizard(WizardAct::Edit(tour))),
                 PaletteCommand::StartPage => vec![Action::Welcome(WelcomeAct::StartPage)],
+                PaletteCommand::Settings => vec![Action::Settings(SettingsAct::Toggle)],
                 PaletteCommand::Split(direction) => {
                     let shown = View::of_tab(self.nav.tab());
                     self.panels

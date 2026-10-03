@@ -122,13 +122,14 @@ covering it: the code has no comments, so the map is the only prose about it.
 ## Crates
 
 `domain` (the model, no I/O), `io-*` (one crate per outside format or program: `io-map`
-`.codemap/`, `io-cache`, `io-layout`, `io-vcs` jj or git, `io-lsp`, `io-source`, `io-process`,
-`io-store`), `index` (tree-sitter resolvers, server orchestration), `features` (every function
-a user can reach; CLI commands and help, GUI buttons and keys are built from it), `cli` (text
-commands, also the GUI's Console), `ui` (the element tree), `platform` (wgpu, fonts,
-winit, the script runner), `gui`, `codemap` (the binary and integration tests), `xtask` (the
-gate). The allowed edges are in `xtask/src/arch.rs`. `cli` and `gui` are two front ends over
-one `Index` and `Map`; anything that mutates the map is a method of `Map`.
+`.codemap/`, `io-cache`, `io-config` the user's layout and settings, `io-fonts` installed fonts,
+`io-vcs` jj or git, `io-lsp`, `io-source`, `io-process`, `io-store`, `io-clipboard` the system
+clipboard), `index` (tree-sitter resolvers, server orchestration), `features` (every function a
+user can reach; CLI commands and help, GUI buttons and keys are built from it), `cli` (text
+commands, also the GUI's Console), `ui` (the element tree), `platform` (wgpu, fonts, winit, the
+script runner), `gui`, `codemap` (the binary and integration tests), `xtask` (the gate). The
+allowed edges are in `xtask/src/arch.rs`. `cli` and `gui` are two front ends over one `Index`
+and `Map`; anything that mutates the map is a method of `Map`.
 
 ## Explore codebases through codemap, not grep
 
@@ -191,6 +192,7 @@ Never claim a visual or interactive behaviour from reading the code; drive it an
   the same on every run: `wait n` (frames), `pause ms` (waits that long in wall time, for the
   servers, and moves the clock by exactly that), `mouse x y`, `down`, `up`,
   `click x y [ctrl|alt|shift]`, `dblclick x y`, `drag x0 y0 x1 y1`, `wheel dy [ctrl|shift]`,
+  `swipe dx dy` (a trackpad two-finger swipe, both axes in pixels),
   `pinch n` (a trackpad pinch of n percent, negative to zoom out),
   `key <name> [ctrl] [alt]`, `text ...`, `quit`; app commands `tab <name>`,
   `open <file> [line]`, `scroll <panel> <n>`, `idle` (waits until every server request is

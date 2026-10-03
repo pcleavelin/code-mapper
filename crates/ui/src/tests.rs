@@ -3,9 +3,9 @@ use std::rc::Rc;
 use strum::VariantArray;
 
 use crate::{
-    Button, Canvas, Cell, Color, Command, Coordinate, Count, Extent, FontSize, Glyph, Grid, Icon,
-    Id, Input, Key, Kind, Label, Layout, Measure, Mods, Point, Press, Px, Rect, Run, Scale,
-    Scrollbar, Sides, Style, Text, Ui, Vector, Wrap,
+    Axis, Button, Canvas, Cell, Color, Command, Coordinate, Count, Extent, FontSize, Glyph, Grid,
+    Icon, Id, Input, Key, Kind, Label, Layout, Measure, Mods, Point, Press, Px, Rect, Run, Scale,
+    Scrollbar, Scrollbars, Sides, Style, Text, Ui, Vector, Wrap,
 };
 
 struct Cells;
@@ -283,10 +283,26 @@ fn scrolled_column_clips_children_and_reports_content() {
 
 #[test]
 fn scrollbar_matches_legacy_math() {
-    let bar = Scrollbar::of(rect(0, 0, 100, 50), px(200), px(75)).unwrap();
+    let bar = Scrollbar::of(
+        Axis::Vertical,
+        rect(0, 0, 100, 50),
+        rect(0, 0, 100, 50),
+        px(200),
+        px(75),
+    )
+    .unwrap();
     assert_eq!(bar.track, rect(92, 0, 8, 50));
     assert_eq!(bar.thumb, rect(92, 15, 8, 20));
-    assert!(Scrollbar::of(rect(0, 0, 100, 50), px(50), px(0)).is_none());
+    assert!(
+        Scrollbar::of(
+            Axis::Vertical,
+            rect(0, 0, 100, 50),
+            rect(0, 0, 100, 50),
+            px(50),
+            px(0)
+        )
+        .is_none()
+    );
 }
 
 #[test]
@@ -295,16 +311,13 @@ fn wheel_scrolls_and_clamps() {
     let mut frame = input(100, 100);
     frame.pointer.mouse = Point::new(px(10), px(10));
     let id = Id::new("list");
-    let mut offset = px(0);
+    let mut offset = Point::default();
     for _ in 0..2 {
         ui.begin(&frame);
         ui.scroll_by_wheel(id, &mut offset);
         ui.open(
             Kind::None,
-            Layout::column()
-                .width(px(50))
-                .height(px(30))
-                .scroll(Point::new(px(0), offset)),
+            Layout::column().width(px(50)).height(px(30)).scroll(offset),
             Style::default(),
             Some(id),
         );
@@ -318,7 +331,110 @@ fn wheel_scrolls_and_clamps() {
         ui.end(&mut Cells);
         frame.pointer.wheel = Vector::new(Coordinate::new(0.0), Coordinate::new(-120.0));
     }
-    assert_eq!(offset, px(70));
+    assert_eq!(offset, Point::new(px(0), px(70)));
+}
+
+fn strip(ui: &mut Ui, frame: &Input, offset: &mut Point, bars: Scrollbars) {
+    let id = Id::new("strip");
+    ui.begin(frame);
+    ui.scroll_by_wheel(id, offset);
+    ui.open(
+        Kind::None,
+        Layout::row()
+            .width(px(100))
+            .scroll(*offset)
+            .scrollbars(bars),
+        Style::default(),
+        Some(id),
+    );
+    ui.leaf(
+        Kind::None,
+        Layout::row().width(px(300)).height(px(20)),
+        Style::default(),
+        None,
+    );
+    ui.close();
+    ui.end(&mut Cells);
+}
+
+fn swiped(bars: Scrollbars) -> Point {
+    let mut ui = Ui::default();
+    let mut frame = input(400, 400);
+    frame.pointer.mouse = Point::new(px(10), px(10));
+    let mut offset = Point::default();
+    strip(&mut ui, &frame, &mut offset, bars);
+    frame.pointer.wheel = Vector::new(Coordinate::new(-500.0), Coordinate::new(-40.0));
+    strip(&mut ui, &frame, &mut offset, bars);
+    offset
+}
+
+#[test]
+fn sideways_wheel_scrolls_a_horizontal_scroller_to_its_overflow() {
+    assert_eq!(swiped(Scrollbars::HORIZONTAL), Point::new(px(200), px(0)));
+}
+
+#[test]
+fn vertical_scroller_ignores_the_sideways_wheel() {
+    assert_eq!(swiped(Scrollbars::VERTICAL), Point::new(px(0), px(0)));
+}
+
+#[test]
+fn horizontal_scroller_measures_its_widest_child_and_makes_room_for_its_bar() {
+    let mut ui = Ui::default();
+    let mut offset = Point::default();
+    strip(
+        &mut ui,
+        &input(400, 400),
+        &mut offset,
+        Scrollbars::HORIZONTAL,
+    );
+    let placement = ui.placement(Id::new("strip")).unwrap();
+    assert_eq!(placement.content, Extent::new(px(300), px(28)));
+    assert_eq!(placement.rect, rect(0, 0, 100, 28));
+}
+
+#[test]
+fn horizontal_bar_never_rises_above_its_element() {
+    let bar = Scrollbar::of(
+        Axis::Horizontal,
+        rect(0, 100, 100, 50),
+        rect(0, 100, 100, 4),
+        px(300),
+        px(0),
+    )
+    .unwrap();
+    assert_eq!(bar.track, rect(0, 100, 100, 8));
+}
+
+#[test]
+fn horizontal_bar_runs_along_the_bottom_of_what_shows() {
+    let bar = Scrollbar::of(
+        Axis::Horizontal,
+        rect(0, 0, 100, 200),
+        rect(0, 0, 100, 50),
+        px(300),
+        px(100),
+    )
+    .unwrap();
+    assert_eq!(bar.track, rect(0, 42, 100, 8));
+    assert_eq!(bar.thumb, rect(33, 42, 33, 8));
+}
+
+#[test]
+fn dragging_the_horizontal_thumb_follows_the_mouse() {
+    let mut ui = Ui::default();
+    let mut frame = input(400, 400);
+    let mut offset = Point::default();
+    frame.pointer.mouse = Point::new(px(10), px(24));
+    strip(&mut ui, &frame, &mut offset, Scrollbars::HORIZONTAL);
+    frame.pointer.pressed.insert(Button::Left);
+    frame.pointer.down.insert(Button::Left);
+    strip(&mut ui, &frame, &mut offset, Scrollbars::HORIZONTAL);
+    assert!(ui.on_scrollbar(Id::new("strip")));
+    frame.pointer.pressed.remove(Button::Left);
+    frame.pointer.mouse = Point::new(px(43), px(60));
+    strip(&mut ui, &frame, &mut offset, Scrollbars::HORIZONTAL);
+    assert_eq!(offset, Point::new(px(98), px(0)));
 }
 
 #[test]

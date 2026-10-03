@@ -1,7 +1,0 @@
-pub struct LayoutStore { path: PathBuf, }
-pub enum Reach { User, OverrideOnly, }
-pub const fn at(path: PathBuf) -> Self
-pub fn find(reach: Reach) -> Option<Self>
-pub fn path(&self) -> &Path
-pub fn load(&self) -> Option<LayoutTree>
-pub fn save(&self, layout: &LayoutTree) -> io::Result<()>

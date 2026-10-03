@@ -1,4 +1,4 @@
-pub enum Feature { Files, Symbols, Show, Search, Notes, Callers, Callees, Refs, Index, Tree, Roots, Tours, Tour, TourNew, TourGroup, Groups, GroupRename, TourNote, StepNote, StepLink, StepUnlink, NoteEdit, TourRename, TourAdd, TourPin, TourMove, TourSwap, TourRm, Promote, Stale, Check, Repin, Uncovered, Coverage, Diff, Help, OpenTour, OpenGroup, SelectStep, WalkSteps, ToggleWholeSymbol, ToggleCode, ToggleCollapse, InlineLink, OpenLinkedTour, HideAllCode, CollapseAll, MoreContext, RemoveStep, RemoveTour, ShowGraph, SwitchTab, GoBack, Save, AddStep, ChooseTarget, MoveStep, PromoteSymbol, SearchFiles, RunCommand, FilterSymbols, FilterTours, BrowseFiles, FollowXref, GoToLine, SelectLines, JumpToDefinition, PeekDefinition, HoverInfo, ScrollCode, RevealNode, MoveNode, NodeContext, NodeSource, ShowReferences, AutoLayout, FitGraph, PanGraph, ZoomGraph, WalkGraph, TurnGraph, MoveView, ResizePanel, SplitPanel, ClosePanel, CloseTab, PickView, OpenDiffRow, CommandPalette, Welcome, BuildTour, EditTour, }
+pub enum Feature { Files, Symbols, Show, Search, Notes, Callers, Callees, Refs, Index, Tree, Roots, Tours, Tour, TourNew, TourGroup, Groups, GroupRename, TourNote, StepNote, StepLink, StepUnlink, NoteEdit, TourRename, TourAdd, TourPin, TourMove, TourSwap, TourRm, Promote, Stale, Check, Repin, Uncovered, Coverage, Diff, Help, OpenTour, OpenGroup, SelectStep, WalkSteps, ToggleWholeSymbol, ToggleCode, ToggleCollapse, InlineLink, OpenLinkedTour, HideAllCode, CollapseAll, MoreContext, RemoveStep, RemoveTour, ShowGraph, SwitchTab, GoBack, Save, AddStep, ChooseTarget, MoveStep, PromoteSymbol, SearchFiles, RunCommand, FilterSymbols, FilterTours, BrowseFiles, FollowXref, GoToLine, SelectLines, JumpToDefinition, PeekDefinition, HoverInfo, ScrollCode, RevealNode, MoveNode, NodeContext, NodeSource, ShowReferences, AutoLayout, FitGraph, PanGraph, ZoomGraph, WalkGraph, TurnGraph, MoveView, ResizePanel, SplitPanel, ClosePanel, CloseTab, PickView, OpenDiffRow, CommandPalette, Welcome, BuildTour, EditTour, EditText, Settings, }
 pub fn spec(self) -> Spec
 spec::pub struct Text(&'static str);
 spec::pub const fn new(text: &'static str) -> Self
@@ -17,7 +17,7 @@ spec::pub const fn control(key: Key) -> Self
 spec::pub const fn alt(key: Key) -> Self
 spec::pub const fn key(self) -> Key
 spec::pub const fn modifiers(self) -> Modifiers
-spec::pub enum Gesture { ShiftClick, ControlClick, AltClick, DoubleClick, Hover, Drag, Wheel, ShiftWheel, ControlWheel, Pinch, BackButton, ForwardButton, }
+spec::pub enum Gesture { ShiftClick, ControlClick, AltClick, DoubleClick, Hover, Drag, Wheel, ShiftWheel, Swipe, ControlWheel, Pinch, BackButton, ForwardButton, }
 spec::pub enum Trigger { Command(Text), Key(Chord), Click(Element), Type(Element), Gesture(Gesture, Element), Palette(Text, Option<Chord>), }
 spec::pub enum Surface { Command, Window, }
 spec::pub struct Spec { name: Text, summary: Text, surface: Surface, triggers: &'static [Trigger], }

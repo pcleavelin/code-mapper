@@ -8,7 +8,7 @@ use ui::{Count, Px};
 use crate::field::Which;
 use crate::graph::Camera;
 use crate::ids;
-use crate::keys::{Extend, Walk};
+use crate::keys::{LineGesture, Walk};
 use crate::model::{LineSelection, Model, StepKey, StepSlot, Tab, TourSlot, ViewFlag};
 use crate::panels::{BranchId, View};
 use crate::status::Status;
@@ -587,14 +587,21 @@ impl Model {
         self.nav.scroll_to_line(line);
     }
 
-    pub(crate) fn select_line(&mut self, line: Line, extend: Extend) {
-        self.nav.lines = match (extend, self.nav.lines) {
-            (Extend::Extend, Some(lines)) => Some(LineSelection {
-                from: lines.from,
-                to: line,
-            }),
-            _ => Some(LineSelection::one(line)),
-        };
+    pub(crate) fn select_line(&mut self, line: Line, gesture: LineGesture) {
+        match (gesture, self.line_grab) {
+            (LineGesture::Press, _) => {
+                self.line_grab = Some(line);
+                self.nav.lines = Some(LineSelection::one(line));
+            }
+            (LineGesture::Drag, Some(from)) => {
+                self.nav.lines = Some(LineSelection { from, to: line });
+            }
+            (LineGesture::Drag, None) => {}
+        }
+    }
+
+    pub(crate) const fn release_lines(&mut self) {
+        self.line_grab = None;
     }
 
     pub(crate) fn set_tab(&mut self, tab: Tab) {

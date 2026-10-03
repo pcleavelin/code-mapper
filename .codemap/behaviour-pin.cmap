@@ -12,7 +12,7 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol gui_scenarios
 lines 0 4
-hash 53c237143e18be9b
+hash 2e1b570606218f9a
 note The GUI scenarios, listed once in the gui_scenarios macro that gui.rs and parity.rs both expand. Each settles with SETTLE first; its stderr and the output of its after commands go to ran, which fails on a crash or a script error.
 
 step 1wrmiq
@@ -62,7 +62,7 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol graph
 lines 0 101
-hash 443530a29df8f224
+hash 14bc709120209db3
 note The graph: the fitted start, a node's callees and hide buttons, an off-tour node, shift-wheel and wheel, dragging a node, auto layout, ctrl-wheel zoom, fit, 1:1, panning, and a node's context and no-context buttons; then, after clicking an off-tour node, the arrow keys down, left and right walking between nodes (a dump after each, once the glide has had time to land), and the graph-turn button laying the tree out top to bottom (turned.png); last, a node's source button opening its file in the Source view.
 
 step 5147ql
@@ -80,10 +80,10 @@ order 40
 parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
-symbol source
-lines 0 60
-hash 7c7ba34729bee8ed
-note The Source view: opening a file at a line, a shift-click range selection added to startup with 'add step' (checked by the after command), goto-line with good, past-the-end and non-numeric input, the tooltip, ctrl-click, and back and forward by button and by key.
+symbol SOURCE
+lines 0 108
+hash 3232079e3df20706
+note The Source view: opening a file at a line, a range selected by press-drag (dumped mid-drag and after release) added to startup with 'add step' (checked by the after command), goto-line with good, past-the-end and non-numeric input, the tooltip, ctrl-click, back and forward by button and by key, with the panels shrunk so the file overflows, a drag held past the bottom edge that scrolls the view and extends the selection, then the divider moved back so every line is drawn, a split that narrows the panel and the sideways scrollbar: a swipe, a thumb drag, shift+wheel and a track click, each followed by a dump.
 
 step 62zoqn
 order 15
@@ -307,8 +307,8 @@ parent hed6nt
 author ai
 file crates/codemap/tests/features.rs
 symbol exercised
-lines 0 61
-hash 031314f767b7efd1
+lines 0 62
+hash 5afa32eab3e54cfc
 note Whether the scenario sources fire one trigger: a command by an argument array in commands (cli.rs and gui.rs) starting with its name, a click or typed field by a click-id or dblclick-id aimed at the element (a graph node's buttons by their label in a <<DUMP button>> click), a key by a key line with its modifier, a gesture by the script command that performs it, and a palette entry by a text line whose words, after an optional >, begin its label ignoring case. The back and forward mouse buttons have no script command, so they never count.
 
 step hbyc72
@@ -373,9 +373,9 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol layout
-lines 0 80
-hash 6a3053c25ffe53e3
-note The panel tree: resizing the left split by its divider, splitting the centre and picking the Source by typing, splitting that down and picking References by clicking (its old panel closes), dragging Console onto the left edge of the Tours panel, a click on a tab that moves nothing, a drag released over the top bar that cancels, closing a panel, and a tab command that brings the Source back into a panel.
+lines 0 89
+hash 97b4c7aa7a21f8f9
+note The panel tree: resizing the left split by its divider, splitting the centre and picking the Source by typing, splitting that down and picking References by clicking (its old panel closes), dragging Console onto the left edge of the Tours panel, a click on a tab that moves nothing, a drag released over the top bar that cancels, closing a panel, and a tab command that brings the Source back into a panel. Between the split and the drag, the picker stays open on a press inside it and closes on a click outside it.
 
 step j8h125
 order 33
@@ -412,10 +412,10 @@ order 38
 parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
-symbol document
-lines 0 94
-hash 7111c34be8557151
-note The document: scrolling, selecting a step, whole-symbol and context toggles, hide and collapse, arrow keys, the breadcrumb, hide and show all code, collapse and expand all, wheel scrolling, the steps list and the jump to the graph.
+symbol DOCUMENT
+lines 0 101
+hash e72a314007fc3061
+note The document: scrolling, selecting a step, whole-symbol and context toggles, hide and collapse, arrow keys, the breadcrumb, hide and show all code, collapse and expand all, wheel scrolling, the steps list, the jump to the graph, and the palette: a press inside its box keeps the keyboard in its field, a click outside closes it and still acts.
 
 step k23duj
 order 9
@@ -559,8 +559,8 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol AUTHORING
-lines 0 124
-hash e99f8349423dee4d
+lines 0 122
+hash 9df798f2d8d8311c
 note The GUI authoring gestures on a fresh tour: a tour built in the wizard opened by '+ new tour' (an empty name refused, kind and group chosen, main as the start, three outline rows ticked by their tick boxes), add-offer@Symbols from the Symbols strip after a symbol is focused, then '+ step' from Symbols and References, each row hovered first since its action shows only then (a repeat refused), the target strip's 'top level', 'add step' from the Source view, '+ step' on an off-tour graph node, three steps list drags (under, before, under), 'promote', and a save; the after command prints the resulting tour.
 
 step wv4hxm

@@ -1,12 +1,13 @@
 use domain::{Author, Column, FileId, GroupName, Language, Line, LineCount, SymbolId};
+use platform::Clip;
 use ui::{Count, Id, Label, Point, Px, Typed};
 
 use crate::app::App;
 use crate::authoring::Authoring;
-use crate::field::{Edit, Enter, FieldText, Which};
+use crate::field::{Edit, Enter, FieldAct, FieldText, Which};
 use crate::graph::{GraphAction, Heading};
 use crate::ids;
-use crate::keys::{Extend, PaletteKey, Walk};
+use crate::keys::{LineGesture, PaletteKey, Walk};
 use crate::model::{
     Context, Dirty, HIT_LIMIT, Hit, HitsShown, Measured, Openness, Readable, StepKey, StepSlot,
     Tab, TourSlot, ViewFlag, Warned,
@@ -15,6 +16,7 @@ use crate::nav::{Going, Scrolling, Ticket, Tries};
 use crate::palette::{Palette, PaletteAction};
 use crate::panels::{BranchId, Direction, DropTarget, Ratio, View};
 use crate::peek::{HoverStep, Intent, Peek, Probe, Probing, WantedDefinition};
+use crate::settings::SettingsAct;
 use crate::status::Status;
 use crate::welcome::WelcomeAct;
 use crate::wizard::WizardAct;
@@ -51,7 +53,8 @@ pub(crate) enum Action {
     RemoveTour(TourSlot),
     GoTo(FileId, Line),
     Definition(FileId, Line, Column, Intent),
-    SelectLine(Line, Extend),
+    SelectLine(Line, LineGesture),
+    ReleaseLines,
     ClosePeek,
     Context(StepKey, ContextChange),
     ToggleDirectory(Label),
@@ -75,7 +78,7 @@ pub(crate) enum Action {
     RefreshBase,
     Hover(Language, Probe),
     AskReferences(Language, Probe),
-    FocusField(Which),
+    FocusField(Which, Id),
     Grab(View, Point),
     Resize(BranchId, Ratio),
     DragView(Point),
@@ -88,11 +91,13 @@ pub(crate) enum Action {
     ClosePicker,
     Palette(PaletteAction),
     Type(Which, Vec<Edit>, Typed),
+    Field(Which, FieldAct),
     WalkWhenIdle(Walk),
     GraphWalk(Heading),
     Graph(GraphAction),
     Welcome(WelcomeAct),
     Wizard(WizardAct),
+    Settings(SettingsAct),
 }
 
 impl App {
@@ -117,18 +122,10 @@ impl App {
             Action::Definition(file, line, column, intent) => {
                 self.definition(file, line, column, intent);
             }
-            Action::SelectLine(line, extend) => model.select_line(line, extend),
+            Action::SelectLine(line, gesture) => model.select_line(line, gesture),
+            Action::ReleaseLines => model.release_lines(),
             Action::ClosePeek => model.peek = None,
-            Action::Context(key, change) => {
-                let context = &mut model.views.entry(key).context;
-                let more =
-                    |count: LineCount| LineCount::new(count.value() + Context::LINES.value());
-                match change {
-                    ContextChange::Reset => *context = Context::default(),
-                    ContextChange::Above => context.above = more(context.above),
-                    ContextChange::Below => context.below = more(context.below),
-                }
-            }
+            Action::Context(key, change) => self.change_context(key, change),
             Action::ToggleDirectory(directory) => {
                 if !model.directories.remove(&directory) {
                     model.directories.insert(directory);
@@ -162,7 +159,7 @@ impl App {
                     self.model.queries.references_sent(probe);
                 }
             }
-            Action::FocusField(which) => model.fields.focus(which),
+            Action::FocusField(which, id) => model.fields.focus_at(which, id),
             Action::Grab(view, at) => model.panels.take_hold(view, at),
             Action::Resize(split, ratio) => model.panels.resize(split, ratio),
             Action::DragView(at) => model.panels.drag_to(at),
@@ -194,13 +191,25 @@ impl App {
             }
             Action::Palette(action) => self.palette(action),
             Action::Type(which, edits, typed) => self.typed(which, &edits, &typed),
+            Action::Field(which, act) => model.fields.act(which, act),
             Action::WalkWhenIdle(walk) => self.walk_when_idle(walk),
             Action::GraphWalk(heading) => self.graph_walk(heading),
             Action::Graph(action) => model.graph.apply(action),
             Action::Welcome(act) => self.welcome(act),
             Action::Wizard(act) => self.wizard(act),
+            Action::Settings(act) => self.change_setting(act),
         }
         self.model.follow_focus();
+    }
+
+    fn change_context(&mut self, key: StepKey, change: ContextChange) {
+        let context = &mut self.model.views.entry(key).context;
+        let more = |count: LineCount| LineCount::new(count.value() + Context::LINES.value());
+        match change {
+            ContextChange::Reset => *context = Context::default(),
+            ContextChange::Above => context.above = more(context.above),
+            ContextChange::Below => context.below = more(context.below),
+        }
     }
 
     fn walk_when_idle(&mut self, walk: Walk) {
@@ -409,7 +418,11 @@ impl App {
             Which::Command | Which::ViewSearch => Enter::Clear,
         };
         let before = self.model.fields.get(which).text().clone();
-        let entered = self.model.fields.handle(which, edits, typed, enter);
+        let handled = self.model.fields.handle(which, edits, typed, enter);
+        if handled.clip != Clip::Keep {
+            self.clip = handled.clip;
+        }
+        let entered = handled.submitted;
         if *self.model.fields.get(which).text() != before {
             match which {
                 Which::SymbolFilter => self.model.scrolls.set(ids::symbols(), Px::ZERO),

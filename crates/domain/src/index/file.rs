@@ -216,6 +216,34 @@ impl SourceFile {
             .map(|entry| entry.id)
     }
 
+    pub fn name_class(&self, symbol: &Symbol) -> HighlightClass {
+        let identifier = |character: char| character.is_alphanumeric() || character == '_';
+        let name = symbol.name().as_str();
+        let Some(word) = name
+            .split_once('(')
+            .map(|(head, _)| head)
+            .filter(|head| head.ends_with(identifier))
+            .unwrap_or(name)
+            .rsplit(|character: char| !identifier(character))
+            .find(|word| !word.is_empty())
+        else {
+            return HighlightClass::Plain;
+        };
+        symbol
+            .span()
+            .lines()
+            .find_map(|line| {
+                let text = self.text.line(line)?.as_str();
+                self.highlights_on(line)
+                    .iter()
+                    .find(|highlight| {
+                        text.get(highlight.start.position()..highlight.end.position()) == Some(word)
+                    })
+                    .map(|highlight| highlight.class)
+            })
+            .unwrap_or(HighlightClass::Plain)
+    }
+
     pub fn call_site(&self, line: Line, name: &SymbolName) -> bool {
         let Some(text) = self.text.line(line).map(SourceLine::as_str) else {
             return false;

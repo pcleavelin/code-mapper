@@ -1,0 +1,134 @@
+codemap 9
+tour io-fonts
+kind layer
+author ai
+group render
+note The io-fonts crate: the monospaced font families installed on this machine, for the settings box's font list. Fonts::scan walks the system and user font folders of macOS, Linux and Windows (folders that do not exist are skipped, six levels deep at most) and reads only the table directory, the name table and two small headers of each .ttf, .otf, .ttc or .otc file, never a whole file, so a scan of a few hundred files takes a fraction of a second; the GUI still runs it on a background thread the first time the box opens. A face counts as monospaced when its post table says fixed pitch or its OS/2 panose says monospaced Latin text; families whose names start with a dot (macOS system faces) are left out. Each family keeps its regular face when it has one. read hands the renderer the whole file and the face index.
+
+step 0zyhf9
+order 6
+parent 1oyh9r
+author ai
+file crates/io-fonts/src/wire.rs
+symbol face
+lines 0 27
+hash 0578747c186ec3ca
+note One face: the name table read whole (up to 1 MiB), fixed pitch from post, panose from OS/2, the family (typographic family first) and whether its style is regular.
+
+step 1oyh9r
+order 5
+parent s8ij0g
+author ai
+file crates/io-fonts/src/wire.rs
+symbol faces
+lines 0 17
+hash 655ff10e7da5e026
+note A single font, or each face a collection header lists (64 at most).
+
+step 85ep7p
+order 0
+author ai
+file crates/io-fonts/src/lib.rs
+symbol Fonts
+lines 0 2
+hash d96408e7c35fe5d7
+note The installed families, each with the file and face index to load it from.
+
+step 8of5gj
+order 7
+parent 0zyhf9
+author ai
+file crates/io-fonts/src/wire.rs
+symbol tables
+lines 0 23
+hash 885e7ae9dac1af27
+note The table directory: where the name, post and OS/2 tables sit in the file.
+
+step kyb5es
+order 10
+parent 85ep7p
+author ai
+file crates/io-fonts/src/lib.rs
+symbol read
+lines 0 9
+hash f0b3b27b56617c3f
+note The whole file of a listed family, with its face index; None for a family not installed, which the GUI reports and answers with the bundled face.
+
+step nfkg24
+order 8
+parent 0zyhf9
+author ai
+file crates/io-fonts/src/wire.rs
+symbol name
+lines 0 31
+hash f7ca967db50c080f
+note A name by id, English Windows records first, then Unicode, then Mac Roman English, decoded from UTF-16 or ASCII.
+
+step p4dzko
+order 9
+parent s8ij0g
+author ai
+file crates/io-fonts/src/convert.rs
+symbol family
+lines 0 4
+hash 9f355ce8455251e5
+note Wire to domain: a monospaced face whose name FontFamily accepts and that does not start with a dot.
+
+step powx6o
+order 2
+parent wq4n1w
+author ai
+file crates/io-fonts/src/lib.rs
+symbol folders
+lines 0 28
+hash 7a8b7aeaff785428
+note The system and user font folders of the three platforms; HOME, XDG_DATA_HOME, WINDIR and LOCALAPPDATA are read here, this crate's one place for the environment.
+
+step pqsw1t
+order 3
+parent wq4n1w
+author ai
+file crates/io-fonts/src/lib.rs
+symbol walk
+lines 0 19
+hash 7c97552c32aaee38
+note Depth-first, in name order so a scan lists the same faces on every run; files are kept by extension.
+
+step q3fm97
+order 12
+author ai
+file crates/io-fonts/src/tests.rs
+symbol a_monospaced_face_is_listed_by_its_family_and_an_icon_font_is_not
+lines 0 7
+hash 523ee7422094bf3e
+note Of Hack and the Codicons icon font, only Hack is listed, by its family name.
+
+step r8p9ts
+order 11
+parent kyb5es
+author ai
+file crates/io-fonts/src/lib.rs
+symbol FontFile
+lines 0 3
+hash 01bc3e7ea0a6aef4
+note What the renderer parses: the file's bytes and which face of it.
+
+step s8ij0g
+order 4
+parent wq4n1w
+author ai
+file crates/io-fonts/src/lib.rs
+symbol of_files
+lines 0 21
+hash 18ceb4efb64173e8
+note Each file's faces through wire, the monospaced ones kept, sorted by family with the regular face first, then one per family.
+
+step wq4n1w
+order 1
+parent 85ep7p
+author ai
+file crates/io-fonts/src/lib.rs
+symbol scan
+lines 0 6
+hash 525b8e79466efebd
+note Every font file under every folder, then of_files.

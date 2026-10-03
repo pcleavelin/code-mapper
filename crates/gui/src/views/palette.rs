@@ -27,7 +27,8 @@ pub(super) fn palette(model: &Model, frame: &mut Frame<'_>) {
         ((window.width - width) / 2).max(Px::ZERO),
         window.height / 10,
     );
-    frame.start(Container::Palette { at, width });
+    let popup = frame.start(Container::Palette { at, width });
+    frame.take_focus_within(popup, Which::Palette);
     frame.field(
         &model.fields,
         Which::Palette,

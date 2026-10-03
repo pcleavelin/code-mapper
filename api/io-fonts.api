@@ -1,0 +1,12 @@
+pub struct FaceIndex(u32);
+pub const fn new(index: u32) -> Self
+pub const fn get(self) -> u32
+pub struct Fonts { installed: Vec<Installed>, }
+pub struct FontBytes(Vec<u8>);
+pub fn as_slice(&self) -> &[u8]
+pub struct FontFile { bytes: FontBytes, index: FaceIndex, }
+pub const fn bytes(&self) -> &FontBytes
+pub const fn index(&self) -> FaceIndex
+pub fn scan() -> Self
+pub fn families(&self) -> impl Iterator<Item = &FontFamily>
+pub fn read(&self, family: &FontFamily) -> Option<FontFile>

@@ -195,10 +195,10 @@ order 39
 parent agulfb
 author ai
 file crates/gui/src/app.rs
-symbol keys
-lines 69 77
-hash 168017996e789dda
-note Escape reaches the wizard only while no field has the keyboard: in a field, escape only leaves the field. Ctrl+enter is Apply from anywhere the wizard's keys are read.
+symbol wizard_actions
+lines 0 32
+hash 88e0d1eec0f71c23
+note The wizard's keys as actions (App::wizard_actions), read only while the wizard is open and the keyboard is in no field or in one of the wizard's own. Escape reaches the wizard only while no field has the keyboard: in a field, escape only leaves the field. Ctrl+enter is Apply while a tour is edited, and goes on as enter does while one is built.
 
 step calkls
 order 46
@@ -215,9 +215,9 @@ order 48
 parent ohmpoo
 author ai
 file crates/gui/src/field.rs
-symbol shown
-lines 0 27
-hash aeab813f4bdef60b
+symbol idle_text
+lines 0 2
+hash b50af46da1a53e95
 link gui-widgets
 note An unfocused note field shows its text from the start, clipped to the field, so every note on the page reads from its first word; only the focused field follows its caret.
 
@@ -291,8 +291,8 @@ parent 5yxrki
 author ai
 file crates/gui/src/views/wizard.rs
 symbol lines_place
-lines 0 14
-hash 2440a7c4ced5038a
+lines 0 15
+hash e9b5e0943bb3c83a
 note A lines step as '(lines)' at its file and first line, read from the map.
 
 step ig90lu
@@ -351,7 +351,7 @@ parent b5ecyo
 author ai
 file crates/gui/src/palette.rs
 symbol palette_actions
-lines 28 28
+lines 30 30
 hash 4620b44185ad3c4d
 note Trigger: the palette's 'edit tour', on the tour being read.
 

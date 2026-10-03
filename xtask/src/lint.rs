@@ -71,7 +71,7 @@ impl Rule {
             }
             Self::Absence => "absence is Option: no \"\", -1 or MAX standing for none",
             Self::EnvAccess => {
-                "environment variables are read in one place per concern: add the read next to the other env reads in platform, io-layout, io-process, gui/app.rs or codemap/main.rs"
+                "environment variables are read in one place per concern: add the read next to the other env reads in platform, io-config, io-fonts, io-process, gui/app.rs or codemap/main.rs"
             }
             Self::WireLeak => {
                 "wire types stay inside their crate: convert to a domain type in convert.rs before it leaves"

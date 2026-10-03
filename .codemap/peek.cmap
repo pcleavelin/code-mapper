@@ -190,8 +190,8 @@ order 0
 author ai
 file crates/gui/src/widgets/code.rs
 symbol code_block
-lines 0 93
-hash a07e2aa176e811fd
+lines 0 78
+hash 226406ddab4e15b5
 note The one entry point for every code view: the line and text column under the pointer come from the block's rectangle and the cell size. The PeekDefinition and JumpToDefinition gestures from the feature registry (alt-click; ctrl-click or double-click) push a Definition action with the intent; with no gesture and no button down, the pointer asks for a hover.
 
 step n2y9nl

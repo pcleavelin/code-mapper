@@ -40,8 +40,8 @@ parent 1a0bgg
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 54 77
-hash 62d74cf5370ace51
+lines 50 61
+hash 229f96f688f719c4
 note Trigger: the keys phase hands edits and typed text to the go-to-line field last.
 
 step xm25ym
@@ -50,8 +50,8 @@ parent urcirn
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 50
-hash d5a408d608ebd0ca
+lines 0 54
+hash 06df82d7a2ce2876
 link gui-widgets
 note The line field keeps its text on enter; a submitted line goes to go_to_line.
 
@@ -61,7 +61,7 @@ parent 1a0bgg
 author ai
 file crates/gui/src/views/center.rs
 symbol source
-lines 13 24
+lines 21 32
 hash c78af866180096ce
 link source-view
 note The effect in the Source view: a pending scroll request puts the requested line three rows below the top, clamped to the end, and answers the ticket.

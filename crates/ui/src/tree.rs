@@ -7,7 +7,7 @@ use crate::color::Color;
 use crate::geometry::{Axis, Count, Extent, Point, Px, Rect, Vector};
 use crate::id::Id;
 use crate::input::{Button, Input, Pinch, Pointer};
-use crate::layout::{Align, Layout, Sides, Size, Style};
+use crate::layout::{Align, Layout, Scrollbars, Sides, Size, Style};
 use crate::text::{Label, Text, Wrap};
 
 const LEAST_WRAP: Count = Count::new(12);
@@ -40,28 +40,38 @@ impl Scrollbar {
     const TRACK_COLOR: Color = Color::rgba(0, 0, 0, 60);
     const THUMB_COLOR: Color = Color::rgba(140, 140, 148, 150);
 
-    pub fn of(rect: Rect, content_height: Px, scroll: Px) -> Option<Self> {
-        if content_height <= rect.height || rect.height <= Px::ZERO {
+    pub fn of(axis: Axis, rect: Rect, visible: Rect, content: Px, scroll: Px) -> Option<Self> {
+        let length = rect.extent().along(axis);
+        if content <= length || length <= Px::ZERO {
             return None;
         }
-        let track = Rect::new(
-            rect.right() - Self::WIDTH,
-            rect.top,
-            Self::WIDTH,
-            rect.height,
-        );
-        let thumb_height =
-            Px::of_wide(rect.height.wide() * rect.height.wide() / content_height.wide())
-                .max(Self::SHORTEST_THUMB);
-        let most = (content_height - rect.height).max(Px::new(1));
-        let thumb_top = rect.top
+        let track = match axis {
+            Axis::Vertical => Rect::new(
+                rect.right() - Self::WIDTH,
+                rect.top,
+                Self::WIDTH,
+                rect.height,
+            ),
+            Axis::Horizontal => Rect::new(
+                rect.left,
+                (visible.bottom() - Self::WIDTH).max(rect.top),
+                rect.width,
+                Self::WIDTH,
+            ),
+        };
+        let thumb_length =
+            Px::of_wide(length.wide() * length.wide() / content.wide()).max(Self::SHORTEST_THUMB);
+        let most = (content - length).max(Px::new(1));
+        let thumb_start = rect.origin().along(axis)
             + Px::of_wide(
-                scroll.clamp(Px::ZERO, most).wide() * (rect.height - thumb_height).wide()
-                    / most.wide(),
+                scroll.clamp(Px::ZERO, most).wide() * (length - thumb_length).wide() / most.wide(),
             );
         Some(Self {
             track,
-            thumb: Rect::new(track.left, thumb_top, Self::WIDTH, thumb_height),
+            thumb: Rect::at(
+                track.origin().with(axis, thumb_start),
+                track.extent().with(axis, thumb_length),
+            ),
         })
     }
 }
@@ -71,12 +81,49 @@ pub struct Placement {
     pub rect: Rect,
     pub clip: Rect,
     pub content: Extent,
+    pub scroll_offset: Point,
+    pub scrollbars: Scrollbars,
+    layer: Layer,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum Capture {
+    #[default]
+    Everything,
+    Floating,
+}
+
+impl Capture {
+    fn reaches(self, placement: &Placement) -> bool {
+        self == Self::Everything || placement.layer == Layer::Floating
+    }
 }
 
 impl Placement {
     pub fn visible_center(self) -> Option<Point> {
         let center = self.rect.center();
         self.clip.contains(center).then_some(center)
+    }
+
+    pub fn overflow(self, axis: Axis) -> Px {
+        if self.scrollbars.has(axis) {
+            (self.content.along(axis) - self.rect.extent().along(axis)).max(Px::ZERO)
+        } else {
+            Px::ZERO
+        }
+    }
+
+    pub fn scrollbar(self, axis: Axis, scroll: Px) -> Option<Scrollbar> {
+        if !self.scrollbars.has(axis) {
+            return None;
+        }
+        Scrollbar::of(
+            axis,
+            self.rect,
+            self.rect.intersect(self.clip),
+            self.content.along(axis),
+            scroll,
+        )
     }
 }
 
@@ -208,8 +255,26 @@ impl Element {
             Size::Grow => (Px::ZERO, least),
             Size::Fit => (fit, least.min(fit)),
         };
-        self.size = self.size.with(axis, value);
+        let room = match (axis, self.layout.size_along(axis)) {
+            (Axis::Vertical, Size::Fit) => self.scrollbar_room(),
+            _ => Px::ZERO,
+        };
+        self.size = self.size.with(axis, value + room);
         self.least = self.least.with(axis, least);
+    }
+
+    fn scrollbar_room(&self) -> Px {
+        let widest = self
+            .laid_out()
+            .map(|child| child.size.width)
+            .max()
+            .unwrap_or(Px::ZERO);
+        let overflows = widest + self.layout.padding * 2 > self.size.width;
+        if self.layout.clips() && self.layout.scrollbars.has(Axis::Horizontal) && overflows {
+            Scrollbar::WIDTH
+        } else {
+            Px::ZERO
+        }
     }
 
     fn least_leaf(&self, axis: Axis, measure: &mut dyn Measure, padding: Px) -> Px {
@@ -397,10 +462,17 @@ impl Element {
             cursor += child_size.along(main) + gap;
             child.position = spot;
         }
-        self.content = size.with(
-            main,
-            (cursor.max(unsqueezed) - gap).max(Px::ZERO) + padding * 2,
-        );
+        let widest = self
+            .laid_out()
+            .map(|child| child.size.along(other))
+            .max()
+            .unwrap_or(Px::ZERO);
+        self.content = Extent::default()
+            .with(
+                main,
+                (cursor.max(unsqueezed) - gap).max(Px::ZERO) + padding * 2,
+            )
+            .with(other, (widest + padding * 2).max(size.along(other)));
         let inner = self.clip.intersect(self.rect);
         for child in &mut self.children {
             match child.layout.floating {
@@ -410,19 +482,28 @@ impl Element {
         }
     }
 
-    fn record(&self, placements: &mut BTreeMap<Id, Placement>) {
+    const fn placement(&self, layer: Layer) -> Placement {
+        Placement {
+            rect: self.rect,
+            clip: self.clip,
+            content: self.content,
+            scroll_offset: self.layout.scroll_offset(),
+            scrollbars: self.layout.scrollbars,
+            layer,
+        }
+    }
+
+    fn record(&self, placements: &mut BTreeMap<Id, Placement>, inherited: Layer) {
+        let layer = if self.layout.floating.is_some() {
+            Layer::Floating
+        } else {
+            inherited
+        };
         if let Some(id) = self.id {
-            placements.insert(
-                id,
-                Placement {
-                    rect: self.rect,
-                    clip: self.clip,
-                    content: self.content,
-                },
-            );
+            placements.insert(id, self.placement(layer));
         }
         for child in &self.children {
-            child.record(placements);
+            child.record(placements, layer);
         }
     }
 
@@ -517,18 +598,16 @@ impl Element {
         } else {
             inherited
         };
-        if own == layer
-            && self.layout.clips()
-            && let Some(bar) = Scrollbar::of(
-                self.rect,
-                self.content.height,
-                self.layout.scroll_offset().vertical,
-            )
-        {
-            canvas.push_clip(self.clip);
-            canvas.rect(bar.track, Scrollbar::TRACK_COLOR);
-            canvas.rect(bar.thumb.shrink(Px::new(1)), Scrollbar::THUMB_COLOR);
-            canvas.pop_clip();
+        if own == layer && self.layout.clips() {
+            let placement = self.placement(own);
+            for axis in Axis::BOTH {
+                if let Some(bar) = placement.scrollbar(axis, placement.scroll_offset.along(axis)) {
+                    canvas.push_clip(self.clip);
+                    canvas.rect(bar.track, Scrollbar::TRACK_COLOR);
+                    canvas.rect(bar.thumb.shrink(Px::new(1)), Scrollbar::THUMB_COLOR);
+                    canvas.pop_clip();
+                }
+            }
         }
         for child in &self.children {
             child.draw_scrollbars(canvas, layer, own);
@@ -543,7 +622,7 @@ enum Level {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-enum Layer {
+pub(crate) enum Layer {
     Base,
     Floating,
 }
@@ -551,6 +630,7 @@ enum Layer {
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 struct ScrollGrab {
     id: Id,
+    axis: Axis,
     grab: Px,
 }
 
@@ -565,9 +645,14 @@ pub struct Ui {
     scroll_drag: Option<ScrollGrab>,
     pointer: Pointer,
     size: Extent,
+    capture: Capture,
 }
 
 impl Ui {
+    pub const fn capture(&mut self, capture: Capture) {
+        self.capture = capture;
+    }
+
     pub fn begin(&mut self, input: &Input) {
         self.roots.clear();
         self.stack.clear();
@@ -578,7 +663,9 @@ impl Ui {
             .previous
             .iter()
             .filter(|(_, placement)| {
-                placement.rect.contains(mouse) && placement.clip.contains(mouse)
+                self.capture.reaches(placement)
+                    && placement.rect.contains(mouse)
+                    && placement.clip.contains(mouse)
             })
             .max_by_key(|(id, placement)| {
                 let visible = placement.rect.intersect(placement.clip);
@@ -686,56 +773,87 @@ impl Ui {
         self.previous.get(&id).copied()
     }
 
-    pub fn scroll_by_wheel(&mut self, id: Id, offset: &mut Px) -> Px {
+    pub fn on_scrollbar(&self, id: Id) -> bool {
+        let mouse = self.pointer.mouse;
+        self.previous.get(&id).is_some_and(|placement| {
+            placement.clip.contains(mouse)
+                && Axis::BOTH.into_iter().any(|axis| {
+                    placement
+                        .scrollbar(axis, placement.scroll_offset.along(axis))
+                        .is_some_and(|bar| bar.track.contains(mouse))
+                })
+        })
+    }
+
+    pub fn scroll_by_wheel(&mut self, id: Id, offset: &mut Point) -> Point {
         let mouse = self.pointer.mouse;
         let inside = self.previous.get(&id).is_some_and(|placement| {
-            placement.rect.contains(mouse) && placement.clip.contains(mouse)
+            self.capture.reaches(placement)
+                && placement.rect.contains(mouse)
+                && placement.clip.contains(mouse)
         });
         if self.hot == Some(id) || inside {
-            *offset -= self.pointer.wheel.vertical.truncate();
+            let wheel = self.pointer.wheel;
+            *offset = *offset - Point::new(wheel.horizontal.truncate(), wheel.vertical.truncate());
         }
         let left_down = self.pointer.down.contains(Button::Left);
-        if let Some(placement) = self.previous.get(&id).copied() {
-            let rect = placement.rect;
-            let content = placement.content.height;
-            if let Some(bar) = Scrollbar::of(rect, content, *offset) {
-                let most = (content - rect.height).max(Px::ZERO);
-                if self.pointer.pressed.contains(Button::Left)
-                    && inside
-                    && bar.track.contains(mouse)
-                {
-                    if bar.thumb.contains(mouse) {
-                        self.scroll_drag = Some(ScrollGrab {
-                            id,
-                            grab: mouse.vertical - bar.thumb.top,
-                        });
-                    } else {
-                        *offset = Px::of_wide(
-                            (mouse.vertical - rect.top).wide() * content.wide()
-                                / rect.height.max(Px::new(1)).wide(),
-                        ) - rect.height / 2;
-                    }
+        let press = (inside && self.pointer.pressed.contains(Button::Left)).then_some(mouse);
+        for axis in Axis::BOTH {
+            let value = match self.previous.get(&id).copied() {
+                Some(placement) => {
+                    self.drag_scrollbar(id, placement, axis, offset.along(axis), press)
                 }
-                if let Some(grab) = self.scroll_drag
-                    && grab.id == id
-                    && left_down
-                {
-                    let span = (rect.height - bar.thumb.height).max(Px::new(1));
-                    *offset = Px::of_wide(
-                        (mouse.vertical - grab.grab - rect.top).wide() * most.wide() / span.wide(),
-                    );
-                }
-            }
-            *offset = (*offset)
-                .min((content - rect.height).max(Px::ZERO))
-                .max(Px::ZERO);
-        } else {
-            *offset = (*offset).max(Px::ZERO);
+                None => offset.along(axis).max(Px::ZERO),
+            };
+            *offset = offset.with(axis, value);
         }
         if !left_down {
             self.scroll_drag = None;
         }
         *offset
+    }
+
+    fn drag_scrollbar(
+        &mut self,
+        id: Id,
+        placement: Placement,
+        axis: Axis,
+        offset: Px,
+        press: Option<Point>,
+    ) -> Px {
+        let mouse = self.pointer.mouse.along(axis);
+        let start = placement.rect.origin().along(axis);
+        let length = placement.rect.extent().along(axis);
+        let content = placement.content.along(axis);
+        let most = placement.overflow(axis);
+        let mut offset = offset;
+        if let Some(bar) = placement.scrollbar(axis, offset) {
+            if let Some(press) = press
+                && bar.track.contains(press)
+            {
+                if bar.thumb.contains(press) {
+                    self.scroll_drag = Some(ScrollGrab {
+                        id,
+                        axis,
+                        grab: mouse - bar.thumb.origin().along(axis),
+                    });
+                } else {
+                    offset = Px::of_wide(
+                        (mouse - start).wide() * content.wide() / length.max(Px::new(1)).wide(),
+                    ) - length / 2;
+                }
+            }
+            if let Some(grab) = self.scroll_drag
+                && grab.id == id
+                && grab.axis == axis
+                && self.pointer.down.contains(Button::Left)
+            {
+                let span = (length - bar.thumb.extent().along(axis)).max(Px::new(1));
+                offset =
+                    Px::of_wide((mouse - grab.grab - start).wide() * most.wide() / span.wide());
+            }
+        }
+        offset.min(most).max(Px::ZERO)
     }
 
     pub fn end(&mut self, measure: &mut dyn Measure) {
@@ -763,7 +881,7 @@ impl Ui {
         }
         self.previous.clear();
         for root in &self.roots {
-            root.record(&mut self.previous);
+            root.record(&mut self.previous, Layer::Base);
         }
         self.last_mouse = self.pointer.mouse;
     }

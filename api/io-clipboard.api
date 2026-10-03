@@ -1,0 +1,5 @@
+pub enum ClipboardError { Open(arboard::Error), Read(arboard::Error), Write(arboard::Error), }
+pub struct Clipboard(arboard::Clipboard);
+pub fn open() -> Result<Self, ClipboardError>
+pub fn read(&mut self) -> Result<String, ClipboardError>
+pub fn write(&mut self, text: &str) -> Result<(), ClipboardError>

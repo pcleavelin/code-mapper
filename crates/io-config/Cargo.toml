@@ -1,0 +1,13 @@
+[package]
+name = "io-config"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+strum = { version = "0.28", features = ["derive"] }
+domain = { path = "../domain" }
+io-store = { path = "../io-store" }
+
+[lints]
+workspace = true

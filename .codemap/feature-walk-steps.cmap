@@ -20,8 +20,8 @@ parent 17uw33
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 45 64
-hash a6506b48f54b158e
+lines 39 49
+hash 16c739bba3fe1833
 note Trigger: every frame the keys phase, unless the graph is shown and holds the keyboard, asks keys::walks which arrow chords were pressed and queues one WalkWhenIdle per press.
 
 step hct277

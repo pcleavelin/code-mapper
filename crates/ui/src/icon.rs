@@ -21,6 +21,7 @@ pub enum Icon {
     Up,
     Down,
     Edit,
+    Settings,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -55,6 +56,7 @@ impl Icon {
             Self::Up => '\u{EAA1}',
             Self::Down => '\u{EA9A}',
             Self::Edit => '\u{EA73}',
+            Self::Settings => '\u{EB51}',
         })
     }
 
@@ -74,6 +76,7 @@ impl Icon {
             Self::Up => "up",
             Self::Down => "down",
             Self::Edit => "edit",
+            Self::Settings => "settings",
         })
     }
 

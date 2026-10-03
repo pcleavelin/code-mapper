@@ -1,9 +1,10 @@
 use std::fmt::{self, Write as _};
 use std::io::{self, Write as _};
+use std::iter;
 
 use domain::Row;
 use platform::ScriptLine;
-use ui::{Id, Ui};
+use ui::{Axis, Count, Id, Ui};
 
 use crate::field::{Fields, Which};
 use crate::graph::{GraphState, Hit, Node};
@@ -11,8 +12,9 @@ use crate::ids;
 use crate::model::{Model, Scrolls, StepViews, ViewFlag};
 use crate::nav::Nav;
 use crate::palette::Palette;
-use crate::panels::Panels;
+use crate::panels::{Direction, Panels};
 use crate::peek::Peek;
+use crate::settings::{SettingsMenu, ShownFont, ThemeName};
 use crate::status::Status;
 use crate::text::Tag;
 use crate::wizard::{Line, Mode, StepState, Tick, Wizard, verdict_words};
@@ -135,8 +137,27 @@ impl Dump for Scrolls {
                 ));
             }
         }
+        let code = ids::DOCUMENT_CODE.as_str();
+        let steps = (0..).map(|step| (format!("{code}/{step}"), Id::from_name(code).nth(step)));
+        let source = (String::from("lines"), ids::LINES.id());
+        for (name, id) in iter::once(source).chain(steps.take(DUMPED_STEP_BLOCKS.get())) {
+            if let Some(placement) = context.ui.placement(id)
+                && let Some(bar) =
+                    placement.scrollbar(Axis::Horizontal, placement.scroll_offset.horizontal)
+            {
+                lines.line(format_args!(
+                    "across {name} thumb={:?} off={} rect={:?} content={:?}",
+                    bar.thumb,
+                    placement.scroll_offset.horizontal,
+                    placement.rect,
+                    placement.content
+                ));
+            }
+        }
     }
 }
+
+const DUMPED_STEP_BLOCKS: Count = Count::new(8);
 
 impl Dump for Option<Wizard> {
     fn dump(&self, context: &Context<'_>, lines: &mut DumpLines) {
@@ -275,6 +296,26 @@ impl Dump for Fields {
             "tours filter={} listed={listed}",
             Quoted(self.get(Which::TourFilter).text().as_str())
         ));
+        lines.line(format_args!(
+            "field focused={}",
+            Optional(
+                self.focused()
+                    .map(|which| which.control().element().as_str())
+            )
+        ));
+        if let Some(which) = self.focused() {
+            let field = self.get(which);
+            let selection = field.selection().map_or_else(String::new, |chosen| {
+                format!(" selection={}..{}", chosen.from.get(), chosen.to.get())
+            });
+            lines.line(format_args!(
+                "field {which:?} caret={}{selection} first={} rows={} text={}",
+                field.caret().get(),
+                field.first(),
+                field.rows(which.lines()).len(),
+                Quoted(field.text().as_str())
+            ));
+        }
     }
 }
 
@@ -448,6 +489,20 @@ impl Dump for domain::Map {
             model.disk.dirty,
             tour.note().map_or("", domain::Note::as_str),
             noted.join(", ")
+        ));
+    }
+}
+
+impl Dump for Option<SettingsMenu> {
+    fn dump(&self, context: &Context<'_>, lines: &mut DumpLines) {
+        let settings = &context.model.settings;
+        lines.line(format_args!(
+            "settings open={} theme={} font={} size={} graph={}",
+            self.is_some(),
+            ThemeName::new(settings.theme()),
+            ShownFont::new(settings),
+            settings.size().get(),
+            Direction::of_saved(settings.graph())
         ));
     }
 }

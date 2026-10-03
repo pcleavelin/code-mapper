@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 #[macro_export]
 macro_rules! gui_scenarios {
     ($m:ident) => {
-        $m! { gui: document, peek, source, graph, panels, delete, diff, reload, layout, links, authoring, welcome, edit }
+        $m! { gui: document, peek, source, graph, panels, delete, diff, reload, layout, links, authoring, welcome, edit, settings }
     };
 }
 
@@ -55,13 +55,7 @@ fn reload_hook(bin: &Path, root: &Path, line: &str) {
 
 const SETTLE: &str = "idle\nclick-id save\nclick-id tours/2\nwait 2\n";
 
-pub(crate) fn document() -> Scenario {
-    Scenario {
-        first: FirstScreen::Workspace,
-        setup: |bin, name| Ok(mapped(bin, name)),
-        hook: no_hook,
-        after: &[],
-        script: "SETTLE
+const DOCUMENT: &str = "SETTLE
 dump
 shot {shots}/open.png
 scroll document 2000
@@ -146,8 +140,31 @@ wait 2
 key escape
 wait 2
 dump
+key p ctrl
+wait 2
+text tot
+wait 2
+rect palette-box
+click <<DUMP rect palette-box|3,3>>
+wait 2
+text al_a
+wait 2
+dump
+shot {shots}/palette-kept.png
+click-id tab@Symbols
+wait 3
+dump
+shot {shots}/palette-left.png
 quit
-",
+";
+
+pub(crate) fn document() -> Scenario {
+    Scenario {
+        first: FirstScreen::Workspace,
+        setup: |bin, name| Ok(mapped(bin, name)),
+        hook: no_hook,
+        after: &[],
+        script: DOCUMENT,
     }
 }
 
@@ -201,21 +218,20 @@ quit
     }
 }
 
-pub(crate) fn source() -> Scenario {
-    Scenario {
-        first: FirstScreen::Workspace,
-        setup: |bin, name| Ok(mapped(bin, name)),
-        hook: no_hook,
-        after: &[&["tours", "startup"]],
-        script: "SETTLE
+const SOURCE: &str = "SETTLE
 open src/store.rs 12
 wait 3
 dump
 shot {shots}/open.png
 rect lines
-click <<DUMP rect lines|200,8>>
+mouse <<DUMP rect lines|200,8>>
+down
 wait 2
-click <<DUMP rect lines|200,40>> shift
+mouse <<DUMP rect lines|260,40>>
+wait 2
+dump
+shot {shots}/dragging.png
+up
 wait 2
 dump
 shot {shots}/selected.png
@@ -256,10 +272,69 @@ dump
 key right ctrl
 wait 2
 dump
+open src/store.rs 1
+wait 3
+hover-id divider/6
+wait 1
+down
+wait 1
+mouse 600 420
+wait 1
+up
+wait 2
+rect lines
+mouse <<DUMP rect lines|200,8>>
+down
+wait 2
+mouse 600 600
+wait 20
+dump
+shot {shots}/scrolled.png
+mouse 600 200
+wait 2
+up
+wait 2
+dump
+hover-id divider/6
+wait 1
+down
+wait 1
+mouse 600 820
+wait 1
+up
+wait 2
+click-id split-right/1
+wait 3
+open src/store.rs 1
+wait 3
+rect lines
+hover-id lines
+swipe -20 0
+wait 3
+dump
+shot {shots}/sideways.png
+drag <<DUMP rect lines|22,516>> <<DUMP rect lines|-178,516>>
+wait 3
+dump
+hover-id lines
+wheel -10 shift
+wait 3
+dump
+click <<DUMP rect lines|429,516>>
+wait 3
+dump
 click-id save
 wait 2
 quit
-",
+";
+
+pub(crate) fn source() -> Scenario {
+    Scenario {
+        first: FirstScreen::Workspace,
+        setup: |bin, name| Ok(mapped(bin, name)),
+        hook: no_hook,
+        after: &[&["tours", "startup"]],
+        script: SOURCE,
     }
 }
 
@@ -273,7 +348,7 @@ pub(crate) fn graph() -> Scenario {
 click-id tab@Graph
 wait 4
 dump
-dblclick <<DUMP node main|30,8>>
+dblclick <<DUMP node 1 main|30,8>>
 wait 2
 dump
 shot {shots}/graph.png
@@ -563,9 +638,7 @@ dump
 open src/store.rs 12
 wait 3
 rect lines
-click <<DUMP rect lines|200,8>>
-wait 2
-click <<DUMP rect lines|200,40>> shift
+drag <<DUMP rect lines|200,8>> <<DUMP rect lines|200,40>>
 wait 2
 click-id target-top@Source
 wait 2
@@ -758,6 +831,15 @@ shot {shots}/split.png
 hover-id doc-delete
 wait 1
 rect tour-buttons
+dump
+click-id pick/1
+wait 2
+rect picker
+click <<DUMP rect picker|3,3>>
+wait 2
+dump
+click-id tab@Tours
+wait 2
 dump
 hover-id tab@Console
 wait 1
@@ -987,6 +1069,7 @@ wait 2
 click-id field@wizard-search
 text fill
 wait 2
+shot {shots}/wizard-search.png
 click-id wizard-sym/0
 wait 2
 dump
@@ -1017,6 +1100,27 @@ click-id wizard-next
 wait 2
 click-id field@wizard-note
 text Hand-built from main, three calls down to Store::check.
+key enter
+text It stops where the map is read.
+key home shift
+key c ctrl
+key end ctrl
+key enter
+key v ctrl
+wait 1
+key left alt
+key backspace alt
+wait 1
+dump
+shot {shots}/wizard-note.png
+dblclick-id field@wizard-note
+wait 1
+key x ctrl
+key v ctrl
+wait 1
+click-id field@wizard-note shift
+wait 1
+dump
 click-id wizard-next
 wait 2
 dump
@@ -1138,4 +1242,62 @@ quit
 
 pub(crate) fn shots(name: &str) -> PathBuf {
     scratch(name).join("shots")
+}
+
+const SETTINGS: &str = "SETTLE
+key , ctrl
+idle
+wait 3
+dump
+shot {shots}/open.png
+click-id settings-theme@light
+wait 2
+click-id settings-larger
+wait 2
+click-id settings-larger
+wait 2
+click-id settings-graph@down
+wait 2
+click-id settings-font/0
+wait 3
+dump
+shot {shots}/light.png
+key escape
+wait 2
+dump
+absent settings-close
+click-id settings
+wait 3
+dump
+click-id settings-smaller
+wait 2
+click-id settings-close
+wait 2
+dump
+absent settings-box
+tab graph
+wait 5
+shot {shots}/graph.png
+key p ctrl
+wait 2
+text settings
+wait 2
+key enter
+wait 3
+dump
+click 100 900
+wait 3
+dump
+absent settings-close
+quit
+";
+
+pub(crate) fn settings() -> Scenario {
+    Scenario {
+        first: FirstScreen::Workspace,
+        setup: |bin, name| Ok(mapped(bin, name)),
+        hook: no_hook,
+        after: &[],
+        script: SETTINGS,
+    }
 }

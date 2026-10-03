@@ -1,0 +1,25 @@
+codemap 9
+tour io-clipboard
+kind layer
+author ai
+group render
+note The io-clipboard crate: the one place the program reads or writes the system clipboard, through arboard with no image support. open, read and write each return a ClipboardError naming which failed. Only platform calls it, and only in a run with a real window: a script or screenshot run keeps a clipboard of its own, so scenarios never touch the user's clipboard and play the same everywhere.
+
+step 3q79o5
+order 1
+parent no2e8w
+author ai
+file crates/io-clipboard/src/lib.rs
+symbol ClipboardError
+lines 0 4
+hash fb8ccdbd5b5bd392
+note Which of the three failed, carrying arboard's error; platform reports it on stderr and goes on.
+
+step no2e8w
+order 0
+author ai
+file crates/io-clipboard/src/lib.rs
+symbol impl Clipboard
+lines 0 14
+hash 5e52fcbf7bd751f2
+note The three calls: open makes the arboard handle, read takes the clipboard's text, write replaces it.

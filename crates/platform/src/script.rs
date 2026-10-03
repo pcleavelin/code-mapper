@@ -68,6 +68,9 @@ impl ScriptLine {
             Some(NamedKey::Right) => Key::Right,
             Some(NamedKey::Up) => Key::Up,
             Some(NamedKey::Down) => Key::Down,
+            Some(NamedKey::Home) => Key::Home,
+            Some(NamedKey::End) => Key::End,
+            Some(NamedKey::Delete) => Key::Remove,
             None => Key::Character(Glyph::new(
                 self.word(1)
                     .unwrap_or_default()
@@ -314,6 +317,15 @@ impl<Application: App> Runner<Application> {
                 pointer.mods = line.mods_from(2);
                 Flow::Yield
             }
+            Some(ScriptCommand::Swipe) => {
+                let horizontal =
+                    pointer.wheel.horizontal.get() + Coordinate::of_integer(line.number(1)).get();
+                let vertical =
+                    pointer.wheel.vertical.get() + Coordinate::of_integer(line.number(2)).get();
+                pointer.wheel.horizontal = Coordinate::new(horizontal);
+                pointer.wheel.vertical = Coordinate::new(vertical);
+                Flow::Yield
+            }
             Some(ScriptCommand::Pinch) => {
                 let amount = Coordinate::of_integer(line.number(1)).get();
                 pointer.pinch = pointer.pinch.plus(Pinch::new(amount / 100.0));
@@ -397,6 +409,9 @@ enum NamedKey {
     Right,
     Up,
     Down,
+    Home,
+    End,
+    Delete,
 }
 
 impl NamedKey {
@@ -409,6 +424,9 @@ impl NamedKey {
             Self::Right => "right",
             Self::Up => "up",
             Self::Down => "down",
+            Self::Home => "home",
+            Self::End => "end",
+            Self::Delete => "delete",
         })
     }
 
@@ -436,6 +454,7 @@ enum ScriptCommand {
     Absent,
     Drag,
     Wheel,
+    Swipe,
     Pinch,
     Key,
     Text,
@@ -458,6 +477,7 @@ impl ScriptCommand {
             Self::Absent => "absent",
             Self::Drag => "drag",
             Self::Wheel => "wheel",
+            Self::Swipe => "swipe",
             Self::Pinch => "pinch",
             Self::Key => "key",
             Self::Text => "text",

@@ -118,8 +118,8 @@ parent l5and2
 author ai
 file crates/gui/src/app.rs
 symbol of_model
-lines 0 10
-hash 286e3a15c3f36beb
+lines 0 12
+hash b6dc1c3461c6935c
 note An App from a ready Model with fresh Services and no screenshot aid, for tests; the Services start only the idle watcher thread.
 
 step 84oxa7
@@ -182,6 +182,15 @@ lines 0 14
 hash 8ea93f7f2e29948b
 note hide all code hides every step's code and keeps a collapse; show all code shows every step's code and leaves nothing collapsed.
 
+step 9qtra2
+order 37
+author ai
+file crates/gui/src/settings/tests.rs
+symbol the_light_theme_puts_dark_text_on_a_light_background_and_keeps_each_tint
+lines 0 8
+hash 153a591dd18bb4e7
+note The light repaint puts text darker than the background, keeps a tint's alpha while changing its colour, and the dark one changes nothing.
+
 step apiokq
 order 40
 parent 8uitgf
@@ -218,7 +227,7 @@ author ai
 file crates/gui/src/tests.rs
 symbol adding_selected_source_lines_uses_the_same_control
 lines 0 11
-hash 7168156ac85e9469
+hash 45244930a1add0f3
 note On the Source tab, AddOffered adds the selected line and the step count grows.
 
 step ea3gtj
@@ -356,6 +365,24 @@ lines 0 2
 hash 42953d1e4d8efdd9
 note An App around the fixture model, for tests that go through apply.
 
+step lo8kkv
+order 35
+author ai
+file crates/gui/src/settings/tests.rs
+symbol choosing_top_to_bottom_turns_the_graph_once_and_is_kept_as_the_setting
+lines 0 7
+hash 8922d566ff934783
+note Choosing top to bottom turns the graph once; choosing it again does not turn it back, and the setting holds Down.
+
+step lv5n4y
+order 35
+author ai
+file crates/gui/src/tests.rs
+symbol a_press_off_the_focused_field_releases_it_and_keeps_what_was_typed
+lines 0 14
+hash 5b1e2dca7eeb6cde
+note Fields alone, no model: a press on the focused field's own element keeps the keyboard, a press on another element or on no element releases it, and the typed text survives the release.
+
 step mqnqki
 order 37
 parent 8uitgf
@@ -431,8 +458,8 @@ order 47
 author ai
 file crates/gui/src/tests.rs
 symbol a_field_without_the_keyboard_shows_the_start_of_its_text_cut_with_an_ellipsis
-lines 0 15
-hash 0da33b9507d0a596
+lines 0 11
+hash 76ad7c296ce84c85
 note An unfocused field shows the start of its text cut to its room with an ellipsis; focused, the whole text split at the caret.
 
 step ulvmts
@@ -464,6 +491,15 @@ symbol back_restores_the_scroll_the_place_was_left_at
 lines 0 11
 hash 1a624d071bc2446b
 note Back restores the document scroll the place was left at, and asks for no step scroll that would override it.
+
+step z548pq
+order 36
+author ai
+file crates/gui/src/settings/tests.rs
+symbol a_changed_setting_is_written_to_the_settings_file_and_an_unchanged_one_is_not
+lines 0 18
+hash fa71bd197d0c7291
+note keep_settings writes nothing while the settings equal the loaded ones, and the whole file after a change.
 
 step zjhrtr
 order 31

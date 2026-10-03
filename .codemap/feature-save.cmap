@@ -30,7 +30,7 @@ parent 6t9jgh
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 31 33
+lines 26 28
 hash 34161d4736cad7b0
 note Trigger from the keyboard: the keys phase queues Save when keys::save matches.
 

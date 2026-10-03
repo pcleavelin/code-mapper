@@ -29,10 +29,10 @@ step u5328q
 order 0
 author ai
 file crates/gui/src/action.rs
-symbol apply
-lines 18 27
-hash 28236fcdc5146bb2
-note The handler: the Context arm adds Context::LINES (ten) to the above or below count of the step's view, or resets both to zero.
+symbol change_context
+lines 0 8
+hash 6afcee5441865bc2
+note The handler: apply's Context arm calls change_context, which adds Context::LINES (ten) to the above or below count of the step's view, or resets both to zero.
 
 step ydud8f
 order 2

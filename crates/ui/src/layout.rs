@@ -39,6 +39,7 @@ pub struct Layout {
     pub gap: Px,
     pub cross: Align,
     pub scroll: Option<Point>,
+    pub scrollbars: Scrollbars,
 }
 
 impl Layout {
@@ -52,6 +53,7 @@ impl Layout {
             gap: Px::ZERO,
             cross: Align::Start,
             scroll: None,
+            scrollbars: Scrollbars::VERTICAL,
         }
     }
 
@@ -141,9 +143,31 @@ impl Layout {
     }
 
     #[must_use]
+    pub const fn scrollbars(mut self, scrollbars: Scrollbars) -> Self {
+        self.scrollbars = scrollbars;
+        self
+    }
+
+    #[must_use]
     pub const fn floating(mut self, at: Point) -> Self {
         self.floating = Some(at);
         self
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct Scrollbars(u8);
+
+impl Scrollbars {
+    pub const VERTICAL: Self = Self(1);
+    pub const HORIZONTAL: Self = Self(2);
+
+    pub const fn has(self, axis: Axis) -> bool {
+        let bit = match axis {
+            Axis::Horizontal => Self::HORIZONTAL.0,
+            Axis::Vertical => Self::VERTICAL.0,
+        };
+        self.0 & bit != 0
     }
 }
 

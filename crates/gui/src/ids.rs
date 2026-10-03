@@ -51,7 +51,6 @@ impl Control {
         self.feature
     }
 
-    #[cfg(test)]
     pub(crate) const fn element(self) -> Element {
         self.element
     }
@@ -152,6 +151,19 @@ pub(crate) const PALETTE_FIELD: Control =
     Control::new(Feature::CommandPalette, Element::new("field@palette"));
 pub(crate) const PALETTE_ROW: Control =
     Control::new(Feature::CommandPalette, Element::new("palette"));
+pub(crate) const SETTINGS: Control = Control::new(Feature::Settings, Element::new("settings"));
+pub(crate) const SETTINGS_CLOSE: Control =
+    Control::new(Feature::Settings, Element::new("settings-close"));
+pub(crate) const SETTINGS_THEME: Control =
+    Control::new(Feature::Settings, Element::new("settings-theme"));
+pub(crate) const SETTINGS_SMALLER: Control =
+    Control::new(Feature::Settings, Element::new("settings-smaller"));
+pub(crate) const SETTINGS_LARGER: Control =
+    Control::new(Feature::Settings, Element::new("settings-larger"));
+pub(crate) const SETTINGS_FONT: Control =
+    Control::new(Feature::Settings, Element::new("settings-font"));
+pub(crate) const SETTINGS_GRAPH: Control =
+    Control::new(Feature::Settings, Element::new("settings-graph"));
 pub(crate) const BUILD_TOUR: Control = Control::new(Feature::BuildTour, Element::new("build-tour"));
 pub(crate) const START_CHANGE: Control =
     Control::new(Feature::Welcome, Element::new("start-change"));
@@ -303,6 +315,13 @@ pub(crate) const CONTROLS: &[Control] = &[
     EDIT_CANCEL,
     EDIT_MORE,
     EDIT_NOTE_FIELD,
+    SETTINGS,
+    SETTINGS_CLOSE,
+    SETTINGS_THEME,
+    SETTINGS_SMALLER,
+    SETTINGS_LARGER,
+    SETTINGS_FONT,
+    SETTINGS_GRAPH,
 ];
 
 pub(crate) fn body() -> Id {
@@ -390,6 +409,10 @@ pub(crate) fn tour_buttons() -> Id {
 
 pub(crate) fn palette_box() -> Id {
     Id::new("palette-box")
+}
+
+pub(crate) fn settings_box() -> Id {
+    Id::new("settings-box")
 }
 
 pub(crate) fn start_page() -> Id {

@@ -2,14 +2,15 @@ mod code;
 
 use platform::Cursor;
 use ui::{
-    Align, Canvas, Count, Draw, FontSize, Icon, Id, Interaction, Kind, Label, Layout, Point, Px,
-    Rect, Run, Scrollbar, Sides, Size, Style, Text, Ui, Wrap,
+    Align, Button, Canvas, Count, Draw, FontSize, Icon, Id, Interaction, Kind, Label, Layout,
+    Point, Px, Rect, Run, Scrollbar, Sides, Size, Style, Text, Ui, Wrap,
 };
 
 use crate::action::Action;
-use crate::field::{Attention, Field, FieldRoom, Looks, Which};
+use crate::field::{Attention, Field, FieldAct, Lines, Piece, Pointing, Tint, Viewport, Which};
 use crate::grid::Grids;
 use crate::ids::{Control, Target};
+use crate::keys::Walk;
 use crate::model::Metrics;
 use crate::panels::Direction;
 use crate::peek::Tip;
@@ -17,15 +18,23 @@ use crate::status::Status;
 use crate::theme::{
     self, ACCENT, BACKGROUND, BAR_PADDING, BORDER, BUTTON_PADDING, Cells, DANGER_HOVER,
     DOCUMENT_PADDING, DROP_BAND, FAINT, FIELD, FIELD_CARET_ROOM, FIELD_PADDING, GAP, HOVER,
-    INDENT_EXTRA, LABEL_PADDING, NAV_BUTTON, NAV_BUTTON_EXTRA, PALETTE_TAG, PANEL, PANEL_PADDING,
-    RED, ROW_PADDING, SELECTED, SMALL_BUTTON_EXTRA, SMALL_BUTTON_PADDING, SMALL_GAP, STATUS_GAP,
-    STEP_SPACER, TAB_PADDING, TAB_STRIP, TEXT, TIGHT_GAP, TOOLTIP_PADDING, WEAK, WIDE_GAP,
+    INDENT_EXTRA, LABEL_PADDING, NAV_BUTTON, NAV_BUTTON_EXTRA, NOTE_ROWS_LEAST, NOTE_ROWS_MOST,
+    PALETTE_TAG, PANEL, PANEL_PADDING, RED, ROW_PADDING, SELECTED, SMALL_BUTTON_EXTRA,
+    SMALL_BUTTON_PADDING, SMALL_GAP, STATUS_GAP, STEP_SPACER, TAB_PADDING, TAB_STRIP, TEXT,
+    TIGHT_GAP, TOOLTIP_PADDING, WEAK, WIDE_GAP,
 };
 
 use crate::field::Fields;
 use crate::ids;
 use crate::wizard::Tick;
-pub(crate) use code::{CodeBlock, Marks, Width};
+pub(crate) use code::{CodeBlock, Coded, Marks, Width};
+
+#[derive(Clone, Copy, Debug)]
+struct Spot {
+    across: Px,
+    first: Count,
+    attention: Attention,
+}
 
 #[derive(Clone, Debug)]
 pub(crate) struct TipAt {
@@ -54,6 +63,16 @@ pub(crate) struct Frame<'frame> {
 pub(crate) enum Chosen {
     Chosen,
     Plain,
+}
+
+impl Chosen {
+    pub(crate) fn of<Value: PartialEq>(value: &Value, current: &Value) -> Self {
+        if value == current {
+            Self::Chosen
+        } else {
+            Self::Plain
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -86,6 +105,7 @@ pub(crate) enum Container {
     Tooltip { at: Point },
     Picker { at: Point, width: Px },
     Palette { at: Point, width: Px },
+    Settings { at: Point, width: Px },
     PanelHeader,
     Centered,
     StartPage { width: Px },
@@ -201,17 +221,19 @@ impl Container {
                 Style::background(PANEL).border(Sides::ALL, BORDER),
                 None,
             ),
-            Self::Picker { at, width } | Self::Palette { at, width } => Shape::new(
+            Self::Picker { at, width }
+            | Self::Palette { at, width }
+            | Self::Settings { at, width } => Shape::new(
                 Layout::column()
                     .floating(at)
                     .width(width)
                     .padding(TOOLTIP_PADDING)
                     .gap(TIGHT_GAP),
                 Style::background(PANEL).border(Sides::ALL, ACCENT),
-                Some(if matches!(self, Self::Picker { .. }) {
-                    ids::picker()
-                } else {
-                    ids::palette_box()
+                Some(match self {
+                    Self::Picker { .. } => ids::picker(),
+                    Self::Settings { .. } => ids::settings_box(),
+                    _ => ids::palette_box(),
                 }),
             ),
             Self::Centered | Self::StartPage { .. } => self.page_shape(),
@@ -733,28 +755,77 @@ impl Frame<'_> {
         }
     }
 
-    pub(crate) fn field_runs(
-        field: &Field,
-        attention: Attention,
-        hint: &Label,
-        room: FieldRoom,
-    ) -> Vec<Run> {
-        let shown = field.shown(attention, room);
-        let color = match shown.looks {
-            Looks::Hint => return vec![Run::new(hint.clone(), WEAK)],
-            Looks::Marked => ACCENT,
-            Looks::Plain => TEXT,
+    pub(crate) fn field_runs(field: &Field, attention: Attention, hint: &Label) -> Vec<Run> {
+        if field.text().is_empty() && attention == Attention::Idle {
+            return vec![Run::new(hint.clone(), WEAK)];
+        }
+        field
+            .pieces(field.whole(), attention)
+            .into_iter()
+            .map(|Piece { text, tint }| {
+                Run::new(
+                    text,
+                    match tint {
+                        Tint::Plain => TEXT,
+                        Tint::Selected | Tint::Caret => ACCENT,
+                    },
+                )
+            })
+            .collect()
+    }
+
+    fn field_pieces(&mut self, pieces: Vec<Piece>) {
+        let size = self.metrics.font;
+        if pieces.is_empty() {
+            self.ui.leaf(
+                text_kind(vec![Run::new("", TEXT)], size, Wrap::None),
+                Layout::row(),
+                Style::NONE,
+                None,
+            );
+        }
+        for Piece { text, tint } in pieces {
+            let (color, style) = match tint {
+                Tint::Plain => (TEXT, Style::NONE),
+                Tint::Selected => (TEXT, Style::background(SELECTED)),
+                Tint::Caret => (ACCENT, Style::NONE),
+            };
+            self.ui.leaf(
+                text_kind(vec![Run::new(text, color)], size, Wrap::None),
+                Layout::row(),
+                style,
+                None,
+            );
+        }
+    }
+
+    fn field_pointer(&mut self, which: Which, field: &Field, interaction: Interaction, at: Spot) {
+        let Some(rect) = interaction.rect() else {
+            return;
         };
-        let caret = if attention == Attention::Focused {
-            "\u{258f}"
+        let mods = self.ui.pointer().mods;
+        let pointing = if interaction.double_clicked() {
+            Pointing::Word
+        } else if interaction.clicked() && mods.shift() {
+            Pointing::Extend
+        } else if interaction.clicked() {
+            Pointing::Press
+        } else if interaction.down() {
+            Pointing::Drag
         } else {
-            ""
+            return;
         };
-        vec![
-            Run::new(shown.before, color),
-            Run::new(caret, ACCENT),
-            Run::new(shown.after, color),
-        ]
+        let mouse = self.ui.pointer().mouse;
+        let cell = self.cell_width().get().max(1);
+        let row_height = self.row_height().get().max(1);
+        let across = mouse.horizontal.get() - rect.left.get() - FIELD_PADDING.get()
+            + at.across.get()
+            + cell / 2;
+        let down = mouse.vertical.get() - rect.top.get() - FIELD_PADDING.get();
+        let column = Count::new(usize::try_from(across / cell).unwrap_or(0));
+        let row = Count::new(at.first.get() + usize::try_from(down / row_height).unwrap_or(0));
+        let caret = field.caret_at(which.lines(), row, column, at.attention);
+        self.push(Action::Field(which, FieldAct::Point(caret, pointing)));
     }
 
     pub(crate) fn field(&mut self, fields: &Fields, which: Which, hint: &Label, width: Cells) {
@@ -769,11 +840,13 @@ impl Frame<'_> {
         hint: &Label,
         width: Cells,
     ) {
+        if which.lines() == Lines::Many {
+            self.note_field(fields, which, id, hint, width);
+            return;
+        }
         let attention = self.focused(fields, which);
         let field = fields.get(which);
-        let room = FieldRoom::Cells(Count::new(
-            usize::try_from(width.get().saturating_sub(1)).unwrap_or(0),
-        ));
+        let room = Count::new(usize::try_from(width.get().saturating_sub(1)).unwrap_or(0));
         let width = width.of(self.cell_width());
         let across = match attention {
             Attention::Focused => {
@@ -783,40 +856,144 @@ impl Frame<'_> {
             }
             Attention::Idle => Px::ZERO,
         };
-        let runs = Self::field_runs(field, attention, hint, room);
         let border = if attention == Attention::Focused {
             ACCENT
         } else {
             BORDER
         };
-        let clicked = self
-            .ui
-            .open(
-                Kind::None,
-                Layout::row()
-                    .width(width)
-                    .padding(FIELD_PADDING)
-                    .scroll(Point::new(across, Px::ZERO)),
-                Style::background(FIELD).border(Sides::ALL, border),
-                Some(id),
-            )
-            .clicked();
-        let size = self.metrics.font;
-        self.ui.leaf(
-            text_kind(runs, size, Wrap::None),
-            Layout::row(),
-            Style::NONE,
-            None,
+        let interaction = self.ui.open(
+            Kind::None,
+            Layout::row()
+                .width(width)
+                .padding(FIELD_PADDING)
+                .scroll(Point::new(across, Px::ZERO)),
+            Style::background(FIELD).border(Sides::ALL, border),
+            Some(id),
         );
+        let clicked = interaction.clicked();
+        match attention {
+            Attention::Idle if field.text().is_empty() => {
+                let size = self.metrics.font;
+                self.ui.leaf(
+                    text_kind(vec![Run::new(hint.clone(), WEAK)], size, Wrap::None),
+                    Layout::row(),
+                    Style::NONE,
+                    None,
+                );
+            }
+            Attention::Idle => self.field_pieces(vec![Piece {
+                text: field.idle_text(room),
+                tint: Tint::Plain,
+            }]),
+            Attention::Focused => self.field_pieces(field.pieces(field.whole(), attention)),
+        }
         self.ui.close();
         if clicked {
-            self.take_focus(which);
+            self.take_focus_at(which, id);
         }
+        self.field_pointer(
+            which,
+            field,
+            interaction,
+            Spot {
+                across,
+                first: Count::ZERO,
+                attention,
+            },
+        );
+    }
+
+    fn note_field(&mut self, fields: &Fields, which: Which, id: Id, hint: &Label, width: Cells) {
+        let attention = self.focused(fields, which);
+        let field = fields.get(which);
+        let lines = which.lines();
+        let width = width.of(self.cell_width());
+        let inner = width - FIELD_PADDING * 2;
+        let viewport = Viewport {
+            columns: Count::new(
+                usize::try_from(inner.get() / self.cell_width().get().max(1)).unwrap_or(0),
+            ),
+            rows: NOTE_ROWS_MOST,
+        };
+        if field.viewport() != viewport {
+            self.push(Action::Field(which, FieldAct::Fit(viewport)));
+        }
+        let rows = field.rows(lines);
+        let shown = rows
+            .len()
+            .clamp(NOTE_ROWS_LEAST.get(), NOTE_ROWS_MOST.get());
+        let first = field.first();
+        let border = if attention == Attention::Focused {
+            ACCENT
+        } else {
+            BORDER
+        };
+        let interaction = self.ui.open(
+            Kind::None,
+            Layout::column()
+                .width(width)
+                .height(self.row_height() * Count::new(shown) + FIELD_PADDING * 2)
+                .padding(FIELD_PADDING)
+                .scroll(Point::new(Px::ZERO, self.row_height() * first)),
+            Style::background(FIELD).border(Sides::ALL, border),
+            Some(id),
+        );
+        let clicked = interaction.clicked();
+        if field.text().is_empty() && attention == Attention::Idle {
+            let size = self.metrics.font;
+            self.ui.leaf(
+                text_kind(vec![Run::new(hint.clone(), WEAK)], size, Wrap::None),
+                Layout::row(),
+                Style::NONE,
+                None,
+            );
+        } else {
+            for row in rows {
+                self.ui.open(Kind::None, Layout::row(), Style::NONE, None);
+                self.field_pieces(field.pieces(row, attention));
+                self.ui.close();
+            }
+        }
+        self.ui.close();
+        if clicked {
+            self.take_focus_at(which, id);
+        }
+        let wheel = interaction.wheel().vertical.get();
+        if wheel > 0.0 {
+            self.push(Action::Field(which, FieldAct::Scroll(Walk::Up)));
+        } else if wheel < 0.0 {
+            self.push(Action::Field(which, FieldAct::Scroll(Walk::Down)));
+        }
+        self.field_pointer(
+            which,
+            field,
+            interaction,
+            Spot {
+                across: Px::ZERO,
+                first,
+                attention,
+            },
+        );
     }
 
     pub(crate) fn take_focus(&mut self, which: Which) {
+        self.take_focus_at(which, which.id());
+    }
+
+    fn take_focus_at(&mut self, which: Which, id: Id) {
         self.overlay.focus = Some(which);
-        self.push(Action::FocusField(which));
+        self.push(Action::FocusField(which, id));
+    }
+
+    pub(crate) fn take_focus_within(&mut self, popup: Interaction, which: Which) {
+        let pointer = self.ui.pointer();
+        if pointer.pressed.contains(Button::Left)
+            && popup
+                .rect()
+                .is_some_and(|rect| rect.contains(pointer.mouse))
+        {
+            self.take_focus(which);
+        }
     }
 
     pub(crate) fn command_row(&mut self, fields: &Fields) {
@@ -843,12 +1020,7 @@ impl Frame<'_> {
             self.take_focus(Which::Command);
         }
         self.text_runs(vec![Run::new(">", WEAK)], Fill::Fit);
-        let runs = Self::field_runs(
-            fields.get(Which::Command),
-            attention,
-            &Label::default(),
-            FieldRoom::Open,
-        );
+        let runs = Self::field_runs(fields.get(Which::Command), attention, &Label::default());
         self.text_runs(runs, Fill::Grow);
         self.ui.close();
     }
@@ -860,8 +1032,8 @@ impl Frame<'_> {
         scroller: Scroller,
         background: Option<ui::Color>,
     ) -> Scrolled {
-        let mut offset = start;
-        let offset = self.ui.scroll_by_wheel(id, &mut offset);
+        let mut offset = Point::new(Px::ZERO, start);
+        let offset = self.ui.scroll_by_wheel(id, &mut offset).vertical;
         self.push(Action::Scroll(id, offset));
         let layout = match scroller {
             Scroller::Plain => Layout::column().grow().padding(PANEL_PADDING),

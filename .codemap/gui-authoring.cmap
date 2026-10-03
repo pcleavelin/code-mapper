@@ -255,8 +255,8 @@ parent q09qk7
 author ai
 file crates/gui/src/field.rs
 symbol fill
-lines 0 6
-hash 9bf18e7db9d909ea
+lines 0 5
+hash 626af6a12ecec6da
 note Sets a field's text without giving it the keyboard: the wizard's group field starts with the group of the tour being read.
 
 step q09qk7

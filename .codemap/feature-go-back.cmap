@@ -51,8 +51,8 @@ parent y91rv4
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 34 39
-hash f6c28c0aab2b50c3
+lines 29 35
+hash 240deb57c202da99
 note Trigger from the keyboard and the mouse's side buttons, read in the keys phase before the views are built.
 
 step jfhpjk
@@ -81,6 +81,6 @@ parent d1o8nr
 author ai
 file crates/gui/src/keys.rs
 symbol going
-lines 0 10
-hash 47d5664607ed0c9e
-note Matches the registry's GoBack chords whose key is Left (back) or Right (forward), with any modifier the registry lists, and the mouse's Back or Forward button when the registry lists that gesture.
+lines 0 11
+hash 56e33eacf98c7997
+note Matches the registry's GoBack chords whose key is Left (back) or Right (forward), with any modifier the registry lists, unless a text field has the keyboard, where those chords move the caret by word; and the mouse's Back or Forward button when the registry lists that gesture.

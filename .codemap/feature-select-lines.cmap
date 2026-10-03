@@ -3,7 +3,47 @@ tour feature-select-lines
 kind flow
 author ai
 group features/gui
-note In the Source view, click a line to select it and shift-click another to extend the selection from the first; the selected lines are highlighted. The reader needs it to say which lines a hand-built step pins, since 'add step' adds the selected lines. A ctrl-, alt- or double-click is a definition gesture, not a selection. The selection is what the Source view's 'add step' adds and what back and forward remember.
+note In the Source view, press on a line and drag to another: every line between the two, inclusive, is selected and highlighted while the button is still held, and holding the pointer above or below the code scrolls the view and keeps extending the selection. A plain click selects one line. The reader needs it to say which lines a hand-built step pins, since 'add step' adds the selected lines. Press-drag is the gesture every editor uses for a range, so the reader who tries it gets the range; before it, the drag selected only the pressed line and the range took a click, a scroll and a shift-click read off the toolbar caption. A ctrl-, alt- or double-click is a definition gesture and starts no selection; a press on the view's scrollbar scrolls and selects nothing. The selection is what the Source view's 'add step' adds and what back and forward remember.
+
+step 3ha5ig
+order 6
+parent pvdi25
+author ai
+file crates/gui/src/views/center.rs
+symbol source
+lines 12 20
+hash c8129284c8a07430
+note Autoscroll: while a selecting drag holds the code block, a pointer above or below the view moves the scroll offset before the column is laid out.
+
+step 696yx8
+order 5
+parent pvdi25
+author ai
+file crates/gui/src/widgets/code.rs
+symbol line_dragged_to
+lines 0 15
+hash 36ce078076d863cc
+note The line under the held pointer: the pointer is clamped into the part of the code block on screen, so above or below the view it reports the first or last visible line, which is the line the selection reaches while the view scrolls.
+
+step 9c8nv5
+order 8
+parent pvdi25
+author ai
+file crates/gui/src/app.rs
+symbol frame
+lines 62 62
+hash 84b9405a281633b5
+note While line_grab is set the window redraws at the animation rate, so a pointer held still past the edge keeps scrolling with no input events arriving.
+
+step d1xzw6
+order 7
+parent 3ha5ig
+author ai
+file crates/gui/src/views/center.rs
+symbol edge_scroll
+lines 0 11
+hash 57c99f0db2da496c
+note The scroll per frame: a quarter of the distance past the edge (EDGE_SCROLL), at least a pixel and at most EDGE_SCROLL_MOST rows, upward above the view and downward below it.
 
 step laekhp
 order 2
@@ -12,17 +52,37 @@ author ai
 file crates/gui/src/keys.rs
 symbol selects_line
 lines 0 10
-hash ab9491a74b0ed7e2
-note A plain click selects, one with the registry's SelectLines shift-click gesture extends; ctrl, alt and double clicks are left to jump and peek.
+hash e0a5641bfc70b877
+note Drag comes from the registry's SelectLines drag gesture (held on the element, after the press frame); a plain click is a Press; ctrl, alt and double clicks are left to jump and peek.
+
+step p7hzhw
+order 9
+parent pvdi25
+author ai
+file crates/gui/src/keys.rs
+symbol LineGesture
+lines 0 3
+hash fe677ac50515fc47
+note The two line gestures: a Press starts a selection on one line, a Drag moves its far end.
+
+step pljkoh
+order 4
+parent pvdi25
+author ai
+file crates/gui/src/nav.rs
+symbol release_lines
+lines 0 2
+hash 5636ccd0d6aa8bb2
+note The drag's end: line_grab is cleared, so Drag frames change nothing until the next selecting Press.
 
 step pvdi25
 order 0
 author ai
 file crates/gui/src/nav.rs
 symbol select_line
-lines 0 8
-hash bfd3bf9d7a7e667f
-note The handler: extending keeps the selection's first line and moves its end, so the range can run upward; anything else, or extending with nothing selected, selects the one line.
+lines 0 11
+hash b79b5031a6a330c4
+note The handler: a Press selects the one line and records it in line_grab as the drag's fixed end; each Drag selects from line_grab to the pointer's line, so the range can run upward; a Drag with no line_grab (the press was a definition gesture, or the drag already ended) changes nothing.
 
 step q4xn7z
 order 3
@@ -30,7 +90,7 @@ parent pvdi25
 author ai
 file crates/gui/src/views/center.rs
 symbol source
-lines 56 60
+lines 64 68
 hash 29762266e34acca8
 note The effect: lines inside the selection get the LINES_SELECTED background.
 
@@ -39,8 +99,8 @@ order 1
 parent pvdi25
 author ai
 file crates/gui/src/views/center.rs
-symbol source
-lines 75 80
-hash fd19b1328cd15b25
+symbol select_lines
+lines 0 21
+hash 4dcb117abbf4c998
 link source-view
-note Trigger: the Source view's code block reports the line under a click, and keys::selects_line decides whether the click selects and whether it extends. A selecting click queues SelectLine.
+note Trigger: keys::selects_line names the frame's gesture on the code block. A Press queues SelectLine for the line under the pointer unless it landed on the scrollbar track; a Drag queues it for the line the code block reports under the held pointer; any other press, or a frame with the button up, while line_grab is set queues ReleaseLines.

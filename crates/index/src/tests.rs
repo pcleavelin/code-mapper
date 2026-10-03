@@ -204,6 +204,32 @@ fn highlights_keywords_and_strings() {
 }
 
 #[test]
+fn a_symbol_name_takes_the_class_its_declaration_is_highlighted_in() {
+    let parsed = |path: &str, src: &str| {
+        Parsers::default().parse(RelativePath::new(path), &Contents::new(src))
+    };
+    let rust = parsed(
+        "x.rs",
+        "/// Store\nstruct Store {}\nimpl Store {\n    fn fill(&self) {}\n}\n",
+    );
+    let clang = parsed("x.c", "static int square(int x) { return x * x; }\n");
+    let class_of = |file: &domain::SourceFile, name: &str| {
+        let symbol = file
+            .symbols()
+            .find(|symbol| symbol.name().as_str() == name)
+            .unwrap_or_else(|| panic!("no symbol {name}"));
+        file.name_class(symbol)
+    };
+    assert_eq!(class_of(&rust, "Store"), HighlightClass::Type);
+    assert_eq!(class_of(&rust, "impl Store"), HighlightClass::Type);
+    assert_eq!(class_of(&rust, "fill"), HighlightClass::Function);
+    assert_eq!(
+        class_of(&clang, "static int square(int x)"),
+        HighlightClass::Function
+    );
+}
+
+#[test]
 fn calls_sort_as_their_legacy_debug_spelling() {
     let mut calls = vec![
         call("f", named("a")),

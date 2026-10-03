@@ -20,8 +20,8 @@ parent 5hqfou
 author ai
 file crates/gui/src/keys.rs
 symbol going
-lines 0 10
-hash 47d5664607ed0c9e
+lines 0 11
+hash 56e33eacf98c7997
 note Back and forward from the input: the GoBack feature's chords with left or right (alt+left, alt+right), or the mouse's side buttons, which the window reports as pressed pointer buttons, so the app does not care which it was.
 
 step 447wu9
@@ -58,9 +58,9 @@ order 12
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 0 86
-hash ce8c6cbb021a6b6b
-note The keys, read in the frame before the tree is built and turned into actions: first the palette's chord, and while the palette is open and has the keyboard every key goes to it (feature-palette); then the Save chord, back and forward, every field fed the frame's edits and typed text, enter, ctrl+enter and escape for the wizard while it is open and the keyboard is in no field or one of its own (escape while a field has the keyboard only leaves the field, so it never reaches the wizard), a focused step-note field fed like the others, then the arrows: while the Graph view is shown and the graph holds the keyboard (the last press was inside its canvas) each arrow is a GraphWalk, otherwise up and down walk the tour when no field has the keyboard. Which chord does what comes from the feature registry through keys.
+lines 0 74
+hash dbfe7b5173a3628a
+note The keys, read in the frame before the tree is built and turned into actions: first the palette's chord, and while the palette is open and has the keyboard every key goes to it (feature-palette); then the Save chord, back and forward, every field fed the frame's edits and typed text, enter, ctrl+enter and escape for the wizard (wizard_actions) while it is open and the keyboard is in no field or one of its own (escape while a field has the keyboard only leaves the field, so it never reaches the wizard), a focused step-note field fed like the others, then the arrows: while the Graph view is shown and the graph holds the keyboard (the last press was inside its canvas) each arrow is a GraphWalk, otherwise up and down walk the tour when no field has the keyboard. Which chord does what comes from the feature registry through keys.
 
 step 5wentz
 order 3

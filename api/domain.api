@@ -82,6 +82,7 @@ index::file::pub fn set_readiness(&mut self, readiness: Readiness)
 index::file::pub fn without_text(&self) -> Self
 index::file::pub fn innermost(&self, span: Span) -> Option<SymbolIndex>
 index::file::pub fn first_named(&self, name: &SymbolName) -> Option<SymbolIndex>
+index::file::pub fn name_class(&self, symbol: &Symbol) -> HighlightClass
 index::file::pub fn call_site(&self, line: Line, name: &SymbolName) -> bool
 index::language::pub struct Extension(&'static str);
 index::language::pub const fn as_str(self) -> &'static str
@@ -149,7 +150,7 @@ index::symbol::pub fn set_targets(&mut self, targets: Vec<Location>)
 index::symbol::pub fn set_references(&mut self, references: Vec<Location>)
 index::symbol::pub fn set_callees(&mut self, callees: Vec<SymbolId>)
 index::symbol::pub fn set_callers(&mut self, callers: Vec<SymbolId>)
-layout::pub enum SplitDirection { Right, Down, }
+layout::pub enum SplitDirection { #[default] Right, Down, }
 layout::pub struct Share(u16);
 layout::pub const WHOLE: Self = Self(1000);
 layout::pub fn permille(value: u16) -> Option<Self>
@@ -311,6 +312,26 @@ map::tour::pub fn tree_order_by(&self, key: impl Fn(&Step, &Step) -> Option<Line
 map::tour::pub fn numbered(&self, index: &Index) -> Vec<NumberedStep>
 map::tour::pub fn descendants(&self, id: &StepId) -> Vec<StepId>
 map::tour::pub fn parent_label(&self, id: &StepId) -> Option<ParentLabel>
+settings::pub enum Theme { #[default] Dark, Light, }
+settings::pub struct FontFamily(String);
+settings::pub fn new(name: &str) -> Option<Self>
+settings::pub fn as_str(&self) -> &str
+settings::pub struct BaseFontSize(u16);
+settings::pub const SMALLEST: Self = Self(8);
+settings::pub const LARGEST: Self = Self(32);
+settings::pub fn new(size: u16) -> Option<Self>
+settings::pub const fn get(self) -> u16
+settings::pub fn larger(self) -> Self
+settings::pub fn smaller(self) -> Self
+settings::pub struct Settings { theme: Theme, font: Option<FontFamily>, size: BaseFontSize, graph: SplitDirection, }
+settings::pub const fn theme(&self) -> Theme
+settings::pub const fn font(&self) -> Option<&FontFamily>
+settings::pub const fn size(&self) -> BaseFontSize
+settings::pub const fn graph(&self) -> SplitDirection
+settings::pub const fn with_theme(mut self, theme: Theme) -> Self
+settings::pub fn with_font(mut self, font: Option<FontFamily>) -> Self
+settings::pub const fn with_size(mut self, size: BaseFontSize) -> Self
+settings::pub const fn with_graph(mut self, graph: SplitDirection) -> Self
 text::pub struct Line(u32);
 text::pub const fn new(value: u32) -> Self
 text::pub const fn value(self) -> u32

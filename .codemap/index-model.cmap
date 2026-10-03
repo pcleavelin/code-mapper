@@ -224,6 +224,16 @@ lines 0 5
 hash 7128012a3a727eb2
 note The identity that does survive a re-index. Everything the GUI carries across an index change (graph focus, peek, current file) is turned into a key before the change and looked up again after it.
 
+step nwocph
+order 29
+parent rfv0y0
+author ai
+file crates/domain/src/index/file.rs
+symbol name_class
+lines 0 26
+hash 5e7d0aea10cd8f68
+note The highlight class of a symbol's name as the source view draws it: the class of the first highlight in the symbol's span whose text is the name's word, so a doc comment holding the name is passed over. The word is the one before the first '(' when one comes right after an identifier (C's 'static int square(int x)' takes square), else the last word ('impl Store' takes Store, Go's '(*Store).Check' takes Check). Plain when no highlight matches. The wizard colours a symbol's name with it.
+
 step qjdlil
 order 15
 parent rfv0y0
@@ -290,6 +300,6 @@ parent rfv0y0
 author ai
 file crates/domain/src/index/file.rs
 symbol impl SourceFile
-lines 0 156
-hash 538539a2bcd85bad
+lines 0 184
+hash 45c4dc952b3ca79a
 note Reads, plus the few changes the index allows: set_text when build fills a cached file's text from disk (the highlight table grows or shrinks with it), set_symbols, set_backend and set_readiness when a server answers or gives up, and without_text for the link thread's copy.
