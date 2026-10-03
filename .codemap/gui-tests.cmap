@@ -35,6 +35,26 @@ lines 0 13
 hash 16146a00254e6280
 note Removing a step shifts the views of the steps after it and clears the selection.
 
+step 3bj5k1
+order 44
+parent 52670m
+author ai
+file crates/gui/src/tests.rs
+symbol a_call_opened_under_a_kept_step_ticks_by_the_build_rule_even_when_another_tour_has_it
+lines 0 46
+hash 2f05065cc3f8b0cd
+note Editing a tour (main, a, and a lines step under a): a call into another tour's b is a Mapped leaf that still starts ticked under a kept step; c, which only the edited tour covers, is Kept rather than a leaf; unticking a unticks the new c under it. Fails if besides is not passed or ticked_under ignores the row above.
+
+step 3zmy3e
+order 42
+parent 8uitgf
+author ai
+file crates/gui/src/tests.rs
+symbol the_pending_edit_is_recounted_after_a_typed_note_and_after_a_kind_change
+lines 0 10
+hash 71dc4bcaf3119e8d
+note The change count follows a typed note and a kind change at once. Fails if the Derived cache is not refreshed after typing or after an act.
+
 step 43i1gl
 order 29
 parent l5and2
@@ -73,6 +93,15 @@ lines 0 37
 hash 009ac0ab94ffe392
 note Clipping keeps short text and marks cut text with an ellipsis, from the right or the left; a Needle matches ignoring ASCII case; a count of one takes the singular noun.
 
+step 52670m
+order 35
+author ai
+file crates/gui/src/tests.rs
+symbol deep_app
+lines 0 63
+hash 63a34f3dd022112c
+note A second fixture for the wizard: one file whose main calls a, a calls b, b calls c, with c and d and two one-line accessors, deep enough to open calls past promote's depth.
+
 step 6eirab
 order 7
 parent 4n3q0r
@@ -103,6 +132,46 @@ lines 0 13
 hash 57ca18f63876f782
 note Switching the centre tab is its own place. Back from Source returns to Graph, and back again to Tour, with nothing behind that.
 
+step 8fpn0a
+order 45
+parent 52670m
+author ai
+file crates/gui/src/tests.rs
+symbol escape_cancels_the_build_wizard_only_while_nothing_is_entered
+lines 0 14
+hash 09f0c7eeb8f92d89
+note The build wizard: escape in the name field only leaves the field, a second escape with nothing entered closes it; after typing a name, escapes keep it open with WizardHeld(Unbuilt).
+
+step 8uitgf
+order 36
+parent 52670m
+author ai
+file crates/gui/src/tests.rs
+symbol editing_walk
+lines 0 5
+hash 02e6744506dbef4c
+note The deep fixture with a drafted tour 'walk' (main, a under it, b under a) opened on the edit page.
+
+step 8vi9yy
+order 43
+parent 8uitgf
+author ai
+file crates/gui/src/tests.rs
+symbol ctrl_enter_applies_the_edit_and_plain_enter_in_a_step_note_does_not
+lines 0 34
+hash 2f0cbbf85e5d6f5d
+note Plain enter in a step note neither applies nor leaves the page; ctrl+enter applies, closes the page and writes the note into the map.
+
+step 9fy8mr
+order 39
+parent 8uitgf
+author ai
+file crates/gui/src/tests.rs
+symbol escape_in_a_step_note_releases_the_field_and_keeps_the_edit_open
+lines 0 8
+hash 06ec1d63f1ee2f7a
+note Escape in a step-note field only drops the keyboard; the page stays. Fails if escape reaches the wizard while a field is focused.
+
 step 9hxjt5
 order 12
 parent l5and2
@@ -112,6 +181,16 @@ symbol hide_all_code_hides_every_step_and_show_all_code_expands_none
 lines 0 14
 hash 8ea93f7f2e29948b
 note hide all code hides every step's code and keeps a collapse; show all code shows every step's code and leaves nothing collapsed.
+
+step apiokq
+order 40
+parent 8uitgf
+author ai
+file crates/gui/src/tests.rs
+symbol escape_with_changes_pending_keeps_them_and_says_cancel_discards_them
+lines 0 19
+hash 1f0808cc9f95bffc
+note A typed note, escape out of the field, escape again: the page stays, the status is WizardHeld(Changes(1)) worded '1 change pending: press cancel to discard it', and cancel then closes. Fails if escape discards pending changes.
 
 step b6gbpm
 order 21
@@ -258,6 +337,16 @@ lines 0 37
 hash 3ae89043eaf26e59
 note A graph Built by hand from a list of node sizes: the first node a step at rank zero, every other its child at rank one, for the layout tests.
 
+step kq252y
+order 46
+parent 52670m
+author ai
+file crates/gui/src/tests.rs
+symbol unticking_a_promoted_row_counts_as_entered_for_escape
+lines 0 12
+hash ec8c2b0039fa8d89
+note From 'tour from here', unticking a promoted row makes escape hold (Unbuilt); ticking it back lets escape close. Fails if held compares ticks against the wrong baseline.
+
 step l5and2
 order 5
 author ai
@@ -266,6 +355,16 @@ symbol app
 lines 0 2
 hash 42953d1e4d8efdd9
 note An App around the fixture model, for tests that go through apply.
+
+step mqnqki
+order 37
+parent 8uitgf
+author ai
+file crates/gui/src/tests.rs
+symbol drafted
+lines 0 23
+hash ca80f4269b2dc960
+note A tour added through add_drafted_tour from (symbol, depth) pairs, authored by the agent.
 
 step n6986p
 order 13
@@ -276,6 +375,16 @@ symbol collapse_all_collapses_only_steps_with_children
 lines 0 15
 hash 20844b0498dbb469
 note collapse all collapses only the steps that have children.
+
+step opfuyd
+order 41
+parent 8uitgf
+author ai
+file crates/gui/src/tests.rs
+symbol escape_with_nothing_pending_cancels_the_edit
+lines 0 4
+hash a3ab0b3f2d7127d0
+note Escape with nothing pending closes the edit page.
 
 step ps5lmt
 order 11
@@ -306,6 +415,25 @@ symbol symbol
 lines 0 9
 hash 56134e1eb7d10c3e
 note A top-level function symbol over a line range.
+
+step ss1x4f
+order 38
+parent 8uitgf
+author ai
+file crates/gui/src/tests.rs
+symbol the_edit_outline_starts_ticked_from_the_tour_opens_calls_it_lacks_and_unticking_removes
+lines 0 56
+hash 5ae73107f5139ac8
+note The edit outline opens with every step ticked and numbered as the window numbers them and no change pending; '+N calls' on main adds only calls the tour lacks; opening b shows c as a new ticked call; unticking a unticks everything under it and the changes are the two removals, a's carrying the note it loses. Fails if of_tour misnumbers or leaves steps unticked, if load offers a step the tour holds, or if a removal forgets its note.
+
+step u6zxfk
+order 47
+author ai
+file crates/gui/src/tests.rs
+symbol a_field_without_the_keyboard_shows_the_start_of_its_text_cut_with_an_ellipsis
+lines 0 15
+hash 0da33b9507d0a596
+note An unfocused field shows the start of its text cut to its room with an ellipsis; focused, the whole text split at the caret.
 
 step ulvmts
 order 24

@@ -14,6 +14,7 @@ use crate::model::{Model, StepKey, Tab, TourSlot};
 use crate::nav::Scrolling;
 use crate::panels::{Direction, View};
 use crate::welcome::WelcomeAct;
+use crate::wizard::WizardAct;
 
 pub(crate) const PALETTE_LIMIT: Count = Count::new(50);
 pub(crate) const PALETTE_ROWS: Count = Count::new(16);
@@ -73,6 +74,7 @@ pub(crate) enum PaletteCommand {
     Split(Direction),
     AddStep,
     BuildTour,
+    EditTour,
     StartPage,
 }
 
@@ -96,6 +98,7 @@ pub(crate) const fn commands(feature: Feature) -> &'static [PaletteCommand] {
         Feature::TurnGraph => &[PaletteCommand::Turn],
         Feature::Welcome => &[PaletteCommand::StartPage],
         Feature::BuildTour => &[PaletteCommand::BuildTour],
+        Feature::EditTour => &[PaletteCommand::EditTour],
         Feature::SplitPanel => &[
             PaletteCommand::Split(Direction::Right),
             PaletteCommand::Split(Direction::Down),
@@ -573,6 +576,7 @@ impl Model {
                 PaletteCommand::OneToOne => vec![Action::Graph(GraphAction::OneToOne)],
                 PaletteCommand::Turn => vec![Action::Graph(GraphAction::Turn)],
                 PaletteCommand::BuildTour => vec![Action::Welcome(WelcomeAct::BuildTour)],
+                PaletteCommand::EditTour => on_tour(|tour| Action::Wizard(WizardAct::Edit(tour))),
                 PaletteCommand::StartPage => vec![Action::Welcome(WelcomeAct::StartPage)],
                 PaletteCommand::Split(direction) => {
                     let shown = View::of_tab(self.nav.tab());

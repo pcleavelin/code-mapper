@@ -1,8 +1,11 @@
+use std::collections::BTreeMap;
 use std::mem;
 
-use ui::{Label, Typed};
+use ui::{Count, Id, Label, Typed};
 
 use crate::ids::{self, Control};
+use crate::text::Clipped;
+use crate::wizard::BranchId;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Edit {
@@ -33,9 +36,14 @@ pub(crate) enum Which {
     WizardGroup,
     WizardSearch,
     WizardNote,
+    StepNote(BranchId),
 }
 
 impl Which {
+    pub(crate) fn id(self) -> Id {
+        self.control().id()
+    }
+
     pub(crate) const fn control(self) -> Control {
         match self {
             Self::Search => ids::SEARCH_FIELD,
@@ -49,6 +57,7 @@ impl Which {
             Self::WizardGroup => ids::WIZARD_GROUP_FIELD,
             Self::WizardSearch => ids::WIZARD_SEARCH_FIELD,
             Self::WizardNote => ids::WIZARD_NOTE_FIELD,
+            Self::StepNote(_) => ids::EDIT_NOTE_FIELD,
         }
     }
 }
@@ -279,25 +288,40 @@ impl Field {
         self.caret = Caret(self.caret.0 + typed.as_str().chars().count());
     }
 
-    pub(crate) fn shown(&self, attention: Attention) -> Shown {
-        let focused = attention == Attention::Focused;
-        if self.text.is_empty() && !focused {
-            return Shown {
+    pub(crate) fn shown(&self, attention: Attention, room: FieldRoom) -> Shown {
+        match attention {
+            Attention::Idle if self.text.is_empty() => Shown {
                 looks: Looks::Hint,
                 before: Label::default(),
                 after: Label::default(),
-            };
-        }
-        Shown {
-            looks: if self.marked == Marked::Whole && focused {
-                Looks::Marked
-            } else {
-                Looks::Plain
             },
-            before: self.text.before(self.caret.0),
-            after: self.text.after(self.caret.0),
+            Attention::Idle => Shown {
+                looks: Looks::Plain,
+                before: match room {
+                    FieldRoom::Cells(cells) => {
+                        Label::new(Clipped::right(self.text.as_str(), cells.get()).to_string())
+                    }
+                    FieldRoom::Open => self.text.label(),
+                },
+                after: Label::default(),
+            },
+            Attention::Focused => Shown {
+                looks: if self.marked == Marked::Whole {
+                    Looks::Marked
+                } else {
+                    Looks::Plain
+                },
+                before: self.text.before(self.caret.0),
+                after: self.text.after(self.caret.0),
+            },
         }
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum FieldRoom {
+    Cells(Count),
+    Open,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -325,6 +349,8 @@ pub(crate) struct Fields {
     wizard_group: Field,
     wizard_search: Field,
     wizard_note: Field,
+    step_notes: BTreeMap<BranchId, Field>,
+    blank: Field,
     focused: Option<Which>,
 }
 
@@ -342,6 +368,7 @@ impl Fields {
             Which::WizardGroup => &self.wizard_group,
             Which::WizardSearch => &self.wizard_search,
             Which::WizardNote => &self.wizard_note,
+            Which::StepNote(branch) => self.step_notes.get(&branch).unwrap_or(&self.blank),
         }
     }
 
@@ -358,6 +385,7 @@ impl Fields {
             Which::WizardGroup => &mut self.wizard_group,
             Which::WizardSearch => &mut self.wizard_search,
             Which::WizardNote => &mut self.wizard_note,
+            Which::StepNote(branch) => self.step_notes.entry(branch).or_default(),
         }
     }
 
@@ -380,6 +408,13 @@ impl Fields {
         field.marked = Marked::Nothing;
         field.text.insert_at(0, text.as_str());
         field.caret = Caret(field.text.characters());
+    }
+
+    pub(crate) fn drop_step_notes(&mut self) {
+        self.step_notes.clear();
+        if matches!(self.focused, Some(Which::StepNote(_))) {
+            self.focused = None;
+        }
     }
 
     pub(crate) fn release(&mut self, which: Which) {

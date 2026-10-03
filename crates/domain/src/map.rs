@@ -1,4 +1,5 @@
 mod diff;
+mod edit;
 mod error;
 mod follow;
 mod name;
@@ -11,6 +12,7 @@ use crate::index::{Cut, Depth, FileId, Index, Planned, PrunedTree, Stop, SymbolI
 use crate::text::{RelativePath, Span};
 
 pub use diff::{Change, StepChange, StepDiff, TourDiff};
+pub use edit::{AddedStep, AddedSteps, AddedUnder, EditChange, StepNote, TourEdit};
 pub use error::{InvalidName, MapError, StepAddress};
 pub use follow::{Alignment, Followed, follow};
 pub use name::{Author, GroupName, Note, TextFragment, TourCount, TourKind, TourName};
@@ -581,13 +583,14 @@ impl Map {
     pub fn plan_promotion_callees(
         &self,
         index: &Index,
+        besides: Option<&TourName>,
         path: &[SymbolId],
         placed: &BTreeSet<SymbolId>,
     ) -> Vec<Planned> {
         let Some(root) = path.first().copied() else {
             return Vec::new();
         };
-        index.plan_callees(path, placed, &self.mapped(None, index, root))
+        index.plan_callees(path, placed, &self.mapped(besides, index, root))
     }
 
     pub fn check_name_free(&self, name: &TourName) -> Result<Changed, MapError> {
@@ -608,6 +611,105 @@ impl Map {
         let _noted = built.set_tour_note(&draft.name, draft.note)?;
         let _hung = built.hang(index, &draft.name, entries, draft.author)?;
         *self = built;
+        Ok(Changed)
+    }
+
+    pub fn tour_edit_changes(&self, tour: &TourName, edit: &TourEdit) -> Vec<EditChange> {
+        let Some(found) = self.tour(tour) else {
+            return Vec::new();
+        };
+        let mut changes = Vec::new();
+        if &edit.name != found.name() {
+            changes.push(EditChange::Renamed(edit.name.clone()));
+        }
+        if edit.kind != found.kind() {
+            changes.push(EditChange::Kind(edit.kind));
+        }
+        if edit.group.as_ref() != found.group() {
+            changes.push(EditChange::Group(edit.group.clone()));
+        }
+        if edit.note.as_ref() != found.note() {
+            changes.push(EditChange::TourNote(edit.note.clone()));
+        }
+        for note in &edit.step_notes {
+            if edit.removed.contains(&note.step) {
+                continue;
+            }
+            if found
+                .step(&note.step)
+                .is_some_and(|step| step.note() != note.note.as_ref())
+            {
+                changes.push(EditChange::StepNote(note.clone()));
+            }
+        }
+        for added in &edit.added {
+            push_added(
+                &mut changes,
+                &AddedUnder::Step(added.under.clone()),
+                &added.steps,
+            );
+        }
+        for step in &edit.removed {
+            if let Some(gone) = found.step(step) {
+                changes.push(EditChange::Removed {
+                    step: step.clone(),
+                    lost: gone.note().cloned(),
+                });
+            }
+        }
+        changes
+    }
+
+    pub fn apply_tour_edit(
+        &mut self,
+        index: &Index,
+        tour: &TourName,
+        edit: TourEdit,
+    ) -> Result<Changed, MapError> {
+        let mut edited = self.clone();
+        for note in &edit.step_notes {
+            if !edit.removed.contains(&note.step) {
+                let _noted = edited.set_step_note(tour, &note.step, note.note.clone())?;
+            }
+        }
+        for step in &edit.removed {
+            let _removed = edited.remove_step(tour, step)?;
+        }
+        for added in &edit.added {
+            let _added =
+                edited.add_steps_under(index, tour, &added.under, &added.steps, edit.author)?;
+        }
+        edited.tour_mut(tour)?.set_kind(edit.kind);
+        let _grouped = edited.set_group(tour, edit.group)?;
+        let _noted = edited.set_tour_note(tour, edit.note)?;
+        if &edit.name != tour {
+            let _renamed = edited.rename(tour, edit.name)?;
+        }
+        *self = edited;
+        Ok(Changed)
+    }
+
+    fn add_steps_under(
+        &mut self,
+        index: &Index,
+        tour: &TourName,
+        under: &StepId,
+        steps: &[AddedStep],
+        author: Author,
+    ) -> Result<Changed, MapError> {
+        for added in steps {
+            let symbol = index.symbol(added.symbol).ok_or(MapError::NoSuchSymbol)?;
+            let id = self.add_step(
+                index,
+                tour,
+                added.symbol.file(),
+                symbol.span(),
+                author,
+                Some(under),
+            )?;
+            let _noted = self.set_step_note(tour, &id, added.note.clone())?;
+            let _below = self.add_steps_under(index, tour, &id, &added.below, author)?;
+        }
         Ok(Changed)
     }
 
@@ -748,6 +850,16 @@ fn level(members: &[&Tour], prefix: Option<&GroupName>, depth: Depth, rows: &mut
         level(&inside, Some(&group), depth.deeper(), rows);
     }
     rows.extend(here.into_iter().map(|name| Row::Tour { name, depth }));
+}
+
+fn push_added(changes: &mut Vec<EditChange>, under: &AddedUnder, steps: &[AddedStep]) {
+    for added in steps {
+        changes.push(EditChange::Added {
+            symbol: added.symbol,
+            under: under.clone(),
+        });
+        push_added(changes, &AddedUnder::Added(added.symbol), &added.below);
+    }
 }
 
 #[cfg(test)]

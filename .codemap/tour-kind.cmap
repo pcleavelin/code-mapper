@@ -12,7 +12,7 @@ file crates/domain/src/map.rs
 symbol add_tour
 lines 0 12
 hash c91454eca2c13b84
-note How a tour is made outside a read, so every tour has a kind from birth; the other way is Tour::new from a file. A name already taken is no change; one differing only in letter case is CaseClash. The build-tour wizard starts a new tour as a flow and offers the other kinds; the CLI takes the kind as an argument.
+note How a tour is made outside a read, so every tour has a kind from birth; the other way is Tour::new from a file. A name already taken is no change; one differing only in letter case is CaseClash. The build-tour wizard starts a new tour as a flow and offers the other kinds, and the edit-tour page changes it later (Tour::set_kind through Map::apply_tour_edit); the CLI takes the kind as an argument.
 
 step f6tlg7
 order 4

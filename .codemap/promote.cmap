@@ -10,9 +10,9 @@ order 22
 author ai
 file crates/domain/src/map.rs
 symbol plan_promotion_callees
-lines 0 10
-hash 8a7580ec964d22f7
-note One more level of the same walk: plan_callees under path, with placed the symbols already in the outline and mapped taken from the path's root. The wizard calls it when the human opens a branch deeper than plan_promotion went.
+lines 0 11
+hash 137f973c9615fd99
+note One more level of the same walk: plan_callees under path, with placed the symbols already in the outline and mapped taken from the path's root, not counting the tour named by besides: the edit-tour page passes the tour being edited, so its own steps are not leaves 'in another tour'. The wizard calls it when the human opens a branch deeper than plan_promotion went.
 
 step 413kyo
 order 15

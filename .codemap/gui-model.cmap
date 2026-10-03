@@ -45,6 +45,16 @@ lines 0 5
 hash 7e2f63fbb8bdefd9
 note A step's hierarchical number, for status messages and link buttons.
 
+step 5szbd4
+order 47
+parent hl1oxj
+author ai
+file crates/gui/src/wizard.rs
+symbol Baseline
+lines 0 4
+hash 43ab015413471d03
+note The kind, start and the four typed fields' texts when the wizard opened, so held can tell an untouched wizard from one with something entered.
+
 step 5zr9ht
 order 22
 parent w41rnw
@@ -64,6 +74,16 @@ symbol StepView
 lines 0 3
 hash 2c762515e02e7e47
 note How one step shows: its flags and its context lines.
+
+step 6d2r0n
+order 44
+parent hl1oxj
+author ai
+file crates/gui/src/wizard.rs
+symbol Derived
+lines 0 4
+hash 3635e36fdaa854f2
+note The wizard's cache: the rows on screen, the pending edit and the changes it makes. refresh_wizard rebuilds it whenever something it reads changes, so drawing a frame never re-plans an edit or asks the index.
 
 step 6ss4kt
 order 20
@@ -114,6 +134,16 @@ symbol TourSlot
 lines 0 0
 hash f626b4215f76455d
 note A tour's slot, and the StepSlot, StepKey and their queries.
+
+step 8rln9f
+order 45
+parent hl1oxj
+author ai
+file crates/gui/src/wizard.rs
+symbol Pending
+lines 0 3
+hash 7b1da2151e244467
+note The edit apply would make: the tour's current name and either the TourEdit or the reason it cannot be made (an empty, invalid or taken name).
 
 step 9xv7om
 order 12
@@ -191,9 +221,9 @@ parent w41rnw
 author ai
 file crates/gui/src/wizard.rs
 symbol Wizard
-lines 0 7
-hash 302d11bef96312f4
-note The build-tour wizard, Model.wizard, None while none is open: the page, the kind, the start symbol, the last focus it saw (so follow_focus reacts only to a change), the outline and the refusal shown under the page. The typed name, group, search and note live in the wizard's fields (Which::WizardName and the others). App::wizard's acts change it, follow_focus sets its start, create_from_wizard and every close (cancel, opening a tour or a step of another tour, the start page) drop it (feature-build-tour).
+lines 0 10
+hash 1f3e0a7b91ffc6fb
+note The wizard, building a tour or editing one, Model.wizard, None while none is open: the page, the kind, the start symbol, the last focus it saw (so follow_focus reacts only to a change), the outline, the refusal shown under the page, the Mode (Build, or EditTour of a named tour), what the kind, start and typed fields held when it opened (the Baseline, so escape can tell whether anything was entered) and the Derived cache: the rows on screen, the pending TourEdit or why it is invalid, and tour_edit_changes of it, rebuilt by refresh_wizard after every act, typed key, Console command, reload and re-index rather than per frame. The typed name, group, search and note live in the wizard's fields (Which::WizardName and the others), and each step note being edited in a StepNote field keyed by its row. App::wizard's acts change it, follow_focus sets its start, create_from_wizard, apply_edit and every close (cancel, opening a tour or a step of another tour, the start page) drop it (feature-build-tour, feature-edit-tour).
 
 step i04y8d
 order 13
@@ -215,6 +245,16 @@ lines 0 6
 hash b8c07582d3730efd
 note Everything a step's height depends on: its StepView (flags and context), its span (None when its file or symbol is gone), its note's length, the document's width and the row height. Two equal shapes lay out to the same height.
 
+step jfjdcd
+order 48
+parent ulo2dp
+author ai
+file crates/gui/src/wizard.rs
+symbol impl Branch
+lines 0 30
+hash 8627811f244f1042
+note symbol and verdict read through the Subject (a lines step is Kept, with no symbol), step through the StepState; fixed is a cycle, or the root of a new outline (the start), the rows toggle never changes.
+
 step jrjkms
 order 30
 parent w41rnw
@@ -224,6 +264,16 @@ symbol numbered
 lines 0 15
 hash ed2032547302a899
 note The tour's steps in tree order with their depth and hierarchical number (1.2.3), in slots: the steps list, the document and the graph all number steps through this, and walking up and down follows it.
+
+step jwxnwz
+order 43
+parent ulo2dp
+author ai
+file crates/gui/src/wizard.rs
+symbol StepState
+lines 0 3
+hash 9f3fe9cff46fc96f
+note Where a row came from: New (the walk, to be created or added to the edited tour), or Existing, a step of the edited tour with its id and its number as the window shows it.
 
 step kh0he1
 order 24
@@ -254,6 +304,16 @@ symbol Measured
 lines 0 3
 hash 88ccb4e99294580c
 note One measurement: the shape the step had and the height its column took.
+
+step qsn4qo
+order 46
+parent vr4u67
+author ai
+file crates/gui/src/wizard.rs
+symbol OutlineRow
+lines 0 4
+hash 591383f52ec1d5c5
+note A line of the outline as drawn: the branch or fold, its expander, and the '+N' count of calls not yet in the outline.
 
 step s3wp0h
 order 3
@@ -301,9 +361,9 @@ parent vr4u67
 author ai
 file crates/gui/src/wizard.rs
 symbol Branch
-lines 0 6
-hash 7ac055dc119762f3
-note One call in the outline: promote's Planned for it, the branch it hangs under, its callees once loaded (Unloaded until opened), whether it is shown open, and whether it is ticked to become a step.
+lines 0 9
+hash e64702d5743f16c0
+note One row of the outline: its Subject (a call with promote's Planned, or Lines for a step anchored on lines), its StepState (New, or Existing with the step's id and number when the outline is a tour being edited), the branch it hangs under, its children, whether they are loaded, whether it is shown open, its depth and whether it is ticked.
 
 step uuttuc
 order 33
@@ -323,7 +383,17 @@ file crates/gui/src/wizard.rs
 symbol Outline
 lines 0 3
 hash ad10ea58b8e84772
-note The call tree opened so far: every Branch in the order it was loaded, a BranchId being its position, the start at 0; and the groups of cut calls the human has opened, by parent and reason.
+note The call tree opened so far: every Branch in the order it was loaded, a BranchId being its position; building, the start is at 0 and the rest come from promote's walk (of); editing, the tour's steps come first in tree order, every top-level step a root (of_tour); and the groups of cut calls the human has opened, by parent and reason.
+
+step w0lhld
+order 41
+parent hl1oxj
+author ai
+file crates/gui/src/wizard.rs
+symbol Mode
+lines 0 3
+hash af3d029757b26b30
+note Build or EditTour(the tour's name): what the wizard is doing. Build walks the pages and creates; EditTour draws the one edit page and applies, and its name is what besides keeps out of 'in another tour' when a step's calls load.
 
 step w41rnw
 order 0
@@ -343,6 +413,16 @@ symbol descendants
 lines 0 8
 hash 20255b561ee0b98a
 note How many steps hang under a step, at any depth: the collapsed count, and whether a step gets a collapse arrow.
+
+step x6ab02
+order 42
+parent ulo2dp
+author ai
+file crates/gui/src/wizard.rs
+symbol Subject
+lines 0 3
+hash 619f499eb73ed863
+note What a row stands for: a call (promote's Planned, its symbol, depth and verdict), or Lines, a step of the edited tour anchored on lines rather than a symbol, which has no calls to open.
 
 step xu6ld0
 order 28
@@ -393,3 +473,13 @@ symbol tree_order
 lines 0 13
 hash c60d0b0fa0fd51ac
 note The tour's steps in tree order, as slots: what opening a tour follows.
+
+step z30f6z
+order 49
+parent w0lhld
+author ai
+file crates/gui/src/wizard.rs
+symbol impl Mode
+lines 0 7
+hash 161eb37e3248c211
+note besides: the tour an edit is of, None while building.

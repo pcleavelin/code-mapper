@@ -7,7 +7,7 @@ use ui::{
 };
 
 use crate::action::Action;
-use crate::field::{Attention, Field, Looks, Which};
+use crate::field::{Attention, Field, FieldRoom, Looks, Which};
 use crate::grid::Grids;
 use crate::ids::{Control, Target};
 use crate::model::Metrics;
@@ -24,6 +24,7 @@ use crate::theme::{
 
 use crate::field::Fields;
 use crate::ids;
+use crate::wizard::Tick;
 pub(crate) use code::{CodeBlock, Marks, Width};
 
 #[derive(Clone, Debug)]
@@ -544,6 +545,28 @@ impl Frame<'_> {
         )
     }
 
+    pub(crate) fn tick_box(&mut self, tick: Tick, cells: Cells, target: Target) -> Interaction {
+        let id = target.id();
+        let hovered = self.ui.interaction(id).hovered();
+        let (text, color) = match tick {
+            Tick::Ticked => ("[x]", ACCENT),
+            Tick::Unticked if hovered => ("[ ]", TEXT),
+            Tick::Unticked => ("[ ]", WEAK),
+        };
+        let size = self.metrics.font;
+        self.ui.leaf(
+            text_kind(vec![Run::new(text, color)], size, Wrap::None),
+            Layout::row()
+                .width(cells.of(self.cell_width()))
+                .padding(ROW_PADDING),
+            Style {
+                background: hovered.then_some(HOVER),
+                ..Style::NONE
+            },
+            Some(id),
+        )
+    }
+
     pub(crate) fn row(&mut self, runs: Vec<Run>, target: Target, chosen: Chosen) -> Interaction {
         self.marked_row(runs, target, (chosen == Chosen::Chosen).then_some(SELECTED))
     }
@@ -710,8 +733,13 @@ impl Frame<'_> {
         }
     }
 
-    pub(crate) fn field_runs(field: &Field, attention: Attention, hint: &Label) -> Vec<Run> {
-        let shown = field.shown(attention);
+    pub(crate) fn field_runs(
+        field: &Field,
+        attention: Attention,
+        hint: &Label,
+        room: FieldRoom,
+    ) -> Vec<Run> {
+        let shown = field.shown(attention, room);
         let color = match shown.looks {
             Looks::Hint => return vec![Run::new(hint.clone(), WEAK)],
             Looks::Marked => ACCENT,
@@ -730,13 +758,32 @@ impl Frame<'_> {
     }
 
     pub(crate) fn field(&mut self, fields: &Fields, which: Which, hint: &Label, width: Cells) {
+        self.field_named(fields, which, which.id(), hint, width);
+    }
+
+    pub(crate) fn field_named(
+        &mut self,
+        fields: &Fields,
+        which: Which,
+        id: Id,
+        hint: &Label,
+        width: Cells,
+    ) {
         let attention = self.focused(fields, which);
         let field = fields.get(which);
+        let room = FieldRoom::Cells(Count::new(
+            usize::try_from(width.get().saturating_sub(1)).unwrap_or(0),
+        ));
         let width = width.of(self.cell_width());
-        let caret = Px::of_count(field.caret().get() + 1);
-        let across = (Px::new(caret.get() * self.cell_width().get()) - (width - FIELD_CARET_ROOM))
-            .max(Px::ZERO);
-        let runs = Self::field_runs(field, attention, hint);
+        let across = match attention {
+            Attention::Focused => {
+                let caret = Px::of_count(field.caret().get() + 1);
+                (Px::new(caret.get() * self.cell_width().get()) - (width - FIELD_CARET_ROOM))
+                    .max(Px::ZERO)
+            }
+            Attention::Idle => Px::ZERO,
+        };
+        let runs = Self::field_runs(field, attention, hint, room);
         let border = if attention == Attention::Focused {
             ACCENT
         } else {
@@ -751,7 +798,7 @@ impl Frame<'_> {
                     .padding(FIELD_PADDING)
                     .scroll(Point::new(across, Px::ZERO)),
                 Style::background(FIELD).border(Sides::ALL, border),
-                Some(which.control().id()),
+                Some(id),
             )
             .clicked();
         let size = self.metrics.font;
@@ -796,7 +843,12 @@ impl Frame<'_> {
             self.take_focus(Which::Command);
         }
         self.text_runs(vec![Run::new(">", WEAK)], Fill::Fit);
-        let runs = Self::field_runs(fields.get(Which::Command), attention, &Label::default());
+        let runs = Self::field_runs(
+            fields.get(Which::Command),
+            attention,
+            &Label::default(),
+            FieldRoom::Open,
+        );
         self.text_runs(runs, Fill::Grow);
         self.ui.close();
     }

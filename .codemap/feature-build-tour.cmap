@@ -10,10 +10,10 @@ order 47
 parent cz6242
 author ai
 file crates/gui/src/wizard.rs
-symbol expander
-lines 0 16
-hash e859f7e7cc0034fc
-note Whether a row can open: never for a cycle; for a loaded branch, whether it has callees; for one not yet opened, whether the index has any callee not placed elsewhere in the outline (unplaced_callees).
+symbol branch_row
+lines 0 23
+hash 14e746143e021857
+note A row as drawn (Outline::branch_row): whether it can open (never for a cycle; when it has children or callees not yet in the outline, waiting), whether it is open, and for an open row with children and more callees waiting, the count behind '+N calls'. Worked out once per change into the Derived cache, not every frame.
 
 step 1hk3ih
 order 27
@@ -21,9 +21,9 @@ parent g6iy2u
 author ai
 file crates/gui/src/wizard.rs
 symbol of
-lines 0 36
-hash e4d6b1f39c04c113
-note The outline from the walk: each entry hangs under the nearest shallower one before it. A Kept entry above promote's depth has its callees already loaded and is open; every other row is closed and loads its callees when opened. Kept and stopped rows start ticked, cut rows and cycles unticked, as promote would keep them.
+lines 0 31
+hash 8985407575f6b164
+note The outline from the walk: each entry hangs under the nearest shallower one before it. A Kept entry above promote's depth has its callees already loaded and is open; every other row is closed and loads its callees when opened. Kept and stopped rows start ticked under a ticked row (ticked_under), cut rows and cycles unticked, as promote would keep them.
 
 step 1mmipf
 order 49
@@ -41,8 +41,8 @@ parent ssuxjb
 author ai
 file crates/gui/src/wizard.rs
 symbol walk
-lines 0 45
-hash 04567455225a5233
+lines 0 44
+hash af77e9e8273af637
 note The pre-order walk behind both the rows and the ticked list: a row, then its calls that were not cut, then the cut calls grouped by reason. A group of two or more becomes a fold row on screen, its members shown only while open. Walking for the ticked list it goes through every loaded row whether open or not.
 
 step 357vd3
@@ -61,9 +61,9 @@ parent mcyqva
 author ai
 file crates/gui/src/wizard.rs
 symbol open_wizard
-lines 0 27
-hash 6684116694d06434
-note Start: the group field takes the group of the tour being read, the other fields are emptied, the kind is flow, and the focused symbol, when there is one, is already the start. The wizard opens on the Name page with the Tour view in front, where the document draws it.
+lines 0 31
+hash 261cf299b985915f
+note Start: the group field takes the group of the tour being read, the other fields are emptied, the kind is flow, and the focused symbol, when there is one, is already the start. The wizard opens in Build mode on the Name page with the Tour view in front, where the document draws it, and mark_baseline records what the fields, kind and start held as the Baseline, so escape can tell whether anything was entered since.
 
 step 474et1
 order 43
@@ -71,9 +71,29 @@ parent lgtkew
 author ai
 file crates/gui/src/views/wizard.rs
 symbol steps_page
-lines 0 52
-hash fb95c33b0e18b876
-note Page 3: the outline as rows, with the name, path and reason columns sized to the widest row shown.
+lines 0 11
+hash a0c6cd3f02d8d431
+note Page 3: the question, then the outline's rows (outline_rows).
+
+step 47aqv6
+order 65
+parent 0btuay
+author ai
+file crates/gui/src/wizard.rs
+symbol waiting
+lines 0 10
+hash a2dfbfac1c2f344a
+note How many calls a row has that are not in the outline yet: none for a loaded row, a lines step or a cycle; otherwise the index's unplaced_callees under its path.
+
+step 4ov17v
+order 67
+parent mcyqva
+author ai
+file crates/gui/src/wizard.rs
+symbol held
+lines 0 16
+hash 85039df11ed564d5
+note What escape would throw away. While building: Unbuilt when a tick differs from what promote's rules gave (touched) or the kind, start or a typed field differs from the Baseline; nothing otherwise, so escape on an untouched wizard just closes it. While editing: the pending change count, or Unapplied when the edit cannot be made (feature-edit-tour).
 
 step 5vync4
 order 54
@@ -101,9 +121,9 @@ parent 65btfk
 author ai
 file crates/gui/src/wizard.rs
 symbol wizard_edited
-lines 0 4
-hash ff414fc59bbfc8c3
-note Editing any wizard field clears the refusal.
+lines 0 5
+hash f1961cfcc09f543a
+note Editing any wizard field clears the refusal and rebuilds the cached rows and pending edit (refresh_wizard).
 
 step 73yqm5
 order 48
@@ -114,6 +134,16 @@ symbol note_page
 lines 0 14
 hash a45221fb73048de2
 note Page 4: the tour note. Step notes are written later in the Tour view.
+
+step 7d9rok
+order 72
+parent cz6242
+author ai
+file crates/gui/src/views/wizard.rs
+symbol branch_runs
+lines 0 63
+hash 97b34c5669842349
+note A branch row's text: a cycle as 'calls back into X'; otherwise, while editing, the step number (green 'new' for a call to add), then the name and place, ticked rows in text and unticked weak, and the status word, with the path squeezed to leave room for the reason and '+N calls'.
 
 step 7nnbsz
 order 40
@@ -131,8 +161,8 @@ parent vuo5t0
 author ai
 file crates/gui/src/wizard.rs
 symbol placed
-lines 0 5
-hash df8a642bb26d1334
+lines 0 2
+hash c0925c15707bdf3c
 note Every symbol in the outline so far.
 
 step 878lmx
@@ -142,8 +172,8 @@ author ai
 file crates/gui/src/views/wizard.rs
 symbol buttons
 lines 0 32
-hash 752a6346e1a1e301
-note back (not on page 1), next or create, cancel, and the keys that do the same.
+hash 46c4f0c0fd4942ab
+note back (not on page 1), next or create, cancel, and a hint for the keys: enter goes on (or creates), escape cancels if nothing is entered.
 
 step 9h15aw
 order 62
@@ -171,9 +201,9 @@ parent g6iy2u
 author ai
 file crates/gui/src/wizard.rs
 symbol follow_focus
-lines 0 14
-hash e7650efa02962fe7
-note apply calls this after every action. When the focused symbol has changed since the wizard last looked and the Start page is up, the focus becomes the start, so clicking a symbol in Symbols, Source, References or the Graph picks it.
+lines 0 15
+hash 899c55544a5bbfb4
+note apply calls this after every action. When the focused symbol has changed since the wizard last looked and the Start page is up, the focus becomes the start and the cached rows are rebuilt, so clicking a symbol in Symbols, Source, References or the Graph picks it.
 
 step a8fjzx
 order 10
@@ -182,17 +212,17 @@ author ai
 file crates/gui/src/wizard.rs
 symbol toggle
 lines 0 17
-hash 056112cbb9408c77
-note Ticking a row ticks every row above it, unticking one unticks every row under it, so the ticked rows always form a tree. The start and cycle rows cannot be toggled.
+hash 7bd1a4c9d9840680
+note Ticking a row ticks every row above it, unticking one unticks every row under it, so the ticked rows always form a tree. Fixed rows (a cycle, and the start of a new tour) cannot be toggled. Only the row's tick box pushes Toggle; a click on its text does nothing.
 
 step a90vvo
 order 3
-parent vuo5t0
+parent gn9z56
 author ai
 file crates/domain/src/map.rs
 symbol plan_promotion_callees
-lines 0 10
-hash 8a7580ec964d22f7
+lines 0 11
+hash 137f973c9615fd99
 link promote
 note One more level of promote's walk, given the path from the start to the row and every symbol already in the outline, so a symbol is placed once and a call back into the path is a cycle.
 
@@ -202,9 +232,9 @@ parent 474et1
 author ai
 file crates/gui/src/views/wizard.rs
 symbol fold_row
-lines 0 45
-hash c51c5acfb7f5a0a6
-note A fold: 'N left out: reason', with how many of them are ticked. Clicking it or its expander shows or hides the calls in it.
+lines 0 37
+hash b697ca2ff63ddafa
+note A fold: 'N left out: reason', with how many of them are ticked. Clicking it or its expander shows or hides the calls in it; the expander's state comes from the cached row.
 
 step ajodeu
 order 26
@@ -232,9 +262,9 @@ parent 474et1
 author ai
 file crates/gui/src/views/wizard.rs
 symbol branch_row
-lines 0 62
-hash 217cdb096acc61b8
-note One call: its expander, a tick box, its name and file, and promote's reason (the start, test, accessor, trivial body, or which kind of leaf). A call back into the path shows as 'calls back into X' with no box. A click ticks or unticks it.
+lines 0 44
+hash 8fb1c10f0355750c
+note One branch row (Tree::branch_row): its expander, a tick box (wizard-tick/<row>), its name and file, and promote's reason (the start, test, accessor, trivial body, or which kind of leaf). A call back into the path shows as 'calls back into X' with no box. Only the tick box ticks or unticks the row, so a click meant for the row's text or a field under it never changes a tick. On the edit page the row also carries its step number, '+N calls', and its note field or the note it loses (feature-edit-tour).
 
 step dfowq3
 order 37
@@ -245,6 +275,16 @@ symbol focus_actions
 lines 25 30
 hash 8c6f4fc6e2896fa6
 note Trigger: 'tour from here' under the References heading, beside promote, for the focused symbol.
+
+step dgxxa4
+order 73
+parent lgtkew
+author ai
+file crates/gui/src/views/wizard.rs
+symbol page_width
+lines 0 10
+hash 6bcd7fffe7a09942
+note The page's width: the given number of cells, at most the room the panel leaves, and the columns inside it; the edit page asks for a wider one than the build pages.
 
 step duxupz
 order 60
@@ -297,6 +337,16 @@ lines 0 7
 hash 6696bd845dd66f50
 note Setting the start clears the refusal. The same symbol again keeps the outline and its ticks; a new one rebuilds the outline from promote's walk.
 
+step gn9z56
+order 66
+parent vuo5t0
+author ai
+file crates/gui/src/wizard.rs
+symbol load
+lines 0 31
+hash fc1ae556b57c5cc8
+note Loading a row's calls: one more level of promote's walk under it, given the path and every symbol already placed, and, while editing, not counting the edited tour as another tour. Each call becomes a closed child one level deeper, ticked as ticked_under says; the row is then loaded and open. More ('+N calls') calls this directly, so a row whose children are the tour's own steps gains the calls it makes that the tour has not.
+
 step gu7uyx
 order 28
 parent g6iy2u
@@ -308,15 +358,25 @@ hash cf3bd8eccfec16f0
 link promote
 note promote's walk two calls deep with a verdict on every call, without writing a tour: the outline's first rows.
 
+step h1dtbj
+order 69
+parent 4ov17v
+author ai
+file crates/gui/src/wizard.rs
+symbol touched
+lines 0 5
+hash f06cc660d04236ab
+note Whether any row's tick differs from the tick promote's rules would have given it (planned_tick).
+
 step haz43c
 order 36
 parent pvqpnt
 author ai
 file crates/gui/src/keys.rs
 symbol wizard_keys
-lines 0 11
-hash 587d8929a291977e
-note Enter goes on and escape cancels, while the wizard is open and the keyboard is in no field or in one of the wizard's own.
+lines 0 13
+hash 7e8b0ebee59941e1
+note Enter goes on, ctrl+enter applies an edit and escape asks to leave, while the wizard is open and the keyboard is in no field or in one of the wizard's own; the keys phase drops escape while any field has the keyboard, since there escape only leaves the field.
 
 step hdfkb8
 order 39
@@ -333,10 +393,10 @@ order 57
 parent cz6242
 author ai
 file crates/gui/src/views/wizard.rs
-symbol tree_runs
-lines 0 25
-hash cc80a2d4758855fb
-note A symbol as a row of the tree: its name indented two cells a level, padded to the name column, then its file and line clipped from the left and padded to the path room.
+symbol place_runs
+lines 0 22
+hash 2516d303648c81c1
+note A place as the runs of a tree row: its name after the given indent, padded to the name column, then its file and line clipped from the left and padded to the path room. tree_runs does the same for a ticked entry.
 
 step hzqskv
 order 53
@@ -344,9 +404,9 @@ parent mcyqva
 author ai
 file crates/gui/src/views/wizard.rs
 symbol wizard_strip
-lines 0 33
-hash 91d1f5f077e576d5
-note While the wizard is open, the target strip of Source and Graph says which tour is being built and, on the Start page, the chosen start ('click a symbol' when none); elsewhere the page it is on. 'back to the wizard' brings the Tour view forward.
+lines 0 45
+hash 58c00b8e3ca0475e
+note While the wizard is open, the target strip of Source and Graph says which tour is being built and, on the Start page, the chosen start ('click a symbol' when none); elsewhere the page it is on. 'back to the wizard' brings the Tour view forward. While a tour is being edited it says 'editing <tour>' with 'back to the edit'.
 
 step idkgl4
 order 56
@@ -355,7 +415,7 @@ author ai
 file crates/gui/src/views/wizard.rs
 symbol tree_width
 lines 0 11
-hash 03aea94fb97327c6
+hash 690d5f1a6d41f173
 note The name column's width: the widest name with its indent, at most a third of the column so the path and reason still fit.
 
 step j20ivn
@@ -364,9 +424,9 @@ parent mcyqva
 author ai
 file crates/gui/src/wizard.rs
 symbol tour_from_here
-lines 0 14
-hash a7e9a8909572e379
-note 'tour from here': opens the wizard with the name taken from the symbol, the symbol as the start, and the steps page up.
+lines 0 15
+hash b847c617d1bafd21
+note 'tour from here': opens the wizard with the name taken from the symbol, the symbol as the start, and the steps page up; what it filled is part of the Baseline, not entered (mark_baseline).
 
 step j95dk0
 order 44
@@ -374,9 +434,19 @@ parent 474et1
 author ai
 file crates/gui/src/wizard.rs
 symbol lines
-lines 0 6
-hash 01aef2031f7f8b3f
-note The rows on screen: the walk over open branches, with folded groups as one row each.
+lines 0 2
+hash 476c81a2535637ad
+note The lines on screen: the walk over open branches, with folded groups as one line each.
+
+step jkizk3
+order 68
+parent 3hhho6
+author ai
+file crates/gui/src/wizard.rs
+symbol mark_baseline
+lines 0 5
+hash feaae47f85f98a53
+note Records what the wizard holds once it is opened (kind, start, the four typed fields' texts), the baseline held compares against.
 
 step ld45g0
 order 25
@@ -384,9 +454,9 @@ parent mcyqva
 author ai
 file crates/gui/src/wizard.rs
 symbol WizardAct
-lines 0 13
-hash e44ca205c4a96794
-note The wizard's acts, one per control: the buttons, the kind buttons, a symbol row, 'use it', a row's tick box and expander, a fold row, 'back to the wizard'.
+lines 0 17
+hash 134d5cc9adf33ec1
+note The wizard's acts, one per control or key: the buttons, the kind buttons, a symbol row, 'use it', a row's tick box and expander, '+N calls', a fold row, 'back to the wizard', enter (Next), escape (Escape), and the edit page's 'edit', apply and ctrl+enter (Edit, Apply).
 
 step lgtkew
 order 38
@@ -394,18 +464,28 @@ parent 3hhho6
 author ai
 file crates/gui/src/views/wizard.rs
 symbol wizard_page
-lines 0 42
-hash 6f8ecbbb040b75a0
-note Drawn by the Tour view's document in place of a tour while the wizard is open, in the start page's centred column: the title, the five pages numbered with the current one in the accent, the page, the refusal in red, the buttons, and below every page but Create a preview of the tour as it will be created.
+lines 0 37
+hash b5dabb7a2ac6dc2f
+note Drawn by the Tour view's document in place of a tour while the wizard is open; in Mode::EditTour it hands over to edit_page (feature-edit-tour). Otherwise, in the start page's centred column: the title, the five pages numbered with the current one in the accent, the page, the refusal in red, the buttons, and below every page but Create a preview of the tour as it will be created.
 
 step mcyqva
 order 0
 author ai
 file crates/gui/src/wizard.rs
-symbol wizard
-lines 0 44
-hash b8fae97527bdb7b7
-note The handler: every act of the build-tour wizard. Start opens it, FromHere opens it on the steps page for a symbol, Next and Back move between pages, Cancel drops it, Return brings the Tour view forward from the strip in Source or Graph, Kind sets the tour's kind, Choose and UseFocus set the start symbol, Toggle ticks or unticks a row of the outline, Expand opens a row's calls, Fold opens or closes a group of calls cut for the same reason.
+symbol wizard_act
+lines 0 67
+hash b582ddbe9140f272
+note The handler: every act of the wizard, applied through App::wizard, which then rebuilds the wizard's Derived cache (refresh_wizard). Start opens it, FromHere opens it on the steps page for a symbol, Next and Back move between pages (Next only while building), Cancel drops it, Escape drops it only when nothing has been entered and otherwise keeps it and says cancel discards it (held), Return brings the Tour view forward from the strip in Source or Graph, Kind sets the tour's kind, Choose and UseFocus set the start symbol, Toggle ticks or unticks a row from its tick box, Expand opens a row's calls, More loads a row's calls not yet shown, Fold opens or closes a group of calls cut for the same reason. Edit and Apply are the edit page's (feature-edit-tour).
+
+step mjm2wz
+order 64
+parent j95dk0
+author ai
+file crates/gui/src/wizard.rs
+symbol rows
+lines 0 16
+hash 8e1307e765028ad6
+note The OutlineRows: each line with its expander and, for a branch, the '+N' count; rebuilt into the Derived cache by refresh_wizard, so a frame reads rows instead of walking the outline and asking the index.
 
 step mnmkuh
 order 31
@@ -475,7 +555,7 @@ author ai
 file crates/gui/src/wizard.rs
 symbol path
 lines 0 9
-hash 412a7e443d733fb1
+hash 7044df33c0702fe8
 note The symbols from the start down to a row, the path plan_promotion_callees walks under.
 
 step rrrirf
@@ -515,9 +595,19 @@ parent g60ekx
 author ai
 file crates/gui/src/wizard.rs
 symbol ticked
-lines 0 13
-hash 541b027a5c0a0cba
-note Every ticked row in walk order, with its depth: the entries the tour is hung from. Folds and closed rows do not hide a ticked row from it.
+lines 0 11
+hash dbfc0625f645d163
+note Every ticked row with a symbol in walk order, with its depth: the entries the tour is hung from. Folds and closed rows do not hide a ticked row from it.
+
+step vihpho
+order 70
+parent 4ov17v
+author ai
+file crates/gui/src/wizard.rs
+symbol baseline_now
+lines 0 7
+hash b2158e7d3e1770e0
+note The kind, start and typed texts as they are now, compared against what mark_baseline kept.
 
 step vuo5t0
 order 2
@@ -525,9 +615,9 @@ parent mcyqva
 author ai
 file crates/gui/src/wizard.rs
 symbol expand
-lines 0 34
-hash aaa958e564883e1d
-note Opening a row. A cycle never opens; a row already loaded opens or closes; one not yet loaded asks for one more level of promote's walk under it and opens. Its new rows start ticked as promote would keep them only when the row is ticked; under an unticked row they all start unticked.
+lines 0 9
+hash 636a01a380c1aade
+note Opening a row. A row with no children whose calls are not loaded loads one more level of promote's walk under it (load) and opens; any other row opens or closes.
 
 step vwr7qn
 order 33
@@ -559,15 +649,25 @@ lines 0 5
 hash 152087eca532cdad
 note Opens or closes the group of one row's calls cut for one reason.
 
+step xt4bys
+order 63
+parent 474et1
+author ai
+file crates/gui/src/views/wizard.rs
+symbol outline_rows
+lines 0 62
+hash f236d86b0f5649f8
+note The outline's rows, from the Derived cache: the name column sized to the widest name with its indent (and step number while editing), at most a third of the width while building and half while editing, the path and reason columns to their widest; then each row as a branch row or a fold row.
+
 step yjsvg2
 order 7
 parent vuo5t0
 author ai
 file crates/gui/src/wizard.rs
-symbol ticked_at_first
+symbol ticked_under
 lines 0 5
-hash 43c0e19f81d486d4
-note Kept and stopped calls start ticked, cut calls and cycles unticked.
+hash 7cef21334e0d093d
+note A new row's first tick, from the row it hangs under: kept and stopped calls are ticked when that row is, cut calls and cycles never, so under an unticked row nothing starts ticked.
 
 step z5o3ie
 order 15
@@ -575,6 +675,16 @@ parent mcyqva
 author ai
 file crates/gui/src/wizard.rs
 symbol close_wizard
-lines 0 10
-hash 43807ab2425057a0
-note Cancel and every other way out (opening a tour, the start page, a create): drops the wizard and releases its fields.
+lines 0 11
+hash 75066ebd670e7ae5
+note Cancel and every other way out (opening a tour, the start page, a create, an applied edit): drops the wizard, releases its fields and forgets the step-note fields.
+
+step zzzsbv
+order 71
+parent h1dtbj
+author ai
+file crates/gui/src/wizard.rs
+symbol planned_tick
+lines 0 8
+hash d22966bd7eccc82a
+note planned_tick: the tick a row would have with nothing toggled, ticked_under all the way down from a ticked start.

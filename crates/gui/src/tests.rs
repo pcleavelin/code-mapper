@@ -1,19 +1,19 @@
 use std::path::Path as FsPath;
 
 use domain::{
-    Anchor, Author, Backend, Cut, Depth, Edge, FileText, Imports, Index, Line, Map, RelativePath,
-    Root, Row, SourceFile, Span, Step, StepId, StepOrder, Symbol, SymbolId, SymbolKind, SymbolName,
-    Tour, TourKind, TourName, Verdict,
+    Anchor, Author, Backend, Cut, Depth, Draft, Edge, EditChange, FileText, Imports, Index, Line,
+    Map, Note, RelativePath, Root, Row, SourceFile, Span, Step, StepId, StepOrder, Stop, Symbol,
+    SymbolId, SymbolKind, SymbolName, Tour, TourKind, TourName, TreeEntry, Verdict,
 };
 use features::{Feature, Trigger};
 use io_map::MapStore;
 use strum::VariantArray;
-use ui::{Count, Label, Px};
+use ui::{Count, Input, Key, Label, Mods, Press, Px};
 
 use crate::action::{Action, Collapse, Hide};
 use crate::app::App;
 use crate::authoring::Authoring;
-use crate::field::Which;
+use crate::field::{Attention, FieldRoom, Fields, Which};
 use crate::graph::Parentage;
 use crate::graph::build::{Built, CellSize, Rank, StepInfo};
 use crate::graph::{Button, GraphState, Node};
@@ -23,6 +23,7 @@ use crate::model::{LineSelection, Model, Readable, StepKey, StepSlot, Tab, TourS
 use crate::nav::Scrolling;
 use crate::palette::{Palette, commands};
 use crate::panels::{Direction, View};
+use crate::status::{Held, Status};
 use crate::theme::Cells;
 use crate::wizard::{self, BranchId, Expander, Page, Tick, WizardAct};
 
@@ -853,10 +854,10 @@ fn wizard_rows(app: &App) -> Vec<String> {
                 let branch = outline.branch(*id).unwrap();
                 format!(
                     "{}{} {}",
-                    "  ".repeat(branch.planned.entry.depth.value() as usize),
+                    "  ".repeat(branch.depth().value() as usize),
                     app.model
                         .index
-                        .symbol(branch.planned.entry.symbol)
+                        .symbol(branch.symbol().unwrap())
                         .unwrap()
                         .name(),
                     if branch.tick == Tick::Ticked {
@@ -884,9 +885,7 @@ fn branch_named(app: &App, name: &str) -> BranchId {
         .lines()
         .iter()
         .find_map(|line| match line {
-            wizard::Line::Branch(id)
-                if outline.branch(*id).unwrap().planned.entry.symbol == symbol =>
-            {
+            wizard::Line::Branch(id) if outline.branch(*id).unwrap().symbol() == Some(symbol) => {
                 Some(*id)
             }
             _ => None,
@@ -934,21 +933,19 @@ fn opening_a_row_past_promote_depth_loads_its_callees_and_a_call_back_into_the_p
         ["    b x", "      c x", "        d x", "          a -"]
     );
     let wizard = app.model.wizard.as_ref().unwrap();
-    let back = wizard_rows(&app)
+    let position = wizard_rows(&app)
         .iter()
         .position(|row| row == "          a -")
         .unwrap();
-    let wizard::Line::Branch(back) = wizard.outline().lines()[back].clone() else {
+    let shaped = wizard.rows()[position].clone();
+    let wizard::Line::Branch(back) = shaped.line else {
         panic!("a fold where the call back should be");
     };
     assert_eq!(
-        wizard.outline().branch(back).unwrap().planned.verdict,
+        wizard.outline().branch(back).unwrap().verdict(),
         Verdict::Cycle
     );
-    assert_eq!(
-        wizard.outline().expander(back, &app.model.index),
-        Expander::Leaf
-    );
+    assert_eq!(shaped.expander, Expander::Leaf);
     app.apply(Action::Wizard(WizardAct::Toggle(back)));
     assert_eq!(
         app.model
@@ -1061,4 +1058,341 @@ fn opening_a_tour_cancels_the_wizard_and_the_next_wizard_starts_fresh() {
     app.apply(Action::Wizard(WizardAct::Start));
     assert_eq!(app.model.wizard.as_ref().unwrap().page(), Page::Name);
     assert_eq!(app.model.typed_name().as_str(), "");
+}
+
+fn edit_rows(app: &App) -> Vec<String> {
+    let outline = app.model.wizard.as_ref().unwrap().outline();
+    outline
+        .lines()
+        .iter()
+        .filter_map(|line| match line {
+            wizard::Line::Branch(id) => {
+                let branch = outline.branch(*id).unwrap();
+                let number = match &branch.state {
+                    wizard::StepState::Existing { number, .. } => number.to_string(),
+                    wizard::StepState::New => "new".to_owned(),
+                };
+                Some(format!(
+                    "{}{number} {} {}",
+                    "  ".repeat(branch.depth().value() as usize),
+                    app.model
+                        .index
+                        .symbol(branch.symbol().unwrap())
+                        .unwrap()
+                        .name(),
+                    if branch.tick == Tick::Ticked {
+                        "x"
+                    } else {
+                        "-"
+                    }
+                ))
+            }
+            wizard::Line::Fold(_) => None,
+        })
+        .collect()
+}
+
+#[test]
+fn the_edit_outline_starts_ticked_from_the_tour_opens_calls_it_lacks_and_unticking_removes() {
+    let mut app = deep_app();
+    let walk = drafted(&mut app, "walk", &[("main", 0), ("a", 1), ("b", 2)]);
+    let step_of = |shown: &App, name: &str| {
+        let symbol = symbol_named(shown, name);
+        shown
+            .model
+            .map
+            .tour(&walk)
+            .unwrap()
+            .steps()
+            .iter()
+            .find(|step| step.resolved_symbol() == Some(symbol))
+            .unwrap()
+            .id()
+            .clone()
+    };
+    let (first, second) = (step_of(&app, "a"), step_of(&app, "b"));
+    let _noted = app
+        .model
+        .map
+        .set_step_note(&walk, &first, Note::new("why a"))
+        .unwrap();
+    app.apply(Action::Wizard(WizardAct::Edit(TourSlot::new(0))));
+    assert_eq!(edit_rows(&app), ["1 main x", "  1.1 a x", "    1.1.1 b x"]);
+    assert!(app.model.wizard.as_ref().unwrap().changes().is_empty());
+    app.apply(Action::Wizard(WizardAct::More(branch_named(&app, "main"))));
+    let outline = app.model.wizard.as_ref().unwrap().outline();
+    let added: Vec<Tick> = outline
+        .ids()
+        .filter_map(|id| outline.branch(id))
+        .filter(|branch| branch.state == wizard::StepState::New)
+        .map(|branch| branch.tick)
+        .collect();
+    assert_eq!(added, [Tick::Unticked; 4]);
+    app.apply(Action::Wizard(WizardAct::Expand(branch_named(&app, "b"))));
+    assert_eq!(edit_rows(&app)[2..], ["    1.1.1 b x", "      new c x"]);
+    app.apply(Action::Wizard(WizardAct::Toggle(branch_named(&app, "a"))));
+    assert_eq!(
+        edit_rows(&app),
+        ["1 main x", "  1.1 a -", "    1.1.1 b -", "      new c -"]
+    );
+    let changes = app.model.wizard.as_ref().unwrap().changes();
+    assert_eq!(
+        changes,
+        [
+            EditChange::Removed {
+                step: first,
+                lost: Note::new("why a"),
+            },
+            EditChange::Removed {
+                step: second,
+                lost: None,
+            },
+        ]
+    );
+}
+
+fn drafted(app: &mut App, name: &str, steps: &[(&str, u32)]) -> TourName {
+    let tour = TourName::new(name).unwrap();
+    let entries: Vec<TreeEntry> = steps
+        .iter()
+        .map(|(symbol, depth)| TreeEntry {
+            symbol: symbol_named(app, symbol),
+            depth: Depth::new(*depth),
+        })
+        .collect();
+    let draft = Draft {
+        name: tour.clone(),
+        kind: TourKind::Flow,
+        group: None,
+        note: None,
+        author: Author::Agent,
+    };
+    let index = app.model.index.clone();
+    let _created = app
+        .model
+        .map
+        .add_drafted_tour(&index, draft, &entries)
+        .unwrap();
+    tour
+}
+
+fn editing_walk() -> App {
+    let mut app = deep_app();
+    let _walk = drafted(&mut app, "walk", &[("main", 0), ("a", 1), ("b", 2)]);
+    app.apply(Action::Wizard(WizardAct::Edit(TourSlot::new(0))));
+    app
+}
+
+fn press(app: &mut App, key: Key) {
+    let mut input = Input::default();
+    input.keys.push(Press {
+        key,
+        mods: Mods::NONE,
+    });
+    app.keys(&input);
+}
+
+fn type_text(app: &mut App, text: &str) {
+    let mut input = Input::default();
+    input.typed.push_str(text);
+    app.keys(&input);
+}
+
+fn change_count(app: &App) -> usize {
+    app.model.wizard.as_ref().unwrap().changes().len()
+}
+
+#[test]
+fn escape_in_a_step_note_releases_the_field_and_keeps_the_edit_open() {
+    let mut app = editing_walk();
+    app.model
+        .fields
+        .focus(Which::StepNote(branch_named(&app, "a")));
+    press(&mut app, Key::Escape);
+    assert_eq!(app.model.fields.focused(), None);
+    assert!(app.model.wizard.is_some());
+}
+
+#[test]
+fn escape_with_changes_pending_keeps_them_and_says_cancel_discards_them() {
+    let mut app = editing_walk();
+    app.model
+        .fields
+        .focus(Which::StepNote(branch_named(&app, "a")));
+    type_text(&mut app, "why a");
+    press(&mut app, Key::Escape);
+    press(&mut app, Key::Escape);
+    assert!(app.model.wizard.is_some());
+    assert_eq!(
+        app.model.status,
+        Status::WizardHeld(Held::Changes(Count::new(1)))
+    );
+    assert_eq!(
+        app.model.status.to_string(),
+        "1 change pending: press cancel to discard it"
+    );
+    app.apply(Action::Wizard(WizardAct::Cancel));
+    assert!(app.model.wizard.is_none());
+}
+
+#[test]
+fn escape_with_nothing_pending_cancels_the_edit() {
+    let mut app = editing_walk();
+    press(&mut app, Key::Escape);
+    assert!(app.model.wizard.is_none());
+}
+
+#[test]
+fn escape_cancels_the_build_wizard_only_while_nothing_is_entered() {
+    let mut app = deep_app();
+    app.apply(Action::Wizard(WizardAct::Start));
+    assert_eq!(app.model.fields.focused(), Some(Which::WizardName));
+    press(&mut app, Key::Escape);
+    assert!(app.model.wizard.is_some());
+    press(&mut app, Key::Escape);
+    assert!(app.model.wizard.is_none());
+    app.apply(Action::Wizard(WizardAct::Start));
+    type_text(&mut app, "walk");
+    press(&mut app, Key::Escape);
+    press(&mut app, Key::Escape);
+    assert!(app.model.wizard.is_some());
+    assert_eq!(app.model.status, Status::WizardHeld(Held::Unbuilt));
+}
+
+#[test]
+fn unticking_a_promoted_row_counts_as_entered_for_escape() {
+    let mut app = deep_app();
+    app.apply(Action::Wizard(WizardAct::FromHere(symbol_named(
+        &app, "main",
+    ))));
+    app.model.fields.release(Which::WizardName);
+    app.apply(Action::Wizard(WizardAct::Toggle(branch_named(&app, "b"))));
+    press(&mut app, Key::Escape);
+    assert_eq!(app.model.status, Status::WizardHeld(Held::Unbuilt));
+    app.apply(Action::Wizard(WizardAct::Toggle(branch_named(&app, "b"))));
+    press(&mut app, Key::Escape);
+    assert!(app.model.wizard.is_none());
+}
+
+#[test]
+fn a_call_opened_under_a_kept_step_ticks_by_the_build_rule_even_when_another_tour_has_it() {
+    let mut app = deep_app();
+    let walk = drafted(&mut app, "walk", &[("main", 0), ("a", 1)]);
+    let _other = drafted(&mut app, "other", &[("b", 0)]);
+    let index = app.model.index.clone();
+    let file = index.find_file(&RelativePath::new("src/main.rs")).unwrap();
+    let a_step = {
+        let symbol = symbol_named(&app, "a");
+        app.model
+            .map
+            .tour(&walk)
+            .unwrap()
+            .steps()
+            .iter()
+            .find(|step| step.resolved_symbol() == Some(symbol))
+            .unwrap()
+            .id()
+            .clone()
+    };
+    let _lines = app
+        .model
+        .map
+        .add_step(
+            &index,
+            &walk,
+            file,
+            Span::new(Line::new(13), Line::new(18)).unwrap(),
+            Author::Agent,
+            Some(&a_step),
+        )
+        .unwrap();
+    let slot = app.model.find_tour(&walk).unwrap();
+    app.apply(Action::Wizard(WizardAct::Edit(slot)));
+    app.apply(Action::Wizard(WizardAct::More(branch_named(&app, "a"))));
+    let first = app.model.wizard.as_ref().unwrap().outline();
+    let mapped = first.branch(branch_named(&app, "b")).unwrap();
+    assert_eq!(mapped.verdict(), Verdict::Stopped(Stop::Mapped));
+    assert_eq!(mapped.tick, Tick::Ticked);
+    app.apply(Action::Wizard(WizardAct::More(branch_named(&app, "b"))));
+    let second = app.model.wizard.as_ref().unwrap().outline();
+    let covered_by_the_edited_tour = second.branch(branch_named(&app, "c")).unwrap();
+    assert_eq!(covered_by_the_edited_tour.verdict(), Verdict::Kept);
+    app.apply(Action::Wizard(WizardAct::Toggle(branch_named(&app, "a"))));
+    let unticked = app.model.wizard.as_ref().unwrap().outline();
+    let below = unticked.branch(branch_named(&app, "c")).unwrap();
+    assert_eq!(below.tick, Tick::Unticked);
+}
+
+#[test]
+fn the_pending_edit_is_recounted_after_a_typed_note_and_after_a_kind_change() {
+    let mut app = editing_walk();
+    assert_eq!(change_count(&app), 0);
+    app.model
+        .fields
+        .focus(Which::StepNote(branch_named(&app, "a")));
+    type_text(&mut app, "why a");
+    assert_eq!(change_count(&app), 1);
+    app.apply(Action::Wizard(WizardAct::Kind(TourKind::Layer)));
+    assert_eq!(change_count(&app), 2);
+}
+
+fn press_with(app: &mut App, key: Key, mods: Mods) {
+    let mut input = Input::default();
+    input.keys.push(Press { key, mods });
+    app.keys(&input);
+}
+
+#[test]
+fn ctrl_enter_applies_the_edit_and_plain_enter_in_a_step_note_does_not() {
+    let mut app = editing_walk();
+    app.model
+        .fields
+        .focus(Which::StepNote(branch_named(&app, "a")));
+    type_text(&mut app, "why a");
+    press(&mut app, Key::Enter);
+    assert!(app.model.wizard.is_some());
+    assert_eq!(change_count(&app), 1);
+    let walk = TourName::new("walk").unwrap();
+    assert_eq!(
+        app.model
+            .map
+            .tour(&walk)
+            .unwrap()
+            .steps()
+            .iter()
+            .filter(|step| step.note().is_some())
+            .count(),
+        0
+    );
+    press_with(&mut app, Key::Enter, Mods::CTRL);
+    assert!(app.model.wizard.is_none());
+    assert_eq!(
+        app.model
+            .map
+            .tour(&walk)
+            .unwrap()
+            .steps()
+            .iter()
+            .filter(|step| step.note().is_some())
+            .count(),
+        1
+    );
+}
+
+#[test]
+fn a_field_without_the_keyboard_shows_the_start_of_its_text_cut_with_an_ellipsis() {
+    let mut fields = Fields::default();
+    fields.fill(Which::WizardNote, &Label::new("abcdefghij"));
+    let field = fields.get(Which::WizardNote);
+    let room = FieldRoom::Cells(Count::new(5));
+    let idle = field.shown(Attention::Idle, room);
+    assert_eq!(
+        (idle.before.as_str(), idle.after.as_str()),
+        ("abcd\u{2026}", "")
+    );
+    let focused = field.shown(Attention::Focused, room);
+    assert_eq!(
+        (focused.before.as_str(), focused.after.as_str()),
+        ("abcdefghij", "")
+    );
 }

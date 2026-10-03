@@ -474,9 +474,9 @@ parent wz1vr6
 author ai
 file crates/gui/src/field.rs
 symbol impl Fields
-lines 41 58
-hash 9aed5dd5fba1b9c9
-note start_empty clears a field and gives it the keyboard; fill sets a field's text without focusing it (the build-tour wizard's group and name); release takes the keyboard away only if that field has it. The picker uses both, so its search starts empty each time it opens.
+lines 43 67
+hash 297dcf08d8f03ea6
+note start_empty clears a field and gives it the keyboard; fill sets a field's text without focusing it (the wizard's fields, and every step note when a tour is edited); release takes the keyboard away only if that field has it; drop_step_notes forgets every edit-tour note field when the wizard closes. The picker uses both, so its search starts empty each time it opens.
 
 step sbmmjo
 order 31

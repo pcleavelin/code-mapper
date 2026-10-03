@@ -24,6 +24,16 @@ lines 0 19
 hash 50e0b10955d13300
 note A step from stored values, as io-map reads it: stale on line 0 until resolve places it.
 
+step 2kkmuw
+order 26
+parent ow1cud
+author ai
+file crates/domain/src/map/edit.rs
+symbol AddedUnder
+lines 0 3
+hash 4f8f32729111e0d9
+note Where an added call hangs: under an existing step, or under another call the same edit adds.
+
 step 2oc3b2
 order 16
 parent ze9l1o
@@ -81,6 +91,16 @@ lines 0 14
 hash 0b5718b4b50a1d62
 note A piece of text given on the command line: a name to look up, a regex, or the old and new text of note-edit. replace_first replaces its first occurrence in a note, None when the note lacks it.
 
+step hi9sdd
+order 21
+parent t2rnem
+author ai
+file crates/domain/src/map/edit.rs
+symbol StepNote
+lines 0 3
+hash cdefc2cdc00faa13
+note One step's note as the edit wants it; None removes it.
+
 step jcf8em
 order 2
 parent 9tq2td
@@ -90,6 +110,16 @@ symbol StepAddress
 lines 0 3
 hash 41e0266190580f91
 note A step named the way the model names it, tour name and step id; the front ends turn it into an index for display.
+
+step l31738
+order 23
+parent mzlmng
+author ai
+file crates/domain/src/map/edit.rs
+symbol AddedStep
+lines 0 4
+hash 02f621466aaeb62d
+note One new whole-symbol step with its note, and the new steps to hang under it, as a tree.
 
 step m6uydt
 order 9
@@ -108,6 +138,45 @@ symbol impl TourCount
 lines 0 12
 hash a07787ca62afacee
 note A number of tours: rows' group counts and group-rename's result.
+
+step mzlmng
+order 22
+parent t2rnem
+author ai
+file crates/domain/src/map/edit.rs
+symbol AddedSteps
+lines 0 3
+hash 1e6ef6d4dff0730e
+note The new steps to hang under one existing step.
+
+step nkx1lq
+order 19
+author ai
+file crates/domain/src/map.rs
+symbol tour_edit_changes
+lines 0 44
+hash a725ed0efac2f653
+note What a TourEdit would change, without changing anything: one EditChange per difference from the tour as it is (rename, kind, group, tour note, each kept step whose note differs, each added call, each removal with the note it loses). Empty when the edit changes nothing. The edit-tour page lists these and counts them on its apply button.
+
+step nsrim2
+order 25
+parent r8cgtz
+author ai
+file crates/domain/src/map/tour.rs
+symbol set_kind
+lines 0 2
+hash 8ee354e53e3a944c
+note The kind, changed only through apply_tour_edit.
+
+step ow1cud
+order 24
+parent nkx1lq
+author ai
+file crates/domain/src/map/edit.rs
+symbol EditChange
+lines 0 8
+hash 9313d213cb9bebb7
+note One difference an edit makes: Renamed, Kind, Group, TourNote, StepNote, Added (a call and what it hangs under) or Removed (a step and the note it loses).
 
 step p5o3oa
 order 14
@@ -137,6 +206,15 @@ lines 0 14
 hash a1332e7202fa85b0
 note An anchor from stored values, with no check against any file.
 
+step r8cgtz
+order 18
+author ai
+file crates/domain/src/map.rs
+symbol apply_tour_edit
+lines 0 27
+hash 5b6ccfe519abaf4c
+note Applies a TourEdit to one tour as a single edit: on a copy of the map, the kept steps' notes, the removals, the added steps (add_steps_under), then kind, group, tour note and last the rename (every earlier call names the tour by its old name); the copy replaces the map only when every part succeeded, so a refusal leaves the map as it was. The edit-tour page's apply (feature-edit-tour).
+
 step skptvw
 order 4
 author ai
@@ -145,6 +223,16 @@ symbol tour_mut
 lines 0 5
 hash b6191744f143aa94
 note The mutable lookup every edit starts from: NoSuchTour when the name is not in the map.
+
+step t2rnem
+order 20
+parent r8cgtz
+author ai
+file crates/domain/src/map/edit.rs
+symbol TourEdit
+lines 0 9
+hash 95d7f12906f89b40
+note Everything one edit of a tour sets: the name (the current one or a new one), kind, optional group and note, the note of each kept step (step_notes), the steps to remove, the calls to add under existing steps (added), and the author of the new steps. Every field is the whole desired value, so an unchanged field is a no-op.
 
 step tgs436
 order 6

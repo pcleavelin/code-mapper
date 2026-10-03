@@ -1,0 +1,457 @@
+codemap 9
+tour feature-edit-tour
+kind flow
+author ai
+group features/gui
+note The human, reading a tour in the window, who finds a note wrong, a name or group that no longer fits, or a call the tour should also show. Goals: the map is the second channel beside the source, and the human audits what the agent mapped. The run before this feature: the window added, removed and moved steps one at a time, but renaming a tour, regrouping it, changing its kind and every note were Console commands (tour-rename, tour-group, tour-note, step-note) that take the step index the tours command prints, not the 1.1 numbers in the window. Two designs were built and run on a promoted fixture and on this repo's promote tour. The build-tour wizard's pages (Name, Steps, Notes, Apply): a step's note sat on its own page, away from the step it describes, and a one-note fix walked four pages. The kept one is a single page: the tour's name, kind, group and note; the step outline with each step's note field under it, the calls a step makes opened as deep as wanted and ticked to add them by promote's rules; a Changes list, and a bar counting what Apply will do with a red line for every note a removal loses. Apply changes the map in one step or not at all and reopens the tour unsaved. Escape in a field only leaves the field; with changes pending, escape keeps them and says cancel discards them; only the tick box changes a tick.
+
+step 0hk5vf
+order 52
+parent 884f6v
+author ai
+file crates/gui/src/views/wizard.rs
+symbol number_of
+lines 0 5
+hash f365e84d6afbd94d
+note A row's number column: the step's number as the window shows it, or 'new' for a call to add.
+
+step 132lqw
+order 31
+parent 8k3g3v
+author ai
+file crates/gui/src/wizard.rs
+symbol refresh_wizard
+lines 0 20
+hash 9b57bcabe7119240
+note The cache: the rows on screen, the pending edit and tour_edit_changes of it, in Derived. Drawing reads these; nothing plans an edit per frame. It runs after every act, every typed key in a wizard field, every Console command, a map reload and a re-index.
+
+step 2lfbm2
+order 35
+parent tsqzwg
+author ai
+file crates/gui/src/wizard.rs
+symbol added_steps
+lines 0 13
+hash d931aec2d3b757c2
+note For each existing step, its ticked new children as AddedSteps under it.
+
+step 3eg0kz
+order 22
+parent g37gc5
+author ai
+file crates/domain/src/map.rs
+symbol apply_tour_edit
+lines 0 27
+hash 5b6ccfe519abaf4c
+link map-model
+note The whole edit on a copy of the map: step notes on kept steps, removals, the added steps (add_steps_under), then kind, group, tour note and last the rename, since every earlier call names the tour by its old name. Any refusal leaves the map as it was.
+
+step 48hul2
+order 9
+parent 8iuq35
+author ai
+file crates/gui/src/wizard.rs
+symbol close_wizard
+lines 0 11
+hash 75066ebd670e7ae5
+link feature-build-tour
+note Cancel: the wizard and every step-note field are dropped, the map untouched.
+
+step 4eh7ca
+order 47
+parent yyfbb8
+author ai
+file crates/gui/src/views/wizard.rs
+symbol step_named
+lines 0 11
+hash 8da4efddf7f083e4
+note A step as the Changes list names it: its number and name in the outline.
+
+step 5yxrki
+order 50
+parent 884f6v
+author ai
+file crates/gui/src/views/wizard.rs
+symbol branch_place
+lines 0 5
+hash c9c53d02f8d37189
+note Where a row points: a call's symbol, or for a lines step its file and first line.
+
+step 6i3t4q
+order 49
+parent 884f6v
+author ai
+file crates/gui/src/views/wizard.rs
+symbol outline_rows
+lines 0 62
+hash f236d86b0f5649f8
+link feature-build-tour
+note The steps section draws the same outline rows as the build-tour wizard, with the step number column and per-row note fields.
+
+step 755g7c
+order 34
+parent tsqzwg
+author ai
+file crates/gui/src/wizard.rs
+symbol removed
+lines 0 6
+hash 481c4cce3f92f814
+note Every unticked existing step, in walk order; a step under it is removed with it.
+
+step 76xi75
+order 21
+parent g37gc5
+author ai
+file crates/domain/src/map.rs
+symbol tour_edit_changes
+lines 0 44
+hash a725ed0efac2f653
+link map-model
+note What the edit would do to the tour, in order: rename, kind, group, tour note, each kept step whose note differs, each added call (under a step, or under another added call), each removed step with the note it loses. Empty for an unchanged page, which is how both the bar and apply know there is nothing to do.
+
+step 7z75t4
+order 3
+parent 8iuq35
+author ai
+file crates/gui/src/wizard.rs
+symbol expand
+lines 0 9
+hash 636a01a380c1aade
+link feature-build-tour
+note Opening a step: a step with no children whose calls were never loaded loads them (load) and opens; any other opens or closes.
+
+step 884f6v
+order 29
+parent b5ecyo
+author ai
+file crates/gui/src/views/wizard.rs
+symbol edit_page
+lines 0 78
+hash 75732a5a91026e46
+note The page: a bar fixed above the scroll (edit_bar), then in one scrolling centred column the Tour section (the name field with why the pending edit is invalid beside it, the kind buttons with what the chosen one means, the group field, the note field), the Steps section (the outline, each step with its note field under it) and the Changes section.
+
+step 8iuq35
+order 0
+author ai
+file crates/gui/src/wizard.rs
+symbol wizard_act
+lines 0 67
+hash b582ddbe9140f272
+note The handler: the edit page's acts are arms of the wizard's one handler. Edit(slot) opens the page on that tour, Apply applies the pending edit, Cancel drops it, Escape drops it only when nothing is pending and otherwise keeps it and says cancel discards it; Kind, Toggle, Expand, More and Fold act on the edit page as they do while building. Next does nothing while editing, so enter in a field never leaves the page.
+
+step 8k3g3v
+order 30
+parent 8iuq35
+author ai
+file crates/gui/src/wizard.rs
+symbol wizard
+lines 0 3
+hash 1099fa782472c3ed
+note Every act goes through here, and refresh_wizard runs after it.
+
+step 9bnw5u
+order 27
+parent b5ecyo
+author ai
+file crates/gui/src/views/document.rs
+symbol header_bar
+lines 16 21
+hash 6cd346a90323ea03
+note Trigger: the pencil icon (doc-edit) on the tour header's title line, after the step count. An icon rather than a labelled button, so the header's buttons still fit one row at the default layout.
+
+step agulfb
+order 10
+parent 8iuq35
+author ai
+file crates/gui/src/wizard.rs
+symbol held
+lines 0 16
+hash 85039df11ed564d5
+link feature-build-tour
+note Escape with nothing focused: Changes(n) while the pending edit changes anything, Unapplied while it cannot be made (a bad name), nothing otherwise, and then escape just closes the page.
+
+step b5ecyo
+order 14
+parent 8iuq35
+author ai
+file crates/gui/src/wizard.rs
+symbol open_edit
+lines 0 44
+hash 42cddaa182aa3259
+note Edit(slot): any open wizard closes, the name, group and note fields are filled from the tour, the outline is built from its steps (of_tour), each step's note goes into its own StepNote field, the tour becomes the one being read, and the page opens scrolled to its top in the Tour view.
+
+step b78gv3
+order 32
+parent tsqzwg
+author ai
+file crates/gui/src/wizard.rs
+symbol edit_name
+lines 0 11
+hash 49f18153d10d82b1
+note The typed name, refused when empty or invalid, and checked for being free unless it is the tour's own name in any letter case.
+
+step bj49x5
+order 39
+parent agulfb
+author ai
+file crates/gui/src/app.rs
+symbol keys
+lines 69 77
+hash 168017996e789dda
+note Escape reaches the wizard only while no field has the keyboard: in a field, escape only leaves the field. Ctrl+enter is Apply from anywhere the wizard's keys are read.
+
+step calkls
+order 46
+parent 884f6v
+author ai
+file crates/gui/src/views/wizard.rs
+symbol status_of
+lines 0 19
+hash cfd0d1bacdd26a98
+note A row's status word: blank for a kept step, 'removed' in red for an unticked one, 'the start' or promote's verdict for a new call.
+
+step car4a1
+order 48
+parent ohmpoo
+author ai
+file crates/gui/src/field.rs
+symbol shown
+lines 0 27
+hash aeab813f4bdef60b
+link gui-widgets
+note An unfocused note field shows its text from the start, clipped to the field, so every note on the page reads from its first word; only the focused field follows its caret.
+
+step cy11v2
+order 45
+parent 884f6v
+author ai
+file crates/gui/src/views/wizard.rs
+symbol lost_row
+lines 0 7
+hash 1149b42985ec8aab
+note An unticked existing step with a note shows, in red, the note it loses.
+
+step frwggr
+order 24
+parent g37gc5
+author ai
+file crates/gui/src/nav.rs
+symbol steps_moved
+lines 0 21
+hash aa0eac18a8621592
+link gui-authoring
+note Every slot-keyed thing on the tour follows the removals and added steps to the steps' new slots.
+
+step g2oktn
+order 19
+parent b5ecyo
+author ai
+file crates/gui/src/wizard.rs
+symbol Mode
+lines 0 3
+hash af3d029757b26b30
+link gui-model
+note Mode::EditTour carries the tour's name as it was when the page opened, which plan_edit and apply_edit look the tour up by.
+
+step g37gc5
+order 20
+parent 8iuq35
+author ai
+file crates/gui/src/wizard.rs
+symbol apply_edit
+lines 0 45
+hash e6d93d61c0d91ee0
+note Apply: plans the edit again from the page, shows the refusal when it cannot be made, closes the page when it changes nothing; otherwise applies it to the map in one step, carries the tour's slot-keyed state to the steps' new slots, closes the page, marks the map unsaved, opens the tour in the Tour view and says it was edited.
+
+step g4eok5
+order 4
+parent 8iuq35
+author ai
+file crates/gui/src/wizard.rs
+symbol load
+lines 0 31
+hash fc1ae556b57c5cc8
+link feature-build-tour
+note '+N calls' and opening a step: one more level of promote's walk under the step, with every symbol already in the outline left out and the edited tour not counted as another tour (besides), so a call the tour already holds is not shown again and its own steps do not turn calls into leaves. New rows start ticked by promote's rules.
+
+step guwvf6
+order 41
+parent ox1tr8
+author ai
+file crates/gui/src/widgets.rs
+symbol tick_box
+lines 0 20
+hash 822e13aaa5477ea1
+link gui-widgets
+note The tick box (wizard-tick/<row>), the one control that pushes Toggle: a click elsewhere on the row, or in the note field under it, never changes a tick. [x] in the accent when ticked, [ ] weak, lit under the pointer.
+
+step gylctw
+order 51
+parent 5yxrki
+author ai
+file crates/gui/src/views/wizard.rs
+symbol lines_place
+lines 0 14
+hash 2440a7c4ced5038a
+note A lines step as '(lines)' at its file and first line, read from the map.
+
+step ig90lu
+order 38
+parent 76xi75
+author ai
+file crates/domain/src/map.rs
+symbol push_added
+lines 0 8
+hash 0323795129aa4c73
+note An AddedStep and everything below it as Added changes, each new call named under what it is added under (AddedUnder).
+
+step j9lsfn
+order 37
+parent 3eg0kz
+author ai
+file crates/domain/src/map.rs
+symbol add_steps_under
+lines 0 22
+hash f824f4927b0b5fe6
+note Adds each AddedStep under its step as a whole-symbol step with its note, then its own added steps under it.
+
+step l1tguu
+order 40
+parent agulfb
+author ai
+file crates/gui/src/status.rs
+symbol authoring
+lines 4 16
+hash cb873498049263b6
+note What escape says while something is held: 'N changes pending: press cancel to discard them', or that the edit is not applied, or that the tour is not created yet.
+
+step lhcu55
+order 33
+parent tsqzwg
+author ai
+file crates/gui/src/wizard.rs
+symbol kept_notes
+lines 0 11
+hash 4ca652a872680f32
+note Every ticked existing step with the text of its note field.
+
+step m2s7ww
+order 53
+parent cy11v2
+author ai
+file crates/gui/src/views/wizard.rs
+symbol kept_note
+lines 0 5
+hash 6aca99aa2c47332f
+note The note an existing step has in the map, which lost_row shows when the step is unticked.
+
+step n74tcp
+order 28
+parent b5ecyo
+author ai
+file crates/gui/src/palette.rs
+symbol palette_actions
+lines 28 28
+hash 4620b44185ad3c4d
+note Trigger: the palette's 'edit tour', on the tour being read.
+
+step ohmpoo
+order 44
+parent 884f6v
+author ai
+file crates/gui/src/views/wizard.rs
+symbol note_row
+lines 0 10
+hash bd7612674817ed6e
+note A ticked row's note field, under an existing step or a new call alike, as wide as the room under the row, hinted 'what this step does for the tour'. Drawn through field_named with edit-note/<row>, numbered by the visible row like wizard-tick/<row>, so a script addresses both by the same row. A new call's note goes into its AddedStep.
+
+step ox1tr8
+order 5
+parent 8iuq35
+author ai
+file crates/gui/src/wizard.rs
+symbol toggle
+lines 0 17
+hash 7bd1a4c9d9840680
+link feature-build-tour
+note Unticking an existing step marks it, with every step under it, for removal; ticking a new call ticks the rows above it. The tour's top-level steps can be unticked: only the start of a new tour is fixed.
+
+step qfg05l
+order 42
+parent 884f6v
+author ai
+file crates/gui/src/views/wizard.rs
+symbol edit_bar
+lines 0 53
+hash 14222f11d1ebcc82
+note The bar: 'Editing <tour>', the apply button counting the changes ('nothing to apply' when none; highlighted only when there are some and the edit is valid), cancel, the keys; under it a red line with the refusal or why the edit is invalid and, when removals lose notes, how many steps go with their notes.
+
+step rs7rdg
+order 18
+parent b5ecyo
+author ai
+file crates/gui/src/wizard.rs
+symbol of_tour
+lines 0 38
+hash 25a442afe4d25582
+note The tour's steps as an outline, in the order the window numbers them: each step a ticked, open row (closed when it has no children) in StepState::Existing with its id and number, a call when its anchor resolves to a symbol, Lines otherwise; its calls are not loaded until opened.
+
+step rzjpfx
+order 54
+parent yyfbb8
+author ai
+file crates/gui/src/views/wizard.rs
+symbol clip
+lines 0 10
+hash c6610c6b2a2730d5
+note A note in the Changes list: quoted and cut to the room left, or '(none)'.
+
+step tsqzwg
+order 26
+parent g37gc5
+author ai
+file crates/gui/src/wizard.rs
+symbol plan_edit
+lines 0 20
+hash 04e3abfca7af3c12
+note The TourEdit the page describes: the name (refused when empty, invalid or another tour's), kind, group, note, the kept steps' notes, the removed steps and the added steps, authored by the human; or why it cannot be made (invalid).
+
+step u9tbsz
+order 36
+parent 2lfbm2
+author ai
+file crates/gui/src/wizard.rs
+symbol added_step
+lines 0 18
+hash 5e8698938a216107
+note A ticked new row and its ticked new children as an AddedStep tree, with the notes typed under them.
+
+step wt58p1
+order 56
+parent agulfb
+author ai
+file crates/gui/src/status.rs
+symbol Held
+lines 0 4
+hash db11a467b3bbe00a
+note What an escape would lose: Changes(n) pending on the edit page, Unapplied when the edit cannot be made, Unbuilt when a tour being built has anything entered. Carried by Status::WizardHeld, a warning.
+
+step wymrbz
+order 55
+parent tsqzwg
+author ai
+file crates/gui/src/wizard.rs
+symbol note_in
+lines 0 7
+hash 3e13b3531716db51
+note A note field's text as a Note, None when blank, so clearing a field removes the note.
+
+step yyfbb8
+order 43
+parent 884f6v
+author ai
+file crates/gui/src/views/wizard.rs
+symbol change_rows
+lines 0 91
+hash 6a62250ad72794e5
+note Changes: one line per EditChange from the Derived cache, ~ for a rename, kind, group or note, + for a call added under a step or under another new call, - for a removal with the note it loses in red; 'Nothing changed yet' when the edit changes nothing.

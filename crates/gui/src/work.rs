@@ -597,6 +597,7 @@ impl App {
             .map_err(|error| Label::new(Failure::Load(error).to_string()))?;
         model.map = loaded;
         model.map.resolve_all(&model.index);
+        model.refresh_wizard();
         let tour = tour_name.and_then(|name| model.find_tour(&name));
         let step = match (tour, step) {
             (Some(tour), Some((slot, anchor))) => model
@@ -670,6 +671,7 @@ impl App {
         model.queries.forget_hovers();
         self.grids.clear();
         model.map.resolve_all(&model.index);
+        model.refresh_wizard();
         let focus = focus_key.and_then(|key| model.index.by_key(&key));
         let file = open_path.and_then(|path| model.index.find_file(&path));
         model.refocus(focus, file);

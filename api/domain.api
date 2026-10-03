@@ -200,9 +200,11 @@ map::pub fn remove_step(&mut self, name: &TourName, step: &StepId) -> Result<Ste
 map::pub fn remove_tour(&mut self, name: &TourName) -> Result<Tour, MapError>
 map::pub fn promote( &mut self, index: &Index, root: SymbolId, depth: Depth, name: Option<TourName>, author: Author, pruning: Pruning, ) -> Result<Promoted, MapError>
 map::pub fn plan_promotion(&self, index: &Index, root: SymbolId) -> Vec<Planned>
-map::pub fn plan_promotion_callees( &self, index: &Index, path: &[SymbolId], placed: &BTreeSet<SymbolId>, ) -> Vec<Planned>
+map::pub fn plan_promotion_callees( &self, index: &Index, besides: Option<&TourName>, path: &[SymbolId], placed: &BTreeSet<SymbolId>, ) -> Vec<Planned>
 map::pub fn check_name_free(&self, name: &TourName) -> Result<Changed, MapError>
 map::pub fn add_drafted_tour( &mut self, index: &Index, draft: Draft, entries: &[TreeEntry], ) -> Result<Changed, MapError>
+map::pub fn tour_edit_changes(&self, tour: &TourName, edit: &TourEdit) -> Vec<EditChange>
+map::pub fn apply_tour_edit( &mut self, index: &Index, tour: &TourName, edit: TourEdit, ) -> Result<Changed, MapError>
 map::pub fn resolve_all(&mut self, index: &Index)
 map::pub fn rows(&self) -> Vec<Row>
 map::pub fn rows_where(&self, wanted: impl Fn(&Tour) -> bool) -> Vec<Row>
@@ -219,6 +221,12 @@ map::diff::pub fn change(&self) -> Change
 map::diff::pub fn note_changed(&self) -> bool
 map::diff::pub fn steps(&self) -> &[StepDiff]
 map::diff::pub fn removed(&self) -> &[Step]
+map::edit::pub struct StepNote { pub step: StepId, pub note: Option<Note>, }
+map::edit::pub struct AddedStep { pub symbol: SymbolId, pub note: Option<Note>, pub below: Vec<AddedStep>, }
+map::edit::pub struct AddedSteps { pub under: StepId, pub steps: Vec<AddedStep>, }
+map::edit::pub struct TourEdit { pub name: TourName, pub kind: TourKind, pub group: Option<GroupName>, pub note: Option<Note>, pub step_notes: Vec<StepNote>, pub removed: Vec<StepId>, pub added: Vec<AddedSteps>, pub author: Author, }
+map::edit::pub enum AddedUnder { Step(StepId), Added(SymbolId), }
+map::edit::pub enum EditChange { Renamed(TourName), Kind(TourKind), Group(Option<GroupName>), TourNote(Option<Note>), StepNote(StepNote), Added { symbol: SymbolId, under: AddedUnder }, Removed { step: StepId, lost: Option<Note> }, }
 map::error::pub struct InvalidName(String);
 map::error::pub fn new(name: &str) -> Self
 map::error::pub fn as_str(&self) -> &str

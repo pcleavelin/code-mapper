@@ -183,8 +183,8 @@ pub(crate) const WIZARD_KIND: Control =
     Control::new(Feature::BuildTour, Element::new("wizard-kind"));
 pub(crate) const WIZARD_SYMBOL: Control =
     Control::new(Feature::BuildTour, Element::new("wizard-sym"));
-pub(crate) const WIZARD_STEP: Control =
-    Control::new(Feature::BuildTour, Element::new("wizard-step"));
+pub(crate) const WIZARD_TICK: Control =
+    Control::new(Feature::BuildTour, Element::new("wizard-tick"));
 pub(crate) const WIZARD_USE_FOCUS: Control =
     Control::new(Feature::BuildTour, Element::new("wizard-use-focus"));
 pub(crate) const WIZARD_OPEN: Control =
@@ -195,6 +195,13 @@ pub(crate) const WIZARD_RETURN: Control =
     Control::new(Feature::BuildTour, Element::new("wizard-return"));
 pub(crate) const WIZARD_FROM_HERE: Control =
     Control::new(Feature::BuildTour, Element::new("tour-from-here"));
+pub(crate) const EDIT_TOUR: Control = Control::new(Feature::EditTour, Element::new("doc-edit"));
+pub(crate) const EDIT_APPLY: Control = Control::new(Feature::EditTour, Element::new("edit-apply"));
+pub(crate) const EDIT_CANCEL: Control =
+    Control::new(Feature::EditTour, Element::new("edit-cancel"));
+pub(crate) const EDIT_MORE: Control = Control::new(Feature::EditTour, Element::new("edit-more"));
+pub(crate) const EDIT_NOTE_FIELD: Control =
+    Control::new(Feature::EditTour, Element::new("edit-note"));
 
 #[cfg(test)]
 pub(crate) const CONTROLS: &[Control] = &[
@@ -285,12 +292,17 @@ pub(crate) const CONTROLS: &[Control] = &[
     WIZARD_CREATE,
     WIZARD_KIND,
     WIZARD_SYMBOL,
-    WIZARD_STEP,
+    WIZARD_TICK,
     WIZARD_USE_FOCUS,
     WIZARD_OPEN,
     WIZARD_FOLD,
     WIZARD_RETURN,
     WIZARD_FROM_HERE,
+    EDIT_TOUR,
+    EDIT_APPLY,
+    EDIT_CANCEL,
+    EDIT_MORE,
+    EDIT_NOTE_FIELD,
 ];
 
 pub(crate) fn body() -> Id {

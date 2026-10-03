@@ -11,8 +11,8 @@ parent saeyu5
 author ai
 file crates/gui/src/status.rs
 symbol fmt
-lines 0 94
-hash 1da2c4ae11f9b166
+lines 0 96
+hash d87d4b8bb67ce075
 note The wording. Map refusals and load failures arrive already worded by cli, so the GUI and the CLI say the same thing.
 
 step 0fz3qy
@@ -21,8 +21,8 @@ parent saeyu5
 author ai
 file crates/gui/src/status.rs
 symbol tone
-lines 0 38
-hash f5953fbef9cab9a0
+lines 0 40
+hash 78ad3ddba4c8ce7d
 note How the status bar colours each Status: Done for what the reader asked and got (saved, created, added, moved, removed, reloaded, re-indexed), Warning for what needs the reader's attention but broke nothing (a refused gesture, a clamped line, missing input, cut search hits, a change on disk), Problem for a failure (an unreadable map, a refused or failed save or command, a bad regex, a server or re-index failure), Plain for the rest.
 
 step 2e645j
@@ -129,7 +129,7 @@ file crates/gui/src/dump.rs
 symbol Dump
 lines 0 2
 hash 32f1e195f6bd176e
-note What a script's dump prints for one part of the Model. The App dumps Nav, the scrolls, the panel tree, the status, the fields, the step views, WorkState, the graph, the palette and the build-tour wizard, in that order.
+note What a script's dump prints for one part of the Model. The App dumps Nav, the map's tour being read, the scrolls, the panel tree, the status, the fields, the step views, WorkState, the graph, the palette and the wizard, in that order.
 
 step 7h1hw9
 order 32
@@ -447,9 +447,9 @@ parent 04jbr0
 author ai
 file crates/gui/src/status.rs
 symbol authoring
-lines 0 40
-hash c71ffef55d2d5611
-note The wording of tour creation and step placement (new tour, promote, add, move, the target), split out of fmt to keep it under the length limit; fmt hands every one of these variants here.
+lines 0 54
+hash c82336748b3a9c5e
+note The wording of tour creation, editing and step placement (new tour, an applied edit, promote, add, move, the target), and of WizardHeld: what escape keeps (Held: N changes pending, an edit that cannot apply, a tour not yet created) and that cancel discards it, split out of fmt to keep it under the length limit; fmt hands every one of these variants here.
 
 step mch588
 order 33
@@ -457,8 +457,8 @@ parent 9pik9m
 author ai
 file crates/gui/src/ids.rs
 symbol CONTROLS
-lines 0 94
-hash 4e737b8b6a366e35
+lines 0 99
+hash ae3ea2ad8a943df3
 note Every control, for the test that checks them against the registry.
 
 step mjhubp
@@ -558,6 +558,16 @@ lines 0 5
 hash 040ce81bbc64f696
 note The four tones: Plain, Done, Warning, Problem. status_bar maps them to text, green, orange and red; the colour is chosen there, the meaning here.
 
+step q38jsi
+order 78
+parent 7579zm
+author ai
+file crates/gui/src/dump.rs
+symbol impl Dump for domain::Map
+lines 0 27
+hash 3596a7d704448dbc
+note The map line: the tour being read as the map holds it, its name, kind, group, step count, whether the map is unsaved, its note and every step note, so a script sees what an edit applied without saving.
+
 step q9e3i7
 order 70
 parent saeyu5
@@ -583,8 +593,8 @@ order 52
 author ai
 file crates/gui/src/status.rs
 symbol Status
-lines 0 79
-hash 03029a3cd11c6739
+lines 0 81
+hash cf10f665f7596662
 note Everything the status line can say, as data: each outcome of a save, a command, a search, an edit, a definition lookup, a server, a re-index or a disk change. Views and apply set one; nothing formats a message where it happens.
 
 step sbpnbg
@@ -603,9 +613,9 @@ parent 7579zm
 author ai
 file crates/gui/src/dump.rs
 symbol impl Dump for Option<Wizard>
-lines 1 51
-hash 56c1abc2dec15ef6
-note While the build-tour wizard is open: one 'wizard' line with the page, kind, typed name, start, ticked step count, row count and refusal, then one 'wizard row' line per row on screen, a branch with its depth, tick, name, expander and verdict words, or a fold with its state, size and reason.
+lines 0 76
+hash 0ae52f6661ffda94
+note While the wizard is open: in Mode::Build one 'wizard' line with the page, kind, typed name, start, ticked step count, row count and refusal; in Mode::EditTour one 'wizard edit' line with the tour, typed name, kind, group, change count, row count and refusal, then a 'wizard change' line per pending EditChange. Then one 'wizard row' line per row on screen, a branch with its depth, tick, step number (or new), name ((lines) for a lines step), expander, verdict words and its note field's text, or a fold with its state, size and reason.
 
 step uhm8r4
 order 44

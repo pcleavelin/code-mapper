@@ -97,6 +97,7 @@ pub enum Feature {
     CommandPalette,
     Welcome,
     BuildTour,
+    EditTour,
 }
 
 impl Feature {
@@ -927,7 +928,7 @@ impl Feature {
                         Trigger::Click(Element::new("wizard-create")),
                         Trigger::Click(Element::new("wizard-kind")),
                         Trigger::Click(Element::new("wizard-sym")),
-                        Trigger::Click(Element::new("wizard-step")),
+                        Trigger::Click(Element::new("wizard-tick")),
                         Trigger::Click(Element::new("wizard-use-focus")),
                         Trigger::Click(Element::new("wizard-open")),
                         Trigger::Click(Element::new("wizard-fold")),
@@ -937,6 +938,23 @@ impl Feature {
                         Trigger::Type(Element::new("field@wizard-search")),
                         Trigger::Type(Element::new("field@wizard-note")),
                         Trigger::Palette(Text::new("build a tour"), None),
+                    ]
+                },
+            ),
+            Self::EditTour => Spec::new(
+                Text::new("edit-tour"),
+                Text::new(
+                    "one page in the Tour view that edits the tour being read: its name, kind, group and note, every step's note in place, steps removed by unticking them and calls added by opening a step, with the changes listed before they are applied together",
+                ),
+                Surface::Window,
+                &const {
+                    [
+                        Trigger::Click(Element::new("doc-edit")),
+                        Trigger::Click(Element::new("edit-apply")),
+                        Trigger::Click(Element::new("edit-cancel")),
+                        Trigger::Click(Element::new("edit-more")),
+                        Trigger::Type(Element::new("edit-note")),
+                        Trigger::Palette(Text::new("edit tour"), None),
                     ]
                 },
             ),

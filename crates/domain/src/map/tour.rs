@@ -155,6 +155,10 @@ impl Tour {
         self.name = name;
     }
 
+    pub(crate) fn set_kind(&mut self, kind: TourKind) {
+        self.kind = kind;
+    }
+
     pub(crate) fn set_group(&mut self, group: Option<GroupName>) {
         self.group = group;
     }

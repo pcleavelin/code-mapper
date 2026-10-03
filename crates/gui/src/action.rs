@@ -404,7 +404,8 @@ impl App {
             | Which::WizardName
             | Which::WizardGroup
             | Which::WizardSearch
-            | Which::WizardNote => Enter::Keep,
+            | Which::WizardNote
+            | Which::StepNote(_) => Enter::Keep,
             Which::Command | Which::ViewSearch => Enter::Clear,
         };
         let before = self.model.fields.get(which).text().clone();
@@ -416,7 +417,8 @@ impl App {
                 Which::WizardName
                 | Which::WizardGroup
                 | Which::WizardSearch
-                | Which::WizardNote => {
+                | Which::WizardNote
+                | Which::StepNote(_) => {
                     self.model.wizard_edited();
                 }
                 _ => {}
@@ -426,7 +428,10 @@ impl App {
             return;
         };
         match which {
-            Which::Command => self.run_command(&line),
+            Which::Command => {
+                self.run_command(&line);
+                self.model.refresh_wizard();
+            }
             Which::Search => self.search(),
             Which::GoToLine => self.go_to_line(&line),
             Which::ViewSearch => self.pick_first(&line),
@@ -436,7 +441,8 @@ impl App {
             | Which::WizardName
             | Which::WizardGroup
             | Which::WizardSearch
-            | Which::WizardNote => {}
+            | Which::WizardNote
+            | Which::StepNote(_) => {}
         }
     }
 

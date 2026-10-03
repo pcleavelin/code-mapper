@@ -70,9 +70,9 @@ parent n12e84
 author ai
 file crates/gui/src/work.rs
 symbol with_index_change
-lines 0 40
-hash 110cc69175b0242e
-note The carry-over, used by every index change (a re-index here, merged server answers in poll_backend). Symbol and file ids do not survive a new index, so the focused symbol, the kept peek (a symbol or a line) and the current file are saved as (path, symbol name) keys first and looked up again after, the graph saves and restores what it shows the same way, and the map's anchors are re-resolved. Hovers are forgotten and the drawn grids dropped, since both were keyed on the old index. Anything whose symbol is gone is simply dropped.
+lines 0 41
+hash 6d803ad22bc47376
+note The carry-over, used by every index change (a re-index here, merged server answers in poll_backend). Symbol and file ids do not survive a new index, so the focused symbol, the kept peek (a symbol or a line) and the current file are saved as (path, symbol name) keys first and looked up again after, the graph saves and restores what it shows the same way, and the map's anchors are re-resolved, then refresh_wizard rebuilds an open wizard's rows and pending edit against the new index. Hovers are forgotten and the drawn grids dropped, since both were keyed on the old index. Anything whose symbol is gone is simply dropped.
 
 step du8yxm
 order 13
@@ -149,9 +149,9 @@ parent 174dll
 author ai
 file crates/gui/src/work.rs
 symbol reload_map
-lines 0 58
-hash 747ddb6eb4a685f0
-note The reload keeps as much of the reading position as the new map still supports: the tour by name, the selected step when the step at that index still has the same anchor (file, symbol and offsets), and a tour's step views when its step count is unchanged. Tours are matched by name throughout, so a tour added or removed by the agent does not shift another tour's state onto the wrong rows. An Err, worded by cli's Failure::Load, leaves the window's map as it was; poll_disk then marks the disk Broken, so a save cannot write over files that did not read.
+lines 0 59
+hash 9f075439c492a908
+note The reload keeps as much of the reading position as the new map still supports: the tour by name, the selected step when the step at that index still has the same anchor (file, symbol and offsets), and a tour's step views when its step count is unchanged. Tours are matched by name throughout, so a tour added or removed by the agent does not shift another tour's state onto the wrong rows. An open wizard's rows and pending edit are rebuilt against the reloaded map (refresh_wizard). An Err, worded by cli's Failure::Load, leaves the window's map as it was; poll_disk then marks the disk Broken, so a save cannot write over files that did not read.
 
 step yy35zu
 order 6

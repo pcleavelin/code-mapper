@@ -15,7 +15,10 @@ use crate::theme::{
     ACCENT, COLLAPSE_ROOM, DANGER_GAP, FAINT, GREEN, HIDE_BUTTON, INDENT, INLINE_BUTTON, PENDING,
     PIXEL, RED, SLICE, TEXT, WEAK, WHOLE_BUTTON, WIDE_GAP,
 };
-use crate::widgets::{Chosen, CodeBlock, Container, Frame, Marks, Padding, Scroller, Width};
+use crate::widgets::{
+    Chosen, CodeBlock, Container, Enabled, Frame, Marks, Padding, Scroller, Width,
+};
+use crate::wizard::WizardAct;
 use std::mem;
 
 use super::{welcome, wizard};
@@ -172,6 +175,12 @@ fn header_bar(frame: &mut Frame<'_>, tour: TourSlot, found: &Tour, diff: Option<
     );
     if let Some(group) = found.group() {
         frame.label(format!("in {group}"), WEAK);
+    }
+    if frame
+        .nav_button(Icon::Edit, ids::EDIT_TOUR.target(), Enabled::Enabled)
+        .clicked()
+    {
+        frame.push(Action::Wizard(WizardAct::Edit(tour)));
     }
     match diff.map(TourDiff::change) {
         Some(Change::Added) => frame.label("new since the parent revision", GREEN),

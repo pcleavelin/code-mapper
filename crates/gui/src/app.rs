@@ -184,7 +184,7 @@ impl App {
         }
     }
 
-    fn keys(&mut self, input: &Input) {
+    pub(crate) fn keys(&mut self, input: &Input) {
         if keys::palette_toggled(input) {
             self.apply(Action::Palette(PaletteAction::Toggle));
             return;
@@ -196,6 +196,7 @@ impl App {
             }
             self.apply(Action::Palette(PaletteAction::Close));
         }
+        let field_held = self.model.fields.focused().is_some();
         let wizard_keys = if self.model.wizard.is_some()
             && self.model.fields.focused().is_none_or(|which| {
                 matches!(
@@ -204,6 +205,7 @@ impl App {
                         | Which::WizardGroup
                         | Which::WizardSearch
                         | Which::WizardNote
+                        | Which::StepNote(_)
                 )
             }) {
             keys::wizard_keys(input)
@@ -248,11 +250,17 @@ impl App {
         ] {
             actions.push(Action::Type(which, edits.clone(), typed.clone()));
         }
+        if let Some(which @ Which::StepNote(_)) = self.model.fields.focused() {
+            actions.push(Action::Type(which, edits.clone(), typed.clone()));
+        }
         for key in wizard_keys {
-            actions.push(Action::Wizard(match key {
+            let act = match key {
                 WizardKey::Next => WizardAct::Next,
-                WizardKey::Cancel => WizardAct::Cancel,
-            }));
+                WizardKey::Apply => WizardAct::Apply,
+                WizardKey::Escape if field_held => continue,
+                WizardKey::Escape => WizardAct::Escape,
+            };
+            actions.push(Action::Wizard(act));
         }
         for action in actions {
             self.apply(action);
@@ -272,8 +280,9 @@ impl App {
             ui: &self.ui,
             services: &self.services,
         };
-        let parts: [&dyn Dump; 10] = [
+        let parts: [&dyn Dump; 11] = [
             &model.nav,
+            &model.map,
             &model.scrolls,
             &model.panels,
             &model.status,

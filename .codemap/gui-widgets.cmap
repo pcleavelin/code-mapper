@@ -29,9 +29,9 @@ order 13
 author ai
 file crates/gui/src/field.rs
 symbol Fields
-lines 0 13
-hash a023af71bff41c12
-note The eleven fields, one named member each, reached by Which; focused names the one with the keyboard, at most one, so taking focus is setting it.
+lines 0 15
+hash 0eeb907f8db2227f
+note The eleven named fields, one member each, plus step_notes, a field per edit-tour outline row made on first write (an unwritten one reads as blank), reached by Which; focused names the one with the keyboard, at most one, so taking focus is setting it.
 
 step 2yp2r2
 order 5
@@ -115,17 +115,17 @@ order 11
 author ai
 file crates/gui/src/widgets.rs
 symbol field
-lines 0 36
-hash 3040603c2a55715d
-note A text field: a box of fixed width in cells that clips its text and scrolls it sideways so the caret stays in view, bordered in the accent colour while it has the keyboard. Clicking it takes the keyboard from the other fields. The field only draws: keys reach it through the Type actions the frame pushes, applied before the tree is built.
+lines 0 2
+hash 825164163948a025
+note A text field under its Which's own id (field_named does the work): a box of fixed width in cells that clips its text and scrolls it sideways so the caret stays in view while it has the keyboard, and shows its start when it does not, bordered in the accent colour while it has the keyboard. Clicking it takes the keyboard from the other fields. The field only draws: keys reach it through the Type actions the frame pushes, applied before the tree is built.
 
 step 94dj1i
 order 28
 author ai
 file crates/gui/src/widgets.rs
 symbol command_row
-lines 0 27
-hash c76a4d61300f73b6
+lines 0 32
+hash ffdb18d20a6f3a67
 note The Console's input line: a prompt and the command field's runs across the full width, the whole row taking the keyboard when clicked.
 
 step 9dxpzk
@@ -177,6 +177,16 @@ lines 0 20
 hash 5e526c4116dab16f
 note Up and down: the first press recalls the newest line, each further up an older one, down a newer one, and down past the newest clears the field.
 
+step d8mfok
+order 50
+parent 7mnsht
+author ai
+file crates/gui/src/widgets.rs
+symbol field_named
+lines 0 51
+hash feba486e70adb2a2
+note The field under a given element id, which field passes as the field's own Control id: a list of fields of one Which kind (the edit page's step notes) names each by its row, so a click on one takes the keyboard for that row's field.
+
 step e2sdhm
 order 16
 parent 0tlkjk
@@ -197,6 +207,16 @@ lines 0 8
 hash a80623c0c7604288
 note Asking the server for a hover. When the question will be sent this frame, the overlay counts it and the status line shows the server starting, so both show in the same frame as the hover.
 
+step g0slfv
+order 49
+parent k73r2l
+author ai
+file crates/gui/src/field.rs
+symbol FieldRoom
+lines 0 3
+hash a90f3bb62b34645f
+note How much an unfocused field may show: Cells for a field box (its width less one), Open for the Console's line, which grows.
+
 step gjm6fk
 order 0
 author ai
@@ -204,6 +224,16 @@ file crates/gui/src/theme.rs
 lines 8 36
 hash 14ebfa1d66595a34
 note The palette, in theme: a dozen colours named by role - background, panel, field, border, text, weak, accent, green, red, orange, hover, selected, and the red background a danger button takes under the pointer - and below them the tints made from those by alpha (disabled, selected lines, the slice, the steps list's top step, faint, pending, the drop band, the call tint), the graph's colours (STEP_EDGE, EXPANSION_EDGE, BACK_EDGE, STEP_BORDER, SIBLINGS_FILL, SIBLINGS_BORDER) and the panel header's TAB_STRIP. A colour decision is made once, here, and every view names one.
+
+step h1v6z6
+order 48
+parent v1qf6b
+author ai
+file crates/gui/src/widgets.rs
+symbol tick_box
+lines 0 20
+hash 822e13aaa5477ea1
+note A tick box drawn as text: '[x]' in the accent when ticked, '[ ]' weak, brighter and on the hover background under the pointer, a fixed width in cells. Its own element, so a click on the row beside it is not a tick (the wizard's outline rows).
 
 step hatq2a
 order 45
@@ -229,9 +259,9 @@ parent 2havd5
 author ai
 file crates/gui/src/field.rs
 symbol Which
-lines 0 12
-hash 796b791c546145c4
-note The eleven fields: search, the Console, the symbol filter, the tour filter, the view picker's search, go-to-line, the palette's query, and the build-tour wizard's name, group, search and note. Which::control is the field's Control in ids, whose element name is its script id: field@search, cmd, field@symbols, field@tours, field@views, field@goto-line, field@palette, field@wizard-name, field@wizard-group, field@wizard-search, field@wizard-note.
+lines 0 13
+hash c8f8e0985f865bb4
+note The eleven named fields: search, the Console, the symbol filter, the tour filter, the view picker's search, go-to-line, the palette's query, and the wizard's name, group, search and note; and StepNote(BranchId), one note field per outline row of the edit-tour page. Which::control is the field's Control in ids, whose element name is its script id: field@search, cmd, field@symbols, field@tours, field@views, field@goto-line, field@palette, field@wizard-name, field@wizard-group, field@wizard-search, field@wizard-note, and edit-note; the edit page draws each step note through Frame::field_named as edit-note/<n>, numbered by the visible row.
 
 step k73r2l
 order 25
@@ -239,9 +269,9 @@ parent zo7d1b
 author ai
 file crates/gui/src/field.rs
 symbol shown
-lines 0 18
-hash fe9e3c175db7e1f7
-note What the field looks like for its focus: the hint when empty and unfocused, marked when the whole text is marked and it has the keyboard, plain otherwise, split at the caret.
+lines 0 27
+hash aeab813f4bdef60b
+note What the field looks like for its focus: with the keyboard, marked when the whole text is marked, else plain, split at the caret; without it, the hint when empty, else the text from its start, cut with an ellipsis to the field's room (FieldRoom::Cells; the Console's line is Open), so an unfocused field always shows the beginning of what it holds.
 
 step kleb0l
 order 46
@@ -405,7 +435,7 @@ file crates/gui/src/field.rs
 symbol Field
 lines 0 6
 hash 8df2adeb84eb2f11
-note The one widget with state: the text, the caret in characters, whether the whole text is marked so the next character typed replaces it, and the submitted lines with which one of them up and down have recalled. Eleven of these live in Fields on the Model.
+note The one widget with state: the text, the caret in characters, whether the whole text is marked so the next character typed replaces it, and the submitted lines with which one of them up and down have recalled. Eleven of these, and one per row of the edit-tour outline, live in Fields on the Model.
 
 step v1qf6b
 order 4
@@ -460,6 +490,6 @@ parent ulzrgg
 author ai
 file crates/gui/src/widgets.rs
 symbol field_runs
-lines 0 17
-hash b6272b513a42c1d8
-note The field as runs: the text before the caret, the caret itself when focused, the text after, in the accent colour while the whole text is marked. An empty unfocused field shows its hint instead.
+lines 0 22
+hash 96a34896fef80077
+note The field as runs: the text before the caret, the caret itself when focused, the text after, in the accent colour while the whole text is marked. An empty unfocused field shows its hint instead; a filled unfocused one its start, clipped to the room it is given.

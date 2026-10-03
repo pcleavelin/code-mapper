@@ -37,6 +37,13 @@ pub(crate) enum Under {
     Step(Label),
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Held {
+    Changes(Count),
+    Unapplied,
+    Unbuilt,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum Status {
     Nothing,
@@ -56,6 +63,8 @@ pub(crate) enum Status {
     },
     MapRefused(Label),
     TourCreated(TourName),
+    TourEdited(TourName),
+    WizardHeld(Held),
     TourPromoted {
         name: TourName,
         steps: Count,
@@ -136,6 +145,20 @@ impl Status {
     fn authoring(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::TourCreated(name) => write!(formatter, "tour '{name}' created (unsaved)"),
+            Self::TourEdited(name) => write!(formatter, "tour '{name}' edited (unsaved)"),
+            Self::WizardHeld(Held::Changes(count)) if count.get() == 1 => {
+                formatter.write_str("1 change pending: press cancel to discard it")
+            }
+            Self::WizardHeld(Held::Changes(count)) => write!(
+                formatter,
+                "{count} changes pending: press cancel to discard them"
+            ),
+            Self::WizardHeld(Held::Unapplied) => {
+                formatter.write_str("the edit is not applied: press cancel to discard it")
+            }
+            Self::WizardHeld(Held::Unbuilt) => {
+                formatter.write_str("the tour is not created yet: press cancel to discard it")
+            }
             Self::TourPromoted { name, steps } => write!(
                 formatter,
                 "tour '{name}' made from the symbol and its calls, {steps} steps (unsaved)"
@@ -208,6 +231,7 @@ impl Status {
         match self {
             Self::Saved
             | Self::TourCreated(_)
+            | Self::TourEdited(_)
             | Self::TourPromoted { .. }
             | Self::StepAdded { .. }
             | Self::StepPlaced { .. }
@@ -219,6 +243,7 @@ impl Status {
                 shown: HitsShown::First,
                 ..
             }
+            | Self::WizardHeld(_)
             | Self::AlreadyStep { .. }
             | Self::SelectLinesFirst
             | Self::SelectTourFirst
@@ -287,6 +312,8 @@ impl fmt::Display for Status {
             Self::Hits { .. } => self.hits(formatter),
             Self::MapRefused(error) => formatter.write_str(error.as_str()),
             Self::TourCreated(_)
+            | Self::TourEdited(_)
+            | Self::WizardHeld(_)
             | Self::TourPromoted { .. }
             | Self::AlreadyStep { .. }
             | Self::SelectLinesFirst

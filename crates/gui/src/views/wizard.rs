@@ -1,6 +1,9 @@
 use std::cmp::Ordering;
 
-use domain::{Planned, SymbolId, TourKind, TreeEntry, Verdict};
+use domain::{
+    AddedUnder, Depth, EditChange, GroupName, Note, StepId, SymbolId, Tour, TourKind, TourName,
+    TreeEntry, Verdict,
+};
 use strum::VariantArray;
 use ui::{Count, Extent, Icon, Label, Px, Run};
 
@@ -11,13 +14,14 @@ use crate::model::Model;
 use crate::panels::View;
 use crate::text::{Clipped, Counted, Needle, Noun, Tag};
 use crate::theme::{
-    ACCENT, Cells, EXPANDER_BUTTON, PANEL_PADDING, PANEL_TEXT_ROOM, PIXEL, RED, START_PAGE_WIDTH,
-    TEXT, WEAK,
+    ACCENT, Cells, EXPANDER_BUTTON, GREEN, PANEL_PADDING, PANEL_TEXT_ROOM, PIXEL, RED,
+    START_PAGE_WIDTH, TEXT, WEAK,
 };
 use crate::welcome::Spell;
 use crate::widgets::{Chosen, Container, Frame, Padding, Scroller};
 use crate::wizard::{
-    BranchId, Expander, Fold, Line, Page, Shown, Tick, Wizard, WizardAct, verdict_words,
+    Branch, BranchId, Expander, Fold, Line, Mode, OutlineRow, Page, StepState, Tick, Wizard,
+    WizardAct, verdict_words,
 };
 
 const MATCHES_SHOWN: Count = Count::new(12);
@@ -25,6 +29,7 @@ const SHORT_FIELD: Cells = Cells::new(32);
 const LABEL_CELLS: Count = Count::new(7);
 const ROW_CELLS: Count = Count::new(8);
 const ROW_SLACK: Count = Count::new(3);
+const EDIT_PAGE_WIDTH: Cells = Cells::new(120);
 
 struct Columns(Count);
 
@@ -35,18 +40,13 @@ impl Columns {
 }
 
 pub(super) fn wizard_page(model: &Model, wizard: &Wizard, frame: &mut Frame<'_>, area: Extent) {
+    if let Mode::EditTour(tour) = wizard.mode() {
+        edit_page(model, wizard, tour, frame, area);
+        return;
+    }
     let id = ids::wizard();
     frame.scroll_column(id, model.scrolls.get(id), Scroller::Plain, None);
-    let cell = frame.cell_width().max(PIXEL);
-    let room = area.width - PANEL_TEXT_ROOM - Frame::scrollbar_width() - PANEL_PADDING * 2;
-    let width = Px::new(cell.get() * START_PAGE_WIDTH.get())
-        .min(room)
-        .max(cell);
-    let columns = Columns(Count::new(
-        usize::try_from(width.ratio(cell))
-            .unwrap_or(0)
-            .saturating_sub(ROW_SLACK.get()),
-    ));
+    let PageWidth { width, columns } = page_width(frame, area, START_PAGE_WIDTH);
     frame.start(Container::Centered);
     frame.start(Container::StartPage { width });
     let line = frame.row_height();
@@ -342,8 +342,8 @@ fn matches(model: &Model, wizard: &Wizard, frame: &mut Frame<'_>, columns: &Colu
     }
 }
 
-fn indent_of(entry: TreeEntry) -> Count {
-    Count::new(usize::try_from(entry.depth.value()).unwrap_or(0) * 2)
+fn indent_of(depth: Depth) -> Count {
+    Count::new(usize::try_from(depth.value()).unwrap_or(0) * 2)
 }
 
 fn name_of(model: &Model, symbol: SymbolId) -> Label {
@@ -360,7 +360,7 @@ fn tree_width(model: &Model, entries: &[TreeEntry], columns: &Columns) -> Count 
         entries
             .iter()
             .map(|entry| {
-                indent_of(*entry).get() + name_of(model, entry.symbol).as_str().chars().count()
+                indent_of(entry.depth).get() + name_of(model, entry.symbol).as_str().chars().count()
             })
             .max()
             .unwrap_or(0)
@@ -373,13 +373,10 @@ struct Room {
     path: Count,
 }
 
-fn tree_runs(model: &Model, entry: TreeEntry, room: &Room, color: ui::Color) -> Vec<Run> {
-    let Some(found) = place(model, entry.symbol) else {
-        return Vec::new();
-    };
+fn place_runs(found: &Place, indent: Count, room: &Room, color: ui::Color) -> Vec<Run> {
     let named = Label::new(format!(
         "{}{}",
-        " ".repeat(indent_of(entry).get()),
+        " ".repeat(indent.get()),
         found.name.as_str()
     ));
     vec![
@@ -400,7 +397,71 @@ fn tree_runs(model: &Model, entry: TreeEntry, room: &Room, color: ui::Color) -> 
     ]
 }
 
+fn tree_runs(model: &Model, entry: TreeEntry, room: &Room, color: ui::Color) -> Vec<Run> {
+    place(model, entry.symbol).map_or_else(Vec::new, |found| {
+        place_runs(&found, indent_of(entry.depth), room, color)
+    })
+}
+
 const BOX_CELLS: Count = Count::new(4);
+
+fn lines_place(model: &Model, wizard: &Wizard, step: &StepId) -> Option<Place> {
+    let Mode::EditTour(tour) = wizard.mode() else {
+        return None;
+    };
+    let found = model.map.step(tour, step)?;
+    Some(Place {
+        name: Label::new("(lines)"),
+        kind: Label::default(),
+        at: Label::new(format!(
+            "{}:{}",
+            found.file().as_str(),
+            found.span().start().number()
+        )),
+    })
+}
+
+fn branch_place(model: &Model, wizard: &Wizard, branch: &Branch) -> Option<Place> {
+    match branch.symbol() {
+        Some(symbol) => place(model, symbol),
+        None => lines_place(model, wizard, branch.step()?),
+    }
+}
+
+fn number_of(branch: &Branch) -> Label {
+    match &branch.state {
+        StepState::Existing { number, .. } => Label::new(number.to_string()),
+        StepState::New => Label::new("new"),
+    }
+}
+
+fn kept_note(model: &Model, wizard: &Wizard, branch: &Branch) -> Option<Note> {
+    let Mode::EditTour(tour) = wizard.mode() else {
+        return None;
+    };
+    model.map.step(tour, branch.step()?)?.note().cloned()
+}
+
+fn status_of(branch: &Branch) -> Filled {
+    match (&branch.state, branch.tick) {
+        (StepState::Existing { .. }, Tick::Ticked) => Filled {
+            text: Label::default(),
+            color: WEAK,
+        },
+        (StepState::Existing { .. }, Tick::Unticked) => Filled {
+            text: Label::new("removed"),
+            color: RED,
+        },
+        (StepState::New, _) if branch.depth() == Depth::default() => Filled {
+            text: Label::new("the start"),
+            color: WEAK,
+        },
+        (StepState::New, _) => Filled {
+            text: Label::new(verdict_words(branch.verdict()).as_str()),
+            color: WEAK,
+        },
+    }
+}
 
 fn steps_page(model: &Model, wizard: &Wizard, frame: &mut Frame<'_>, columns: &Columns) {
     let outline = wizard.outline();
@@ -410,33 +471,63 @@ fn steps_page(model: &Model, wizard: &Wizard, frame: &mut Frame<'_>, columns: &C
     }
     ask(
         frame,
-        "Which calls become steps? promote's rules ticked these, two calls deep. Open any row to see what it calls, as deep as you like. Ticking a row ticks the rows above it; unticking one unticks the rows under it.",
+        "Which calls become steps? promote's rules ticked these, two calls deep. Open any row to see what it calls, as deep as you like. Tick a row's box to make it a step: ticking one ticks the rows above it, unticking one unticks the rows under it.",
     );
-    let lines = outline.lines();
-    let entries: Vec<TreeEntry> = lines
+    outline_rows(model, wizard, frame, columns);
+}
+
+fn number_width(wizard: &Wizard, branch: &Branch) -> Count {
+    match wizard.mode() {
+        Mode::Build => Count::ZERO,
+        Mode::EditTour(_) => Count::new(number_of(branch).as_str().chars().count() + 1),
+    }
+}
+
+fn outline_rows(model: &Model, wizard: &Wizard, frame: &mut Frame<'_>, columns: &Columns) {
+    let outline = wizard.outline();
+    let rows = wizard.rows();
+    let branches: Vec<&Branch> = rows
         .iter()
-        .filter_map(|line| match line {
-            Line::Branch(id) => outline.branch(*id).map(|branch| branch.planned.entry),
+        .filter_map(|shaped| match &shaped.line {
+            Line::Branch(id) => outline.branch(*id),
             Line::Fold(_) => None,
         })
         .collect();
-    let width = tree_width(model, &entries, columns);
-    let paths = Count::new(
-        entries
+    let places: Vec<Option<Place>> = branches
+        .iter()
+        .map(|branch| branch_place(model, wizard, branch))
+        .collect();
+    let share = match wizard.mode() {
+        Mode::Build => 3,
+        Mode::EditTour(_) => 2,
+    };
+    let width = Count::new(
+        branches
             .iter()
-            .filter_map(|entry| place(model, entry.symbol))
+            .zip(&places)
+            .map(|(branch, found)| {
+                indent_of(branch.depth()).get()
+                    + number_width(wizard, branch).get()
+                    + found
+                        .as_ref()
+                        .map_or(0, |spot| spot.name.as_str().chars().count())
+            })
+            .max()
+            .unwrap_or(0)
+            .min(columns.get() / share),
+    );
+    let paths = Count::new(
+        places
+            .iter()
+            .flatten()
             .map(|found| found.at.as_str().chars().count())
             .max()
             .unwrap_or(0),
     );
     let reasons = Count::new(
-        lines
+        branches
             .iter()
-            .filter_map(|line| match line {
-                Line::Branch(id) => outline.branch(*id),
-                Line::Fold(_) => None,
-            })
-            .map(|branch| reason_of(branch.planned).as_str().chars().count())
+            .map(|branch| status_of(branch).text.as_str().chars().count())
             .max()
             .unwrap_or(0),
     );
@@ -448,10 +539,10 @@ fn steps_page(model: &Model, wizard: &Wizard, frame: &mut Frame<'_>, columns: &C
         paths,
         columns,
     };
-    for (row, line) in lines.iter().enumerate() {
-        match line {
-            Line::Branch(id) => tree.branch_row(frame, Count::new(row), *id),
-            Line::Fold(fold) => tree.fold_row(frame, Count::new(row), fold),
+    for (row, shaped) in rows.iter().enumerate() {
+        match &shaped.line {
+            Line::Branch(id) => tree.branch_row(frame, Count::new(row), *id, shaped),
+            Line::Fold(fold) => tree.fold_row(frame, Count::new(row), fold, shaped),
         }
     }
 }
@@ -464,6 +555,8 @@ struct Tree<'tree> {
     paths: Count,
     columns: &'tree Columns,
 }
+
+const MORE_CELLS: Count = Count::new(13);
 
 impl Tree<'_> {
     fn lead(frame: &mut Frame<'_>, indent: Count) {
@@ -498,88 +591,164 @@ impl Tree<'_> {
         )
     }
 
-    fn branch_row(&self, frame: &mut Frame<'_>, row: Count, id: BranchId) {
+    fn editing(&self) -> bool {
+        matches!(self.wizard.mode(), Mode::EditTour(_))
+    }
+
+    fn branch_runs(&self, branch: &Branch, indent: Count) -> Vec<Run> {
         let model = self.model;
-        let outline = self.wizard.outline();
-        let Some(branch) = outline.branch(id) else {
-            return;
-        };
-        let entry = branch.planned.entry;
-        let indent = indent_of(entry);
-        Self::lead(frame, indent);
-        Self::expander(
-            frame,
-            row,
-            outline.expander(id, &model.index),
-            WizardAct::Expand(id),
-        );
         let room = self.room_left(indent);
         let ticked = branch.tick == Tick::Ticked;
-        let runs = if branch.planned.verdict == Verdict::Cycle {
-            vec![
+        if branch.verdict() == Verdict::Cycle {
+            return vec![
                 Run::new(" ".repeat(BOX_CELLS.get()), WEAK),
                 Run::new(
                     Clipped::right(
-                        &format!("calls back into {}", name_of(model, entry.symbol).as_str()),
+                        &format!(
+                            "calls back into {}",
+                            branch
+                                .symbol()
+                                .map(|symbol| name_of(model, symbol))
+                                .unwrap_or_default()
+                                .as_str()
+                        ),
                         room.get().saturating_sub(BOX_CELLS.get()),
                     )
                     .to_string(),
                     WEAK,
                 ),
-            ]
-        } else {
-            let reason = reason_of(branch.planned);
-            let name = Count::new(self.width.get().saturating_sub(indent.get()).max(1));
-            let path = Count::new(
-                room.get()
-                    .saturating_sub(BOX_CELLS.get() + name.get() + 2 + 2 + self.reasons.get())
-                    .min(self.paths.get()),
-            );
-            let mut runs = vec![Run::new(
-                if ticked { "[x] " } else { "[ ] " },
-                if ticked { ACCENT } else { WEAK },
-            )];
-            runs.extend(tree_runs(
-                model,
-                TreeEntry {
-                    symbol: entry.symbol,
-                    depth: domain::Depth::default(),
-                },
+            ];
+        }
+        let status = status_of(branch);
+        let number = number_width(self.wizard, branch);
+        let more = if self.editing() { MORE_CELLS.get() } else { 0 };
+        let name = Count::new(
+            self.width
+                .get()
+                .saturating_sub(indent.get() + number.get())
+                .max(1),
+        );
+        let path = Count::new(
+            room.get()
+                .saturating_sub(
+                    BOX_CELLS.get() + number.get() + name.get() + 2 + 2 + self.reasons.get() + more,
+                )
+                .min(self.paths.get()),
+        );
+        let mut runs = Vec::new();
+        if self.editing() {
+            let color = match branch.state {
+                StepState::New => GREEN,
+                StepState::Existing { .. } => WEAK,
+            };
+            runs.push(Run::new(format!("{} ", number_of(branch).as_str()), color));
+        }
+        if let Some(found) = branch_place(model, self.wizard, branch) {
+            runs.extend(place_runs(
+                &found,
+                Count::ZERO,
                 &Room { name, path },
                 if ticked { TEXT } else { WEAK },
             ));
-            if !reason.as_str().is_empty() {
-                runs.push(Run::new(format!("  {}", reason.as_str()), WEAK));
-            }
-            runs
+        }
+        if !status.text.as_str().is_empty() {
+            runs.push(Run::new(
+                format!("  {}", status.text.as_str()),
+                status.color,
+            ));
+        }
+        runs
+    }
+
+    fn branch_row(&self, frame: &mut Frame<'_>, row: Count, id: BranchId, shaped: &OutlineRow) {
+        let model = self.model;
+        let outline = self.wizard.outline();
+        let Some(branch) = outline.branch(id) else {
+            return;
         };
-        if frame
-            .row(runs, ids::WIZARD_STEP.nth(row), Chosen::Plain)
-            .clicked()
+        let indent = indent_of(branch.depth());
+        Self::lead(frame, indent);
+        Self::expander(frame, row, shaped.expander, WizardAct::Expand(id));
+        if branch.verdict() != Verdict::Cycle
+            && frame
+                .tick_box(
+                    branch.tick,
+                    Cells::of_count(BOX_CELLS.get()),
+                    ids::WIZARD_TICK.nth(row),
+                )
+                .clicked()
         {
             frame.push(Action::Wizard(WizardAct::Toggle(id)));
         }
+        frame.row_text(self.branch_runs(branch, indent));
+        if let Some(count) = shaped.more {
+            let count = count.get();
+            if frame
+                .small_button(
+                    format!("+{count} call{}", if count == 1 { "" } else { "s" }),
+                    ids::EDIT_MORE.nth(row),
+                )
+                .clicked()
+            {
+                frame.push(Action::Wizard(WizardAct::More(id)));
+            }
+        }
+        frame.finish();
+        let ticked = branch.tick == Tick::Ticked;
+        if self.editing() && ticked && branch.verdict() != Verdict::Cycle {
+            self.note_row(frame, row, indent, id);
+        }
+        if self.editing()
+            && !ticked
+            && let Some(note) = kept_note(model, self.wizard, branch)
+        {
+            self.lost_row(frame, indent, &note);
+        }
+    }
+
+    fn under_row(&self, frame: &mut Frame<'_>, indent: Count) -> Count {
+        Self::lead(frame, indent);
+        frame.small_button_room(EXPANDER_BUTTON);
+        frame.cells_gap(Cells::of_count(BOX_CELLS.get()));
+        Count::new(
+            self.room_left(indent)
+                .get()
+                .saturating_sub(BOX_CELLS.get() + 1)
+                .max(1),
+        )
+    }
+
+    fn lost_row(&self, frame: &mut Frame<'_>, indent: Count, note: &Note) {
+        let room = self.under_row(frame, indent);
+        frame.label(
+            Clipped::right(&format!("its note is lost: {}", note.as_str()), room.get()).to_string(),
+            RED,
+        );
         frame.finish();
     }
 
-    fn fold_row(&self, frame: &mut Frame<'_>, row: Count, fold: &Fold) {
+    fn note_row(&self, frame: &mut Frame<'_>, row: Count, indent: Count, id: BranchId) {
+        let room = self.under_row(frame, indent);
+        frame.field_named(
+            &self.model.fields,
+            Which::StepNote(id),
+            ids::EDIT_NOTE_FIELD.nth(row).id(),
+            &Label::new("what this step does for the tour"),
+            Cells::of_count(room.get()),
+        );
+        frame.finish();
+    }
+
+    fn fold_row(&self, frame: &mut Frame<'_>, row: Count, fold: &Fold, shaped: &OutlineRow) {
         let outline = self.wizard.outline();
         let indent = fold
             .members
             .first()
             .and_then(|member| outline.branch(*member))
-            .map_or(Count::ZERO, |branch| indent_of(branch.planned.entry));
+            .map_or(Count::ZERO, |branch| indent_of(branch.depth()));
         Self::lead(frame, indent);
         let act = WizardAct::Fold(fold.parent, fold.cut);
-        Self::expander(
-            frame,
-            row,
-            match fold.shown {
-                Shown::Open => Expander::Open,
-                Shown::Closed => Expander::Closed,
-            },
-            act,
-        );
+        Self::expander(frame, row, shaped.expander, act);
         let ticked = fold
             .members
             .iter()
@@ -735,9 +904,9 @@ fn buttons(frame: &mut Frame<'_>, page: Page) {
     }
     frame.label(
         if page == Page::Create {
-            "enter creates, escape cancels"
+            "enter creates"
         } else {
-            "enter goes on, escape cancels"
+            "enter goes on; escape cancels if nothing is entered"
         },
         WEAK,
     );
@@ -769,6 +938,18 @@ fn preview(model: &Model, wizard: &Wizard, frame: &mut Frame<'_>, columns: &Colu
 pub(super) fn wizard_strip(model: &Model, wizard: &Wizard, frame: &mut Frame<'_>, view: View) {
     let place = Label::new(view.name().as_str());
     frame.start(Container::ToolbarSmall);
+    if let Mode::EditTour(tour) = wizard.mode() {
+        frame.label("editing", WEAK);
+        frame.label(tour.as_str(), TEXT);
+        if frame
+            .small_button("back to the edit", ids::WIZARD_RETURN.with(&place))
+            .clicked()
+        {
+            frame.push(Action::Wizard(WizardAct::Return));
+        }
+        frame.finish();
+        return;
+    }
     frame.label("building", WEAK);
     let typed = model.typed_name();
     if typed.as_str().is_empty() {
@@ -810,10 +991,276 @@ fn location_of(model: &Model, symbol: SymbolId) -> Option<Label> {
     )))
 }
 
-fn reason_of(planned: Planned) -> Label {
-    if planned.entry.depth == domain::Depth::default() {
-        Label::new("the start")
+fn edit_page(model: &Model, wizard: &Wizard, tour: &TourName, frame: &mut Frame<'_>, area: Extent) {
+    let changes = wizard.changes();
+    edit_bar(wizard, tour, frame, changes);
+    let id = ids::wizard();
+    frame.scroll_column(id, model.scrolls.get(id), Scroller::Plain, None);
+    let PageWidth { width, columns } = page_width(frame, area, EDIT_PAGE_WIDTH);
+    frame.start(Container::Centered);
+    frame.start(Container::StartPage { width });
+    let line = frame.row_height();
+    frame.spacer(line);
+    section(frame, &Spell::new("Tour"));
+    frame.start(Container::ToolbarSmall);
+    frame.plain_line(caption(&Spell::new("name")), WEAK);
+    frame.field(
+        &model.fields,
+        Which::WizardName,
+        &Label::new("the tour's name"),
+        SHORT_FIELD,
+    );
+    if let Some(why) = wizard.invalid() {
+        frame.label(why.clone(), RED);
+    }
+    frame.finish();
+    frame.start(Container::ToolbarSmall);
+    frame.plain_line(caption(&Spell::new("kind")), WEAK);
+    for kind in TourKind::VARIANTS.iter().copied() {
+        let word = Tag::kind(kind).to_string();
+        let chosen = if kind == wizard.kind() {
+            Chosen::Chosen
+        } else {
+            Chosen::Plain
+        };
+        if frame
+            .button(
+                word.clone(),
+                ids::WIZARD_KIND.with(&Label::new(&word)),
+                chosen,
+            )
+            .clicked()
+        {
+            frame.push(Action::Wizard(WizardAct::Kind(kind)));
+        }
+    }
+    frame.label(meaning(wizard.kind()).as_str(), WEAK);
+    frame.finish();
+    frame.start(Container::ToolbarSmall);
+    frame.plain_line(caption(&Spell::new("group")), WEAK);
+    frame.field(
+        &model.fields,
+        Which::WizardGroup,
+        &Label::new("(none)"),
+        SHORT_FIELD,
+    );
+    frame.label("where it sits in the Tours list, / nests", WEAK);
+    frame.finish();
+    frame.start(Container::ToolbarSmall);
+    frame.plain_line(caption(&Spell::new("note")), WEAK);
+    frame.field(
+        &model.fields,
+        Which::WizardNote,
+        &Label::new("what happens, as a whole"),
+        Cells::of_count(columns.get().saturating_sub(LABEL_CELLS.get() + 2)),
+    );
+    frame.finish();
+    frame.spacer(line);
+    section(frame, &Spell::new("Steps"));
+    ask(
+        frame,
+        "Each step's note is the field under it. Untick a step's box to remove it with the steps under it. Open a step to see the calls it makes that the tour has not, and tick one to add it there.",
+    );
+    outline_rows(model, wizard, frame, &columns);
+    frame.spacer(line);
+    section(frame, &Spell::new("Changes"));
+    change_rows(model, wizard, tour, frame, changes, &columns);
+    frame.spacer(line + line);
+    frame.finish();
+    frame.finish();
+    frame.finish();
+}
+
+struct PageWidth {
+    width: Px,
+    columns: Columns,
+}
+
+fn page_width(frame: &Frame<'_>, area: Extent, cells: Cells) -> PageWidth {
+    let cell = frame.cell_width().max(PIXEL);
+    let room = area.width - PANEL_TEXT_ROOM - Frame::scrollbar_width() - PANEL_PADDING * 2;
+    let width = Px::new(cell.get() * cells.get()).min(room).max(cell);
+    let columns = Columns(Count::new(
+        usize::try_from(width.ratio(cell))
+            .unwrap_or(0)
+            .saturating_sub(ROW_SLACK.get()),
+    ));
+    PageWidth { width, columns }
+}
+
+fn section(frame: &mut Frame<'_>, title: &Spell) {
+    frame.row_text(vec![Run::new(title.as_str(), ACCENT)]);
+}
+
+fn edit_bar(wizard: &Wizard, tour: &TourName, frame: &mut Frame<'_>, changes: &[EditChange]) {
+    let invalid = wizard.invalid();
+    frame.start(Container::TourHeader);
+    frame.title(format!("Editing {tour}"));
+    frame.grow();
+    let count = changes.len();
+    let apply = match count {
+        0 => "nothing to apply".to_owned(),
+        1 => "apply 1 change".to_owned(),
+        _ => format!("apply {count} changes"),
+    };
+    let look = if count > 0 && invalid.is_none() {
+        Chosen::Chosen
     } else {
-        Label::new(verdict_words(planned.verdict).as_str())
+        Chosen::Plain
+    };
+    if frame
+        .button(apply, ids::EDIT_APPLY.target(), look)
+        .clicked()
+    {
+        frame.push(Action::Wizard(WizardAct::Apply));
+    }
+    if frame
+        .button("cancel", ids::EDIT_CANCEL.target(), Chosen::Plain)
+        .clicked()
+    {
+        frame.push(Action::Wizard(WizardAct::Cancel));
+    }
+    frame.label("ctrl+enter applies; escape cancels if unchanged", WEAK);
+    frame.finish();
+    let lost = changes
+        .iter()
+        .filter(|change| matches!(change, EditChange::Removed { lost: Some(_), .. }))
+        .count();
+    let why = wizard.refusal().or(invalid);
+    if why.is_some() || lost > 0 {
+        frame.start(Container::ToolbarSmall);
+        if let Some(why) = why {
+            frame.label(why.clone(), RED);
+        }
+        if lost > 0 {
+            frame.label(
+                format!(
+                    "{} removed with {} note{}: see Changes",
+                    Counted::new(Count::new(lost), Noun::Step),
+                    if lost == 1 { "its" } else { "their" },
+                    if lost == 1 { "" } else { "s" }
+                ),
+                RED,
+            );
+        }
+        frame.finish();
+    }
+}
+
+fn step_named(wizard: &Wizard, model: &Model, step: &StepId) -> Label {
+    let outline = wizard.outline();
+    outline
+        .ids()
+        .filter_map(|id| outline.branch(id))
+        .find(|branch| branch.step() == Some(step))
+        .map_or_else(Label::default, |branch| {
+            let name =
+                branch_place(model, wizard, branch).map_or_else(Label::default, |found| found.name);
+            Label::new(format!("{} {}", number_of(branch).as_str(), name.as_str()))
+        })
+}
+
+fn clip(note: Option<&Note>, room: Count) -> Label {
+    note.map_or_else(
+        || Label::new("(none)"),
+        |note| {
+            Label::new(format!(
+                "\"{}\"",
+                Clipped::right(note.as_str(), room.get().max(8))
+            ))
+        },
+    )
+}
+
+fn change_rows(
+    model: &Model,
+    wizard: &Wizard,
+    tour: &TourName,
+    frame: &mut Frame<'_>,
+    changes: &[EditChange],
+    columns: &Columns,
+) {
+    if changes.is_empty() {
+        ask(frame, "Nothing changed yet.");
+        return;
+    }
+    ask(
+        frame,
+        "Apply does all of these at once, unsaved; save with ctrl+s.",
+    );
+    let found = model.map.tour(tour);
+    let room = Count::new(columns.get().saturating_sub(ROW_CELLS.get() + 24));
+    for change in changes {
+        let (sign, color, text, warning) = match change {
+            EditChange::Renamed(name) => ("~", ACCENT, format!("rename to {name}"), None),
+            EditChange::Kind(kind) => (
+                "~",
+                ACCENT,
+                format!(
+                    "kind {} -> {}",
+                    found.map_or_else(String::new, |old| Tag::kind(old.kind()).to_string()),
+                    Tag::kind(*kind)
+                ),
+                None,
+            ),
+            EditChange::Group(group) => (
+                "~",
+                ACCENT,
+                format!(
+                    "group {} -> {}",
+                    found
+                        .and_then(Tour::group)
+                        .map_or("(none)", GroupName::as_str),
+                    group.as_ref().map_or("(none)", GroupName::as_str)
+                ),
+                None,
+            ),
+            EditChange::TourNote(note) => (
+                "~",
+                ACCENT,
+                format!("tour note {}", clip(note.as_ref(), room).as_str()),
+                None,
+            ),
+            EditChange::StepNote(note) => (
+                "~",
+                ACCENT,
+                format!(
+                    "note of {}: {}",
+                    step_named(wizard, model, &note.step).as_str(),
+                    clip(note.note.as_ref(), room).as_str()
+                ),
+                None,
+            ),
+            EditChange::Added { symbol, under } => (
+                "+",
+                GREEN,
+                format!(
+                    "add {} under {}",
+                    name_of(model, *symbol).as_str(),
+                    match under {
+                        AddedUnder::Step(step) => step_named(wizard, model, step),
+                        AddedUnder::Added(parent) =>
+                            Label::new(format!("{} (new)", name_of(model, *parent).as_str())),
+                    }
+                    .as_str()
+                ),
+                None,
+            ),
+            EditChange::Removed { step, lost } => (
+                "-",
+                RED,
+                format!("remove {}", step_named(wizard, model, step).as_str()),
+                lost.as_ref()
+                    .map(|note| format!("  its note is lost: {}", clip(Some(note), room).as_str())),
+            ),
+        };
+        let mut runs = vec![
+            Run::new(format!("{:>width$} ", sign, width = 2), color),
+            Run::new(text, TEXT),
+        ];
+        if let Some(warning) = warning {
+            runs.push(Run::new(warning, RED));
+        }
+        frame.row_text(runs);
     }
 }

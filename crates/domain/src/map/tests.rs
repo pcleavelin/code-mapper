@@ -1176,3 +1176,174 @@ fn add_drafted_tour_hangs_each_entry_under_the_entry_above_it_and_refuses_a_take
     );
     assert_eq!(map.tours().len(), 1);
 }
+
+struct Walk {
+    index: Index,
+    map: Map,
+    first: StepId,
+    second: StepId,
+    third: StepId,
+    linked: StepId,
+    unmapped: SymbolId,
+}
+
+fn walk_with_a_noted_step() -> Walk {
+    let mut index = Index::new(Root::new(FsPath::new(".")));
+    index.push(source(
+        &[
+            "fn a() {", "}", "fn b() {", "}", "fn c() {", "}", "fn d() {", "}",
+        ],
+        vec![
+            symbol("a", 0, 1),
+            symbol("b", 2, 3),
+            symbol("c", 4, 5),
+            symbol("d", 6, 7),
+        ],
+    ));
+    let at = |line: u32| index.by_line(&file("a.rs"), Line::new(line)).unwrap();
+    let entries = [(0, 0), (2, 1), (4, 2)].map(|(line, depth)| TreeEntry {
+        symbol: at(line),
+        depth: Depth::new(depth),
+    });
+    let mut map = Map::default();
+    for (tour, steps) in [("walk", &entries[..]), ("taken", &entries[..1])] {
+        let draft = Draft {
+            name: name(tour),
+            kind: TourKind::Flow,
+            group: None,
+            note: None,
+            author: Author::Agent,
+        };
+        let _created = map.add_drafted_tour(&index, draft, steps).unwrap();
+    }
+    let linked = map.tour(&name("taken")).unwrap().steps()[0].id().clone();
+    let _linked = map
+        .set_link(&name("taken"), &linked, Some(name("walk")))
+        .unwrap();
+    let walk = map.tour(&name("walk")).unwrap();
+    let id_of = |line: u32| {
+        walk.steps()
+            .iter()
+            .find(|step| step.resolved_symbol() == Some(at(line)))
+            .unwrap()
+            .id()
+            .clone()
+    };
+    let (first, second, third) = (id_of(0), id_of(2), id_of(4));
+    let _noted = map
+        .set_step_note(&name("walk"), &second, Note::new("why b"))
+        .unwrap();
+    let unmapped = at(6);
+    Walk {
+        index,
+        map,
+        first,
+        second,
+        third,
+        linked,
+        unmapped,
+    }
+}
+
+fn edit_of(walk: &Walk, new: &str) -> TourEdit {
+    TourEdit {
+        name: name(new),
+        kind: TourKind::Layer,
+        group: GroupName::new("flows"),
+        note: Note::new("the whole"),
+        step_notes: vec![StepNote {
+            step: walk.first.clone(),
+            note: Note::new("why a"),
+        }],
+        removed: vec![walk.second.clone(), walk.third.clone()],
+        added: vec![AddedSteps {
+            under: walk.first.clone(),
+            steps: vec![AddedStep {
+                symbol: walk.unmapped,
+                note: Note::new("why d"),
+                below: Vec::new(),
+            }],
+        }],
+        author: Author::Human,
+    }
+}
+
+#[test]
+fn tour_edit_changes_name_each_removed_step_with_the_note_it_loses() {
+    let walk = walk_with_a_noted_step();
+    let changes = walk
+        .map
+        .tour_edit_changes(&name("walk"), &edit_of(&walk, "walked"));
+    assert_eq!(
+        changes,
+        [
+            EditChange::Renamed(name("walked")),
+            EditChange::Kind(TourKind::Layer),
+            EditChange::Group(GroupName::new("flows")),
+            EditChange::TourNote(Note::new("the whole")),
+            EditChange::StepNote(StepNote {
+                step: walk.first.clone(),
+                note: Note::new("why a"),
+            }),
+            EditChange::Added {
+                symbol: walk.unmapped,
+                under: AddedUnder::Step(walk.first.clone()),
+            },
+            EditChange::Removed {
+                step: walk.second.clone(),
+                lost: Note::new("why b"),
+            },
+            EditChange::Removed {
+                step: walk.third.clone(),
+                lost: None,
+            },
+        ]
+    );
+}
+
+#[test]
+fn a_tour_edit_applies_whole_or_not_at_all_and_links_follow_its_rename() {
+    let mut walk = walk_with_a_noted_step();
+    let before = walk.map.clone();
+    let refused = walk
+        .map
+        .apply_tour_edit(&walk.index, &name("walk"), edit_of(&walk, "taken"));
+    assert_eq!(refused, Err(MapError::NameTaken(name("taken"))));
+    assert_eq!(walk.map, before);
+    let edit = edit_of(&walk, "walked");
+    let _applied = walk
+        .map
+        .apply_tour_edit(&walk.index, &name("walk"), edit)
+        .unwrap();
+    assert!(walk.map.tour(&name("walk")).is_none());
+    let walked = walk.map.tour(&name("walked")).unwrap();
+    assert_eq!(walked.kind(), TourKind::Layer);
+    assert_eq!(walked.group().map(GroupName::as_str), Some("flows"));
+    assert_eq!(walked.note().map(Note::as_str), Some("the whole"));
+    let tree: Vec<(String, u32, Option<String>)> = walked
+        .tree_order()
+        .into_iter()
+        .map(|placed| {
+            let step = walked.step(&placed.step).unwrap();
+            (
+                step.symbol().unwrap().as_str().to_owned(),
+                placed.depth.value(),
+                step.note().map(|note| note.as_str().to_owned()),
+            )
+        })
+        .collect();
+    assert_eq!(
+        tree,
+        [
+            ("a".to_owned(), 0, Some("why a".to_owned())),
+            ("d".to_owned(), 1, Some("why d".to_owned()))
+        ]
+    );
+    assert_eq!(
+        walk.map
+            .step(&name("taken"), &walk.linked)
+            .and_then(Step::link)
+            .map(TourName::as_str),
+        Some("walked")
+    );
+}

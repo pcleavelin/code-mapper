@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 #[macro_export]
 macro_rules! gui_scenarios {
     ($m:ident) => {
-        $m! { gui: document, peek, source, graph, panels, delete, diff, reload, layout, links, authoring, welcome }
+        $m! { gui: document, peek, source, graph, panels, delete, diff, reload, layout, links, authoring, welcome, edit }
     };
 }
 
@@ -466,7 +466,7 @@ dump
 click-id wizard-next
 wait 2
 dump
-click-id wizard-step/1
+click-id wizard-tick/1
 wait 1
 dump
 click-id wizard-next
@@ -516,11 +516,11 @@ wait 2
 click-id wizard-next
 wait 2
 dump
-click-id wizard-step/1
+click-id wizard-tick/1
 wait 1
-click-id wizard-step/2
+click-id wizard-tick/2
 wait 1
-click-id wizard-step/3
+click-id wizard-tick/3
 wait 1
 dump
 click-id wizard-next
@@ -1003,9 +1003,9 @@ wait 2
 click-id wizard-open/2
 wait 2
 dump
-click-id wizard-step/3
+click-id wizard-tick/3
 wait 1
-click-id wizard-step/3
+click-id wizard-tick/3
 wait 1
 dump
 shot {shots}/wizard-steps.png
@@ -1029,7 +1029,7 @@ shot {shots}/workspace.png
 hover-id tour-from-here
 click-id tour-from-here
 wait 2
-hover-id wizard-step/0
+hover-id wizard-tick/0
 dump
 click-id wizard-back
 wait 2
@@ -1052,6 +1052,83 @@ hover-id start-ungrouped
 key left alt
 wait 2
 absent start-ungrouped
+quit
+";
+
+pub(crate) fn edit() -> Scenario {
+    Scenario {
+        first: FirstScreen::Workspace,
+        setup: |bin, name| Ok(mapped(bin, name)),
+        hook: no_hook,
+        after: &[&["tour", "startup-edited"]],
+        script: EDIT,
+    }
+}
+
+const EDIT: &str = "SETTLE
+key p ctrl
+wait 1
+text startup
+wait 1
+key enter
+wait 2
+click-id doc-edit
+wait 3
+dump
+shot {shots}/edit-open.png
+click-id field@wizard-name
+key u ctrl
+text startup-edited
+click-id wizard-kind@layer
+wait 1
+click-id edit-note/2
+text Stores one shape and checks the size.
+key escape
+wait 1
+hover-id edit-apply
+dump
+rect wizard-tick/6
+click <<DUMP rect wizard-tick/6|160,8>>
+wait 1
+hover-id edit-note/6
+click-id wizard-tick/6
+wait 1
+absent edit-note/6
+click-id edit-more/0
+wait 2
+click-id wizard-open/5
+wait 2
+click-id wizard-tick/6
+wait 1
+dump
+scroll wizard 400
+wait 2
+shot {shots}/edit-changes.png
+click-id edit-apply
+wait 2
+absent edit-apply
+dump
+shot {shots}/edit-applied.png
+key s ctrl
+wait 3
+dump
+key p ctrl
+wait 1
+text edit tour
+wait 1
+key enter
+wait 3
+click-id wizard-kind@data
+wait 1
+key escape
+wait 1
+hover-id edit-apply
+dump
+shot {shots}/edit-held.png
+click-id edit-cancel
+wait 2
+absent edit-cancel
+dump
 quit
 ";
 

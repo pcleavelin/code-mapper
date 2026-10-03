@@ -13,10 +13,11 @@ pub use index::{
 };
 pub use layout::{LayoutPanel, LayoutSplit, LayoutTree, Share, SplitDirection, ViewKey};
 pub use map::{
-    Alignment, Anchor, Author, Change, Changed, Coverage, Draft, Followed, Freshness, GroupName,
-    InvalidName, LinkCandidate, Map, MapError, Note, NumberedStep, ParentLabel, PlacedStep,
-    Promoted, Pruning, Resolution, Row, Step, StepAddress, StepChange, StepDiff, StepId,
-    StepNumber, StepOrder, TextFragment, Tour, TourCount, TourDiff, TourKind, TourName, follow,
+    AddedStep, AddedSteps, AddedUnder, Alignment, Anchor, Author, Change, Changed, Coverage, Draft,
+    EditChange, Followed, Freshness, GroupName, InvalidName, LinkCandidate, Map, MapError, Note,
+    NumberedStep, ParentLabel, PlacedStep, Promoted, Pruning, Resolution, Row, Step, StepAddress,
+    StepChange, StepDiff, StepId, StepNote, StepNumber, StepOrder, TextFragment, Tour, TourCount,
+    TourDiff, TourEdit, TourKind, TourName, follow,
 };
 pub use text::{
     ByteOffset, Column, FileText, Line, LineCount, LineOffset, RelativePath, Revision, SourceLine,

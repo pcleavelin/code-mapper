@@ -15,7 +15,7 @@ use crate::panels::Panels;
 use crate::peek::Peek;
 use crate::status::Status;
 use crate::text::Tag;
-use crate::wizard::{Line, Tick, Wizard, verdict_words};
+use crate::wizard::{Line, Mode, StepState, Tick, Wizard, verdict_words};
 use crate::work::{Services, WorkState};
 
 #[derive(Default)]
@@ -150,34 +150,59 @@ impl Dump for Option<Wizard> {
                 .map_or_else(String::new, |found| found.name().as_str().to_owned())
         };
         let outline = wizard.outline();
-        let rows = outline.lines();
-        lines.line(format_args!(
-            "wizard page={} kind={} name={} start={} steps={} rows={} refusal={}",
-            wizard.page().word().as_str(),
-            Tag::kind(wizard.kind()),
-            context.model.typed_name().as_str(),
-            Optional(wizard.start().map(name_of)),
-            outline.ticked().len(),
-            rows.len(),
-            Optional(wizard.refusal().map(|why| why.as_str().to_owned()))
-        ));
-        for (row, line) in rows.iter().enumerate() {
-            match line {
+        let rows = wizard.rows();
+        let model = context.model;
+        match wizard.mode() {
+            Mode::Build => lines.line(format_args!(
+                "wizard page={} kind={} name={} start={} steps={} rows={} refusal={}",
+                wizard.page().word().as_str(),
+                Tag::kind(wizard.kind()),
+                model.typed_name().as_str(),
+                Optional(wizard.start().map(name_of)),
+                outline.ticked().len(),
+                rows.len(),
+                Optional(wizard.refusal().map(|why| why.as_str().to_owned()))
+            )),
+            Mode::EditTour(tour) => {
+                let changes = wizard.changes();
+                lines.line(format_args!(
+                    "wizard edit tour={tour} name={} kind={} group={} changes={} rows={} refusal={}",
+                    model.typed_name().as_str(),
+                    Tag::kind(wizard.kind()),
+                    model.fields.get(Which::WizardGroup).text().as_str(),
+                    changes.len(),
+                    rows.len(),
+                    Optional(wizard.refusal().map(|why| why.as_str().to_owned()))
+                ));
+                for change in changes {
+                    lines.line(format_args!("wizard change {change:?}"));
+                }
+            }
+        }
+        for (row, shaped) in rows.iter().enumerate() {
+            match &shaped.line {
                 Line::Branch(id) => {
                     let Some(branch) = outline.branch(*id) else {
                         continue;
                     };
+                    let number = match &branch.state {
+                        StepState::Existing { number, .. } => number.to_string(),
+                        StepState::New => "new".to_owned(),
+                    };
                     lines.line(format_args!(
-                        "wizard row {row} depth={} {} {} {:?} {}",
-                        branch.planned.entry.depth,
+                        "wizard row {row} depth={} {} {number} {} {:?} {} note={}",
+                        branch.depth(),
                         if branch.tick == Tick::Ticked {
                             "x"
                         } else {
                             "-"
                         },
-                        name_of(branch.planned.entry.symbol),
-                        outline.expander(*id, index),
-                        verdict_words(branch.planned.verdict).as_str()
+                        branch
+                            .symbol()
+                            .map_or_else(|| "(lines)".to_owned(), name_of),
+                        shaped.expander,
+                        verdict_words(branch.verdict()).as_str(),
+                        model.fields.get(Which::StepNote(*id)).text().as_str()
                     ));
                 }
                 Line::Fold(fold) => lines.line(format_args!(
@@ -393,6 +418,36 @@ impl Dump for Option<Palette> {
             palette.selected.get(),
             palette.top.get(),
             Optional(chosen)
+        ));
+    }
+}
+
+impl Dump for domain::Map {
+    fn dump(&self, context: &Context<'_>, lines: &mut DumpLines) {
+        let model = context.model;
+        let Some(tour) = model.nav.tour().and_then(|slot| model.tour(slot)) else {
+            return;
+        };
+        let noted: Vec<String> = tour
+            .steps()
+            .iter()
+            .filter_map(|step| {
+                Some(format!(
+                    "{}={:?}",
+                    step.symbol().map_or("(lines)", |name| name.as_str()),
+                    step.note()?.as_str()
+                ))
+            })
+            .collect();
+        lines.line(format_args!(
+            "map tour={} kind={} group={} steps={} unsaved={:?} note={:?} noted=[{}]",
+            tour.name(),
+            Tag::kind(tour.kind()),
+            tour.group().map_or("", domain::GroupName::as_str),
+            tour.steps().len(),
+            model.disk.dirty,
+            tour.note().map_or("", domain::Note::as_str),
+            noted.join(", ")
         ));
     }
 }
