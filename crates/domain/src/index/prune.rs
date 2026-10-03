@@ -17,6 +17,20 @@ pub enum Stop {
     OtherPackage,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Verdict {
+    Kept,
+    Cut(Cut),
+    Stopped(Stop),
+    Cycle,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Planned {
+    pub entry: TreeEntry,
+    pub verdict: Verdict,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct PrunedTree {
     pub entries: Vec<TreeEntry>,
@@ -118,6 +132,86 @@ impl Index {
         (package(parent) != package(callee)).then_some(Stop::OtherPackage)
     }
 
+    pub fn unplaced_callees(
+        &self,
+        path: &[SymbolId],
+        placed: &BTreeSet<SymbolId>,
+    ) -> Vec<SymbolId> {
+        let Some(found) = path.last().and_then(|caller| self.symbol(*caller)) else {
+            return Vec::new();
+        };
+        found
+            .callees()
+            .iter()
+            .copied()
+            .filter(|callee| path.contains(callee) || !placed.contains(callee))
+            .collect()
+    }
+
+    pub fn plan_callees(
+        &self,
+        path: &[SymbolId],
+        placed: &BTreeSet<SymbolId>,
+        mapped: &impl Fn(SymbolId) -> bool,
+    ) -> Vec<Planned> {
+        let Some(caller) = path.last().copied() else {
+            return Vec::new();
+        };
+        let depth = path
+            .iter()
+            .fold(Depth::default(), |depth, _| depth.deeper());
+        self.unplaced_callees(path, placed)
+            .into_iter()
+            .map(|callee| Planned {
+                entry: TreeEntry {
+                    symbol: callee,
+                    depth,
+                },
+                verdict: if path.contains(&callee) {
+                    Verdict::Cycle
+                } else if let Some(cut) = self.cut(callee) {
+                    Verdict::Cut(cut)
+                } else {
+                    self.stop(caller, callee, mapped)
+                        .map_or(Verdict::Kept, Verdict::Stopped)
+                },
+            })
+            .collect()
+    }
+
+    pub fn planned_tree(
+        &self,
+        root: SymbolId,
+        deepest: Depth,
+        mapped: impl Fn(SymbolId) -> bool,
+    ) -> Vec<Planned> {
+        let mut planned = Vec::new();
+        let mut placed = BTreeSet::new();
+        let mut path: Vec<SymbolId> = Vec::new();
+        let mut stack = vec![Planned {
+            entry: TreeEntry {
+                symbol: root,
+                depth: Depth::default(),
+            },
+            verdict: Verdict::Kept,
+        }];
+        while let Some(next) = stack.pop() {
+            let symbol = next.entry.symbol;
+            if next.verdict != Verdict::Cycle && !placed.insert(symbol) {
+                continue;
+            }
+            planned.push(next);
+            if next.verdict != Verdict::Kept || next.entry.depth >= deepest {
+                continue;
+            }
+            path.truncate(next.entry.depth.position());
+            path.push(symbol);
+            let children = self.plan_callees(&path, &placed, &mapped);
+            stack.extend(children.into_iter().rev());
+        }
+        planned
+    }
+
     pub fn pruned_tree(
         &self,
         root: SymbolId,
@@ -125,47 +219,19 @@ impl Index {
         mapped: impl Fn(SymbolId) -> bool,
     ) -> PrunedTree {
         let mut tree = PrunedTree::default();
-        let mut seen = BTreeSet::new();
-        let mut stack: Vec<(TreeEntry, Option<Stop>)> = vec![(
-            TreeEntry {
-                symbol: root,
-                depth: Depth::default(),
-            },
-            None,
-        )];
-        while let Some((entry, stop)) = stack.pop() {
-            if !seen.insert(entry.symbol) {
-                continue;
-            }
-            tree.entries.push(entry);
-            if let Some(stop) = stop {
-                tree.stopped.insert(entry.symbol, stop);
-                continue;
-            }
-            if entry.depth >= deepest {
-                continue;
-            }
-            let Some(symbol) = self.symbol(entry.symbol) else {
-                continue;
-            };
-            let mut children = Vec::new();
-            for callee in symbol.callees() {
-                if seen.contains(callee) {
-                    continue;
+        for planned in self.planned_tree(root, deepest, mapped) {
+            let entry = planned.entry;
+            match planned.verdict {
+                Verdict::Kept => tree.entries.push(entry),
+                Verdict::Stopped(stop) => {
+                    tree.entries.push(entry);
+                    tree.stopped.insert(entry.symbol, stop);
                 }
-                if let Some(cut) = self.cut(*callee) {
-                    tree.cut.entry(*callee).or_insert(cut);
-                    continue;
+                Verdict::Cut(cut) => {
+                    tree.cut.entry(entry.symbol).or_insert(cut);
                 }
-                children.push((
-                    TreeEntry {
-                        symbol: *callee,
-                        depth: entry.depth.deeper(),
-                    },
-                    self.stop(entry.symbol, *callee, &mapped),
-                ));
+                Verdict::Cycle => {}
             }
-            stack.extend(children.into_iter().rev());
         }
         tree
     }

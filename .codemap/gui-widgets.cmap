@@ -29,9 +29,9 @@ order 13
 author ai
 file crates/gui/src/field.rs
 symbol Fields
-lines 0 11
-hash 0d8b6f11b4dbd697
-note The eight fields, one named member each, reached by Which; focused names the one with the keyboard, at most one, so taking focus is setting it.
+lines 0 15
+hash 7f1eee62d9378d7f
+note The thirteen fields, one named member each, reached by Which; focused names the one with the keyboard, at most one, so taking focus is setting it.
 
 step 2yp2r2
 order 5
@@ -134,8 +134,8 @@ parent rcazsr
 author ai
 file crates/gui/src/widgets.rs
 symbol shape
-lines 0 98
-hash f363319c2f234e81
+lines 0 89
+hash 1f4be56ae86e9adb
 note The one match that turns a Container into its layout, style and fixed id: the paddings, gaps and colours from theme, the accent bar on the left of a selected step row or code column, the panel header's TAB_STRIP background with no padding (its tabs carry their own), the id body the panel tree is laid out from, the picker's and the palette box's ids, and the id a StepColumn carries.
 
 step aidqqn
@@ -229,9 +229,9 @@ parent 2havd5
 author ai
 file crates/gui/src/field.rs
 symbol Which
-lines 0 10
-hash 340ba883fe72235f
-note The eight fields: search, the new tour's name and group, the Console, the symbol filter, the tour filter, go-to-line and the palette's query. Which::control is the field's Control in ids, whose element name is its script id: field@search, field@new-tour, field@new-group, cmd, field@symbols, field@tours, field@goto-line, field@palette.
+lines 0 14
+hash f41b5867d9929359
+note The thirteen fields: search, the new tour's name and group, the Console, the symbol filter, the tour filter, the view picker's search, go-to-line, the palette's query, and the build-tour wizard's name, group, search and note. Which::control is the field's Control in ids, whose element name is its script id: field@search, field@new-tour, field@new-group, cmd, field@symbols, field@tours, field@views, field@goto-line, field@palette, field@wizard-name, field@wizard-group, field@wizard-search, field@wizard-note.
 
 step k73r2l
 order 25
@@ -345,9 +345,9 @@ order 1
 author ai
 file crates/gui/src/widgets.rs
 symbol Container
-lines 0 27
-hash 260fbff148a186af
-note Every box that holds other elements is one of these: the window, the body, the centre, the bars, the toolbars, a panel column, a step row or code column (with its selected mark), the column holding one step of the document (StepColumn, carrying that step's id so its height can be measured), a tooltip, a panel header, the floating view picker, the command palette's box, the guide bar, and the start page's centred column (Centered around StartPage, which carries the column's width). A view opens one with Frame::start and closes it with finish; it never spells out a layout or a style.
+lines 0 26
+hash 15b621f15f83c1aa
+note Every box that holds other elements is one of these: the window, the body, the centre, the bars, the toolbars, a panel column, a step row or code column (with its selected mark), the column holding one step of the document (StepColumn, carrying that step's id so its height can be measured), a tooltip, a panel header, the floating view picker, the command palette's box, and the start page's centred column (Centered around StartPage, which carries the column's width). A view opens one with Frame::start and closes it with finish; it never spells out a layout or a style.
 
 step rs11uk
 order 14

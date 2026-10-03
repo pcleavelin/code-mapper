@@ -197,6 +197,7 @@ pub(crate) const HIDE_BUTTON: Cells = Cells::new(9);
 pub(crate) const WHOLE_BUTTON: Cells = Cells::new(12);
 pub(crate) const INLINE_BUTTON: Cells = Cells::new(9);
 pub(crate) const CLOSE_BUTTON: Cells = Cells::new(3);
+pub(crate) const EXPANDER_BUTTON: Cells = Cells::new(2);
 pub(crate) const DANGER_GAP: Cells = Cells::new(2);
 pub(crate) const SEARCH_FIELD: Cells = Cells::new(24);
 pub(crate) const MAP_PLACE: Cells = Cells::new(40);

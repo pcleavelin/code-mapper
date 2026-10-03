@@ -142,7 +142,7 @@ parent ub828q
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 32 41
+lines 46 55
 hash fc9a4dd80b236834
 note Trigger: the keys phase, while the Graph view is shown and the graph holds the keyboard, queues one GraphWalk per arrow pressed this frame; the tour walk (WalkWhenIdle) gets no arrows then.
 

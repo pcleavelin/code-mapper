@@ -10,9 +10,9 @@ order 0
 author ai
 file crates/gui/src/nav.rs
 symbol open_tour
-lines 0 5
-hash 5214b39f2a008c2b
-note The handler. Selects the tour only when it is not the one being read, so a second click keeps the reader's place; the tab is set either way.
+lines 0 6
+hash d3fa4f41e0867531
+note The handler. It closes the build-tour wizard if one is open, so the document shows the tour. Selects the tour only when it is not the one being read, so a second click keeps the reader's place; the tab is set either way.
 
 step 62e7oy
 order 1

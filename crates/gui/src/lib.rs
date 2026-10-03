@@ -19,6 +19,7 @@ mod theme;
 mod views;
 mod welcome;
 mod widgets;
+mod wizard;
 mod work;
 
 use domain::Root;

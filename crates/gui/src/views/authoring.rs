@@ -15,6 +15,12 @@ use crate::theme::{ACCENT, NEW_TOUR_FIELD, TEXT, WEAK};
 use crate::widgets::{Chosen, Container, Frame};
 
 pub(super) fn target_strip(model: &Model, frame: &mut Frame<'_>, view: View) {
+    if let Some(wizard) = model.wizard.as_ref()
+        && matches!(view, View::Source | View::Graph)
+    {
+        super::wizard::wizard_strip(model, wizard, frame, view);
+        return;
+    }
     let place = Label::new(view.name().as_str());
     frame.start(Container::ToolbarSmall);
     match model

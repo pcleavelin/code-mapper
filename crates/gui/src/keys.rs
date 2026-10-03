@@ -250,3 +250,22 @@ pub(crate) fn palette_edits(input: &Input) -> Vec<Edit> {
         .filter(|edit| !matches!(edit, Edit::Enter | Edit::Escape | Edit::Older | Edit::Newer))
         .collect()
 }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum WizardKey {
+    Next,
+    Cancel,
+}
+
+pub(crate) fn wizard_keys(input: &Input) -> Vec<WizardKey> {
+    input
+        .keys
+        .iter()
+        .filter(|press| !press.mods.ctrl() && !press.mods.alt())
+        .filter_map(|press| match press.key {
+            Key::Enter => Some(WizardKey::Next),
+            Key::Escape => Some(WizardKey::Cancel),
+            _ => None,
+        })
+        .collect()
+}

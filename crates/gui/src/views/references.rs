@@ -15,6 +15,7 @@ use crate::theme::{
     PIXEL, ROW_EXTRA, SLICE, TEXT, WEAK,
 };
 use crate::widgets::{Chosen, CodeBlock, Container, Frame, Marks, RowAction, Scroller, Width};
+use crate::wizard::WizardAct;
 
 enum Body {
     Inside {
@@ -266,6 +267,12 @@ fn focus_actions(model: &Model, frame: &mut Frame<'_>, symbol: SymbolId) {
         .clicked()
     {
         frame.push(Action::Authoring(Authoring::Promote(symbol)));
+    }
+    if frame
+        .small_button("tour from here", ids::WIZARD_FROM_HERE.target())
+        .clicked()
+    {
+        frame.push(Action::Wizard(WizardAct::FromHere(symbol)));
     }
     frame.finish();
 }

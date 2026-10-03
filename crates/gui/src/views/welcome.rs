@@ -1,6 +1,5 @@
 use domain::{Change, TourDiff};
-use features::Feature;
-use ui::{Count, Extent, Label, Point, Px, Run};
+use ui::{Count, Extent, Label, Px, Run};
 
 use crate::action::Action;
 use crate::ids;
@@ -11,59 +10,14 @@ use crate::text::{Clipped, Counted, Noun};
 use crate::theme::{
     ACCENT, GREEN, PANEL_PADDING, PANEL_TEXT_ROOM, PIXEL, RED, START_PAGE_WIDTH, TEXT, WEAK,
 };
-use crate::welcome::{GuideStep, MapFigures, TopGroup, WelcomeAct, key_rows, palette_chord};
-use crate::widgets::{Chosen, Container, Frame, Padding, Scroller};
+use crate::welcome::{MapFigures, TopGroup, WelcomeAct, key_rows};
+use crate::widgets::{Chosen, Container, Frame, Scroller};
 
 use super::center;
 
 const CHANGES_SHOWN: Count = Count::new(12);
 const ROOTS_SHOWN: Count = Count::new(8);
 const GAP_CELLS: Count = Count::new(3);
-
-pub(crate) fn coach(frame: &mut Frame<'_>, step: GuideStep) {
-    let row = frame.row_height();
-    let at = Point::new(
-        Px::ZERO,
-        frame.ui.size().height - (row + row + row + row + row),
-    );
-    frame.start(Container::Coach {
-        at,
-        width: frame.ui.size().width,
-    });
-    frame.start(Container::Stack);
-    let mut runs = vec![Run::new("Command palette  ", TEXT)];
-    if let Some(chord) = palette_chord(Feature::CommandPalette) {
-        runs.push(Run::new(chord, ACCENT));
-    }
-    frame.row_text(runs);
-    frame.note(step.sentence(), TEXT, Padding::Step);
-    frame.start(Container::ToolbarSmall);
-    if frame
-        .button("skip", ids::GUIDE_SKIP.target(), Chosen::Plain)
-        .clicked()
-    {
-        frame.push(Action::Welcome(WelcomeAct::Skip));
-    }
-    if frame
-        .button("close", ids::GUIDE_CLOSE.target(), Chosen::Plain)
-        .clicked()
-    {
-        frame.push(Action::Welcome(WelcomeAct::Leave));
-    }
-    frame.finish();
-    frame.finish();
-    frame.finish();
-}
-
-pub(crate) fn ring(model: &Model, frame: &mut Frame<'_>) {
-    let Some(step) = model.welcome.guide_step() else {
-        return;
-    };
-    let Some(rect) = frame.ui.interaction(step.spotlight()).rect() else {
-        return;
-    };
-    frame.mark_rect(rect);
-}
 
 struct Columns(usize);
 
@@ -328,14 +282,14 @@ fn build_tour(model: &Model, frame: &mut Frame<'_>, columns: &Columns) {
         .row(
             vec![
                 Run::new("Build a tour by hand", TEXT),
-                Run::new("   a guide points at each control in turn", WEAK),
+                Run::new("   name, start symbol, steps, note: a page each", WEAK),
             ],
-            ids::WELCOME_GUIDE.target(),
+            ids::BUILD_TOUR.target(),
             Chosen::Plain,
         )
         .clicked()
     {
-        frame.push(Action::Welcome(WelcomeAct::StartGuide));
+        frame.push(Action::Welcome(WelcomeAct::BuildTour));
     }
     if !model.map.tours().is_empty() {
         return;

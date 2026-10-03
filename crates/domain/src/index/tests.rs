@@ -385,3 +385,111 @@ fn a_pruned_tree_cuts_tests_accessors_and_trivial_bodies_and_stops_at_shared_for
         ["load Mapped", "other OtherPackage", "shared Mapped"]
     );
 }
+
+fn plan_lines(index: &Index, planned: &[Planned]) -> Vec<String> {
+    planned
+        .iter()
+        .map(|planned| {
+            format!(
+                "{}{} {:?}",
+                "  ".repeat(planned.entry.depth.value() as usize),
+                index.symbol(planned.entry.symbol).unwrap().name(),
+                planned.verdict
+            )
+        })
+        .collect()
+}
+
+#[test]
+fn a_planned_tree_places_each_cut_callee_under_the_caller_it_was_found_under_and_stops_are_leaves()
+{
+    let index = pruning_fixture();
+    let run = id(&index, "crates/app/src/main.rs", "run");
+    assert_eq!(
+        plan_lines(&index, &index.planned_tree(run, Depth::new(2), |_| false)),
+        [
+            "run Kept",
+            "  load Kept",
+            "    parse Kept",
+            "    checks Cut(Test)",
+            "    count Cut(Accessor)",
+            "    shared Stopped(Shared)",
+            "  wrap Cut(Trivial)",
+            "  other Stopped(OtherPackage)",
+        ]
+    );
+}
+
+#[test]
+fn planning_one_level_below_an_entry_gives_the_verdicts_the_deeper_walk_gives_there() {
+    let index = pruning_fixture();
+    let main = "crates/app/src/main.rs";
+    let (run, load, parse) = (
+        id(&index, main, "run"),
+        id(&index, main, "load"),
+        id(&index, main, "parse"),
+    );
+    let shallow = index.planned_tree(run, Depth::new(2), |_| false);
+    let before: BTreeSet<SymbolId> = shallow
+        .iter()
+        .take_while(|planned| planned.entry.symbol != parse)
+        .map(|planned| planned.entry.symbol)
+        .chain([parse])
+        .collect();
+    let one_level = index.plan_callees(&[run, load, parse], &before, &|_| false);
+    let deeper = index.planned_tree(run, Depth::new(3), |_| false);
+    let at = deeper
+        .iter()
+        .position(|planned| planned.entry.symbol == parse)
+        .unwrap();
+    let under: Vec<Planned> = deeper[at + 1..]
+        .iter()
+        .take_while(|planned| planned.entry.depth > Depth::new(2))
+        .copied()
+        .collect();
+    assert_eq!(
+        plan_lines(&index, &one_level),
+        [
+            "      deep Kept",
+            "      count Cut(Accessor)",
+            "      shared Stopped(Shared)"
+        ]
+    );
+    assert_eq!(one_level, under);
+}
+
+#[test]
+fn a_call_back_into_the_path_is_reported_as_a_leaf_and_never_walked_again() {
+    let mut index = Index::new(Root::new(FsPath::new(".")));
+    index.push(file(
+        "src/even.rs",
+        "fn even() {\n    odd();\n}\nfn odd() {\n    even();\n    odd();\n}\n",
+        vec![symbol("even", 0, 2, 0, None), symbol("odd", 3, 6, 0, None)],
+    ));
+    let (even, odd) = (
+        id(&index, "src/even.rs", "even"),
+        id(&index, "src/even.rs", "odd"),
+    );
+    index.connect(&[
+        Edge {
+            from: even,
+            to: odd,
+        },
+        Edge {
+            from: odd,
+            to: even,
+        },
+        Edge { from: odd, to: odd },
+    ]);
+    assert_eq!(
+        plan_lines(&index, &index.planned_tree(even, Depth::new(8), |_| false)),
+        ["even Kept", "  odd Kept", "    even Cycle", "    odd Cycle"]
+    );
+    assert_eq!(
+        plan_lines(
+            &index,
+            &index.plan_callees(&[even, odd], &BTreeSet::from([even, odd]), &|_| false)
+        ),
+        ["    even Cycle", "    odd Cycle"]
+    );
+}

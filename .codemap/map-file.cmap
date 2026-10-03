@@ -239,8 +239,8 @@ parent 9g28fx
 author ai
 file crates/gui/src/action.rs
 symbol save
-lines 0 22
-hash 4e4ef60e9f09eacc
+lines 0 21
+hash 067e19114a5a97a9
 note The GUI's save: refused while the map on disk does not read (Readable::Broken), since the save would rewrite what did not read. Otherwise clears the dirty flag and records the files' stamp so the disk poller does not read its own write back as an external change.
 
 step n8ip2o

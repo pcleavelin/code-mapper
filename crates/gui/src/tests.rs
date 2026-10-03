@@ -1,9 +1,9 @@
 use std::path::Path as FsPath;
 
 use domain::{
-    Anchor, Author, Backend, Depth, FileText, Imports, Index, Line, Map, RelativePath, Root, Row,
-    SourceFile, Span, Step, StepId, StepOrder, Symbol, SymbolKind, SymbolName, Tour, TourKind,
-    TourName,
+    Anchor, Author, Backend, Cut, Depth, Edge, FileText, Imports, Index, Line, Map, RelativePath,
+    Root, Row, SourceFile, Span, Step, StepId, StepOrder, Symbol, SymbolId, SymbolKind, SymbolName,
+    Tour, TourKind, TourName, Verdict,
 };
 use features::{Feature, Trigger};
 use io_map::MapStore;
@@ -24,6 +24,7 @@ use crate::nav::Scrolling;
 use crate::palette::{Palette, commands};
 use crate::panels::{Direction, View};
 use crate::theme::Cells;
+use crate::wizard::{self, BranchId, Expander, Page, Tick, WizardAct};
 
 #[test]
 fn every_control_is_named_by_its_feature() {
@@ -764,4 +765,300 @@ fn a_graph_node_offers_callees_of_the_symbol_even_when_the_step_shows_other_line
         labels.iter().any(|label| label.contains("callees")),
         "{labels:?}"
     );
+}
+
+const DEEP: &str = "fn main() {\n    a();\n    get_x();\n    get_y();\n    t1();\n    t2();\n}\nfn a() {\n    b();\n}\nfn b() {\n    c();\n}\nfn c() {\n    d();\n}\nfn d() {\n    a();\n}\nfn get_x(&self) -> u32 { self.x }\nfn get_y(&self) -> u32 { self.y }\n";
+
+fn deep_app() -> App {
+    let text = FileText::from(DEEP);
+    let highlights = vec![Vec::new(); text.all().len()];
+    let hash = text.whole_hash();
+    let mut index = Index::new(Root::new(FsPath::new("/nowhere")));
+    index.push(SourceFile::new(
+        RelativePath::new("src/main.rs"),
+        text,
+        highlights,
+        vec![
+            symbol("main", 0, 6),
+            symbol("a", 7, 9),
+            symbol("b", 10, 12),
+            symbol("c", 13, 15),
+            symbol("d", 16, 18),
+            symbol("get_x", 19, 19),
+            symbol("get_y", 20, 20),
+        ],
+        Imports::new(),
+        hash,
+        Backend::TreeSitter,
+    ));
+    let tests = FileText::from("fn t1() {\n}\nfn t2() {\n}\n");
+    let test_highlights = vec![Vec::new(); tests.all().len()];
+    let test_hash = tests.whole_hash();
+    index.push(SourceFile::new(
+        RelativePath::new("src/tests.rs"),
+        tests,
+        test_highlights,
+        vec![symbol("t1", 0, 1), symbol("t2", 2, 3)],
+        Imports::new(),
+        test_hash,
+        Backend::TreeSitter,
+    ));
+    let at = |name: &str| {
+        index
+            .symbol_ids()
+            .find(|id| index.symbol(*id).unwrap().name().as_str() == name)
+            .unwrap()
+    };
+    let edges: Vec<Edge> = [
+        ("main", "a"),
+        ("main", "get_x"),
+        ("main", "get_y"),
+        ("main", "t1"),
+        ("main", "t2"),
+        ("a", "b"),
+        ("b", "c"),
+        ("c", "d"),
+        ("d", "a"),
+    ]
+    .into_iter()
+    .map(|(from, to)| Edge {
+        from: at(from),
+        to: at(to),
+    })
+    .collect();
+    index.connect(&edges);
+    let store = MapStore::new(&Root::new(FsPath::new("/nowhere")));
+    App::of_model(
+        Model::new(index, Map::default(), store, Readable::Reads),
+        &Root::new(FsPath::new("/nowhere")),
+    )
+}
+
+fn symbol_named(app: &App, name: &str) -> SymbolId {
+    let index = &app.model.index;
+    index
+        .symbol_ids()
+        .find(|id| index.symbol(*id).unwrap().name().as_str() == name)
+        .unwrap()
+}
+
+fn wizard_rows(app: &App) -> Vec<String> {
+    let wizard = app.model.wizard.as_ref().unwrap();
+    let outline = wizard.outline();
+    outline
+        .lines()
+        .iter()
+        .map(|line| match line {
+            wizard::Line::Branch(id) => {
+                let branch = outline.branch(*id).unwrap();
+                format!(
+                    "{}{} {}",
+                    "  ".repeat(branch.planned.entry.depth.value() as usize),
+                    app.model
+                        .index
+                        .symbol(branch.planned.entry.symbol)
+                        .unwrap()
+                        .name(),
+                    if branch.tick == Tick::Ticked {
+                        "x"
+                    } else {
+                        "-"
+                    }
+                )
+            }
+            wizard::Line::Fold(fold) => format!(
+                "fold {:?} {} {:?}",
+                fold.cut,
+                fold.members.len(),
+                fold.shown
+            ),
+        })
+        .collect()
+}
+
+fn branch_named(app: &App, name: &str) -> BranchId {
+    let wizard = app.model.wizard.as_ref().unwrap();
+    let outline = wizard.outline();
+    let symbol = symbol_named(app, name);
+    outline
+        .lines()
+        .iter()
+        .find_map(|line| match line {
+            wizard::Line::Branch(id)
+                if outline.branch(*id).unwrap().planned.entry.symbol == symbol =>
+            {
+                Some(*id)
+            }
+            _ => None,
+        })
+        .unwrap()
+}
+
+#[test]
+fn tour_from_here_opens_the_wizard_on_steps_with_the_start_and_a_name_from_the_symbol() {
+    let mut app = deep_app();
+    app.model.set_tab(Tab::Source);
+    let start = symbol_named(&app, "a");
+    app.apply(Action::Wizard(WizardAct::FromHere(start)));
+    let wizard = app.model.wizard.as_ref().unwrap();
+    assert_eq!(wizard.page(), Page::Steps);
+    assert_eq!(wizard.start(), Some(start));
+    assert_eq!(app.model.typed_name().as_str(), "a");
+    assert_eq!(app.model.nav.tab(), Tab::Tour);
+    assert_eq!(wizard_rows(&app), ["a x", "  b x", "    c x"]);
+    app.apply(Action::Wizard(WizardAct::Back));
+    assert_eq!(app.model.wizard.as_ref().unwrap().page(), Page::Start);
+}
+
+#[test]
+fn opening_a_row_past_promote_depth_loads_its_callees_and_a_call_back_into_the_path_is_a_leaf() {
+    let mut app = deep_app();
+    app.apply(Action::Wizard(WizardAct::FromHere(symbol_named(
+        &app, "main",
+    ))));
+    assert_eq!(
+        wizard_rows(&app),
+        [
+            "main x",
+            "  a x",
+            "    b x",
+            "fold Test 2 Closed",
+            "fold Trivial 2 Closed"
+        ]
+    );
+    app.apply(Action::Wizard(WizardAct::Expand(branch_named(&app, "b"))));
+    app.apply(Action::Wizard(WizardAct::Expand(branch_named(&app, "c"))));
+    app.apply(Action::Wizard(WizardAct::Expand(branch_named(&app, "d"))));
+    assert_eq!(
+        wizard_rows(&app)[2..6],
+        ["    b x", "      c x", "        d x", "          a -"]
+    );
+    let wizard = app.model.wizard.as_ref().unwrap();
+    let back = wizard_rows(&app)
+        .iter()
+        .position(|row| row == "          a -")
+        .unwrap();
+    let wizard::Line::Branch(back) = wizard.outline().lines()[back].clone() else {
+        panic!("a fold where the call back should be");
+    };
+    assert_eq!(
+        wizard.outline().branch(back).unwrap().planned.verdict,
+        Verdict::Cycle
+    );
+    assert_eq!(
+        wizard.outline().expander(back, &app.model.index),
+        Expander::Leaf
+    );
+    app.apply(Action::Wizard(WizardAct::Toggle(back)));
+    assert_eq!(
+        app.model
+            .wizard
+            .as_ref()
+            .unwrap()
+            .outline()
+            .branch(back)
+            .unwrap()
+            .tick,
+        Tick::Unticked
+    );
+}
+
+#[test]
+fn unticking_a_wizard_row_unticks_its_subtree_and_ticking_one_ticks_its_parents() {
+    let mut app = deep_app();
+    app.apply(Action::Wizard(WizardAct::FromHere(symbol_named(
+        &app, "main",
+    ))));
+    app.apply(Action::Wizard(WizardAct::Expand(branch_named(&app, "b"))));
+    app.apply(Action::Wizard(WizardAct::Expand(branch_named(&app, "c"))));
+    app.apply(Action::Wizard(WizardAct::Toggle(branch_named(&app, "a"))));
+    assert_eq!(
+        wizard_rows(&app)[..5],
+        ["main x", "  a -", "    b -", "      c -", "        d -"]
+    );
+    app.apply(Action::Wizard(WizardAct::Toggle(branch_named(&app, "c"))));
+    assert_eq!(
+        wizard_rows(&app)[..5],
+        ["main x", "  a x", "    b x", "      c x", "        d -"]
+    );
+}
+
+#[test]
+fn a_collapsed_row_keeps_its_ticks_and_create_adds_the_hidden_ticked_rows() {
+    let mut app = deep_app();
+    app.apply(Action::Wizard(WizardAct::FromHere(symbol_named(
+        &app, "main",
+    ))));
+    app.apply(Action::Wizard(WizardAct::Expand(branch_named(&app, "b"))));
+    app.apply(Action::Wizard(WizardAct::Expand(branch_named(&app, "c"))));
+    app.apply(Action::Wizard(WizardAct::Expand(branch_named(&app, "b"))));
+    assert_eq!(wizard_rows(&app)[..3], ["main x", "  a x", "    b x"]);
+    assert_eq!(wizard_rows(&app)[3], "fold Test 2 Closed");
+    app.apply(Action::Wizard(WizardAct::Next));
+    app.apply(Action::Wizard(WizardAct::Next));
+    app.apply(Action::Wizard(WizardAct::Next));
+    assert!(app.model.wizard.is_none());
+    let tour = app.model.map.tour(&TourName::new("main").unwrap()).unwrap();
+    let tree: Vec<String> = tour
+        .tree_order()
+        .into_iter()
+        .map(|placed| {
+            format!(
+                "{}{}",
+                "  ".repeat(placed.depth.value() as usize),
+                tour.step(&placed.step).unwrap().symbol().unwrap()
+            )
+        })
+        .collect();
+    assert_eq!(tree, ["main", "  a", "    b", "      c", "        d"]);
+}
+
+#[test]
+fn cut_callees_fold_by_reason_and_an_open_fold_lists_each_one_to_tick() {
+    let mut app = deep_app();
+    let main = symbol_named(&app, "main");
+    app.apply(Action::Wizard(WizardAct::FromHere(main)));
+    let root = branch_named(&app, "main");
+    app.apply(Action::Wizard(WizardAct::Fold(root, Cut::Trivial)));
+    assert_eq!(
+        wizard_rows(&app)[3..],
+        [
+            "fold Test 2 Closed",
+            "fold Trivial 2 Open",
+            "  get_x -",
+            "  get_y -"
+        ]
+    );
+    app.apply(Action::Wizard(WizardAct::Toggle(branch_named(
+        &app, "get_y",
+    ))));
+    app.apply(Action::Wizard(WizardAct::Fold(root, Cut::Trivial)));
+    assert_eq!(wizard_rows(&app)[4..], ["fold Trivial 2 Closed"]);
+    let ticked: Vec<SymbolId> = app
+        .model
+        .wizard
+        .as_ref()
+        .unwrap()
+        .outline()
+        .ticked()
+        .into_iter()
+        .map(|entry| entry.symbol)
+        .collect();
+    assert!(ticked.contains(&symbol_named(&app, "get_y")));
+    assert!(!ticked.contains(&symbol_named(&app, "get_x")));
+}
+
+#[test]
+fn opening_a_tour_cancels_the_wizard_and_the_next_wizard_starts_fresh() {
+    let mut app = app();
+    app.apply(Action::Wizard(WizardAct::Start));
+    app.model
+        .fields
+        .fill(Which::WizardName, &Label::new("half typed"));
+    app.apply(Action::OpenTour(TOUR, Tab::Tour));
+    assert!(app.model.wizard.is_none());
+    assert_eq!(app.model.nav.tour(), Some(TOUR));
+    app.apply(Action::Wizard(WizardAct::Start));
+    assert_eq!(app.model.wizard.as_ref().unwrap().page(), Page::Name);
+    assert_eq!(app.model.typed_name().as_str(), "");
 }

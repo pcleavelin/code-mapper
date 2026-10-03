@@ -62,8 +62,8 @@ order 0
 author ai
 file crates/gui/src/nav.rs
 symbol open_tour
-lines 0 5
-hash 5214b39f2a008c2b
+lines 0 6
+hash d3fa4f41e0867531
 note The handler for a row of a tour that exists: open_tour on the Tour tab.
 
 step r0nnxl

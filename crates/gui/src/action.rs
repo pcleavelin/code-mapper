@@ -17,6 +17,7 @@ use crate::panels::{BranchId, Direction, DropTarget, Ratio, View};
 use crate::peek::{HoverStep, Intent, Peek, Probe, Probing, WantedDefinition};
 use crate::status::Status;
 use crate::welcome::WelcomeAct;
+use crate::wizard::WizardAct;
 use crate::work::Request;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -91,6 +92,7 @@ pub(crate) enum Action {
     GraphWalk(Heading),
     Graph(GraphAction),
     Welcome(WelcomeAct),
+    Wizard(WizardAct),
 }
 
 impl App {
@@ -105,7 +107,7 @@ impl App {
             Action::Focus(symbol) => model.go_to_symbol(symbol),
             Action::Jump(symbol) => model.jumped_to_symbol(symbol),
             Action::OpenTour(tour, tab) => model.open_tour(tour, tab),
-            Action::SelectStep(key, scrolling) => model.select_step(key, scrolling),
+            Action::SelectStep(key, scrolling) => model.open_step(key, scrolling),
             Action::Toggle(key, flag) => model.views.entry(key).flags.toggle(flag),
             Action::HideAll(tour, hide) => self.hide_all(tour, hide),
             Action::CollapseAll(tour, collapse) => self.collapse_all(tour, collapse),
@@ -196,8 +198,9 @@ impl App {
             Action::GraphWalk(heading) => self.graph_walk(heading),
             Action::Graph(action) => model.graph.apply(action),
             Action::Welcome(act) => self.welcome(act),
+            Action::Wizard(act) => self.wizard(act),
         }
-        self.model.follow_welcome();
+        self.model.follow_focus();
     }
 
     fn walk_when_idle(&mut self, walk: Walk) {
@@ -380,7 +383,6 @@ impl App {
                 model.disk.warned = Warned::Quiet;
                 model.disk.stamp = model.store.stamp();
                 model.status = Status::Saved;
-                model.welcome.note_saved();
             }
             Err(error) => {
                 model.status = Status::SaveFailed(Label::new(match &error {
@@ -400,7 +402,11 @@ impl App {
             | Which::GoToLine
             | Which::NewTour
             | Which::NewGroup
-            | Which::Palette => Enter::Keep,
+            | Which::Palette
+            | Which::WizardName
+            | Which::WizardGroup
+            | Which::WizardSearch
+            | Which::WizardNote => Enter::Keep,
             Which::Command | Which::ViewSearch => Enter::Clear,
         };
         let before = self.model.fields.get(which).text().clone();
@@ -409,6 +415,12 @@ impl App {
             match which {
                 Which::SymbolFilter => self.model.scrolls.set(ids::symbols(), Px::ZERO),
                 Which::TourFilter => self.model.scrolls.set(ids::tours(), Px::ZERO),
+                Which::WizardName
+                | Which::WizardGroup
+                | Which::WizardSearch
+                | Which::WizardNote => {
+                    self.model.wizard_edited();
+                }
                 _ => {}
             }
         }
@@ -421,7 +433,13 @@ impl App {
             Which::NewTour | Which::NewGroup => self.create_tour(),
             Which::GoToLine => self.go_to_line(&line),
             Which::ViewSearch => self.pick_first(&line),
-            Which::SymbolFilter | Which::TourFilter | Which::Palette => {}
+            Which::SymbolFilter
+            | Which::TourFilter
+            | Which::Palette
+            | Which::WizardName
+            | Which::WizardGroup
+            | Which::WizardSearch
+            | Which::WizardNote => {}
         }
     }
 

@@ -534,10 +534,18 @@ impl Model {
     }
 
     pub(crate) fn open_tour(&mut self, tour: TourSlot, tab: Tab) {
+        self.close_wizard();
         if self.nav.tour != Some(tour) {
             self.select_tour(tour);
         }
         self.nav.show(tab);
+    }
+
+    pub(crate) fn open_step(&mut self, key: StepKey, scrolling: Scrolling) {
+        if self.nav.tour != Some(key.tour) {
+            self.close_wizard();
+        }
+        self.select_step(key, scrolling);
     }
 
     pub(crate) fn go_to_symbol(&mut self, symbol: SymbolId) {

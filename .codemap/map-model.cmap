@@ -5,6 +5,16 @@ author ai
 group map
 note The domain crate's map: Map, Tour, Step, Anchor and the names and notes they carry, as pure values with no I/O. Map is the only writer: every edit the CLI or the GUI makes is a Map method addressing a tour by TourName and a step by StepId, returning Changed (must be used, so a caller cannot drop the fact that the map needs saving) or a count, or a MapError value that the front ends word. Invariants it keeps: tour names are unique, and add_tour and rename refuse a name that differs from another only in letter case (a name is a file name, and some filesystems ignore case), a step's parent is a step of its tour, no step sits under itself, a link names an existing other tour, and a linked-to tour is not removed. Constructors that take stored values (Tour::new, Step::new, Anchor::new) exist for io-map's reader; everything else is made through Map.
 
+step 16ib6b
+order 17
+parent ze9l1o
+author ai
+file crates/domain/src/map.rs
+symbol check_name_free
+lines 0 3
+hash c25d9397d145dc61
+note free_name for a new tour, exposed so the wizard can refuse a taken name on its name page before the human picks any steps.
+
 step 20t16w
 order 12
 author ai
@@ -13,6 +23,16 @@ symbol new
 lines 0 19
 hash 50e0b10955d13300
 note A step from stored values, as io-map reads it: stale on line 0 until resolve places it.
+
+step 2oc3b2
+order 16
+parent ze9l1o
+author ai
+file crates/domain/src/map.rs
+symbol Draft
+lines 0 6
+hash ae7d057079ef9b16
+note Everything a tour is created with besides its steps: name, kind, optional group and note, and the author.
 
 step 3sz0ia
 order 8
@@ -144,3 +164,12 @@ symbol free_name
 lines 0 15
 hash 341df8b1c1e68bcd
 note Whether a name is free: taken when another tour has exactly it, CaseClash when one differs only in letter case; except names the tour being renamed, which may keep or recase its own name.
+
+step ze9l1o
+order 15
+author ai
+file crates/domain/src/map.rs
+symbol add_drafted_tour
+lines 0 14
+hash e10fba8d35527927
+note Creates a whole tour in one edit, as the build-tour wizard's create does: the name must be free, then the tour, its group, its note and its steps (hung from the tree entries the human kept, through the same hang promote uses) are built on a clone, which replaces the map only when every part succeeded. A refusal anywhere leaves the map as it was.

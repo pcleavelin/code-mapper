@@ -1,0 +1,570 @@
+codemap 9
+tour feature-build-tour
+kind flow
+author ai
+group features/gui
+note The human, reading in the window, who wants a tour of a workflow no tour covers yet. Goals: the human builds tours by hand where code is shown, and understanding an unfamiliar codebase takes less friction here than in an editor. The run before this feature: a tour by hand took + new tour, a name and a kind, then + step on one symbol at a time in Symbols and a click on a step to hang the next one under it, with the controls on three tabs and a guide bar pointing at each in turn; promote, in References, wrote its two-calls-deep scaffold with no say in what it kept. Nothing showed a symbol's call tree with promote's verdicts to pick from, or went deeper than two calls. Three wizards were built and run. A dialog over the window: it blocks the window, so a start cannot be picked from the views, and it needed a change to the ui crate to stop clicks reaching beneath it. One in the References panel, opened from the focused symbol: two lines a row in a 320 px panel, and References' own callers and callees hidden while building. The kept one is drawn in the Tour view where the start page is: the rest of the window stays live, so focusing a symbol anywhere sets the start; a preview shows the tour as it will be created; and 'tour from here' in References opens it on the steps page for the focused symbol. The steps page is promote's walk with a verdict on every call (kept, cut with the reason, stopped as a leaf, a cycle back into the path), opened one level at a time as deep as wanted, with cut calls folded by reason. A run on this repo starting from Map::promote shows twelve accessors folded under hang and pruned_tree opened five calls deep; create opens the tour in the document, unsaved until ctrl+s.
+
+step 0btuay
+order 47
+parent cz6242
+author ai
+file crates/gui/src/wizard.rs
+symbol expander
+lines 0 16
+hash e859f7e7cc0034fc
+note Whether a row can open: never for a cycle; for a loaded branch, whether it has callees; for one not yet opened, whether the index has any callee not placed elsewhere in the outline (unplaced_callees).
+
+step 1hk3ih
+order 27
+parent g6iy2u
+author ai
+file crates/gui/src/wizard.rs
+symbol of
+lines 0 36
+hash e4d6b1f39c04c113
+note The outline from the walk: each entry hangs under the nearest shallower one before it. A Kept entry above promote's depth has its callees already loaded and is open; every other row is closed and loads its callees when opened. Kept and stopped rows start ticked, cut rows and cycles unticked, as promote would keep them.
+
+step 1mmipf
+order 49
+parent lgtkew
+author ai
+file crates/gui/src/views/wizard.rs
+symbol create_page
+lines 0 30
+hash 13050fa2e3cd2032
+note Page 5: the name, kind, group, note and step count as they will be created, and the ticked tree.
+
+step 2fcjvg
+order 30
+parent ssuxjb
+author ai
+file crates/gui/src/wizard.rs
+symbol walk
+lines 0 45
+hash 04567455225a5233
+note The pre-order walk behind both the rows and the ticked list: a row, then its calls that were not cut, then the cut calls grouped by reason. A group of two or more becomes a fold row on screen, its members shown only while open. Walking for the ticked list it goes through every loaded row whether open or not.
+
+step 357vd3
+order 51
+parent g6fi5t
+author ai
+file crates/gui/src/views/wizard.rs
+symbol ticked_tree
+lines 0 23
+hash fa7fa784528376d1
+note The ticked entries in walk order, indented by depth: what create will hang.
+
+step 3hhho6
+order 16
+parent mcyqva
+author ai
+file crates/gui/src/wizard.rs
+symbol open_wizard
+lines 0 27
+hash 6684116694d06434
+note Start: the group field takes the group of the tour being read, the other fields are emptied, the kind is flow, and the focused symbol, when there is one, is already the start. The wizard opens on the Name page with the Tour view in front, where the document draws it.
+
+step 474et1
+order 43
+parent lgtkew
+author ai
+file crates/gui/src/views/wizard.rs
+symbol steps_page
+lines 0 52
+hash fb95c33b0e18b876
+note Page 3: the outline as rows, with the name, path and reason columns sized to the widest row shown.
+
+step 5vync4
+order 54
+parent cz6242
+author ai
+file crates/gui/src/wizard.rs
+symbol verdict_words
+lines 0 11
+hash 5e1c1861048b9e80
+note The words each verdict is shown with, in the rows, the fold rows and the dump.
+
+step 65btfk
+order 22
+parent pvqpnt
+author ai
+file crates/gui/src/wizard.rs
+symbol refuse
+lines 0 4
+hash 30bd6d1fae60fea2
+note The refusal is shown in red under the page until a page changes, a start is chosen or a wizard field is edited.
+
+step 6qrw2u
+order 61
+parent 65btfk
+author ai
+file crates/gui/src/wizard.rs
+symbol wizard_edited
+lines 0 4
+hash ff414fc59bbfc8c3
+note Editing any wizard field clears the refusal.
+
+step 73yqm5
+order 48
+parent lgtkew
+author ai
+file crates/gui/src/views/wizard.rs
+symbol note_page
+lines 0 14
+hash a45221fb73048de2
+note Page 4: the tour note. Step notes are written later in the Tour view.
+
+step 7nnbsz
+order 40
+parent lgtkew
+author ai
+file crates/gui/src/views/wizard.rs
+symbol start_page
+lines 0 7
+hash 2b89b527491f6898
+note Page 2: the start symbol. A symbol can be clicked anywhere in the window, since the rest of the window stays live, or searched for here.
+
+step 846x4y
+order 9
+parent vuo5t0
+author ai
+file crates/gui/src/wizard.rs
+symbol placed
+lines 0 5
+hash df8a642bb26d1334
+note Every symbol in the outline so far.
+
+step 878lmx
+order 52
+parent lgtkew
+author ai
+file crates/gui/src/views/wizard.rs
+symbol buttons
+lines 0 32
+hash 752a6346e1a1e301
+note back (not on page 1), next or create, cancel, and the keys that do the same.
+
+step 9hl3t0
+order 41
+parent 7nnbsz
+author ai
+file crates/gui/src/views/wizard.rs
+symbol matches
+lines 0 91
+hash 1b9f6d64c8d24b08
+note The search field and its matches: with nothing typed, the entry points outside tests; otherwise every symbol whose name holds the text. A click on a row makes it the start; past the rows shown, how many more match.
+
+step a7104e
+order 35
+parent g6iy2u
+author ai
+file crates/gui/src/wizard.rs
+symbol follow_focus
+lines 0 14
+hash e7650efa02962fe7
+note apply calls this after every action. When the focused symbol has changed since the wizard last looked and the Start page is up, the focus becomes the start, so clicking a symbol in Symbols, Source, References or the Graph picks it.
+
+step a8fjzx
+order 10
+parent mcyqva
+author ai
+file crates/gui/src/wizard.rs
+symbol toggle
+lines 0 17
+hash 056112cbb9408c77
+note Ticking a row ticks every row above it, unticking one unticks every row under it, so the ticked rows always form a tree. The start and cycle rows cannot be toggled.
+
+step a90vvo
+order 3
+parent vuo5t0
+author ai
+file crates/domain/src/map.rs
+symbol plan_promotion_callees
+lines 0 10
+hash 8a7580ec964d22f7
+link promote
+note One more level of promote's walk, given the path from the start to the row and every symbol already in the outline, so a symbol is placed once and a call back into the path is a cycle.
+
+step abjtfb
+order 46
+parent 474et1
+author ai
+file crates/gui/src/views/wizard.rs
+symbol fold_row
+lines 0 45
+hash c51c5acfb7f5a0a6
+note A fold: 'N left out: reason', with how many of them are ticked. Clicking it or its expander shows or hides the calls in it.
+
+step ajodeu
+order 26
+parent cwylz1
+author ai
+file crates/gui/src/wizard.rs
+symbol Page
+lines 0 6
+hash 3beb28e54225b72e
+note The five pages in order: Name, Start, Steps, Note, Create. next and back step through them, and field names the text field each page focuses.
+
+step cwylz1
+order 14
+parent mcyqva
+author ai
+file crates/gui/src/wizard.rs
+symbol show_page
+lines 0 12
+hash 20467d85f248d4c7
+note Moves to a page: clears the refusal and gives the keyboard to the page's field, if it has one.
+
+step cz6242
+order 45
+parent 474et1
+author ai
+file crates/gui/src/views/wizard.rs
+symbol branch_row
+lines 0 62
+hash 217cdb096acc61b8
+note One call: its expander, a tick box, its name and file, and promote's reason (the start, test, accessor, trivial body, or which kind of leaf). A call back into the path shows as 'calls back into X' with no box. A click ticks or unticks it.
+
+step dfowq3
+order 37
+parent j20ivn
+author ai
+file crates/gui/src/views/references.rs
+symbol focus_actions
+lines 25 30
+hash 8c6f4fc6e2896fa6
+note Trigger: 'tour from here' under the References heading, beside promote, for the focused symbol.
+
+step duxupz
+order 60
+parent ajodeu
+author ai
+file crates/gui/src/wizard.rs
+symbol impl Page
+lines 0 49
+hash 48c10764b7ad77aa
+note Each page's word and number for the header, the page after and before it, and the field it focuses.
+
+step g4coml
+order 19
+parent j20ivn
+author ai
+file crates/domain/src/map/name.rs
+symbol from_symbol
+lines 0 18
+hash a83fde2b77800bcb
+link map-model
+note The name prefilled from the symbol, the same name promote would give.
+
+step g60ekx
+order 24
+parent pvqpnt
+author ai
+file crates/gui/src/wizard.rs
+symbol create_from_wizard
+lines 0 38
+hash 35a65077aba4e777
+note Create: builds a Draft from the fields and kind, authored by the human, and adds it with the ticked entries in one edit. On a refusal the wizard stays open with the message; on success it closes, the map is marked unsaved, and the new tour opens in the Tour view, waiting for ctrl+s.
+
+step g6fi5t
+order 50
+parent lgtkew
+author ai
+file crates/gui/src/views/wizard.rs
+symbol preview
+lines 0 20
+hash d6ed7005ed5bff33
+note Under every page before Create: the tour as it will be created, name, kind, group, note and ticked steps, updated as the fields and ticks change.
+
+step g6iy2u
+order 13
+parent mcyqva
+author ai
+file crates/gui/src/wizard.rs
+symbol choose
+lines 0 7
+hash 6696bd845dd66f50
+note Setting the start clears the refusal. The same symbol again keeps the outline and its ticks; a new one rebuilds the outline from promote's walk.
+
+step gu7uyx
+order 28
+parent g6iy2u
+author ai
+file crates/domain/src/map.rs
+symbol plan_promotion
+lines 0 2
+hash cf3bd8eccfec16f0
+link promote
+note promote's walk two calls deep with a verdict on every call, without writing a tour: the outline's first rows.
+
+step haz43c
+order 36
+parent pvqpnt
+author ai
+file crates/gui/src/keys.rs
+symbol wizard_keys
+lines 0 11
+hash 587d8929a291977e
+note Enter goes on and escape cancels, while the wizard is open and the keyboard is in no field or in one of the wizard's own.
+
+step hdfkb8
+order 39
+parent lgtkew
+author ai
+file crates/gui/src/views/wizard.rs
+symbol name_page
+lines 0 53
+hash b4f1a37d83f86a0d
+note Page 1: the name field, the three kinds as buttons each with what it means, and the group field.
+
+step hoic3c
+order 57
+parent cz6242
+author ai
+file crates/gui/src/views/wizard.rs
+symbol tree_runs
+lines 0 25
+hash cc80a2d4758855fb
+note A symbol as a row of the tree: its name indented two cells a level, padded to the name column, then its file and line clipped from the left and padded to the path room.
+
+step hzqskv
+order 53
+parent mcyqva
+author ai
+file crates/gui/src/views/wizard.rs
+symbol wizard_strip
+lines 0 33
+hash 91d1f5f077e576d5
+note While the wizard is open, the target strip of Source and Graph says which tour is being built and, on the Start page, the chosen start ('click a symbol' when none); elsewhere the page it is on. 'back to the wizard' brings the Tour view forward.
+
+step idkgl4
+order 56
+parent 474et1
+author ai
+file crates/gui/src/views/wizard.rs
+symbol tree_width
+lines 0 11
+hash 03aea94fb97327c6
+note The name column's width: the widest name with its indent, at most a third of the column so the path and reason still fit.
+
+step j20ivn
+order 18
+parent mcyqva
+author ai
+file crates/gui/src/wizard.rs
+symbol tour_from_here
+lines 0 14
+hash a7e9a8909572e379
+note 'tour from here': opens the wizard with the name taken from the symbol, the symbol as the start, and the steps page up.
+
+step j95dk0
+order 44
+parent 474et1
+author ai
+file crates/gui/src/wizard.rs
+symbol lines
+lines 0 6
+hash 01aef2031f7f8b3f
+note The rows on screen: the walk over open branches, with folded groups as one row each.
+
+step ld45g0
+order 25
+parent mcyqva
+author ai
+file crates/gui/src/wizard.rs
+symbol WizardAct
+lines 0 13
+hash e44ca205c4a96794
+note The wizard's acts, one per control: the buttons, the kind buttons, a symbol row, 'use it', a row's tick box and expander, a fold row, 'back to the wizard'.
+
+step lgtkew
+order 38
+parent 3hhho6
+author ai
+file crates/gui/src/views/wizard.rs
+symbol wizard_page
+lines 0 42
+hash 6f8ecbbb040b75a0
+note Drawn by the Tour view's document in place of a tour while the wizard is open, in the start page's centred column: the title, the five pages numbered with the current one in the accent, the page, the refusal in red, the buttons, and below every page but Create a preview of the tour as it will be created.
+
+step mcyqva
+order 0
+author ai
+file crates/gui/src/wizard.rs
+symbol wizard
+lines 0 44
+hash b8fae97527bdb7b7
+note The handler: every act of the build-tour wizard. Start opens it, FromHere opens it on the steps page for a symbol, Next and Back move between pages, Cancel drops it, Return brings the Tour view forward from the strip in Source or Graph, Kind sets the tour's kind, Choose and UseFocus set the start symbol, Toggle ticks or unticks a row of the outline, Expand opens a row's calls, Fold opens or closes a group of calls cut for the same reason.
+
+step mnmkuh
+order 31
+parent g60ekx
+author ai
+file crates/domain/src/map.rs
+symbol add_drafted_tour
+lines 0 14
+hash e10fba8d35527927
+link map-model
+note The tour, its group, note and steps in one edit that changes nothing when any part is refused.
+
+step nonj3j
+order 55
+parent lgtkew
+author ai
+file crates/gui/src/views/wizard.rs
+symbol header
+lines 0 17
+hash 92c4cdf514f7e5d9
+note The five pages by number and name: done ones in text, the current one in the accent, the ones ahead weak.
+
+step opal2i
+order 58
+parent cz6242
+author ai
+file crates/gui/src/views/wizard.rs
+symbol expander
+lines 0 15
+hash d0bfc6343b2e72ec
+note The open/closed button of a row or fold, or the room for one on a leaf so the boxes line up.
+
+step pvqpnt
+order 20
+parent mcyqva
+author ai
+file crates/gui/src/wizard.rs
+symbol next_page
+lines 0 26
+hash 769b6d997f068ed3
+note Next: refuses on the Name page without a free valid name and on the Start page without a start; on Create it creates; otherwise it moves to the next page.
+
+step q36cpw
+order 42
+parent 7nnbsz
+author ai
+file crates/gui/src/views/wizard.rs
+symbol focus_choice
+lines 0 33
+hash 6ea030b9473a2497
+note The chosen start, and the focused symbol with 'use it' when it is not already the start.
+
+step qf8u06
+order 59
+parent q36cpw
+author ai
+file crates/gui/src/views/wizard.rs
+symbol place
+lines 0 12
+hash 9ac368bd5611d32e
+note A symbol's name, kind and file:line, for the start, the focus and the search matches.
+
+step qp8o5f
+order 8
+parent vuo5t0
+author ai
+file crates/gui/src/wizard.rs
+symbol path
+lines 0 9
+hash 412a7e443d733fb1
+note The symbols from the start down to a row, the path plan_promotion_callees walks under.
+
+step rrrirf
+order 23
+parent pvqpnt
+author ai
+file crates/gui/src/wizard.rs
+symbol name_refusal
+lines 0 9
+hash f91475214000f88f
+note An empty name, an invalid one or a taken one, refused on page 1 with the CLI's message for the same MapError.
+
+step se4ylt
+order 34
+parent z5o3ie
+author ai
+file crates/gui/src/nav.rs
+symbol open_step
+lines 0 5
+hash 39d72a425d8eb623
+note Selecting a step of another tour closes the wizard too; a step of the tour being read leaves it open.
+
+step sp4v3x
+order 32
+parent rrrirf
+author ai
+file crates/domain/src/map.rs
+symbol check_name_free
+lines 0 3
+hash c25d9397d145dc61
+link map-model
+note Whether no tour has the name, in any letter case.
+
+step ssuxjb
+order 29
+parent g60ekx
+author ai
+file crates/gui/src/wizard.rs
+symbol ticked
+lines 0 13
+hash 541b027a5c0a0cba
+note Every ticked row in walk order, with its depth: the entries the tour is hung from. Folds and closed rows do not hide a ticked row from it.
+
+step vuo5t0
+order 2
+parent mcyqva
+author ai
+file crates/gui/src/wizard.rs
+symbol expand
+lines 0 34
+hash aaa958e564883e1d
+note Opening a row. A cycle never opens; a row already loaded opens or closes; one not yet loaded asks for one more level of promote's walk under it and opens. Its new rows start ticked as promote would keep them only when the row is ticked; under an unticked row they all start unticked.
+
+step vwr7qn
+order 33
+parent z5o3ie
+author ai
+file crates/gui/src/nav.rs
+symbol open_tour
+lines 0 6
+hash d3fa4f41e0867531
+note Opening a tour from anywhere (the Tours list, a change on the start page, a link) closes the wizard, so the document shows that tour.
+
+step wo8fc9
+order 11
+parent a8fjzx
+author ai
+file crates/gui/src/wizard.rs
+symbol untick_below
+lines 0 8
+hash c4084651abf79cc0
+note Unticks a row and every loaded row under it.
+
+step xcntxh
+order 12
+parent mcyqva
+author ai
+file crates/gui/src/wizard.rs
+symbol toggle_fold
+lines 0 5
+hash 152087eca532cdad
+note Opens or closes the group of one row's calls cut for one reason.
+
+step yjsvg2
+order 7
+parent vuo5t0
+author ai
+file crates/gui/src/wizard.rs
+symbol ticked_at_first
+lines 0 5
+hash 43c0e19f81d486d4
+note Kept and stopped calls start ticked, cut calls and cycles unticked.
+
+step z5o3ie
+order 15
+parent mcyqva
+author ai
+file crates/gui/src/wizard.rs
+symbol close_wizard
+lines 0 10
+hash 43807ab2425057a0
+note Cancel and every other way out (opening a tour, the start page, a create): drops the wizard and releases its fields.

@@ -16,7 +16,7 @@ use crate::field::Which;
 use crate::graph::{GraphAction, Keyboard, Presence};
 use crate::grid::Grids;
 use crate::ids;
-use crate::keys::{self, Going};
+use crate::keys::{self, Going, WizardKey};
 use crate::model::{Metrics, Model, Readable, Tab, TabName, TourSlot};
 use crate::palette::PaletteAction;
 use crate::panels::{Panels, View};
@@ -25,6 +25,7 @@ use crate::theme::{self, BACKGROUND, TEXT};
 use crate::views;
 use crate::welcome::Opening;
 use crate::widgets::{Frame, Overlay};
+use crate::wizard::WizardAct;
 use crate::work::Services;
 
 struct Shot {
@@ -195,6 +196,20 @@ impl App {
             }
             self.apply(Action::Palette(PaletteAction::Close));
         }
+        let wizard_keys = if self.model.wizard.is_some()
+            && self.model.fields.focused().is_none_or(|which| {
+                matches!(
+                    which,
+                    Which::WizardName
+                        | Which::WizardGroup
+                        | Which::WizardSearch
+                        | Which::WizardNote
+                )
+            }) {
+            keys::wizard_keys(input)
+        } else {
+            Vec::new()
+        };
         let edits = keys::edits(input);
         let typed = &input.typed;
         let mut actions = Vec::new();
@@ -231,8 +246,18 @@ impl App {
             Which::TourFilter,
             Which::ViewSearch,
             Which::GoToLine,
+            Which::WizardName,
+            Which::WizardGroup,
+            Which::WizardSearch,
+            Which::WizardNote,
         ] {
             actions.push(Action::Type(which, edits.clone(), typed.clone()));
+        }
+        for key in wizard_keys {
+            actions.push(Action::Wizard(match key {
+                WizardKey::Next => WizardAct::Next,
+                WizardKey::Cancel => WizardAct::Cancel,
+            }));
         }
         for action in actions {
             self.apply(action);
@@ -262,7 +287,7 @@ impl App {
             &model.work,
             &model.graph,
             &model.palette,
-            &model.welcome,
+            &model.wizard,
         ];
         for part in parts {
             part.dump(&context, &mut lines);

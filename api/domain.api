@@ -96,8 +96,13 @@ index::language::pub const fn arguments(self) -> &'static [Argument]
 index::language::pub fn of(path: &RelativePath) -> Option<Self>
 index::prune::pub enum Cut { Test, Accessor, Trivial, }
 index::prune::pub enum Stop { Mapped, Shared, OtherPackage, }
+index::prune::pub enum Verdict { Kept, Cut(Cut), Stopped(Stop), Cycle, }
+index::prune::pub struct Planned { pub entry: TreeEntry, pub verdict: Verdict, }
 index::prune::pub struct PrunedTree { pub entries: Vec<TreeEntry>, pub cut: BTreeMap<SymbolId, Cut>, pub stopped: BTreeMap<SymbolId, Stop>, }
 index::prune::pub fn in_tests(&self, symbol: SymbolId) -> bool
+index::prune::pub fn unplaced_callees( &self, path: &[SymbolId], placed: &BTreeSet<SymbolId>, ) -> Vec<SymbolId>
+index::prune::pub fn plan_callees( &self, path: &[SymbolId], placed: &BTreeSet<SymbolId>, mapped: &impl Fn(SymbolId) -> bool, ) -> Vec<Planned>
+index::prune::pub fn planned_tree( &self, root: SymbolId, deepest: Depth, mapped: impl Fn(SymbolId) -> bool, ) -> Vec<Planned>
 index::prune::pub fn pruned_tree( &self, root: SymbolId, deepest: Depth, mapped: impl Fn(SymbolId) -> bool, ) -> PrunedTree
 index::symbol::pub struct FileId(Position);
 index::symbol::pub struct SymbolIndex(Position);
@@ -170,6 +175,7 @@ map::pub enum Row { Group { group: GroupName, depth: Depth, tours: TourCount, },
 map::pub enum Pruning { Pruned, All, }
 map::pub struct LinkCandidate { pub step: StepId, pub target: TourName, }
 map::pub struct Promoted { pub name: TourName, pub cut: BTreeMap<SymbolId, Cut>, pub stopped: BTreeMap<SymbolId, Stop>, pub links: Vec<LinkCandidate>, }
+map::pub struct Draft { pub name: TourName, pub kind: TourKind, pub group: Option<GroupName>, pub note: Option<Note>, pub author: Author, }
 map::pub struct Map { tours: Vec<Tour>, }
 map::pub const PROMOTE_DEPTH: Depth = Depth::new(2);
 map::pub fn new(tours: Vec<Tour>) -> Result<Self, MapError>
@@ -193,6 +199,10 @@ map::pub fn place( &mut self, name: &TourName, step: &StepId, parent: Option<&St
 map::pub fn remove_step(&mut self, name: &TourName, step: &StepId) -> Result<Step, MapError>
 map::pub fn remove_tour(&mut self, name: &TourName) -> Result<Tour, MapError>
 map::pub fn promote( &mut self, index: &Index, root: SymbolId, depth: Depth, name: Option<TourName>, author: Author, pruning: Pruning, ) -> Result<Promoted, MapError>
+map::pub fn plan_promotion(&self, index: &Index, root: SymbolId) -> Vec<Planned>
+map::pub fn plan_promotion_callees( &self, index: &Index, path: &[SymbolId], placed: &BTreeSet<SymbolId>, ) -> Vec<Planned>
+map::pub fn check_name_free(&self, name: &TourName) -> Result<Changed, MapError>
+map::pub fn add_drafted_tour( &mut self, index: &Index, draft: Draft, entries: &[TreeEntry], ) -> Result<Changed, MapError>
 map::pub fn resolve_all(&mut self, index: &Index)
 map::pub fn rows(&self) -> Vec<Row>
 map::pub fn rows_where(&self, wanted: impl Fn(&Tour) -> bool) -> Vec<Row>

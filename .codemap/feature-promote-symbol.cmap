@@ -40,6 +40,6 @@ parent miupsu
 author ai
 file crates/domain/src/map.rs
 symbol promote
-lines 0 72
-hash bcdd9854a71a740a
+lines 0 36
+hash 237ed6534734283c
 note The same promote the CLI runs: the call tree to the depth, each symbol added under its caller unless the tour already pins it whole.

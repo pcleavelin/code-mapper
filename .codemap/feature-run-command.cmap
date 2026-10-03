@@ -31,8 +31,8 @@ parent t1jwoo
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 31
-hash f3a379a4518cae0a
+lines 0 47
+hash 8c8e2b1cecbf8aa9
 link feature-new-tour
 note The command field clears on enter; a submitted line goes to run_command.
 
@@ -42,6 +42,6 @@ parent i8plan
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 24 31
+lines 38 45
 hash 4920825419facafe
 note Trigger: the keys phase hands the frame's edits and typed text to the command field first.

@@ -97,6 +97,7 @@ pub enum Feature {
     OpenDiffRow,
     CommandPalette,
     Welcome,
+    BuildTour,
 }
 
 impl Feature {
@@ -910,22 +911,47 @@ impl Feature {
             Self::Welcome => Spec::new(
                 Text::new("welcome"),
                 Text::new(
-                    "the Tour view with nothing chosen: the map's size and coverage, the tours changed since the parent revision, the groups to start reading, the keys; and a guide that points at each step of adding a tour",
+                    "the Tour view with nothing chosen: the map's size and coverage, the tours changed since the parent revision, the groups to start reading, the keys",
                 ),
                 Surface::Window,
                 &const {
                     [
-                        Trigger::Click(Element::new("welcome-guide")),
                         Trigger::Click(Element::new("start-change")),
                         Trigger::Click(Element::new("start-more-changes")),
                         Trigger::Click(Element::new("start-group")),
                         Trigger::Click(Element::new("start-ungrouped")),
                         Trigger::Click(Element::new("start-uncovered")),
                         Trigger::Click(Element::new("start-root")),
-                        Trigger::Click(Element::new("guide-skip")),
-                        Trigger::Click(Element::new("guide-close")),
-                        Trigger::Palette(Text::new("guided tour"), None),
                         Trigger::Palette(Text::new("start page"), None),
+                    ]
+                },
+            ),
+            Self::BuildTour => Spec::new(
+                Text::new("build-tour"),
+                Text::new(
+                    "a wizard drawn in the Tour view that builds a tour page by page: name and kind, the symbol it starts from, the steps from its call tree opened as deep as wanted with promote's verdict on every call, the note",
+                ),
+                Surface::Window,
+                &const {
+                    [
+                        Trigger::Click(Element::new("build-tour")),
+                        Trigger::Click(Element::new("tour-from-here")),
+                        Trigger::Click(Element::new("wizard-back")),
+                        Trigger::Click(Element::new("wizard-next")),
+                        Trigger::Click(Element::new("wizard-cancel")),
+                        Trigger::Click(Element::new("wizard-create")),
+                        Trigger::Click(Element::new("wizard-kind")),
+                        Trigger::Click(Element::new("wizard-sym")),
+                        Trigger::Click(Element::new("wizard-step")),
+                        Trigger::Click(Element::new("wizard-use-focus")),
+                        Trigger::Click(Element::new("wizard-open")),
+                        Trigger::Click(Element::new("wizard-fold")),
+                        Trigger::Click(Element::new("wizard-return")),
+                        Trigger::Type(Element::new("field@wizard-name")),
+                        Trigger::Type(Element::new("field@wizard-group")),
+                        Trigger::Type(Element::new("field@wizard-search")),
+                        Trigger::Type(Element::new("field@wizard-note")),
+                        Trigger::Palette(Text::new("build a tour"), None),
                     ]
                 },
             ),

@@ -15,7 +15,7 @@ use crate::panels::Panels;
 use crate::peek::Peek;
 use crate::status::Status;
 use crate::text::Tag;
-use crate::welcome::{Arrival, Welcome, palette_chord};
+use crate::wizard::{Line, Tick, Wizard, verdict_words};
 use crate::work::{Services, WorkState};
 
 #[derive(Default)]
@@ -139,18 +139,56 @@ impl Dump for Scrolls {
     }
 }
 
-impl Dump for Welcome {
-    fn dump(&self, _: &Context<'_>, lines: &mut DumpLines) {
-        if self.arrival() == Arrival::Workspace {
+impl Dump for Option<Wizard> {
+    fn dump(&self, context: &Context<'_>, lines: &mut DumpLines) {
+        let Some(wizard) = self else {
             return;
-        }
-        let chord = palette_chord(features::Feature::CommandPalette)
-            .unwrap_or_else(|| ui::Label::new("missing"));
+        };
+        let index = &context.model.index;
+        let name_of = |symbol: domain::SymbolId| {
+            index
+                .symbol(symbol)
+                .map_or_else(String::new, |found| found.name().as_str().to_owned())
+        };
+        let outline = wizard.outline();
+        let rows = outline.lines();
         lines.line(format_args!(
-            "welcome {} palette={}",
-            self.arrival(),
-            chord.as_str()
+            "wizard page={} kind={} name={} start={} steps={} rows={} refusal={}",
+            wizard.page().word().as_str(),
+            Tag::kind(wizard.kind()),
+            context.model.typed_name().as_str(),
+            Optional(wizard.start().map(name_of)),
+            outline.ticked().len(),
+            rows.len(),
+            Optional(wizard.refusal().map(|why| why.as_str().to_owned()))
         ));
+        for (row, line) in rows.iter().enumerate() {
+            match line {
+                Line::Branch(id) => {
+                    let Some(branch) = outline.branch(*id) else {
+                        continue;
+                    };
+                    lines.line(format_args!(
+                        "wizard row {row} depth={} {} {} {:?} {}",
+                        branch.planned.entry.depth,
+                        if branch.tick == Tick::Ticked {
+                            "x"
+                        } else {
+                            "-"
+                        },
+                        name_of(branch.planned.entry.symbol),
+                        outline.expander(*id, index),
+                        verdict_words(branch.planned.verdict).as_str()
+                    ));
+                }
+                Line::Fold(fold) => lines.line(format_args!(
+                    "wizard row {row} fold {:?} {} left out: {}",
+                    fold.shown,
+                    fold.members.len(),
+                    verdict_words(domain::Verdict::Cut(fold.cut)).as_str()
+                )),
+            }
+        }
     }
 }
 

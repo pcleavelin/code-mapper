@@ -900,43 +900,106 @@ pub(crate) fn welcome() -> Scenario {
         setup: |bin, name| Ok(mapped(bin, name)),
         hook: no_hook,
         after: &[&["tours", "startup-hand"]],
-        script: "idle
+        script: WELCOME,
+    }
+}
+
+const WELCOME: &str = "idle
 wait 2
 dump
 shot {shots}/start.png
 hover-id start-ungrouped
-click-id welcome-guide
+key p ctrl
+wait 1
+text build a tour
+wait 1
+key enter
 wait 2
-dump
-shot {shots}/guide-new.png
-click-id new-tour
+hover-id field@wizard-name
+click-id wizard-cancel
 wait 2
-dump
+absent wizard-cancel
+hover-id start-ungrouped
+click-id build-tour
+wait 2
+click-id field@wizard-name
 text startup-hand
-click-id kind@flow
+click-id wizard-kind@layer
 wait 1
-click-id create-tour
-wait 3
-dump
-shot {shots}/guide-add.png
-hover-id sym@3:0
+click-id wizard-kind@flow
 wait 1
-click-id add-sym@3:0
+click-id field@wizard-group
+text flows
+click-id wizard-next
 wait 2
 dump
-click-id tab@Tours
+shot {shots}/wizard-start.png
+click-id tab@Symbols
 wait 2
-click-id steps/0
+click-id sym@3:0
+wait 2
+idle
+wait 2
+click-id field@wizard-search
+text fill
+wait 2
+click-id wizard-sym/0
 wait 2
 dump
-shot {shots}/guide-save.png
+click-id wizard-use-focus
+wait 2
+dump
+click-id tab@Source
+wait 2
+dump
+shot {shots}/source-strip.png
+click-id wizard-return@Source
+wait 2
+click-id wizard-next
+wait 2
+dump
+click-id wizard-open/1
+wait 2
+click-id wizard-open/2
+wait 2
+dump
+click-id wizard-step/3
+wait 1
+click-id wizard-step/3
+wait 1
+dump
+shot {shots}/wizard-steps.png
+click-id wizard-next
+wait 2
+click-id field@wizard-note
+text Hand-built from main, three calls down to Store::check.
+click-id wizard-next
+wait 2
+dump
+shot {shots}/wizard-create.png
+hover-id wizard-create
+click-id wizard-create
+wait 2
+absent wizard-create
+dump
 click-id save
 wait 2
 dump
 shot {shots}/workspace.png
-click-id tab@Tour
+hover-id tour-from-here
+click-id tour-from-here
 wait 2
-absent start-ungrouped
+hover-id wizard-step/0
+dump
+click-id wizard-back
+wait 2
+hover-id field@wizard-search
+click-id tab@Tours
+wait 2
+click-id tours/0
+wait 2
+absent wizard-back
+dump
 key p ctrl
 wait 1
 text start page
@@ -950,9 +1013,7 @@ key left alt
 wait 2
 absent start-ungrouped
 quit
-",
-    }
-}
+";
 
 pub(crate) fn shots(name: &str) -> PathBuf {
     scratch(name).join("shots")

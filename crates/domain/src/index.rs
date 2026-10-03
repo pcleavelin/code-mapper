@@ -13,7 +13,7 @@ use crate::text::{Line, RelativePath, Span};
 
 pub use file::{Backend, Highlight, HighlightClass, Imports, Readiness, SourceFile};
 pub use language::{Argument, Extension, Language, Program};
-pub use prune::{Cut, PrunedTree, Stop};
+pub use prune::{Cut, Planned, PrunedTree, Stop, Verdict};
 pub use symbol::{
     Call, Depth, Edge, FileId, Location, Qualifier, Scope, Symbol, SymbolId, SymbolIndex,
     SymbolKey, SymbolKind, SymbolName, TypeName,

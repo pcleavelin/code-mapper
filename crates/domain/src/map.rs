@@ -7,7 +7,7 @@ mod tour;
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::index::{Cut, Depth, FileId, Index, PrunedTree, Stop, SymbolId};
+use crate::index::{Cut, Depth, FileId, Index, Planned, PrunedTree, Stop, SymbolId, TreeEntry};
 use crate::text::{RelativePath, Span};
 
 pub use diff::{Change, StepChange, StepDiff, TourDiff};
@@ -65,6 +65,20 @@ pub struct Promoted {
     pub cut: BTreeMap<SymbolId, Cut>,
     pub stopped: BTreeMap<SymbolId, Stop>,
     pub links: Vec<LinkCandidate>,
+}
+
+struct Hung {
+    symbol: SymbolId,
+    step: StepId,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Draft {
+    pub name: TourName,
+    pub kind: TourKind,
+    pub group: Option<GroupName>,
+    pub note: Option<Note>,
+    pub author: Author,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -425,13 +439,13 @@ impl Map {
         Ok(self.tours.remove(position))
     }
 
-    fn covers(&self, besides: &TourName, index: &Index, symbol: SymbolId) -> Vec<TourName> {
+    fn covers(&self, besides: Option<&TourName>, index: &Index, symbol: SymbolId) -> Vec<TourName> {
         let (Some(found), Some(file)) = (index.symbol(symbol), index.file(symbol.file())) else {
             return Vec::new();
         };
         self.tours
             .iter()
-            .filter(|tour| tour.name() != besides)
+            .filter(|tour| Some(tour.name()) != besides)
             .filter(|tour| {
                 tour.steps().iter().any(|step| {
                     step.resolved_symbol() == Some(symbol)
@@ -445,7 +459,7 @@ impl Map {
     }
 
     fn link_target(&self, besides: &TourName, index: &Index, symbol: SymbolId) -> Option<TourName> {
-        let covering = self.covers(besides, index, symbol);
+        let covering = self.covers(Some(besides), index, symbol);
         let rooted = covering.iter().find(|name| {
             self.tour(name).is_some_and(|tour| {
                 tour.steps()
@@ -477,13 +491,39 @@ impl Map {
                 entries: index.call_tree(root, depth),
                 ..PrunedTree::default()
             },
-            Pruning::Pruned => index.pruned_tree(root, depth, |symbol| {
-                symbol != root && !self.covers(&name, index, symbol).is_empty()
-            }),
+            Pruning::Pruned => {
+                index.pruned_tree(root, depth, self.mapped(Some(&name), index, root))
+            }
         };
-        let mut stack: Vec<StepId> = Vec::new();
         let mut links = Vec::new();
-        for entry in &tree.entries {
+        for hung in self.hang(index, &name, &tree.entries, author)? {
+            if tree.stopped.get(&hung.symbol) == Some(&Stop::Mapped)
+                && let Some(target) = self.link_target(&name, index, hung.symbol)
+            {
+                links.push(LinkCandidate {
+                    step: hung.step,
+                    target,
+                });
+            }
+        }
+        Ok(Promoted {
+            name,
+            cut: tree.cut,
+            stopped: tree.stopped,
+            links,
+        })
+    }
+
+    fn hang(
+        &mut self,
+        index: &Index,
+        name: &TourName,
+        entries: &[TreeEntry],
+        author: Author,
+    ) -> Result<Vec<Hung>, MapError> {
+        let mut stack: Vec<StepId> = Vec::new();
+        let mut hung = Vec::new();
+        for entry in entries {
             let level = entry.depth.position();
             let (Some(symbol), Some(file)) =
                 (index.symbol(entry.symbol), index.file(entry.symbol.file()))
@@ -494,7 +534,7 @@ impl Map {
                 .checked_sub(1)
                 .and_then(|above| stack.get(above))
                 .cloned();
-            let existing = self.tour(&name).and_then(|tour| {
+            let existing = self.tour(name).and_then(|tour| {
                 tour.steps()
                     .iter()
                     .find(|step| {
@@ -508,30 +548,67 @@ impl Map {
                 Some(id) => id,
                 None => self.add_step(
                     index,
-                    &name,
+                    name,
                     entry.symbol.file(),
                     symbol.span(),
                     author,
                     parent.as_ref(),
                 )?,
             };
-            if tree.stopped.get(&entry.symbol) == Some(&Stop::Mapped)
-                && let Some(target) = self.link_target(&name, index, entry.symbol)
-            {
-                links.push(LinkCandidate {
-                    step: id.clone(),
-                    target,
-                });
-            }
+            hung.push(Hung {
+                symbol: entry.symbol,
+                step: id.clone(),
+            });
             stack.truncate(level);
             stack.push(id);
         }
-        Ok(Promoted {
-            name,
-            cut: tree.cut,
-            stopped: tree.stopped,
-            links,
-        })
+        Ok(hung)
+    }
+
+    fn mapped<'map>(
+        &'map self,
+        besides: Option<&'map TourName>,
+        index: &'map Index,
+        root: SymbolId,
+    ) -> impl Fn(SymbolId) -> bool + 'map {
+        move |symbol| symbol != root && !self.covers(besides, index, symbol).is_empty()
+    }
+
+    pub fn plan_promotion(&self, index: &Index, root: SymbolId) -> Vec<Planned> {
+        index.planned_tree(root, Self::PROMOTE_DEPTH, self.mapped(None, index, root))
+    }
+
+    pub fn plan_promotion_callees(
+        &self,
+        index: &Index,
+        path: &[SymbolId],
+        placed: &BTreeSet<SymbolId>,
+    ) -> Vec<Planned> {
+        let Some(root) = path.first().copied() else {
+            return Vec::new();
+        };
+        index.plan_callees(path, placed, &self.mapped(None, index, root))
+    }
+
+    pub fn check_name_free(&self, name: &TourName) -> Result<Changed, MapError> {
+        self.free_name(name, None)?;
+        Ok(Changed)
+    }
+
+    pub fn add_drafted_tour(
+        &mut self,
+        index: &Index,
+        draft: Draft,
+        entries: &[TreeEntry],
+    ) -> Result<Changed, MapError> {
+        let _free = self.check_name_free(&draft.name)?;
+        let mut built = self.clone();
+        let _added = built.add_tour(draft.name.clone(), draft.kind, draft.author)?;
+        let _grouped = built.set_group(&draft.name, draft.group)?;
+        let _noted = built.set_tour_note(&draft.name, draft.note)?;
+        let _hung = built.hang(index, &draft.name, entries, draft.author)?;
+        *self = built;
+        Ok(Changed)
     }
 
     pub fn resolve_all(&mut self, index: &Index) {

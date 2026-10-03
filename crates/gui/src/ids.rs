@@ -158,8 +158,7 @@ pub(crate) const PALETTE_FIELD: Control =
     Control::new(Feature::CommandPalette, Element::new("field@palette"));
 pub(crate) const PALETTE_ROW: Control =
     Control::new(Feature::CommandPalette, Element::new("palette"));
-pub(crate) const WELCOME_GUIDE: Control =
-    Control::new(Feature::Welcome, Element::new("welcome-guide"));
+pub(crate) const BUILD_TOUR: Control = Control::new(Feature::BuildTour, Element::new("build-tour"));
 pub(crate) const START_CHANGE: Control =
     Control::new(Feature::Welcome, Element::new("start-change"));
 pub(crate) const START_MORE_CHANGES: Control =
@@ -170,8 +169,38 @@ pub(crate) const START_UNGROUPED: Control =
 pub(crate) const START_UNCOVERED: Control =
     Control::new(Feature::Welcome, Element::new("start-uncovered"));
 pub(crate) const START_ROOT: Control = Control::new(Feature::Welcome, Element::new("start-root"));
-pub(crate) const GUIDE_SKIP: Control = Control::new(Feature::Welcome, Element::new("guide-skip"));
-pub(crate) const GUIDE_CLOSE: Control = Control::new(Feature::Welcome, Element::new("guide-close"));
+pub(crate) const WIZARD_NAME_FIELD: Control =
+    Control::new(Feature::BuildTour, Element::new("field@wizard-name"));
+pub(crate) const WIZARD_GROUP_FIELD: Control =
+    Control::new(Feature::BuildTour, Element::new("field@wizard-group"));
+pub(crate) const WIZARD_SEARCH_FIELD: Control =
+    Control::new(Feature::BuildTour, Element::new("field@wizard-search"));
+pub(crate) const WIZARD_NOTE_FIELD: Control =
+    Control::new(Feature::BuildTour, Element::new("field@wizard-note"));
+pub(crate) const WIZARD_BACK: Control =
+    Control::new(Feature::BuildTour, Element::new("wizard-back"));
+pub(crate) const WIZARD_NEXT: Control =
+    Control::new(Feature::BuildTour, Element::new("wizard-next"));
+pub(crate) const WIZARD_CANCEL: Control =
+    Control::new(Feature::BuildTour, Element::new("wizard-cancel"));
+pub(crate) const WIZARD_CREATE: Control =
+    Control::new(Feature::BuildTour, Element::new("wizard-create"));
+pub(crate) const WIZARD_KIND: Control =
+    Control::new(Feature::BuildTour, Element::new("wizard-kind"));
+pub(crate) const WIZARD_SYMBOL: Control =
+    Control::new(Feature::BuildTour, Element::new("wizard-sym"));
+pub(crate) const WIZARD_STEP: Control =
+    Control::new(Feature::BuildTour, Element::new("wizard-step"));
+pub(crate) const WIZARD_USE_FOCUS: Control =
+    Control::new(Feature::BuildTour, Element::new("wizard-use-focus"));
+pub(crate) const WIZARD_OPEN: Control =
+    Control::new(Feature::BuildTour, Element::new("wizard-open"));
+pub(crate) const WIZARD_FOLD: Control =
+    Control::new(Feature::BuildTour, Element::new("wizard-fold"));
+pub(crate) const WIZARD_RETURN: Control =
+    Control::new(Feature::BuildTour, Element::new("wizard-return"));
+pub(crate) const WIZARD_FROM_HERE: Control =
+    Control::new(Feature::BuildTour, Element::new("tour-from-here"));
 
 #[cfg(test)]
 pub(crate) const CONTROLS: &[Control] = &[
@@ -249,15 +278,29 @@ pub(crate) const CONTROLS: &[Control] = &[
     GRAPH_CANVAS,
     PALETTE_FIELD,
     PALETTE_ROW,
-    WELCOME_GUIDE,
+    BUILD_TOUR,
     START_CHANGE,
     START_MORE_CHANGES,
     START_GROUP,
     START_UNGROUPED,
     START_UNCOVERED,
     START_ROOT,
-    GUIDE_SKIP,
-    GUIDE_CLOSE,
+    WIZARD_NAME_FIELD,
+    WIZARD_GROUP_FIELD,
+    WIZARD_SEARCH_FIELD,
+    WIZARD_NOTE_FIELD,
+    WIZARD_BACK,
+    WIZARD_NEXT,
+    WIZARD_CANCEL,
+    WIZARD_CREATE,
+    WIZARD_KIND,
+    WIZARD_SYMBOL,
+    WIZARD_STEP,
+    WIZARD_USE_FOCUS,
+    WIZARD_OPEN,
+    WIZARD_FOLD,
+    WIZARD_RETURN,
+    WIZARD_FROM_HERE,
 ];
 
 pub(crate) fn body() -> Id {
@@ -347,10 +390,10 @@ pub(crate) fn palette_box() -> Id {
     Id::new("palette-box")
 }
 
-pub(crate) fn guide() -> Id {
-    Id::new("guide")
-}
-
 pub(crate) fn start_page() -> Id {
     Id::new("start-page")
+}
+
+pub(crate) fn wizard() -> Id {
+    Id::new("wizard")
 }

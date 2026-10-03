@@ -18,7 +18,7 @@ use crate::theme::{
 use crate::widgets::{Chosen, CodeBlock, Container, Frame, Marks, Padding, Scroller, Width};
 use std::mem;
 
-use super::welcome;
+use super::{welcome, wizard};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct Occurrence(usize);
@@ -288,6 +288,10 @@ fn removed_steps(frame: &mut Frame<'_>, diff: Option<&TourDiff>) {
 }
 
 pub(super) fn tour_document(model: &Model, frame: &mut Frame<'_>, area: Extent) {
+    if let Some(open) = model.wizard.as_ref() {
+        wizard::wizard_page(model, open, frame, area);
+        return;
+    }
     let Some(tour) = model
         .nav
         .tour()

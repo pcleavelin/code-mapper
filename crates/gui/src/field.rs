@@ -31,6 +31,10 @@ pub(crate) enum Which {
     ViewSearch,
     GoToLine,
     Palette,
+    WizardName,
+    WizardGroup,
+    WizardSearch,
+    WizardNote,
 }
 
 impl Which {
@@ -45,6 +49,10 @@ impl Which {
             Self::ViewSearch => ids::VIEW_FIELD,
             Self::GoToLine => ids::LINE_FIELD,
             Self::Palette => ids::PALETTE_FIELD,
+            Self::WizardName => ids::WIZARD_NAME_FIELD,
+            Self::WizardGroup => ids::WIZARD_GROUP_FIELD,
+            Self::WizardSearch => ids::WIZARD_SEARCH_FIELD,
+            Self::WizardNote => ids::WIZARD_NOTE_FIELD,
         }
     }
 }
@@ -319,6 +327,10 @@ pub(crate) struct Fields {
     view_search: Field,
     line: Field,
     palette: Field,
+    wizard_name: Field,
+    wizard_group: Field,
+    wizard_search: Field,
+    wizard_note: Field,
     focused: Option<Which>,
 }
 
@@ -334,6 +346,10 @@ impl Fields {
             Which::ViewSearch => &self.view_search,
             Which::GoToLine => &self.line,
             Which::Palette => &self.palette,
+            Which::WizardName => &self.wizard_name,
+            Which::WizardGroup => &self.wizard_group,
+            Which::WizardSearch => &self.wizard_search,
+            Which::WizardNote => &self.wizard_note,
         }
     }
 
@@ -348,6 +364,10 @@ impl Fields {
             Which::ViewSearch => &mut self.view_search,
             Which::GoToLine => &mut self.line,
             Which::Palette => &mut self.palette,
+            Which::WizardName => &mut self.wizard_name,
+            Which::WizardGroup => &mut self.wizard_group,
+            Which::WizardSearch => &mut self.wizard_search,
+            Which::WizardNote => &mut self.wizard_note,
         }
     }
 

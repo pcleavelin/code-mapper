@@ -142,7 +142,7 @@ author ai
 file crates/gui/src/model.rs
 symbol new
 lines 0 42
-hash b64ee91c99b8dcf6
+hash 5067a403838b8215
 note Every panel in its default state, the map's stamp taken from the store, the metrics at the starting font until the first frame measures the real one.
 
 step erlcdz
@@ -165,6 +165,16 @@ lines 0 3
 hash 711fa6d14011de84
 note A group's state in the Tours list, once the reader has clicked it.
 
+step g3s74v
+order 39
+parent vr4u67
+author ai
+file crates/gui/src/wizard.rs
+symbol Fold
+lines 0 5
+hash 30a6b271cb0e43e3
+note A row standing for a parent's calls cut for one reason, two or more of them: built by the walk for the rows on screen, never stored.
+
 step gdb3ru
 order 5
 parent 8ftts9
@@ -174,6 +184,16 @@ symbol impl Model
 lines 104 118
 hash 17458e228a233098
 note Name to slot and StepId to slot: how a slot is found again after the map changed.
+
+step hl1oxj
+order 36
+parent w41rnw
+author ai
+file crates/gui/src/wizard.rs
+symbol Wizard
+lines 0 7
+hash 302d11bef96312f4
+note The build-tour wizard, Model.wizard, None while none is open: the page, the kind, the start symbol, the last focus it saw (so follow_focus reacts only to a change), the outline and the refusal shown under the page. The typed name, group, search and note live in the wizard's fields (Which::WizardName and the others). App::wizard's acts change it, follow_focus sets its start, create_from_wizard and every close (cancel, opening a tour or a step of another tour, the start page) drop it (feature-build-tour).
 
 step i04y8d
 order 13
@@ -275,6 +295,16 @@ lines 0 4
 hash c413607fc95327a7
 note One numbered step: slot, depth, number.
 
+step ulo2dp
+order 38
+parent vr4u67
+author ai
+file crates/gui/src/wizard.rs
+symbol Branch
+lines 0 6
+hash 7ac055dc119762f3
+note One call in the outline: promote's Planned for it, the branch it hangs under, its callees once loaded (Unloaded until opened), whether it is shown open, and whether it is ticked to become a step.
+
 step uuttuc
 order 33
 parent y4jba3
@@ -285,13 +315,23 @@ lines 0 11
 hash 79222c99d9ce456e
 note set records a measurement (Action::Measured); height gives it back only while the step's shape is the one it was measured at, so a step whose code, note, view or width changed is built again rather than reserved at a stale height.
 
+step vr4u67
+order 37
+parent hl1oxj
+author ai
+file crates/gui/src/wizard.rs
+symbol Outline
+lines 0 3
+hash ad10ea58b8e84772
+note The call tree opened so far: every Branch in the order it was loaded, a BranchId being its position, the start at 0; and the groups of cut calls the human has opened, by parent and reason.
+
 step w41rnw
 order 0
 author ai
 file crates/gui/src/model.rs
 symbol Model
 lines 0 31
-hash 58185743b70e7a1b
+hash 96cacbca253f6c62
 note All the state a view can see (gui-structure lists the fields). Views get &Model; apply gets &mut.
 
 step x5fqsj

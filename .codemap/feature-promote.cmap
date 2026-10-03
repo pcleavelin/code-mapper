@@ -21,8 +21,8 @@ parent x1eail
 author ai
 file crates/domain/src/map.rs
 symbol promote
-lines 0 72
-hash bcdd9854a71a740a
+lines 0 36
+hash 237ed6534734283c
 link promote
 note Creates the tour if needed and adds one whole-symbol step per call-tree entry, under the step of its caller.
 

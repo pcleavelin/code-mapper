@@ -3,17 +3,36 @@ tour promote
 kind flow
 author ai
 group cli
-note The scaffolding command, and the reason building a flow is not tedious. promote turns a symbol's call tree into a tour shaped like it: one step per symbol, each under the step it is called from, named after the root symbol. By default the tree is pruned (Index::pruned_tree) by rules measured against the hand-written feature tours of this repo: on its CLI features a depth-2 pruned tree kept 85% of the steps the authors chose at 69% precision, where the whole depth-2 tree kept 93% at 20% (TODO item 7's 42-step scaffolds). The result is still a draft, not an answer: the agent then deletes the steps that do not belong to the workflow, re-parents anything the resolver placed wrong, and writes the notes. Running it again on the same tour adds only the symbols the tour does not already have, so a tour can be deepened after a change.
+note The scaffolding command, and the reason building a flow is not tedious. promote turns a symbol's call tree into a tour shaped like it: one step per symbol, each under the step it is called from, named after the root symbol. By default the tree is pruned (Index::pruned_tree) by rules measured against the hand-written feature tours of this repo: on its CLI features a depth-2 pruned tree kept 85% of the steps the authors chose at 69% precision, where the whole depth-2 tree kept 93% at 20% (TODO item 7's 42-step scaffolds). The result is still a draft, not an answer: the agent then deletes the steps that do not belong to the workflow, re-parents anything the resolver placed wrong, and writes the notes. Running it again on the same tour adds only the symbols the tour does not already have, so a tour can be deepened after a change. The same walk with a verdict on every call (planned_tree) is what the build-tour wizard shows, opened one level at a time.
+
+step 1z1eb4
+order 22
+author ai
+file crates/domain/src/map.rs
+symbol plan_promotion_callees
+lines 0 10
+hash 8a7580ec964d22f7
+note One more level of the same walk: plan_callees under path, with placed the symbols already in the outline and mapped taken from the path's root. The wizard calls it when the human opens a branch deeper than plan_promotion went.
 
 step 413kyo
 order 15
-parent ia62kn
+parent pe9l4c
 author ai
 file crates/domain/src/map.rs
 symbol covers
 lines 0 17
-hash 9e8ce3e2f17266ab
-note Every other tour with a step on the symbol, or with a step whose lines hold all of it: what 'already mapped' means to promote.
+hash 0898ee7f9d366fdf
+note Every tour with a step on the symbol, or with a step whose lines hold all of it, leaving out the one tour named in besides (the tour being promoted into, when there is one).
+
+step 5wqvt6
+order 16
+parent 7klfk9
+author ai
+file crates/domain/src/index/prune.rs
+symbol planned_tree
+lines 0 31
+hash b338f9daf3285d9f
+note The depth-first walk with a verdict on every call: a stack of Planned seeded with the root as Kept, each popped entry recorded once (a cycle is recorded every time it is met), and only a Kept entry above the deepest depth opens its callees, through plan_callees with the path truncated to its depth. Children are pushed in reverse so they come out in call order.
 
 step 6881s1
 order 4
@@ -24,6 +43,16 @@ symbol add_step
 lines 0 38
 hash e0a7a55b402d53ee
 note Each step is anchored to the whole symbol; narrowing one to a slice is a later tour-pin. The step gets a fresh id, the next order number and the parent from the stack.
+
+step 6fuk1r
+order 19
+parent r1r0rp
+author ai
+file crates/domain/src/index/prune.rs
+symbol unplaced_callees
+lines 0 14
+hash 31c07d076a709cfe
+note The callees still to place: every callee of the last symbol on path that is not placed elsewhere in the walk, plus any on the path itself so plan_callees can mark them as a Cycle. A symbol therefore appears once in the tree, at its first place in pre-order.
 
 step 712z8g
 order 3
@@ -41,9 +70,9 @@ parent ia62kn
 author ai
 file crates/domain/src/index/prune.rs
 symbol pruned_tree
-lines 0 50
-hash 6c76d9f3d6a949c8
-note The default shape: the call tree in pre-order, each symbol once, where a cut callee is left out and a stopped one is kept as a leaf whose own callees are not followed. The root is never cut or stopped. The rules and their thresholds were chosen by scoring against the hand-written feature tours of this repo; the report names every symbol each rule touched so an agent can put one back.
+lines 0 22
+hash 33493822e46927b2
+note The default shape, derived from planned_tree: a Kept entry is a step, a Stopped one is a step recorded with its Stop so the report can name it, a Cut one is left out and recorded with its first reason, a Cycle is dropped. The root is never cut or stopped. The rules and their thresholds were chosen by scoring against the hand-written feature tours of this repo; the report names every symbol each rule touched so an agent can put one back.
 
 step 8kery8
 order 12
@@ -67,7 +96,7 @@ note Asks the language servers for the files the call tree reaches, one round pe
 
 step e26eha
 order 11
-parent 7klfk9
+parent r1r0rp
 author ai
 file crates/domain/src/index/prune.rs
 symbol stop
@@ -94,6 +123,15 @@ lines 0 30
 hash ab4261e2fc85b978
 note The command: index the files the call tree reaches, resolve the symbol to exactly one, hand it to Map::promote with the agent or human as author, and print how many steps the tour now has with what each pruning rule did. The name and depth arrive already converted: the name as a TourName or the MapError that refuses it, the depth as Levels, Map::PROMOTE_DEPTH (2) unless given. A pruned promote first asks the server for every pending file of the root's language, since the accessor and shared rules count callers and a caller in an unindexed file would be missed.
 
+step gshfd6
+order 21
+author ai
+file crates/domain/src/map.rs
+symbol plan_promotion
+lines 0 2
+hash cf3bd8eccfec16f0
+note promote's walk without writing a tour: planned_tree to PROMOTE_DEPTH with mapped as the stop rule. The build-tour wizard's steps page opens on it.
+
 step i8jlm4
 order 5
 parent 6881s1
@@ -110,9 +148,9 @@ parent ggmy6f
 author ai
 file crates/domain/src/map.rs
 symbol promote
-lines 0 72
-hash bcdd9854a71a740a
-note Walks the call tree in pre-order and keeps a stack of the StepId at each depth, so the step created at depth d becomes the parent of everything at depth d+1. The tour is created as a flow, since a call tree is a workflow by construction, and named from the root symbol when no name is given.
+lines 0 36
+hash 237ed6534734283c
+note Creates the tour as a flow, since a call tree is a workflow by construction, named from the root symbol when no name is given. The tree is call_tree with --all, else pruned_tree, where 'already mapped' is mapped's answer. hang adds the steps; each hung step stopped as Mapped that has a link_target becomes a LinkCandidate for the report.
 
 step kpfpi2
 order 14
@@ -131,7 +169,7 @@ author ai
 file crates/domain/src/map.rs
 symbol link_target
 lines 0 14
-hash a482abab85436571
+hash cc71a56aa6922ece
 note Which tour a mapped leaf should link to: the tour rooted at that symbol, else the only other tour covering it; none when several cover it and none is rooted there. On this repo's feature tours 80% of linked steps link to a tour that covers the step's symbol.
 
 step mkum0c
@@ -139,20 +177,70 @@ order 6
 parent ia62kn
 author ai
 file crates/domain/src/map.rs
-symbol promote
-lines 34 54
-hash 016d1e3e538b36a6
-note Re-promoting reuses the step a symbol already has instead of adding a second one, which also means notes already written survive. Only a step anchored at the symbol's first line counts as the symbol's step, so a step narrowed to a slice of it does not stop the whole symbol from being added.
+symbol hang
+lines 0 49
+hash 2b6de7b114daf748
+note Hangs a list of tree entries in a tour: walks them in pre-order and keeps a stack of the StepId at each depth, so the step created at depth d becomes the parent of everything at depth d+1. A symbol that already has a step reuses it and adds no second one, which also means notes already written survive; only a step anchored at the symbol's first line counts as the symbol's step, so a step narrowed to a slice of it does not stop the whole symbol from being added. Returns each symbol with its step. promote and add_drafted_tour (the build-tour wizard's create) both hang through it.
+
+step p26k16
+order 24
+parent mkum0c
+author ai
+file crates/domain/src/map.rs
+symbol Hung
+lines 0 3
+hash 7882d9092853ed2e
+note A symbol and the step hang gave it, new or reused: what promote needs to attach link candidates.
+
+step pe9l4c
+order 20
+parent ia62kn
+author ai
+file crates/domain/src/map.rs
+symbol mapped
+lines 0 6
+hash 97079574df57ccff
+note What 'already mapped' means to the walk: covered by a tour other than the one named besides, and not the root itself. promote names the tour it writes into, so promoting again into a tour does not stop at that tour's own steps; the wizard has no tour yet and names none. Promoting a symbol that has a tour still walks its callees.
+
+step r1r0rp
+order 17
+parent 5wqvt6
+author ai
+file crates/domain/src/index/prune.rs
+symbol plan_callees
+lines 0 29
+hash 08f4c4a8ac25d8e8
+note The verdicts for the callees of the last symbol on path, each one level deeper than that symbol: a callee already on path is a Cycle; else a cut rule makes it Cut; else a stop rule makes it Stopped; else Kept. The rules see only the callee and its caller, so the wizard can ask for one level at a time as the human opens a branch and get what promote would decide there.
+
+step t1zvsz
+order 18
+parent r1r0rp
+author ai
+file crates/domain/src/index/prune.rs
+symbol Verdict
+lines 0 5
+hash 9f62190ce67a0da9
+note What the walk says about one call: Kept (a step, followed further), Cut with its reason (left out), Stopped with its reason (a step, not followed), Cycle (a callee already on the path from the root, shown and never followed). Planned is a TreeEntry with its Verdict; promote turns a list of them into a PrunedTree, the build-tour wizard shows them.
 
 step u3yovj
 order 9
-parent 7klfk9
+parent r1r0rp
 author ai
 file crates/domain/src/index/prune.rs
 symbol cut
 lines 0 22
 hash d585499318c0d83d
 note Left out: a test (a 'tests' path segment or file stem, or a member of mod tests), an accessor (3 lines or fewer with 3 or more callers: a short specific helper with few callers is kept, since length alone cut too much of what authors keep), or a trivial body.
+
+step x9u3b8
+order 23
+parent t1zvsz
+author ai
+file crates/domain/src/index/prune.rs
+symbol Planned
+lines 0 3
+hash f275a4443a6fbc85
+note One entry of the walk: where it sits (symbol and depth) and its verdict.
 
 step xrlyep
 order 10

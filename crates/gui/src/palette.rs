@@ -73,7 +73,7 @@ pub(crate) enum PaletteCommand {
     Turn,
     Split(Direction),
     AddStep,
-    Guide,
+    BuildTour,
     StartPage,
 }
 
@@ -96,7 +96,8 @@ pub(crate) const fn commands(feature: Feature) -> &'static [PaletteCommand] {
         Feature::AutoLayout => &[PaletteCommand::AutoLayout],
         Feature::FitGraph => &[PaletteCommand::Fit, PaletteCommand::OneToOne],
         Feature::TurnGraph => &[PaletteCommand::Turn],
-        Feature::Welcome => &[PaletteCommand::Guide, PaletteCommand::StartPage],
+        Feature::Welcome => &[PaletteCommand::StartPage],
+        Feature::BuildTour => &[PaletteCommand::BuildTour],
         Feature::SplitPanel => &[
             PaletteCommand::Split(Direction::Right),
             PaletteCommand::Split(Direction::Down),
@@ -574,7 +575,7 @@ impl Model {
                 PaletteCommand::Fit => vec![Action::Graph(GraphAction::WantFit)],
                 PaletteCommand::OneToOne => vec![Action::Graph(GraphAction::OneToOne)],
                 PaletteCommand::Turn => vec![Action::Graph(GraphAction::Turn)],
-                PaletteCommand::Guide => vec![Action::Welcome(WelcomeAct::StartGuide)],
+                PaletteCommand::BuildTour => vec![Action::Welcome(WelcomeAct::BuildTour)],
                 PaletteCommand::StartPage => vec![Action::Welcome(WelcomeAct::StartPage)],
                 PaletteCommand::Split(direction) => {
                     let shown = View::of_tab(self.nav.tab());

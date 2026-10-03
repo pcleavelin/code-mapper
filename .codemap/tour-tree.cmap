@@ -30,9 +30,9 @@ order 4
 parent d43fmw
 author ai
 file crates/domain/src/map.rs
-symbol promote
-lines 34 43
-hash ab20e9eb1f974852
+symbol hang
+lines 20 29
+hash 200ef8c25567962c
 note Is this symbol already a whole-symbol step of this tour? The check that makes re-promoting add only what is missing instead of duplicating the tree.
 
 step 3e05qp

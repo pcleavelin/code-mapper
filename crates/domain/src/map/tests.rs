@@ -1088,3 +1088,91 @@ fn promote_stops_at_code_another_tour_covers_and_names_the_tour_to_link() {
     );
     assert_eq!(links(&map, &ambiguous).len(), 0);
 }
+
+#[test]
+fn promoting_into_a_tour_again_does_not_stop_at_its_own_steps() {
+    let mut index = one_file();
+    let first = index.by_line(&file("a.rs"), Line::new(0)).unwrap();
+    let second = index.by_line(&file("a.rs"), Line::new(3)).unwrap();
+    index.connect(&[Edge {
+        from: first,
+        to: second,
+    }]);
+    let mut map = Map::default();
+    for _ in 0..2 {
+        let promoted = map
+            .promote(
+                &index,
+                first,
+                Depth::new(2),
+                Some(name("again")),
+                Author::Agent,
+                Pruning::Pruned,
+            )
+            .unwrap();
+        assert_eq!(promoted.stopped.len(), 0);
+    }
+}
+
+#[test]
+fn add_drafted_tour_hangs_each_entry_under_the_entry_above_it_and_refuses_a_taken_name() {
+    let mut index = Index::new(Root::new(FsPath::new(".")));
+    index.push(source(
+        &["fn a() {", "}", "fn b() {", "}", "fn c() {", "}"],
+        vec![symbol("a", 0, 1), symbol("b", 2, 3), symbol("c", 4, 5)],
+    ));
+    let at = |line: u32| index.by_line(&file("a.rs"), Line::new(line)).unwrap();
+    let entries = [
+        TreeEntry {
+            symbol: at(0),
+            depth: Depth::new(0),
+        },
+        TreeEntry {
+            symbol: at(2),
+            depth: Depth::new(1),
+        },
+        TreeEntry {
+            symbol: at(4),
+            depth: Depth::new(0),
+        },
+    ];
+    let draft = Draft {
+        name: name("walk"),
+        kind: TourKind::Layer,
+        group: GroupName::new("flows"),
+        note: Note::new("the note"),
+        author: Author::Human,
+    };
+    let mut map = Map::default();
+    let _created = map
+        .add_drafted_tour(&index, draft.clone(), &entries)
+        .unwrap();
+    let tour = map.tour(&name("walk")).unwrap();
+    assert_eq!(tour.kind(), TourKind::Layer);
+    assert_eq!(tour.group().map(GroupName::as_str), Some("flows"));
+    assert_eq!(tour.note().map(Note::as_str), Some("the note"));
+    let tree: Vec<(String, u32)> = tour
+        .tree_order()
+        .into_iter()
+        .map(|placed| {
+            let step = tour.step(&placed.step).unwrap();
+            (
+                step.symbol().unwrap().as_str().to_owned(),
+                placed.depth.value(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        tree,
+        [
+            ("a".to_owned(), 0),
+            ("b".to_owned(), 1),
+            ("c".to_owned(), 0)
+        ]
+    );
+    assert_eq!(
+        map.add_drafted_tour(&index, draft, &entries),
+        Err(MapError::NameTaken(name("walk")))
+    );
+    assert_eq!(map.tours().len(), 1);
+}
