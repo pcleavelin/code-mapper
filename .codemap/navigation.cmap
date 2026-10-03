@@ -98,9 +98,9 @@ parent ju7j2n
 author ai
 file crates/gui/src/nav.rs
 symbol go
-lines 0 23
-hash 624b1902dba265a2
-note Restoring a place without it counting as a new navigation: it overwrites the last-frame snapshot, so track_navigation sees no difference at the end of this frame. The tour is found by name and the step by StepId; when either is gone only the symbol is restored. The step is selected with Scrolling::Stay and the pending scroll requests are cleared, then the document and Source scroll offsets and the graph camera (restore_camera, so nothing looks, glides or fits) are set to what they were when the place was left. The tab is set last, because selecting a step switches the tab on its own.
+lines 0 24
+hash 14475bdae7309b69
+note Restoring a place without it counting as a new navigation: it overwrites the last-frame snapshot, so track_navigation sees no difference at the end of this frame. The tour is found by name and the step by StepId; when either is gone only the symbol is restored, and a place with no symbol clears the focus. The step is selected with Scrolling::Stay and the pending scroll requests are cleared, then the document and Source scroll offsets and the graph camera (restore_camera, so nothing looks, glides or fits) are set to what they were when the place was left. The tab is set last, because selecting a step switches the tab on its own.
 
 step hbxizr
 order 15

@@ -158,15 +158,18 @@ pub(crate) const PALETTE_FIELD: Control =
     Control::new(Feature::CommandPalette, Element::new("field@palette"));
 pub(crate) const PALETTE_ROW: Control =
     Control::new(Feature::CommandPalette, Element::new("palette"));
-pub(crate) const WELCOME_PALETTE: Control =
-    Control::new(Feature::CommandPalette, Element::new("welcome-palette"));
-pub(crate) const WELCOME_SAVE: Control = Control::new(Feature::Save, Element::new("welcome-save"));
-pub(crate) const WELCOME_BACK: Control =
-    Control::new(Feature::GoBack, Element::new("welcome-back"));
 pub(crate) const WELCOME_GUIDE: Control =
     Control::new(Feature::Welcome, Element::new("welcome-guide"));
-pub(crate) const WELCOME_WORK: Control =
-    Control::new(Feature::Welcome, Element::new("welcome-work"));
+pub(crate) const START_CHANGE: Control =
+    Control::new(Feature::Welcome, Element::new("start-change"));
+pub(crate) const START_MORE_CHANGES: Control =
+    Control::new(Feature::Welcome, Element::new("start-more-changes"));
+pub(crate) const START_GROUP: Control = Control::new(Feature::Welcome, Element::new("start-group"));
+pub(crate) const START_UNGROUPED: Control =
+    Control::new(Feature::Welcome, Element::new("start-ungrouped"));
+pub(crate) const START_UNCOVERED: Control =
+    Control::new(Feature::Welcome, Element::new("start-uncovered"));
+pub(crate) const START_ROOT: Control = Control::new(Feature::Welcome, Element::new("start-root"));
 pub(crate) const GUIDE_SKIP: Control = Control::new(Feature::Welcome, Element::new("guide-skip"));
 pub(crate) const GUIDE_CLOSE: Control = Control::new(Feature::Welcome, Element::new("guide-close"));
 
@@ -246,11 +249,13 @@ pub(crate) const CONTROLS: &[Control] = &[
     GRAPH_CANVAS,
     PALETTE_FIELD,
     PALETTE_ROW,
-    WELCOME_PALETTE,
-    WELCOME_SAVE,
-    WELCOME_BACK,
     WELCOME_GUIDE,
-    WELCOME_WORK,
+    START_CHANGE,
+    START_MORE_CHANGES,
+    START_GROUP,
+    START_UNGROUPED,
+    START_UNCOVERED,
+    START_ROOT,
     GUIDE_SKIP,
     GUIDE_CLOSE,
 ];
@@ -344,4 +349,8 @@ pub(crate) fn palette_box() -> Id {
 
 pub(crate) fn guide() -> Id {
     Id::new("guide")
+}
+
+pub(crate) fn start_page() -> Id {
+    Id::new("start-page")
 }

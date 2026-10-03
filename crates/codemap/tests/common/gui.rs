@@ -903,8 +903,8 @@ pub(crate) fn welcome() -> Scenario {
         script: "idle
 wait 2
 dump
-shot {shots}/board.png
-absent tab@Tour
+shot {shots}/start.png
+hover-id start-ungrouped
 click-id welcome-guide
 wait 2
 dump
@@ -934,6 +934,21 @@ click-id save
 wait 2
 dump
 shot {shots}/workspace.png
+click-id tab@Tour
+wait 2
+absent start-ungrouped
+key p ctrl
+wait 1
+text start page
+wait 1
+key enter
+wait 2
+dump
+shot {shots}/start-again.png
+hover-id start-ungrouped
+key left alt
+wait 2
+absent start-ungrouped
 quit
 ",
     }

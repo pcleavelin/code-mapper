@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use domain::{Change, Depth, FileId, Line, Span, Step, Symbol, SymbolName, Tour, TourDiff};
-use ui::{Count, Icon, Id, Label, Px, Run};
+use ui::{Count, Extent, Icon, Id, Label, Px, Run};
 
 use crate::action::{Action, Collapse, ContextChange, Hide};
 use crate::ids::{self, Control, Target};
@@ -17,6 +17,8 @@ use crate::theme::{
 };
 use crate::widgets::{Chosen, CodeBlock, Container, Frame, Marks, Padding, Scroller, Width};
 use std::mem;
+
+use super::welcome;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct Occurrence(usize);
@@ -285,20 +287,13 @@ fn removed_steps(frame: &mut Frame<'_>, diff: Option<&TourDiff>) {
     }
 }
 
-pub(super) fn tour_document(model: &Model, frame: &mut Frame<'_>) {
+pub(super) fn tour_document(model: &Model, frame: &mut Frame<'_>, area: Extent) {
     let Some(tour) = model
         .nav
         .tour()
         .filter(|tour| tour.get() < model.tour_count().get())
     else {
-        frame.label(
-            if model.map.tours().is_empty() {
-                "no tours yet: the agent writes them (tour-new, tour-add in the console)"
-            } else {
-                "pick a tour on the left"
-            },
-            WEAK,
-        );
+        welcome::start_page(model, frame, area);
         return;
     };
     let Some(found) = model.tour(tour) else {

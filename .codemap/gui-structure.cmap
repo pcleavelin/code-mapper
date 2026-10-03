@@ -203,8 +203,8 @@ order 26
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 192 230
-hash 7d67d4029158aedb
+lines 192 231
+hash 5b05abcbd27f450b
 note Every measure counted in cells: button and field widths, column guesses before a panel has a size, the symbol table's columns, tooltip sizes, the gap before a danger button, the status bar's room for the map's place, the panels' floors and the picker's width.
 
 step an1gef
@@ -457,8 +457,8 @@ parent 9pik9m
 author ai
 file crates/gui/src/ids.rs
 symbol CONTROLS
-lines 0 82
-hash 457db60d17bac688
+lines 0 84
+hash ec98c885fce86d98
 note Every control, for the test that checks them against the registry.
 
 step mjhubp

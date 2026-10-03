@@ -204,6 +204,7 @@ pub(crate) const NEW_TOUR_FIELD: Cells = Cells::new(16);
 pub(crate) const FILTER_FIELD: Cells = Cells::new(16);
 pub(crate) const LINE_FIELD: Cells = Cells::new(8);
 pub(crate) const TOURS_GUESS: Cells = Cells::new(44);
+pub(crate) const START_PAGE_WIDTH: Cells = Cells::new(80);
 pub(crate) const TOURS_LEAST: Cells = Cells::new(20);
 pub(crate) const SYMBOLS_GUESS: Cells = Cells::new(60);
 pub(crate) const SYMBOLS_LEAST: Cells = Cells::new(30);

@@ -520,7 +520,6 @@ impl Feature {
                     [
                         Trigger::Click(Element::new("back")),
                         Trigger::Click(Element::new("forward")),
-                        Trigger::Click(Element::new("welcome-back")),
                         Trigger::Key(Chord::alt(Key::Left)),
                         Trigger::Key(Chord::alt(Key::Right)),
                         Trigger::Key(Chord::control(Key::Left)),
@@ -539,7 +538,6 @@ impl Feature {
                 &const {
                     [
                         Trigger::Click(Element::new("save")),
-                        Trigger::Click(Element::new("welcome-save")),
                         Trigger::Key(Chord::control(Key::Letter(Letter::new('s')))),
                         Trigger::Palette(
                             Text::new("save"),
@@ -906,23 +904,28 @@ impl Feature {
                         Trigger::Key(Chord::control(Key::Letter(Letter::new('p')))),
                         Trigger::Type(Element::new("field@palette")),
                         Trigger::Click(Element::new("palette")),
-                        Trigger::Click(Element::new("welcome-palette")),
                     ]
                 },
             ),
             Self::Welcome => Spec::new(
                 Text::new("welcome"),
                 Text::new(
-                    "a tabless first panel of actions and their keys, then a guide that points at each step of adding a tour",
+                    "the Tour view with nothing chosen: the map's size and coverage, the tours changed since the parent revision, the groups to start reading, the keys; and a guide that points at each step of adding a tour",
                 ),
                 Surface::Window,
                 &const {
                     [
                         Trigger::Click(Element::new("welcome-guide")),
-                        Trigger::Click(Element::new("welcome-work")),
+                        Trigger::Click(Element::new("start-change")),
+                        Trigger::Click(Element::new("start-more-changes")),
+                        Trigger::Click(Element::new("start-group")),
+                        Trigger::Click(Element::new("start-ungrouped")),
+                        Trigger::Click(Element::new("start-uncovered")),
+                        Trigger::Click(Element::new("start-root")),
                         Trigger::Click(Element::new("guide-skip")),
                         Trigger::Click(Element::new("guide-close")),
                         Trigger::Palette(Text::new("guided tour"), None),
+                        Trigger::Palette(Text::new("start page"), None),
                     ]
                 },
             ),

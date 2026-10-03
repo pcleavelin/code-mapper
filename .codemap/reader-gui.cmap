@@ -366,9 +366,9 @@ parent bg9t38
 author ai
 file crates/gui/src/views/document.rs
 symbol tour_document
-lines 0 50
-hash a3d92ba406700374
-note The document, the reader's landing view: the tour header, the note, the steps that link here, and a sticky breadcrumb of the topmost visible step's ancestors, then the scrolling column of steps (an empty tour says how to add some) and the steps removed since the parent revision. With no tour selected it says how to get one.
+lines 0 43
+hash fc54f303536bdef1
+note The document, the reader's landing view: the tour header, the note, the steps that link here, and a sticky breadcrumb of the topmost visible step's ancestors, then the scrolling column of steps (an empty tour says how to add some) and the steps removed since the parent revision. With no tour selected it draws the start page (feature-welcome) instead.
 
 step dhyl4k
 order 87
@@ -609,7 +609,7 @@ author ai
 file crates/gui/src/views/center.rs
 symbol summary
 lines 0 29
-hash e485a7d91ae9b6de
+hash 8cc6c29980f6d5ef
 note The one-line summary of a tour's change: its step count when added or removed, else counts of new, removed, re-pinned, note-edited and relinked steps and whether the tour's own note, kind or group changed.
 
 step maduyk
@@ -649,7 +649,7 @@ author ai
 file crates/gui/src/views/panel_tree.rs
 symbol body
 lines 0 25
-hash 608b0d29fb8c55ac
+hash afa594a89f9fbf1d
 note What a panel shows, one match from View to its draw function: Tours, Symbols and Files (each in a panel-coloured column), the document, Diff, Graph, Source, Search, References (told the panel's size) and Console. Which view a panel shows is its own; clicking a tab in its header changes it.
 
 step nn39t3

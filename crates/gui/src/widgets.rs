@@ -87,6 +87,8 @@ pub(crate) enum Container {
     Palette { at: Point, width: Px },
     PanelHeader,
     Coach { at: Point, width: Px },
+    Centered,
+    StartPage { width: Px },
 }
 
 struct Shape {
@@ -122,6 +124,14 @@ fn marked(selected: Chosen) -> Style {
 }
 
 impl Container {
+    fn page_shape(self) -> Shape {
+        let layout = match self {
+            Self::StartPage { width } => Layout::column().width(width),
+            _ => Layout::column().grow_width().cross(Align::Center),
+        };
+        Shape::new(layout, Style::NONE, None)
+    }
+
     fn shape(self) -> Shape {
         match self {
             Self::Window => {
@@ -213,6 +223,7 @@ impl Container {
                 Style::background(PANEL).border(Sides::ALL, ACCENT),
                 Some(ids::guide()),
             ),
+            Self::Centered | Self::StartPage { .. } => self.page_shape(),
             Self::PanelHeader => Shape::new(
                 Layout::row().grow_width().cross(Align::Center),
                 Style::background(TAB_STRIP).border(Sides::BOTTOM, BORDER),
@@ -333,11 +344,6 @@ impl Frame<'_> {
     pub(crate) fn grow(&mut self) {
         self.ui
             .leaf(Kind::None, Layout::row().grow_width(), Style::NONE, None);
-    }
-
-    pub(crate) fn spring(&mut self) {
-        self.ui
-            .leaf(Kind::None, Layout::column().grow(), Style::NONE, None);
     }
 
     pub(crate) fn mark_rect(&mut self, rect: Rect) {

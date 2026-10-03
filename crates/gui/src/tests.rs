@@ -201,6 +201,18 @@ fn back_and_forward_return_to_the_places_visited_as_they_were_left() {
 }
 
 #[test]
+fn back_to_the_start_page_leaves_nothing_chosen() {
+    let mut model = model();
+    model.track_navigation();
+    model.select_tour(TOUR);
+    model.track_navigation();
+    model.back();
+    assert_eq!(model.nav.tour(), None);
+    assert_eq!(model.nav.step(), None);
+    assert_eq!(model.nav.focus(), None);
+}
+
+#[test]
 fn switching_tabs_is_its_own_place() {
     let mut model = model();
     model.select_tour(TOUR);

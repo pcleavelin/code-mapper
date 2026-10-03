@@ -253,7 +253,7 @@ pub(super) fn search_view(model: &Model, frame: &mut Frame<'_>) {
     frame.finish();
 }
 
-fn summary(diff: &TourDiff) -> Label {
+pub(super) fn summary(diff: &TourDiff) -> Label {
     Label::new(match diff.change() {
         Change::Added => Counted::new(Count::new(diff.steps().len()), Noun::Step).to_string(),
         Change::Removed => Counted::new(Count::new(diff.removed().len()), Noun::Step).to_string(),

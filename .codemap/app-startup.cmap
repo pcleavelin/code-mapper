@@ -141,9 +141,9 @@ parent dosvcv
 author ai
 file crates/gui/src/app.rs
 symbol new
-lines 0 57
-hash a2c33eb6c77b0568
-note Builds the whole application state before the first frame. The order matters: index first, then the map resolved against it, then the Model that holds both. A saved layout restores its panels. With no saved layout the first screen is the welcome board, one panel and no tabs, except a scripted run, which keeps the working layout unless CODEMAP_OPENING names board. Then the Services with their watcher, the first tour selected so the document, steps list, Source view, References panel and graph all have something in them, then the language servers and the parent map. A map that did not read leaves its error in the status line; otherwise the status line says how many files and symbols were indexed.
+lines 0 55
+hash 8a2a6a4f8ee19a5d
+note Builds the whole application state before the first frame. The order matters: index first, then the map resolved against it, then the Model that holds both. A saved layout restores its panels, the default layout stands otherwise. The opening decides the first selection: an ordinary launch selects nothing and brings the Tour view forward in whatever layout is up, so the document shows the start page (feature-welcome); a scripted or screenshot run selects the first tour so the document, steps list, Source view, References panel and graph all have something in them. Both happen before the layout is kept as the saved one, so bringing Tour forward is not written back as a change. Then the Services with their watcher, then the language servers and the parent map. A map that did not read leaves its error in the status line; otherwise the status line says how many files and symbols were indexed.
 
 step t4wzoi
 order 5
@@ -191,9 +191,19 @@ parent pucdnk
 author ai
 file crates/gui/src/app.rs
 symbol opening_shape
-lines 0 8
-hash 51b35f19f2f22240
-note CODEMAP_OPENING names the first screen. A scripted run with the variable unset keeps the working layout, so the existing scenarios still open on the tabs. Anything else with no saved layout opens the board.
+lines 0 11
+hash 46e95724e598b3de
+note CODEMAP_OPENING names the opening: start or first-tour. Unset, a scripted or screenshot run opens on the first tour, so the scenarios and parity transcripts keep a selection to show; any other launch opens on the start page.
+
+step xtvki8
+order 20
+parent xg2fnx
+author ai
+file crates/gui/src/welcome.rs
+symbol impl Opening
+lines 0 14
+hash 75f3fc89441fbc29
+note The opening's words for CODEMAP_OPENING; a word it does not know names no opening, and the default for the kind of run applies.
 
 step yzu1mn
 order 6

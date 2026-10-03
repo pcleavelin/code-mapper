@@ -268,9 +268,9 @@ parent yf6cx3
 author ai
 file crates/gui/src/views/panel_tree.rs
 symbol panel_box
-lines 0 20
-hash aedc5e1dd3449869
-note A panel: a clipped box (panel/<n>, which drop targets read back). The welcome board has no header and its body is the action list. Any other panel holds its header and the active view, or a hint when it is empty.
+lines 0 16
+hash 52c50515d5bdf2a9
+note A panel: a clipped box (panel/<n>, which drop targets read back) holding its header and the active view, or a hint when it is empty.
 
 step ec5woa
 order 5
@@ -387,7 +387,7 @@ author ai
 file crates/gui/src/views/panel_tree.rs
 symbol body
 lines 0 25
-hash 608b0d29fb8c55ac
+hash afa594a89f9fbf1d
 note The one match from a view to what draws it. Tours, Symbols and Files sit in a panel-coloured column; References is told the panel's size, since its peek fits itself to it.
 
 step mp1y9p

@@ -61,19 +61,24 @@ impl Index {
         CallerCount(self.symbol(symbol).map_or(0, |found| found.callers().len()))
     }
 
-    fn cut(&self, symbol: SymbolId) -> Option<Cut> {
-        let file = self.file(symbol.file())?;
-        let found = self.symbol(symbol)?;
+    pub fn in_tests(&self, symbol: SymbolId) -> bool {
+        let (Some(file), Some(found)) = (self.file(symbol.file()), self.symbol(symbol)) else {
+            return false;
+        };
         let path = file.path();
-        let in_tests = path
-            .as_str()
+        path.as_str()
             .split('/')
             .any(|segment| segment == TEST_WORD.0)
             || path.stem() == TEST_WORD.0
             || found
                 .owner()
-                .is_some_and(|owner| owner.as_str() == TEST_WORD.0);
-        if in_tests {
+                .is_some_and(|owner| owner.as_str() == TEST_WORD.0)
+    }
+
+    fn cut(&self, symbol: SymbolId) -> Option<Cut> {
+        let file = self.file(symbol.file())?;
+        let found = self.symbol(symbol)?;
+        if self.in_tests(symbol) {
             return Some(Cut::Test);
         }
         if found.span().count() <= ACCESSOR_LINES && self.callers_of(symbol).0 >= ACCESSOR_CALLERS.0

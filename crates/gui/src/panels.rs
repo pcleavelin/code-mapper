@@ -510,23 +510,6 @@ fn layout_of(branch: &Branch) -> LayoutTree {
 }
 
 impl Panels {
-    pub(crate) fn bare() -> Self {
-        let mut panels = Self {
-            root: Branch::placeholder(),
-            next: BranchId(0),
-            grab: None,
-            picker: None,
-            revealed: Tab::Tour,
-            answered: Ticket::default(),
-        };
-        panels.root = panels.panel(Vec::new());
-        panels
-    }
-
-    pub(crate) fn is_bare(&self) -> bool {
-        self.panels().iter().all(|panel| panel.views().is_empty())
-    }
-
     pub(crate) fn from_layout(layout: &LayoutTree) -> Self {
         let mut panels = Self::default();
         let mut placed = Vec::new();

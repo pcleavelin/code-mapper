@@ -3,7 +3,7 @@ tour feature-welcome
 kind flow
 author ai
 group features/gui
-note A cold human opens the window with no saved layout. The shot of this repo at that moment is the tabbed workspace: Tours, an open tour, References, the Console, and a save button, and no key chord. The palette is ctrl+p, but nothing on that screen says so, so a symbol or an action stays hidden until they already know the key. Adding a tour by hand is already possible, with + new tour, a name and a kind, + step, a click on the step, and save, but those controls sit on different tabs and nothing walks them in order. The palette, the new-tour button and the Console each do a piece of this. None of them is a first panel with no tabs that lists the actions with their chords, and none of them points at the real controls one step at a time. The manual-tour pain inventory is a separate backlog, not the design of this screen. The guide names a dead end only where a step would otherwise teach one: a note is still tour-note or step-note in the Console, and the index is the one the tours command prints, not the 1.1 numbers in the window. Closing the window drops unsaved work, so the last step is save. Three openings were run on the real window. The board is one panel and the dump is panels 0[], tab@Tour is absent, and the palette row shows ctrl+p from the registry, with save as ctrl+s and back as alt+left. Add a tour replaces that panel with the working layout and a bar that names the next real control. The bar moves to the next step only when that control has been used: the form opens, the tour count grows, a step is added, the target is the step, then save. A scripted run on the fixture creates startup-hand, adds main, saves, and the bar is gone. The coach opening puts that same bar on the tabbed workspace immediately, so the first screen still has tabs. The checklist opening is tabless, but it copies + new tour into the panel, says the real Tours list and Symbols and save are not there, and does not show the palette chord. The board is the opening that meets the first screen and still teaches the controls where they already live.
+note The human, every time they open the window on a repo, often right after an agent session changed the code and the map. Goals: understanding a change you did not write, and code no tour covers being visible. The run before this feature: the window opened on whichever tour sorts first, on this repo the scratch tour !Test/Startup, and nothing on screen said which tours the agent had changed, how much of the code the map covers, how many steps are stale, or that ctrl+p opens the palette. A tabless board from an earlier change showed actions and chords only when no layout was saved, and the layout file is per machine, so it appeared once per machine; it said nothing about the repo and its chords did not line up. The Diff view lists map changes but is a tab you must know to open; the Tours list shows groups but not changes or coverage; Files shows coverage per file, not the whole; the palette needs its chord. Three designs were built and run. A whole-window board on every launch, the saved layout held aside until dismissed: a dismissal every launch, no way back to it, and a mode that keeps a second layout. A Start tab beside Tour: a view kind that is never saved plus a hidden per-panel field for the view it covers, with the first tour still selected behind it. The kept design: the start page is what the Tour view shows when nothing is selected, so it adds no surface and no mode, it follows 'the GUI is one selection', and back or the palette's 'start page' return to it. A launch on this repo shows code-mapper, 168 tours, 51% of symbols covered and 30 stale steps in red, '+ Startup (1 step)' as changed since the parent revision, the top-level groups with their tour counts, the uncovered symbol count, 'Build a tour by hand', and the chords in one aligned column; clicking a change opens that tour, alt+left comes back. On a root with no map it lists entry points, leaving out tests. Building a tour by hand is the guide: a bar that names the next real control and moves on only when that control has been used (the form opens, the tour count grows, a step is added, the step becomes the target, save).
 
 step 02lv34
 order 9
@@ -15,6 +15,16 @@ lines 0 5
 hash 02faf9fa554fecd0
 link feature-switch-tab
 
+step 1fki4m
+order 31
+parent 53u3oi
+author ai
+file crates/gui/src/views/welcome.rs
+symbol heading
+lines 0 45
+hash ed909a5bdf0ea955
+note The root's folder name, then tours, covered/total symbols with the percentage, and the stale steps, red when there are any. Split one per row when the line does not fit the column.
+
 step 2urwku
 order 14
 parent jybka5
@@ -24,6 +34,16 @@ symbol follow_welcome
 lines 0 5
 hash 8d34cf298cdc8493
 note apply calls this after every action. The guide advances one step only when the fact for that step has changed.
+
+step 342ld7
+order 28
+parent jybka5
+author ai
+file crates/gui/src/welcome.rs
+symbol show_start_page
+lines 0 4
+hash 1e537a1f62be51f0
+note The start page action: nothing chosen and the Tour view in front, so the document draws the start page. It is a place like any other, so back and forward cross it.
 
 step 3mq0my
 order 3
@@ -41,8 +61,8 @@ parent jybka5
 author ai
 file crates/gui/src/views/welcome.rs
 symbol coach
-lines 0 29
-hash b9a73b547723ee71
+lines 0 33
+hash 0f51c082fe18bb27
 note The bar floats over the window while a guide step is current, so it does not squeeze the panels.
 
 step 40vzsa
@@ -64,15 +84,15 @@ symbol next
 lines 0 8
 hash 58b0c03f67bea824
 
-step 53edqt
-order 1
-parent jybka5
+step 53u3oi
+order 29
+parent 342ld7
 author ai
-file crates/gui/src/panels.rs
-symbol is_bare
-lines 0 2
-hash 8fcc8e79963e39cc
-note The welcome panel is bare when every panel it holds has no view.
+file crates/gui/src/views/welcome.rs
+symbol start_page
+lines 0 27
+hash a951f06ebdbacebe
+note Drawn by the document whenever no tour is selected, which the action above brings about and a launch starts in. A centred column at most START_PAGE_WIDTH cells wide, narrower when the panel is, scrolled on its own: the heading, then the changes, the groups, building a tour, and the keys, each under an accent heading.
 
 step 5ekrbu
 order 6
@@ -83,15 +103,6 @@ symbol skip
 lines 0 16
 hash 4a91a1f6e0cf312a
 note Skip moves one guide step without the real action, and remembers the counts so the next real action is not mistaken for a finished step.
-
-step 5mnyhg
-order 28
-parent hdrikw
-author ai
-file crates/gui/src/welcome.rs
-symbol chord
-lines 0 7
-hash 8788ca9471bd095b
 
 step 6dos8i
 order 10
@@ -122,15 +133,15 @@ lines 0 18
 hash 98d777894291fb8b
 note The facts the guide watches. The form, the tour count, the step count, and whether a step is the target.
 
-step bxrpyj
-order 18
-parent jybka5
+step ay9n1d
+order 42
+parent w464x2
 author ai
-file crates/gui/src/views/welcome.rs
-symbol surface
-lines 0 4
-hash c5a1b169cf18af41
-note Drawn in place of an empty panel's body while the welcome fills the panel.
+file crates/gui/src/welcome.rs
+symbol key_rows
+lines 0 52
+hash f28f2bc4beeac523
+note From the registry: a palette entry with a chord gives its own row (go back, go forward), any other feature with key triggers one row of its chords named after the feature. The palette first, then chords with a modifier, then plain keys.
 
 step ck3wwq
 order 17
@@ -142,34 +153,64 @@ lines 0 8
 hash 72c4aa2a81e4fd97
 note A ring around the control the step names. It is drawn from the control's rectangle, so a missing control draws nothing.
 
-step hdrikw
-order 22
-parent jbb5in
+step coi05f
+order 37
+parent 53u3oi
 author ai
 file crates/gui/src/views/welcome.rs
-symbol row
-lines 0 16
-hash 46e2dcd61eef6b9f
-note One row. A click runs that action. The palette row opens the palette. Add a tour starts the guide.
+symbol groups
+lines 0 64
+hash e011ad039aa6bcdf
+note The top-level groups with their tour counts, a click opening the group in the Tours list; tours with no group in one row; then the uncovered symbol count, which opens Files.
 
-step jbb5in
-order 20
-parent bxrpyj
+step gwxchy
+order 43
+parent m7mx38
 author ai
 file crates/gui/src/views/welcome.rs
-symbol board
-lines 0 19
-hash 21baef560e9b01e9
-note The action list. Each row is a title, its chord when the feature has a key, and a line about what it does.
+symbol padded
+lines 0 4
+hash 9d6ad164a880d655
+note Every left column pads its labels to the widest one in its section, so the descriptions start in one column.
+
+step i9ovn8
+order 30
+parent 342ld7
+author ai
+file crates/gui/src/nav.rs
+symbol forget_focus
+lines 0 2
+hash ec779d5fb3b7a04b
+note Drops the focused symbol, so the References panel and the graph have nothing chosen either.
+
+step jjpk6n
+order 38
+parent coi05f
+author ai
+file crates/gui/src/welcome.rs
+symbol top_groups
+lines 0 20
+hash bfc1a1e6aa11a281
+note The depth-0 rows of the Tours list: each group, and a count of the tours outside any group.
 
 step jybka5
 order 0
 author ai
 file crates/gui/src/welcome.rs
 symbol welcome
-lines 0 20
-hash 9bf69e95c9432615
-note Start the guide, leave it, or skip one step. Starting and leaving install the working layout when the panel is still bare.
+lines 0 15
+hash 7d9f4d39dbaec353
+note The handler. Start the guide, leave it, skip one guide step, or show the start page.
+
+step m3cafn
+order 33
+parent 53u3oi
+author ai
+file crates/gui/src/welcome.rs
+symbol figures
+lines 0 25
+hash abd17c3d4810431d
+note Coverage over every symbol in the index, counted as the Coverage the map derives; the stale count is every step whose text no longer matches.
 
 step m5b01d
 order 4
@@ -180,14 +221,25 @@ symbol start
 lines 0 6
 hash 799160ea16293690
 
+step m7mx38
+order 36
+parent xgs6s7
+author ai
+file crates/gui/src/views/welcome.rs
+symbol change_row
+lines 0 36
+hash 1d5fba2ad9b6fa6f
+note One change: + added with its step count, ~ changed with the Diff view's summary, - only in the parent revision. A click opens the tour; a removed one says where its steps went, as the Diff view does.
+
 step ma6ucj
 order 26
-parent 5mnyhg
+parent 3t35mr
 author ai
 file crates/gui/src/welcome.rs
 symbol palette_chord
 lines 0 9
 hash b93a90ef682ee956
+note The palette's chord from the registry, shown at the head of the guide bar.
 
 step ngtyco
 order 8
@@ -209,23 +261,15 @@ lines 0 8
 hash d51502c0a0aea3b0
 note One step forward, and only that step, when the watched fact has changed.
 
-step og4yyh
-order 23
-parent 3t35mr
+step o55ai6
+order 40
+parent r9zl1g
 author ai
-file crates/gui/src/views/welcome.rs
-symbol chord_line
-lines 0 9
-hash c118a31b0a090c3c
-
-step pk24y0
-order 2
-parent 53edqt
-author ai
-file crates/gui/src/panels.rs
-symbol panels
-lines 0 4
-hash 1ca3fbe09b53f32c
+file crates/domain/src/index/prune.rs
+symbol in_tests
+lines 0 12
+hash b3df0ac546c3a6dd
+note The test rule promote's pruning uses: a tests path segment or file stem, or a member of mod tests. Entry points in tests are left off the start page.
 
 step pva2wg
 order 24
@@ -233,9 +277,19 @@ parent 3t35mr
 author ai
 file crates/gui/src/welcome.rs
 symbol sentence
-lines 0 18
-hash 1d431aaeb0cd87db
-note The sentence for the step. The save step says that closing drops unsaved work and that a note is still a Console command.
+lines 0 16
+hash 76a01c54e20bb4da
+note The sentence for the step. The save step says that closing drops unsaved work.
+
+step qjgp5t
+order 44
+parent ay9n1d
+author ai
+file crates/gui/src/welcome.rs
+symbol spoken
+lines 0 9
+hash 31038a5687bd06c3
+note A feature's variant name split into lower-case words (CommandPalette, command palette), for a row the registry gives no palette text.
 
 step qu6jyy
 order 25
@@ -255,6 +309,56 @@ symbol mark_rect
 lines 0 17
 hash 1d25904652d4037e
 
+step r9zl1g
+order 39
+parent 53u3oi
+author ai
+file crates/gui/src/views/welcome.rs
+symbol build_tour
+lines 0 64
+hash 0736f03d98503e3d
+note Build a tour by hand starts the guide. With no tours at all, up to eight entry points follow, a click jumping to one.
+
+step sj7pxo
+order 32
+parent 1fki4m
+author ai
+file crates/gui/src/welcome.rs
+symbol root_name
+lines 0 11
+hash 683870c8f26ba37f
+note The root made absolute first, so a root given as . is named by its folder.
+
+step uw9ej4
+order 34
+parent 1fki4m
+author ai
+file crates/gui/src/welcome.rs
+symbol impl MapFigures
+lines 0 14
+hash f1a774d4c45b4efc
+note The percentage rounds down; an index with no symbols is 0%.
+
+step w464x2
+order 41
+parent 53u3oi
+author ai
+file crates/gui/src/views/welcome.rs
+symbol keys
+lines 0 15
+hash 6a403db31b638397
+note The chords, padded to one width so the meanings line up.
+
+step xgs6s7
+order 35
+parent 53u3oi
+author ai
+file crates/gui/src/views/welcome.rs
+symbol changes
+lines 0 51
+hash efe1b4d2d7eb8bad
+note The tours changed since the parent revision, from the same diff as the Diff view; while the parent map is read, or when there is none, the reason instead. At most twelve rows, then one that opens the Diff view.
+
 step xw38qb
 order 12
 parent ah2x7r
@@ -270,15 +374,5 @@ parent 3mq0my
 author ai
 file crates/gui/src/welcome.rs
 symbol Arrival
-lines 0 4
-hash 7b63d8b4605dc376
-
-step zlryxd
-order 13
-parent jybka5
-author ai
-file crates/gui/src/welcome.rs
-symbol open_workspace_panels
-lines 0 4
-hash d9fd71f1b2b8d8a6
-note A panel with no views becomes the ordinary split layout, so the real controls are on screen.
+lines 0 3
+hash 4fa4afec96f24c32

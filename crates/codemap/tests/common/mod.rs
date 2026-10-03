@@ -518,7 +518,7 @@ pub(crate) fn gui(
         .env("CODEMAP_SCRIPT", &file)
         .env("JJ_CONFIG", dir.join("jj.toml"));
     if first == FirstScreen::Welcome {
-        command.env("CODEMAP_OPENING", "board");
+        command.env("CODEMAP_OPENING", "start");
     }
     let mut child = command
         .stdout(Stdio::null())

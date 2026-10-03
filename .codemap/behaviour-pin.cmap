@@ -580,7 +580,7 @@ author ai
 file crates/codemap/tests/common/mod.rs
 symbol gui
 lines 0 60
-hash a493c198aecb8962
+hash 78b2bcd1bb09cf3a
 note Runs the window with CODEMAP_SCRIPT and reads stderr line by line as it arrives, so a scenario's hook can act at a line the script marks; that is how live reload is pinned. {shots} in a script stands for the directory the screenshots go to. A window that has not quit after 90 s is killed and fails the test, and so does a non-zero exit.
 
 step yagdfh

@@ -1,20 +1,21 @@
 use std::fmt;
+use std::path::{self, Component};
 
-use features::{Feature, Trigger};
+use domain::{GroupName, Row, Step, Tour, TourCount};
+use features::{Feature, Modifiers, Trigger};
 use strum::VariantArray;
 use ui::{Count, Id, Label};
 
-use crate::action::Action;
 use crate::app::App;
-use crate::ids::{self, Control};
-use crate::model::Model;
-use crate::palette::{PaletteAction, chord_label};
-use crate::panels::{Panels, View};
+use crate::ids;
+use crate::model::{Model, Tab};
+use crate::palette::chord_label;
+use crate::panels::View;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
 pub(crate) enum Opening {
-    Board,
-    Workspace,
+    Start,
+    FirstTour,
 }
 
 pub(crate) struct Spell(&'static str);
@@ -28,28 +29,16 @@ impl Spell {
 impl Opening {
     const fn word(self) -> Spell {
         Spell(match self {
-            Self::Board => "board",
-            Self::Workspace => "workspace",
+            Self::Start => "start",
+            Self::FirstTour => "first-tour",
         })
     }
 
-    pub(crate) fn named(text: &Label) -> Self {
+    pub(crate) fn named(text: &Label) -> Option<Self> {
         Self::VARIANTS
             .iter()
             .copied()
             .find(|opening| opening.word().as_str() == text.as_str())
-            .unwrap_or(Self::Board)
-    }
-
-    pub(crate) fn panels(self) -> Option<Panels> {
-        match self {
-            Self::Board => Some(Panels::bare()),
-            Self::Workspace => None,
-        }
-    }
-
-    pub(crate) fn welcome(self) -> Welcome {
-        Welcome::first(self)
     }
 }
 
@@ -117,9 +106,7 @@ impl GuideStep {
             Self::Target => {
                 "Click that step. The next one hangs under it. Press top level in the strip to place the next one beside it instead."
             }
-            Self::Save => {
-                "Press save. Closing the window drops unsaved work. A note is still a Console command, tour-note or step-note, and the index it takes is the one the tours command prints, not the 1.1 numbers in this window."
-            }
+            Self::Save => "Press save. Closing the window drops unsaved work.",
         })
     }
 }
@@ -177,7 +164,6 @@ impl Guide {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Arrival {
-    Board,
     Guide(Guide),
     Workspace,
 }
@@ -185,7 +171,6 @@ pub(crate) enum Arrival {
 impl fmt::Display for Arrival {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Board => formatter.write_str("board"),
             Self::Guide(guide) => write!(formatter, "guide {}", guide.step().word().as_str()),
             Self::Workspace => formatter.write_str("workspace"),
         }
@@ -197,6 +182,7 @@ pub(crate) enum WelcomeAct {
     StartGuide,
     Leave,
     Skip,
+    StartPage,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -211,26 +197,14 @@ impl Welcome {
         }
     }
 
-    pub(crate) fn first(opening: Opening) -> Self {
-        let arrival = match opening {
-            Opening::Board => Arrival::Board,
-            Opening::Workspace => Arrival::Workspace,
-        };
-        Self { arrival }
-    }
-
     pub(crate) const fn arrival(self) -> Arrival {
         self.arrival
-    }
-
-    pub(crate) const fn fills_panel(self) -> bool {
-        matches!(self.arrival, Arrival::Board)
     }
 
     pub(crate) const fn guide_step(self) -> Option<GuideStep> {
         match self.arrival {
             Arrival::Guide(guide) => Some(guide.step()),
-            _ => None,
+            Arrival::Workspace => None,
         }
     }
 
@@ -292,64 +266,32 @@ impl Welcome {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
-pub(crate) enum BoardAction {
-    Palette,
-    Guide,
-    Save,
-    Back,
-    Workspace,
+pub(crate) struct MapFigures {
+    pub(crate) tours: Count,
+    pub(crate) covered: Count,
+    pub(crate) symbols: Count,
+    pub(crate) stale: Count,
 }
 
-impl BoardAction {
-    pub(crate) const fn title(self) -> Spell {
-        Spell(match self {
-            Self::Palette => "Command palette",
-            Self::Guide => "Add a tour",
-            Self::Save => "Save the map",
-            Self::Back => "Go back",
-            Self::Workspace => "Open the window",
-        })
+impl MapFigures {
+    pub(crate) const fn uncovered(&self) -> Count {
+        Count::new(self.symbols.get().saturating_sub(self.covered.get()))
     }
 
-    pub(crate) const fn detail(self) -> Spell {
-        Spell(match self {
-            Self::Palette => "a symbol, a file, a tour, or an action",
-            Self::Guide => "each step, on the real controls",
-            Self::Save => "write the tours that changed",
-            Self::Back => "the previous place",
-            Self::Workspace => "the tabs, without the guide",
-        })
+    pub(crate) fn percent(&self) -> Count {
+        Count::new(
+            self.covered
+                .get()
+                .saturating_mul(100)
+                .checked_div(self.symbols.get())
+                .unwrap_or(0),
+        )
     }
+}
 
-    pub(crate) fn chord(self) -> Option<Label> {
-        match self {
-            Self::Palette => palette_chord(Feature::CommandPalette),
-            Self::Save => palette_chord(Feature::Save),
-            Self::Back => palette_chord(Feature::GoBack),
-            Self::Guide | Self::Workspace => None,
-        }
-    }
-
-    pub(crate) const fn control(self) -> Control {
-        match self {
-            Self::Palette => ids::WELCOME_PALETTE,
-            Self::Guide => ids::WELCOME_GUIDE,
-            Self::Save => ids::WELCOME_SAVE,
-            Self::Back => ids::WELCOME_BACK,
-            Self::Workspace => ids::WELCOME_WORK,
-        }
-    }
-
-    pub(crate) fn press(self) -> Action {
-        match self {
-            Self::Palette => Action::Palette(PaletteAction::Toggle),
-            Self::Guide => Action::Welcome(WelcomeAct::StartGuide),
-            Self::Save => Action::Save,
-            Self::Back => Action::Back,
-            Self::Workspace => Action::Welcome(WelcomeAct::Leave),
-        }
-    }
+pub(crate) enum TopGroup {
+    Named(GroupName, TourCount),
+    Ungrouped(Count),
 }
 
 impl Model {
@@ -385,6 +327,151 @@ impl Model {
             },
         }
     }
+
+    pub(crate) fn root_name(&self) -> Label {
+        let root = self.index.root().as_path();
+        let name = path::absolute(root)
+            .unwrap_or_else(|_| root.to_path_buf())
+            .components()
+            .rev()
+            .find_map(|component| match component {
+                Component::Normal(name) => Some(name.to_string_lossy().into_owned()),
+                _ => None,
+            });
+        Label::new(name.unwrap_or_else(|| "this repository".to_owned()))
+    }
+
+    pub(crate) fn figures(&self) -> MapFigures {
+        let coverage = self.map.coverage();
+        let (covered, symbols) = self.index.files().fold((0, 0), |(covered, symbols), file| {
+            (
+                covered
+                    + file
+                        .symbols()
+                        .filter(|symbol| coverage.covers(file.path(), symbol.span()))
+                        .count(),
+                symbols + file.symbols().count(),
+            )
+        });
+        MapFigures {
+            tours: Count::new(self.map.tours().len()),
+            covered: Count::new(covered),
+            symbols: Count::new(symbols),
+            stale: Count::new(
+                self.map
+                    .tours()
+                    .iter()
+                    .flat_map(Tour::steps)
+                    .filter(|step| Step::is_stale(step))
+                    .count(),
+            ),
+        }
+    }
+
+    pub(crate) fn top_groups(&self) -> Vec<TopGroup> {
+        let mut groups = Vec::new();
+        let mut ungrouped = 0;
+        for row in self.map.rows() {
+            match row {
+                Row::Group {
+                    group,
+                    depth,
+                    tours,
+                } if depth.value() == 0 => {
+                    groups.push(TopGroup::Named(group, tours));
+                }
+                Row::Tour { depth, .. } if depth.value() == 0 => ungrouped += 1,
+                _ => {}
+            }
+        }
+        if ungrouped > 0 {
+            groups.push(TopGroup::Ungrouped(Count::new(ungrouped)));
+        }
+        groups
+    }
+
+    pub(crate) fn show_start_page(&mut self) {
+        self.forget_tour();
+        self.forget_focus();
+        self.set_tab(Tab::Tour);
+    }
+}
+
+pub(crate) struct KeyRow {
+    pub(crate) chord: Label,
+    pub(crate) meaning: Label,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum KeyRank {
+    Palette,
+    Modified,
+    Plain,
+}
+
+fn spoken(feature: Feature) -> Label {
+    let mut words = String::new();
+    for letter in format!("{feature:?}").chars() {
+        if letter.is_uppercase() && !words.is_empty() {
+            words.push(' ');
+        }
+        words.extend(letter.to_lowercase());
+    }
+    Label::new(words)
+}
+
+pub(crate) fn key_rows() -> Vec<KeyRow> {
+    let mut ranked = Vec::new();
+    for feature in Feature::VARIANTS {
+        let spec = feature.spec();
+        let rank = |modifiers: Modifiers| match (feature, modifiers) {
+            (Feature::CommandPalette, _) => KeyRank::Palette,
+            (_, Modifiers::Plain) => KeyRank::Plain,
+            _ => KeyRank::Modified,
+        };
+        let named: Vec<(KeyRank, KeyRow)> = spec
+            .triggers()
+            .iter()
+            .filter_map(|trigger| match trigger {
+                Trigger::Palette(text, Some(chord)) => Some((
+                    rank(chord.modifiers()),
+                    KeyRow {
+                        chord: chord_label(*chord),
+                        meaning: Label::new(text.as_str()),
+                    },
+                )),
+                _ => None,
+            })
+            .collect();
+        if !named.is_empty() {
+            ranked.extend(named);
+            continue;
+        }
+        let chords: Vec<_> = spec
+            .triggers()
+            .iter()
+            .filter_map(|trigger| match trigger {
+                Trigger::Key(chord) => Some(*chord),
+                _ => None,
+            })
+            .collect();
+        let Some(first) = chords.first() else {
+            continue;
+        };
+        let spelled: Vec<String> = chords
+            .iter()
+            .map(|chord| chord_label(*chord).as_str().to_owned())
+            .collect();
+        ranked.push((
+            rank(first.modifiers()),
+            KeyRow {
+                chord: Label::new(spelled.join("/")),
+                meaning: spoken(*feature),
+            },
+        ));
+    }
+    ranked.sort_by_key(|(rank, _)| *rank);
+    ranked.into_iter().map(|(_, row)| row).collect()
 }
 
 impl App {
@@ -392,27 +479,16 @@ impl App {
         match act {
             WelcomeAct::StartGuide => {
                 self.model.welcome.begin_guide();
-                self.open_workspace_panels();
                 self.model.reveal_guide(GuideStep::NewTour);
             }
-            WelcomeAct::Leave => {
-                self.model.welcome.leave();
-                self.open_workspace_panels();
-            }
+            WelcomeAct::Leave => self.model.welcome.leave(),
             WelcomeAct::Skip => {
                 let seen = self.model.welcome_seen();
-                match self.model.welcome.skip(seen) {
-                    Some(step) if !self.model.panels.is_bare() => self.model.reveal_guide(step),
-                    Some(_) => {}
-                    None => self.open_workspace_panels(),
+                if let Some(step) = self.model.welcome.skip(seen) {
+                    self.model.reveal_guide(step);
                 }
             }
-        }
-    }
-
-    fn open_workspace_panels(&mut self) {
-        if self.model.panels.is_bare() {
-            self.model.panels = Panels::default();
+            WelcomeAct::StartPage => self.model.show_start_page(),
         }
     }
 }
@@ -478,17 +554,36 @@ mod tests {
     }
 
     #[test]
-    fn the_board_is_the_only_arrival_that_fills_the_panel() {
-        assert!(Welcome::first(Opening::Board).fills_panel());
-        assert!(!Welcome::guiding().fills_panel());
-        assert!(!Welcome::workspace().fills_panel());
+    fn the_keys_open_with_the_palette_and_list_back_and_forward_once() {
+        let rows = key_rows();
+        let first = rows.first().unwrap();
+        assert_eq!(first.chord.as_str(), "ctrl+p");
+        for meaning in ["go back", "go forward"] {
+            let found = rows
+                .iter()
+                .filter(|row| row.meaning.as_str() == meaning)
+                .count();
+            assert_eq!(found, 1, "{meaning}");
+        }
+        let mut chords: Vec<&str> = rows.iter().map(|row| row.chord.as_str()).collect();
+        chords.sort_unstable();
+        chords.dedup();
+        assert_eq!(chords.len(), rows.len());
+    }
+
+    fn figures(covered: usize, symbols: usize) -> MapFigures {
+        MapFigures {
+            tours: Count::ZERO,
+            covered: Count::new(covered),
+            symbols: Count::new(symbols),
+            stale: Count::ZERO,
+        }
     }
 
     #[test]
-    fn the_palette_row_shows_the_palette_key() {
-        let shown = BoardAction::Palette.chord();
-        let bound = palette_chord(Feature::CommandPalette);
-        assert_eq!(shown, bound);
-        assert_eq!(shown.unwrap().as_str(), "ctrl+p");
+    fn coverage_rounds_down_and_an_empty_index_is_none_covered() {
+        assert_eq!(figures(2, 3).percent(), Count::new(66));
+        assert_eq!(figures(2, 3).uncovered(), Count::new(1));
+        assert_eq!(figures(0, 0).percent(), Count::ZERO);
     }
 }

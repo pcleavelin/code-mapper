@@ -97,6 +97,7 @@ index::language::pub fn of(path: &RelativePath) -> Option<Self>
 index::prune::pub enum Cut { Test, Accessor, Trivial, }
 index::prune::pub enum Stop { Mapped, Shared, OtherPackage, }
 index::prune::pub struct PrunedTree { pub entries: Vec<TreeEntry>, pub cut: BTreeMap<SymbolId, Cut>, pub stopped: BTreeMap<SymbolId, Stop>, }
+index::prune::pub fn in_tests(&self, symbol: SymbolId) -> bool
 index::prune::pub fn pruned_tree( &self, root: SymbolId, deepest: Depth, mapped: impl Fn(SymbolId) -> bool, ) -> PrunedTree
 index::symbol::pub struct FileId(Position);
 index::symbol::pub struct SymbolIndex(Position);

@@ -15,7 +15,7 @@ use crate::panels::Panels;
 use crate::peek::Peek;
 use crate::status::Status;
 use crate::text::Tag;
-use crate::welcome::{Arrival, BoardAction, Welcome};
+use crate::welcome::{Arrival, Welcome, palette_chord};
 use crate::work::{Services, WorkState};
 
 #[derive(Default)]
@@ -144,8 +144,7 @@ impl Dump for Welcome {
         if self.arrival() == Arrival::Workspace {
             return;
         }
-        let chord = BoardAction::Palette
-            .chord()
+        let chord = palette_chord(features::Feature::CommandPalette)
             .unwrap_or_else(|| ui::Label::new("missing"));
         lines.line(format_args!(
             "welcome {} palette={}",

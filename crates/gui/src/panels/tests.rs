@@ -11,14 +11,6 @@ fn rect(left: i32, top: i32, width: i32, height: i32) -> Rect {
 const DEFAULT: &str = "down6(820 right5(220 0[Tours* Symbols Files] right4(740 1[Tour* Diff Graph Source Search] 2[References*])) 3[Console*])";
 
 #[test]
-fn a_bare_panel_holds_no_view() {
-    let panels = Panels::bare();
-    assert!(panels.is_bare());
-    assert_eq!(panels.to_string(), "0[]");
-    assert!(!Panels::default().is_bare());
-}
-
-#[test]
 fn the_default_tree_holds_every_view_once() {
     let panels = Panels::default();
     assert_eq!(panels.to_string(), DEFAULT);

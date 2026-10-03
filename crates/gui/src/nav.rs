@@ -330,8 +330,9 @@ impl Model {
             self.select_step(StepKey { tour, step }, Scrolling::Stay);
         } else {
             self.nav.step = None;
-            if let Some(symbol) = place.focus.and_then(|key| self.index.by_key(&key)) {
-                self.focus_symbol(symbol);
+            match place.focus.and_then(|key| self.index.by_key(&key)) {
+                Some(symbol) => self.focus_symbol(symbol),
+                None => self.nav.focus = None,
             }
         }
         self.nav.file = place.file.and_then(|path| self.index.find_file(&path));
@@ -621,6 +622,10 @@ impl Model {
 
     pub(crate) fn forget_step(&mut self) {
         self.nav.step = None;
+    }
+
+    pub(crate) const fn forget_focus(&mut self) {
+        self.nav.focus = None;
     }
 
     pub(crate) fn forget_tour(&mut self) {

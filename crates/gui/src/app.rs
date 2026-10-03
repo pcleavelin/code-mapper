@@ -49,13 +49,16 @@ struct KeptLayout {
 }
 
 fn opening_shape() -> Opening {
-    if let Ok(value) = env::var("CODEMAP_OPENING") {
-        return Opening::named(&Label::new(&value));
+    if let Some(opening) = env::var("CODEMAP_OPENING")
+        .ok()
+        .and_then(|value| Opening::named(&Label::new(&value)))
+    {
+        return opening;
     }
-    if env::var_os("CODEMAP_SCRIPT").is_some() {
-        return Opening::Workspace;
+    if env::var_os("CODEMAP_SCRIPT").is_some() || env::var_os("CODEMAP_SHOT").is_some() {
+        return Opening::FirstTour;
     }
-    Opening::Board
+    Opening::Start
 }
 
 const SHOT_TAB_FRAME: Count = Count::new(3);
@@ -89,12 +92,10 @@ impl App {
         let layout_store = LayoutStore::find(reach);
         if let Some(saved) = layout_store.as_ref().and_then(LayoutStore::load) {
             model.panels = Panels::from_layout(&saved);
-        } else {
-            let opening = opening_shape();
-            model.welcome = opening.welcome();
-            if let Some(panels) = opening.panels() {
-                model.panels = panels;
-            }
+        }
+        let opening = opening_shape();
+        if opening == Opening::Start {
+            model.show_view(View::Tour);
         }
         let layout = KeptLayout {
             saved: Some(model.panels.layout()),
@@ -117,7 +118,7 @@ impl App {
             None => app.indexed_status(),
         };
         app.services.watch(indexed.stamps);
-        if !app.model.map.tours().is_empty() {
+        if opening == Opening::FirstTour && !app.model.map.tours().is_empty() {
             app.model.select_tour(TourSlot::new(0));
         }
         app.start_backend();

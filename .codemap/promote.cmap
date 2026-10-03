@@ -150,8 +150,8 @@ parent 7klfk9
 author ai
 file crates/domain/src/index/prune.rs
 symbol cut
-lines 0 31
-hash accba617e7c39002
+lines 0 22
+hash d585499318c0d83d
 note Left out: a test (a 'tests' path segment or file stem, or a member of mod tests), an accessor (3 lines or fewer with 3 or more callers: a short specific helper with few callers is kept, since length alone cut too much of what authors keep), or a trivial body.
 
 step xrlyep
