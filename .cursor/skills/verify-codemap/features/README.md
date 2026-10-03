@@ -7,7 +7,7 @@ This directory is the maintained source for verifying user-facing behavior of co
 - Build `target/release/codemap` (`cargo build --release -p codemap`, Rust 1.85+).
 - Put `.cursor/skills/verify-codemap/bin` on `PATH`.
 - Set `CODEMAP_VERIFY_RUN` to a unique id (for example `vfy-$$`).
-- Run `control-codemap launch`, then `control-codemap doctor` and require `bin_ok=yes`, `xtask_ok=yes`, `weston_ok=yes`, `vulkan_icd_ok=yes`, `compositor=up`, `compositor_owned=yes`, and `map_ok=yes` when the feature needs a map. Shape features use `control-codemap lint` and do not need the compositor.
+- Run `check-compositor` once per machine. It must exit 0. Then `control-codemap smoke` for a GUI feature, or `control-codemap launch` and `control-codemap doctor`. Require `bin_ok=yes`, `xtask_ok=yes`, `weston_ok=yes`, `vulkan_icd_ok=yes`, `compositor=up`, `compositor_owned=yes`, and `map_ok=yes` when the feature needs a map. Shape features use `control-codemap lint` and do not need the compositor. Do not export `XDG_RUNTIME_DIR` by hand. The helper passes it to weston.
 - Default root is the repo. For map mutations, point `CODEMAP_VERIFY_ROOT` at a disposable tree instead.
 - Never drive a Wayland socket this run did not start. Never drive the developer's interactive GUI.
 

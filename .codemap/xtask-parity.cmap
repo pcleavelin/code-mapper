@@ -3,7 +3,7 @@ tour xtask-parity
 kind flow
 author ai
 group tooling
-note cargo xtask parity [scenario]: finds the parent revision (jj log -r @- if jj answers, else git rev-parse HEAD), builds it once from a git archive into target/parity/source with CARGO_TARGET_DIR=target/parity/build, caches the release binary at target/parity/bin/<commit>/codemap, then runs cargo test --release --test parity -- --ignored with CODEMAP_BASE_BIN and CODEMAP_PARITY_REV set (and CODEMAP_PARITY_ONLY when a scenario is named), and prints the scenarios whose output differs.
+note cargo xtask parity [scenario]: finds the parent revision (jj log -r @- if jj answers, else git rev-parse HEAD), builds it once from a git archive into target/parity/source with CARGO_TARGET_DIR=target/parity/build, caches the release binary at target/parity/bin/<commit>/codemap, then runs cargo test --release --test parity -- --ignored with CODEMAP_BASE_BIN and CODEMAP_PARITY_REV set (and CODEMAP_PARITY_ONLY when a scenario is named), and prints the scenarios whose output differs. On Linux a filter other than cli or cli- refuses first, unless XDG_RUNTIME_DIR and WAYLAND_DISPLAY name a live socket. control-codemap parity is what starts that weston.
 
 step 4i987m
 order 2
@@ -15,14 +15,24 @@ lines 0 45
 hash a3a79be32011cba5
 note The base binary for the revision: the cached target/parity/bin/<commit>/codemap when a previous run already built it, otherwise a fresh target/parity/source filled from a git archive of the revision (tar -x into it), built there with cargo and CARGO_TARGET_DIR=target/parity/build, and the release binary copied into the cache.
 
+step 9rhjk4
+order 9
+parent l8b0hx
+author ai
+file xtask/src/parity.rs
+symbol compositor_here
+lines 0 17
+hash 5d86854fabfc6bf3
+note Reads XDG_RUNTIME_DIR and WAYLAND_DISPLAY. Ready when both are non-empty and the socket file exists. Unset when either name is missing. SocketMissing when the names are set and the file is not there.
+
 step bh7m5n
 order 0
 author ai
 file xtask/src/parity.rs
 symbol compare
-lines 0 35
-hash 048b3b9235712142
-note Runs cargo test --release --test parity -- --ignored, with CODEMAP_BASE_BIN and CODEMAP_PARITY_REV set to the base binary and the parent revision (and CODEMAP_PARITY_ONLY when a scenario is named). Success reports every scenario matches; failure reports the differing scenarios, with old.txt and new.txt kept at each path.
+lines 0 38
+hash d253555aa25d79fe
+note On Linux, unless the filter is cli or starts with cli-, refuses when XDG_RUNTIME_DIR and WAYLAND_DISPLAY do not name a socket. The refusal quotes weston's fatal line about XDG_RUNTIME_DIR and names control-codemap parity. Then runs cargo test --release --test parity -- --ignored, with CODEMAP_BASE_BIN and CODEMAP_PARITY_REV set to the base binary and the parent revision (and CODEMAP_PARITY_ONLY when a scenario is named). Success reports every scenario matches. Failure reports the differing scenarios, with old.txt and new.txt kept at each path.
 
 step ft57k4
 order 5
@@ -44,6 +54,16 @@ lines 0 11
 hash 5c40440f1bcd0b63
 note The lines worth showing from a failed parity run: any containing 'differences:', ' differs', ' screenshots old, ' or 'script failed:'; with none of those, the first 40 lines of the raw output.
 
+step l8b0hx
+order 7
+parent bh7m5n
+author ai
+file xtask/src/parity.rs
+symbol require_linux_compositor
+lines 0 5
+hash 80d77045adbd7e59
+note The boundary read: XDG_RUNTIME_DIR, WAYLAND_DISPLAY, and whether the socket file exists. Hands those to linux_gui_refusal with this operating system.
+
 step oiqqot
 order 1
 parent bh7m5n
@@ -53,6 +73,26 @@ symbol parent_commit
 lines 0 20
 hash 6312da5b1ceebc52
 note The parent commit: jj log -r @- --no-graph -T commit_id, or git rev-parse HEAD when jj does not answer. A Message names the failure when neither answers.
+
+step r6idya
+order 8
+parent l8b0hx
+author ai
+file xtask/src/parity.rs
+symbol linux_gui_refusal
+lines 0 13
+hash 8dd1042b7c9c553d
+note On Linux, a missing runtime directory or display names weston's fatal line and control-codemap parity. Names with no socket say the socket is missing. Any other operating system returns nothing, so macOS runs parity without weston.
+
+step ujv542
+order 6
+parent bh7m5n
+author ai
+file xtask/src/parity.rs
+symbol selects_gui
+lines 0 9
+hash 1ae716445e75a445
+note True unless the filter is cli or starts with cli-. Those names are the CLI scenarios and do not open a window. An empty filter runs every scenario, including the GUI ones.
 
 step v4qddo
 order 4

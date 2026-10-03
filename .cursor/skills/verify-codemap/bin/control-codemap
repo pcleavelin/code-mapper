@@ -25,8 +25,8 @@ STATE_DIR="$VERIFY_DIR/state"
 ARTIFACTS_DIR="${CODEMAP_VERIFY_ARTIFACTS:-$SKILL_DIR/artifacts}"
 BIN="${CODEMAP_BIN:-$REPO_ROOT/target/release/codemap}"
 ROOT="${CODEMAP_VERIFY_ROOT:-$REPO_ROOT}"
-LAYOUT="${CODEMAP_LAYOUT:-$STATE_DIR/layout.bin}"
 XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp/xdg-runtime-$(id -u)}"
+export XDG_RUNTIME_DIR
 SOCKET_NAME="${CODEMAP_VERIFY_SOCKET:-codemap-verify-$RUN_ID}"
 WESTON_PID_FILE="$STATE_DIR/weston.pid"
 WESTON_LOG="$STATE_DIR/weston.log"
@@ -53,6 +53,7 @@ export_gui_env() {
   export XDG_RUNTIME_DIR
   export WAYLAND_DISPLAY="$SOCKET_NAME"
   export VK_DRIVER_FILES="${VK_DRIVER_FILES:-$VK_ICD_DEFAULT}"
+  export LIBGL_ALWAYS_SOFTWARE="${LIBGL_ALWAYS_SOFTWARE:-1}"
   unset DISPLAY || true
 }
 
@@ -66,12 +67,20 @@ start_compositor() {
     echo "control-codemap: compositor already up socket=$SOCKET_NAME"
     return 0
   fi
-  weston --backend=headless --renderer=pixman --shell=kiosk \
+  if [[ -z "${XDG_RUNTIME_DIR:-}" ]]; then
+    die "XDG_RUNTIME_DIR is empty. Weston exits with \"fatal: environment variable XDG_RUNTIME_DIR is not set\" when that variable is missing from its environment. Pass XDG_RUNTIME_DIR on the weston command line."
+  fi
+  env "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR" \
+    weston --backend=headless --renderer=pixman --shell=kiosk \
     --socket="$SOCKET_NAME" --width=1600 --height=1000 \
     >"$WESTON_LOG" 2>&1 &
   echo $! >"$WESTON_PID_FILE"
   local i=0
   while ! compositor_up; do
+    if [[ -f "$WESTON_LOG" ]] && grep -q 'XDG_RUNTIME_DIR is not set' "$WESTON_LOG"; then
+      cat "$WESTON_LOG" >&2 || true
+      die "weston: fatal: environment variable XDG_RUNTIME_DIR is not set. Pass XDG_RUNTIME_DIR on the weston command line before start. export_gui_env runs after start_compositor, so an export only there is too late."
+    fi
     i=$((i + 1))
     [[ $i -lt 100 ]] || {
       cat "$WESTON_LOG" >&2 || true
@@ -104,7 +113,11 @@ cmd_doctor() {
   echo "root=$ROOT"
   echo "bin=$BIN"
   echo "socket=$SOCKET_NAME"
-  echo "layout=$LAYOUT"
+  if [[ -n "${CODEMAP_LAYOUT:-}" ]]; then
+    echo "layout=$CODEMAP_LAYOUT"
+  else
+    echo "layout=unset"
+  fi
   if [[ -x "$BIN" ]]; then
     echo "bin_ok=yes"
   else
@@ -218,7 +231,9 @@ cmd_gui() {
   done
   [[ -n "$script" || -n "$shot" ]] || die "gui needs --script FILE and/or --shot FILE.png"
   local -a env_args=()
-  env_args+=(CODEMAP_LAYOUT="$LAYOUT")
+  if [[ -n "${CODEMAP_LAYOUT:-}" ]]; then
+    env_args+=(CODEMAP_LAYOUT="$CODEMAP_LAYOUT")
+  fi
   if [[ -n "$script" ]]; then
     [[ -f "$script" ]] || die "script not found: $script"
     env_args+=(CODEMAP_SCRIPT="$script")
@@ -240,6 +255,37 @@ cmd_cli() {
   "$BIN" "$ROOT" "$@"
 }
 
+cmd_smoke() {
+  ensure_bin
+  start_compositor
+  export_gui_env
+  local script="$STATE_DIR/smoke.txt"
+  local err="$STATE_DIR/smoke.err"
+  printf 'wait 1\ndump\nquit\n' >"$script"
+  set +e
+  cmd_gui --script "$script" >"$STATE_DIR/smoke.out" 2>"$err"
+  local code=$?
+  set -e
+  cat "$err" >&2
+  [[ "$code" -eq 0 ]] || die "smoke: gui exited $code"
+  if grep -q '^script:' "$err"; then
+    die "smoke: the script failed"
+  fi
+  if grep -q 'ZINK' "$err"; then
+    die "smoke: Mesa tried ZINK. Set LIBGL_ALWAYS_SOFTWARE=1 for the GUI process. A headless machine has no DRM device, and that warning is what a failed probe prints."
+  fi
+  grep -q '^DUMP ' "$err" || die "smoke: the window did not draw (no DUMP lines)"
+  echo "smoke=ok"
+  echo "stderr=$err"
+}
+
+cmd_parity() {
+  start_compositor
+  export_gui_env
+  cd "$REPO_ROOT"
+  cargo xtask parity "$@"
+}
+
 cmd_cleanup() {
   stop_compositor
   # Remove scratch state only; keep artifacts.
@@ -254,11 +300,17 @@ usage: control-codemap <command> [args]
 commands:
   doctor              read-only health check (exit 0 = worth driving)
   launch              start a private headless weston for this RUN_ID
+  smoke               launch, then one dump script (proves the window drew)
+  parity [scenario]   launch, then cargo xtask parity (one process, scenarios in order)
   gui --script FILE [--shot FILE.png] [--tab name] [--scroll n]
   cli -- <codemap-args...>
   lint [file...]      archlint (cargo xtask lint); writes artifacts/archlint/lint.txt
   check-map           codemap check (stale steps); writes artifacts/archlint/check.txt
   cleanup             stop compositor started by launch; keep artifacts
+
+XDG_RUNTIME_DIR is exported before weston, and passed on the weston command line.
+A missing value is the weston line "fatal: environment variable XDG_RUNTIME_DIR is not set".
+check-compositor, next to this script, fails when that order regresses.
 
 env:
   CODEMAP_BIN                default: <repo>/target/release/codemap
@@ -266,8 +318,9 @@ env:
   CODEMAP_VERIFY_RUN         run id (default: \$\$)
   CODEMAP_VERIFY_DIR         scratch dir (default: /tmp/codemap-verify-\$RUN)
   CODEMAP_VERIFY_ARTIFACTS   proof dir (default: skill artifacts/)
-  CODEMAP_LAYOUT             layout file (default: \$VERIFY_DIR/state/layout.bin)
+  CODEMAP_LAYOUT             layout file to load and save. Unset means the default panels, not saved.
   VK_DRIVER_FILES            lavapipe ICD (default: $VK_ICD_DEFAULT)
+  LIBGL_ALWAYS_SOFTWARE      default 1, so Mesa does not probe ZINK on a machine with no DRM device
 EOF
 }
 
@@ -278,6 +331,8 @@ main() {
   case "$cmd" in
     doctor) cmd_doctor "$@" ;;
     launch) cmd_launch "$@" ;;
+    smoke) cmd_smoke "$@" ;;
+    parity) cmd_parity "$@" ;;
     gui) cmd_gui "$@" ;;
     cli) cmd_cli "$@" ;;
     lint) cmd_lint "$@" ;;

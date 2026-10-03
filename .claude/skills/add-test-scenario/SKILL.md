@@ -25,8 +25,11 @@ gesture), and the behaviour a change adds is stated by a test written before the
    component's `Dump` (`add-gui-element` step 6).
 4. A scenario needing jj or git starts with `needs("jj")?`; it is skipped where the tool is
    missing.
-5. Run it: `cargo test --release --test cli <name>` (GUI: `--test gui`; on Linux run GUI
-   tests under a headless compositor, one at a time), then `cargo xtask parity <name>` and read
+5. Run it: `cargo test --release --test cli <name>`. For a GUI scenario, run
+   `.cursor/skills/verify-codemap/bin/control-codemap parity <name>`. That passes
+   `XDG_RUNTIME_DIR` to one headless weston, then runs `cargo xtask parity`. The gui test
+   binary and the parity test each run one window at a time. A second window on a desktop
+   display stops getting frames and the script stalls. Then read
    each `old.txt`/`new.txt` it lists against how `understand` says the behaviour is meant to
    work.
 6. `finish`.
