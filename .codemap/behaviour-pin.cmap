@@ -141,9 +141,9 @@ parent noqsg2
 author ai
 file crates/codemap/tests/parity.rs
 symbol snapshot
-lines 0 23
-hash b4ffdadc7dce56a9
-note The repo at the revision as a plain directory: git archive of that revision from the workspace, unpacked under scratch(name)/repo. It has the map of that revision and no VCS.
+lines 0 27
+hash 7b928ba950e05d1b
+note The repo at the revision as a plain directory: git archive of that revision, through CODEMAP_PARITY_GIT_DIR when xtask passed the git store, unpacked under scratch(name)/repo. It has the map of that revision and no VCS.
 
 step 9mybqa
 order 35

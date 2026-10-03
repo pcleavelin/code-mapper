@@ -184,7 +184,11 @@ fn snapshot(rev: &str, name: &str) -> PathBuf {
     fs::remove_dir_all(common::scratch(name)).ok();
     fs::create_dir_all(&root).unwrap();
     let tar = common::scratch(name).join("snap.tar");
-    let git_status = Command::new("git")
+    let mut git = Command::new("git");
+    if let Some(store) = env::var_os("CODEMAP_PARITY_GIT_DIR") {
+        git.arg(format!("--git-dir={}", store.to_string_lossy()));
+    }
+    let git_status = git
         .args(["archive", "--format=tar", "-o"])
         .arg(&tar)
         .arg(rev)

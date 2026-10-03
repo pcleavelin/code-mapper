@@ -13,6 +13,7 @@ const BASE_BINARY: Literal = Literal::new("CODEMAP_BASE_BIN");
 const BASE_REVISION: Literal = Literal::new("CODEMAP_PARITY_REV");
 const ONLY: Literal = Literal::new("CODEMAP_PARITY_ONLY");
 const TARGET: Literal = Literal::new("CARGO_TARGET_DIR");
+const GIT_STORE: Literal = Literal::new("CODEMAP_PARITY_GIT_DIR");
 
 const DIFFERENCES: [Literal; 4] = [
     Literal::new("differences:"),
@@ -32,11 +33,15 @@ impl fmt::Display for CommitId {
 
 pub(crate) fn compare(root: &Root, only: Option<&Argument>) -> Result<Message, Message> {
     let revision = parent_commit(root)?;
-    let base = base_binary(root, &revision)?;
+    let store = git_store(root);
+    let base = base_binary(root, &revision, store.as_ref())?;
     let mut environment = vec![
         Setting::new(BASE_BINARY, base),
         Setting::new(BASE_REVISION, revision.0.clone()),
     ];
+    if let Some(found) = &store {
+        environment.push(Setting::new(GIT_STORE, found.0.clone()));
+    }
     if let Some(scenario) = only {
         environment.push(Setting::new(ONLY, scenario.as_str()));
     }
@@ -89,7 +94,26 @@ fn parent_commit(root: &Root) -> Result<CommitId, Message> {
     }
 }
 
-fn base_binary(root: &Root, revision: &CommitId) -> Result<PathBuf, Message> {
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct GitStore(String);
+
+impl GitStore {
+    fn argument(&self) -> Argument {
+        Argument::new(format!("--git-dir={}", self.0))
+    }
+}
+
+fn git_store(root: &Root) -> Option<GitStore> {
+    let asked = run(root, Program::JJ, &Argument::list(&["git", "root"]));
+    let store = asked.output.as_str().trim();
+    (asked.outcome == Outcome::Success && !store.is_empty()).then(|| GitStore(store.to_owned()))
+}
+
+fn base_binary(
+    root: &Root,
+    revision: &CommitId,
+    store: Option<&GitStore>,
+) -> Result<PathBuf, Message> {
     let parity = root.join(&RepoPath::new(DIRECTORY.as_str()));
     let binary = parity
         .join("bin")
@@ -101,17 +125,15 @@ fn base_binary(root: &Root, revision: &CommitId) -> Result<PathBuf, Message> {
     let source = parity.join("source");
     let archive = parity.join("source.tar");
     files::fresh_directory(&source)?;
-    succeed(&run(
-        root,
-        Program::GIT,
-        &[
-            Argument::new("archive"),
-            Argument::new("--format=tar"),
-            Argument::new("-o"),
-            Argument::new(archive.display().to_string()),
-            Argument::new(revision.0.clone()),
-        ],
-    ))?;
+    let mut archiving: Vec<Argument> = store.map(GitStore::argument).into_iter().collect();
+    archiving.extend([
+        Argument::new("archive"),
+        Argument::new("--format=tar"),
+        Argument::new("-o"),
+        Argument::new(archive.display().to_string()),
+        Argument::new(revision.0.clone()),
+    ]);
+    succeed(&run(root, Program::GIT, &archiving))?;
     succeed(&run(
         root,
         Program::TAR,
