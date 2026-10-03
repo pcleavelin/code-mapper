@@ -1,9 +1,10 @@
 use std::path::Path as FsPath;
 
 use domain::{
-    Anchor, Author, Backend, Cut, Depth, Draft, Edge, EditChange, FileText, Imports, Index, Line,
-    Map, Note, RelativePath, Root, Row, SourceFile, Span, Step, StepId, StepOrder, Stop, Symbol,
-    SymbolId, SymbolKind, SymbolName, Tour, TourKind, TourName, TreeEntry, Verdict,
+    Anchor, Author, Backend, Cut, Depth, Draft, Edge, EditChange, FileText, HighlightClass,
+    Imports, Index, Line, Map, Note, RelativePath, Root, Row, SourceFile, Span, Step, StepId,
+    StepOrder, Stop, Symbol, SymbolId, SymbolKind, SymbolName, Theme, Tour, TourKind, TourName,
+    TreeEntry, Verdict,
 };
 use features::{Feature, Trigger};
 use io_map::MapStore;
@@ -28,7 +29,7 @@ use crate::nav::Scrolling;
 use crate::palette::{Palette, commands};
 use crate::panels::{Direction, View};
 use crate::status::{Held, Status};
-use crate::theme::Cells;
+use crate::theme::{self, ACCENT, Cells, GREEN, NOTE, PANEL, TEXT};
 use crate::wizard::{self, BranchId, Expander, Page, Tick, WizardAct};
 
 #[test]
@@ -1717,4 +1718,41 @@ fn the_plain_and_the_control_wheel_keep_their_direction() {
     let wheel = ui::Vector::new(ui::Coordinate::new(5.0), ui::Coordinate::new(-120.0));
     assert_eq!(turned(ui::Mods::NONE), wheel);
     assert_eq!(turned(ui::Mods::CTRL.with(ui::Mods::SHIFT)), wheel);
+}
+
+fn luminance(color: ui::Color) -> f32 {
+    let linear = |channel: u8| {
+        let value = f32::from(channel) / 255.0;
+        if value <= 0.040_45 {
+            value / 12.92
+        } else {
+            ((value + 0.055) / 1.055).powf(2.4)
+        }
+    };
+    0.2126 * linear(color.red()) + 0.7152 * linear(color.green()) + 0.0722 * linear(color.blue())
+}
+
+fn contrast(left: ui::Color, right: ui::Color) -> f32 {
+    let (light, dark) = {
+        let (one, two) = (luminance(left), luminance(right));
+        (one.max(two), one.min(two))
+    };
+    (light + 0.05) / (dark + 0.05)
+}
+
+#[test]
+fn a_note_reads_as_body_text_and_never_as_a_comment_a_success_or_a_link_in_both_themes() {
+    for shown in [Theme::Dark, Theme::Light] {
+        let paint = theme::repaint(shown);
+        let note = paint.paint(NOTE);
+        assert!(contrast(note, paint.paint(PANEL)) >= 7.0, "{shown:?}");
+        for other in [
+            theme::highlight(HighlightClass::Comment),
+            GREEN,
+            ACCENT,
+            TEXT,
+        ] {
+            assert_ne!(note, paint.paint(other), "{shown:?}");
+        }
+    }
 }

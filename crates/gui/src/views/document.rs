@@ -12,8 +12,8 @@ use crate::model::{
 use crate::nav::Scrolling;
 use crate::text::{Counted, Noun, Tag};
 use crate::theme::{
-    ACCENT, COLLAPSE_ROOM, DANGER_GAP, FAINT, GREEN, HIDE_BUTTON, INDENT, INLINE_BUTTON, PENDING,
-    PIXEL, RED, SLICE, TEXT, WEAK, WHOLE_BUTTON, WIDE_GAP,
+    ACCENT, COLLAPSE_ROOM, DANGER_GAP, FAINT, GREEN, HIDE_BUTTON, INDENT, INLINE_BUTTON, NOTE,
+    PENDING, PIXEL, RED, SLICE, TEXT, WEAK, WHOLE_BUTTON, WIDE_GAP,
 };
 use crate::widgets::{
     Chosen, CodeBlock, Container, Enabled, Frame, Marks, Padding, Scroller, Width,
@@ -319,7 +319,7 @@ pub(super) fn tour_document(model: &Model, frame: &mut Frame<'_>, area: Extent) 
     let top_step = track_steps(model, frame, &numbered, &mut offset);
     header_bar(frame, tour, found, diff);
     match found.note() {
-        Some(note) => frame.note(note.as_str(), TEXT, Padding::Tour),
+        Some(note) => frame.note(note.as_str(), NOTE, Padding::Tour),
         None => frame.note("(no tour note)", WEAK, Padding::Tour),
     }
     linked_from(model, frame, found);
@@ -566,7 +566,7 @@ fn step_note(frame: &mut Frame<'_>, row: &Row<'_>) {
     frame.start(Container::FillRow);
     frame.indent(row.indent + COLLAPSE_ROOM.of(frame.cell_width()));
     match row.step.note() {
-        Some(note) => frame.note(note.as_str(), GREEN, Padding::Step),
+        Some(note) => frame.note(note.as_str(), NOTE, Padding::Step),
         None => frame.note("(no note)", PENDING, Padding::Step),
     }
     frame.finish();

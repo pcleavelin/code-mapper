@@ -100,7 +100,7 @@ author ai
 file crates/gui/src/graph/scene.rs
 symbol draw_scene
 lines 0 80
-hash 587f5ccce3d512c8
+hash 890b92a00976c7ed
 note The painter, called with ui's Canvas when the tree draws the custom element: the sibling boxes (SIBLINGS_FILL with a thin SIBLINGS_BORDER), curves and a dot for the arrow head, then per node: fill, outline, a clip to the node, header, buttons, note, the rule above the code, the slice and call tints behind their rows, the code grid, and the 'more lines' footer.
 
 step 8wgusc

@@ -16,8 +16,8 @@ use crate::panels::Direction;
 use crate::theme::{
     ACCENT, BACK_EDGE, BORDER, CALL_TINT, FIELD, GRAPH_BEND, GRAPH_BOX_HEADER, GRAPH_BUTTON_GAP,
     GRAPH_CODE_GAP, GRAPH_EDGE, GRAPH_EDGE_END, GRAPH_RANK_GAP_ACROSS, GRAPH_RANK_GAP_DOWN,
-    GRAPH_RULE, GRAPH_RULE_ABOVE, GRAPH_STEP_EDGE, GRAPH_THICK_BORDER, GRAPH_THIN_BORDER, GREEN,
-    HOVER, PANEL, PIXEL, RED, REVEAL_EDGE, SIBLINGS_BORDER, SIBLINGS_FILL, SLICE, STEP_BORDER,
+    GRAPH_RULE, GRAPH_RULE_ABOVE, GRAPH_STEP_EDGE, GRAPH_THICK_BORDER, GRAPH_THIN_BORDER, HOVER,
+    NOTE, PANEL, PIXEL, RED, REVEAL_EDGE, SIBLINGS_BORDER, SIBLINGS_FILL, SLICE, STEP_BORDER,
     STEP_EDGE, TEXT, WEAK,
 };
 
@@ -668,7 +668,7 @@ pub(crate) fn draw_scene(canvas: &mut Canvas<'_>, scene: &Scene) {
                 Point::new(node.rect.left + metrics.padding, top + metrics.row_height),
                 scene.size,
                 note.clone(),
-                GREEN,
+                NOTE,
             );
         }
         let inner = node.rect.width - metrics.padding * 2;

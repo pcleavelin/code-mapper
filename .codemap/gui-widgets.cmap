@@ -272,9 +272,9 @@ step gjm6fk
 order 0
 author ai
 file crates/gui/src/theme.rs
-lines 8 36
-hash 14ebfa1d66595a34
-note The palette, in theme: a dozen colours named by role - background, panel, field, border, text, weak, accent, green, red, orange, hover, selected, and the red background a danger button takes under the pointer - and below them the tints made from those by alpha (disabled, selected lines, the slice, the steps list's top step, faint, pending, the drop band, the call tint), the graph's colours (STEP_EDGE, EXPANSION_EDGE, BACK_EDGE, STEP_BORDER, SIBLINGS_FILL, SIBLINGS_BORDER) and the panel header's TAB_STRIP. A colour decision is made once, here, and every view names one.
+lines 8 37
+hash 6ab2cf0ac147fa80
+note The palette, in theme: a dozen colours named by role - background, panel, field, border, text, weak, accent, green, red, orange, hover, selected, the red background a danger button takes under the pointer, and NOTE, the colour of tour and step notes: a warm off-white (a dark brown in the light theme) at body-text contrast, apart from the comment green, GREEN (new, success) and the accent links use, since the notes are the most important prose in the window - and below them the tints made from those by alpha (disabled, selected lines, the slice, the steps list's top step, faint, pending, the drop band, the call tint), the graph's colours (STEP_EDGE, EXPANSION_EDGE, BACK_EDGE, STEP_BORDER, SIBLINGS_FILL, SIBLINGS_BORDER) and the panel header's TAB_STRIP. A colour decision is made once, here, and every view names one.
 
 step gp3at7
 order 49

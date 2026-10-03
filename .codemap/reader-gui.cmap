@@ -357,7 +357,7 @@ author ai
 file crates/gui/src/views/document.rs
 symbol tour_document
 lines 0 47
-hash 866e7c8556a9bb28
+hash bb8d2484a0fe5dbd
 note The document, the reader's landing view: the tour header, the note, the steps that link here, and a sticky breadcrumb of the topmost visible step's ancestors, then the scrolling column of steps (an empty tour says how to add some) and the steps removed since the parent revision. While the wizard is open it draws the wizard's page instead (feature-build-tour), or the edit page while a tour is edited (feature-edit-tour); with no tour selected, the start page (feature-welcome).
 
 step dhyl4k
@@ -956,8 +956,8 @@ author ai
 file crates/gui/src/views/document.rs
 symbol step_note
 lines 0 8
-hash 738ce225e2dfe106
-note The step's note, wrapped, or '(no note)' dimmed.
+hash e92a5b76436d1b43
+note The step's note, wrapped, in NOTE, or '(no note)' dimmed.
 
 step x3sfq6
 order 7
