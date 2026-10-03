@@ -6,7 +6,9 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use cli::Failure;
-use domain::{FileId, Index, Language, Line, LineCount, Location, Map, RelativePath, Root, Span};
+use domain::{
+    FileId, Index, Language, Line, LineCount, Location, Map, RelativePath, Root, SourceFile, Span,
+};
 use index::{FileVersion, Indexed, Parsers, ServerFile, Stamps, read_outside};
 use io_lsp::StartError;
 use io_map::{MapStore, MapText};
@@ -63,9 +65,37 @@ enum Repeat {
     Wanted,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ServerState {
+    NotStarted,
+    Starting,
+    Indexing,
+    Ready,
+    Missing,
+    Failed,
+}
+
+impl fmt::Display for ServerState {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(match self {
+            Self::NotStarted => "not-started",
+            Self::Starting => "starting",
+            Self::Indexing => "indexing",
+            Self::Ready => "ready",
+            Self::Missing => "missing",
+            Self::Failed => "failed",
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct LanguageServer {
+    pub(crate) language: Language,
+    pub(crate) state: ServerState,
+}
+
 pub(crate) struct WorkState {
-    no_server: BTreeSet<Language>,
-    started: BTreeSet<Language>,
+    states: BTreeMap<Language, ServerState>,
     indexing: BTreeSet<Language>,
     progress: Label,
     restart: Repeat,
@@ -78,8 +108,7 @@ pub(crate) struct WorkState {
 impl Default for WorkState {
     fn default() -> Self {
         Self {
-            no_server: BTreeSet::new(),
-            started: BTreeSet::new(),
+            states: BTreeMap::new(),
             indexing: BTreeSet::new(),
             progress: Label::default(),
             restart: Repeat::Idle,
@@ -106,11 +135,62 @@ impl fmt::Display for Indexing<'_> {
 
 impl WorkState {
     pub(crate) fn no_server(&self, language: Language) -> bool {
-        self.no_server.contains(&language)
+        matches!(
+            self.states.get(&language),
+            Some(ServerState::Missing | ServerState::Failed)
+        )
     }
 
-    pub(crate) fn started(&self, language: Language) -> bool {
-        self.started.contains(&language)
+    pub(crate) fn server_started(&mut self, language: Language) {
+        self.states.insert(language, ServerState::Starting);
+    }
+
+    pub(crate) fn server_answered(&mut self, language: Language) {
+        if let Some(state) = self.states.get_mut(&language)
+            && *state == ServerState::Starting
+        {
+            *state = ServerState::Ready;
+        }
+    }
+
+    pub(crate) fn server_unavailable(&mut self, language: Language, error: &StartError) {
+        let gone = match error {
+            StartError::Missing(_) => ServerState::Missing,
+            StartError::Failed(_) => ServerState::Failed,
+        };
+        self.states.insert(language, gone);
+        self.indexing.remove(&language);
+    }
+
+    pub(crate) fn index_asked(&mut self, language: Language) {
+        self.indexing.insert(language);
+    }
+
+    pub(crate) fn index_answered(&mut self, language: Language) {
+        self.indexing.remove(&language);
+    }
+
+    pub(crate) fn server_state(&self, language: Language) -> ServerState {
+        match self.states.get(&language) {
+            None => ServerState::NotStarted,
+            Some(ServerState::Ready) if self.indexing.contains(&language) => ServerState::Indexing,
+            Some(state) => *state,
+        }
+    }
+
+    pub(crate) fn server_states(&self, index: &Index) -> Vec<LanguageServer> {
+        let languages: BTreeSet<Language> = index
+            .files()
+            .filter_map(SourceFile::language)
+            .chain(self.states.keys().copied())
+            .collect();
+        languages
+            .into_iter()
+            .map(|language| LanguageServer {
+                language,
+                state: self.server_state(language),
+            })
+            .collect()
     }
 
     pub(crate) const fn progress(&self) -> &Label {
@@ -347,8 +427,7 @@ impl App {
             self.services
                 .servers
                 .insert(language, ServerLink { requests, answers });
-            self.model.work.started.insert(language);
-            self.model.status = Status::Starting(language.program());
+            self.model.work.server_started(language);
         }
         self.services
             .servers
@@ -374,7 +453,7 @@ impl App {
             let count = files.len();
             let program = batch.language.program();
             if self.ask(batch.language, Request::Index(files)) {
-                self.model.work.indexing.insert(batch.language);
+                self.model.work.index_asked(batch.language);
                 self.model.work.progress = Label::new(format!("{program}: 0/{count}"));
             } else {
                 self.model.index.give_up(batch.language);
@@ -384,12 +463,15 @@ impl App {
 
     pub(crate) fn poll_backend(&mut self) {
         let mut answers = Vec::new();
-        for link in self.services.servers.values() {
+        for (language, link) in &self.services.servers {
+            let before = answers.len();
             while let Ok(answer) = link.answers.try_recv() {
                 answers.push(answer);
             }
+            if answers.len() > before {
+                self.model.work.server_answered(*language);
+            }
         }
-        let answered = !answers.is_empty();
         let mut files = Vec::new();
         let mut batch_ended = false;
         for answer in answers {
@@ -398,18 +480,13 @@ impl App {
                 Answer::Progress(progress) => self.model.work.progress = progress,
                 Answer::Failed(language, error) => {
                     self.services.servers.remove(&language);
-                    let work = &mut self.model.work;
-                    work.started.remove(&language);
-                    work.no_server.insert(language);
-                    work.indexing.remove(&language);
+                    self.model.work.server_unavailable(language, &error);
                     self.model.index.give_up(language);
                     self.model.queries.server_gone();
-                    self.model.status =
-                        Status::ServerFailed(Label::new(cli::start_error(&error).as_str()));
                     batch_ended = true;
                 }
                 Answer::Done(language) => {
-                    self.model.work.indexing.remove(&language);
+                    self.model.work.index_answered(language);
                     batch_ended = true;
                 }
                 Answer::Hover(probe, text) => self.model.queries.hover_answered(probe, text),
@@ -438,9 +515,6 @@ impl App {
             if self.model.status.is_indexed() {
                 self.model.status = self.indexed_status();
             }
-        }
-        if answered && self.model.status.is_starting() {
-            self.model.status = self.indexed_status();
         }
         if batch_ended && !self.model.work.is_indexing() {
             drop(index::save_cache(&self.model.index));

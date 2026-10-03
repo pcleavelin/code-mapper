@@ -53,7 +53,7 @@ fn reload_hook(bin: &Path, root: &Path, line: &str) {
     }
 }
 
-const SETTLE: &str = "idle\nclick-id save\nclick-id tours/2\nwait 2\n";
+const SETTLE: &str = "idle\nclick-id tours/2\nwait 2\n";
 
 const DOCUMENT: &str = "SETTLE
 dump

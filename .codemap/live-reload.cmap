@@ -111,7 +111,7 @@ author ai
 file crates/gui/src/work.rs
 symbol start_backend
 lines 0 16
-hash 0ef67aed00b2836a
+hash 4de5d3776edde24e
 note Whatever changed is pending again and goes to the servers; if a server batch is still running, the request is remembered and started when it finishes.
 
 step h58ssq

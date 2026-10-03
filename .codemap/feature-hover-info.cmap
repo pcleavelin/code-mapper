@@ -41,7 +41,7 @@ parent z2vf49
 author ai
 file crates/gui/src/work.rs
 symbol poll_backend
-lines 30 30
+lines 28 28
 hash 7395b9cfbffebbef
 link peek
 note The answer, polled in a later frame, is cached as answered and frees the in-flight slot; the next frame's hover finds it and shows the tip.
@@ -52,9 +52,9 @@ parent z2vf49
 author ai
 file crates/gui/src/widgets/code.rs
 symbol push_hover
-lines 0 8
-hash a80623c0c7604288
-note Queues the hover question. When it will really be sent this frame, the overlay counts it and shows the server-starting status, so the status bar is right without waiting a frame.
+lines 0 5
+hash 02cc8cefea7bf995
+note Queues the hover question. When it will really be sent this frame, the overlay counts it, so the count is right without waiting a frame.
 
 step o8cqc5
 order 7

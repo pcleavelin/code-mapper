@@ -8,6 +8,7 @@ use crate::status::Tone;
 use crate::text::Clipped;
 use crate::theme::{GREEN, MAP_PLACE, ORANGE, RED, TEXT, WEAK};
 use crate::widgets::{Chosen, Container, Enabled, Frame};
+use crate::work::ServerState;
 
 pub(super) fn top_bar(model: &Model, frame: &mut Frame<'_>) {
     frame.start(Container::TopBar);
@@ -82,6 +83,18 @@ pub(super) fn status_bar(model: &Model, frame: &mut Frame<'_>) {
     let progress = model.work.progress();
     if !progress.as_str().is_empty() {
         frame.label(progress.clone(), WEAK);
+    }
+    for server in model.work.server_states(&model.index) {
+        let light = match server.state {
+            ServerState::NotStarted => WEAK,
+            ServerState::Starting | ServerState::Indexing => ORANGE,
+            ServerState::Ready => GREEN,
+            ServerState::Missing | ServerState::Failed => RED,
+        };
+        frame.label_runs(vec![
+            Run::new(Icon::Dot, light),
+            Run::new(format!(" {}", server.language.program()), WEAK),
+        ]);
     }
     let place = model
         .store

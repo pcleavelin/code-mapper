@@ -21,8 +21,8 @@ parent 7n3jq4
 author ai
 file crates/gui/src/views/references.rs
 symbol references_panel
-lines 0 76
-hash 621269e05a78af09
+lines 0 73
+hash 38cbbeb05854cc5f
 note The References panel, on the right by default: the kept peek on top when there is one, then the focused symbol with 'add step' (unless it is the selected step) and 'promote', then callers, callees and references in one windowed list, each row clickable. References are asked of the server the first time a symbol is shown, once per text of its file (the probe carries the file hash), and the references title says so while the answer is out.
 
 step 0n6ve6
@@ -396,8 +396,8 @@ parent 50ozko
 author ai
 file crates/gui/src/work.rs
 symbol poll_backend
-lines 0 67
-hash 56a1a12ad5d9c5e8
+lines 0 62
+hash cc9da9121b82002d
 link peek
 note Server answers: hovers, references and definitions land, indexed files are merged into the index at most once a second, and a finished batch saves the cache.
 
@@ -558,9 +558,9 @@ parent bg9t38
 author ai
 file crates/gui/src/views/bars.rs
 symbol status_bar
-lines 0 27
-hash 63d2ca5338ba0eb4
-note The last row: the current status line in its Tone's colour (plain, green when done, orange for a warning, red for a problem), clipped to the room left; the servers' progress while a batch runs; then the map's directory, cut from the left to MAP_PLACE cells. A status set this frame by a view (the overlay) shows at once.
+lines 0 39
+hash 98f86dc8a1a02893
+note The last row: the current status line in its Tone's colour (plain, green when done, orange for a warning, red for a problem), clipped to the room left; the servers' progress while a batch runs; one dot per language of the index, beside its server's program (green ready, orange starting or indexing, red missing or failed, dim not started); then the map's directory, cut from the left to MAP_PLACE cells. A status set this frame by a view (the overlay) shows at once.
 
 step jkrf60
 order 99

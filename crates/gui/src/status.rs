@@ -1,7 +1,7 @@
 use std::fmt;
 use std::path::PathBuf;
 
-use domain::{Line, LineCount, Map, MapError, Program, RelativePath, SymbolName, TourName};
+use domain::{Line, LineCount, Map, MapError, RelativePath, SymbolName, TourName};
 use platform::BUNDLED_FAMILY;
 use ui::{Count, Label};
 
@@ -117,8 +117,6 @@ pub(crate) enum Status {
     },
     NoDefinition,
     LookingUp(Label),
-    Starting(Program),
-    ServerFailed(Label),
     Reindexing,
     Reindexed(IndexCounts),
     ReindexFailed,
@@ -267,7 +265,6 @@ impl Status {
             | Self::CommandFailed(_)
             | Self::RegexRefused(_)
             | Self::MapRefused(_)
-            | Self::ServerFailed(_)
             | Self::ReindexFailed
             | Self::MapUnreadableKept(_) => Tone::Problem,
             _ => Tone::Plain,
@@ -276,10 +273,6 @@ impl Status {
 
     pub(crate) const fn is_indexed(&self) -> bool {
         matches!(self, Self::Indexed(_))
-    }
-
-    pub(crate) const fn is_starting(&self) -> bool {
-        matches!(self, Self::Starting(_))
     }
 
     pub(crate) fn line(&self) -> Label {
@@ -369,12 +362,6 @@ impl fmt::Display for Status {
                 formatter,
                 "looking up '{}'; the language server has not answered yet",
                 word.as_str()
-            ),
-            Self::Starting(program) => write!(formatter, "{program}: starting"),
-            Self::ServerFailed(error) => write!(
-                formatter,
-                "{}: its files keep the tree-sitter resolver, no hover or go-to for them",
-                error.as_str()
             ),
             Self::Reindexing => formatter.write_str("re-indexing (source changed)"),
             Self::Reindexed(counts) => write!(formatter, "re-indexed: {counts} (source changed)"),

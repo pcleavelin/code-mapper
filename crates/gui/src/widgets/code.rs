@@ -9,7 +9,6 @@ use crate::grid::GUTTER;
 use crate::keys::{self, CodeGesture};
 use crate::model::Model;
 use crate::peek::{Hovering, Intent, Probe};
-use crate::status::Status;
 use crate::theme::{PIXEL, SELECTED_BAR};
 use crate::widgets::{Frame, Scrolled, TipAt};
 
@@ -224,9 +223,6 @@ impl Frame<'_> {
     pub(crate) fn push_hover(&mut self, model: &Model, language: Language, probe: Probe) {
         if model.queries.asks_now(&probe, model.now) && !model.work.no_server(language) {
             self.overlay.asked += Count::new(1);
-            if !model.work.started(language) {
-                self.overlay.status = Some(Status::Starting(language.program()));
-            }
         }
         self.push(Action::Hover(language, probe));
     }

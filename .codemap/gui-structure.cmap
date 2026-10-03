@@ -11,8 +11,8 @@ parent saeyu5
 author ai
 file crates/gui/src/status.rs
 symbol fmt
-lines 0 100
-hash ed38de912217e1b0
+lines 0 94
+hash 7c79d3ec684c274d
 note The wording. Map refusals and load failures arrive already worded by cli, so the GUI and the CLI say the same thing.
 
 step 0fz3qy
@@ -21,9 +21,9 @@ parent saeyu5
 author ai
 file crates/gui/src/status.rs
 symbol tone
-lines 0 42
-hash 4c02604d592efca1
-note How the status bar colours each Status: Done for what the reader asked and got (saved, created, added, moved, removed, reloaded, re-indexed), Warning for what needs the reader's attention but broke nothing (a refused gesture, a clamped line, missing input, cut search hits, a change on disk), Problem for a failure (an unreadable map, a refused or failed save or command, a bad regex, a server or re-index failure), Plain for the rest.
+lines 0 41
+hash 361d9d56e316e4c3
+note How the status bar colours each Status: Done for what the reader asked and got (saved, created, added, moved, removed, reloaded, re-indexed), Warning for what needs the reader's attention but broke nothing (a refused gesture, a clamped line, missing input, cut search hits, a change on disk), Problem for a failure (an unreadable map, a refused or failed save or command, a bad regex, a re-index failure), Plain for the rest.
 
 step 2e645j
 order 5
@@ -292,9 +292,9 @@ parent vkbn4x
 author ai
 file crates/gui/src/work.rs
 symbol WorkState
-lines 0 10
-hash 5f0c225607ec12b3
-note What the Model knows of the work, readable by views: the languages whose server failed or started or is indexing, the progress label, whether a batch must restart when this one ends, the server answers waiting to be merged and when the last merge was, whether a link must run again, and whether the parent map is being read.
+lines 0 9
+hash 62106d1f15158bd9
+note What the Model knows of the work, readable by views: each language's server state (starting, ready, missing or failed; indexing is read off the batches in flight), the languages indexing, the progress label, whether a batch must restart when this one ends, the server answers waiting to be merged and when the last merge was, whether a link must run again, and whether the parent map is being read.
 
 step g89lh9
 order 23
@@ -321,9 +321,9 @@ parent 7579zm
 author ai
 file crates/gui/src/dump.rs
 symbol dump
-lines 0 9
-hash 090884dbec8dbe08
-note The servers' progress, which languages are indexing, the answers waiting to merge, and whether a re-index or a link is running.
+lines 0 15
+hash 2cead7a42391e6c7
+note The servers' progress, which languages are indexing, the answers waiting to merge, and whether a re-index or a link is running; then a servers line, each language's server program and its state, in language order.
 
 step hd9zv5
 order 35
@@ -593,9 +593,9 @@ order 52
 author ai
 file crates/gui/src/status.rs
 symbol Status
-lines 0 83
-hash 11b134c140383c41
-note Everything the status line can say, as data: each outcome of a save, a command, a search, an edit, a definition lookup, a server, a re-index or a disk change. Views and apply set one; nothing formats a message where it happens.
+lines 0 81
+hash e4f7292fbc79bb0b
+note Everything the status line can say, as data: each outcome of a save, a command, a search, an edit, a definition lookup, a re-index or a disk change. Views and apply set one; nothing formats a message where it happens.
 
 step sbpnbg
 order 72

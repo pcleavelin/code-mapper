@@ -91,7 +91,7 @@ author ai
 file crates/gui/src/work.rs
 symbol start_backend
 lines 0 16
-hash 0ef67aed00b2836a
+hash 4de5d3776edde24e
 note The GUI's driver: every pending language's files go as one batch to that language's server thread; a call while a batch runs is remembered and made again when the batch ends. A language whose server thread cannot be had gives up its files to the tree-sitter answer.
 
 step ahwmbv
@@ -279,9 +279,9 @@ order 8
 author ai
 file crates/gui/src/work.rs
 symbol poll_backend
-lines 0 67
-hash 56a1a12ad5d9c5e8
-note Drains every server's channel each frame, but merges at most once a second and once more when a batch ends, since a merge re-resolves the map and drops every drawn grid. A merge applies the answers inside with_index_change and starts a link on a thread; the status line's symbol count follows each merge. A batch's end saves the cache and runs the next batch if a rebuild asked for one meanwhile. Any message at all from a server means it is past starting, so a Starting status gives way to the index count.
+lines 0 62
+hash cc9da9121b82002d
+note Drains every server's channel each frame, but merges at most once a second and once more when a batch ends, since a merge re-resolves the map and drops every drawn grid. A merge applies the answers inside with_index_change and starts a link on a thread; the status line's symbol count follows each merge. A batch's end saves the cache and runs the next batch if a rebuild asked for one meanwhile. Any message at all from a server means it is past starting, so its state turns from Starting to Ready.
 
 step u2g8ww
 order 36
@@ -378,6 +378,6 @@ parent 89epu3
 author ai
 file crates/gui/src/work.rs
 symbol server
-lines 0 19
-hash 3336cce433cc404e
+lines 0 18
+hash ff46b97e57ec14ba
 note One thread per language for the session, started on first use; indexing batches go to the same server that answers hover, definition and references. A language already known to have no server gives None.

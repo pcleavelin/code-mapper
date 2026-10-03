@@ -60,7 +60,7 @@ parent 7x9zhl
 author ai
 file crates/gui/src/work.rs
 symbol poll_backend
-lines 35 39
+lines 33 37
 hash 0d766cad93d5bf15
 link peek
 note The server's answer, polled at the start of a later frame: it counts only if it matches the definition still wanted, so a stale answer after another click is dropped.

@@ -36,23 +36,19 @@
    rust-analyzer reports them.
 4. Hover requests have no cancellation; one for a word the pointer has left is still
    answered first.
-5. With several language servers missing, the status line names only one. Name every
-   missing server, then drop the save the GUI scripts do before their first dump.
-6. `index::build` runs on the main thread before the window opens; move it to a
+5. `index::build` runs on the main thread before the window opens; move it to a
    background thread with progress.
-7. The file browser should sort by type: directories first, then files grouped by
+6. The file browser should sort by type: directories first, then files grouped by
    extension.
-8. The Source tab's horizontal scrollbar shows only while a line wider than the view is
+7. The Source tab's horizontal scrollbar shows only while a line wider than the view is
    on screen.
-9. Moving the cursor in a text field shifts the text around.
+8. Moving the cursor in a text field shifts the text around.
 
 ## Features
 
 1. Comments for an agent to review and address: the owner leaves a comment on code or a
    step, the next agent session answers it in the map and clears it.
-2. A status dot per language server in the status line (green ready, amber starting or
-   indexing, red missing) beside its name. Covers GUI 5.
-3. A graph minimap: the whole graph in a corner with the camera's view drawn on it; click
+2. A graph minimap: the whole graph in a corner with the camera's view drawn on it; click
    or drag it to move the camera. A way out of GUI 2.
 
 ## Deferred

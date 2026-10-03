@@ -1,11 +1,12 @@
 use std::path::Path as FsPath;
 
 use domain::{
-    Anchor, Author, Backend, Cut, Depth, Draft, Edge, EditChange, FileText, Imports, Index, Line,
-    Map, Note, RelativePath, Root, Row, SourceFile, Span, Step, StepId, StepOrder, Stop, Symbol,
-    SymbolId, SymbolKind, SymbolName, Tour, TourKind, TourName, TreeEntry, Verdict,
+    Anchor, Author, Backend, Cut, Depth, Draft, Edge, EditChange, FileText, Imports, Index,
+    Language, Line, Map, Note, RelativePath, Root, Row, SourceFile, Span, Step, StepId, StepOrder,
+    Stop, Symbol, SymbolId, SymbolKind, SymbolName, Tour, TourKind, TourName, TreeEntry, Verdict,
 };
 use features::{Feature, Trigger};
+use io_lsp::StartError;
 use io_map::MapStore;
 use platform::ClipboardRequest;
 use strum::VariantArray;
@@ -30,6 +31,7 @@ use crate::panels::{Direction, View};
 use crate::status::{Held, Status};
 use crate::theme::Cells;
 use crate::wizard::{self, BranchId, Expander, Page, Tick, WizardAct};
+use crate::work::{LanguageServer, ServerState, WorkState};
 
 #[test]
 fn every_control_is_named_by_its_feature() {
@@ -677,6 +679,66 @@ fn the_tours_filter_lists_a_tour_by_its_steps_and_names_the_steps_that_match() {
         (1, ["1", "1.1", "1.1.1", "1.2"].map(str::to_owned).to_vec())
     );
     assert_eq!(filtered(&mut model, "absent"), (0, Vec::new()));
+}
+
+#[test]
+fn every_language_of_the_index_names_its_server_and_state_in_language_order() {
+    let mut index = index();
+    for path in ["web/app.js", "tool.py", "c/lib.c"] {
+        let text = FileText::from("x\n");
+        let hash = text.whole_hash();
+        index.push(SourceFile::new(
+            RelativePath::new(path),
+            text,
+            vec![Vec::new()],
+            Vec::new(),
+            Imports::new(),
+            hash,
+            Backend::TreeSitter,
+        ));
+    }
+    let mut work = WorkState::default();
+    work.server_started(Language::Rust);
+    work.index_asked(Language::Rust);
+    work.server_started(Language::Clang);
+    work.index_asked(Language::Clang);
+    work.server_started(Language::Python);
+    work.server_unavailable(
+        Language::Clang,
+        &StartError::Missing(Language::Clang.program()),
+    );
+    work.server_unavailable(
+        Language::Python,
+        &StartError::Failed(Language::Python.program()),
+    );
+    let starting = [
+        LanguageServer {
+            language: Language::Rust,
+            state: ServerState::Starting,
+        },
+        LanguageServer {
+            language: Language::Clang,
+            state: ServerState::Missing,
+        },
+        LanguageServer {
+            language: Language::Python,
+            state: ServerState::Failed,
+        },
+        LanguageServer {
+            language: Language::Javascript,
+            state: ServerState::NotStarted,
+        },
+    ];
+    assert_eq!(work.server_states(&index), starting);
+    work.server_answered(Language::Rust);
+    assert_eq!(work.server_state(Language::Rust), ServerState::Indexing);
+    work.index_answered(Language::Rust);
+    assert!(!work.is_indexing());
+    assert_eq!(work.server_state(Language::Rust), ServerState::Ready);
+    work.server_answered(Language::Clang);
+    assert_eq!(work.server_state(Language::Clang), ServerState::Missing);
+    assert!(work.no_server(Language::Clang) && work.no_server(Language::Python));
+    assert!(!work.no_server(Language::Rust));
 }
 
 #[test]

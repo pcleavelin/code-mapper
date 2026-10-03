@@ -51,9 +51,9 @@ parent 8dz15n
 author ai
 file crates/gui/src/widgets/code.rs
 symbol push_hover
-lines 0 8
-hash a80623c0c7604288
-note Pushes the Hover action. When the question will actually be sent this frame, the overlay counts it and shows the server as starting, so the status line and the References heading agree with it in the same frame.
+lines 0 5
+hash 02cc8cefea7bf995
+note Pushes the Hover action. When the question will actually be sent this frame, the overlay counts it, so the References heading agrees with it in the same frame.
 
 step 3xb88t
 order 36
@@ -210,9 +210,9 @@ parent vy64jp
 author ai
 file crates/gui/src/work.rs
 symbol server
-lines 0 19
-hash 3336cce433cc404e
-note The server thread for a language, spawned on first use and kept for the session, and the status line says it is starting; None once it failed to start, so a hover does not retry it.
+lines 0 18
+hash ff46b97e57ec14ba
+note The server thread for a language, spawned on first use and kept for the session, Starting until its first answer; None once it failed to start, so a hover does not retry it.
 
 step nt3g6k
 order 17
@@ -299,9 +299,9 @@ order 3
 author ai
 file crates/gui/src/work.rs
 symbol poll_backend
-lines 0 67
-hash 56a1a12ad5d9c5e8
-note Where the answers land, at the top of every frame: a hover is cached under its Probe, references land on the symbol they were asked for when its file still has the text they were asked about, and a definition is acted on only when it is the one still awaited. A server that failed to start drops every question to it and says so in the status line.
+lines 0 62
+hash cc9da9121b82002d
+note Where the answers land, at the top of every frame: a hover is cached under its Probe, references land on the symbol they were asked for when its file still has the text they were asked about, and a definition is acted on only when it is the one still awaited. A server that failed to start drops every question to it, and its dot in the status bar turns red.
 
 step v678nk
 order 14

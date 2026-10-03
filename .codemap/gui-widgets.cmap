@@ -141,6 +141,16 @@ lines 0 27
 hash 1a714d00ca99e6b3
 note Keys go to one field: nothing happens unless it has the keyboard. Its Edits apply in order, then the typed text goes in at the caret, then the shown rows follow the caret; escape gives the keyboard up. Returns what came of it as Handled: the submitted line, if enter submitted, and the ClipboardRequest the platform is to carry out (copy or paste).
 
+step 7fxzdq
+order 62
+parent aidqqn
+author ai
+file crates/gui/src/widgets.rs
+symbol label_runs
+lines 0 8
+hash 4d674c8ee8ad9ed9
+note label with several runs, each in its own colour: sized to its text, unlike caption, which grows to fill the row.
+
 step 7mnsht
 order 11
 author ai
@@ -254,9 +264,9 @@ parent 65k6cz
 author ai
 file crates/gui/src/widgets/code.rs
 symbol push_hover
-lines 0 8
-hash a80623c0c7604288
-note Asking the server for a hover. When the question will be sent this frame, the overlay counts it and the status line shows the server starting, so both show in the same frame as the hover.
+lines 0 5
+hash 02cc8cefea7bf995
+note Asking the server for a hover. When the question will be sent this frame, the overlay counts it, so the count shows in the same frame as the hover.
 
 step g0slfv
 order 49
