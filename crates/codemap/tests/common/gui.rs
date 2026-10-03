@@ -1098,7 +1098,7 @@ dump
 shot {shots}/wizard-steps.png
 click-id wizard-next
 wait 2
-click-id field@wizard-note
+click-id field@tour-note
 text Hand-built from main, three calls down to Store::check.
 key enter
 text It stops where the map is read.
@@ -1112,13 +1112,13 @@ key left alt
 key backspace alt
 wait 1
 dump
-shot {shots}/wizard-note.png
-dblclick-id field@wizard-note
+shot {shots}/tour-note.png
+dblclick-id field@tour-note
 wait 1
 key x ctrl
 key v ctrl
 wait 1
-click-id field@wizard-note shift
+click-id field@tour-note shift
 wait 1
 dump
 click-id wizard-next
@@ -1266,7 +1266,7 @@ key escape
 wait 2
 dump
 absent settings-close
-click-id settings
+click-id settings-open
 wait 3
 dump
 click-id settings-smaller

@@ -42,17 +42,17 @@ author ai
 file crates/ui/src/layout.rs
 symbol Layout
 lines 0 10
-hash 1ae3470c9b7b42b2
-note How an element lays its children out: direction, a size per axis, padding, gap, cross-axis alignment, a scroll offset applied to the children, the axes it shows a scrollbar on and scrolls along (Scrollbars, vertical unless asked), and a floating absolute position that takes it out of the parent's flow and onto the upper layer. There is no separate clip flag: an element clips exactly when it scrolls.
+hash d05595bd813fa21f
+note How an element lays its children out: direction, a size per axis, padding, gap, cross-axis alignment, a scroll offset applied to the children, the axes it shows a scrollbar on and scrolls along (ScrollAxes, vertical unless asked), and a floating absolute position that takes it out of the parent's flow and onto the upper layer. There is no separate clip flag: an element clips exactly when it scrolls.
 
 step 30tymq
 order 45
 parent 2ykree
 author ai
 file crates/ui/src/layout.rs
-symbol impl Scrollbars
+symbol impl ScrollAxes
 lines 0 11
-hash b9baf836e67ae912
+hash 16030747cd2e31cf
 note The two axes and has, the one question asked of the set.
 
 step 3sljeg
@@ -72,7 +72,7 @@ author ai
 file crates/ui/src/tree.rs
 symbol scrollbar_room
 lines 0 12
-hash f002abda5b6169a0
+hash c4fe0ea391b745e4
 note One bar width of height for a clipping element that scrolls sideways and whose widest child, with padding, is wider than it; added in the vertical fit pass, after widths are final.
 
 step 5r4iu3
@@ -103,7 +103,7 @@ author ai
 file crates/ui/src/tree.rs
 symbol Placement
 lines 0 7
-hash 7087c2e3711b4b3f
+hash f612a15d2dc627d4
 note Where an id was last frame: its rectangle, its clip, the extent of its content, its scroll offset and which scrollbars it shows; overflow and scrollbar answer, per axis, how far it can scroll and where its bar is.
 
 step a3j9w8
@@ -203,7 +203,7 @@ author ai
 file crates/ui/src/tree.rs
 symbol placement
 lines 0 9
-hash 55f6ed68e233c6c7
+hash 545f8c60987dc5c9
 note An element's Placement, built in one place for record and draw_scrollbars.
 
 step go9e81
@@ -293,7 +293,7 @@ file crates/ui/src/tree.rs
 symbol scroll_by_wheel
 lines 0 26
 hash 68b82712153d1ce3
-note Scrolls a two-axis offset by the wheel when the element is the hit or the mouse is inside its visible rectangle, then runs each axis through drag_scrollbar, which clamps it to the overflow the element showed last frame on that axis, and returns it for the caller to build the element with. An axis the element did not opt into (Scrollbars) has no overflow, so it stays at zero. The offset is the caller's state, not the tree's.
+note Scrolls a two-axis offset by the wheel when the element is the hit or the mouse is inside its visible rectangle, then runs each axis through drag_scrollbar, which clamps it to the overflow the element showed last frame on that axis, and returns it for the caller to build the element with. An axis the element did not opt into (ScrollAxes) has no overflow, so it stays at zero. The offset is the caller's state, not the tree's.
 
 step ja80zd
 order 6
@@ -302,7 +302,7 @@ author ai
 file crates/ui/src/layout.rs
 symbol impl Layout
 lines 0 111
-hash 83b6e5754201ca05
+hash c61fd2799e001f59
 note The builders. Every one takes and returns a Layout by value and is const, so a call site reads as one expression - Layout::column().grow().padding(px).gap(px) - and no layout struct is ever named. scroll is also what makes clips() true, because a scrolling element that does not clip would draw its children over its neighbours.
 
 step kgjw02
@@ -390,10 +390,10 @@ order 44
 parent 2ykree
 author ai
 file crates/ui/src/layout.rs
-symbol Scrollbars
+symbol ScrollAxes
 lines 0 0
-hash e446d56314f26d39
-note The axes an element scrolls along and shows a scrollbar on, as bits. Layout::scrollbars sets it and every Layout starts vertical, so a column, a pane or a text field never scrolls sideways or shows a horizontal bar because a child is wider; the code block asks for HORIZONTAL alone.
+hash 809c7a0b33bee0d6
+note The axes an element scrolls along and shows a scrollbar on, as bits. Layout::scroll_axes sets it and every Layout starts vertical, so a column, a pane or a text field never scrolls sideways or shows a horizontal bar because a child is wider; the code block asks for HORIZONTAL alone.
 
 step tx2hut
 order 32
@@ -462,7 +462,7 @@ author ai
 file crates/ui/src/tree.rs
 symbol impl Placement
 lines 6 25
-hash 08bb9cfeefbfec2b
+hash 209a802ca6cf1463
 note Per axis: overflow, how far the element can scroll (content minus rectangle, zero on an axis it did not opt into), and scrollbar, its bar's geometry for an offset, from the rectangle and the part of it that shows.
 
 step wlqe6u

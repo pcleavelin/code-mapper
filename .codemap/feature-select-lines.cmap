@@ -41,9 +41,9 @@ parent 3ha5ig
 author ai
 file crates/gui/src/views/center.rs
 symbol edge_scroll
-lines 0 11
-hash 57c99f0db2da496c
-note The scroll per frame: a quarter of the distance past the edge (EDGE_SCROLL), at least a pixel and at most EDGE_SCROLL_MOST rows, upward above the view and downward below it.
+lines 0 13
+hash b4f36fd82b451a56
+note The scroll per frame: a quarter of the distance past the edge (EDGE_SCROLL_BAND), at least a pixel and at most EDGE_SCROLL_MOST rows, upward above the view and downward below it.
 
 step laekhp
 order 2
@@ -70,9 +70,9 @@ order 4
 parent pvdi25
 author ai
 file crates/gui/src/nav.rs
-symbol release_lines
+symbol clear_line_selection
 lines 0 2
-hash 5636ccd0d6aa8bb2
+hash a6d0dd90fc5ac6a4
 note The drag's end: line_grab is cleared, so Drag frames change nothing until the next selecting Press.
 
 step pvdi25
@@ -101,6 +101,6 @@ author ai
 file crates/gui/src/views/center.rs
 symbol select_lines
 lines 0 21
-hash 4dcb117abbf4c998
+hash b9363977d30d6759
 link source-view
-note Trigger: keys::selects_line names the frame's gesture on the code block. A Press queues SelectLine for the line under the pointer unless it landed on the scrollbar track; a Drag queues it for the line the code block reports under the held pointer; any other press, or a frame with the button up, while line_grab is set queues ReleaseLines.
+note Trigger: keys::selects_line names the frame's gesture on the code block. A Press queues SelectLine for the line under the pointer unless it landed on the scrollbar track; a Drag queues it for the line the code block reports under the held pointer; any other press, or a frame with the button up, while line_grab is set queues ClearLineSelection.

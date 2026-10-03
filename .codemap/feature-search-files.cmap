@@ -62,6 +62,6 @@ author ai
 file crates/gui/src/action.rs
 symbol typed
 lines 0 54
-hash 06df82d7a2ce2876
+hash fe61d47c32b1c808
 link gui-widgets
 note The search field keeps its text on enter and marks it whole; a submitted line runs search.

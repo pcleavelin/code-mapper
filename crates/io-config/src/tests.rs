@@ -61,7 +61,7 @@ const SETTINGS_SAMPLE: &str = "codemap settings 1
 theme light
 font JetBrains Mono
 size 17
-graph down
+graph-direction down
 ";
 
 #[test]
@@ -74,7 +74,7 @@ fn settings_read_and_print_back_byte_for_byte() {
         Some("JetBrains Mono")
     );
     assert_eq!(settings.size().get(), 17);
-    assert_eq!(settings.graph(), domain::SplitDirection::Down);
+    assert_eq!(settings.graph_direction(), domain::SplitDirection::Down);
     assert_eq!(
         wire::print_settings(&convert::wire_settings(&settings)),
         SETTINGS_SAMPLE
@@ -86,17 +86,17 @@ fn the_bundled_font_is_written_as_no_font_line() {
     let settings = domain::Settings::default();
     assert_eq!(
         wire::print_settings(&convert::wire_settings(&settings)),
-        "codemap settings 1\ntheme dark\nsize 14\ngraph right\n"
+        "codemap settings 1\ntheme dark\nsize 14\ngraph-direction right\n"
     );
 }
 
 #[test]
 fn a_bad_line_keeps_that_setting_at_its_default_and_the_rest_as_written() {
-    let text = "codemap settings 1\ntheme purple\nsize 99\ncolour red\ngraph down\n";
+    let text = "codemap settings 1\ntheme purple\nsize 99\ncolour red\ngraph-direction down\n";
     let settings = convert::settings(&wire::parse_settings(text).unwrap());
     assert_eq!(
         settings,
-        domain::Settings::default().with_graph(domain::SplitDirection::Down)
+        domain::Settings::default().with_graph_direction(domain::SplitDirection::Down)
     );
 }
 

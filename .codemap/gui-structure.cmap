@@ -12,7 +12,7 @@ author ai
 file crates/gui/src/status.rs
 symbol fmt
 lines 0 100
-hash 8b284b18b4522fac
+hash ed38de912217e1b0
 note The wording. Map refusals and load failures arrive already worded by cli, so the GUI and the CLI say the same thing.
 
 step 0fz3qy
@@ -51,7 +51,7 @@ author ai
 file crates/gui/src/app.rs
 symbol App
 lines 0 10
-hash 90ef79aa387e966a
+hash 4d2288c1f6b5b721
 note What platform::App is implemented on: the Model, the Services, the element tree and the grid cache, plus the screenshot aid. frame, script and locate are its three methods; all state changes funnel through its apply.
 
 step 3foimq
@@ -312,7 +312,7 @@ author ai
 file crates/gui/src/action.rs
 symbol apply
 lines 0 94
-hash a2ef9e642997b9e4
+hash d8c9b2c47bd7926d
 note The one place the Model changes during a frame. Each arm is a call into nav.rs, a field of the Model, or a method on the App for changes that need the Services (save, a server question, a command).
 
 step h4xmjq
@@ -458,7 +458,7 @@ author ai
 file crates/gui/src/ids.rs
 symbol CONTROLS
 lines 0 106
-hash d78d9d81f40cd8c1
+hash 7c9c56236eb8adfd
 note Every control, for the test that checks them against the registry.
 
 step mjhubp
@@ -505,9 +505,9 @@ step nzpne9
 order 22
 author ai
 file crates/gui/src/theme.rs
-symbol font
+symbol scaled_font_size
 lines 0 2
-hash 77a3eabb501ec2cd
+hash e0f92cc076bd00cc
 note The font size for the display's scale factor: the settings' BaseFontSize times the scale, never under 8 pixels. The frame sets it on the Model, with the cell size the renderer measures for it, before anything is built.
 
 step o1zcz0
@@ -594,7 +594,7 @@ author ai
 file crates/gui/src/status.rs
 symbol Status
 lines 0 83
-hash 9b5b259f9cce0136
+hash 11b134c140383c41
 note Everything the status line can say, as data: each outcome of a save, a command, a search, an edit, a definition lookup, a server, a re-index or a disk change. Views and apply set one; nothing formats a message where it happens.
 
 step sbpnbg
@@ -722,7 +722,7 @@ author ai
 file crates/gui/src/action.rs
 symbol Action
 lines 0 57
-hash 3bdafbdee53e226d
+hash 2523093a55174644
 note Every change a gesture, a key, a script line or a view's measurement can cause, as data. A view names the change; it never makes it.
 
 step xypoz6
@@ -741,7 +741,7 @@ author ai
 file crates/gui/src/keys.rs
 symbol edit_of
 lines 0 29
-hash 81dc78d26509a539
+hash ff5df550f7741908
 note A key press as a field edit: ctrl or alt makes a move or a delete go by word, shift makes a move extend the selection, ctrl with home or end goes to the text's ends, and the clipboard letters are the edit-text chords in the registry. While a field has the keyboard, ctrl or alt with left or right is this word move and keys::going does not go back or forward.
 
 step y65w9m

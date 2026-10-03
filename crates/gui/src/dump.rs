@@ -305,14 +305,14 @@ impl Dump for Fields {
         ));
         if let Some(which) = self.focused() {
             let field = self.get(which);
-            let selection = field.selection().map_or_else(String::new, |chosen| {
+            let selection = field.text_selection().map_or_else(String::new, |chosen| {
                 format!(" selection={}..{}", chosen.from.get(), chosen.to.get())
             });
             lines.line(format_args!(
                 "field {which:?} caret={}{selection} first={} rows={} text={}",
                 field.caret().get(),
                 field.first(),
-                field.rows(which.lines()).len(),
+                field.rows(which.shape()).len(),
                 Quoted(field.text().as_str())
             ));
         }
@@ -497,12 +497,12 @@ impl Dump for Option<SettingsMenu> {
     fn dump(&self, context: &Context<'_>, lines: &mut DumpLines) {
         let settings = &context.model.settings;
         lines.line(format_args!(
-            "settings open={} theme={} font={} size={} graph={}",
+            "settings open={} theme={} font={} size={} graph_direction={}",
             self.is_some(),
             ThemeName::new(settings.theme()),
             ShownFont::new(settings),
             settings.size().get(),
-            Direction::of_saved(settings.graph())
+            Direction::of_saved(settings.graph_direction())
         ));
     }
 }

@@ -1,10 +1,10 @@
 use domain::{Author, Column, FileId, GroupName, Language, Line, LineCount, SymbolId};
-use platform::Clip;
+use platform::ClipboardRequest;
 use ui::{Count, Id, Label, Point, Px, Typed};
 
 use crate::app::App;
 use crate::authoring::Authoring;
-use crate::field::{Edit, Enter, FieldAct, FieldText, Which};
+use crate::field::{AfterSubmit, Edit, FieldAct, FieldText, Which};
 use crate::graph::{GraphAction, Heading};
 use crate::ids;
 use crate::keys::{LineGesture, PaletteKey, Walk};
@@ -54,7 +54,7 @@ pub(crate) enum Action {
     GoTo(FileId, Line),
     Definition(FileId, Line, Column, Intent),
     SelectLine(Line, LineGesture),
-    ReleaseLines,
+    ClearLineSelection,
     ClosePeek,
     Context(StepKey, ContextChange),
     ToggleDirectory(Label),
@@ -123,7 +123,7 @@ impl App {
                 self.definition(file, line, column, intent);
             }
             Action::SelectLine(line, gesture) => model.select_line(line, gesture),
-            Action::ReleaseLines => model.release_lines(),
+            Action::ClearLineSelection => model.clear_line_selection(),
             Action::ClosePeek => model.peek = None,
             Action::Context(key, change) => self.change_context(key, change),
             Action::ToggleDirectory(directory) => {
@@ -404,7 +404,7 @@ impl App {
     }
 
     fn typed(&mut self, which: Which, edits: &[Edit], typed: &Typed) {
-        let enter = match which {
+        let after = match which {
             Which::Search
             | Which::SymbolFilter
             | Which::TourFilter
@@ -413,14 +413,14 @@ impl App {
             | Which::WizardName
             | Which::WizardGroup
             | Which::WizardSearch
-            | Which::WizardNote
-            | Which::StepNote(_) => Enter::Keep,
-            Which::Command | Which::ViewSearch => Enter::Clear,
+            | Which::TourNote
+            | Which::StepNote(_) => AfterSubmit::Keep,
+            Which::Command | Which::ViewSearch => AfterSubmit::Clear,
         };
         let before = self.model.fields.get(which).text().clone();
-        let handled = self.model.fields.handle(which, edits, typed, enter);
-        if handled.clip != Clip::Keep {
-            self.clip = handled.clip;
+        let handled = self.model.fields.handle(which, edits, typed, after);
+        if handled.clipboard != ClipboardRequest::Keep {
+            self.clipboard = handled.clipboard;
         }
         let entered = handled.submitted;
         if *self.model.fields.get(which).text() != before {
@@ -430,7 +430,7 @@ impl App {
                 Which::WizardName
                 | Which::WizardGroup
                 | Which::WizardSearch
-                | Which::WizardNote
+                | Which::TourNote
                 | Which::StepNote(_) => {
                     self.model.wizard_edited();
                 }
@@ -454,7 +454,7 @@ impl App {
             | Which::WizardName
             | Which::WizardGroup
             | Which::WizardSearch
-            | Which::WizardNote
+            | Which::TourNote
             | Which::StepNote(_) => {}
         }
     }

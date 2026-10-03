@@ -71,7 +71,7 @@ pub struct Settings {
     theme: Theme,
     font: Option<FontFamily>,
     size: BaseFontSize,
-    graph: SplitDirection,
+    graph_direction: SplitDirection,
 }
 
 impl Settings {
@@ -87,8 +87,8 @@ impl Settings {
         self.size
     }
 
-    pub const fn graph(&self) -> SplitDirection {
-        self.graph
+    pub const fn graph_direction(&self) -> SplitDirection {
+        self.graph_direction
     }
 
     #[must_use]
@@ -110,8 +110,8 @@ impl Settings {
     }
 
     #[must_use]
-    pub const fn with_graph(mut self, graph: SplitDirection) -> Self {
-        self.graph = graph;
+    pub const fn with_graph_direction(mut self, direction: SplitDirection) -> Self {
+        self.graph_direction = direction;
         self
     }
 }

@@ -323,15 +323,15 @@ settings::pub fn new(size: u16) -> Option<Self>
 settings::pub const fn get(self) -> u16
 settings::pub fn larger(self) -> Self
 settings::pub fn smaller(self) -> Self
-settings::pub struct Settings { theme: Theme, font: Option<FontFamily>, size: BaseFontSize, graph: SplitDirection, }
+settings::pub struct Settings { theme: Theme, font: Option<FontFamily>, size: BaseFontSize, graph_direction: SplitDirection, }
 settings::pub const fn theme(&self) -> Theme
 settings::pub const fn font(&self) -> Option<&FontFamily>
 settings::pub const fn size(&self) -> BaseFontSize
-settings::pub const fn graph(&self) -> SplitDirection
+settings::pub const fn graph_direction(&self) -> SplitDirection
 settings::pub const fn with_theme(mut self, theme: Theme) -> Self
 settings::pub fn with_font(mut self, font: Option<FontFamily>) -> Self
 settings::pub const fn with_size(mut self, size: BaseFontSize) -> Self
-settings::pub const fn with_graph(mut self, graph: SplitDirection) -> Self
+settings::pub const fn with_graph_direction(mut self, direction: SplitDirection) -> Self
 text::pub struct Line(u32);
 text::pub const fn new(value: u32) -> Self
 text::pub const fn value(self) -> u32

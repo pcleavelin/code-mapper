@@ -5,7 +5,7 @@ use strum::VariantArray;
 use crate::{
     Axis, Button, Canvas, Cell, Color, Command, Coordinate, Count, Extent, FontSize, Glyph, Grid,
     Icon, Id, Input, Key, Kind, Label, Layout, Measure, Mods, Point, Press, Px, Rect, Run, Scale,
-    Scrollbar, Scrollbars, Sides, Style, Text, Ui, Vector, Wrap,
+    ScrollAxes, Scrollbar, Sides, Style, Text, Ui, Vector, Wrap,
 };
 
 struct Cells;
@@ -334,7 +334,7 @@ fn wheel_scrolls_and_clamps() {
     assert_eq!(offset, Point::new(px(0), px(70)));
 }
 
-fn strip(ui: &mut Ui, frame: &Input, offset: &mut Point, bars: Scrollbars) {
+fn strip(ui: &mut Ui, frame: &Input, offset: &mut Point, bars: ScrollAxes) {
     let id = Id::new("strip");
     ui.begin(frame);
     ui.scroll_by_wheel(id, offset);
@@ -343,7 +343,7 @@ fn strip(ui: &mut Ui, frame: &Input, offset: &mut Point, bars: Scrollbars) {
         Layout::row()
             .width(px(100))
             .scroll(*offset)
-            .scrollbars(bars),
+            .scroll_axes(bars),
         Style::default(),
         Some(id),
     );
@@ -357,7 +357,7 @@ fn strip(ui: &mut Ui, frame: &Input, offset: &mut Point, bars: Scrollbars) {
     ui.end(&mut Cells);
 }
 
-fn swiped(bars: Scrollbars) -> Point {
+fn swiped(bars: ScrollAxes) -> Point {
     let mut ui = Ui::default();
     let mut frame = input(400, 400);
     frame.pointer.mouse = Point::new(px(10), px(10));
@@ -370,12 +370,12 @@ fn swiped(bars: Scrollbars) -> Point {
 
 #[test]
 fn sideways_wheel_scrolls_a_horizontal_scroller_to_its_overflow() {
-    assert_eq!(swiped(Scrollbars::HORIZONTAL), Point::new(px(200), px(0)));
+    assert_eq!(swiped(ScrollAxes::HORIZONTAL), Point::new(px(200), px(0)));
 }
 
 #[test]
 fn vertical_scroller_ignores_the_sideways_wheel() {
-    assert_eq!(swiped(Scrollbars::VERTICAL), Point::new(px(0), px(0)));
+    assert_eq!(swiped(ScrollAxes::VERTICAL), Point::new(px(0), px(0)));
 }
 
 #[test]
@@ -386,7 +386,7 @@ fn horizontal_scroller_measures_its_widest_child_and_makes_room_for_its_bar() {
         &mut ui,
         &input(400, 400),
         &mut offset,
-        Scrollbars::HORIZONTAL,
+        ScrollAxes::HORIZONTAL,
     );
     let placement = ui.placement(Id::new("strip")).unwrap();
     assert_eq!(placement.content, Extent::new(px(300), px(28)));
@@ -426,14 +426,14 @@ fn dragging_the_horizontal_thumb_follows_the_mouse() {
     let mut frame = input(400, 400);
     let mut offset = Point::default();
     frame.pointer.mouse = Point::new(px(10), px(24));
-    strip(&mut ui, &frame, &mut offset, Scrollbars::HORIZONTAL);
+    strip(&mut ui, &frame, &mut offset, ScrollAxes::HORIZONTAL);
     frame.pointer.pressed.insert(Button::Left);
     frame.pointer.down.insert(Button::Left);
-    strip(&mut ui, &frame, &mut offset, Scrollbars::HORIZONTAL);
+    strip(&mut ui, &frame, &mut offset, ScrollAxes::HORIZONTAL);
     assert!(ui.on_scrollbar(Id::new("strip")));
     frame.pointer.pressed.remove(Button::Left);
     frame.pointer.mouse = Point::new(px(43), px(60));
-    strip(&mut ui, &frame, &mut offset, Scrollbars::HORIZONTAL);
+    strip(&mut ui, &frame, &mut offset, ScrollAxes::HORIZONTAL);
     assert_eq!(offset, Point::new(px(98), px(0)));
 }
 

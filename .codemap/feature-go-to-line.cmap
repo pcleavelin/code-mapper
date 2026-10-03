@@ -41,7 +41,7 @@ author ai
 file crates/gui/src/app.rs
 symbol keys
 lines 50 61
-hash 229f96f688f719c4
+hash 3d34d2862160fbe3
 note Trigger: the keys phase hands edits and typed text to the go-to-line field last.
 
 step xm25ym
@@ -51,7 +51,7 @@ author ai
 file crates/gui/src/action.rs
 symbol typed
 lines 0 54
-hash 06df82d7a2ce2876
+hash fe61d47c32b1c808
 link gui-widgets
 note The line field keeps its text on enter; a submitted line goes to go_to_line.
 

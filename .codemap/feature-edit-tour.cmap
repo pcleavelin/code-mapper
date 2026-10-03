@@ -53,7 +53,7 @@ author ai
 file crates/gui/src/wizard.rs
 symbol close_wizard
 lines 0 11
-hash 75066ebd670e7ae5
+hash 981ab9758fee50da
 link feature-build-tour
 note Cancel: the wizard and every step-note field are dropped, the map untouched.
 
@@ -127,7 +127,7 @@ author ai
 file crates/gui/src/views/wizard.rs
 symbol edit_page
 lines 0 82
-hash de9230b867a4b05a
+hash 709a12f68c8937f3
 note The page: a bar fixed above the scroll (edit_bar), then in one scrolling centred column the Tour section (the name field with why the pending edit is invalid beside it, the kind buttons with what the chosen one means, the group field, the note field), the Steps section (the outline, each step with its note field under it) and the Changes section.
 
 step 8iuq35
@@ -177,7 +177,7 @@ author ai
 file crates/gui/src/wizard.rs
 symbol open_edit
 lines 0 44
-hash 42cddaa182aa3259
+hash a27b44c56fc4a904
 note Edit(slot): any open wizard closes, the name, group and note fields are filled from the tour, the outline is built from its steps (of_tour), each step's note goes into its own StepNote field, the tour becomes the one being read, and the page opens scrolled to its top in the Tour view.
 
 step b78gv3
@@ -197,7 +197,7 @@ author ai
 file crates/gui/src/app.rs
 symbol wizard_actions
 lines 0 32
-hash 88e0d1eec0f71c23
+hash efd349edea24523e
 note The wizard's keys as actions (App::wizard_actions), read only while the wizard is open and the keyboard is in no field or in one of the wizard's own. Escape reaches the wizard only while no field has the keyboard: in a field, escape only leaves the field. Ctrl+enter is Apply while a tour is edited, and goes on as enter does while one is built.
 
 step calkls
@@ -413,7 +413,7 @@ author ai
 file crates/gui/src/wizard.rs
 symbol plan_edit
 lines 0 20
-hash 04e3abfca7af3c12
+hash bc0de4f13d61c2e5
 note The TourEdit the page describes: the name (refused when empty, invalid or another tour's), kind, group, note, the kept steps' notes, the removed steps and the added steps, authored by the human; or why it cannot be made (invalid).
 
 step u9tbsz

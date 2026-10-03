@@ -81,7 +81,7 @@ pub(crate) fn settings(wire: &WireSettings) -> Settings {
                 Some(size) => settings.with_size(size),
                 None => settings,
             },
-            WireSetting::Graph(growth) => settings.with_graph(direction(*growth)),
+            WireSetting::GraphDirection(saved) => settings.with_graph_direction(direction(*saved)),
         })
 }
 
@@ -95,6 +95,8 @@ pub(crate) fn wire_settings(settings: &Settings) -> WireSettings {
         entries.push(WireSetting::Font(family.as_str().to_owned()));
     }
     entries.push(WireSetting::Size(settings.size().get()));
-    entries.push(WireSetting::Graph(wire_direction(settings.graph())));
+    entries.push(WireSetting::GraphDirection(wire_direction(
+        settings.graph_direction(),
+    )));
     WireSettings { entries }
 }

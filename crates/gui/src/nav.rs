@@ -600,7 +600,7 @@ impl Model {
         }
     }
 
-    pub(crate) const fn release_lines(&mut self) {
+    pub(crate) const fn clear_line_selection(&mut self) {
         self.line_grab = None;
     }
 

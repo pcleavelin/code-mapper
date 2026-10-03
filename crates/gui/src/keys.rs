@@ -1,7 +1,7 @@
 use features::{Chord, Feature, Gesture, Key as ChordKey, Modifiers, Trigger};
 use ui::{Button, Coordinate, Glyph, Input, Interaction, Key, Mods, Pointer, Press, Vector};
 
-use crate::field::{Edit, Held, Lines, Motion, Unit, Which};
+use crate::field::{Edit, EnterMods, FieldShape, Motion, Unit, Which};
 use crate::graph::Heading;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -131,13 +131,13 @@ pub(crate) fn walks(input: &Input) -> Vec<Walk> {
         .collect()
 }
 
-pub(crate) const fn held(mods: Mods) -> Held {
+pub(crate) const fn enter_mods(mods: Mods) -> EnterMods {
     if mods.ctrl() {
-        Held::Control
+        EnterMods::Control
     } else if mods.shift() {
-        Held::Shift
+        EnterMods::Shift
     } else {
-        Held::Plain
+        EnterMods::Plain
     }
 }
 
@@ -170,7 +170,7 @@ fn edit_of(press: Press) -> Option<Edit> {
         Extend::Replace
     };
     Some(match press.key {
-        Key::Enter => Edit::Enter(held(mods)),
+        Key::Enter => Edit::Enter(enter_mods(mods)),
         Key::Backspace => Edit::Backspace(unit),
         Key::Remove => Edit::Remove(unit),
         Key::Left => Edit::Move(Motion::Left(unit), extend),
@@ -325,14 +325,14 @@ pub(crate) enum WizardKey {
     Escape,
 }
 
-pub(crate) fn wizard_keys(input: &Input, lines: Lines) -> Vec<WizardKey> {
+pub(crate) fn wizard_keys(input: &Input, shape: FieldShape) -> Vec<WizardKey> {
     input
         .keys
         .iter()
         .filter(|press| !press.mods.alt())
         .filter_map(|press| match press.key {
             Key::Enter if press.mods.ctrl() => Some(WizardKey::Apply),
-            Key::Enter if lines.breaks(held(press.mods)) => None,
+            Key::Enter if shape.breaks(enter_mods(press.mods)) => None,
             _ if press.mods.ctrl() => None,
             Key::Enter => Some(WizardKey::Next),
             Key::Escape => Some(WizardKey::Escape),

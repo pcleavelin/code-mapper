@@ -124,7 +124,7 @@ author ai
 file crates/platform/src/window.rs
 symbol redraw
 lines 0 38
-hash bd7504fab0705523
+hash 4e4c1d463afde6a4
 note One frame: input.time set from the script's clock while a script plays or from wall time otherwise, the script's next lines, the app's frame, the Renderer presenting its DrawList, the cursor, and then the Input is cleared of everything that was momentary. The frame is timed here and the count, the worst and how many went over 16 ms accumulate on the runner, which is the only measurement of smoothness the tool has. Whatever the frame asked for becomes the next redraw deadline (a script instead runs a frame every 8 ms), and a frame or a script that asked to quit exits the loop.
 
 step h41g96
@@ -133,7 +133,7 @@ author ai
 file crates/platform/src/window.rs
 symbol run
 lines 0 40
-hash 575fb3708547359e
+hash 97a3f1068289157e
 note The entry the gui crate calls: pick the window mode from the environment, create the event loop (for a fixed window through background::launch_without_focus, so on macOS the run never activates and never takes the keyboard), build the runner around the app and hand it to winit. It returns when the loop exits - the window closed or a frame asked to quit - and a failure to open the window or the GPU comes back as the StartError the runner kept, rather than a panic.
 
 step ioalrb
@@ -161,9 +161,9 @@ order 27
 parent fhtrrf
 author ai
 file crates/platform/src/clipboard.rs
-symbol Clip
+symbol ClipboardRequest
 lines 0 5
-hash c30d9e592c8bed4f
+hash e7e6cf6cc4cbfd6e
 note What a frame asks of the clipboard: nothing, copy this text, or paste. The app answers ctrl+c, ctrl+x and ctrl+v this way rather than touching the clipboard, which belongs to the platform.
 
 step l544vz
@@ -213,7 +213,7 @@ author ai
 file crates/platform/src/window.rs
 symbol Frame
 lines 0 7
-hash 1c0e82910fa699f4
+hash d5297a51447c439f
 note What a frame hands back: come back after this long, whether to quit, the colour to clear with, the pointer's cursor, and the DrawList to present.
 
 step qr635v
@@ -264,9 +264,9 @@ author ai
 file crates/platform/src/clipboard.rs
 symbol impl Clipboard
 lines 0 44
-hash 68eba1509ba399cc
+hash b33e5bb263ffe47b
 link io-clipboard
-note The clipboard behind those asks: the system's, opened on first use, in a run with a real window; a text of its own in a script or screenshot run. After a frame a copy writes it, and a paste reads it into the next frame's typed text and asks for that frame at once, so the pasted text reaches the focused field as if typed.
+note The clipboard behind those asks: the system's (Clipboard::Os), opened on first use, in a run with a real window; a text of its own (Clipboard::Local) in a script or screenshot run. After a frame a copy writes it, and a paste reads it into the next frame's typed text and asks for that frame at once, so the pasted text reaches the focused field as if typed.
 
 step xv0ja1
 order 3

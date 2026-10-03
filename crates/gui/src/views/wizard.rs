@@ -799,7 +799,7 @@ fn note_page(model: &Model, frame: &mut Frame<'_>, columns: &Columns) {
     frame.plain_line(caption(&Spell::new("note")), WEAK);
     frame.field(
         &model.fields,
-        Which::WizardNote,
+        Which::TourNote,
         &Label::new("what happens, as a whole"),
         Cells::of_count(columns.get().saturating_sub(LABEL_CELLS.get() + 4)),
     );
@@ -877,7 +877,7 @@ fn create_page(model: &Model, wizard: &Wizard, frame: &mut Frame<'_>, columns: &
     summary_line(
         frame,
         &Spell::new("note"),
-        or_none(field_text(model, Which::WizardNote)),
+        or_none(field_text(model, Which::TourNote)),
     );
     let steps = wizard.outline().ticked().len();
     summary_line(
@@ -941,7 +941,7 @@ fn preview(model: &Model, wizard: &Wizard, frame: &mut Frame<'_>, columns: &Colu
         runs.push(Run::new(format!("  in {}/", group.as_str()), WEAK));
     }
     frame.row_text(runs);
-    let note = field_text(model, Which::WizardNote);
+    let note = field_text(model, Which::TourNote);
     if !note.as_str().is_empty() {
         frame.row_text(vec![
             Run::new(row_caption(&Spell::new("")), WEAK),
@@ -1064,7 +1064,7 @@ fn edit_page(model: &Model, wizard: &Wizard, tour: &TourName, frame: &mut Frame<
     frame.plain_line(caption(&Spell::new("note")), WEAK);
     frame.field(
         &model.fields,
-        Which::WizardNote,
+        Which::TourNote,
         &Label::new("what happens, as a whole"),
         Cells::of_count(columns.get().saturating_sub(LABEL_CELLS.get() + 2)),
     );

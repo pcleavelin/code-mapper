@@ -55,7 +55,7 @@ pub(crate) enum Status {
     SaveFailed(Label),
     LayoutUnsaved(Label),
     SettingsUnsaved(Label),
-    FontNotUsed(FontTrouble),
+    FontNotUsed(FontError),
     CommandRejected(Label),
     CommandFailed(Label),
     RegexRefused(Label),
@@ -314,7 +314,7 @@ impl fmt::Display for Status {
             Self::SettingsUnsaved(error) => {
                 write!(formatter, "settings not saved: {}", error.as_str())
             }
-            Self::FontNotUsed(trouble) => trouble.fmt(formatter),
+            Self::FontNotUsed(error) => error.fmt(formatter),
             Self::CommandRejected(first) => formatter.write_str(first.as_str()),
             Self::CommandFailed(error) => write!(formatter, "error: {}", error.as_str()),
             Self::RegexRefused(reason) => write!(formatter, "bad regex: {}", reason.as_str()),
@@ -447,12 +447,12 @@ impl ConsoleLog {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(crate) enum FontTrouble {
+pub(crate) enum FontError {
     Missing(Label),
     Unloadable(Label, Label),
 }
 
-impl fmt::Display for FontTrouble {
+impl fmt::Display for FontError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         let bundled = BUNDLED_FAMILY.as_str();
         match self {

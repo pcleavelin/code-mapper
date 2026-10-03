@@ -8,14 +8,15 @@ use domain::{Line, Map, RelativePath, Root};
 use io_config::{LayoutStore, Reach, SettingsStore};
 use io_map::MapStore;
 use platform::{
-    Clip, Cursor, Exit, Frame as PlatformFrame, Outcome, Renderer, ScriptLine, Visibility,
+    ClipboardRequest, Cursor, Exit, Frame as PlatformFrame, Outcome, Renderer, ScriptLine,
+    Visibility,
 };
 use strum::VariantArray;
 use ui::{Button, Capture, Count, Id, Input, Label, Measure, Px, Ui};
 
 use crate::action::Action;
 use crate::dump::{self, Context, Dump, DumpLines};
-use crate::field::{Lines, Which};
+use crate::field::{FieldShape, Which};
 use crate::graph::{GraphAction, Keyboard, Presence};
 use crate::grid::Grids;
 use crate::ids;
@@ -45,7 +46,7 @@ pub(crate) struct App {
     shot: Option<Shot>,
     shot_next: Option<PathBuf>,
     layout: KeptLayout,
-    pub(crate) clip: Clip,
+    pub(crate) clipboard: ClipboardRequest,
     pub(crate) settings: KeptSettings,
 }
 
@@ -98,7 +99,7 @@ impl App {
             };
         let settings = KeptSettings::load(SettingsStore::find(reach));
         let chosen = settings.chosen();
-        if Direction::of_saved(chosen.graph()) != model.graph.direction() {
+        if Direction::of_saved(chosen.graph_direction()) != model.graph.direction() {
             model.graph.apply(GraphAction::Turn);
         }
         model.settings = chosen;
@@ -125,7 +126,7 @@ impl App {
             }),
             shot_next: None,
             layout,
-            clip: Clip::Keep,
+            clipboard: ClipboardRequest::Keep,
             settings,
         };
         app.model.status = match unreadable {
@@ -151,7 +152,7 @@ impl App {
             shot: None,
             shot_next: None,
             layout: KeptLayout::default(),
-            clip: Clip::Keep,
+            clipboard: ClipboardRequest::Keep,
             settings: KeptSettings::default(),
         }
     }
@@ -211,7 +212,7 @@ impl App {
                 Which::WizardName
                     | Which::WizardGroup
                     | Which::WizardSearch
-                    | Which::WizardNote
+                    | Which::TourNote
                     | Which::StepNote(_)
             )
         });
@@ -219,7 +220,7 @@ impl App {
             return Vec::new();
         }
         let building = matches!(wizard.mode(), Mode::Build);
-        keys::wizard_keys(input, focused.map_or(Lines::One, Which::lines))
+        keys::wizard_keys(input, focused.map_or(FieldShape::Single, Which::shape))
             .into_iter()
             .filter_map(|key| {
                 let act = match key {
@@ -292,7 +293,7 @@ impl App {
             Which::WizardName,
             Which::WizardGroup,
             Which::WizardSearch,
-            Which::WizardNote,
+            Which::TourNote,
         ] {
             actions.push(Action::Type(which, edits.clone(), typed.clone()));
         }
@@ -342,7 +343,7 @@ impl App {
 impl platform::App for App {
     fn frame(&mut self, renderer: &mut Renderer, input: &mut Input) -> PlatformFrame {
         self.use_settings(renderer);
-        let font = theme::font(self.model.settings.size(), renderer.scale());
+        let font = theme::scaled_font_size(self.model.settings.size(), renderer.scale());
         self.model.metrics = Metrics {
             font,
             cell: renderer.cell(font),
@@ -413,7 +414,7 @@ impl platform::App for App {
             clear: BACKGROUND,
             cursor,
             drawing,
-            clip: mem::take(&mut self.clip),
+            clipboard: mem::take(&mut self.clipboard),
         }
     }
 

@@ -13,7 +13,7 @@ use crate::graph::GraphAction;
 use crate::ids;
 use crate::panels::Direction;
 use crate::runtime::{Job, Landing, landed};
-use crate::status::{FontTrouble, Status};
+use crate::status::{FontError, Status};
 use crate::theme::{self, ROW_EXTRA, SETTINGS_FONT_ROWS};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -77,7 +77,7 @@ impl App {
                 if self.model.graph.direction() != direction {
                     self.apply(Action::Graph(GraphAction::Turn));
                 }
-                settings.with_graph(direction.saved())
+                settings.with_graph_direction(direction.saved())
             }
             SettingsAct::Toggle => {
                 if self.model.settings_menu.take().is_none() {
@@ -163,7 +163,7 @@ impl App {
     ) -> Result<(), Status> {
         let Some(family) = font else {
             return renderer.use_font_file(None).map_err(|reason| {
-                Status::FontNotUsed(FontTrouble::Unloadable(
+                Status::FontNotUsed(FontError::Unloadable(
                     Label::new(BUNDLED_FAMILY.as_str()),
                     Label::new(reason.to_string()),
                 ))
@@ -175,12 +175,9 @@ impl App {
             .fonts
             .as_ref()
             .and_then(|fonts| fonts.read(family))
-            .ok_or_else(|| Status::FontNotUsed(FontTrouble::Missing(name.clone())))?;
+            .ok_or_else(|| Status::FontNotUsed(FontError::Missing(name.clone())))?;
         renderer.use_font_file(Some(&file)).map_err(|reason| {
-            Status::FontNotUsed(FontTrouble::Unloadable(
-                name,
-                Label::new(reason.to_string()),
-            ))
+            Status::FontNotUsed(FontError::Unloadable(name, Label::new(reason.to_string())))
         })
     }
     pub(crate) fn keep_settings(&mut self) {
@@ -214,15 +211,15 @@ impl fmt::Display for ThemeName {
     }
 }
 
-pub(crate) struct Growth(Direction);
+pub(crate) struct GraphDirectionName(Direction);
 
-impl Growth {
+impl GraphDirectionName {
     pub(crate) const fn new(direction: Direction) -> Self {
         Self(direction)
     }
 }
 
-impl fmt::Display for Growth {
+impl fmt::Display for GraphDirectionName {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str(match self.0 {
             Direction::Right => "left to right",

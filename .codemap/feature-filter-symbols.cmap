@@ -21,7 +21,7 @@ author ai
 file crates/gui/src/action.rs
 symbol typed
 lines 0 54
-hash 06df82d7a2ce2876
+hash fe61d47c32b1c808
 link gui-widgets
 note An edit that changes the symbol filter's text scrolls the Symbols list back to its top, so the first match is in view. The filter keeps its text on enter and has nothing to run; the field's text is all the filter needs.
 
@@ -73,7 +73,7 @@ author ai
 file crates/gui/src/app.rs
 symbol keys
 lines 50 61
-hash 229f96f688f719c4
+hash 3d34d2862160fbe3
 note The typing: after the walks, the keys phase hands edits and typed text to the symbol filter, tour filter and go-to-line fields.
 
 step w6a3u3

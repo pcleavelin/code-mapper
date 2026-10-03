@@ -10,9 +10,9 @@ mod report;
 mod script;
 mod window;
 
-pub use clipboard::Clip;
+pub use clipboard::ClipboardRequest;
 pub use error::{Reason, StartError};
-pub use font::{BUNDLED_FAMILY, FamilyName};
+pub use font::{BUNDLED_FAMILY, BundledFamily};
 pub use renderer::Renderer;
 pub use script::{Outcome, ScriptLine};
 pub use window::{App, Cursor, Exit, Frame, Title, Visibility, run};

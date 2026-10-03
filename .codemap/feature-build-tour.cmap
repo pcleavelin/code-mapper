@@ -32,7 +32,7 @@ author ai
 file crates/gui/src/views/wizard.rs
 symbol create_page
 lines 0 30
-hash 13050fa2e3cd2032
+hash 63743a3f159a2639
 note Page 5: the name, kind, group, note and step count as they will be created, and the ticked tree.
 
 step 2fcjvg
@@ -62,7 +62,7 @@ author ai
 file crates/gui/src/wizard.rs
 symbol open_wizard
 lines 0 31
-hash 261cf299b985915f
+hash 7a546befe811b7b0
 note Start: the group field takes the group of the tour being read, the other fields are emptied, the kind is flow, and the focused symbol, when there is one, is already the start. The wizard opens in Build mode on the Name page with the Tour view in front, where the document draws it, and mark_baseline records what the fields, kind and start held as the Baseline, so escape can tell whether anything was entered since.
 
 step 474et1
@@ -132,7 +132,7 @@ author ai
 file crates/gui/src/views/wizard.rs
 symbol note_page
 lines 0 14
-hash a45221fb73048de2
+hash 084b8d3df7af53ff
 note Page 4: the tour note. Step notes are written later in the Tour view.
 
 step 7d9rok
@@ -253,7 +253,7 @@ author ai
 file crates/gui/src/wizard.rs
 symbol show_page
 lines 0 12
-hash 20467d85f248d4c7
+hash 6c6592b5d08702d2
 note Moves to a page: clears the refusal and gives the keyboard to the page's field, if it has one.
 
 step cz6242
@@ -293,7 +293,7 @@ author ai
 file crates/gui/src/wizard.rs
 symbol impl Page
 lines 0 49
-hash 48c10764b7ad77aa
+hash f49487baf0fec1cd
 note Each page's word and number for the header, the page after and before it, and the field it focuses.
 
 step g4coml
@@ -314,7 +314,7 @@ author ai
 file crates/gui/src/wizard.rs
 symbol create_from_wizard
 lines 0 38
-hash 35a65077aba4e777
+hash b173f0de1bbdf7ea
 note Create: builds a Draft from the fields and kind, authored by the human, and adds it with the ticked entries in one edit. On a refusal the wizard stays open with the message; on success it closes, the map is marked unsaved, and the new tour opens in the Tour view, waiting for ctrl+s.
 
 step g6fi5t
@@ -324,7 +324,7 @@ author ai
 file crates/gui/src/views/wizard.rs
 symbol preview
 lines 0 20
-hash d6ed7005ed5bff33
+hash 63da31314be9cf04
 note Under every page before Create: the tour as it will be created, name, kind, group, note and ticked steps, updated as the fields and ticks change.
 
 step g6iy2u
@@ -375,8 +375,8 @@ author ai
 file crates/gui/src/keys.rs
 symbol wizard_keys
 lines 0 14
-hash d587d2756fd51eec
-note Enter goes on, ctrl+enter applies an edit (while building it goes on as enter does) and escape asks to leave, while the wizard is open and the keyboard is in no field or in one of the wizard's own. In the note, which holds many lines, plain enter breaks the line instead (Lines::breaks), so there ctrl+enter is the way on. The keys phase drops escape while any field has the keyboard, since there escape only leaves the field.
+hash 89b176b17f948903
+note Enter goes on, ctrl+enter applies an edit (while building it goes on as enter does) and escape asks to leave, while the wizard is open and the keyboard is in no field or in one of the wizard's own. In the note, which holds many lines, plain enter breaks the line instead (FieldShape::breaks), so there ctrl+enter is the way on. The keys phase drops escape while any field has the keyboard, since there escape only leaves the field.
 
 step hdfkb8
 order 39
@@ -676,7 +676,7 @@ author ai
 file crates/gui/src/wizard.rs
 symbol close_wizard
 lines 0 11
-hash 75066ebd670e7ae5
+hash 981ab9758fee50da
 note Cancel and every other way out (opening a tour, the start page, a create, an applied edit): drops the wizard, releases its fields and forgets the step-note fields.
 
 step zzzsbv

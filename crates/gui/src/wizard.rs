@@ -69,7 +69,7 @@ impl Page {
         match self {
             Self::Name => Some(Which::WizardName),
             Self::Start => Some(Which::WizardSearch),
-            Self::Note => Some(Which::WizardNote),
+            Self::Note => Some(Which::TourNote),
             Self::Steps | Self::Create => None,
         }
     }
@@ -665,7 +665,7 @@ const TYPED: [Which; 4] = [
     Which::WizardName,
     Which::WizardGroup,
     Which::WizardSearch,
-    Which::WizardNote,
+    Which::TourNote,
 ];
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -817,7 +817,7 @@ impl Model {
         };
         wizard.page = page;
         wizard.refusal = None;
-        for which in [Which::WizardName, Which::WizardSearch, Which::WizardNote] {
+        for which in [Which::WizardName, Which::WizardSearch, Which::TourNote] {
             self.fields.release(which);
         }
         if let Some(which) = page.field() {
@@ -831,7 +831,7 @@ impl Model {
             Which::WizardName,
             Which::WizardGroup,
             Which::WizardSearch,
-            Which::WizardNote,
+            Which::TourNote,
         ] {
             self.fields.release(which);
         }
@@ -870,7 +870,7 @@ impl Model {
             name,
             kind: wizard.kind,
             group: GroupName::new(self.fields.get(Which::WizardGroup).text().as_str()),
-            note: self.note_in(Which::WizardNote),
+            note: self.note_in(Which::TourNote),
             step_notes: wizard.outline.kept_notes(&note_of),
             removed: wizard.outline.removed(),
             added: wizard.outline.added_steps(&note_of),
@@ -1036,7 +1036,7 @@ impl App {
             .and_then(|tour| tour.group())
             .map_or("", GroupName::as_str);
         model.fields.fill(Which::WizardGroup, &Label::new(group));
-        for which in [Which::WizardName, Which::WizardSearch, Which::WizardNote] {
+        for which in [Which::WizardName, Which::WizardSearch, Which::TourNote] {
             model.fields.fill(which, &Label::default());
         }
         let focus = model.nav.focus();
@@ -1114,7 +1114,7 @@ impl App {
         let entries = wizard.outline.ticked();
         let kind = wizard.kind;
         let group = GroupName::new(model.fields.get(Which::WizardGroup).text().as_str());
-        let note = Note::new(model.fields.get(Which::WizardNote).text().as_str().trim());
+        let note = Note::new(model.fields.get(Which::TourNote).text().as_str().trim());
         let created = TourName::new(typed.as_str()).and_then(|name| {
             let draft = Draft {
                 name: name.clone(),
@@ -1159,7 +1159,7 @@ impl App {
             &Label::new(tour.group().map_or("", GroupName::as_str)),
         );
         model.fields.fill(
-            Which::WizardNote,
+            Which::TourNote,
             &Label::new(tour.note().map_or("", Note::as_str)),
         );
         model.fields.fill(Which::WizardSearch, &Label::default());

@@ -32,7 +32,7 @@ fn choosing_top_to_bottom_turns_the_graph_once_and_is_kept_as_the_setting() {
     assert_eq!(app.model.graph.direction(), Direction::Down);
     app.apply(Action::Settings(SettingsAct::Graph(Direction::Down)));
     assert_eq!(app.model.graph.direction(), Direction::Down);
-    assert_eq!(app.model.settings.graph(), SplitDirection::Down);
+    assert_eq!(app.model.settings.graph_direction(), SplitDirection::Down);
 }
 
 #[test]
@@ -51,7 +51,7 @@ fn a_changed_setting_is_written_to_the_settings_file_and_an_unchanged_one_is_not
     app.keep_settings();
     assert_eq!(
         fs::read_to_string(&file).unwrap(),
-        "codemap settings 1\ntheme light\nsize 15\ngraph right\n"
+        "codemap settings 1\ntheme light\nsize 15\ngraph-direction right\n"
     );
     fs::remove_dir_all(folder).unwrap();
 }

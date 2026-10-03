@@ -69,7 +69,7 @@ const fn theme_pair(dark: Color, light: Color) -> ThemePair {
     ThemePair { dark, light }
 }
 
-const LIGHT: [ThemePair; 24] = [
+const LIGHT_PALETTE: [ThemePair; 24] = [
     theme_pair(BACKGROUND, Color::rgba(250, 250, 250, 255)),
     theme_pair(PANEL, Color::rgba(243, 243, 243, 255)),
     theme_pair(FIELD, Color::rgba(255, 255, 255, 255)),
@@ -105,7 +105,7 @@ const fn inverted(color: Color) -> Color {
 }
 
 fn light(color: Color) -> Color {
-    LIGHT
+    LIGHT_PALETTE
         .iter()
         .find(|pair| same_hue(pair.dark, color))
         .map_or_else(
@@ -130,7 +130,7 @@ pub(crate) const fn start_font() -> FontSize {
     BASE_FONT
 }
 
-pub(crate) fn font(base: BaseFontSize, scale: Scale) -> FontSize {
+pub(crate) fn scaled_font_size(base: BaseFontSize, scale: Scale) -> FontSize {
     FontSize::scaled(u32::from(base.get()), scale, SMALLEST_FONT.get())
 }
 
@@ -253,7 +253,7 @@ pub(crate) const GRAPH_BEND: Coordinate = Coordinate::new(0.8);
 pub(crate) const GRAPH_THIN_BORDER: Px = PIXEL;
 pub(crate) const GRAPH_THICK_BORDER: Px = Px::new(2);
 const WHEEL_NOTCH: Coordinate = Coordinate::new(40.0);
-pub(crate) const EDGE_SCROLL: Ratio = Ratio::permille(250);
+pub(crate) const EDGE_SCROLL_BAND: Ratio = Ratio::permille(250);
 pub(crate) const EDGE_SCROLL_MOST: Count = Count::new(2);
 
 pub(crate) const NAV_BUTTON: Cells = Cells::new(3);

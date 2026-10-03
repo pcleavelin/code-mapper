@@ -1,7 +1,7 @@
 use domain::{Column, FileId, Language, Line, Span};
 use ui::{
     Button, Canvas, Color, Count, Draw, Extent, Id, Interaction, Kind, Layout, Point, Px, Rect,
-    Scrollbars, Style,
+    ScrollAxes, Style,
 };
 
 use crate::action::Action;
@@ -186,7 +186,7 @@ impl Frame<'_> {
             Kind::Custom(marks),
             layout
                 .scroll(Point::new(across, Px::ZERO))
-                .scrollbars(Scrollbars::HORIZONTAL),
+                .scroll_axes(ScrollAxes::HORIZONTAL),
             Style::NONE,
             Some(block.id),
         );

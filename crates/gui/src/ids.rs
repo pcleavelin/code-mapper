@@ -151,7 +151,8 @@ pub(crate) const PALETTE_FIELD: Control =
     Control::new(Feature::CommandPalette, Element::new("field@palette"));
 pub(crate) const PALETTE_ROW: Control =
     Control::new(Feature::CommandPalette, Element::new("palette"));
-pub(crate) const SETTINGS: Control = Control::new(Feature::Settings, Element::new("settings"));
+pub(crate) const SETTINGS_OPEN: Control =
+    Control::new(Feature::Settings, Element::new("settings-open"));
 pub(crate) const SETTINGS_CLOSE: Control =
     Control::new(Feature::Settings, Element::new("settings-close"));
 pub(crate) const SETTINGS_THEME: Control =
@@ -181,8 +182,8 @@ pub(crate) const WIZARD_GROUP_FIELD: Control =
     Control::new(Feature::BuildTour, Element::new("field@wizard-group"));
 pub(crate) const WIZARD_SEARCH_FIELD: Control =
     Control::new(Feature::BuildTour, Element::new("field@wizard-search"));
-pub(crate) const WIZARD_NOTE_FIELD: Control =
-    Control::new(Feature::BuildTour, Element::new("field@wizard-note"));
+pub(crate) const TOUR_NOTE_FIELD: Control =
+    Control::new(Feature::BuildTour, Element::new("field@tour-note"));
 pub(crate) const WIZARD_BACK: Control =
     Control::new(Feature::BuildTour, Element::new("wizard-back"));
 pub(crate) const WIZARD_NEXT: Control =
@@ -297,7 +298,7 @@ pub(crate) const CONTROLS: &[Control] = &[
     WIZARD_NAME_FIELD,
     WIZARD_GROUP_FIELD,
     WIZARD_SEARCH_FIELD,
-    WIZARD_NOTE_FIELD,
+    TOUR_NOTE_FIELD,
     WIZARD_BACK,
     WIZARD_NEXT,
     WIZARD_CANCEL,
@@ -315,7 +316,7 @@ pub(crate) const CONTROLS: &[Control] = &[
     EDIT_CANCEL,
     EDIT_MORE,
     EDIT_NOTE_FIELD,
-    SETTINGS,
+    SETTINGS_OPEN,
     SETTINGS_CLOSE,
     SETTINGS_THEME,
     SETTINGS_SMALLER,

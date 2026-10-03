@@ -39,7 +39,7 @@ pub struct Layout {
     pub gap: Px,
     pub cross: Align,
     pub scroll: Option<Point>,
-    pub scrollbars: Scrollbars,
+    pub scroll_axes: ScrollAxes,
 }
 
 impl Layout {
@@ -53,7 +53,7 @@ impl Layout {
             gap: Px::ZERO,
             cross: Align::Start,
             scroll: None,
-            scrollbars: Scrollbars::VERTICAL,
+            scroll_axes: ScrollAxes::VERTICAL,
         }
     }
 
@@ -143,8 +143,8 @@ impl Layout {
     }
 
     #[must_use]
-    pub const fn scrollbars(mut self, scrollbars: Scrollbars) -> Self {
-        self.scrollbars = scrollbars;
+    pub const fn scroll_axes(mut self, scroll_axes: ScrollAxes) -> Self {
+        self.scroll_axes = scroll_axes;
         self
     }
 
@@ -156,9 +156,9 @@ impl Layout {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct Scrollbars(u8);
+pub struct ScrollAxes(u8);
 
-impl Scrollbars {
+impl ScrollAxes {
     pub const VERTICAL: Self = Self(1);
     pub const HORIZONTAL: Self = Self(2);
 

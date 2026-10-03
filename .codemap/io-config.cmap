@@ -41,8 +41,8 @@ author ai
 file crates/io-config/src/tests.rs
 symbol a_bad_line_keeps_that_setting_at_its_default_and_the_rest_as_written
 lines 0 7
-hash 432a0e372cf64a79
-note A bad theme, a size over 32 and an unknown key each lose only their own line; the graph line after them is kept.
+hash f26c38c71933dc43
+note A bad theme, a size over 32 and an unknown key each lose only their own line; the graph-direction line after them is kept.
 
 step 2t48o8
 order 29
@@ -51,8 +51,8 @@ author ai
 file crates/io-config/src/wire.rs
 symbol setting
 lines 0 23
-hash 3b03793566481291
-note One line: a key word, a space, the value. theme dark|light, font <family> (the rest of the line, spaces included), size <number>, graph right|down. An unknown key or value reads as nothing.
+hash 9716151d54566cd3
+note One line: a key word, a space, the value. theme dark|light, font <family> (the rest of the line, spaces included), size <number>, graph-direction right|down. An unknown key or value reads as nothing.
 
 step 5pb8a4
 order 12
@@ -110,7 +110,7 @@ file crates/domain/src/layout.rs
 symbol SplitDirection
 lines 0 4
 hash 0f3b782f283d6752
-note Right: side by side, a vertical divider. Down: one above the other. As the settings' graph value, Right grows the call tree left to right and Down top to bottom.
+note Right: side by side, a vertical divider. Down: one above the other. As the settings' graph_direction value, Right grows the call tree left to right and Down top to bottom.
 
 step bsmdiv
 order 2
@@ -129,7 +129,7 @@ author ai
 file crates/io-config/src/convert.rs
 symbol settings
 lines 0 16
-hash c53829ad69a9c4cf
+hash 6bcd4d24974c9c4e
 note Wire to domain, folded over Settings::default: a font name FontFamily refuses or a size outside 8 to 32 keeps the default for that key only.
 
 step d8p7ax
@@ -168,8 +168,8 @@ parent 0aiys7
 author ai
 file crates/io-config/src/convert.rs
 symbol wire_settings
-lines 0 12
-hash 74752eacc8879af3
+lines 0 14
+hash cbab0e5792d5030c
 note Domain to wire; the bundled face (no family) writes no font line.
 
 step i2dco1
@@ -249,7 +249,7 @@ author ai
 file crates/domain/src/settings.rs
 symbol Settings
 lines 0 5
-hash 9a96ad4b255dd46e
+hash 33003576943bf870
 note The settings as a value: theme, font (None is the bundled face), size and which way the graph grows. Built from Settings::default with the with_ methods, so a reader that drops a line keeps the default.
 
 step q8euj8
@@ -317,8 +317,8 @@ parent 0aiys7
 author ai
 file crates/io-config/src/wire.rs
 symbol print_settings
-lines 0 15
-hash 91bc0e83fde495eb
+lines 0 17
+hash 64fe0b056e6a3e09
 note The header, then one line per entry: key, space, value.
 
 step v4mooe
@@ -387,7 +387,7 @@ author ai
 file crates/io-config/src/wire.rs
 symbol WireSetting
 lines 0 5
-hash de855e93527590f0
+hash 90b1b5ac27210667
 note The file's lines as read: a theme word, the font's name as written, a size as a plain number (range-checked only in convert), a direction word.
 
 step zysfvv

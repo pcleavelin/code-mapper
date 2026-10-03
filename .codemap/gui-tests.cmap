@@ -119,7 +119,7 @@ author ai
 file crates/gui/src/app.rs
 symbol of_model
 lines 0 12
-hash b6dc1c3461c6935c
+hash 342da0299b2591a1
 note An App from a ready Model with fresh Services and no screenshot aid, for tests; the Services start only the idle watcher thread.
 
 step 84oxa7
@@ -371,7 +371,7 @@ author ai
 file crates/gui/src/settings/tests.rs
 symbol choosing_top_to_bottom_turns_the_graph_once_and_is_kept_as_the_setting
 lines 0 7
-hash 8922d566ff934783
+hash e3b7811cb8fe19a5
 note Choosing top to bottom turns the graph once; choosing it again does not turn it back, and the setting holds Down.
 
 step lv5n4y
@@ -380,7 +380,7 @@ author ai
 file crates/gui/src/tests.rs
 symbol a_press_off_the_focused_field_releases_it_and_keeps_what_was_typed
 lines 0 14
-hash 5b1e2dca7eeb6cde
+hash 4ac583f7eb7a043a
 note Fields alone, no model: a press on the focused field's own element keeps the keyboard, a press on another element or on no element releases it, and the typed text survives the release.
 
 step mqnqki
@@ -498,7 +498,7 @@ author ai
 file crates/gui/src/settings/tests.rs
 symbol a_changed_setting_is_written_to_the_settings_file_and_an_unchanged_one_is_not
 lines 0 18
-hash fa71bd197d0c7291
+hash 88d74c091fbfc6c5
 note keep_settings writes nothing while the settings equal the loaded ones, and the whole file after a change.
 
 step zjhrtr

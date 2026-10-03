@@ -7,7 +7,7 @@ use crate::action::Action;
 use crate::ids;
 use crate::model::Model;
 use crate::panels::Direction;
-use crate::settings::{Growth, SettingsAct, ThemeName};
+use crate::settings::{GraphDirectionName, SettingsAct, ThemeName};
 use crate::theme::{
     PANEL_PADDING, ROW_EXTRA, SETTINGS_FONT_ROWS, SETTINGS_HEADING, SETTINGS_WIDTH, TEXT,
     TOOLTIP_PADDING, WEAK,
@@ -71,11 +71,11 @@ pub(super) fn settings(model: &Model, frame: &mut Frame<'_>) {
 
     frame.start(Container::ToolbarTight);
     heading(frame, &Label::new("graph starts"));
-    let graph = Direction::of_saved(settings.graph());
+    let graph = Direction::of_saved(settings.graph_direction());
     for direction in [Direction::Right, Direction::Down] {
         if frame
             .button(
-                Growth::new(direction).to_string(),
+                GraphDirectionName::new(direction).to_string(),
                 ids::SETTINGS_GRAPH.with(&Label::new(direction.to_string())),
                 Chosen::of(&direction, &graph),
             )

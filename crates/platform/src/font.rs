@@ -11,16 +11,16 @@ use crate::error::{Reason, StartError};
 struct Face<'bytes>(&'bytes [u8]);
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct FamilyName(&'static str);
+pub struct BundledFamily(&'static str);
 
-impl FamilyName {
+impl BundledFamily {
     pub const fn as_str(self) -> &'static str {
         self.0
     }
 }
 
 const BUNDLED: Face<'static> = Face(include_bytes!("../../../assets/Hack-Regular.ttf"));
-pub const BUNDLED_FAMILY: FamilyName = FamilyName("Hack");
+pub const BUNDLED_FAMILY: BundledFamily = BundledFamily("Hack");
 const ICONS: Face<'static> = Face(include_bytes!("../../../assets/codicon.ttf"));
 
 #[derive(Clone, Copy, Debug)]

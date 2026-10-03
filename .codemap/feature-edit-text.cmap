@@ -12,7 +12,7 @@ author ai
 file crates/gui/src/field.rs
 symbol follow
 lines 0 12
-hash ef5cf133c0270105
+hash d970cb7cc571b44f
 link gui-widgets
 note The shown rows follow the caret, so a note longer than the box scrolls as the caret moves.
 
@@ -22,8 +22,8 @@ author ai
 file crates/gui/src/field.rs
 symbol handle
 lines 0 27
-hash 098e46e8ca9d2a06
-note Applies a frame's edits and typed text to the field with the keyboard and returns what came of it: the submitted line and the Clip (copy this, or paste) that App::typed hands to the platform.
+hash 1a714d00ca99e6b3
+note Applies a frame's edits and typed text to the field with the keyboard and returns what came of it: the submitted line and the ClipboardRequest (copy this, or paste) that App::typed hands to the platform.
 
 step 55pcd5
 order 8
@@ -32,8 +32,8 @@ author ai
 file crates/platform/src/clipboard.rs
 symbol impl Clipboard
 lines 0 44
-hash 68eba1509ba399cc
-note The clipboard the platform copies to and pastes from: the system's in a real run, a private one in a script run.
+hash b33e5bb263ffe47b
+note The clipboard the platform copies to and pastes from: the system's (Clipboard::Os) in a real run, a private one (Clipboard::Local) in a script run.
 
 step 7g6y3g
 order 2
@@ -41,8 +41,8 @@ parent 4t25bo
 author ai
 file crates/gui/src/field.rs
 symbol apply
-lines 0 57
-hash 145308956df1e88a
+lines 0 63
+hash 1cb91d528640c75d
 link gui-widgets
 note Each edit: line break or submit, deletes and moves by character, word, row and text, with shift extending the selection, copy, cut and paste.
 
@@ -53,7 +53,7 @@ author ai
 file crates/gui/src/keys.rs
 symbol edit_of
 lines 0 29
-hash 81dc78d26509a539
+hash ff5df550f7741908
 note Trigger: the keys, as edits; alt or ctrl means by word, shift means select, and the clipboard chords come from this feature's registry entry.
 
 step jp438m
@@ -63,7 +63,7 @@ author ai
 file crates/gui/src/widgets.rs
 symbol field_pointer
 lines 0 27
-hash ac859b643f358d6a
+hash 12bfa456078d1078
 note Trigger: a click places the caret, a drag or shift-click selects, a double-click selects a word.
 
 step t6ehm9
@@ -71,10 +71,10 @@ order 1
 parent 4t25bo
 author ai
 file crates/gui/src/field.rs
-symbol lines
+symbol shape
 lines 0 15
-hash df16999e1cda55e9
-note Which fields hold many lines: the wizard's note. Enter breaks the line there, up and down move by row, and the field wraps to its width.
+hash b841f392b8c3a1a0
+note Which fields hold many lines (FieldShape::Multi): the tour note on the wizard's Note page. Enter breaks the line there, up and down move by row, and the field wraps to its width.
 
 step xgxp4v
 order 3
@@ -83,7 +83,7 @@ author ai
 file crates/gui/src/field.rs
 symbol type_text
 lines 0 17
-hash e4857d6c60bf73c1
+hash bc3838b5ef10a839
 link gui-widgets
 note Typed and pasted text replaces the selection; a one-line field flattens newlines.
 
@@ -94,5 +94,5 @@ author ai
 file crates/gui/src/widgets.rs
 symbol note_field
 lines 0 71
-hash 6f64b4208296a78f
+hash 7106ea0fa312ea55
 note Trigger and view: the note field, wrapped and growing, which tells the field its width so moving by row knows where rows break.

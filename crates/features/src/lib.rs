@@ -944,7 +944,7 @@ impl Feature {
                         Trigger::Type(Element::new("field@wizard-name")),
                         Trigger::Type(Element::new("field@wizard-group")),
                         Trigger::Type(Element::new("field@wizard-search")),
-                        Trigger::Type(Element::new("field@wizard-note")),
+                        Trigger::Type(Element::new("field@tour-note")),
                         Trigger::Palette(Text::new("build a tour"), None),
                     ]
                 },
@@ -969,7 +969,7 @@ impl Feature {
             Self::EditText => Spec::new(
                 Text::new("edit-text"),
                 Text::new(
-                    "write a note over several lines: enter breaks the line and ctrl+enter goes on, the arrows, home and end move by row, shift selects, alt or ctrl moves and deletes by word, a click places the caret and a drag selects, ctrl+c, ctrl+x and ctrl+v copy, cut and paste",
+                    "how every text field edits: the arrows, home and end move the caret, shift selects, alt or ctrl moves and deletes by word, a click places the caret and a drag or a double click selects, ctrl+c, ctrl+x and ctrl+v copy, cut and paste; in the tour note enter breaks the line, ctrl+enter goes on and the arrows move by row",
                 ),
                 Surface::Window,
                 &const {
@@ -977,10 +977,22 @@ impl Feature {
                         Trigger::Key(Chord::control(Key::Letter(Letter::new('c')))),
                         Trigger::Key(Chord::control(Key::Letter(Letter::new('x')))),
                         Trigger::Key(Chord::control(Key::Letter(Letter::new('v')))),
-                        Trigger::Gesture(Gesture::Drag, Element::new("field@wizard-note")),
-                        Trigger::Gesture(Gesture::ShiftClick, Element::new("field@wizard-note")),
-                        Trigger::Gesture(Gesture::DoubleClick, Element::new("field@wizard-note")),
-                        Trigger::Gesture(Gesture::Wheel, Element::new("field@wizard-note")),
+                        Trigger::Gesture(Gesture::Drag, Element::new("field@tour-note")),
+                        Trigger::Gesture(Gesture::ShiftClick, Element::new("field@tour-note")),
+                        Trigger::Gesture(Gesture::DoubleClick, Element::new("field@tour-note")),
+                        Trigger::Gesture(Gesture::Wheel, Element::new("field@tour-note")),
+                        Trigger::Gesture(Gesture::Drag, Element::new("edit-note")),
+                        Trigger::Gesture(Gesture::ShiftClick, Element::new("edit-note")),
+                        Trigger::Gesture(Gesture::DoubleClick, Element::new("edit-note")),
+                        Trigger::Gesture(Gesture::Drag, Element::new("field@wizard-name")),
+                        Trigger::Gesture(Gesture::Drag, Element::new("field@wizard-group")),
+                        Trigger::Gesture(Gesture::Drag, Element::new("field@wizard-search")),
+                        Trigger::Gesture(Gesture::Drag, Element::new("field@search")),
+                        Trigger::Gesture(Gesture::Drag, Element::new("field@symbols")),
+                        Trigger::Gesture(Gesture::Drag, Element::new("field@tours")),
+                        Trigger::Gesture(Gesture::Drag, Element::new("field@goto-line")),
+                        Trigger::Gesture(Gesture::Drag, Element::new("field@views")),
+                        Trigger::Gesture(Gesture::Drag, Element::new("field@palette")),
                     ]
                 },
             ),
@@ -993,7 +1005,7 @@ impl Feature {
                 &const {
                     [
                         Trigger::Key(Chord::control(Key::Letter(Letter::new(',')))),
-                        Trigger::Click(Element::new("settings")),
+                        Trigger::Click(Element::new("settings-open")),
                         Trigger::Click(Element::new("settings-close")),
                         Trigger::Click(Element::new("settings-theme")),
                         Trigger::Click(Element::new("settings-smaller")),

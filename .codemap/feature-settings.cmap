@@ -103,7 +103,7 @@ author ai
 file crates/gui/src/app.rs
 symbol new
 lines 20 25
-hash e0a21634c9e0e361
+hash 0da7411901d611e3
 note At start: the settings file through io-config (a script or screenshot run reads only CODEMAP_SETTINGS), the graph turned when it should start top to bottom, and the Model's settings set before the first frame.
 
 step qcy38g
@@ -113,7 +113,7 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol SETTINGS
 lines 0 46
-hash 8c089d7755487716
+hash ecf1d4eb8c6da05b
 note The scenario: ctrl+, opens the box; light, larger twice, top to bottom and the bundled font; escape, the gear, smaller, close, the palette's 'settings' and a click outside, each followed by a dump, with absent checks that the box closed.
 
 step t5vcvn
@@ -123,8 +123,8 @@ author ai
 file crates/gui/src/views/bars.rs
 symbol top_bar
 lines 49 59
-hash d88abd4ff08e1040
-note Trigger: the gear at the right end of the top bar (settings), marked while the box is open.
+hash cc8aeed9e3cb91fd
+note Trigger: the gear at the right end of the top bar (settings-open), marked while the box is open.
 
 step tyf82h
 order 6
@@ -165,7 +165,7 @@ author ai
 file crates/gui/src/views/settings.rs
 symbol settings
 lines 0 82
-hash 28c82094b0b207fe
+hash 4a7ee4d82b343829
 note The box, drawn over the window near the top like the palette: a row each for theme, font size (smaller, the number, larger) and graph starts with the value in force marked, then the font list. A press outside the box closes it; the gear counts as outside, so it closes rather than reopens.
 
 step v87ohh
@@ -175,7 +175,7 @@ author ai
 file crates/gui/src/theme.rs
 symbol light
 lines 0 8
-hash 2db79188cc5f4cf4
+hash 0810e24323410450
 note The light theme: each named dark colour has a light counterpart, matched by red, green and blue so every tint made with with_alpha keeps its alpha; a colour with no counterpart is inverted. The views keep using the theme's names; only the renderer sees the light values.
 
 step w1cpxo
@@ -184,8 +184,8 @@ parent uwgtmd
 author ai
 file crates/gui/src/settings.rs
 symbol use_font
-lines 0 26
-hash e993237d0dee237b
+lines 0 23
+hash 61cf9546151a3798
 link io-fonts
 note The chosen family's file from the scan into the renderer; a family no longer installed, or one fontdue cannot parse, puts the bundled face back and says so in the status line.
 
@@ -195,7 +195,7 @@ author ai
 file crates/gui/src/settings.rs
 symbol change_setting
 lines 0 27
-hash a6399d21178749a6
+hash 4bb7bfca48127b00
 note The handler: every choice in the box is one SettingsAct applied to the Model's Settings. A graph direction other than the one shown turns the graph at once (GraphAction::Turn, dropping dragged positions as graph-turn does). Toggle opens the box, closing the palette and releasing its field, starts the font scan and scrolls the font list to the current family; Close shuts it.
 
 step xu6ip9
@@ -215,5 +215,5 @@ author ai
 file crates/gui/src/dump.rs
 symbol impl Dump for Option<SettingsMenu>
 lines 0 11
-hash dfe46fef560c4850
-note What a script sees: DUMP settings open= theme= font= size= graph=.
+hash 9675bca22eab7180
+note What a script sees: DUMP settings open= theme= font= size= graph_direction=.

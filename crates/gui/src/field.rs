@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use std::collections::BTreeMap;
 use std::mem;
 
-use platform::Clip;
+use platform::ClipboardRequest;
 use ui::{Count, Glyph, Id, Label, Typed};
 
 use crate::ids::{self, Control};
@@ -11,7 +11,7 @@ use crate::text::Clipped;
 use crate::wizard::BranchId;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum Held {
+pub(crate) enum EnterMods {
     Plain,
     Shift,
     Control,
@@ -37,7 +37,7 @@ pub(crate) enum Motion {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Edit {
-    Enter(Held),
+    Enter(EnterMods),
     Backspace(Unit),
     Remove(Unit),
     Move(Motion, Extend),
@@ -50,14 +50,17 @@ pub(crate) enum Edit {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum Lines {
-    One,
-    Many,
+pub(crate) enum FieldShape {
+    Single,
+    Multi,
 }
 
-impl Lines {
-    pub(crate) const fn breaks(self, held: Held) -> bool {
-        matches!((self, held), (Self::Many, Held::Plain | Held::Shift))
+impl FieldShape {
+    pub(crate) const fn breaks(self, mods: EnterMods) -> bool {
+        matches!(
+            (self, mods),
+            (Self::Multi, EnterMods::Plain | EnterMods::Shift)
+        )
     }
 }
 
@@ -73,7 +76,7 @@ pub(crate) enum Which {
     WizardName,
     WizardGroup,
     WizardSearch,
-    WizardNote,
+    TourNote,
     StepNote(BranchId),
 }
 
@@ -94,14 +97,14 @@ impl Which {
             Self::WizardName => ids::WIZARD_NAME_FIELD,
             Self::WizardGroup => ids::WIZARD_GROUP_FIELD,
             Self::WizardSearch => ids::WIZARD_SEARCH_FIELD,
-            Self::WizardNote => ids::WIZARD_NOTE_FIELD,
+            Self::TourNote => ids::TOUR_NOTE_FIELD,
             Self::StepNote(_) => ids::EDIT_NOTE_FIELD,
         }
     }
 
-    pub(crate) const fn lines(self) -> Lines {
+    pub(crate) const fn shape(self) -> FieldShape {
         match self {
-            Self::WizardNote => Lines::Many,
+            Self::TourNote => FieldShape::Multi,
             Self::Search
             | Self::Command
             | Self::SymbolFilter
@@ -112,13 +115,13 @@ impl Which {
             | Self::WizardName
             | Self::WizardGroup
             | Self::WizardSearch
-            | Self::StepNote(_) => Lines::One,
+            | Self::StepNote(_) => FieldShape::Single,
         }
     }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum Enter {
+pub(crate) enum AfterSubmit {
     Keep,
     Clear,
 }
@@ -181,16 +184,16 @@ impl FieldText {
         Caret(self.characters())
     }
 
-    fn class_at(&self, at: usize) -> Option<Class> {
+    fn class_at(&self, at: usize) -> Option<CharClass> {
         self.0
             .chars()
             .nth(at)
-            .map(|character| Class::of(Glyph::new(character)))
+            .map(|character| CharClass::of(Glyph::new(character)))
     }
 
     fn word_left(&self, from: Caret) -> Caret {
         let mut at = from.0;
-        while at > 0 && self.class_at(at - 1) == Some(Class::Space) {
+        while at > 0 && self.class_at(at - 1) == Some(CharClass::Space) {
             at -= 1;
         }
         let class = at.checked_sub(1).and_then(|before| self.class_at(before));
@@ -203,7 +206,7 @@ impl FieldText {
     fn word_right(&self, from: Caret) -> Caret {
         let end = self.characters();
         let mut at = from.0;
-        while at < end && self.class_at(at) == Some(Class::Space) {
+        while at < end && self.class_at(at) == Some(CharClass::Space) {
             at += 1;
         }
         let class = self.class_at(at);
@@ -253,13 +256,13 @@ impl FieldText {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Class {
+enum CharClass {
     Space,
     Word,
     Mark,
 }
 
-impl Class {
+impl CharClass {
     fn of(glyph: Glyph) -> Self {
         let character = glyph.get();
         if character.is_whitespace() {
@@ -315,14 +318,14 @@ impl Caret {
 struct Recalled(usize);
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub(crate) struct Viewport {
+pub(crate) struct FieldWindow {
     pub(crate) columns: Count,
     pub(crate) rows: Count,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum FieldAct {
-    Fit(Viewport),
+    Fit(FieldWindow),
     Point(Caret, Pointing),
     Scroll(Walk),
 }
@@ -341,7 +344,7 @@ pub(crate) struct Field {
     caret: Caret,
     anchor: Option<Caret>,
     goal: Option<Count>,
-    viewport: Viewport,
+    window: FieldWindow,
     first: Count,
     history: Vec<FieldText>,
     recalled: Option<Recalled>,
@@ -350,7 +353,7 @@ pub(crate) struct Field {
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Handled {
     pub(crate) submitted: Option<FieldText>,
-    pub(crate) clip: Clip,
+    pub(crate) clipboard: ClipboardRequest,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -361,7 +364,7 @@ pub(crate) enum Tint {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) struct Selection {
+pub(crate) struct TextSelection {
     pub(crate) from: Caret,
     pub(crate) to: Caret,
 }
@@ -394,18 +397,18 @@ impl Field {
         self.first
     }
 
-    pub(crate) const fn viewport(&self) -> Viewport {
-        self.viewport
+    pub(crate) const fn window(&self) -> FieldWindow {
+        self.window
     }
 
-    pub(crate) fn selection(&self) -> Option<Selection> {
+    pub(crate) fn text_selection(&self) -> Option<TextSelection> {
         let anchor = self.anchor?;
         match anchor.cmp(&self.caret) {
-            Ordering::Less => Some(Selection {
+            Ordering::Less => Some(TextSelection {
                 from: anchor,
                 to: self.caret,
             }),
-            Ordering::Greater => Some(Selection {
+            Ordering::Greater => Some(TextSelection {
                 from: self.caret,
                 to: anchor,
             }),
@@ -413,16 +416,17 @@ impl Field {
         }
     }
 
-    fn columns(&self, lines: Lines) -> Option<Count> {
-        match lines {
-            Lines::One => None,
-            Lines::Many => (self.viewport.columns.get() > 1)
-                .then(|| Count::new(self.viewport.columns.get() - 1)),
+    fn columns(&self, shape: FieldShape) -> Option<Count> {
+        match shape {
+            FieldShape::Single => None,
+            FieldShape::Multi => {
+                (self.window.columns.get() > 1).then(|| Count::new(self.window.columns.get() - 1))
+            }
         }
     }
 
-    pub(crate) fn rows(&self, lines: Lines) -> Vec<TextRow> {
-        self.text.rows(self.columns(lines))
+    pub(crate) fn rows(&self, shape: FieldShape) -> Vec<TextRow> {
+        self.text.rows(self.columns(shape))
     }
 
     pub(crate) fn idle_text(&self, room: Count) -> Label {
@@ -440,8 +444,8 @@ impl Field {
     pub(crate) fn pieces(&self, row: TextRow, attention: Attention) -> Vec<Piece> {
         let focused = attention == Attention::Focused;
         let mut cuts = vec![row.start, row.end];
-        let selection = self.selection().filter(|_| focused);
-        if let Some(Selection { from, to }) = selection {
+        let selection = self.text_selection().filter(|_| focused);
+        if let Some(TextSelection { from, to }) = selection {
             cuts.push(from.max(row.start).min(row.end));
             cuts.push(to.max(row.start).min(row.end));
         }
@@ -479,12 +483,12 @@ impl Field {
 
     pub(crate) fn caret_at(
         &self,
-        lines: Lines,
+        shape: FieldShape,
         row: Count,
         column: Count,
         attention: Attention,
     ) -> Caret {
-        let rows = self.rows(lines);
+        let rows = self.rows(shape);
         let Some(chosen) = rows.get(row.get()).or_else(|| rows.last()).copied() else {
             return Caret(0);
         };
@@ -507,7 +511,7 @@ impl Field {
     }
 
     fn take_selection(&mut self) -> bool {
-        let Some(Selection { from, to }) = self.selection() else {
+        let Some(TextSelection { from, to }) = self.text_selection() else {
             return false;
         };
         self.text.remove(from, to);
@@ -532,8 +536,8 @@ impl Field {
         }
     }
 
-    fn target(&mut self, motion: Motion, lines: Lines) -> Caret {
-        let rows = self.rows(lines);
+    fn target(&mut self, motion: Motion, shape: FieldShape) -> Caret {
+        let rows = self.rows(shape);
         let index = row_of(&rows, self.caret).get();
         let row = rows.get(index).copied();
         let caret = self.caret;
@@ -567,11 +571,11 @@ impl Field {
         }
     }
 
-    fn move_caret(&mut self, motion: Motion, extend: Extend, lines: Lines) {
-        let to = match (motion, extend, self.selection()) {
+    fn move_caret(&mut self, motion: Motion, extend: Extend, shape: FieldShape) {
+        let to = match (motion, extend, self.text_selection()) {
             (Motion::Left(Unit::Character), Extend::Replace, Some(selection)) => selection.from,
             (Motion::Right(Unit::Character), Extend::Replace, Some(selection)) => selection.to,
-            _ => self.target(motion, lines),
+            _ => self.target(motion, shape),
         };
         self.anchor = match extend {
             Extend::Replace => None,
@@ -580,26 +584,33 @@ impl Field {
         self.caret = to;
     }
 
-    fn copied(&self) -> Clip {
-        self.selection().map_or(Clip::Keep, |selection| {
-            Clip::Copy(self.text.between(selection.from, selection.to))
-        })
+    fn copied(&self) -> ClipboardRequest {
+        self.text_selection()
+            .map_or(ClipboardRequest::Keep, |selection| {
+                ClipboardRequest::Copy(self.text.between(selection.from, selection.to))
+            })
     }
 
-    fn apply(&mut self, edit: Edit, enter: Enter, lines: Lines, focus: &mut Focus) -> Handled {
+    fn apply(
+        &mut self,
+        edit: Edit,
+        after: AfterSubmit,
+        shape: FieldShape,
+        focus: &mut Focus,
+    ) -> Handled {
         let mut handled = Handled::default();
         if !matches!(edit, Edit::Move(Motion::Up | Motion::Down, _)) {
             self.goal = None;
         }
         match edit {
-            Edit::Enter(held) if lines.breaks(held) => self.insert(&Label::new("\n")),
+            Edit::Enter(mods) if shape.breaks(mods) => self.insert(&Label::new("\n")),
             Edit::Enter(_) => {
-                let line = match enter {
-                    Enter::Keep => {
+                let line = match after {
+                    AfterSubmit::Keep => {
                         self.select_all();
                         self.text.clone()
                     }
-                    Enter::Clear => {
+                    AfterSubmit::Clear => {
                         self.caret = Caret(0);
                         self.anchor = None;
                         mem::take(&mut self.text)
@@ -613,7 +624,7 @@ impl Field {
             }
             Edit::Backspace(unit) => {
                 if !self.take_selection() {
-                    let from = self.target(Motion::Left(unit), lines);
+                    let from = self.target(Motion::Left(unit), shape);
                     self.text.remove(from, self.caret);
                     self.caret = from;
                     self.anchor = None;
@@ -621,26 +632,26 @@ impl Field {
             }
             Edit::Remove(unit) => {
                 if !self.take_selection() {
-                    let to = self.target(Motion::Right(unit), lines);
+                    let to = self.target(Motion::Right(unit), shape);
                     self.text.remove(self.caret, to);
                     self.anchor = None;
                 }
             }
             Edit::Move(motion @ (Motion::Up | Motion::Down), Extend::Replace)
-                if lines == Lines::One =>
+                if shape == FieldShape::Single =>
             {
                 self.recall(motion);
             }
-            Edit::Move(motion, extend) => self.move_caret(motion, extend, lines),
+            Edit::Move(motion, extend) => self.move_caret(motion, extend, shape),
             Edit::SelectAll => self.select_all(),
             Edit::Escape => *focus = Focus::Lost,
             Edit::ClearLine => self.clear(),
-            Edit::Copy => handled.clip = self.copied(),
+            Edit::Copy => handled.clipboard = self.copied(),
             Edit::Cut => {
-                handled.clip = self.copied();
+                handled.clipboard = self.copied();
                 self.take_selection();
             }
-            Edit::Paste => handled.clip = Clip::Paste,
+            Edit::Paste => handled.clipboard = ClipboardRequest::Paste,
         }
         handled
     }
@@ -668,7 +679,7 @@ impl Field {
         self.caret = self.text.end();
     }
 
-    fn type_text(&mut self, typed: &Typed, lines: Lines) {
+    fn type_text(&mut self, typed: &Typed, shape: FieldShape) {
         if typed.is_empty() {
             return;
         }
@@ -676,8 +687,8 @@ impl Field {
             .as_str()
             .chars()
             .filter(|character| *character != '\r')
-            .map(|character| match (character, lines) {
-                ('\n', Lines::Many) => '\n',
+            .map(|character| match (character, shape) {
+                ('\n', FieldShape::Multi) => '\n',
                 ('\n' | '\t', _) => ' ',
                 (other, _) => other,
             })
@@ -708,9 +719,9 @@ impl Field {
         }
     }
 
-    fn follow(&mut self, lines: Lines) {
-        let shown = self.viewport.rows.get().max(1);
-        let rows = self.rows(lines);
+    fn follow(&mut self, shape: FieldShape) {
+        let shown = self.window.rows.get().max(1);
+        let rows = self.rows(shape);
         let row = row_of(&rows, self.caret).get();
         let mut first = self.first.get();
         if row < first {
@@ -722,9 +733,9 @@ impl Field {
         self.first = Count::new(first.min(rows.len().saturating_sub(shown)));
     }
 
-    fn scroll(&mut self, lines: Lines, walk: Walk) {
-        let shown = self.viewport.rows.get().max(1);
-        let most = self.rows(lines).len().saturating_sub(shown);
+    fn scroll(&mut self, shape: FieldShape, walk: Walk) {
+        let shown = self.window.rows.get().max(1);
+        let most = self.rows(shape).len().saturating_sub(shown);
         let first = self.first.get();
         self.first = Count::new(match walk {
             Walk::Down => (first + 1).min(most),
@@ -757,7 +768,7 @@ pub(crate) struct Fields {
     wizard_name: Field,
     wizard_group: Field,
     wizard_search: Field,
-    wizard_note: Field,
+    tour_note: Field,
     step_notes: BTreeMap<BranchId, Field>,
     blank: Field,
     focused: Option<Holding>,
@@ -782,7 +793,7 @@ impl Fields {
             Which::WizardName => &self.wizard_name,
             Which::WizardGroup => &self.wizard_group,
             Which::WizardSearch => &self.wizard_search,
-            Which::WizardNote => &self.wizard_note,
+            Which::TourNote => &self.tour_note,
             Which::StepNote(branch) => self.step_notes.get(&branch).unwrap_or(&self.blank),
         }
     }
@@ -799,7 +810,7 @@ impl Fields {
             Which::WizardName => &mut self.wizard_name,
             Which::WizardGroup => &mut self.wizard_group,
             Which::WizardSearch => &mut self.wizard_search,
-            Which::WizardNote => &mut self.wizard_note,
+            Which::TourNote => &mut self.tour_note,
             Which::StepNote(branch) => self.step_notes.entry(branch).or_default(),
         }
     }
@@ -843,28 +854,28 @@ impl Fields {
 
     pub(crate) fn act(&mut self, which: Which, act: FieldAct) {
         match act {
-            FieldAct::Fit(viewport) => self.fit(which, viewport),
+            FieldAct::Fit(window) => self.fit(which, window),
             FieldAct::Point(at, pointing) => self.point(which, at, pointing),
             FieldAct::Scroll(walk) => self.scroll(which, walk),
         }
     }
 
-    fn fit(&mut self, which: Which, viewport: Viewport) {
+    fn fit(&mut self, which: Which, window: FieldWindow) {
         let field = self.get_mut(which);
-        if field.viewport != viewport {
-            field.viewport = viewport;
-            field.follow(which.lines());
+        if field.window != window {
+            field.window = window;
+            field.follow(which.shape());
         }
     }
 
     fn point(&mut self, which: Which, at: Caret, pointing: Pointing) {
         let field = self.get_mut(which);
         field.point(at, pointing);
-        field.follow(which.lines());
+        field.follow(which.shape());
     }
 
     fn scroll(&mut self, which: Which, walk: Walk) {
-        self.get_mut(which).scroll(which.lines(), walk);
+        self.get_mut(which).scroll(which.shape(), walk);
     }
 
     pub(crate) fn press(&mut self, hot: Option<Id>) {
@@ -878,24 +889,24 @@ impl Fields {
         which: Which,
         edits: &[Edit],
         typed: &Typed,
-        enter: Enter,
+        after: AfterSubmit,
     ) -> Handled {
         let mut handled = Handled::default();
         if self.focused() != Some(which) {
             return handled;
         }
         let mut focus = Focus::Kept;
-        let lines = which.lines();
+        let shape = which.shape();
         let field = self.get_mut(which);
         for edit in edits {
-            let one = field.apply(*edit, enter, lines, &mut focus);
+            let one = field.apply(*edit, after, shape, &mut focus);
             handled.submitted = one.submitted.or(handled.submitted);
-            if one.clip != Clip::Keep {
-                handled.clip = one.clip;
+            if one.clipboard != ClipboardRequest::Keep {
+                handled.clipboard = one.clipboard;
             }
         }
-        field.type_text(typed, lines);
-        field.follow(lines);
+        field.type_text(typed, shape);
+        field.follow(shape);
         if focus == Focus::Lost && self.focused() == Some(which) {
             self.focused = None;
         }

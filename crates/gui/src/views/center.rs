@@ -12,8 +12,8 @@ use crate::panels::{Direction, View};
 use crate::status::Status;
 use crate::text::{Counted, Noun, Tag};
 use crate::theme::{
-    EDGE_SCROLL, EDGE_SCROLL_MOST, FIELD, GREEN, LINE_FIELD, LINES_SELECTED, ORANGE, PIXEL, RED,
-    ROW_EXTRA, SOURCE_GUESS, TEXT, WEAK,
+    EDGE_SCROLL_BAND, EDGE_SCROLL_MOST, FIELD, GREEN, LINE_FIELD, LINES_SELECTED, ORANGE, PIXEL,
+    RED, ROW_EXTRA, SOURCE_GUESS, TEXT, WEAK,
 };
 use crate::widgets::{Chosen, CodeBlock, Coded, Container, Frame, Marks, Padding, Scroller, Width};
 
@@ -53,9 +53,11 @@ fn source_toolbar(model: &Model, frame: &mut Frame<'_>, path: &RelativePath) {
 fn edge_scroll(vertical: Px, rect: Rect, row_height: Px) -> Px {
     let most = row_height * EDGE_SCROLL_MOST;
     if vertical < rect.top {
-        -EDGE_SCROLL.apply(rect.top - vertical).clamp(PIXEL, most)
+        -EDGE_SCROLL_BAND
+            .apply(rect.top - vertical)
+            .clamp(PIXEL, most)
     } else if vertical >= rect.bottom() {
-        EDGE_SCROLL
+        EDGE_SCROLL_BAND
             .apply(vertical - rect.bottom() + PIXEL)
             .clamp(PIXEL, most)
     } else {
@@ -80,7 +82,7 @@ fn select_lines(model: &Model, frame: &mut Frame<'_>, coded: &Coded, scrollbar: 
         _ if model.line_grab.is_some()
             && (coded.interaction.clicked() || !coded.interaction.down()) =>
         {
-            frame.push(Action::ReleaseLines);
+            frame.push(Action::ClearLineSelection);
         }
         _ => {}
     }

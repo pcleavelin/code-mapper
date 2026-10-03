@@ -146,7 +146,7 @@ const SETTINGS_HEADER: &str = "codemap settings 1";
 const THEME: &str = "theme";
 const FONT: &str = "font";
 const SIZE: &str = "size";
-const GRAPH: &str = "graph";
+const GRAPH_DIRECTION: &str = "graph-direction";
 const DARK: &str = "dark";
 const LIGHT: &str = "light";
 
@@ -161,7 +161,7 @@ pub(crate) enum WireSetting {
     Theme(WireTheme),
     Font(String),
     Size(u16),
-    Graph(WireDirection),
+    GraphDirection(WireDirection),
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -185,11 +185,11 @@ fn setting(line: &str) -> Option<WireSetting> {
     if key == SIZE {
         return value.parse().ok().map(WireSetting::Size);
     }
-    if key == GRAPH {
+    if key == GRAPH_DIRECTION {
         if value == RIGHT {
-            return Some(WireSetting::Graph(WireDirection::Right));
+            return Some(WireSetting::GraphDirection(WireDirection::Right));
         }
-        return (value == DOWN).then_some(WireSetting::Graph(WireDirection::Down));
+        return (value == DOWN).then_some(WireSetting::GraphDirection(WireDirection::Down));
     }
     None
 }
@@ -212,8 +212,10 @@ pub(crate) fn print_settings(settings: &WireSettings) -> String {
             WireSetting::Theme(WireTheme::Light) => format!("{THEME} {LIGHT}"),
             WireSetting::Font(family) => format!("{FONT} {family}"),
             WireSetting::Size(size) => format!("{SIZE} {size}"),
-            WireSetting::Graph(WireDirection::Right) => format!("{GRAPH} {RIGHT}"),
-            WireSetting::Graph(WireDirection::Down) => format!("{GRAPH} {DOWN}"),
+            WireSetting::GraphDirection(WireDirection::Right) => {
+                format!("{GRAPH_DIRECTION} {RIGHT}")
+            }
+            WireSetting::GraphDirection(WireDirection::Down) => format!("{GRAPH_DIRECTION} {DOWN}"),
         };
         out.push_str(&line);
         out.push('\n');

@@ -65,7 +65,7 @@ pub(super) fn top_bar(model: &Model, frame: &mut Frame<'_>) {
         Chosen::Plain
     };
     if frame
-        .button(Icon::Settings, ids::SETTINGS.target(), open)
+        .button(Icon::Settings, ids::SETTINGS_OPEN.target(), open)
         .clicked()
     {
         frame.push(Action::Settings(SettingsAct::Toggle));

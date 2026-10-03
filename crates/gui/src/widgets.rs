@@ -7,7 +7,9 @@ use ui::{
 };
 
 use crate::action::Action;
-use crate::field::{Attention, Field, FieldAct, Lines, Piece, Pointing, Tint, Viewport, Which};
+use crate::field::{
+    Attention, Field, FieldAct, FieldShape, FieldWindow, Piece, Pointing, Tint, Which,
+};
 use crate::grid::Grids;
 use crate::ids::{Control, Target};
 use crate::keys::Walk;
@@ -824,7 +826,7 @@ impl Frame<'_> {
         let down = mouse.vertical.get() - rect.top.get() - FIELD_PADDING.get();
         let column = Count::new(usize::try_from(across / cell).unwrap_or(0));
         let row = Count::new(at.first.get() + usize::try_from(down / row_height).unwrap_or(0));
-        let caret = field.caret_at(which.lines(), row, column, at.attention);
+        let caret = field.caret_at(which.shape(), row, column, at.attention);
         self.push(Action::Field(which, FieldAct::Point(caret, pointing)));
     }
 
@@ -840,7 +842,7 @@ impl Frame<'_> {
         hint: &Label,
         width: Cells,
     ) {
-        if which.lines() == Lines::Many {
+        if which.shape() == FieldShape::Multi {
             self.note_field(fields, which, id, hint, width);
             return;
         }
@@ -906,19 +908,19 @@ impl Frame<'_> {
     fn note_field(&mut self, fields: &Fields, which: Which, id: Id, hint: &Label, width: Cells) {
         let attention = self.focused(fields, which);
         let field = fields.get(which);
-        let lines = which.lines();
+        let shape = which.shape();
         let width = width.of(self.cell_width());
         let inner = width - FIELD_PADDING * 2;
-        let viewport = Viewport {
+        let window = FieldWindow {
             columns: Count::new(
                 usize::try_from(inner.get() / self.cell_width().get().max(1)).unwrap_or(0),
             ),
             rows: NOTE_ROWS_MOST,
         };
-        if field.viewport() != viewport {
-            self.push(Action::Field(which, FieldAct::Fit(viewport)));
+        if field.window() != window {
+            self.push(Action::Field(which, FieldAct::Fit(window)));
         }
-        let rows = field.rows(lines);
+        let rows = field.rows(shape);
         let shown = rows
             .len()
             .clamp(NOTE_ROWS_LEAST.get(), NOTE_ROWS_MOST.get());

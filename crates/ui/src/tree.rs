@@ -7,7 +7,7 @@ use crate::color::Color;
 use crate::geometry::{Axis, Count, Extent, Point, Px, Rect, Vector};
 use crate::id::Id;
 use crate::input::{Button, Input, Pinch, Pointer};
-use crate::layout::{Align, Layout, Scrollbars, Sides, Size, Style};
+use crate::layout::{Align, Layout, ScrollAxes, Sides, Size, Style};
 use crate::text::{Label, Text, Wrap};
 
 const LEAST_WRAP: Count = Count::new(12);
@@ -82,7 +82,7 @@ pub struct Placement {
     pub clip: Rect,
     pub content: Extent,
     pub scroll_offset: Point,
-    pub scrollbars: Scrollbars,
+    pub scroll_axes: ScrollAxes,
     layer: Layer,
 }
 
@@ -106,7 +106,7 @@ impl Placement {
     }
 
     pub fn overflow(self, axis: Axis) -> Px {
-        if self.scrollbars.has(axis) {
+        if self.scroll_axes.has(axis) {
             (self.content.along(axis) - self.rect.extent().along(axis)).max(Px::ZERO)
         } else {
             Px::ZERO
@@ -114,7 +114,7 @@ impl Placement {
     }
 
     pub fn scrollbar(self, axis: Axis, scroll: Px) -> Option<Scrollbar> {
-        if !self.scrollbars.has(axis) {
+        if !self.scroll_axes.has(axis) {
             return None;
         }
         Scrollbar::of(
@@ -270,7 +270,7 @@ impl Element {
             .max()
             .unwrap_or(Px::ZERO);
         let overflows = widest + self.layout.padding * 2 > self.size.width;
-        if self.layout.clips() && self.layout.scrollbars.has(Axis::Horizontal) && overflows {
+        if self.layout.clips() && self.layout.scroll_axes.has(Axis::Horizontal) && overflows {
             Scrollbar::WIDTH
         } else {
             Px::ZERO
@@ -488,7 +488,7 @@ impl Element {
             clip: self.clip,
             content: self.content,
             scroll_offset: self.layout.scroll_offset(),
-            scrollbars: self.layout.scrollbars,
+            scroll_axes: self.layout.scroll_axes,
             layer,
         }
     }

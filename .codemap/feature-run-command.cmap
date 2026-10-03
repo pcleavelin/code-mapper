@@ -32,7 +32,7 @@ author ai
 file crates/gui/src/action.rs
 symbol typed
 lines 0 54
-hash 06df82d7a2ce2876
+hash fe61d47c32b1c808
 link gui-widgets
 note The command field clears on enter; a submitted line goes to run_command.
 
