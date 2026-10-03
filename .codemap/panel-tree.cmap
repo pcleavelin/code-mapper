@@ -512,7 +512,7 @@ order 21
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 62 92
+lines 63 93
 hash a4d1e09759f7ab10
 note The panel arms of apply: grab, resize, drag and release; split, close; the picker opened, closed or picked from. Opening the picker, by + or by a split, empties its search field and gives it the keyboard.
 

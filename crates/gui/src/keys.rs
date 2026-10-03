@@ -23,9 +23,9 @@ pub(crate) enum CodeGesture {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum Extend {
-    Replace,
-    Extend,
+pub(crate) enum LineGesture {
+    Press,
+    Drag,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -157,7 +157,6 @@ fn seen(gesture: Gesture, interaction: Interaction, pointer: Pointer) -> bool {
     match gesture {
         Gesture::AltClick => interaction.clicked() && mods.alt(),
         Gesture::ControlClick => interaction.clicked() && mods.ctrl(),
-        Gesture::ShiftClick => interaction.clicked() && mods.shift(),
         Gesture::DoubleClick => interaction.double_clicked(),
         Gesture::Hover => interaction.hovered(),
         Gesture::Drag => interaction.drag().is_some(),
@@ -188,16 +187,16 @@ pub(crate) fn code_gesture(interaction: Interaction, pointer: Pointer) -> Option
     }
 }
 
-pub(crate) fn selects_line(interaction: Interaction, pointer: Pointer) -> Option<Extend> {
+pub(crate) fn selects_line(interaction: Interaction, pointer: Pointer) -> Option<LineGesture> {
     let mods = pointer.mods;
-    if !interaction.clicked() || mods.ctrl() || mods.alt() || interaction.double_clicked() {
-        return None;
-    }
-    Some(if fired(Feature::SelectLines, interaction, pointer) {
-        Extend::Extend
+    if fired(Feature::SelectLines, interaction, pointer) {
+        Some(LineGesture::Drag)
+    } else if interaction.clicked() && !mods.ctrl() && !mods.alt() && !interaction.double_clicked()
+    {
+        Some(LineGesture::Press)
     } else {
-        Extend::Replace
-    })
+        None
+    }
 }
 
 pub(crate) fn wheeling(pointer: Pointer) -> Wheeling {

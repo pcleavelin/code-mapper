@@ -90,7 +90,6 @@ fn exercised(trigger: Trigger, commands: &str, scripts: &str) -> bool {
             Gesture::DoubleClick => line.starts_with("dblclick"),
             Gesture::ControlClick => line.starts_with("click") && line.ends_with(" ctrl"),
             Gesture::AltClick => line.starts_with("click") && line.ends_with(" alt"),
-            Gesture::ShiftClick => line.starts_with("click") && line.ends_with(" shift"),
             Gesture::BackButton | Gesture::ForwardButton => false,
         }),
         Trigger::Palette(label, _) => lines.iter().any(|line| {

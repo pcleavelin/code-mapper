@@ -142,7 +142,7 @@ author ai
 file crates/gui/src/app.rs
 symbol frame
 lines 0 63
-hash 181aa0490ea50ad1
+hash f5890d1eeada260f
 note The frame (platform::App::frame), in order: the font and cell size for this scale factor, the screenshot aid, the five polls, the keys, then panel_input, the steps list's drag (step_list_input) and the graph's own input phase (or, with the Graph view hidden, the graph marked Hidden and its keyboard Elsewhere, so a look snaps and the arrows walk the tour), the element tree, layout and draw, the action queue, the reveal of the centre view navigation asked for, saving the layout if it changed, and the history snapshot, which first performs a back or forward asked for this frame. It asks the loop to come back at the ANIMATING rate while the graph camera is gliding, in 50 ms while any work is in flight, and in a second otherwise, so an idle window costs one frame per second.
 
 step 5aljhx
@@ -182,8 +182,8 @@ parent bg9t38
 author ai
 file crates/gui/src/views/center.rs
 symbol source
-lines 0 84
-hash 90fe100f3c4de553
+lines 0 89
+hash 89b87d4070878345
 link source-view
 note The Source tab: the current file.
 
@@ -528,8 +528,8 @@ parent sn1cn1
 author ai
 file crates/gui/src/action.rs
 symbol Action
-lines 0 54
-hash d887280b95863e1a
+lines 0 55
+hash 978ed53fc3bd62a5
 note What a gesture can ask for. Selection and navigation, the per-step view toggles, the tour-wide toggles, the two deletions, the authoring gestures as one Authoring variant (add lines or a symbol, the target, grabbing, dragging and dropping a steps list row, promote), opening a line or a definition, tabs, the fields' input, scroll offsets and what a view measured (the top step, a scroll done, a step's height), server questions, panel gestures, graph gestures, the start page's acts and the build-tour wizard's acts. Adding a gesture means adding a variant here and an arm in apply, not threading a callback through the views. A StepKey is a (tour, step) pair of slots in the map; Definition carries the intent, peek or jump; SelectLine says whether to extend; SelectStep whether to scroll the document; OpenTour selects the tour unless it is the one being read and shows it in the given tab.
 
 step jd4cl1
@@ -658,8 +658,8 @@ parent 4uwoav
 author ai
 file crates/gui/src/widgets/code.rs
 symbol code_block
-lines 0 93
-hash a07e2aa176e811fd
+lines 0 99
+hash 4e000cfa52a1bc2d
 note One block of code as one element, shared with the Source view, the peek panel and the tooltip; the document passes the slice highlight as the row background.
 
 step o4p6no
@@ -823,8 +823,8 @@ parent 50ozko
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 0 100
-hash 6bafd9825263f527
+lines 0 101
+hash 35d77fb326e9f9d3
 note The action queue, drained once the tree is built; the keys and panel_input use it too, before the tree. apply is the only place the Model changes during a frame, which is what lets every view take the Model read-only. Most arms are one call into nav.rs or a Model field.
 
 step svoo3m

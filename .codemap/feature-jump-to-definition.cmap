@@ -11,7 +11,7 @@ parent 7x9zhl
 author ai
 file crates/gui/src/widgets/code.rs
 symbol code_block
-lines 74 91
+lines 75 92
 hash 5201244658bdb3d7
 note Trigger in every code block: when the pointer is over a character, keys::code_gesture classifies the click and a jump queues Definition with Intent::Jump.
 

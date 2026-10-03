@@ -89,8 +89,8 @@ order 2
 author ai
 file crates/gui/src/model.rs
 symbol Model
-lines 0 30
-hash c3293445ef8a3d71
+lines 0 31
+hash c057ec91479a212a
 note All the state a view can see, in one struct: the index and the map with its MapStore and disk state, the parent map for the Diff tab, Nav, the step views, the open directories and groups, the kept peek, the server Queries, the panel tree, the scroll offsets (down and across), the graph's state, the fields, search hits and whether they were cut at HIT_LIMIT, the measured heights of document steps (Measures), the console log, the status, WorkState, the font metrics, the frame time, and the build-tour wizard while one is open. gui-model has its values and queries.
 
 step 622pjb
@@ -203,7 +203,7 @@ order 26
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 192 231
+lines 194 233
 hash 1fcedfb9e782142a
 note Every measure counted in cells: button and field widths, column guesses before a panel has a size, the symbol table's columns, tooltip sizes, the gap before a danger button, the status bar's room for the map's place, the panels' floors and the picker's width.
 
@@ -243,9 +243,9 @@ parent uhm8r4
 author ai
 file crates/gui/src/keys.rs
 symbol seen
-lines 0 16
-hash f3783d45d4ab0ab4
-note Whether a gesture happened to an element this frame: alt, ctrl or shift click, double click, hover, drag, wheel (plain, shift or ctrl), pinch, and the mouse's side buttons.
+lines 0 15
+hash 1517b85078776f74
+note Whether a gesture happened to an element this frame: alt or ctrl click, double click, hover, drag, wheel (plain, shift or ctrl), pinch, and the mouse's side buttons.
 
 step e7qp3v
 order 54
@@ -311,8 +311,8 @@ parent xjz44n
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 0 100
-hash 6bafd9825263f527
+lines 0 101
+hash 35d77fb326e9f9d3
 note The one place the Model changes during a frame. Each arm is a call into nav.rs, a field of the Model, or a method on the App for changes that need the Services (save, a server question, a command).
 
 step h4xmjq
@@ -721,8 +721,8 @@ order 8
 author ai
 file crates/gui/src/action.rs
 symbol Action
-lines 0 54
-hash d887280b95863e1a
+lines 0 55
+hash 978ed53fc3bd62a5
 note Every change a gesture, a key, a script line or a view's measurement can cause, as data. A view names the change; it never makes it.
 
 step xypoz6

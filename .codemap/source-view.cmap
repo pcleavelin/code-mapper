@@ -3,7 +3,7 @@ tour source-view
 kind flow
 author ai
 group gui
-note The file viewer, and where a human adds a range of lines as a step. Only the rows on screen become elements - a spacer stands in for everything above and below - which is what makes a four-thousand-line file scroll at the same cost as a short one. Each row is numbered, syntax coloured, and carries a coloured bar on the left where a step of the selected tour is anchored, green when current and red when stale. Clicking selects a line and shift-clicking extends the selection, which the toolbar's add button, named for the selected lines, then turns into a step under the target the strip below the toolbar shows (gui-authoring); double-clicking or ctrl-clicking an identifier jumps to its definition instead, and alt-clicking keeps it in the peek panel. The view only reads the Model: every click becomes an Action applied after the tree is built.
+note The file viewer, and where a human adds a range of lines as a step. Only the rows on screen become elements - a spacer stands in for everything above and below - which is what makes a four-thousand-line file scroll at the same cost as a short one. Each row is numbered, syntax coloured, and carries a coloured bar on the left where a step of the selected tour is anchored, green when current and red when stale. Pressing on a line and dragging selects the lines between, which the toolbar's add button, named for the selected lines, then turns into a step under the target the strip below the toolbar shows (gui-authoring); double-clicking or ctrl-clicking an identifier jumps to its definition instead, and alt-clicking keeps it in the peek panel. The view only reads the Model: every click becomes an Action applied after the tree is built.
 
 step 1cxlr5
 order 7
@@ -21,8 +21,8 @@ parent azzv57
 author ai
 file crates/gui/src/views/center.rs
 symbol source
-lines 26 83
-hash 5d4eb1062ffef29b
+lines 34 88
+hash 8335b02b733ce901
 note The rows. rows_window turns the scroll offset into the first visible line and emits the spacer for the lines above; then one code block of the visible lines, then a spacer for the rest plus a row of slack, so the scrollbar sees the whole file while only what shows is drawn. The bar closure marks the selected tour's anchors in this file, the background closure the selected lines.
 
 step 49joa9
@@ -40,8 +40,8 @@ order 0
 author ai
 file crates/gui/src/views/center.rs
 symbol source
-lines 0 84
-hash 90fe100f3c4de553
+lines 0 89
+hash 89b87d4070878345
 note The whole viewer: the toolbar (source_toolbar), the target strip, then the scrolling column of rows. With no current file it says so and draws nothing else.
 
 step ghy5uj
@@ -50,8 +50,8 @@ parent 2h2qhv
 author ai
 file crates/gui/src/widgets/code.rs
 symbol code_block
-lines 0 93
-hash a07e2aa176e811fd
+lines 0 99
+hash 4e000cfa52a1bc2d
 note The code element: the rows drawn from a cached grid, the gutter, the marks, and the spot under the pointer.
 
 step mlu0tc
@@ -70,8 +70,8 @@ author ai
 file crates/gui/src/keys.rs
 symbol selects_line
 lines 0 10
-hash ab9491a74b0ed7e2
-note A plain click on a line selects it and a shift-click extends the selection; a click with ctrl or alt, or a double click, is a definition gesture instead and selects nothing. Shift comes from the SelectLines feature's gesture in the registry.
+hash e0a5641bfc70b877
+note A plain click on a line is a Press and selects it; the button held on the code after the press is a Drag that extends it; a click with ctrl or alt, or a double click, is a definition gesture instead and selects nothing. The drag comes from the SelectLines feature's gesture in the registry.
 
 step rmvq1d
 order 4
@@ -111,7 +111,7 @@ author ai
 file crates/gui/src/views/center.rs
 symbol source_toolbar
 lines 0 29
-hash 54858313013e06fa
+hash fe43aa00855fa3ef
 note The toolbar: the file name, the add button named for what it will add ('add line 12 as a step', 'add lines 12-20 as a step', or 'add step' with nothing selected), the 'line' go-to-line box, and a line of help clipped to what is left of the bar.
 
 step yfetc7
@@ -120,6 +120,6 @@ parent azzv57
 author ai
 file crates/gui/src/views/center.rs
 symbol source
-lines 12 23
-hash 5f5e386d8757fbcf
+lines 14 31
+hash b45cba7d4cbc5ee7
 note A pending scroll: anything that selected a symbol or opened a line left a LineRequest in Nav, and it becomes a scroll offset three rows above that line, clamped to the file. The viewport height comes from what the column measured last frame. The request carries a ticket, and ScrolledToLine clears it only if no newer request replaced it meanwhile.

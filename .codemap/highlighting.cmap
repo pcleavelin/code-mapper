@@ -50,8 +50,8 @@ order 2
 author ai
 file crates/gui/src/widgets/code.rs
 symbol code_block
-lines 0 93
-hash a07e2aa176e811fd
+lines 0 99
+hash 4e000cfa52a1bc2d
 note The one code element in the GUI: a block of lines drawn from a cached grid by a custom element, with the hover, jump and peek gestures resolved to a (line, column) spot from the pointer. Per-row backgrounds and bars come from the two closures in Marks, so the Source view's selection and anchor bars and the document's slice highlight all share it. Its sideways scroll is kept per block in the model.
 
 step k0lp9q

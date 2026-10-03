@@ -213,9 +213,14 @@ wait 3
 dump
 shot {shots}/open.png
 rect lines
-click <<DUMP rect lines|200,8>>
+mouse <<DUMP rect lines|200,8>>
+down
 wait 2
-click <<DUMP rect lines|200,40>> shift
+mouse <<DUMP rect lines|260,40>>
+wait 2
+dump
+shot {shots}/dragging.png
+up
 wait 2
 dump
 shot {shots}/selected.png
@@ -254,6 +259,29 @@ key left alt
 wait 2
 dump
 key right ctrl
+wait 2
+dump
+open src/store.rs 1
+wait 3
+hover-id divider/6
+wait 1
+down
+wait 1
+mouse 600 420
+wait 1
+up
+wait 2
+rect lines
+mouse <<DUMP rect lines|200,8>>
+down
+wait 2
+mouse 600 600
+wait 20
+dump
+shot {shots}/scrolled.png
+mouse 600 200
+wait 2
+up
 wait 2
 dump
 click-id save
@@ -563,9 +591,7 @@ dump
 open src/store.rs 12
 wait 3
 rect lines
-click <<DUMP rect lines|200,8>>
-wait 2
-click <<DUMP rect lines|200,40>> shift
+drag <<DUMP rect lines|200,8>> <<DUMP rect lines|200,40>>
 wait 2
 click-id target-top@Source
 wait 2

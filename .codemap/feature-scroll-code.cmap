@@ -22,7 +22,7 @@ parent vso1s4
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 43 43
+lines 44 44
 hash c5a6628c1b2c605e
 note Stores the offset under the block's id, so the next frame starts from it.
 
@@ -32,7 +32,7 @@ parent vso1s4
 author ai
 file crates/gui/src/widgets/code.rs
 symbol code_block
-lines 54 60
+lines 55 61
 hash 24e4b1606a2defb3
 note The effect: the grid is drawn shifted left by the offset, with the scrolled mark on the left edge.
 
@@ -51,6 +51,6 @@ order 0
 author ai
 file crates/gui/src/widgets/code.rs
 symbol code_block
-lines 20 32
+lines 21 33
 hash 647eb278bb50b1ac
 note The handler, run as the code block is built: when the block was hovered last frame and the ScrollCode gesture is held, the wheel moves the block's across offset by a fixed number of columns per notch; the offset is clamped to the text's overflow and queued as ScrollAcross.

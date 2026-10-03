@@ -61,7 +61,7 @@ parent 1a0bgg
 author ai
 file crates/gui/src/views/center.rs
 symbol source
-lines 13 24
+lines 21 32
 hash c78af866180096ce
 link source-view
 note The effect in the Source view: a pending scroll request puts the requested line three rows below the top, clamped to the end, and answers the ticket.

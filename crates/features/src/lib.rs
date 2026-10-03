@@ -661,12 +661,12 @@ impl Feature {
             ),
             Self::SelectLines => Spec::new(
                 Text::new("select-lines"),
-                Text::new("select a line, or extend the selection, in the Source view"),
+                Text::new("select a line, or drag over lines to select them, in the Source view"),
                 Surface::Window,
                 &const {
                     [
                         Trigger::Click(Element::new("lines")),
-                        Trigger::Gesture(Gesture::ShiftClick, Element::new("lines")),
+                        Trigger::Gesture(Gesture::Drag, Element::new("lines")),
                     ]
                 },
             ),

@@ -3,7 +3,7 @@ tour feature-add-step
 kind flow
 author ai
 group features/gui
-note Add code to the tour being read, from wherever it is shown. The reader reaches for it to turn code already on screen into a step without switching to the CLI (the human builds tours by hand). The target strip, on the Tours list, on Symbols, on Source and on the Graph tab, names the one add for what is in front of you. On the Source tab with lines selected it adds those lines. Otherwise it adds the focused symbol, and it offers nothing when that symbol is already the selected whole-symbol step. The palette entry 'add step' does the same thing. The hover '+ step' controls stay. In the Source view, select lines (click, shift-click) and press the toolbar's add button, which names them ('add lines 12-20 as a step'). On a Symbols row or a References caller or callee row, press '+ step', shown while the row is hovered, to add that symbol whole; 'add step' under the References heading adds the selected symbol. On an off-tour graph node, '+ step' adds its symbol. The step is authored by the human and hangs under the target (see feature-choose-target), except a graph node revealed as a callee of a step, which hangs under that step. The same lines under the same parent again is refused with the step's number; adding moves neither the selection nor the target, so the next add lands beside this one. The status names the new step's number and parent.
+note Add code to the tour being read, from wherever it is shown. The reader reaches for it to turn code already on screen into a step without switching to the CLI (the human builds tours by hand). The target strip, on the Tours list, on Symbols, on Source and on the Graph tab, names the one add for what is in front of you. On the Source tab with lines selected it adds those lines. Otherwise it adds the focused symbol, and it offers nothing when that symbol is already the selected whole-symbol step. The palette entry 'add step' does the same thing. The hover '+ step' controls stay. In the Source view, select lines (press and drag) and press the toolbar's add button, which names them ('add lines 12-20 as a step'). On a Symbols row or a References caller or callee row, press '+ step', shown while the row is hovered, to add that symbol whole; 'add step' under the References heading adds the selected symbol. On an off-tour graph node, '+ step' adds its symbol. The step is authored by the human and hangs under the target (see feature-choose-target), except a graph node revealed as a callee of a step, which hangs under that step. The same lines under the same parent again is refused with the step's number; adding moves neither the selection nor the target, so the next add lands beside this one. The status names the new step's number and parent.
 
 step 4aiwmt
 order 12
@@ -71,10 +71,10 @@ parent 9kzjp8
 author ai
 file crates/gui/src/views/center.rs
 symbol source
-lines 75 80
-hash fd19b1328cd15b25
+lines 83 85
+hash 5d52075ce2a6ed93
 link feature-select-lines
-note Where the lines come from: clicks in the Source view set and extend the line selection.
+note Where the lines come from: pressing and dragging in the Source view sets the line selection.
 
 step c2ft8i
 order 2

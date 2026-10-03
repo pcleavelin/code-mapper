@@ -2,7 +2,7 @@ use std::ops::{Add, AddAssign, Div, Mul, Sub};
 use std::time::Duration;
 
 use domain::HighlightClass;
-use ui::{Color, Coordinate, FontSize, Pinch, Px, Scale};
+use ui::{Color, Coordinate, Count, FontSize, Pinch, Px, Scale};
 
 use crate::panels::Ratio;
 
@@ -189,6 +189,8 @@ pub(crate) const GRAPH_THIN_BORDER: Px = PIXEL;
 pub(crate) const GRAPH_THICK_BORDER: Px = Px::new(2);
 const WHEEL_NOTCH: Coordinate = Coordinate::new(40.0);
 pub(crate) const WHEEL_ACROSS: Cells = Cells::new(3);
+pub(crate) const EDGE_SCROLL: Ratio = Ratio::permille(250);
+pub(crate) const EDGE_SCROLL_MOST: Count = Count::new(2);
 
 pub(crate) const NAV_BUTTON: Cells = Cells::new(3);
 pub(crate) const COLLAPSE_ROOM: Cells = Cells::new(3);

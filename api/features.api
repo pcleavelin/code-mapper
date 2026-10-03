@@ -17,7 +17,7 @@ spec::pub const fn control(key: Key) -> Self
 spec::pub const fn alt(key: Key) -> Self
 spec::pub const fn key(self) -> Key
 spec::pub const fn modifiers(self) -> Modifiers
-spec::pub enum Gesture { ShiftClick, ControlClick, AltClick, DoubleClick, Hover, Drag, Wheel, ShiftWheel, ControlWheel, Pinch, BackButton, ForwardButton, }
+spec::pub enum Gesture { ControlClick, AltClick, DoubleClick, Hover, Drag, Wheel, ShiftWheel, ControlWheel, Pinch, BackButton, ForwardButton, }
 spec::pub enum Trigger { Command(Text), Key(Chord), Click(Element), Type(Element), Gesture(Gesture, Element), Palette(Text, Option<Chord>), }
 spec::pub enum Surface { Command, Window, }
 spec::pub struct Spec { name: Text, summary: Text, surface: Surface, triggers: &'static [Trigger], }

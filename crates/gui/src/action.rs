@@ -6,7 +6,7 @@ use crate::authoring::Authoring;
 use crate::field::{Edit, Enter, FieldText, Which};
 use crate::graph::{GraphAction, Heading};
 use crate::ids;
-use crate::keys::{Extend, PaletteKey, Walk};
+use crate::keys::{LineGesture, PaletteKey, Walk};
 use crate::model::{
     Context, Dirty, HIT_LIMIT, Hit, HitsShown, Measured, Openness, Readable, StepKey, StepSlot,
     Tab, TourSlot, ViewFlag, Warned,
@@ -51,7 +51,8 @@ pub(crate) enum Action {
     RemoveTour(TourSlot),
     GoTo(FileId, Line),
     Definition(FileId, Line, Column, Intent),
-    SelectLine(Line, Extend),
+    SelectLine(Line, LineGesture),
+    ReleaseLines,
     ClosePeek,
     Context(StepKey, ContextChange),
     ToggleDirectory(Label),
@@ -117,7 +118,8 @@ impl App {
             Action::Definition(file, line, column, intent) => {
                 self.definition(file, line, column, intent);
             }
-            Action::SelectLine(line, extend) => model.select_line(line, extend),
+            Action::SelectLine(line, gesture) => model.select_line(line, gesture),
+            Action::ReleaseLines => model.release_lines(),
             Action::ClosePeek => model.peek = None,
             Action::Context(key, change) => {
                 let context = &mut model.views.entry(key).context;

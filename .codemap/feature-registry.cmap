@@ -88,7 +88,7 @@ author ai
 file crates/features/src/lib.rs
 symbol spec
 lines 0 854
-hash bffce87f51acab6a
+hash d8aa00f97edd9825
 note The registry itself: one match arm per feature, built at compile time from const data. A command feature has Surface::Command and exactly one trigger, its own name as a command; a window feature lists every click, key, typed field and gesture that fires it.
 
 step k761ua
@@ -143,8 +143,8 @@ parent xadulm
 author ai
 file crates/features/src/spec.rs
 symbol Gesture
-lines 0 13
-hash c76acb3e02975b17
+lines 0 12
+hash 384f2cfec29a6215
 note Pointer gestures that are not a plain click: modified clicks, double click, hover, drag, wheels with and without modifiers, a trackpad pinch, and the mouse back and forward buttons.
 
 step tgfgc9

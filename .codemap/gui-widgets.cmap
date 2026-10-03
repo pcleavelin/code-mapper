@@ -306,8 +306,8 @@ order 21
 author ai
 file crates/gui/src/widgets/code.rs
 symbol code_block
-lines 0 93
-hash a07e2aa176e811fd
+lines 0 99
+hash 4e000cfa52a1bc2d
 note The one code element in the GUI: a block of lines drawn from a cached grid by a custom element, with the hover, jump and peek gestures resolved to a (line, column) spot from the pointer. Per-row backgrounds and bars come from the two Marks closures, so the Source view's selection and anchor bars and the document's slice highlight share it. Width::Wide takes the full width rather than the grid's. It returns the Interaction and the spot under the pointer, whose column is None over the gutter. Shift+wheel over a block whose lines are wider than it scrolls it sideways (kept in the Model's across scrolls, pushed as ScrollAcross), and while it is scrolled a thin weak bar on its left edge shows that the start of the lines is cut off. Which gesture is peek and which is jump comes from keys::code_gesture, that is from the feature registry.
 
 step pwtsq2

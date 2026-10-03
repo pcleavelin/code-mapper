@@ -113,7 +113,7 @@ file crates/gui/src/model.rs
 symbol LineSelection
 lines 0 3
 hash 7818e3b13199fbc4
-note The Source view's selected lines, from the line clicked to the line shift-clicked; low and high order them.
+note The Source view's selected lines, from the line pressed to the line the drag reached; low and high order them.
 
 step 7o39d7
 order 21
@@ -171,8 +171,8 @@ parent w41rnw
 author ai
 file crates/gui/src/model.rs
 symbol new
-lines 0 41
-hash 5ced337f1b380152
+lines 0 42
+hash 06c1759d68111bf1
 note Every panel in its default state, the map's stamp taken from the store, the metrics at the starting font until the first frame measures the real one.
 
 step erlcdz
@@ -211,7 +211,7 @@ parent 8ftts9
 author ai
 file crates/gui/src/model.rs
 symbol impl Model
-lines 103 117
+lines 104 118
 hash 17458e228a233098
 note Name to slot and StepId to slot: how a slot is found again after the map changed.
 
@@ -331,7 +331,7 @@ parent 8ftts9
 author ai
 file crates/gui/src/model.rs
 symbol impl Model
-lines 44 50
+lines 45 51
 hash 25d42bb761237bdd
 note Slot to Tour and to Step, None past the end.
 
@@ -400,8 +400,8 @@ order 0
 author ai
 file crates/gui/src/model.rs
 symbol Model
-lines 0 30
-hash c3293445ef8a3d71
+lines 0 31
+hash c057ec91479a212a
 note All the state a view can see (gui-structure lists the fields). Views get &Model; apply gets &mut.
 
 step x5fqsj

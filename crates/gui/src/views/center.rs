@@ -1,20 +1,21 @@
 use domain::{Change, FileId, Line, RelativePath, StepChange, SymbolName, TourDiff};
-use ui::{Count, Label, Px, Run};
+use ui::{Count, Label, Px, Rect, Run, Scrollbar};
 
 use crate::action::Action;
 use crate::authoring::Authoring;
 use crate::field::Which;
 use crate::graph::{GraphAction, GraphFrame, draw_scene};
 use crate::ids;
-use crate::keys;
+use crate::keys::{self, LineGesture};
 use crate::model::{HIT_LIMIT, HitsShown, Model, StepKey, Tab, TourSlot};
 use crate::panels::{Direction, View};
 use crate::status::Status;
 use crate::text::{Counted, Noun, Tag};
 use crate::theme::{
-    FIELD, GREEN, LINE_FIELD, LINES_SELECTED, ORANGE, RED, ROW_EXTRA, SOURCE_GUESS, TEXT, WEAK,
+    EDGE_SCROLL, EDGE_SCROLL_MOST, FIELD, GREEN, LINE_FIELD, LINES_SELECTED, ORANGE, PIXEL, RED,
+    ROW_EXTRA, SOURCE_GUESS, TEXT, WEAK,
 };
-use crate::widgets::{Chosen, CodeBlock, Container, Frame, Marks, Scroller, Width};
+use crate::widgets::{Chosen, CodeBlock, Coded, Container, Frame, Marks, Scroller, Width};
 
 use super::authoring;
 
@@ -43,10 +44,46 @@ fn source_toolbar(model: &Model, frame: &mut Frame<'_>, path: &RelativePath) {
         LINE_FIELD,
     );
     frame.caption(vec![Run::new(
-        "click a line, shift-click to extend; double-click or ctrl-click an identifier to jump, alt-click to peek",
+        "click a line or drag over lines to select; double-click or ctrl-click an identifier to jump, alt-click to peek",
         WEAK,
     )]);
     frame.finish();
+}
+
+fn edge_scroll(vertical: Px, rect: Rect, row_height: Px) -> Px {
+    let most = row_height * EDGE_SCROLL_MOST;
+    if vertical < rect.top {
+        -EDGE_SCROLL.apply(rect.top - vertical).clamp(PIXEL, most)
+    } else if vertical >= rect.bottom() {
+        EDGE_SCROLL
+            .apply(vertical - rect.bottom() + PIXEL)
+            .clamp(PIXEL, most)
+    } else {
+        Px::ZERO
+    }
+}
+
+fn select_lines(model: &Model, frame: &mut Frame<'_>, coded: &Coded, scrollbar: Option<Scrollbar>) {
+    let pointer = frame.ui.pointer();
+    let on_scrollbar = scrollbar.is_some_and(|shown| shown.track.contains(pointer.mouse));
+    match (
+        keys::selects_line(coded.interaction, pointer),
+        coded.spot,
+        coded.dragged_to,
+    ) {
+        (Some(LineGesture::Press), Some(spot), _) if !on_scrollbar => {
+            frame.push(Action::SelectLine(spot.line, LineGesture::Press));
+        }
+        (Some(LineGesture::Drag), _, Some(line)) => {
+            frame.push(Action::SelectLine(line, LineGesture::Drag));
+        }
+        _ if model.line_grab.is_some()
+            && (coded.interaction.clicked() || !coded.interaction.down()) =>
+        {
+            frame.push(Action::ReleaseLines);
+        }
+        _ => {}
+    }
 }
 
 pub(super) fn source(model: &Model, frame: &mut Frame<'_>) {
@@ -61,7 +98,15 @@ pub(super) fn source(model: &Model, frame: &mut Frame<'_>) {
     let row_height = frame.row_height();
     let count = source.text().count();
     let lines = Px::new(i32::try_from(count.value()).unwrap_or(0));
+    let pointer = frame.ui.pointer();
+    let column = frame.ui.placement(id);
     let mut offset = model.scrolls.get(id);
+    if model.line_grab.is_some()
+        && frame.ui.interaction(ids::LINES.id()).down()
+        && let Some(column) = column
+    {
+        offset += edge_scroll(pointer.mouse.vertical, column.rect, row_height);
+    }
     if let Some(request) = model.nav.scroll_to() {
         let height = frame
             .ui
@@ -124,12 +169,9 @@ pub(super) fn source(model: &Model, frame: &mut Frame<'_>) {
                 },
             },
         );
-        let pointer = frame.ui.pointer();
-        if let Some(spot) = coded.spot
-            && let Some(extend) = keys::selects_line(coded.interaction, pointer)
-        {
-            frame.push(Action::SelectLine(spot.line, extend));
-        }
+        let scrollbar = column
+            .and_then(|placement| Scrollbar::of(placement.rect, placement.content.height, offset));
+        select_lines(model, frame, &coded, scrollbar);
     }
     frame.rows_after(total, &window, row_height, row_height);
     frame.finish();

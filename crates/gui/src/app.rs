@@ -352,7 +352,7 @@ impl platform::App for App {
         self.model.track_navigation();
         let busy = self.working() || self.shot.is_some();
         PlatformFrame {
-            redraw_after: if self.model.graph.gliding() {
+            redraw_after: if self.model.graph.gliding() || self.model.line_grab.is_some() {
                 ANIMATING
             } else if busy {
                 BUSY

@@ -140,7 +140,7 @@ impl Ratio {
         Self(u16::try_from(value).unwrap_or(HALF.0))
     }
 
-    fn apply(self, whole: Px) -> Px {
+    pub(crate) fn apply(self, whole: Px) -> Px {
         Px::of_wide(whole.wide() * i64::from(self.0) / i64::from(RATIO_WHOLE.0))
     }
 }

@@ -9,7 +9,7 @@ use crate::keys::{self, CodeGesture};
 use crate::model::Model;
 use crate::peek::{Hovering, Intent, Probe};
 use crate::status::Status;
-use crate::theme::{SCROLLED_MARK, SELECTED_BAR, WEAK, WHEEL_ACROSS};
+use crate::theme::{PIXEL, SCROLLED_MARK, SELECTED_BAR, WEAK, WHEEL_ACROSS};
 use crate::widgets::{Frame, TipAt};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -41,6 +41,7 @@ pub(crate) struct CodeSpot {
 pub(crate) struct Coded {
     pub(crate) interaction: Interaction,
     pub(crate) spot: Option<CodeSpot>,
+    pub(crate) dragged_to: Option<Line>,
 }
 
 struct RowMarks {
@@ -67,10 +68,29 @@ fn spot_at(mouse: ui::Point, rect: Rect, span: Span, cell: ui::Extent, across: P
 }
 
 impl Frame<'_> {
+    fn line_dragged_to(
+        &self,
+        interaction: Interaction,
+        id: Id,
+        span: Span,
+        across: Px,
+    ) -> Option<Line> {
+        interaction.drag()?;
+        let placement = self.ui.placement(id)?;
+        let shown = placement.rect.intersect(placement.clip);
+        let mouse = self.ui.pointer().mouse;
+        (!shown.is_empty()).then(|| {
+            let vertical = mouse.vertical.clamp(shown.top, shown.bottom() - PIXEL);
+            let inside = ui::Point::new(mouse.horizontal, vertical);
+            spot_at(inside, placement.rect, span, self.metrics.cell, across).line
+        })
+    }
+
     pub(crate) fn code_block(&mut self, model: &Model, block: &CodeBlock<'_>) -> Coded {
         let nothing = Coded {
             interaction: Interaction::default(),
             spot: None,
+            dragged_to: None,
         };
         let Some(source) = model.index.file(block.file) else {
             return nothing;
@@ -159,7 +179,12 @@ impl Frame<'_> {
                 None => {}
             }
         }
-        Coded { interaction, spot }
+        let dragged_to = self.line_dragged_to(interaction, block.id, span, across);
+        Coded {
+            interaction,
+            spot,
+            dragged_to,
+        }
     }
 
     pub(crate) fn hover(&mut self, model: &Model, file: FileId, line: Line, column: Column) {

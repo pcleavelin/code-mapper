@@ -62,7 +62,7 @@ parent z2vf49
 author ai
 file crates/gui/src/widgets/code.rs
 symbol code_block
-lines 74 91
+lines 75 92
 hash 5201244658bdb3d7
 note Trigger: a pointer over a character of a code block with no click gesture and the left button up is a hover.
 

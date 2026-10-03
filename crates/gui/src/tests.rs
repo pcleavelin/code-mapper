@@ -18,7 +18,7 @@ use crate::graph::Parentage;
 use crate::graph::build::{Built, CellSize, Rank, StepInfo};
 use crate::graph::{Button, GraphState, Node};
 use crate::ids::{self, CONTROLS};
-use crate::keys::{Extend, Walk};
+use crate::keys::{LineGesture, Walk};
 use crate::model::{LineSelection, Model, Readable, StepKey, StepSlot, Tab, TourSlot, ViewFlag};
 use crate::nav::Scrolling;
 use crate::palette::{Palette, commands};
@@ -264,6 +264,38 @@ fn a_jump_within_one_file_is_a_place() {
 }
 
 #[test]
+fn dragging_over_lines_selects_from_the_pressed_line_to_the_pointer() {
+    let mut model = model();
+    model.select_line(Line::new(3), LineGesture::Press);
+    model.select_line(Line::new(7), LineGesture::Drag);
+    model.select_line(Line::new(5), LineGesture::Drag);
+    assert_eq!(
+        model.nav.lines(),
+        Some(LineSelection {
+            from: Line::new(3),
+            to: Line::new(5),
+        })
+    );
+    model.select_line(Line::new(1), LineGesture::Drag);
+    let upward = model.nav.lines().unwrap();
+    assert_eq!((upward.low(), upward.high()), (Line::new(1), Line::new(3)));
+}
+
+#[test]
+fn a_drag_no_selecting_press_began_leaves_the_selection() {
+    let mut model = model();
+    let file = model
+        .index
+        .find_file(&RelativePath::new("src/main.rs"))
+        .unwrap();
+    model.select_line(Line::new(3), LineGesture::Press);
+    model.release_lines();
+    model.open_line(file, Line::new(5));
+    model.select_line(Line::new(9), LineGesture::Drag);
+    assert_eq!(model.nav.lines(), Some(LineSelection::one(Line::new(5))));
+}
+
+#[test]
 fn back_restores_the_scroll_the_place_was_left_at() {
     let mut model = model();
     model.select_tour(TOUR);
@@ -440,7 +472,7 @@ fn adding_the_focused_symbol_hangs_it_under_the_target() {
 fn adding_selected_source_lines_uses_the_same_control() {
     let mut app = app();
     app.apply(Action::OpenTour(TOUR, Tab::Source));
-    app.model.select_line(Line::new(1), Extend::Replace);
+    app.model.select_line(Line::new(1), LineGesture::Press);
     app.apply(Action::Authoring(Authoring::AddOffered));
     assert_eq!(app.model.step_count(TOUR), Count::new(5));
     assert!(

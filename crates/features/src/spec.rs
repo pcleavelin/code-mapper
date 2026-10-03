@@ -92,7 +92,6 @@ impl Chord {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Gesture {
-    ShiftClick,
     ControlClick,
     AltClick,
     DoubleClick,

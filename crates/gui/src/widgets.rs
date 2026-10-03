@@ -25,7 +25,7 @@ use crate::theme::{
 use crate::field::Fields;
 use crate::ids;
 use crate::wizard::Tick;
-pub(crate) use code::{CodeBlock, Marks, Width};
+pub(crate) use code::{CodeBlock, Coded, Marks, Width};
 
 #[derive(Clone, Debug)]
 pub(crate) struct TipAt {

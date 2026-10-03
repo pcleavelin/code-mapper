@@ -218,7 +218,7 @@ author ai
 file crates/gui/src/tests.rs
 symbol adding_selected_source_lines_uses_the_same_control
 lines 0 11
-hash 7168156ac85e9469
+hash 45244930a1add0f3
 note On the Source tab, AddOffered adds the selected line and the step count grows.
 
 step ea3gtj
