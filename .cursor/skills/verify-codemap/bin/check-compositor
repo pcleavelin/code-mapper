@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# Proves the helper starts weston with XDG_RUNTIME_DIR set, and that GUI runs do not share a layout.
+set -euo pipefail
+
+BIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HELPER="$BIN_DIR/control-codemap"
+SKILL_DIR="$(cd "$BIN_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$SKILL_DIR/../../.." && pwd)"
+CODEMAP_BIN="${CODEMAP_BIN:-$REPO_ROOT/target/release/codemap}"
+
+die() { echo "check-compositor: $*" >&2; exit 1; }
+
+[[ -x "$HELPER" ]] || die "missing $HELPER"
+[[ -x "$CODEMAP_BIN" ]] || die "missing binary at $CODEMAP_BIN — run: cargo build --release -p codemap"
+
+RUN="check-compositor-$$"
+DIR="/tmp/codemap-verify-$RUN"
+cleanup() {
+  CODEMAP_VERIFY_RUN="$RUN" CODEMAP_BIN="$CODEMAP_BIN" "$HELPER" cleanup >/dev/null 2>&1 || true
+}
+trap cleanup EXIT
+
+# The parent environment has no runtime dir. Weston must still start.
+# The failure this catches is exporting XDG_RUNTIME_DIR only after weston is launched.
+set +e
+env -u XDG_RUNTIME_DIR -u WAYLAND_DISPLAY -u CODEMAP_LAYOUT \
+  CODEMAP_VERIFY_RUN="$RUN" \
+  CODEMAP_VERIFY_ROOT="$REPO_ROOT" \
+  CODEMAP_BIN="$CODEMAP_BIN" \
+  "$HELPER" launch >"$DIR.launch.out" 2>"$DIR.launch.err"
+launch_code=$?
+set -e
+log="$DIR/state/weston.log"
+if [[ "$launch_code" -ne 0 ]] || grep -q 'XDG_RUNTIME_DIR is not set' "$log" 2>/dev/null; then
+  cat "$DIR.launch.err" >&2 || true
+  cat "$log" >&2 || true
+  die "weston did not receive XDG_RUNTIME_DIR. Its log says \"fatal: environment variable XDG_RUNTIME_DIR is not set\" when the variable is missing from the weston process. Pass XDG_RUNTIME_DIR on the weston command line before start. Exporting it afterwards, in export_gui_env, is too late."
+fi
+grep -q 'ready=yes' "$DIR.launch.out" || die "launch did not print ready=yes"
+doctor="$(CODEMAP_VERIFY_RUN="$RUN" CODEMAP_BIN="$CODEMAP_BIN" "$HELPER" doctor)"
+grep -q 'compositor=up' <<<"$doctor" || die "doctor did not report compositor=up"
+grep -q 'compositor_owned=yes' <<<"$doctor" || die "doctor did not report compositor_owned=yes"
+
+panels_of() {
+  local file="$1"
+  grep '^DUMP panels' "$file" | head -n 1
+}
+
+gui() {
+  local script="$1"
+  local err="$2"
+  shift 2
+  env -u XDG_RUNTIME_DIR -u WAYLAND_DISPLAY \
+    CODEMAP_VERIFY_RUN="$RUN" \
+    CODEMAP_VERIFY_ROOT="$REPO_ROOT" \
+    CODEMAP_BIN="$CODEMAP_BIN" \
+    "$@" \
+    "$HELPER" gui --script "$script" >"${err}.out" 2>"$err"
+}
+
+default_a="$DIR/default-a.txt"
+default_b="$DIR/default-b.txt"
+split="$DIR/split.txt"
+printf 'wait 1\ndump\nquit\n' >"$default_a"
+cp "$default_a" "$default_b"
+printf 'wait 1\ndump\nclick-id split-right/0\nwait 2\ndump\nquit\n' >"$split"
+
+gui "$default_a" "$DIR/default-a.err"
+gui "$split" "$DIR/split.err" CODEMAP_LAYOUT="$DIR/explicit.layout"
+gui "$default_b" "$DIR/default-b.err"
+
+for err in "$DIR/default-a.err" "$DIR/split.err" "$DIR/default-b.err"; do
+  if grep -q '^script:' "$err"; then
+    cat "$err" >&2
+    die "script failed ($err)"
+  fi
+  if grep -q 'ZINK' "$err"; then
+    cat "$err" >&2
+    die "Mesa tried the ZINK EGL path. export LIBGL_ALWAYS_SOFTWARE=1 for the GUI process. A headless run has no DRM device, and the warning is what agents read as a failure."
+  fi
+  grep -q '^DUMP panels' "$err" || die "no DUMP panels in $err"
+done
+
+first="$(panels_of "$DIR/default-a.err")"
+second="$(panels_of "$DIR/default-b.err")"
+[[ -n "$first" && "$first" == "$second" ]] || die "two GUI scripts in one run did not both open the default layout. first=[$first] second=[$second]. Leave CODEMAP_LAYOUT unset unless the caller set it. A default file under the run state is loaded and saved, so the next script inherits the previous panels."
+
+[[ -s "$DIR/explicit.layout" ]] || die "an explicit CODEMAP_LAYOUT was not written. The helper must still forward CODEMAP_LAYOUT when the caller sets it."
+
+echo "check-compositor: ok run=$RUN"
