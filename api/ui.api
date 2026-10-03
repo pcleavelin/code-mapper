@@ -216,6 +216,7 @@ tree::pub fn visible_center(self) -> Option<Point>
 tree::pub fn overflow(self, axis: Axis) -> Px
 tree::pub fn scrollbar(self, axis: Axis, scroll: Px) -> Option<Scrollbar>
 tree::pub struct Interaction { signals: Signals, drag: Option<Point>, wheel: Vector, pinch: Pinch, rect: Option<Rect>, }
+tree::pub const fn when_aimed(self) -> Self
 tree::pub const fn hovered(self) -> bool
 tree::pub const fn clicked(self) -> bool
 tree::pub const fn double_clicked(self) -> bool
@@ -224,7 +225,7 @@ tree::pub const fn drag(self) -> Option<Point>
 tree::pub const fn wheel(self) -> Vector
 tree::pub const fn pinch(self) -> Pinch
 tree::pub const fn rect(self) -> Option<Rect>
-tree::pub struct Ui { roots: Vec<Element>, stack: Vec<Element>, previous: BTreeMap<Id, Placement>, hot: Option<Id>, active: Option<Id>, last_mouse: Point, scroll_drag: Option<ScrollGrab>, pointer: Pointer, size: Extent, capture: Capture, }
+tree::pub struct Ui { roots: Vec<Element>, stack: Vec<Element>, previous: BTreeMap<Id, Placement>, hot: Option<Id>, active: Option<Id>, last_mouse: Point, aim: Aim, scroll_drag: Option<ScrollGrab>, pointer: Pointer, size: Extent, capture: Capture, }
 tree::pub const fn capture(&mut self, capture: Capture)
 tree::pub fn begin(&mut self, input: &Input)
 tree::pub const fn hot(&self) -> Option<Id>

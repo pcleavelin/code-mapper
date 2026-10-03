@@ -717,7 +717,15 @@ scroll document 0
 wait 2
 click-id del/0
 wait 3
+click-id del/0
+wait 3
 dump
+shot {shots}/clicked-twice.png
+scroll document 2000
+wait 2
+hover-id step/4
+scroll document 0
+wait 2
 click-id doc-delete
 wait 3
 dump

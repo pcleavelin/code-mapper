@@ -6,7 +6,7 @@ use crate::canvas::{Canvas, DrawList, Measure};
 use crate::color::Color;
 use crate::geometry::{Axis, Count, Extent, Point, Px, Rect, Vector};
 use crate::id::Id;
-use crate::input::{Button, Input, Pinch, Pointer};
+use crate::input::{Button, Buttons, Input, Pinch, Pointer};
 use crate::layout::{Align, Layout, ScrollAxes, Sides, Size, Style};
 use crate::text::{Label, Text, Wrap};
 
@@ -135,10 +135,18 @@ impl Signals {
     const CLICKED: Self = Self(2);
     const DOUBLE_CLICKED: Self = Self(4);
     const DOWN: Self = Self(8);
+    const AIMED: Self = Self(16);
+    const POINTER_SIGNALS: Self =
+        Self(Self::HOVERED.0 | Self::CLICKED.0 | Self::DOUBLE_CLICKED.0 | Self::DOWN.0);
 
     #[must_use]
     const fn when(self, on: bool, bit: Self) -> Self {
         if on { Self(self.0 | bit.0) } else { self }
+    }
+
+    #[must_use]
+    const fn without(self, bits: Self) -> Self {
+        Self(self.0 & !bits.0)
     }
 
     const fn contains(self, bit: Self) -> bool {
@@ -156,6 +164,18 @@ pub struct Interaction {
 }
 
 impl Interaction {
+    #[must_use]
+    pub const fn when_aimed(self) -> Self {
+        if self.signals.contains(Signals::AIMED) {
+            self
+        } else {
+            Self {
+                signals: self.signals.without(Signals::POINTER_SIGNALS),
+                ..self
+            }
+        }
+    }
+
     pub const fn hovered(self) -> bool {
         self.signals.contains(Signals::HOVERED)
     }
@@ -634,6 +654,38 @@ struct ScrollGrab {
     grab: Px,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+enum Aiming {
+    #[default]
+    Still,
+    Moved,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+struct Aim {
+    kept: Aiming,
+    now: Aiming,
+}
+
+impl Aim {
+    fn advance(self, input: &Input, last_mouse: Point) -> Self {
+        let pointer = &input.pointer;
+        let now = if pointer.mouse == last_mouse {
+            self.kept
+        } else {
+            Aiming::Moved
+        };
+        let acted = pointer.pressed != Buttons::NONE
+            || !input.keys.is_empty()
+            || pointer.wheel != Vector::ZERO
+            || pointer.pinch != Pinch::ZERO;
+        Self {
+            kept: if acted { Aiming::Still } else { now },
+            now,
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct Ui {
     roots: Vec<Element>,
@@ -642,6 +694,7 @@ pub struct Ui {
     hot: Option<Id>,
     active: Option<Id>,
     last_mouse: Point,
+    aim: Aim,
     scroll_drag: Option<ScrollGrab>,
     pointer: Pointer,
     size: Extent,
@@ -658,6 +711,7 @@ impl Ui {
         self.stack.clear();
         self.size = input.size;
         self.pointer = input.pointer;
+        self.aim = self.aim.advance(input, self.last_mouse);
         let mouse = input.pointer.mouse;
         self.hot = self
             .previous
@@ -711,7 +765,8 @@ impl Ui {
                     hovered && pointer.clicks.is_double(Button::Left),
                     Signals::DOUBLE_CLICKED,
                 )
-                .when(active && left_down, Signals::DOWN),
+                .when(active && left_down, Signals::DOWN)
+                .when(hovered && self.aim.now == Aiming::Moved, Signals::AIMED),
             drag: (active && left_down && !left_pressed).then(|| pointer.mouse - self.last_mouse),
             wheel: if hovered { pointer.wheel } else { Vector::ZERO },
             pinch: if hovered { pointer.pinch } else { Pinch::ZERO },

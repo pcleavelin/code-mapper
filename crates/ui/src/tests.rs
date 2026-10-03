@@ -3,9 +3,9 @@ use std::rc::Rc;
 use strum::VariantArray;
 
 use crate::{
-    Axis, Button, Canvas, Cell, Color, Command, Coordinate, Count, Extent, FontSize, Glyph, Grid,
-    Icon, Id, Input, Key, Kind, Label, Layout, Measure, Mods, Point, Press, Px, Rect, Run, Scale,
-    ScrollAxes, Scrollbar, Sides, Style, Text, Ui, Vector, Wrap,
+    Axis, Button, Buttons, Canvas, Cell, Color, Command, Coordinate, Count, Extent, FontSize,
+    Glyph, Grid, Icon, Id, Input, Key, Kind, Label, Layout, Measure, Mods, Pinch, Point, Press, Px,
+    Rect, Run, Scale, ScrollAxes, Scrollbar, Sides, Style, Text, Ui, Vector, Wrap,
 };
 
 struct Cells;
@@ -895,4 +895,58 @@ fn clipping_only_trailing_spaces_adds_no_ellipsis() {
     ui.close();
     ui.end(&mut Cells);
     assert_eq!(texts_drawn(&mut ui), ["(0, 0) ab    "]);
+}
+
+fn aimed_click(ui: &mut Ui, frame: &Input) -> bool {
+    ui.begin(frame);
+    let interaction = ui.leaf(
+        Kind::None,
+        Layout::row().width(px(50)).height(px(50)),
+        Style::default(),
+        Some(Id::new("delete")),
+    );
+    ui.end(&mut Cells);
+    interaction.when_aimed().clicked()
+}
+
+#[test]
+fn a_second_click_without_moving_the_pointer_is_not_aimed_until_it_moves() {
+    let mut ui = Ui::default();
+    let mut frame = input(100, 100);
+    frame.pointer.mouse = Point::new(px(10), px(10));
+    assert!(!aimed_click(&mut ui, &frame));
+    frame.pointer.pressed.insert(Button::Left);
+    assert!(aimed_click(&mut ui, &frame));
+    assert!(!aimed_click(&mut ui, &frame));
+    frame.pointer.mouse = Point::new(px(11), px(10));
+    assert!(aimed_click(&mut ui, &frame));
+}
+
+#[test]
+fn a_key_a_wheel_turn_or_a_pinch_leaves_the_pointer_unaimed() {
+    let mut ui = Ui::default();
+    let mut frame = input(100, 100);
+    frame.pointer.mouse = Point::new(px(10), px(10));
+    frame.keys.push(Press {
+        key: Key::Enter,
+        mods: Mods::default(),
+    });
+    assert!(!aimed_click(&mut ui, &frame));
+    frame.keys.clear();
+    frame.pointer.pressed.insert(Button::Left);
+    assert!(!aimed_click(&mut ui, &frame));
+    frame.pointer.pressed = Buttons::NONE;
+    frame.pointer.mouse = Point::new(px(12), px(10));
+    frame.pointer.wheel = Vector::new(Coordinate::ZERO, Coordinate::new(-3.0));
+    assert!(!aimed_click(&mut ui, &frame));
+    frame.pointer.wheel = Vector::ZERO;
+    frame.pointer.pressed.insert(Button::Left);
+    assert!(!aimed_click(&mut ui, &frame));
+    frame.pointer.pressed = Buttons::NONE;
+    frame.pointer.mouse = Point::new(px(14), px(10));
+    frame.pointer.pinch = Pinch::new(0.1);
+    assert!(!aimed_click(&mut ui, &frame));
+    frame.pointer.pinch = Pinch::ZERO;
+    frame.pointer.pressed.insert(Button::Left);
+    assert!(!aimed_click(&mut ui, &frame));
 }

@@ -194,9 +194,9 @@ parent 2yp2r2
 author ai
 file crates/gui/src/widgets.rs
 symbol danger_button
-lines 0 15
-hash 19610956da0a1a95
-note A small button for removing something (a tour, a step): weak text on the field colour at rest, and a red border and dark red background under the pointer, so a destructive press looks different from the buttons beside it.
+lines 0 17
+hash d09d07a637e3210f
+note A small button for removing something (a tour, a step): weak text on the field colour at rest, and a red border and dark red background under the pointer, so a destructive press looks different from the buttons beside it. Both its look and its answer go through Interaction::when_aimed: after a delete re-lays the document and the next step's delete slides under the resting pointer, it stays unlit and a second click does nothing until the pointer moves.
 
 step bwqb9z
 order 37

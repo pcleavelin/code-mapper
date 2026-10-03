@@ -3,7 +3,7 @@ tour feature-remove-step
 kind flow
 author ai
 group features/gui
-note The 'delete' button on a step header removes that step from the tour being read; the steps under it move up to its parent. The reader reaches for it to undo a wrongly added step from the document, without switching to the CLI (deleting is in the document). The status bar names what was removed, the selection is cleared, and the map is marked unsaved until ctrl+s or the save button writes it. Steps shown inline under a link have no delete button.
+note The 'delete' button on a step header removes that step from the tour being read; the steps under it move up to its parent. The reader reaches for it to undo a wrongly added step from the document, without switching to the CLI (deleting is in the document). The status bar names what was removed, the selection is cleared, and the map is marked unsaved until ctrl+s or the save button writes it. Steps shown inline under a link have no delete button. There is no undo, so a delete button that arrives under a resting pointer because the document re-laid out does not fire until the pointer moves.
 
 step 2xofld
 order 3
@@ -33,7 +33,7 @@ file crates/gui/src/views/document.rs
 symbol step_header
 lines 89 95
 hash a2f540b720aad8de
-note Trigger: REMOVE_STEP, a danger button (red under the pointer) at the far right of the header, drawn only for steps of the tour being read (not inline occurrences), queues RemoveStep.
+note Trigger: REMOVE_STEP, a danger button (red under the pointer) at the far right of the header, drawn only for steps of the tour being read (not inline occurrences), queues RemoveStep. Its click only counts when the pointer moved since the last click (danger_button), so clicking twice on a resting pointer deletes one step, not the one that slid under it.
 
 step g1wlyd
 order 1

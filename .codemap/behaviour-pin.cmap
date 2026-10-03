@@ -200,9 +200,9 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol delete
-lines 0 31
-hash 9aa9684254ed9f06
-note Deleting a step and a whole tour from the document, then saving; the after command shows what the map lost.
+lines 0 39
+hash 774df6fbf4acce9c
+note Deleting a step and a whole tour from the document, then saving; step 0's delete is clicked twice without the pointer moving, and hover-id step/4 fails the script if the second click deleted the step that slid under the pointer; the after command shows what the map lost.
 
 step cylef2
 order 54

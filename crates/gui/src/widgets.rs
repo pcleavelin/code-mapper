@@ -493,19 +493,21 @@ impl Frame<'_> {
 
     pub(crate) fn danger_button(&mut self, text: impl Into<Label>, target: Target) -> Interaction {
         let id = target.id();
-        let hovered = self.ui.interaction(id).hovered();
+        let hovered = self.ui.interaction(id).when_aimed().hovered();
         let size = self.metrics.font;
-        self.ui.leaf(
-            text_kind(
-                vec![Run::new(text, if hovered { TEXT } else { WEAK })],
-                size,
-                Wrap::None,
-            ),
-            Layout::row().padding(SMALL_BUTTON_PADDING),
-            Style::background(if hovered { DANGER_HOVER } else { FIELD })
-                .border(Sides::ALL, if hovered { RED } else { BORDER }),
-            Some(id),
-        )
+        self.ui
+            .leaf(
+                text_kind(
+                    vec![Run::new(text, if hovered { TEXT } else { WEAK })],
+                    size,
+                    Wrap::None,
+                ),
+                Layout::row().padding(SMALL_BUTTON_PADDING),
+                Style::background(if hovered { DANGER_HOVER } else { FIELD })
+                    .border(Sides::ALL, if hovered { RED } else { BORDER }),
+                Some(id),
+            )
+            .when_aimed()
     }
 
     pub(crate) fn small_button_room(&mut self, cells: Cells) {
