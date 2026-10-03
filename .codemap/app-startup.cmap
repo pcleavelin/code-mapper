@@ -141,9 +141,9 @@ parent dosvcv
 author ai
 file crates/gui/src/app.rs
 symbol new
-lines 0 51
-hash 12566b3766b17069
-note Builds the whole application state before the first frame. The order matters: index first, then the map resolved against it, then the Model that holds both, with its panel tree from the user's layout file (none for a script or screenshot run unless CODEMAP_LAYOUT names one) and the Services with their watcher, then the first tour selected so the document, steps list, Source view, References panel and graph all have something in them, then the language servers and the parent map. A map that did not read leaves its error in the status line; otherwise the status line says how many files and symbols were indexed.
+lines 0 57
+hash a2c33eb6c77b0568
+note Builds the whole application state before the first frame. The order matters: index first, then the map resolved against it, then the Model that holds both. A saved layout restores its panels. With no saved layout the first screen is the welcome board, one panel and no tabs, except a scripted run, which keeps the working layout unless CODEMAP_OPENING names board. Then the Services with their watcher, the first tour selected so the document, steps list, Source view, References panel and graph all have something in them, then the language servers and the parent map. A map that did not read leaves its error in the status line; otherwise the status line says how many files and symbols were indexed.
 
 step t4wzoi
 order 5
@@ -181,9 +181,19 @@ parent pucdnk
 author ai
 file crates/gui/src/model.rs
 symbol new
-lines 0 41
-hash caeb1749f6c5f050
+lines 0 42
+hash b64ee91c99b8dcf6
 note The Model is built around the index, the map and its store, with every panel in its default state (Nav on the Tour tab, the default panel tree, empty fields). The map's stamp is taken here, so the once-a-second disk poll starts out knowing the map as it was read.
+
+step xg2fnx
+order 19
+parent pucdnk
+author ai
+file crates/gui/src/app.rs
+symbol opening_shape
+lines 0 8
+hash 51b35f19f2f22240
+note CODEMAP_OPENING names the first screen. A scripted run with the variable unset keeps the working layout, so the existing scenarios still open on the tabs. Anything else with no saved layout opens the board.
 
 step yzu1mn
 order 6

@@ -488,11 +488,18 @@ pub(crate) fn first_difference(left: &str, right: &str) -> usize {
         .unwrap_or(left.lines().count().min(right.lines().count()))
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum FirstScreen {
+    Workspace,
+    Welcome,
+}
+
 pub(crate) fn gui(
     bin: &Path,
     root: &Path,
     name: &str,
     script: &str,
+    first: FirstScreen,
     hook: &mut dyn FnMut(&str),
 ) -> String {
     let dir = root.parent().unwrap();
@@ -504,11 +511,16 @@ pub(crate) fn gui(
         script.replace("{shots}", &shots.display().to_string().replace('\\', "/")),
     )
     .unwrap();
-    let mut child = Command::new(bin)
+    let mut command = Command::new(bin);
+    command
         .arg(root)
         .env("PATH", tool_path())
         .env("CODEMAP_SCRIPT", &file)
-        .env("JJ_CONFIG", dir.join("jj.toml"))
+        .env("JJ_CONFIG", dir.join("jj.toml"));
+    if first == FirstScreen::Welcome {
+        command.env("CODEMAP_OPENING", "board");
+    }
+    let mut child = command
         .stdout(Stdio::null())
         .stderr(Stdio::piped())
         .spawn()

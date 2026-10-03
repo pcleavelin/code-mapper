@@ -16,6 +16,7 @@ use crate::palette::{Palette, PaletteAction};
 use crate::panels::{BranchId, Direction, DropTarget, Ratio, View};
 use crate::peek::{HoverStep, Intent, Peek, Probe, Probing, WantedDefinition};
 use crate::status::Status;
+use crate::welcome::WelcomeAct;
 use crate::work::Request;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -89,6 +90,7 @@ pub(crate) enum Action {
     WalkWhenIdle(Walk),
     GraphWalk(Heading),
     Graph(GraphAction),
+    Welcome(WelcomeAct),
 }
 
 impl App {
@@ -190,13 +192,17 @@ impl App {
             }
             Action::Palette(action) => self.palette(action),
             Action::Type(which, edits, typed) => self.typed(which, &edits, &typed),
-            Action::WalkWhenIdle(walk) => {
-                if model.fields.focused().is_none() {
-                    model.walk(walk);
-                }
-            }
+            Action::WalkWhenIdle(walk) => self.walk_when_idle(walk),
             Action::GraphWalk(heading) => self.graph_walk(heading),
             Action::Graph(action) => model.graph.apply(action),
+            Action::Welcome(act) => self.welcome(act),
+        }
+        self.model.follow_welcome();
+    }
+
+    fn walk_when_idle(&mut self, walk: Walk) {
+        if self.model.fields.focused().is_none() {
+            self.model.walk(walk);
         }
     }
 
@@ -374,6 +380,7 @@ impl App {
                 model.disk.warned = Warned::Quiet;
                 model.disk.stamp = model.store.stamp();
                 model.status = Status::Saved;
+                model.welcome.note_saved();
             }
             Err(error) => {
                 model.status = Status::SaveFailed(Label::new(match &error {

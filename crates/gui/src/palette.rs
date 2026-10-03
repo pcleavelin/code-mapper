@@ -13,6 +13,7 @@ use crate::keys::{PaletteKey, Walk};
 use crate::model::{Model, StepKey, Tab, TourSlot};
 use crate::nav::Scrolling;
 use crate::panels::{Direction, View};
+use crate::welcome::WelcomeAct;
 
 pub(crate) const PALETTE_LIMIT: Count = Count::new(50);
 pub(crate) const PALETTE_ROWS: Count = Count::new(16);
@@ -72,6 +73,7 @@ pub(crate) enum PaletteCommand {
     Turn,
     Split(Direction),
     AddStep,
+    Guide,
 }
 
 pub(crate) const fn commands(feature: Feature) -> &'static [PaletteCommand] {
@@ -93,6 +95,7 @@ pub(crate) const fn commands(feature: Feature) -> &'static [PaletteCommand] {
         Feature::AutoLayout => &[PaletteCommand::AutoLayout],
         Feature::FitGraph => &[PaletteCommand::Fit, PaletteCommand::OneToOne],
         Feature::TurnGraph => &[PaletteCommand::Turn],
+        Feature::Welcome => &[PaletteCommand::Guide],
         Feature::SplitPanel => &[
             PaletteCommand::Split(Direction::Right),
             PaletteCommand::Split(Direction::Down),
@@ -321,7 +324,7 @@ impl Query {
     }
 }
 
-fn chord_label(chord: Chord) -> Label {
+pub(crate) fn chord_label(chord: Chord) -> Label {
     let modifier = match chord.modifiers() {
         Modifiers::Plain => "",
         Modifiers::Control => "ctrl+",
@@ -570,6 +573,7 @@ impl Model {
                 PaletteCommand::Fit => vec![Action::Graph(GraphAction::WantFit)],
                 PaletteCommand::OneToOne => vec![Action::Graph(GraphAction::OneToOne)],
                 PaletteCommand::Turn => vec![Action::Graph(GraphAction::Turn)],
+                PaletteCommand::Guide => vec![Action::Welcome(WelcomeAct::StartGuide)],
                 PaletteCommand::Split(direction) => {
                     let shown = View::of_tab(self.nav.tab());
                     self.panels

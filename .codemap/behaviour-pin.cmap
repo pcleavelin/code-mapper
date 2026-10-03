@@ -12,7 +12,7 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol gui_scenarios
 lines 0 4
-hash b8c0240ab926d5e1
+hash e34e3e7d8e9ccbb3
 note The GUI scenarios, listed once in the gui_scenarios macro that gui.rs and parity.rs both expand. Each settles with SETTLE first; its stderr and the output of its after commands go to ran, which fails on a crash or a script error.
 
 step 1wrmiq
@@ -51,8 +51,8 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol graph
-lines 0 100
-hash 7761fe080a562c29
+lines 0 101
+hash 443530a29df8f224
 note The graph: the fitted start, a node's callees and hide buttons, an off-tour node, shift-wheel and wheel, dragging a node, auto layout, ctrl-wheel zoom, fit, 1:1, panning, and a node's context and no-context buttons; then, after clicking an off-tour node, the arrow keys down, left and right walking between nodes (a dump after each, once the glide has had time to land), and the graph-turn button laying the tree out top to bottom (turned.png); last, a node's source button opening its file in the Source view.
 
 step 5147ql
@@ -71,8 +71,8 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol source
-lines 0 59
-hash 42bc7a916429359a
+lines 0 60
+hash 7c7ba34729bee8ed
 note The Source view: opening a file at a line, a shift-click range selection added to startup with 'add step' (checked by the after command), goto-line with good, past-the-end and non-numeric input, the tooltip, ctrl-click, and back and forward by button and by key.
 
 step 62zoqn
@@ -190,8 +190,8 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol delete
-lines 0 30
-hash 00745a5e865683a5
+lines 0 31
+hash 9aa9684254ed9f06
 note Deleting a step and a whole tour from the document, then saving; the after command shows what the map lost.
 
 step cylef2
@@ -229,8 +229,8 @@ order 21
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol play
-lines 0 53
-hash 6f38c61b20cb1ad3
+lines 0 60
+hash a16765296f4631e7
 note Plays a GUI scenario and returns its stderr and the output of its after commands. A script line aiming at <<prefix>> is resolved first by a probe run of the script up to that line, on a fresh fixture, which ends with a dump of the frame that line runs in, reading the rectangle from that dump (or an earlier rect line); the final run then starts from the same state. <<prefix>> stands for the centre of the last stderr line starting with prefix, <<prefix|dx,dy>> for a point offset from its top-left corner. Offsets are pixels: the scripts assume the fixed 1600x1000 script window at scale 1, 16 px rows. A script: line in the final run's stderr is left in the returned text; ran fails the scenario on it, so a missed gesture cannot pass. The screenshots land in shots(name).
 
 step g4vgzv
@@ -287,8 +287,8 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol Scenario
-lines 0 5
-hash 08ef493f4255ff87
+lines 0 6
+hash 34ab1c7c96f0bf2e
 note A GUI scenario: its setup (a fixture root, or Missing when a tool is not on PATH), the script, a hook that sees every stderr line (a rect <marker> line in the script is its cue), and after, CLI commands run once the GUI quits with their output appended to the stderr before both go to ran.
 
 step h9vmup
@@ -334,8 +334,8 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol peek
-lines 0 47
-hash d5d86570cae28ee4
+lines 0 48
+hash 05db4647ef887671
 note The tooltip on hover, the peek on alt-click and its go and close buttons, jump to definition on ctrl-click, a double-click selection, a peek on a line, and the xrefs rows.
 
 step i0b52u
@@ -363,8 +363,8 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol layout
-lines 0 75
-hash 32836e5f48cbd81a
+lines 0 76
+hash f77ba47092b925dd
 note The panel tree: resizing the left split by its divider, splitting the centre and picking the Source by typing, splitting that down and picking References by clicking (its old panel closes), dragging Console onto the left edge of the Tours panel, a click on a tab that moves nothing, a drag released over the top bar that cancels, closing a panel, and a tab command that brings the Source back into a panel.
 
 step j8h125
@@ -403,8 +403,8 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol document
-lines 0 93
-hash cc090d7e238ab9b4
+lines 0 94
+hash 7111c34be8557151
 note The document: scrolling, selecting a step, whole-symbol and context toggles, hide and collapse, arrow keys, the breadcrumb, hide and show all code, collapse and expand all, wheel scrolling, the steps list and the jump to the graph.
 
 step k23duj
@@ -461,8 +461,8 @@ parent hdfzdl
 author ai
 file crates/codemap/tests/parity.rs
 symbol repo_at
-lines 0 72
-hash 270744192ade251e
+lines 0 73
+hash bf2242f32d20db49
 note The repo as a second fixture: files, symbols, roots, coverage, uncovered, stale, tours, a search, notes, a tree, callers and callees, then every tour printed; then a GUI script opens the document, a long tour scrolled, the graph and the graph fitted, and the symbol, file and Source views, all photographed.
 
 step o4w5dz
@@ -471,8 +471,8 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol links
-lines 0 57
-hash 63b48660d0b01e0b
+lines 0 58
+hash fc8e8fcd1bd49fa4
 note Tour groups and links: collapsing and expanding a group in the tours list (absent checks that a closed group lists none of its tours), a linked step inlined in the document and the code inside it, the linked-from row, collapsing the link again, and following the link.
 
 step q0lbe5
@@ -481,8 +481,8 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol panels
-lines 0 100
-hash fb457068b66b2987
+lines 0 101
+hash be7946397dbb294e
 note The side panels and console: the symbol list and its filter, the file tree and a folder toggle, the tours list, search and a hit, commands typed into the console (with a bad one and clear), a new tour from the Tours tab's form, an 'add step' from the Source view, and ctrl-s to save.
 
 step rlmca4
@@ -520,8 +520,8 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol diff
-lines 0 31
-hash 83399d22894e4df2
+lines 0 32
+hash 1e3c9b24e9b6632f
 note The diff tab against a parent revision: the rows, following a row to its tour, and refresh.
 
 step vtkgzt
@@ -539,8 +539,8 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol reload
-lines 0 22
-hash 317c21afeb0c1ebf
+lines 0 23
+hash 789f57920628cf50
 note Live reload: a source edit and a map edit made from outside while the window is open, each followed by the reloaded view.
 
 step wuv6gp
@@ -579,8 +579,8 @@ parent dkjein
 author ai
 file crates/codemap/tests/common/mod.rs
 symbol gui
-lines 0 54
-hash 17315ac351ee572e
+lines 0 60
+hash a493c198aecb8962
 note Runs the window with CODEMAP_SCRIPT and reads stderr line by line as it arrives, so a scenario's hook can act at a line the script marks; that is how live reload is pinned. {shots} in a script stands for the directory the screenshots go to. A window that has not quit after 90 s is killed and fails the test, and so does a non-zero exit.
 
 step yagdfh

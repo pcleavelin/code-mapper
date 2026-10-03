@@ -134,8 +134,8 @@ parent rcazsr
 author ai
 file crates/gui/src/widgets.rs
 symbol shape
-lines 0 88
-hash f0200c1981f9d39b
+lines 0 97
+hash ab54ab4e2ec3f7ed
 note The one match that turns a Container into its layout, style and fixed id: the paddings, gaps and colours from theme, the accent bar on the left of a selected step row or code column, the panel header's TAB_STRIP background with no padding (its tabs carry their own), the id body the panel tree is laid out from, the picker's and the palette box's ids, and the id a StepColumn carries.
 
 step aidqqn
@@ -345,9 +345,9 @@ order 1
 author ai
 file crates/gui/src/widgets.rs
 symbol Container
-lines 0 24
-hash 878d52e4e49679e1
-note Every box that holds other elements is one of these: the window, the body, the centre, the bars, the toolbars, a panel column, a step row or code column (with its selected mark), the column holding one step of the document (StepColumn, carrying that step's id so its height can be measured), a tooltip, a panel header, the floating view picker, the command palette's box. A view opens one with Frame::start and closes it with finish; it never spells out a layout or a style.
+lines 0 25
+hash 91e55b66c635de1a
+note Every box that holds other elements is one of these: the window, the body, the centre, the bars, the toolbars, a panel column, a step row or code column (with its selected mark), the column holding one step of the document (StepColumn, carrying that step's id so its height can be measured), a tooltip, a panel header, the floating view picker, the command palette's box, and the guide bar. A view opens one with Frame::start and closes it with finish; it never spells out a layout or a style.
 
 step rs11uk
 order 14

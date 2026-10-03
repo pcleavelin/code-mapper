@@ -50,9 +50,9 @@ order 5
 parent 17uw33
 author ai
 file crates/gui/src/action.rs
-symbol apply
-lines 93 97
-hash 547c8bd0901ef4e5
+symbol walk_when_idle
+lines 0 4
+hash 18ba3f4fafe45dd5
 note The gate: a walk is dropped while any field is focused, so the arrows move the caret or the field's history there instead.
 
 step uiczsm

@@ -196,7 +196,8 @@ step hvkk6w
 order 20
 author ai
 file crates/gui/src/panels.rs
-lines 870 870
+symbol tests
+lines 0 0
 hash b0307a5ca14bb937
 note The panel tree's arithmetic and edits: the default tree holds every view once, a split opens the picker and a pick moves the view, a panel emptied by a move closes, an edge drop splits (and a panel's only view on its own edge stays), closing hands the room to the sibling and never the root, navigation reveals a hidden view next to the last one shown once per ticket, a division keeps both halves above the floor, the nearest edge within a quarter picks the side, a grab moves only past its reach, views are named in any case, and a view brought into sight while in no panel opens in a split beside the view it serves, while one already in a panel is only activated.
 

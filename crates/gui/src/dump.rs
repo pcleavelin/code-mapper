@@ -15,6 +15,7 @@ use crate::panels::Panels;
 use crate::peek::Peek;
 use crate::status::Status;
 use crate::text::Tag;
+use crate::welcome::{Arrival, BoardAction, Welcome};
 use crate::work::{Services, WorkState};
 
 #[derive(Default)]
@@ -135,6 +136,22 @@ impl Dump for Scrolls {
                 ));
             }
         }
+    }
+}
+
+impl Dump for Welcome {
+    fn dump(&self, _: &Context<'_>, lines: &mut DumpLines) {
+        if self.arrival() == Arrival::Workspace {
+            return;
+        }
+        let chord = BoardAction::Palette
+            .chord()
+            .unwrap_or_else(|| ui::Label::new("missing"));
+        lines.line(format_args!(
+            "welcome {} palette={}",
+            self.arrival(),
+            chord.as_str()
+        ));
     }
 }
 

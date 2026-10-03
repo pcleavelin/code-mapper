@@ -17,6 +17,7 @@ mod status;
 mod text;
 mod theme;
 mod views;
+mod welcome;
 mod widgets;
 mod work;
 

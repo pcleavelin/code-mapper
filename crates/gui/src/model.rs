@@ -20,6 +20,7 @@ use crate::peek::{Peek, Queries};
 use crate::status::{ConsoleLog, Status};
 use crate::text::Needle;
 use crate::theme;
+use crate::welcome::Welcome;
 use crate::work::WorkState;
 use std::mem;
 
@@ -395,6 +396,7 @@ pub(crate) struct Model {
     pub(crate) work: WorkState,
     pub(crate) metrics: Metrics,
     pub(crate) now: Duration,
+    pub(crate) welcome: Welcome,
 }
 
 impl Model {
@@ -438,6 +440,7 @@ impl Model {
                 cell: theme::START_CELL,
             },
             now: Duration::ZERO,
+            welcome: Welcome::workspace(),
         }
     }
 
