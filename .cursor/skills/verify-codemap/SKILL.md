@@ -18,15 +18,27 @@ rustup default stable   # needs Rust 1.85+ (edition 2024)
 cargo build --release -p codemap
 ```
 
-Start a private compositor for this verification run (required before any GUI drive):
+One command starts the compositor and proves the window. Do not export `XDG_RUNTIME_DIR` yourself. The helper passes it to weston. Weston exits with `fatal: environment variable XDG_RUNTIME_DIR is not set` when that variable is missing from the weston process. Exporting it after `start_compositor` is too late.
 
 ```bash
 export PATH="$PWD/.cursor/skills/verify-codemap/bin:$PATH"
 export CODEMAP_VERIFY_RUN="vfy-$$"
-control-codemap launch
+check-compositor
+control-codemap smoke
 ```
 
-Ready when stdout contains `ready=yes` and `control-codemap doctor` reports `compositor=up` and `compositor_owned=yes`.
+`check-compositor` exits 0 only when launch works with `XDG_RUNTIME_DIR` unset in the parent, two GUI scripts in one run both open the default layout, and the GUI stderr has no `ZINK` line. `smoke` prints `smoke=ok` and a `DUMP` line.
+
+Parity, including GUI scenarios, is the same compositor:
+
+```bash
+control-codemap parity
+control-codemap parity gui-graph
+```
+
+`cargo xtask parity` on Linux exits immediately when the Wayland socket is missing and names `control-codemap parity`. `cargo xtask parity cli` does not open a window and does not need weston.
+
+Ready when `smoke` prints `smoke=ok`, or when stdout of `launch` contains `ready=yes` and `control-codemap doctor` reports `compositor=up` and `compositor_owned=yes`.
 
 Default root is the repo (`CODEMAP_VERIFY_ROOT`). Scripted/shot GUI runs open a fixed 1600×1000 window at scale 1, ignore the real mouse and keyboard, and quit themselves. CLI and lint commands are short-lived processes.
 
@@ -102,17 +114,20 @@ Kills only this run's weston PID file. Removes `$CODEMAP_VERIFY_DIR/state`. Neve
 ## Isolate
 
 - One private Wayland socket per `CODEMAP_VERIFY_RUN`.
-- GUI layout only via `CODEMAP_LAYOUT` (default under the run's state dir).
+- `CODEMAP_LAYOUT` is unset unless you set it. A scripted run then opens the default panels and does not save a layout. A default file under the run state is loaded and saved, so the next script in that run id inherits the previous panels.
 - Map mutations: disposable `CODEMAP_VERIFY_ROOT`, not the live `.codemap`, unless the recipe is read-only.
-- One scripted GUI window at a time under this run's weston.
-- Host packages: `weston`, `mesa-vulkan-drivers` (lavapipe at `/usr/share/vulkan/icd.d/lvp_icd.json`).
+- The gui test binary and `cargo xtask parity` each run one window at a time. On a desktop display, a hidden window stops getting frames and the script stalls. Use this helper's weston, not the desktop `DISPLAY`.
+- Host packages: `weston`, `mesa-vulkan-drivers` (lavapipe at `/usr/share/vulkan/icd.d/lvp_icd.json`). The helper sets `LIBGL_ALWAYS_SOFTWARE=1` so Mesa does not probe ZINK when the machine has no DRM device.
 
 ## Helpers
 
 | Invocation | Purpose |
 |---|---|
 | `control-codemap doctor` | Health check |
+| `check-compositor` | Launch order, default layout, no ZINK line |
 | `control-codemap launch` | Start owned headless weston |
+| `control-codemap smoke` | Launch and one dump script |
+| `control-codemap parity [scenario]` | Launch and `cargo xtask parity` |
 | `control-codemap gui --script F [--shot P]` | Scripted GUI / shot |
 | `control-codemap cli -- <args>` | CLI against the verify root |
 | `control-codemap lint [file...]` | archlint |

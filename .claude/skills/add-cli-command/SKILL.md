@@ -15,5 +15,7 @@ description: Add or change a codemap CLI command (the agent's interface, also ru
    one is missing, add it to `domain` with a unit test.
 5. The scenario: add the command, every error it can give, and a follow-up read that shows
    the effect to the fitting scenario in `tests/common/cli.rs` (`add-test-scenario`), then
-   `cargo xtask parity cli` and read what it lists.
+   `cargo xtask parity cli` and read what it lists. That filter does not open a window, so on
+   Linux it does not need weston. A run that includes a GUI scenario uses
+   `.cursor/skills/verify-codemap/bin/control-codemap parity` instead.
 6. `finish`.

@@ -1,6 +1,7 @@
+use std::env;
 use std::env::consts::EXE_SUFFIX;
 use std::fmt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::files;
 use crate::process::{Outcome, Run, Setting, run, run_in};
@@ -31,6 +32,9 @@ impl fmt::Display for CommitId {
 }
 
 pub(crate) fn compare(root: &Root, only: Option<&Argument>) -> Result<Message, Message> {
+    if selects_gui(only) {
+        require_linux_compositor()?;
+    }
     let revision = parent_commit(root)?;
     let base = base_binary(root, &revision)?;
     let mut environment = vec![
@@ -64,6 +68,85 @@ pub(crate) fn compare(root: &Root, only: Option<&Argument>) -> Result<Message, M
             "parity: scenarios whose output differs from {revision} (old.txt and new.txt kept at each path):\n{}",
             differences(&tested.output)
         ))),
+    }
+}
+
+const LINUX: Literal = Literal::new("linux");
+const CLI_FILTER: Literal = Literal::new("cli");
+const CLI_SCENARIO: Literal = Literal::new("cli-");
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum System {
+    Linux,
+    Other,
+}
+
+impl System {
+    fn here() -> Self {
+        if env::consts::OS == LINUX.as_str() {
+            Self::Linux
+        } else {
+            Self::Other
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Compositor {
+    Ready,
+    Unset,
+    SocketMissing,
+}
+
+fn compositor_here() -> Compositor {
+    let runtime = env::var("XDG_RUNTIME_DIR")
+        .ok()
+        .filter(|dir| !dir.is_empty());
+    let display = env::var("WAYLAND_DISPLAY")
+        .ok()
+        .filter(|name| !name.is_empty());
+    match (runtime, display) {
+        (Some(dir), Some(name)) => {
+            if Path::new(&dir).join(name).exists() {
+                Compositor::Ready
+            } else {
+                Compositor::SocketMissing
+            }
+        }
+        _ => Compositor::Unset,
+    }
+}
+
+fn selects_gui(only: Option<&Argument>) -> bool {
+    let Some(only) = only else {
+        return true;
+    };
+    let text = only.as_str();
+    if text.is_empty() {
+        return true;
+    }
+    text != CLI_FILTER.as_str() && !text.starts_with(CLI_SCENARIO.as_str())
+}
+
+fn require_linux_compositor() -> Result<(), Message> {
+    match linux_gui_refusal(System::here(), compositor_here()) {
+        Some(message) => Err(message),
+        None => Ok(()),
+    }
+}
+
+fn linux_gui_refusal(system: System, compositor: Compositor) -> Option<Message> {
+    if system == System::Other {
+        return None;
+    }
+    match compositor {
+        Compositor::Ready => None,
+        Compositor::Unset => Some(Message::new(
+            "parity: GUI scenarios on Linux need one headless weston. Weston exits with \"fatal: environment variable XDG_RUNTIME_DIR is not set\" when that variable is missing from the weston process. Run .cursor/skills/verify-codemap/bin/control-codemap parity (it passes XDG_RUNTIME_DIR to weston, then runs this task). One GUI window at a time on a desktop display. A hidden window stops getting frames and the script stalls.",
+        )),
+        Compositor::SocketMissing => Some(Message::new(
+            "parity: WAYLAND_DISPLAY is set but its socket is not in XDG_RUNTIME_DIR. Run .cursor/skills/verify-codemap/bin/control-codemap parity to start weston. One GUI window at a time on a desktop display. A hidden window stops getting frames and the script stalls.",
+        )),
     }
 }
 
@@ -156,5 +239,56 @@ fn differences(output: &Message) -> Message {
         output.head(40)
     } else {
         Message::new(found.join("\n"))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Compositor, System, linux_gui_refusal};
+
+    fn shown(system: System, compositor: Compositor) -> Option<String> {
+        linux_gui_refusal(system, compositor).map(|message| message.as_str().to_owned())
+    }
+
+    #[test]
+    fn linux_without_a_runtime_dir_names_weston_and_the_command() {
+        let message = shown(System::Linux, Compositor::Unset).unwrap();
+        assert!(message.contains("fatal: environment variable XDG_RUNTIME_DIR is not set"));
+        assert!(message.contains("control-codemap parity"));
+        assert!(message.contains("One GUI window at a time"));
+    }
+
+    #[test]
+    fn linux_with_a_live_socket_is_ready() {
+        assert!(shown(System::Linux, Compositor::Ready).is_none());
+    }
+
+    #[test]
+    fn linux_with_names_but_no_socket_names_the_command() {
+        let message = shown(System::Linux, Compositor::SocketMissing).unwrap();
+        assert!(message.contains("socket is not in XDG_RUNTIME_DIR"));
+        assert!(message.contains("control-codemap parity"));
+    }
+
+    #[test]
+    fn empty_runtime_dir_is_missing() {
+        let message = shown(System::Linux, Compositor::Unset).unwrap();
+        assert!(message.contains("XDG_RUNTIME_DIR is not set"));
+    }
+
+    #[test]
+    fn macos_does_not_need_weston() {
+        assert!(shown(System::Other, Compositor::Unset).is_none());
+    }
+
+    #[test]
+    fn a_cli_filter_does_not_open_a_window() {
+        let filter = |text: &str| super::Argument::new(text);
+        assert!(!super::selects_gui(Some(&filter("cli"))));
+        assert!(!super::selects_gui(Some(&filter("cli-read"))));
+        assert!(super::selects_gui(None));
+        assert!(super::selects_gui(Some(&filter(""))));
+        assert!(super::selects_gui(Some(&filter("gui-graph"))));
+        assert!(super::selects_gui(Some(&filter("graph"))));
     }
 }

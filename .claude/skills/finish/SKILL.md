@@ -63,7 +63,10 @@ session's first stop with nothing in flight is. This is the order that gets it g
    8. `uncovered <crate dir>` for the crates you touched lists only what you judge trivial;
       the owner audits that judgement.
 6. `cargo xtask api` if a library crate's public items changed, and include the `api/` diff.
-7. `cargo xtask parity`. A change meant not to alter output must list no scenario (the
+7. `cargo xtask parity`. On Linux a bare run refuses until a headless weston is up, because a
+   hidden desktop window stops getting frames. Run
+   `.cursor/skills/verify-codemap/bin/control-codemap parity` (it passes `XDG_RUNTIME_DIR` to
+   weston, then runs the task). One GUI window at a time on a desktop display. A change meant not to alter output must list no scenario (the
    `refactor` skill). A change meant to alter output lists only the scenarios it meant to
    alter: read each `old.txt`/`new.txt` against the `understand` restatement, and treat any
    other listed scenario as a side effect to fix or to explain in the commit message.

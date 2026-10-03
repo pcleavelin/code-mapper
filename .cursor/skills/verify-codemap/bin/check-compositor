@@ -50,7 +50,7 @@ gui() {
   local script="$1"
   local err="$2"
   shift 2
-  env -u XDG_RUNTIME_DIR -u WAYLAND_DISPLAY \
+  env -u XDG_RUNTIME_DIR -u WAYLAND_DISPLAY -u CODEMAP_LAYOUT \
     CODEMAP_VERIFY_RUN="$RUN" \
     CODEMAP_VERIFY_ROOT="$REPO_ROOT" \
     CODEMAP_BIN="$CODEMAP_BIN" \

@@ -226,5 +226,9 @@ Never claim a visual or interactive behaviour from reading the code; drive it an
 - On Linux, run GUI scenarios one at a time under a private headless compositor
   (`weston --backend=headless --renderer=pixman --shell=kiosk --socket=<name>`,
   `WAYLAND_DISPLAY=<name>`, a software Vulkan driver): a desktop window that is hidden stops
-  getting frames and the script stalls.
+  getting frames and the script stalls. `.cursor/skills/verify-codemap/bin/control-codemap parity`
+  passes `XDG_RUNTIME_DIR` to weston, then runs `cargo xtask parity`. Weston exits with
+  `fatal: environment variable XDG_RUNTIME_DIR is not set` when that variable is missing from
+  its environment. `cargo xtask parity` on Linux exits immediately when the socket is missing
+  and names that command. `check-compositor` beside the helper fails if the order regresses.
 - Read a PNG with the Read tool; crop or scale it first when the detail matters.
