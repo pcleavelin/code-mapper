@@ -40,7 +40,7 @@ parent 9c84zs
 author ai
 file crates/gui/src/views/document.rs
 symbol step_header
-lines 40 50
+lines 39 49
 hash efd4f40df26377f7
 note Trigger in the document: the step header is a link text with the STEP_HEADER id numbered by the step's slot. A click on a step of the tour being read queues SelectStep with Scrolling::Stay, so the page does not jump under the pointer; a click on a step shown inline under a link queues Scroll, because that step opens in its own tour.
 

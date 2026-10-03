@@ -1,0 +1,125 @@
+codemap 9
+tour feature-element-tip
+kind flow
+author ai
+group features/gui
+note The human, reading in the window, at the moment the pointer reaches a button drawn as a glyph or a word whose effect is not on its face: the panel header's + (pick a view), split right, split down and x, a tab's x, the top bar's back and forward arrows and the settings gear, the tour header's pencil, a step's collapse arrow, save, and a step row's delete. Goal: understanding a codebase takes less friction through codemap than through an editor; a reader who stops to decode the window's own controls is not reading the code. Seen in runs at 1600x1000 before this feature: resting on pick, split-right, split-down, close-panel and save showed nothing (owner's screenshots), and the parent build playing the gui-document scenario printed tip=None after resting 600 ms on a step's delete, on split-right/1 and on save; no code path drew anything for a button under the pointer, so the other glyphs listed were the same. To learn what split-down or x does the reader clicks it and then undoes the split or brings the view back; clicking a step's delete changes the map. Save's ctrl+s and back's alt+left were written only on the start page, which is gone once a tour is open, and in the palette, which shows them only to someone who opens it and types the action's name: neither is where the pointer is when the question arises. A step row's delete moves the step's children up to its parent, while unticking a step in the edit form removes its subtree, and nothing on screen told the two apart; the owner keeps both behaviours and wants the difference visible, and a longer label on every step row would crowd a header that already holds hide code, whole symbol and link buttons, while a tip costs no room until asked for. Nothing codemap had answers it: the hover card (feature-hover-info) explains identifiers in code only; the palette and the start page key list are elsewhere, as above; the registry already held a one-line summary per feature, defined as the button's tooltip, but nothing in the window showed it. The design (one, by the owner's decision; no rival prototypes): every Target carries the Feature of the Control it was made from, so a view attaches a tip with frame.attach_tip(target) after drawing the element, and the text is that feature's registry summary followed by every key chord bound to it, the same summary the CLI help and palette show, so each concept keeps one description. The tip shows after the pointer rests on one element for 500 ms, sits just below the element (above it when the window has no room below) and is moved sideways to stay inside the window, so it never covers what it names; one tip at a time, the code hover card winning when both are wanted; a press hides it until the pointer moves to another element. A run: resting on split-right/1 shows 'split a panel in two, to the right or below' below the button; on save, 'write the map's changed tours to disk  ctrl+s'; on a step's delete, 'delete a step; its children move up to its parent'; pressing save hides the tip and it stays hidden while the pointer stays. dump prints the shown tip as tip=, and the box is the element tip, so rect element-tip gives its place.
+
+step 31bcyd
+order 4
+parent 5pqhqi
+author ai
+file crates/gui/src/views/tooltip.rs
+symbol element_tip
+lines 0 32
+hash f61c2d23f17ef824
+note Draws the tip: the summary wrapped to ELEMENT_TIP_WIDTH cells with the chords on the last line in the accent colour, in a floating box whose size is reckoned from the cell size before layout so it can be placed beside the element; the box carries the id element-tip.
+
+step 4l4mjm
+order 7
+parent 31bcyd
+author ai
+file crates/gui/src/element_tip.rs
+symbol shown
+lines 0 5
+hash dee050ea0d80214d
+note The one-line text reported as the shown tip: summary, two spaces, chords.
+
+step 5pqhqi
+order 0
+author ai
+file crates/gui/src/views/tooltip.rs
+symbol tooltip
+lines 0 15
+hash db3f63f279668254
+note The handler, run once per frame after every view is built: takes the element tip the views attached this frame, reports which element the pointer rests on and whether the button is down (Action::Rest), then draws the code hover card if one is wanted and otherwise the element tip once its rest is due and the button is up. Whichever is drawn is reported as the shown tip (Action::TipShown), which dump prints.
+
+step 62d91x
+order 8
+parent 31bcyd
+author ai
+file crates/gui/src/element_tip.rs
+symbol beside
+lines 0 9
+hash d6d63b640043dd30
+note Places the box below the element, or above it when the window has no room below, left-aligned with it and moved left to stay inside the window, so it never covers the element.
+
+step 8onq9c
+order 15
+parent e4v4xf
+author ai
+file crates/gui/src/palette.rs
+symbol chords_label
+lines 0 11
+hash 5b54a320be791d54
+note Every key chord bound to the feature, spelled as the palette spells them and joined with '/'; the start page's key list uses the same spelling.
+
+step c9yi5j
+order 6
+parent 31bcyd
+author ai
+file crates/gui/src/element_tip.rs
+symbol lines
+lines 0 13
+hash ec1eef6f5dc74d7e
+note Wraps the summary at word boundaries, keeping every word in order.
+
+step e4v4xf
+order 14
+parent nypenk
+author ai
+file crates/gui/src/element_tip.rs
+symbol of
+lines 0 5
+hash cc77b1332ec38546
+note The tip of a feature: its registry summary and its chords.
+
+step h1use5
+order 16
+parent 5pqhqi
+author ai
+file crates/gui/src/element_tip.rs
+symbol rest
+lines 0 11
+hash ecd71402d9bbff50
+note Applied through Action::Rest each frame: arriving on another element (or on none) restarts the delay and forgets an earlier press; a press while resting hides the tip until the pointer moves on.
+
+step mjdoh6
+order 2
+parent 5pqhqi
+author ai
+file crates/gui/src/element_tip.rs
+symbol of
+lines 0 6
+hash 94e2993e7040c960
+note A press or a held left button counts as pressing; either hides the tip.
+
+step nypenk
+order 13
+parent 5pqhqi
+author ai
+file crates/gui/src/widgets.rs
+symbol attach_tip
+lines 0 9
+hash 66992cb16d47b898
+note Frame::attach_tip, what fills frame.attached_tip for the handler to take: how a view attaches a tip to an element it has just drawn: when the pointer is on the element (from the previous frame's rectangles), the frame records the element's id, rectangle and its feature's tip. The text comes only from the registry through the target's feature.
+
+step tjzytn
+order 12
+parent 5pqhqi
+author ai
+file crates/gui/src/views/tooltip.rs
+symbol show
+lines 0 15
+hash 11b3a72037bdc492
+note The code hover card; drawn instead of an element tip when both are wanted, so only one tip shows at a time.
+
+step vmikoz
+order 3
+parent 5pqhqi
+author ai
+file crates/gui/src/element_tip.rs
+symbol due
+lines 0 4
+hash 554f0da20debd052
+note Due only for the element rested on, only once the delay has passed since the pointer arrived, and never after a press during this rest.

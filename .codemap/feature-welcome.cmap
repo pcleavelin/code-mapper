@@ -41,8 +41,8 @@ parent w464x2
 author ai
 file crates/gui/src/welcome.rs
 symbol key_rows
-lines 0 52
-hash f28f2bc4beeac523
+lines 0 44
+hash 1002ee908fff0b59
 note From the registry: a palette entry with a chord gives its own row (go back, go forward), any other feature with key triggers one row of its chords named after the feature. The palette first, then chords with a modifier, then plain keys.
 
 step coi05f

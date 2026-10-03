@@ -328,9 +328,9 @@ order 4
 author ai
 file crates/gui/src/views/tooltip.rs
 symbol tooltip
-lines 0 3
-hash f2578848f1b251e5
-note The tooltip itself: a floating element laid over everything, built after every panel from what the frame's code views left in Frame::tooltip. What it showed is pushed as TipShown, for dumps.
+lines 0 15
+hash db3f63f279668254
+note The tooltip itself: a floating element laid over everything, built after every panel from what the frame's code views left in Frame::tooltip, or, when no code view wants one, the element tip a button attached (feature-element-tip). What it showed is pushed as TipShown, for dumps.
 
 step vy64jp
 order 21

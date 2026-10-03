@@ -31,8 +31,9 @@ order 10
 parent z2vf49
 author ai
 file crates/gui/src/views/tooltip.rs
-lines 35 55
-hash aedc5c5f19d38b5a
+symbol show
+lines 0 15
+hash 11b3a72037bdc492
 note The effect: after the views are built, the frame's tip is drawn beside the pointer (flipped to stay in the window), as wrapped text for a server answer or as a code block for a symbol.
 
 step ire4wo

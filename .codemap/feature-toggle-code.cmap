@@ -21,7 +21,7 @@ parent vsf97x
 author ai
 file crates/gui/src/views/document.rs
 symbol step_header
-lines 51 61
+lines 50 60
 hash e6f1c558914189fd
 note Trigger: the HIDE_CODE button, labelled by the current state, queues Toggle with ViewFlag::Hidden.
 

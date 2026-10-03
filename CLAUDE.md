@@ -210,7 +210,8 @@ Never claim a visual or interactive behaviour from reading the code; drive it an
   by the number n `DUMP panels` prints: `panel/<n>`, header buttons `pick/<n>`,
   `split-right/<n>`, `split-down/<n>`, `close-panel/<n>`, dividers `divider/<n>`, tab close
   buttons `close-tab@<View>`; view picker
-  rows `view/<n>`). Rects come from the previous frame, so `wait 1` after anything that
+  rows `view/<n>`; the box of a button's tooltip `element-tip`, shown after the pointer rests on the
+  button for 500 ms). Rects come from the previous frame, so `wait 1` after anything that
   changes the layout. `dump` prints the selection, scroll offsets, the panel tree, the
   tooltip and peek, the graph camera and every node's and node button's rectangle to stderr as
   `DUMP` lines (grep `^DUMP`), plus

@@ -51,8 +51,8 @@ parent bg9t38
 author ai
 file crates/gui/src/views/tooltip.rs
 symbol tooltip
-lines 0 3
-hash f2578848f1b251e5
+lines 0 15
+hash db3f63f279668254
 note Built after every panel and before the layout, so the floating definition a code view asked for this frame is drawn over everything.
 
 step 2jr38p
@@ -141,8 +141,8 @@ order 0
 author ai
 file crates/gui/src/app.rs
 symbol frame
-lines 0 75
-hash 84ecabd5fc88219c
+lines 0 76
+hash 93846cecdabeaa17
 note The frame (platform::App::frame), in order: the font and cell size for this scale factor, the screenshot aid, the five polls, the keys, then a left press releases the focused field unless the press lands on it (Fields::press), then panel_input, the steps list's drag (step_list_input) and the graph's own input phase (or, with the Graph view hidden, the graph marked Hidden and its keyboard Elsewhere, so a look snaps and the arrows walk the tour), the element tree, layout and draw, the action queue, the reveal of the centre view navigation asked for, saving the layout if it changed, and the history snapshot, which first performs a back or forward asked for this frame. It asks the loop to come back at the ANIMATING rate while the graph camera is gliding, in 50 ms while any work is in flight, and in a second otherwise, so an idle window costs one frame per second.
 
 step 5aljhx
@@ -151,8 +151,8 @@ parent bg9t38
 author ai
 file crates/gui/src/views/bars.rs
 symbol top_bar
-lines 0 61
-hash 786d646d8c5943bd
+lines 0 65
+hash 3758fddacf8d9254
 note The top bar: the search box, back and forward, then, right-aligned, an orange 'unsaved changes' while the map has unsaved edits, and 'save', which shows a star and the selected colour while it does. Every button here only pushes an Action. Authoring controls live where the code is shown: the Tours tab, the Source view, Symbols, References and the graph.
 
 step 5j9xn1
@@ -417,8 +417,8 @@ parent 05p818
 author ai
 file crates/gui/src/views/document.rs
 symbol step_header
-lines 0 98
-hash 1ef096204b0769d7
+lines 0 97
+hash 5c4cf3685501725e
 note The header row: the collapse arrow when the step has children, the title, the hide-code, whole-symbol and no-context toggles, the link controls, and the delete button (a danger button, red under the pointer) alone at the far right. Clicking the title of the tour being read selects the step where it is (no scroll), while a step of an inlined tour is selected with a scroll. The toggle buttons keep one width whatever their label, so no button slides under a pointer that clicks twice.
 
 step fe3dpd
@@ -528,8 +528,8 @@ parent sn1cn1
 author ai
 file crates/gui/src/action.rs
 symbol Action
-lines 0 57
-hash 2523093a55174644
+lines 0 58
+hash c4e540fee3ac3ef4
 note What a gesture can ask for. Selection and navigation, the per-step view toggles, the tour-wide toggles, the two deletions, the authoring gestures as one Authoring variant (add lines or a symbol, the target, grabbing, dragging and dropping a steps list row, promote), opening a line or a definition, tabs, the fields' input, scroll offsets and what a view measured (the top step, a scroll done, a step's height), server questions, panel gestures, graph gestures, the start page's acts and the build-tour wizard's acts. Adding a gesture means adding a variant here and an arm in apply, not threading a callback through the views. A StepKey is a (tour, step) pair of slots in the map; Definition carries the intent, peek or jump; SelectLine says whether to extend; SelectStep whether to scroll the document; OpenTour selects the tour unless it is the one being read and shows it in the given tab.
 
 step jd4cl1
@@ -578,8 +578,8 @@ parent d5you8
 author ai
 file crates/gui/src/views/document.rs
 symbol header_bar
-lines 0 37
-hash db92fbe27bc76507
+lines 0 38
+hash 962aadc8e93b9dac
 note The header: name, kind, author, step count, group, whether the tour is new or changed since the parent revision, and the tour-wide buttons: graph, hide all code, show all code, collapse all, expand all, then, set apart, the danger button 'delete tour'. The buttons sit at the right of the header row when the row fits the panel; when it does not, they move to a row of their own under it, so no button is cut off by the panel's edge (header_rows).
 
 step kfwd14
@@ -823,8 +823,8 @@ parent 50ozko
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 0 94
-hash d8c9b2c47bd7926d
+lines 0 95
+hash 3fa8f4038d2a6f0e
 note The action queue, drained once the tree is built; the keys and panel_input use it too, before the tree. apply is the only place the Model changes during a frame, which is what lets every view take the Model read-only. Most arms are one call into nav.rs or a Model field.
 
 step svoo3m

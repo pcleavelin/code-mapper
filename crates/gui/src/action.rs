@@ -4,6 +4,7 @@ use ui::{Count, Id, Label, Point, Px, Typed};
 
 use crate::app::App;
 use crate::authoring::Authoring;
+use crate::element_tip::Pressing;
 use crate::field::{AfterSubmit, Edit, FieldAct, FieldText, Which};
 use crate::graph::{GraphAction, Heading};
 use crate::ids;
@@ -74,6 +75,7 @@ pub(crate) enum Action {
     StepListShown(StepSlot),
     ConsoleScrolled,
     TipShown(Option<Label>),
+    Rest(Option<Id>, Pressing),
     Status(Status),
     RefreshBase,
     Hover(Language, Probe),
@@ -151,6 +153,7 @@ impl App {
                 model.console_bottom = Count::new(model.console_bottom.get().saturating_sub(1));
             }
             Action::TipShown(tip) => model.tip_shown = tip,
+            Action::Rest(on, pressing) => model.resting.rest(on, pressing, model.now),
             Action::Status(status) => model.status = status,
             Action::RefreshBase => self.load_base(),
             Action::Hover(language, probe) => self.hover(language, probe),

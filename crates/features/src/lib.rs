@@ -100,6 +100,7 @@ pub enum Feature {
     EditTour,
     EditText,
     Settings,
+    ElementTip,
 }
 
 impl Feature {
@@ -1017,6 +1018,19 @@ impl Feature {
                             Some(Chord::control(Key::Letter(Letter::new(',')))),
                         ),
                     ]
+                },
+            ),
+            Self::ElementTip => Spec::new(
+                Text::new("element-tip"),
+                Text::new(
+                    "rest the pointer on a button to read what it does and the key that does the same",
+                ),
+                Surface::Window,
+                &const {
+                    [Trigger::Gesture(
+                        Gesture::Hover,
+                        Element::new("element-tip"),
+                    )]
                 },
             ),
         }

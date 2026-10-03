@@ -7,6 +7,7 @@ use ui::{
 };
 
 use crate::action::Action;
+use crate::element_tip::{AttachedTip, ElementTip};
 use crate::field::{
     Attention, Field, FieldAct, FieldShape, FieldWindow, Piece, Pointing, Tint, Which,
 };
@@ -58,6 +59,7 @@ pub(crate) struct Frame<'frame> {
     pub(crate) metrics: Metrics,
     pub(crate) overlay: Overlay,
     pub(crate) tooltip: Option<TipAt>,
+    pub(crate) attached_tip: Option<AttachedTip>,
     pub(crate) cursor: Cursor,
 }
 
@@ -105,6 +107,7 @@ pub(crate) enum Container {
     StepColumn(Id),
     FillRow,
     Tooltip { at: Point },
+    ElementTip { at: Point },
     Picker { at: Point, width: Px },
     Palette { at: Point, width: Px },
     Settings { at: Point, width: Px },
@@ -223,6 +226,14 @@ impl Container {
                 Style::background(PANEL).border(Sides::ALL, BORDER),
                 None,
             ),
+            Self::ElementTip { at } => Shape::new(
+                Layout::column()
+                    .floating(at)
+                    .padding(TOOLTIP_PADDING)
+                    .gap(TIGHT_GAP),
+                Style::background(PANEL).border(Sides::ALL, BORDER),
+                Some(ids::ELEMENT_TIP.id()),
+            ),
             Self::Picker { at, width }
             | Self::Palette { at, width }
             | Self::Settings { at, width } => Shape::new(
@@ -280,6 +291,17 @@ impl Frame<'_> {
 
     pub(crate) fn push(&mut self, action: Action) {
         self.queue.push(action);
+    }
+
+    pub(crate) fn attach_tip(&mut self, target: Target) {
+        let interaction = self.ui.interaction(target.id());
+        if let Some(rect) = interaction.rect().filter(|_| interaction.hovered()) {
+            self.attached_tip = Some(AttachedTip {
+                id: target.id(),
+                rect,
+                tip: ElementTip::of(target.feature()),
+            });
+        }
     }
 
     pub(crate) fn start(&mut self, container: Container) -> Interaction {

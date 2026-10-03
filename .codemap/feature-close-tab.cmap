@@ -40,7 +40,7 @@ parent 0wlosi
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 78 78
+lines 79 79
 hash 79bb258c8ad23a49
 note The apply arm.
 
@@ -60,8 +60,8 @@ parent 0wlosi
 author ai
 file crates/gui/src/views/panel_tree.rs
 symbol tab
-lines 0 28
-hash e2c1940ebd9b8f87
+lines 0 29
+hash 3716d5b7d74561cb
 note The trigger: each tab is drawn by Frame::tab with its close cross (close-tab@<View>) inside it; a click on the cross queues CloseView, and only a click on the rest of the tab shows and grabs the view.
 
 step y2bfva

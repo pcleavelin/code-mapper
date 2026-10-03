@@ -1,4 +1,5 @@
 use std::path::Path as FsPath;
+use std::time::Duration;
 
 use domain::{
     Anchor, Author, Backend, Cut, Depth, Draft, Edge, EditChange, FileText, Imports, Index, Line,
@@ -14,6 +15,7 @@ use ui::{Count, Input, Key, Label, Mods, Press, Px, Typed};
 use crate::action::{Action, Collapse, Hide};
 use crate::app::App;
 use crate::authoring::Authoring;
+use crate::element_tip::{ElementTip, Pressing, Resting, beside};
 use crate::field::{
     AfterSubmit, Attention, Edit, EnterMods, FieldAct, FieldWindow, Fields, Handled, Motion,
     Pointing, Unit, Which,
@@ -1717,4 +1719,95 @@ fn the_plain_and_the_control_wheel_keep_their_direction() {
     let wheel = ui::Vector::new(ui::Coordinate::new(5.0), ui::Coordinate::new(-120.0));
     assert_eq!(turned(ui::Mods::NONE), wheel);
     assert_eq!(turned(ui::Mods::CTRL.with(ui::Mods::SHIFT)), wheel);
+}
+
+fn millis(count: u64) -> Duration {
+    Duration::from_millis(count)
+}
+
+#[test]
+fn an_element_tip_waits_for_the_pointer_to_rest_and_stays_hidden_after_a_press() {
+    let save = ui::Id::new("save");
+    let pick = ui::Id::new("pick");
+    let mut resting = Resting::default();
+    resting.rest(Some(save), Pressing::Released, millis(0));
+    assert!(!resting.due(save, millis(100)));
+    assert!(resting.pending(millis(100)));
+    assert!(resting.due(save, millis(600)));
+    resting.rest(Some(save), Pressing::Pressed, millis(700));
+    resting.rest(Some(save), Pressing::Released, millis(800));
+    assert!(!resting.due(save, millis(5000)));
+    assert!(!resting.pending(millis(800)));
+    resting.rest(Some(pick), Pressing::Released, millis(900));
+    assert!(!resting.due(pick, millis(1000)));
+    assert!(resting.due(pick, millis(1400)));
+    assert!(!resting.due(save, millis(1400)));
+    resting.rest(None, Pressing::Released, millis(1500));
+    assert!(!resting.due(pick, millis(3000)));
+}
+
+fn overlaps(one: ui::Rect, other: ui::Rect) -> bool {
+    one.left < other.right()
+        && other.left < one.right()
+        && one.top < other.bottom()
+        && other.top < one.bottom()
+}
+
+#[test]
+fn an_element_tip_sits_beside_its_element_and_inside_the_window() {
+    let window = ui::Extent::new(Px::new(1600), Px::new(1000));
+    let size = ui::Extent::new(Px::new(300), Px::new(40));
+    for element in [
+        ui::Rect::new(Px::new(1580), Px::new(30), Px::new(20), Px::new(20)),
+        ui::Rect::new(Px::new(100), Px::new(975), Px::new(50), Px::new(25)),
+        ui::Rect::new(Px::new(0), Px::new(0), Px::new(40), Px::new(20)),
+    ] {
+        let at = beside(window, element, size);
+        let tip = ui::Rect::new(at.horizontal, at.vertical, size.width, size.height);
+        assert!(!overlaps(tip, element), "{tip:?} covers {element:?}");
+        assert!(
+            tip.left >= Px::ZERO && tip.right() <= window.width,
+            "{tip:?}"
+        );
+        assert!(
+            tip.top >= Px::ZERO && tip.bottom() <= window.height,
+            "{tip:?}"
+        );
+        let near = (tip.top - element.bottom()).max(element.top - tip.bottom());
+        assert!(near <= Px::new(8), "{tip:?} is far from {element:?}");
+    }
+}
+
+#[test]
+fn an_element_tip_says_what_its_feature_does_and_the_key_for_it() {
+    assert_eq!(
+        ElementTip::of(Feature::Save).shown().as_str(),
+        "write the map's changed tours to disk  ctrl+s"
+    );
+    assert_eq!(
+        ElementTip::of(Feature::RemoveStep).shown().as_str(),
+        "delete a step; its children move up to its parent"
+    );
+    assert!(
+        ElementTip::of(Feature::GoBack)
+            .shown()
+            .as_str()
+            .ends_with("  alt+left/alt+right/ctrl+left/ctrl+right"),
+        "every chord of the feature, joined with /"
+    );
+    let lines: Vec<String> = ElementTip::of(Feature::Settings)
+        .lines(Cells::new(30))
+        .iter()
+        .map(|line| line.as_str().to_owned())
+        .collect();
+    assert!(lines.len() > 1, "{lines:?}");
+    assert!(
+        lines.iter().all(|line| line.chars().count() <= 30),
+        "{lines:?}"
+    );
+    assert_eq!(
+        lines.join(" "),
+        Feature::Settings.spec().summary().as_str(),
+        "wrapping keeps every word in order"
+    );
 }

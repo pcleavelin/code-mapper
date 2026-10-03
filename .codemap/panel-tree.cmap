@@ -159,8 +159,8 @@ parent dxzju5
 author ai
 file crates/gui/src/views/panel_tree.rs
 symbol tab
-lines 0 28
-hash e2c1940ebd9b8f87
+lines 0 29
+hash 3716d5b7d74561cb
 note A tab is Frame::tab with the id tab@<View> and its close cross close-tab@<View>, labelled with the view's name; the Search tab adds its hit count, with a + when the hits were cut at HIT_LIMIT ('Search (5000+)'). A click on the cross closes the view; a press on the rest both shows the view and takes hold of it for a drag, and releasing without moving leaves only the show.
 
 step aebgap
@@ -239,8 +239,8 @@ parent dxzju5
 author ai
 file crates/gui/src/views/panel_tree.rs
 symbol header
-lines 0 40
-hash 2d1a5a2eb3bd6816
+lines 0 37
+hash 1f73ee9ffbfa77ca
 note One row per panel: a tab per view, then a grow and a ToolbarSmall holding the add (picker), split-right, split-down and close icons, the last only when the panel is not the whole window, so the icons sit at the right end.
 
 step cxcwck
@@ -512,7 +512,7 @@ order 21
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 54 84
+lines 55 85
 hash a4d1e09759f7ab10
 note The panel arms of apply: grab, resize, drag and release; split, close; the picker opened, closed or picked from. Opening the picker, by + or by a split, empties its search field and gives it the keyboard.
 

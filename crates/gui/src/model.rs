@@ -12,6 +12,7 @@ use strum::VariantArray;
 use ui::{Count, Extent, FontSize, Id, Label, Px};
 
 use crate::authoring::StepGrab;
+use crate::element_tip::Resting;
 use crate::field::{Fields, Which};
 use crate::graph::GraphState;
 use crate::nav::Nav;
@@ -386,6 +387,7 @@ pub(crate) struct Model {
     pub(crate) measures: Measures,
     pub(crate) graph: GraphState,
     pub(crate) tip_shown: Option<Label>,
+    pub(crate) resting: Resting,
     pub(crate) fields: Fields,
     pub(crate) palette: Option<Palette>,
     pub(crate) step_grab: Option<StepGrab>,
@@ -430,6 +432,7 @@ impl Model {
             measures: Measures::default(),
             graph: GraphState::default(),
             tip_shown: None,
+            resting: Resting::default(),
             fields: Fields::default(),
             palette: None,
             step_grab: None,

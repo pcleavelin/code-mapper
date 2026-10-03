@@ -2,11 +2,18 @@ use features::{Element, Feature};
 use ui::{Count, Id, Label};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) struct Target(Id);
+pub(crate) struct Target {
+    id: Id,
+    feature: Feature,
+}
 
 impl Target {
     pub(crate) const fn id(self) -> Id {
-        self.0
+        self.id
+    }
+
+    pub(crate) const fn feature(self) -> Feature {
+        self.feature
     }
 }
 
@@ -25,20 +32,27 @@ impl Control {
         Id::from_name(self.element.as_str())
     }
 
+    const fn aim(self, id: Id) -> Target {
+        Target {
+            id,
+            feature: self.feature,
+        }
+    }
+
     pub(crate) fn target(self) -> Target {
-        Target(self.id())
+        self.aim(self.id())
     }
 
     pub(crate) fn nth(self, number: Count) -> Target {
-        Target(self.id().nth(number.get()))
+        self.aim(self.id().nth(number.get()))
     }
 
     pub(crate) fn with(self, suffix: &Label) -> Target {
-        Target(self.id().with(suffix.as_str()))
+        self.aim(self.id().with(suffix.as_str()))
     }
 
     pub(crate) fn nested(self, occurrence: Count, number: Count) -> Target {
-        Target(
+        self.aim(
             linked()
                 .nth(occurrence.get())
                 .with(self.element.as_str())
@@ -215,6 +229,8 @@ pub(crate) const EDIT_CANCEL: Control =
 pub(crate) const EDIT_MORE: Control = Control::new(Feature::EditTour, Element::new("edit-more"));
 pub(crate) const EDIT_NOTE_FIELD: Control =
     Control::new(Feature::EditTour, Element::new("edit-note"));
+pub(crate) const ELEMENT_TIP: Control =
+    Control::new(Feature::ElementTip, Element::new("element-tip"));
 
 #[cfg(test)]
 pub(crate) const CONTROLS: &[Control] = &[
@@ -323,6 +339,7 @@ pub(crate) const CONTROLS: &[Control] = &[
     SETTINGS_LARGER,
     SETTINGS_FONT,
     SETTINGS_GRAPH,
+    ELEMENT_TIP,
 ];
 
 pub(crate) fn body() -> Id {

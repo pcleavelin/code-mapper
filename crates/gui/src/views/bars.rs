@@ -36,6 +36,7 @@ pub(super) fn top_bar(model: &Model, frame: &mut Frame<'_>) {
     {
         frame.push(Action::Back);
     }
+    frame.attach_tip(ids::BACK.target());
     if frame
         .nav_button(
             Icon::Forward,
@@ -46,6 +47,7 @@ pub(super) fn top_bar(model: &Model, frame: &mut Frame<'_>) {
     {
         frame.push(Action::Forward);
     }
+    frame.attach_tip(ids::FORWARD.target());
     frame.grow();
     let unsaved = model.disk.dirty == Dirty::Unsaved;
     if unsaved {
@@ -59,6 +61,7 @@ pub(super) fn top_bar(model: &Model, frame: &mut Frame<'_>) {
     if frame.button(save, ids::SAVE.target(), chosen).clicked() {
         frame.push(Action::Save);
     }
+    frame.attach_tip(ids::SAVE.target());
     let open = if model.settings_menu.is_some() {
         Chosen::Chosen
     } else {
@@ -70,6 +73,7 @@ pub(super) fn top_bar(model: &Model, frame: &mut Frame<'_>) {
     {
         frame.push(Action::Settings(SettingsAct::Toggle));
     }
+    frame.attach_tip(ids::SETTINGS_OPEN.target());
     frame.finish();
 }
 

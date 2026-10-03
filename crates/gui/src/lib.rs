@@ -2,6 +2,7 @@ mod action;
 mod app;
 mod authoring;
 mod dump;
+mod element_tip;
 mod field;
 mod graph;
 mod grid;

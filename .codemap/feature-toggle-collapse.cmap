@@ -40,8 +40,8 @@ parent hmusxe
 author ai
 file crates/gui/src/views/document.rs
 symbol step_header
-lines 15 33
-hash 654c309c82b56040
+lines 15 32
+hash ceb5fc6aaa70f300
 note Trigger: the COLLAPSE arrow, drawn only when the step has descendants, queues Toggle with ViewFlag::Collapsed; a collapsed header gets the +n count of its descendants.
 
 step tmx9tb

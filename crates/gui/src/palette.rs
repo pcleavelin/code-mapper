@@ -346,6 +346,19 @@ pub(crate) fn chord_label(chord: Chord) -> Label {
     Label::new(format!("{modifier}{key}"))
 }
 
+pub(crate) fn chords_label(feature: Feature) -> Option<Label> {
+    let spelled: Vec<String> = feature
+        .spec()
+        .triggers()
+        .iter()
+        .filter_map(|trigger| match trigger {
+            Trigger::Key(chord) => Some(chord_label(*chord).as_str().to_owned()),
+            _ => None,
+        })
+        .collect();
+    (!spelled.is_empty()).then(|| Label::new(spelled.join("/")))
+}
+
 struct Shown {
     name: Label,
     detail: Label,

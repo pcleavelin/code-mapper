@@ -388,6 +388,7 @@ impl platform::App for App {
             metrics: self.model.metrics,
             overlay: Overlay::default(),
             tooltip: None,
+            attached_tip: None,
             cursor: Cursor::Default,
         };
         views::build(&self.model, &mut frame, graph);
@@ -401,7 +402,8 @@ impl platform::App for App {
         self.keep_layout();
         self.keep_settings();
         self.model.track_navigation();
-        let busy = self.working() || self.shot.is_some();
+        let busy =
+            self.working() || self.shot.is_some() || self.model.resting.pending(self.model.now);
         PlatformFrame {
             redraw_after: if self.model.graph.gliding() || self.model.line_grab.is_some() {
                 ANIMATING

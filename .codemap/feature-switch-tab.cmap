@@ -20,8 +20,8 @@ parent 0omynn
 author ai
 file crates/gui/src/views/panel_tree.rs
 symbol tab
-lines 0 28
-hash e2c1940ebd9b8f87
+lines 0 29
+hash 3716d5b7d74561cb
 note Trigger: the tab tab@<View> in a panel header, drawn by Frame::tab, queues ShowView when clicked anywhere but its close cross.
 
 step gf1kjs

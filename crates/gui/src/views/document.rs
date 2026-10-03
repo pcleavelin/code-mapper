@@ -182,6 +182,7 @@ fn header_bar(frame: &mut Frame<'_>, tour: TourSlot, found: &Tour, diff: Option<
     {
         frame.push(Action::Wizard(WizardAct::Edit(tour)));
     }
+    frame.attach_tip(ids::EDIT_TOUR.target());
     match diff.map(TourDiff::change) {
         Some(Change::Added) => frame.label("new since the parent revision", GREEN),
         Some(Change::Changed) => frame.label("changed since the parent revision", GREEN),
@@ -483,12 +484,11 @@ fn step_header(
         } else {
             Icon::Expanded
         };
-        if frame
-            .small_button(arrow, row.target(ids::COLLAPSE))
-            .clicked()
-        {
+        let collapse = row.target(ids::COLLAPSE);
+        if frame.small_button(arrow, collapse).clicked() {
             frame.push(Action::Toggle(key, ViewFlag::Collapsed));
         }
+        frame.attach_tip(collapse);
     } else {
         frame.cells_gap(COLLAPSE_ROOM);
     }
@@ -551,12 +551,12 @@ fn step_header(
     }
     let target = link_buttons(model, frame, row, walk);
     frame.grow();
-    if row.occurrence.is_none()
-        && frame
-            .danger_button("delete", row.target(ids::REMOVE_STEP))
-            .clicked()
-    {
-        frame.push(Action::RemoveStep(key));
+    if row.occurrence.is_none() {
+        let delete = row.target(ids::REMOVE_STEP);
+        if frame.danger_button("delete", delete).clicked() {
+            frame.push(Action::RemoveStep(key));
+        }
+        frame.attach_tip(delete);
     }
     frame.finish();
     target

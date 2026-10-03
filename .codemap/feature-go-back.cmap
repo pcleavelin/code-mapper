@@ -61,8 +61,8 @@ parent y91rv4
 author ai
 file crates/gui/src/views/bars.rs
 symbol top_bar
-lines 16 35
-hash 1d1e38ff599e2ab7
+lines 16 36
+hash b7136cd9d48155e0
 note Trigger in the top bar: the BACK and FORWARD nav buttons, disabled when their stack is empty, queue Back or Forward.
 
 step y91rv4

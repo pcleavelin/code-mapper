@@ -11,7 +11,7 @@ parent wuv152
 author ai
 file crates/gui/src/views/document.rs
 symbol step_header
-lines 62 79
+lines 61 78
 hash 21e0451d13e025fa
 note Trigger: the WHOLE button, labelled by the current state, queues Toggle with ViewFlag::Whole.
 

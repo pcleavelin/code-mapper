@@ -158,30 +158,27 @@ fn header(model: &Model, frame: &mut Frame<'_>, panel: &Panel) {
     frame.start(Container::ToolbarSmall);
     frame.grow();
     let id = panel.id();
-    if frame
-        .small_button(Icon::Add, numbered(ids::PICK, id))
-        .clicked()
-    {
+    let pick = numbered(ids::PICK, id);
+    if frame.small_button(Icon::Add, pick).clicked() {
         frame.push(Action::TogglePicker(id));
     }
-    if frame
-        .small_button(Icon::SplitRight, numbered(ids::SPLIT_RIGHT, id))
-        .clicked()
-    {
+    frame.attach_tip(pick);
+    let right = numbered(ids::SPLIT_RIGHT, id);
+    if frame.small_button(Icon::SplitRight, right).clicked() {
         frame.push(Action::SplitPanel(id, Direction::Right));
     }
-    if frame
-        .small_button(Icon::SplitDown, numbered(ids::SPLIT_DOWN, id))
-        .clicked()
-    {
+    frame.attach_tip(right);
+    let down = numbered(ids::SPLIT_DOWN, id);
+    if frame.small_button(Icon::SplitDown, down).clicked() {
         frame.push(Action::SplitPanel(id, Direction::Down));
     }
-    if !model.panels.is_single()
-        && frame
-            .small_button(Icon::Close, numbered(ids::CLOSE_PANEL, id))
-            .clicked()
-    {
-        frame.push(Action::ClosePanel(id));
+    frame.attach_tip(down);
+    if !model.panels.is_single() {
+        let close = numbered(ids::CLOSE_PANEL, id);
+        if frame.small_button(Icon::Close, close).clicked() {
+            frame.push(Action::ClosePanel(id));
+        }
+        frame.attach_tip(close);
     }
     frame.finish();
     frame.finish();
@@ -201,6 +198,7 @@ fn tab(model: &Model, frame: &mut Frame<'_>, view: View, chosen: Chosen) {
     };
     let close = ids::CLOSE_TAB.with(&Label::new(view.name().as_str()));
     let clicks = frame.tab(label, target, close, chosen);
+    frame.attach_tip(close);
     if clicks.close.clicked() {
         frame.push(Action::CloseView(view));
     } else if clicks.tab.clicked() {

@@ -7,7 +7,7 @@ use ui::{Count, Label};
 
 use crate::app::App;
 use crate::model::{Model, Tab};
-use crate::palette::chord_label;
+use crate::palette::{chord_label, chords_label};
 use crate::wizard::WizardAct;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, VariantArray)]
@@ -210,25 +210,17 @@ pub(crate) fn key_rows() -> Vec<KeyRow> {
             ranked.extend(named);
             continue;
         }
-        let chords: Vec<_> = spec
-            .triggers()
-            .iter()
-            .filter_map(|trigger| match trigger {
-                Trigger::Key(chord) => Some(*chord),
-                _ => None,
-            })
-            .collect();
-        let Some(first) = chords.first() else {
+        let first = spec.triggers().iter().find_map(|trigger| match trigger {
+            Trigger::Key(chord) => Some(*chord),
+            _ => None,
+        });
+        let (Some(first), Some(chord)) = (first, chords_label(*feature)) else {
             continue;
         };
-        let spelled: Vec<String> = chords
-            .iter()
-            .map(|chord| chord_label(*chord).as_str().to_owned())
-            .collect();
         ranked.push((
             rank(first.modifiers()),
             KeyRow {
-                chord: Label::new(spelled.join("/")),
+                chord,
                 meaning: spoken(*feature),
             },
         ));

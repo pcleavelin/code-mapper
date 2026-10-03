@@ -89,8 +89,8 @@ order 2
 author ai
 file crates/gui/src/model.rs
 symbol Model
-lines 0 34
-hash 75f67bfcc4168dfe
+lines 0 35
+hash 7eac7003e64bee49
 note All the state a view can see, in one struct: the index and the map with its MapStore and disk state, the parent map for the Diff tab, Nav, the step views, the open directories and groups, the kept peek, the server Queries, the panel tree, the scroll offsets (down and across), the graph's state, the fields, search hits and whether they were cut at HIT_LIMIT, the measured heights of document steps (Measures), the console log, the status, WorkState, the font metrics, the frame time, and the build-tour wizard while one is open. gui-model has its values and queries.
 
 step 622pjb
@@ -98,8 +98,8 @@ order 25
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 193 228
-hash fe6487cbe20ed276
+lines 193 229
+hash eb40c0dc6d5ee8fa
 note Every padding, gap and fixed pixel measure the widgets and views use, named by where it is used.
 
 step 63vlrl
@@ -137,9 +137,9 @@ parent 9pik9m
 author ai
 file crates/gui/src/ids.rs
 symbol Target
-lines 0 0
-hash 4362e74efa290731
-note An element id that came from a Control; widgets take this rather than a bare Id, so a clickable element always has a declared name.
+lines 0 3
+hash fc77ec27ff749dca
+note An element id that came from a Control, with that Control's feature; widgets take this rather than a bare Id, so a clickable element always has a declared name, and frame.attach_tip(target) can show the feature's summary and chords as the element's tooltip.
 
 step 7m4f8n
 order 58
@@ -203,8 +203,8 @@ order 26
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 258 300
-hash de6480a2979dd050
+lines 259 302
+hash 76d9713c92640c8b
 note Every measure counted in cells: button and field widths, column guesses before a panel has a size, the symbol table's columns, tooltip sizes, the gap before a danger button, the status bar's room for the map's place, the panels' floors and the picker's width.
 
 step an1gef
@@ -311,8 +311,8 @@ parent xjz44n
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 0 94
-hash d8c9b2c47bd7926d
+lines 0 95
+hash 3fa8f4038d2a6f0e
 note The one place the Model changes during a frame. Each arm is a call into nav.rs, a field of the Model, or a method on the App for changes that need the Services (save, a server question, a command).
 
 step h4xmjq
@@ -340,8 +340,8 @@ parent 969yit
 author ai
 file crates/gui/src/widgets.rs
 symbol Frame
-lines 0 8
-hash 3b0f799b7592d1d6
+lines 0 9
+hash 3e6e0384b8979f17
 note What a view draws into: the element tree, the action queue, the grid cache, the font metrics, the overlay, the tooltip asked for this frame, and the mouse cursor the frame will ask the window for. Widgets are its methods.
 
 step hkwrdu
@@ -457,8 +457,8 @@ parent 9pik9m
 author ai
 file crates/gui/src/ids.rs
 symbol CONTROLS
-lines 0 106
-hash 7c9c56236eb8adfd
+lines 0 107
+hash 8e526049d74675b7
 note Every control, for the test that checks them against the registry.
 
 step mjhubp
@@ -721,8 +721,8 @@ order 8
 author ai
 file crates/gui/src/action.rs
 symbol Action
-lines 0 57
-hash 2523093a55174644
+lines 0 58
+hash c4e540fee3ac3ef4
 note Every change a gesture, a key, a script line or a view's measurement can cause, as data. A view names the change; it never makes it.
 
 step xypoz6
@@ -731,8 +731,8 @@ parent 9pik9m
 author ai
 file crates/gui/src/ids.rs
 symbol impl Control
-lines 0 38
-hash bcb60fe673dc4eea
+lines 0 45
+hash 98706fec0cafc15b
 note Ids from a Control: the plain id, the nth for a row, with a suffix for a named row, and nested for a step of a linked tour shown inline (linked/<occurrence>@<element>/<n>).
 
 step y37wqf

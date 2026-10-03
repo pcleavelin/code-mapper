@@ -1,14 +1,15 @@
 use domain::{Line, LineCount, SymbolId};
-use ui::{Button, Count, Label, Point, Px, Run};
+use ui::{Button, Count, Extent, Label, Point, Px, Run};
 
 use crate::action::Action;
+use crate::element_tip::{AttachedTip, Pressing, beside};
 use crate::grid::GUTTER;
 use crate::ids;
 use crate::model::Model;
 use crate::peek::Tip;
 use crate::theme::{
-    Cells, PIXEL, TEXT, TOOLTIP_FRAME, TOOLTIP_LEAST, TOOLTIP_MARGIN, TOOLTIP_OFFSET,
-    TOOLTIP_ROW_GAP, TOOLTIP_RULE, TOOLTIP_SYMBOL_WIDTH, TOOLTIP_TEXT_WIDTH, WEAK,
+    ACCENT, Cells, ELEMENT_TIP_WIDTH, PIXEL, TEXT, TOOLTIP_FRAME, TOOLTIP_LEAST, TOOLTIP_MARGIN,
+    TOOLTIP_OFFSET, TOOLTIP_ROW_GAP, TOOLTIP_RULE, TOOLTIP_SYMBOL_WIDTH, TOOLTIP_TEXT_WIDTH, WEAK,
 };
 use crate::widgets::{CodeBlock, Container, Fill, Frame, Marks, TipAt, Width};
 
@@ -34,8 +35,57 @@ fn place_at(frame: &Frame<'_>, at: Point, columns: Cells, rows: Cells) -> Point 
 }
 
 pub(super) fn tooltip(model: &Model, frame: &mut Frame<'_>) {
-    let shown = show(model, frame);
+    let attached = frame.attached_tip.take();
+    let pressing = Pressing::of(frame.ui.pointer());
+    frame.push(Action::Rest(
+        attached.as_ref().map(|attached| attached.id),
+        pressing,
+    ));
+    let shown = show(model, frame).or_else(|| {
+        attached
+            .filter(|attached| {
+                pressing == Pressing::Released && model.resting.due(attached.id, model.now)
+            })
+            .map(|attached| element_tip(frame, &attached))
+    });
     frame.push(Action::TipShown(shown));
+}
+
+fn element_tip(frame: &mut Frame<'_>, attached: &AttachedTip) -> Label {
+    let cell = frame.metrics.cell;
+    let lines = attached.tip.lines(ELEMENT_TIP_WIDTH);
+    let chord = attached
+        .tip
+        .chord()
+        .map(|chord| format!("  {}", chord.as_str()));
+    let last = lines.len().saturating_sub(1);
+    let widest = lines
+        .iter()
+        .enumerate()
+        .map(|(row, line)| {
+            let chord_room = chord
+                .as_ref()
+                .filter(|_| row == last)
+                .map_or(0, |chord| chord.chars().count());
+            line.as_str().chars().count() + chord_room
+        })
+        .max()
+        .unwrap_or(0);
+    let size = Extent::new(
+        Cells::of_count(widest).of(cell.width) + TOOLTIP_FRAME,
+        Cells::of_count(lines.len()).of(cell.height + TOOLTIP_ROW_GAP) + TOOLTIP_FRAME,
+    );
+    let at = beside(frame.ui.size(), attached.rect, size);
+    frame.start(Container::ElementTip { at });
+    for (row, line) in lines.into_iter().enumerate() {
+        let mut runs = vec![Run::new(line, TEXT)];
+        if let Some(chord) = chord.clone().filter(|_| row == last) {
+            runs.push(Run::new(chord, ACCENT));
+        }
+        frame.text_runs(runs, Fill::Fit);
+    }
+    frame.finish();
+    attached.tip.shown()
 }
 
 fn show(model: &Model, frame: &mut Frame<'_>) -> Option<Label> {

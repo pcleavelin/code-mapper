@@ -40,8 +40,8 @@ parent 2rwmch
 author ai
 file crates/gui/src/views/panel_tree.rs
 symbol header
-lines 0 40
-hash 2d1a5a2eb3bd6816
+lines 0 37
+hash 1f73ee9ffbfa77ca
 note Trigger: SPLIT_RIGHT (|) and SPLIT_DOWN (-) in each panel's header, split-right/<n> and split-down/<n>.
 
 step vk2qts
@@ -50,6 +50,6 @@ parent 2rwmch
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 64 67
+lines 65 68
 hash 78235238f5dbaca6
 note The arm: split, then the picker's search starts empty with the keyboard.

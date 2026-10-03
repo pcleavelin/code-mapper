@@ -413,8 +413,8 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol DOCUMENT
-lines 0 101
-hash e72a314007fc3061
+lines 0 131
+hash 2eabde479dc0c9c3
 note The document: scrolling, selecting a step, whole-symbol and context toggles, hide and collapse, arrow keys, the breadcrumb, hide and show all code, collapse and expand all, wheel scrolling, the steps list, the jump to the graph, and the palette: a press inside its box keeps the keyboard in its field, a click outside closes it and still acts.
 
 step k23duj

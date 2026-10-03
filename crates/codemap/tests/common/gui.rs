@@ -155,6 +155,36 @@ click-id tab@Symbols
 wait 3
 dump
 shot {shots}/palette-left.png
+click-id tab@Tour
+wait 3
+scroll document 0
+wait 2
+hover-id del/1
+wait 2
+dump
+pause 600
+wait 2
+dump
+rect del/1
+rect element-tip
+shot {shots}/tip-delete.png
+hover-id split-right/1
+pause 600
+wait 2
+dump
+rect split-right/1
+rect element-tip
+hover-id save
+pause 600
+wait 2
+dump
+down
+wait 2
+dump
+up
+pause 600
+wait 2
+dump
 quit
 ";
 

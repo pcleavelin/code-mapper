@@ -40,6 +40,6 @@ parent u5328q
 author ai
 file crates/gui/src/views/document.rs
 symbol step_header
-lines 80 86
+lines 79 85
 hash c0bdda51e0f2cbfb
 note Trigger: NO_CONTEXT in the header, drawn only while the step has context, queues Context with Reset.
