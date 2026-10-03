@@ -3,7 +3,7 @@ tour panel-tree
 kind flow
 author ai
 group gui
-note How the window is divided and how the reader rearranges it. Below the top bar and above the status bar, the window is one tree of panels: a split holds two branches side by side or one above the other at a ratio, and a leaf panel holds a stack of views shown as tabs. The ten views (Tours, Symbols, Files, Tour, Diff, Graph, Source, Search, References, Console) each live in at most one panel. The tree is Panels in the Model, laid out top-down every frame from the body's rectangle. The reader drags a divider to resize, drags a tab onto a panel to join it or onto a panel's edge to split it, splits a panel with its | and - buttons, closes it with x, and fills a panel from the picker behind +, a searchable list of views. Navigation still speaks in centre tabs: whatever switches the tab brings that view to front wherever it lives, and adds it back next to the last one shown if it was in no panel; a peek brings References into sight with bring, in a split beside the centre view when no panel holds it. Pointer gestures are read before the tree is built and applied at once, so the frame that sees a drag already draws it. The tree is saved to the user's layout file whenever it changes and no drag is held, and a launch starts from that file (the io-layout path), or from the default tree when there is none.
+note How the window is divided and how the reader rearranges it. Below the top bar and above the status bar, the window is one tree of panels: a split holds two branches side by side or one above the other at a ratio, and a leaf panel holds a stack of views shown as tabs. The ten views (Tours, Symbols, Files, Tour, Diff, Graph, Source, Search, References, Console) each live in at most one panel. The tree is Panels in the Model, laid out top-down every frame from the body's rectangle. The reader drags a divider to resize, drags a tab onto a panel to join it or onto a panel's edge to split it, splits a panel with its | and - buttons, closes it with x, and fills a panel from the picker behind +, a searchable list of views. Navigation still speaks in centre tabs: whatever switches the tab brings that view to front wherever it lives, and adds it back next to the last one shown if it was in no panel; a peek brings References into sight with bring, in a split beside the centre view when no panel holds it. Pointer gestures are read before the tree is built and applied at once, so the frame that sees a drag already draws it. The tree is saved to the user's layout file whenever it changes and no drag is held, and a launch starts from that file (the io-config path), or from the default tree when there is none.
 
 step 0b3yk5
 order 24
@@ -99,8 +99,8 @@ parent q0t4z1
 author ai
 file crates/gui/src/panels.rs
 symbol layout_of
-lines 0 19
-hash ddfcda92adda004d
+lines 0 16
+hash 2b0a1df631568f2a
 note Views by name, the shown tab, a split's direction and ratio as a Share; branch ids are not saved, since a load numbers them afresh.
 
 step 5e9nxa
@@ -109,8 +109,8 @@ parent 3z8x11
 author ai
 file crates/gui/src/panels.rs
 symbol restore
-lines 0 30
-hash e18617b38e2838d8
+lines 0 27
+hash ab23b5c41841a8c2
 note A saved view name the GUI does not know is dropped, and so is a view already placed in an earlier panel, so a hand-edited file can never break one-of-each.
 
 step 5zemej
@@ -437,7 +437,7 @@ file crates/gui/src/panels.rs
 symbol layout
 lines 0 2
 hash 715249615cb78709
-note The tree as domain's LayoutTree, for io-layout.
+note The tree as domain's LayoutTree, for io-config.
 
 step q2y9hy
 order 49

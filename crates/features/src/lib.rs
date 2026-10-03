@@ -98,6 +98,7 @@ pub enum Feature {
     Welcome,
     BuildTour,
     EditTour,
+    Settings,
 }
 
 impl Feature {
@@ -955,6 +956,29 @@ impl Feature {
                         Trigger::Click(Element::new("edit-more")),
                         Trigger::Type(Element::new("edit-note")),
                         Trigger::Palette(Text::new("edit tour"), None),
+                    ]
+                },
+            ),
+            Self::Settings => Spec::new(
+                Text::new("settings"),
+                Text::new(
+                    "a box over the window to choose the theme, the font, the font size and which way the graph grows; kept per user across launches",
+                ),
+                Surface::Window,
+                &const {
+                    [
+                        Trigger::Key(Chord::control(Key::Letter(Letter::new(',')))),
+                        Trigger::Click(Element::new("settings")),
+                        Trigger::Click(Element::new("settings-close")),
+                        Trigger::Click(Element::new("settings-theme")),
+                        Trigger::Click(Element::new("settings-smaller")),
+                        Trigger::Click(Element::new("settings-larger")),
+                        Trigger::Click(Element::new("settings-font")),
+                        Trigger::Click(Element::new("settings-graph")),
+                        Trigger::Palette(
+                            Text::new("settings"),
+                            Some(Chord::control(Key::Letter(Letter::new(',')))),
+                        ),
                     ]
                 },
             ),

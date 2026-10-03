@@ -153,7 +153,7 @@ file xtask/src/lint/checks.rs
 symbol env_access
 lines 0 32
 hash 567afa442895b1d6
-note L7: under crates/, std::env and env:: reads are allowed only in the listed home files (platform script/window, gui/app, io-layout, io-process, codemap/main). Compile-time env::consts passes.
+note L7: under crates/, std::env and env:: reads are allowed only in the listed home files (platform script/window, gui/app, io-config, io-fonts, io-process, codemap/main). Compile-time env::consts passes.
 
 step 7zl7if
 order 21
@@ -474,7 +474,7 @@ author ai
 file xtask/src/lint.rs
 symbol one_way
 lines 0 50
-hash 34001425a575b3c7
+hash aedaa6f30c251486
 note The one way, as one sentence per rule: what to write instead, and where the sanctioned exception lives when there is one (convert.rs, arch.rs EXPECTS, widgets.rs, theme.rs, ids.rs, keys.rs, wire.rs, the env home files). This text is the rule's whole documentation.
 
 step orc9vn

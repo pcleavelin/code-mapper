@@ -141,3 +141,82 @@ fn print_tree(tree: &WireTree, depth: usize, out: &mut String) {
         }
     }
 }
+
+const SETTINGS_HEADER: &str = "codemap settings 1";
+const THEME: &str = "theme";
+const FONT: &str = "font";
+const SIZE: &str = "size";
+const GRAPH: &str = "graph";
+const DARK: &str = "dark";
+const LIGHT: &str = "light";
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum WireTheme {
+    Dark,
+    Light,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum WireSetting {
+    Theme(WireTheme),
+    Font(String),
+    Size(u16),
+    Graph(WireDirection),
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub(crate) struct WireSettings {
+    pub(crate) entries: Vec<WireSetting>,
+}
+
+fn setting(line: &str) -> Option<WireSetting> {
+    let line = line.trim();
+    let (key, value) = line.split_once(' ').unwrap_or((line, ""));
+    let value = value.trim();
+    if key == THEME {
+        if value == DARK {
+            return Some(WireSetting::Theme(WireTheme::Dark));
+        }
+        return (value == LIGHT).then_some(WireSetting::Theme(WireTheme::Light));
+    }
+    if key == FONT {
+        return Some(WireSetting::Font(value.to_owned()));
+    }
+    if key == SIZE {
+        return value.parse().ok().map(WireSetting::Size);
+    }
+    if key == GRAPH {
+        if value == RIGHT {
+            return Some(WireSetting::Graph(WireDirection::Right));
+        }
+        return (value == DOWN).then_some(WireSetting::Graph(WireDirection::Down));
+    }
+    None
+}
+
+pub(crate) fn parse_settings(text: &str) -> Option<WireSettings> {
+    let mut lines = text.lines();
+    if lines.next()? != SETTINGS_HEADER {
+        return None;
+    }
+    Some(WireSettings {
+        entries: lines.filter_map(setting).collect(),
+    })
+}
+
+pub(crate) fn print_settings(settings: &WireSettings) -> String {
+    let mut out = format!("{SETTINGS_HEADER}\n");
+    for entry in &settings.entries {
+        let line = match entry {
+            WireSetting::Theme(WireTheme::Dark) => format!("{THEME} {DARK}"),
+            WireSetting::Theme(WireTheme::Light) => format!("{THEME} {LIGHT}"),
+            WireSetting::Font(family) => format!("{FONT} {family}"),
+            WireSetting::Size(size) => format!("{SIZE} {size}"),
+            WireSetting::Graph(WireDirection::Right) => format!("{GRAPH} {RIGHT}"),
+            WireSetting::Graph(WireDirection::Down) => format!("{GRAPH} {DOWN}"),
+        };
+        out.push_str(&line);
+        out.push('\n');
+    }
+    out
+}

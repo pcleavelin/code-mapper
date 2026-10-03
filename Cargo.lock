@@ -779,7 +779,8 @@ dependencies = [
  "domain",
  "features",
  "index",
- "io-layout",
+ "io-config",
+ "io-fonts",
  "io-lsp",
  "io-map",
  "io-vcs",
@@ -899,11 +900,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "io-layout"
+name = "io-config"
 version = "0.1.0"
 dependencies = [
  "domain",
  "io-store",
+ "strum",
+]
+
+[[package]]
+name = "io-fonts"
+version = "0.1.0"
+dependencies = [
+ "domain",
+ "strum",
 ]
 
 [[package]]
@@ -1589,6 +1599,7 @@ name = "platform"
 version = "0.1.0"
 dependencies = [
  "fontdue",
+ "io-fonts",
  "io-store",
  "png",
  "strum",

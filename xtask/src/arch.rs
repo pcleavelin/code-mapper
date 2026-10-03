@@ -125,7 +125,7 @@ const EXPECTS: [Allowance; 27] = [
     },
 ];
 
-const DEPENDENCIES: [Allowed; 17] = [
+const DEPENDENCIES: [Allowed; 18] = [
     Allowed {
         package: Literal::new("xtask"),
         dependencies: &[
@@ -169,8 +169,16 @@ const DEPENDENCIES: [Allowed; 17] = [
         ],
     },
     Allowed {
-        package: Literal::new("io-layout"),
-        dependencies: &[Literal::new("domain"), Literal::new("io-store")],
+        package: Literal::new("io-config"),
+        dependencies: &[
+            Literal::new("strum"),
+            Literal::new("domain"),
+            Literal::new("io-store"),
+        ],
+    },
+    Allowed {
+        package: Literal::new("io-fonts"),
+        dependencies: &[Literal::new("strum"), Literal::new("domain")],
     },
     Allowed {
         package: Literal::new("io-vcs"),
@@ -229,6 +237,7 @@ const DEPENDENCIES: [Allowed; 17] = [
             Literal::new("strum"),
             Literal::new("ui"),
             Literal::new("io-store"),
+            Literal::new("io-fonts"),
             Literal::new("winit"),
             Literal::new("wgpu"),
             Literal::new("fontdue"),
@@ -242,7 +251,8 @@ const DEPENDENCIES: [Allowed; 17] = [
             Literal::new("domain"),
             Literal::new("index"),
             Literal::new("io-map"),
-            Literal::new("io-layout"),
+            Literal::new("io-config"),
+            Literal::new("io-fonts"),
             Literal::new("io-vcs"),
             Literal::new("io-lsp"),
             Literal::new("cli"),

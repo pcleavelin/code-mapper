@@ -56,6 +56,16 @@ pub(crate) enum Chosen {
     Plain,
 }
 
+impl Chosen {
+    pub(crate) fn of<Value: PartialEq>(value: &Value, current: &Value) -> Self {
+        if value == current {
+            Self::Chosen
+        } else {
+            Self::Plain
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Enabled {
     Enabled,
@@ -86,6 +96,7 @@ pub(crate) enum Container {
     Tooltip { at: Point },
     Picker { at: Point, width: Px },
     Palette { at: Point, width: Px },
+    Settings { at: Point, width: Px },
     PanelHeader,
     Centered,
     StartPage { width: Px },
@@ -201,17 +212,19 @@ impl Container {
                 Style::background(PANEL).border(Sides::ALL, BORDER),
                 None,
             ),
-            Self::Picker { at, width } | Self::Palette { at, width } => Shape::new(
+            Self::Picker { at, width }
+            | Self::Palette { at, width }
+            | Self::Settings { at, width } => Shape::new(
                 Layout::column()
                     .floating(at)
                     .width(width)
                     .padding(TOOLTIP_PADDING)
                     .gap(TIGHT_GAP),
                 Style::background(PANEL).border(Sides::ALL, ACCENT),
-                Some(if matches!(self, Self::Picker { .. }) {
-                    ids::picker()
-                } else {
-                    ids::palette_box()
+                Some(match self {
+                    Self::Picker { .. } => ids::picker(),
+                    Self::Settings { .. } => ids::settings_box(),
+                    _ => ids::palette_box(),
                 }),
             ),
             Self::Centered | Self::StartPage { .. } => self.page_shape(),

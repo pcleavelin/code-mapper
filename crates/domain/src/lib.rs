@@ -2,6 +2,7 @@ mod id;
 mod index;
 mod layout;
 mod map;
+mod settings;
 mod text;
 
 pub use id::{Entry, IdList, Key, Position};
@@ -19,6 +20,7 @@ pub use map::{
     StepChange, StepDiff, StepId, StepNote, StepNumber, StepOrder, TextFragment, Tour, TourCount,
     TourDiff, TourEdit, TourKind, TourName, follow,
 };
+pub use settings::{BaseFontSize, FontFamily, Settings, Theme};
 pub use text::{
     ByteOffset, Column, FileText, Line, LineCount, LineOffset, RelativePath, Revision, SourceLine,
     Span, TextHash,

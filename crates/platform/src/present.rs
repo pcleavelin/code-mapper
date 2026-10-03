@@ -142,7 +142,7 @@ impl Renderer {
         let mut encoder = self
             .device
             .create_command_encoder(&CommandEncoderDescriptor::default());
-        self.encode_pass(&mut encoder, &frame.texture, clear);
+        self.encode_pass(&mut encoder, &frame.texture, self.repaint.paint(clear));
         if let Some(path) = self.shot.take() {
             self.read_back(encoder, &frame.texture, &path);
         } else {

@@ -3,9 +3,10 @@ use std::fmt;
 use std::time::{Duration, Instant};
 
 use domain::{
-    Depth, FileId, GroupName, Index, Line, LineCount, Map, Row, Span, Step, StepId, Tour, TourDiff,
-    TourName,
+    Depth, FileId, GroupName, Index, Line, LineCount, Map, Row, Settings, Span, Step, StepId, Tour,
+    TourDiff, TourName,
 };
+use io_fonts::Fonts;
 use io_map::{MapStore, Stamp};
 use strum::VariantArray;
 use ui::{Count, Extent, FontSize, Id, Label, Px};
@@ -17,6 +18,7 @@ use crate::nav::Nav;
 use crate::palette::Palette;
 use crate::panels::Panels;
 use crate::peek::{Peek, Queries};
+use crate::settings::SettingsMenu;
 use crate::status::{ConsoleLog, Status};
 use crate::text::Needle;
 use crate::theme;
@@ -396,6 +398,9 @@ pub(crate) struct Model {
     pub(crate) metrics: Metrics,
     pub(crate) now: Duration,
     pub(crate) wizard: Option<Wizard>,
+    pub(crate) settings: Settings,
+    pub(crate) fonts: Option<Fonts>,
+    pub(crate) settings_menu: Option<SettingsMenu>,
 }
 
 impl Model {
@@ -439,6 +444,9 @@ impl Model {
             },
             now: Duration::ZERO,
             wizard: None,
+            settings: Settings::default(),
+            fonts: None,
+            settings_menu: None,
         }
     }
 

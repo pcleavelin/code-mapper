@@ -72,8 +72,8 @@ author ai
 file crates/platform/src/font.rs
 symbol BUNDLED
 lines 0 0
-hash 9ad7c3503b4d527e
-note Hack Regular, compiled into the binary, so the tool looks the same everywhere and never searches the system for a font.
+hash 5ddfeeb540c2b525
+note Hack Regular, compiled into the binary: the face every window starts with, and the one shown when the chosen font is not installed or does not load. BUNDLED_FAMILY is its name as the settings box lists it.
 
 step 648zwu
 order 29
@@ -100,8 +100,8 @@ parent ont7tk
 author ai
 file crates/platform/src/renderer.rs
 symbol new
-lines 0 78
-hash 7ab02f646103e6f7
+lines 0 79
+hash 6672afb115a50537
 note One-time setup, run when the window exists: adapter, device, surface, pipeline, sampler, uniforms, atlas and font. The surface is deliberately configured to a non-sRGB format when one is offered, because the colours in the app are already sRGB and a sRGB target would convert them twice; COPY_SRC is added so a frame can be read back as a screenshot. The sampler is nearest in both directions. Every failure is a StartError, which the loop returns instead of panicking.
 
 step 7q87vj
@@ -174,6 +174,16 @@ lines 0 4
 hash 8c018f8c8eb49887
 note One scissor rectangle and the index range start..end drawn under it. The render pass walks these and draws a slice of the one index buffer per batch.
 
+step a54m9i
+order 61
+parent qmqw3w
+author ai
+file crates/platform/src/font.rs
+symbol of_file
+lines 0 8
+hash 22544f2672117fa1
+note A face from an installed font file; the file's face index picks one face of a collection (.ttc).
+
 step ai01lp
 order 44
 parent 6cx7dp
@@ -183,6 +193,16 @@ symbol rasterize
 lines 4 12
 hash 2b54a64dd503c2fa
 note One glyph's coverage bitmap at a size, with its size in texels and its offset from pen and baseline.
+
+step cxd3kt
+order 63
+parent gte9tj
+author ai
+file crates/platform/src/renderer.rs
+symbol replace_atlas
+lines 0 10
+hash 0ccbef759a72045c
+note A fresh atlas of a side, with its texture and bind group; growing and a new face both go through it.
 
 step d8z3s3
 order 11
@@ -260,9 +280,19 @@ parent 82ju6u
 author ai
 file crates/platform/src/renderer.rs
 symbol grow_atlas
-lines 0 10
-hash a56d7746e039a342
-note A full atlas doubles, up to a cap, and everything is rasterised again on demand rather than being copied - it happens once or twice in a session. At the cap it starts over empty at the same size instead of refusing to draw text. The texture and bind group are made again to match.
+lines 0 2
+hash de2aada1bc7f26c2
+note A full atlas doubles, up to a cap, and everything is rasterised again on demand rather than being copied - it happens once or twice in a session. At the cap it starts over empty at the same size instead of refusing to draw text. replace_atlas makes the texture and bind group again to match.
+
+step h6i9xv
+order 62
+parent a54m9i
+author ai
+file crates/platform/src/font.rs
+symbol of_face
+lines 0 9
+hash 5aa7d0434981cd0b
+note Both faces parsed: the chosen text face and the bundled Codicons, so icons never depend on the chosen font.
 
 step hgnmib
 order 40
@@ -270,9 +300,9 @@ parent 6my0c1
 author ai
 file crates/platform/src/font.rs
 symbol load
-lines 0 10
-hash d738851796b5a065
-note The font face, parsed from the bundled bytes; a parse failure is a StartError.
+lines 0 2
+hash dd41beb5970b4b34
+note The bundled face at start, through bundled; a parse failure is a StartError.
 
 step hmokb5
 order 57
@@ -310,8 +340,8 @@ parent 0q1h08
 author ai
 file crates/platform/src/renderer.rs
 symbol circle
-lines 0 24
-hash 6a8b972e147e9350
+lines 0 25
+hash c110cf922ca57995
 note A twelve-sided fan around the centre, all on the white patch, used for the dot at the end of a graph edge.
 
 step m8d9hc
@@ -409,8 +439,8 @@ order 0
 author ai
 file crates/platform/src/renderer.rs
 symbol Renderer
-lines 0 22
-hash d040115efb473113
+lines 0 23
+hash af5eec9fcca76e04
 note The context: the window, surface, device and queue, the pipeline and its bind group, the sampler, uniform buffer and atlas texture, the vertex and index buffers kept between frames, the font and the atlas, and the three vectors a frame is replayed into - vertices, indices and the batches that slice them - with the clip current while replaying. size and scale are the window's; the app calls shoot to have the next frame also written to a PNG. Reused buffers hang off it so a steady frame allocates nothing on the GPU.
 
 step opwule
@@ -450,7 +480,7 @@ author ai
 file crates/platform/src/present.rs
 symbol render
 lines 0 23
-hash 3d37249bd2a16f12
+hash ec886428d204c430
 note Present one frame, called by the loop with the app's DrawList and clear colour: replay the list, then take the surface texture (a lost or outdated surface is reconfigured and the frame skipped rather than failing), upload the atlas if it changed and the geometry, encode the one render pass, and submit - through the screenshot path when a shot was asked for - then present.
 
 step q7j9e0
@@ -462,6 +492,16 @@ symbol Texel
 lines 0 0
 hash 89216823fe8e9e05
 note A count of atlas texels, the unit of the atlas's side, slots and bitmaps, kept apart from screen pixels.
+
+step qmqw3w
+order 60
+parent ont7tk
+author ai
+file crates/platform/src/renderer.rs
+symbol use_font_file
+lines 0 7
+hash 74c955b69f04e0d0
+note The settings' font, live: the chosen font file's face (or the bundled one for None) replaces the Font, and the atlas starts over empty at its first size, since every sprite in it was cut from the old face. Metrics are measured again on demand, so the next frame's cell size follows.
 
 step r6lf42
 order 59
@@ -480,7 +520,7 @@ author ai
 file crates/platform/src/renderer.rs
 symbol quad
 lines 0 19
-hash 03cfe267e5b06f70
+hash 3b03af75d6609441
 note Four corners and a texture area become four vertices and six indices, then extend_batch moves the current batch's end past them. Rectangles, line quads and glyphs all end up here.
 
 step sdbwac
@@ -503,6 +543,16 @@ lines 0 24
 hash 2269c96a103e93e9
 note Drops each row's padding and swaps the channels when the surface is BGRA, giving opaque RGBA.
 
+step tu5gvi
+order 65
+parent yhigki
+author ai
+file crates/ui/src/color.rs
+symbol Repaint
+lines 0 0
+hash f7ff9000a08b6cd2
+note A colour mapping as a plain function, so the ui crate knows nothing of themes and the renderer applies it per vertex without a table lookup of its own.
+
 step u1ogh2
 order 49
 parent pqukys
@@ -522,6 +572,16 @@ symbol text
 lines 0 15
 hash c35e73ee415b2343
 note A run of text with its top-left at a point, one cell per character from the font's metrics, on a baseline an ascent below the top. Characters entirely left of the clip and spaces are skipped and the run stops at the clip's right edge, which is what makes a very long line cheap to draw.
+
+step yhigki
+order 64
+parent ont7tk
+author ai
+file crates/platform/src/renderer.rs
+symbol use_repaint
+lines 0 2
+hash 099f7b1284108d55
+note The theme, live: every colour the renderer writes into a vertex, and the clear colour, passes through this Repaint. Dark is Repaint::NONE, so the GUI's colours reach the GPU as written.
 
 step z2d3kc
 order 52

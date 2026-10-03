@@ -1,0 +1,401 @@
+codemap 9
+tour io-config
+kind layer
+author ai
+group gui
+note The io-config crate: the user's own files in the codemap config folder, the saved panel layout and the settings, each a small text file per user. user_file is the one lookup: the file's variable (CODEMAP_LAYOUT, CODEMAP_SETTINGS) when set, else codemap/<name> under $XDG_CONFIG_HOME, ~/.config or %APPDATA%; a script or screenshot run asks with Reach::OverrideOnly, so only the variable reaches it and a run never reads or writes the user's real files. LayoutStore and SettingsStore each have find, load and save: load gives None for a missing or unreadable file and the GUI starts from its defaults, save creates the folder and writes through io-store. The layout is rejected whole when any line is wrong; the settings keep every line that reads and drop the others, since one typo should not cost the rest. The values are domain's LayoutTree, which knows view names only as ViewKeys, and Settings.
+
+step 02nvpa
+order 28
+parent 5w8zw8
+author ai
+file crates/io-config/src/wire.rs
+symbol parse_settings
+lines 0 8
+hash f0b9d8e15ac5b09f
+note The first line must be 'codemap settings 1'; every other line goes through setting, and a line it does not read is dropped.
+
+step 04nlsv
+order 24
+parent ffv754
+author ai
+file crates/io-config/src/lib.rs
+symbol save_text
+lines 0 5
+hash 1d1e184e8d640997
+note Creates the folder, then writes the whole file through io-store (temporary file, rename over).
+
+step 0aiys7
+order 31
+parent 8958aw
+author ai
+file crates/io-config/src/lib.rs
+symbol save
+lines 0 5
+hash 1e3e027debdb1dc1
+note Prints every key in a fixed order, the font only when one is chosen, through save_text.
+
+step 2oljkf
+order 37
+author ai
+file crates/io-config/src/tests.rs
+symbol a_bad_line_keeps_that_setting_at_its_default_and_the_rest_as_written
+lines 0 7
+hash 432a0e372cf64a79
+note A bad theme, a size over 32 and an unknown key each lose only their own line; the graph line after them is kept.
+
+step 2t48o8
+order 29
+parent 02nvpa
+author ai
+file crates/io-config/src/wire.rs
+symbol setting
+lines 0 23
+hash 3b03793566481291
+note One line: a key word, a space, the value. theme dark|light, font <family> (the rest of the line, spaces included), size <number>, graph right|down. An unknown key or value reads as nothing.
+
+step 5pb8a4
+order 12
+author ai
+file crates/domain/src/layout.rs
+symbol LayoutTree
+lines 0 3
+hash ac44e4322c37bb0d
+note The layout as a value: a Split of two trees or a Panel. domain holds it so io-config can load and save it without knowing the GUI.
+
+step 5w8zw8
+order 27
+parent 8958aw
+author ai
+file crates/io-config/src/lib.rs
+symbol load
+lines 0 3
+hash 3a74e5d0bf1c3f37
+note A missing or unreadable file, or one with another header, is None; the GUI then uses Settings::default.
+
+step 8958aw
+order 25
+author ai
+file crates/io-config/src/lib.rs
+symbol SettingsStore
+lines 0 2
+hash 6f1bfdc611d2ea9e
+note Where the settings live: one file path, from find or at.
+
+step 9cdoid
+order 10
+parent ffv754
+author ai
+file crates/io-config/src/wire.rs
+symbol print
+lines 0 4
+hash 82ebf2048401a818
+note The header line, then the tree.
+
+step 9i3a03
+order 16
+parent 5pb8a4
+author ai
+file crates/domain/src/layout.rs
+symbol LayoutPanel
+lines 0 3
+hash 6b156845ff24f995
+note A stack of view names and the one in front.
+
+step arsuew
+order 22
+parent 5pb8a4
+author ai
+file crates/domain/src/layout.rs
+symbol SplitDirection
+lines 0 4
+hash 0f3b782f283d6752
+note Right: side by side, a vertical divider. Down: one above the other. As the settings' graph value, Right grows the call tree left to right and Down top to bottom.
+
+step bsmdiv
+order 2
+parent vo5pwd
+author ai
+file crates/io-config/src/lib.rs
+symbol find
+lines 0 2
+hash 25ffc613485f1535
+note The layout's file through user_file: CODEMAP_LAYOUT, else codemap/layout in the config folder.
+
+step d00zif
+order 30
+parent 5w8zw8
+author ai
+file crates/io-config/src/convert.rs
+symbol settings
+lines 0 16
+hash c53829ad69a9c4cf
+note Wire to domain, folded over Settings::default: a font name FontFamily refuses or a size outside 8 to 32 keeps the default for that key only.
+
+step d8p7ax
+order 15
+parent 5pb8a4
+author ai
+file crates/domain/src/layout.rs
+symbol LayoutSplit
+lines 0 5
+hash 09edd5a8a29b14e1
+note A split's direction, its first branch's share of the room, and the two branches.
+
+step ffn15n
+order 19
+parent z95a7k
+author ai
+file crates/domain/src/layout.rs
+symbol permille
+lines 0 2
+hash f915c0f03dafd237
+note None above WHOLE.
+
+step ffv754
+order 4
+parent vo5pwd
+author ai
+file crates/io-config/src/lib.rs
+symbol save
+lines 0 2
+hash 9072eb81919a7718
+note The whole file through save_text, so a crash mid-save leaves the old layout.
+
+step hp8dwt
+order 32
+parent 0aiys7
+author ai
+file crates/io-config/src/convert.rs
+symbol wire_settings
+lines 0 12
+hash 74752eacc8879af3
+note Domain to wire; the bundled face (no family) writes no font line.
+
+step i2dco1
+order 35
+parent p2s4vq
+author ai
+file crates/domain/src/settings.rs
+symbol FontFamily
+lines 0 0
+hash d22032aaf963bd0b
+note A font family's name as the font's name table spells it: trimmed, never empty, one line.
+
+step io4lww
+order 3
+parent vo5pwd
+author ai
+file crates/io-config/src/lib.rs
+symbol load
+lines 0 3
+hash f23a7f0a56e3dcc3
+note Missing, unreadable and malformed all read as None: a bad file never stops the window from opening, it only costs the saved layout.
+
+step itm4zf
+order 34
+parent p2s4vq
+author ai
+file crates/domain/src/settings.rs
+symbol BaseFontSize
+lines 0 0
+hash 2b46735dc7cb2544
+note The font size at scale 1, 8 to 32 pixels; larger and smaller stop at the ends. The GUI scales it by the display's factor into a ui FontSize.
+
+step jabnx6
+order 1
+parent vo5pwd
+author ai
+file crates/io-config/src/lib.rs
+symbol Reach
+lines 0 3
+hash d010890a0ed12115
+note User for a real launch; OverrideOnly for a script or screenshot run, which reads and writes a layout only when CODEMAP_LAYOUT names one.
+
+step k3we47
+order 6
+parent rxretx
+author ai
+file crates/io-config/src/wire.rs
+symbol tree
+lines 0 38
+hash 07938d2713deaff7
+note One branch at the given depth: 'panel' and its view names, a trailing * marking the one in front; or 'right' or 'down', its share, then exactly two branches one level deeper.
+
+step mcykpn
+order 7
+parent rxretx
+author ai
+file crates/io-config/src/wire.rs
+symbol row
+lines 0 7
+hash 109a3d8ba8c13fc3
+note A line's depth (its leading spaces in pairs, None for an odd count) and its words.
+
+step oji43d
+order 36
+parent p2s4vq
+author ai
+file crates/domain/src/settings.rs
+symbol Theme
+lines 0 4
+hash e49974930dddec22
+note Dark or light; the GUI turns it into the renderer's Repaint.
+
+step p2s4vq
+order 33
+parent 8958aw
+author ai
+file crates/domain/src/settings.rs
+symbol Settings
+lines 0 5
+hash 9a96ad4b255dd46e
+note The settings as a value: theme, font (None is the bundled face), size and which way the graph grows. Built from Settings::default with the with_ methods, so a reader that drops a line keeps the default.
+
+step q8euj8
+order 23
+parent bsmdiv
+author ai
+file crates/io-config/src/lib.rs
+symbol user_file
+lines 0 12
+hash 7eb27470b88630cb
+note The one lookup of a user file: its variable first, whatever the reach; then XDG_CONFIG_HOME, HOME/.config and APPDATA, each + codemap/<name>. None when none of them is set.
+
+step rxretx
+order 5
+parent io4lww
+author ai
+file crates/io-config/src/wire.rs
+symbol parse
+lines 0 13
+hash aacb9042ce263c60
+note The first line must be 'codemap layout 1'. Blank lines are skipped; every other line must be indented in steps of two spaces, and the tree must use every line.
+
+step t406my
+order 26
+parent 8958aw
+author ai
+file crates/io-config/src/lib.rs
+symbol find
+lines 0 2
+hash c179e768b1acfcae
+note user_file with CODEMAP_SETTINGS and codemap/settings.
+
+step thgwmz
+order 13
+author ai
+file crates/io-config/src/tests.rs
+symbol anything_malformed_reads_as_no_layout
+lines 0 16
+hash 34254f2e4c1df3ee
+note Every way a file can be wrong reads as no layout: another version, an unknown word, a share over 1000, a split with one child, two roots, an odd indent, a name with punctuation, a file that is not there.
+
+step tihrgm
+order 14
+parent 9cdoid
+author ai
+file crates/io-config/src/wire.rs
+symbol print_tree
+lines 0 32
+hash 8ed9b4f3f239f098
+note Indents two spaces per level; a panel's shown view gets its *.
+
+step uk1zx1
+order 17
+parent 9i3a03
+author ai
+file crates/domain/src/layout.rs
+symbol new
+lines 0 3
+hash b623897e828999bf
+note A shown name that is not in the stack is dropped, so a panel never claims a tab it does not hold.
+
+step uvbjju
+order 38
+parent 0aiys7
+author ai
+file crates/io-config/src/wire.rs
+symbol print_settings
+lines 0 15
+hash 91bc0e83fde495eb
+note The header, then one line per entry: key, space, value.
+
+step v4mooe
+order 8
+parent rxretx
+author ai
+file crates/io-config/src/wire.rs
+symbol WireTree
+lines 0 10
+hash 66c5281bb855c798
+note The file's shape exactly: a split's direction word and share as a plain number, a panel's names with the shown flag.
+
+step vh1n88
+order 11
+parent ffv754
+author ai
+file crates/io-config/src/convert.rs
+symbol wire
+lines 0 19
+hash 7633fd3cb31fd873
+note Domain to wire, the inverse of layout.
+
+step vo5pwd
+order 0
+author ai
+file crates/io-config/src/lib.rs
+symbol LayoutStore
+lines 0 2
+hash 678b7e61e3d53717
+note Where the layout lives: one file path. Built by find, or at for a test that names its own file.
+
+step wg6coz
+order 9
+parent io4lww
+author ai
+file crates/io-config/src/convert.rs
+symbol layout
+lines 0 25
+hash 3f0af143c68e64bc
+note Wire to domain: a share above 1000 or a name that is not a ViewKey rejects the whole file. The first starred name is the one in front.
+
+step y7rqnw
+order 20
+parent 5pb8a4
+author ai
+file crates/domain/src/layout.rs
+symbol ViewKey
+lines 0 0
+hash b648e24f36ec5d78
+note A view's name as saved: ASCII letters and digits, so it needs no quoting in the file.
+
+step z95a7k
+order 18
+parent 5pb8a4
+author ai
+file crates/domain/src/layout.rs
+symbol Share
+lines 0 0
+hash 5315532e11b038f0
+note A share of a split's room in thousandths, 0 to 1000; the GUI's Ratio carries the same number.
+
+step zr3lkn
+order 39
+parent 2t48o8
+author ai
+file crates/io-config/src/wire.rs
+symbol WireSetting
+lines 0 5
+hash de855e93527590f0
+note The file's lines as read: a theme word, the font's name as written, a size as a plain number (range-checked only in convert), a direction word.
+
+step zysfvv
+order 21
+parent y7rqnw
+author ai
+file crates/domain/src/layout.rs
+symbol new
+lines 0 3
+hash c9937ad05ed3cbf3
+note None for an empty name or one with anything but letters and digits.

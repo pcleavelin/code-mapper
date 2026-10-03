@@ -22,7 +22,7 @@ author ai
 file crates/ui/src/tree.rs
 symbol end
 lines 0 28
-hash 01d39c3aec580a99
+hash 7ac36a896554c703
 note Layout, once, for the whole frame, with the renderer as the Measure. Each axis gets a fit pass bottom-up and a grow pass top-down; after the horizontal axis, with widths final and heights not, wrapped text learns how many lines it takes; then one pass places every element, and every id's Placement is stored for next frame's input. Floating elements are left out of every flow calculation and sized against the window instead.
 
 step 2f0095
@@ -82,8 +82,8 @@ parent qf94mj
 author ai
 file crates/ui/src/tree.rs
 symbol Placement
-lines 0 4
-hash 8c9a16cf3231ff74
+lines 0 5
+hash 1527342dc37f288a
 note Where an id was last frame: its rectangle, its clip and the extent of its content.
 
 step a3j9w8
@@ -92,8 +92,8 @@ parent ipqjft
 author ai
 file crates/ui/src/tree.rs
 symbol begin
-lines 0 24
-hash b65e57223c27c64a
+lines 0 26
+hash 075c6c60d8faf807
 note Start of a frame: clear the tree, copy the pointer and the window size, and pick the hot element - of every id under the mouse last frame (inside both its rectangle and its clip), the one with the smallest visible area, so a block taller than its scroll container still wins over the container. A left press makes the hot id active; releasing the button clears it.
 
 step b8aeve
@@ -221,8 +221,8 @@ order 0
 author ai
 file crates/ui/src/tree.rs
 symbol Ui
-lines 0 10
-hash bcf916d54d6c091b
+lines 0 11
+hash 1c091b919307660b
 note The tree itself: roots, the stack of elements still open (the top is the one being filled), and last frame's Placement per id - that map is the whole of what survives a frame, and it is what every hit test and every scroll clamp reads. hot is the id under the mouse, active the id the left button went down on and is still held over, last_mouse turns the pointer into a drag delta, scroll_drag holds the id whose scrollbar thumb is being dragged and how far down the thumb the mouse grabbed it, and pointer and size are this frame's copy of the input's pointer and the window size.
 
 step iw1fmo
@@ -231,8 +231,8 @@ parent ipqjft
 author ai
 file crates/ui/src/tree.rs
 symbol scroll_by_wheel
-lines 0 50
-hash 39eedf45a5ce7cf3
+lines 0 52
+hash 6a236d453795ee30
 note Scrolls an offset by the wheel when the element is the hit or the mouse is inside its visible rectangle, clamps it to the content extent the element showed last frame, and returns it for the caller to build the element with. The scrollbar is live here too: pressing the thumb starts a drag that follows the mouse from where it grabbed, and clicking the track jumps so the clicked point is centred. The offset is the caller's state, not the tree's.
 
 step ja80zd
@@ -255,14 +255,24 @@ lines 0 4
 hash cf229eaaf0506056
 note The three things an element can be. Custom is a boxed Draw handed the Canvas and the element's rectangle, which is how the graph canvas draws itself inside the tree without becoming part of it; Text is ui's Text (see ui-text).
 
+step kukr92
+order 44
+parent a3j9w8
+author ai
+file crates/ui/src/tree.rs
+symbol Capture
+lines 0 4
+hash 4cc39f1ebcc3af24
+note Which elements the pointer can reach this frame. Floating limits hot elements and wheel scrolling to the floating layer (the settings box), so a click or a wheel over a modal box never reaches the panels drawn under it; Placement records each element's layer for this.
+
 step lg4ced
 order 25
 parent 27nlma
 author ai
 file crates/ui/src/tree.rs
 symbol record
-lines 0 14
-hash 55dccd5da6b61916
+lines 0 20
+hash f2b02bfb7a67c844
 note The frame's last act: every element with an id records its rectangle, its clip and its content extent; end then remembers the mouse so the next frame can turn it into a drag delta. This map is the only thing that crosses a frame boundary.
 
 step n1kzmu
@@ -384,6 +394,16 @@ symbol paint_text
 lines 0 29
 hash eb959c35562500e9
 note Text at the content origin: a wrapped text draws its lines a row apart in the first run's colour; an unwrapped one chains its coloured runs along the line, each starting where the last one's pen stopped; a clipped one does the same with the runs Text::clipped cut to the columns inside the element's padding.
+
+step yswgji
+order 45
+parent kukr92
+author ai
+file crates/ui/src/tree.rs
+symbol capture
+lines 0 2
+hash 1344632d71a05442
+note Set by the app before begin, every frame.
 
 step yw3bj2
 order 26

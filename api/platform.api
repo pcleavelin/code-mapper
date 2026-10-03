@@ -1,9 +1,14 @@
 error::pub struct Reason(&'static str);
 error::pub enum StartError { EventLoop(EventLoopError), Window(OsError), Surface(CreateSurfaceError), Adapter(RequestAdapterError), Device(RequestDeviceError), SurfaceConfiguration, Font(Reason), }
-renderer::pub struct Renderer { pub(crate) window: Arc<Window>, pub(crate) surface: Surface<'static>, pub(crate) device: Device, pub(crate) queue: Queue, pub(crate) config: SurfaceConfiguration, pub(crate) pipeline: Pipeline, pub(crate) bind_group: BindGroup, sampler: Sampler, pub(crate) uniforms: Buffer, pub(crate) texture: Texture, pub(crate) vertex_buffer: Option<GpuBuffer>, pub(crate) index_buffer: Option<GpuBuffer>, font: Font, pub(crate) atlas: Atlas, pub(crate) vertices: Vec<Vertex>, pub(crate) indices: Indices, pub(crate) batches: Vec<Batch>, clip: Rect, pub(crate) size: Extent, pub(crate) scale: Scale, pub(crate) shot: Option<PathBuf>, }
+font::pub struct FamilyName(&'static str);
+font::pub const fn as_str(self) -> &'static str
+font::pub const BUNDLED_FAMILY: FamilyName = FamilyName("Hack");
+renderer::pub struct Renderer { pub(crate) window: Arc<Window>, pub(crate) surface: Surface<'static>, pub(crate) device: Device, pub(crate) queue: Queue, pub(crate) config: SurfaceConfiguration, pub(crate) pipeline: Pipeline, pub(crate) bind_group: BindGroup, sampler: Sampler, pub(crate) uniforms: Buffer, pub(crate) texture: Texture, pub(crate) vertex_buffer: Option<GpuBuffer>, pub(crate) index_buffer: Option<GpuBuffer>, font: Font, pub(crate) atlas: Atlas, pub(crate) vertices: Vec<Vertex>, pub(crate) indices: Indices, pub(crate) batches: Vec<Batch>, clip: Rect, pub(crate) size: Extent, pub(crate) scale: Scale, pub(crate) shot: Option<PathBuf>, pub(crate) repaint: Repaint, }
 renderer::pub const fn scale(&self) -> Scale
 renderer::pub const fn size(&self) -> Extent
 renderer::pub fn shoot(&mut self, path: PathBuf)
+renderer::pub fn use_font_file(&mut self, file: Option<&FontFile>) -> Result<(), Reason>
+renderer::pub const fn use_repaint(&mut self, repaint: Repaint)
 script::pub struct ScriptLine(String);
 script::pub fn new(text: impl Into<String>) -> Self
 script::pub fn as_str(&self) -> &str

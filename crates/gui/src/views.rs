@@ -7,6 +7,7 @@ mod left;
 mod palette;
 mod panel_tree;
 mod references;
+mod settings;
 mod tooltip;
 mod welcome;
 mod wizard;
@@ -31,5 +32,6 @@ pub(crate) fn build(model: &Model, frame: &mut Frame<'_>, graph: Option<GraphFra
     authoring::step_list_band(model, frame);
     panel_tree::picker(model, frame);
     palette::palette(model, frame);
+    settings::settings(model, frame);
     tooltip::tooltip(model, frame);
 }

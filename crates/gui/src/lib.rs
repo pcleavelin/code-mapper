@@ -13,6 +13,7 @@ mod palette;
 mod panels;
 mod peek;
 mod runtime;
+mod settings;
 mod status;
 mod text;
 mod theme;

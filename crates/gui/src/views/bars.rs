@@ -4,6 +4,7 @@ use crate::action::Action;
 use crate::field::Which;
 use crate::ids;
 use crate::model::{Dirty, Model};
+use crate::settings::SettingsAct;
 use crate::status::Tone;
 use crate::text::Clipped;
 use crate::theme::{GREEN, MAP_PLACE, ORANGE, RED, SEARCH_FIELD, TEXT, WEAK};
@@ -57,6 +58,17 @@ pub(super) fn top_bar(model: &Model, frame: &mut Frame<'_>) {
     };
     if frame.button(save, ids::SAVE.target(), chosen).clicked() {
         frame.push(Action::Save);
+    }
+    let open = if model.settings_menu.is_some() {
+        Chosen::Chosen
+    } else {
+        Chosen::Plain
+    };
+    if frame
+        .button(Icon::Settings, ids::SETTINGS.target(), open)
+        .clicked()
+    {
+        frame.push(Action::Settings(SettingsAct::Toggle));
     }
     frame.finish();
 }

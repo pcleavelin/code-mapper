@@ -69,6 +69,20 @@ pub struct Placement {
     pub rect: Rect,
     pub clip: Rect,
     pub content: Extent,
+    layer: Layer,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum Capture {
+    #[default]
+    Everything,
+    Floating,
+}
+
+impl Capture {
+    fn reaches(self, placement: &Placement) -> bool {
+        self == Self::Everything || placement.layer == Layer::Floating
+    }
 }
 
 impl Placement {
@@ -310,7 +324,12 @@ impl Element {
         }
     }
 
-    fn record(&self, placements: &mut BTreeMap<Id, Placement>) {
+    fn record(&self, placements: &mut BTreeMap<Id, Placement>, inherited: Layer) {
+        let layer = if self.layout.floating.is_some() {
+            Layer::Floating
+        } else {
+            inherited
+        };
         if let Some(id) = self.id {
             placements.insert(
                 id,
@@ -318,11 +337,12 @@ impl Element {
                     rect: self.rect,
                     clip: self.clip,
                     content: self.content,
+                    layer,
                 },
             );
         }
         for child in &self.children {
-            child.record(placements);
+            child.record(placements, layer);
         }
     }
 
@@ -449,7 +469,7 @@ enum Level {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-enum Layer {
+pub(crate) enum Layer {
     Base,
     Floating,
 }
@@ -471,9 +491,14 @@ pub struct Ui {
     scroll_drag: Option<ScrollGrab>,
     pointer: Pointer,
     size: Extent,
+    capture: Capture,
 }
 
 impl Ui {
+    pub const fn capture(&mut self, capture: Capture) {
+        self.capture = capture;
+    }
+
     pub fn begin(&mut self, input: &Input) {
         self.roots.clear();
         self.stack.clear();
@@ -484,7 +509,9 @@ impl Ui {
             .previous
             .iter()
             .filter(|(_, placement)| {
-                placement.rect.contains(mouse) && placement.clip.contains(mouse)
+                self.capture.reaches(placement)
+                    && placement.rect.contains(mouse)
+                    && placement.clip.contains(mouse)
             })
             .max_by_key(|(id, placement)| {
                 let visible = placement.rect.intersect(placement.clip);
@@ -593,7 +620,9 @@ impl Ui {
     pub fn scroll_by_wheel(&mut self, id: Id, offset: &mut Px) -> Px {
         let mouse = self.pointer.mouse;
         let inside = self.previous.get(&id).is_some_and(|placement| {
-            placement.rect.contains(mouse) && placement.clip.contains(mouse)
+            self.capture.reaches(placement)
+                && placement.rect.contains(mouse)
+                && placement.clip.contains(mouse)
         });
         if self.hot == Some(id) || inside {
             *offset -= self.pointer.wheel.vertical.truncate();
@@ -667,7 +696,7 @@ impl Ui {
         }
         self.previous.clear();
         for root in &self.roots {
-            root.record(&mut self.previous);
+            root.record(&mut self.previous, Layer::Base);
         }
         self.last_mouse = self.pointer.mouse;
     }

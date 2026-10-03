@@ -4,11 +4,11 @@ use std::time::Duration;
 
 use domain::LayoutTree;
 use domain::{Line, Map, RelativePath, Root};
-use io_layout::{LayoutStore, Reach};
+use io_config::{LayoutStore, Reach, SettingsStore};
 use io_map::MapStore;
 use platform::{Cursor, Exit, Frame as PlatformFrame, Outcome, Renderer, ScriptLine, Visibility};
 use strum::VariantArray;
-use ui::{Button, Count, Id, Input, Label, Measure, Px, Ui};
+use ui::{Button, Capture, Count, Id, Input, Label, Measure, Px, Ui};
 
 use crate::action::Action;
 use crate::dump::{self, Context, Dump, DumpLines};
@@ -19,7 +19,8 @@ use crate::ids;
 use crate::keys::{self, Going, WizardKey};
 use crate::model::{Metrics, Model, Readable, Tab, TabName, TourSlot};
 use crate::palette::PaletteAction;
-use crate::panels::{Panels, View};
+use crate::panels::{Direction, Panels, View};
+use crate::settings::{KeptSettings, SettingsAct};
 use crate::status::Status;
 use crate::theme::{self, BACKGROUND, TEXT};
 use crate::views;
@@ -41,6 +42,7 @@ pub(crate) struct App {
     shot: Option<Shot>,
     shot_next: Option<PathBuf>,
     layout: KeptLayout,
+    pub(crate) settings: KeptSettings,
 }
 
 #[derive(Debug, Default)]
@@ -90,6 +92,12 @@ impl App {
             } else {
                 Reach::User
             };
+        let settings = KeptSettings::load(SettingsStore::find(reach));
+        let chosen = settings.chosen();
+        if Direction::of_saved(chosen.graph()) != model.graph.direction() {
+            model.graph.apply(GraphAction::Turn);
+        }
+        model.settings = chosen;
         let layout_store = LayoutStore::find(reach);
         if let Some(saved) = layout_store.as_ref().and_then(LayoutStore::load) {
             model.panels = Panels::from_layout(&saved);
@@ -113,6 +121,7 @@ impl App {
             }),
             shot_next: None,
             layout,
+            settings,
         };
         app.model.status = match unreadable {
             Some(error) => Status::MapUnreadable(Label::new(cli::Failure::Load(error).to_string())),
@@ -137,6 +146,7 @@ impl App {
             shot: None,
             shot_next: None,
             layout: KeptLayout::default(),
+            settings: KeptSettings::default(),
         }
     }
 
@@ -185,6 +195,16 @@ impl App {
     }
 
     pub(crate) fn keys(&mut self, input: &Input) {
+        if keys::settings_toggled(input) {
+            self.apply(Action::Settings(SettingsAct::Toggle));
+            return;
+        }
+        if self.model.settings_menu.is_some() {
+            if keys::escaped(input) {
+                self.apply(Action::Settings(SettingsAct::Close));
+            }
+            return;
+        }
         if keys::palette_toggled(input) {
             self.apply(Action::Palette(PaletteAction::Toggle));
             return;
@@ -280,7 +300,7 @@ impl App {
             ui: &self.ui,
             services: &self.services,
         };
-        let parts: [&dyn Dump; 11] = [
+        let parts: [&dyn Dump; 12] = [
             &model.nav,
             &model.map,
             &model.scrolls,
@@ -292,6 +312,7 @@ impl App {
             &model.graph,
             &model.palette,
             &model.wizard,
+            &model.settings_menu,
         ];
         for part in parts {
             part.dump(&context, &mut lines);
@@ -302,7 +323,8 @@ impl App {
 
 impl platform::App for App {
     fn frame(&mut self, renderer: &mut Renderer, input: &mut Input) -> PlatformFrame {
-        let font = theme::font(renderer.scale());
+        self.use_settings(renderer);
+        let font = theme::font(self.model.settings.size(), renderer.scale());
         self.model.metrics = Metrics {
             font,
             cell: renderer.cell(font),
@@ -316,6 +338,11 @@ impl platform::App for App {
         self.model.now = input.time;
         self.keys(input);
         self.model.refresh_palette();
+        self.ui.capture(if self.model.settings_menu.is_some() {
+            Capture::Floating
+        } else {
+            Capture::Everything
+        });
         self.ui.begin(input);
         for action in views::panel_input(&self.model, &self.ui) {
             self.apply(action);
@@ -349,6 +376,7 @@ impl platform::App for App {
         }
         self.model.reveal_tab();
         self.keep_layout();
+        self.keep_settings();
         self.model.track_navigation();
         let busy = self.working() || self.shot.is_some();
         PlatformFrame {

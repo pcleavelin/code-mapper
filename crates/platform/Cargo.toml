@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 strum = { version = "0.28", features = ["derive"] }
 ui = { path = "../ui" }
+io-fonts = { path = "../io-fonts" }
 io-store = { path = "../io-store" }
 winit = "0.30"
 wgpu = "27"

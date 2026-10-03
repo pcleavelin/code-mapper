@@ -196,7 +196,7 @@ parent agulfb
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 69 77
+lines 79 87
 hash 168017996e789dda
 note Escape reaches the wizard only while no field has the keyboard: in a field, escape only leaves the field. Ctrl+enter is Apply from anywhere the wizard's keys are read.
 

@@ -12,7 +12,7 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol gui_scenarios
 lines 0 4
-hash 53c237143e18be9b
+hash 2e1b570606218f9a
 note The GUI scenarios, listed once in the gui_scenarios macro that gui.rs and parity.rs both expand. Each settles with SETTLE first; its stderr and the output of its after commands go to ran, which fails on a crash or a script error.
 
 step 1wrmiq

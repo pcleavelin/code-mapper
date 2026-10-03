@@ -71,8 +71,8 @@ parent ecrorf
 author ai
 file crates/gui/src/palette.rs
 symbol PaletteCommand
-lines 0 17
-hash cdbe6752795f5b13
+lines 0 18
+hash f2d17eac42bb6764
 note The actions the palette can run, one per palette entry in the registry; two-way features (collapse/expand, back/forward, split right/down, fit/1:1, hide/show) have one per direction.
 
 step aiiie0
@@ -111,8 +111,8 @@ parent 5julak
 author ai
 file crates/gui/src/palette.rs
 symbol commands
-lines 0 27
-hash 749645b00e58e3f3
+lines 0 28
+hash afe41ba8ed60cffa
 note Which PaletteCommand each palette entry of a feature runs, in the order the registry lists them. A gui test checks the counts agree, a features test checks a shown chord is one of the feature's Key triggers.
 
 step fgwbhk
@@ -181,8 +181,8 @@ parent 0hd3o2
 author ai
 file crates/gui/src/palette.rs
 symbol palette_actions
-lines 0 46
-hash 33ba7db09c7a392b
+lines 0 47
+hash fc619000505f37b9
 note Goal to actions. An action's PaletteCommand maps to the Action its button or key pushes (collapse and hide act on the tour being read, split on the panel showing the current tab); a tour opens in the Tour tab, a step is selected, a symbol goes to its definition as a jump does, a file opens in the Source view at its top, a view is shown.
 
 step ld2inb
@@ -271,8 +271,8 @@ parent wsviek
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 0 86
-hash ce8c6cbb021a6b6b
+lines 0 96
+hash 5f0ccda854e51fab
 note The keys phase: ctrl+p toggles the palette before anything else; while it is open and its field has the keyboard, every key goes to it; a palette left without the keyboard closes on the next key.
 
 step wsviek

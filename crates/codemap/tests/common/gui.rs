@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 #[macro_export]
 macro_rules! gui_scenarios {
     ($m:ident) => {
-        $m! { gui: document, peek, source, graph, panels, delete, diff, reload, layout, links, authoring, welcome, edit }
+        $m! { gui: document, peek, source, graph, panels, delete, diff, reload, layout, links, authoring, welcome, edit, settings }
     };
 }
 
@@ -1134,4 +1134,60 @@ quit
 
 pub(crate) fn shots(name: &str) -> PathBuf {
     scratch(name).join("shots")
+}
+
+pub(crate) fn settings() -> Scenario {
+    Scenario {
+        first: FirstScreen::Workspace,
+        setup: |bin, name| Ok(mapped(bin, name)),
+        hook: no_hook,
+        after: &[],
+        script: "SETTLE
+key , ctrl
+idle
+wait 3
+dump
+shot {shots}/open.png
+click-id settings-theme@light
+wait 2
+click-id settings-larger
+wait 2
+click-id settings-larger
+wait 2
+click-id settings-graph@down
+wait 2
+click-id settings-font/0
+wait 3
+dump
+shot {shots}/light.png
+key escape
+wait 2
+dump
+absent settings-close
+click-id settings
+wait 3
+dump
+click-id settings-smaller
+wait 2
+click-id settings-close
+wait 2
+dump
+absent settings-box
+tab graph
+wait 5
+shot {shots}/graph.png
+key p ctrl
+wait 2
+text settings
+wait 2
+key enter
+wait 3
+dump
+click 100 900
+wait 3
+dump
+absent settings-close
+quit
+",
+    }
 }

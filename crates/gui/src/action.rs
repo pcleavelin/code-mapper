@@ -15,6 +15,7 @@ use crate::nav::{Going, Scrolling, Ticket, Tries};
 use crate::palette::{Palette, PaletteAction};
 use crate::panels::{BranchId, Direction, DropTarget, Ratio, View};
 use crate::peek::{HoverStep, Intent, Peek, Probe, Probing, WantedDefinition};
+use crate::settings::SettingsAct;
 use crate::status::Status;
 use crate::welcome::WelcomeAct;
 use crate::wizard::WizardAct;
@@ -93,6 +94,7 @@ pub(crate) enum Action {
     Graph(GraphAction),
     Welcome(WelcomeAct),
     Wizard(WizardAct),
+    Settings(SettingsAct),
 }
 
 impl App {
@@ -199,6 +201,7 @@ impl App {
             Action::Graph(action) => model.graph.apply(action),
             Action::Welcome(act) => self.welcome(act),
             Action::Wizard(act) => self.wizard(act),
+            Action::Settings(act) => self.change_setting(act),
         }
         self.model.follow_focus();
     }

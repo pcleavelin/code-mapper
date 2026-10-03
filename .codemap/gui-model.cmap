@@ -171,8 +171,8 @@ parent w41rnw
 author ai
 file crates/gui/src/model.rs
 symbol new
-lines 0 41
-hash 5ced337f1b380152
+lines 0 44
+hash 8d709cbe8e6e14bf
 note Every panel in its default state, the map's stamp taken from the store, the metrics at the starting font until the first frame measures the real one.
 
 step erlcdz
@@ -211,7 +211,7 @@ parent 8ftts9
 author ai
 file crates/gui/src/model.rs
 symbol impl Model
-lines 103 117
+lines 106 120
 hash 17458e228a233098
 note Name to slot and StepId to slot: how a slot is found again after the map changed.
 
@@ -331,7 +331,7 @@ parent 8ftts9
 author ai
 file crates/gui/src/model.rs
 symbol impl Model
-lines 44 50
+lines 47 53
 hash 25d42bb761237bdd
 note Slot to Tour and to Step, None past the end.
 
@@ -400,8 +400,8 @@ order 0
 author ai
 file crates/gui/src/model.rs
 symbol Model
-lines 0 30
-hash c3293445ef8a3d71
+lines 0 33
+hash bbe4a03ae7b7a289
 note All the state a view can see (gui-structure lists the fields). Views get &Model; apply gets &mut.
 
 step x5fqsj

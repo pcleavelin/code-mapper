@@ -1,8 +1,8 @@
 use std::ops::{Add, AddAssign, Div, Mul, Sub};
 use std::time::Duration;
 
-use domain::HighlightClass;
-use ui::{Color, Coordinate, FontSize, Pinch, Px, Scale};
+use domain::{BaseFontSize, HighlightClass, Theme};
+use ui::{Color, Coordinate, Count, FontSize, Pinch, Px, Repaint, Scale};
 
 use crate::panels::Ratio;
 
@@ -57,6 +57,70 @@ pub(crate) const fn highlight(class: HighlightClass) -> Color {
     }
 }
 
+const SCROLL_TRACK: Color = Color::rgba(0, 0, 0, 255);
+
+#[derive(Clone, Copy, Debug)]
+struct ThemePair {
+    dark: Color,
+    light: Color,
+}
+
+const fn theme_pair(dark: Color, light: Color) -> ThemePair {
+    ThemePair { dark, light }
+}
+
+const LIGHT: [ThemePair; 24] = [
+    theme_pair(BACKGROUND, Color::rgba(250, 250, 250, 255)),
+    theme_pair(PANEL, Color::rgba(243, 243, 243, 255)),
+    theme_pair(FIELD, Color::rgba(255, 255, 255, 255)),
+    theme_pair(BORDER, Color::rgba(200, 200, 206, 255)),
+    theme_pair(TEXT, Color::rgba(32, 32, 34, 255)),
+    theme_pair(WEAK, Color::rgba(108, 108, 116, 255)),
+    theme_pair(ACCENT, Color::rgba(0, 95, 200, 255)),
+    theme_pair(GREEN, Color::rgba(20, 130, 60, 255)),
+    theme_pair(RED, Color::rgba(200, 40, 40, 255)),
+    theme_pair(ORANGE, Color::rgba(175, 100, 0, 255)),
+    theme_pair(HOVER, Color::rgba(226, 226, 232, 255)),
+    theme_pair(SELECTED, Color::rgba(196, 218, 250, 255)),
+    theme_pair(DANGER_HOVER, Color::rgba(250, 205, 205, 255)),
+    theme_pair(SIBLINGS_FILL, Color::rgba(238, 238, 242, 255)),
+    theme_pair(SIBLINGS_BORDER, Color::rgba(214, 214, 222, 255)),
+    theme_pair(TAB_STRIP, Color::rgba(232, 232, 236, 255)),
+    theme_pair(KEYWORD, Color::rgba(175, 0, 219, 255)),
+    theme_pair(STRING, Color::rgba(163, 21, 21, 255)),
+    theme_pair(COMMENT, Color::rgba(0, 128, 0, 255)),
+    theme_pair(FUNCTION, Color::rgba(121, 94, 38, 255)),
+    theme_pair(TYPE, Color::rgba(38, 127, 153, 255)),
+    theme_pair(CONSTANT, Color::rgba(9, 134, 88, 255)),
+    theme_pair(PROPERTY, Color::rgba(0, 16, 128, 255)),
+    theme_pair(SCROLL_TRACK, Color::rgba(0, 0, 0, 255)),
+];
+
+const fn same_hue(left: Color, right: Color) -> bool {
+    left.red() == right.red() && left.green() == right.green() && left.blue() == right.blue()
+}
+
+const fn inverted(color: Color) -> Color {
+    Color::rgba(!color.red(), !color.green(), !color.blue(), color.alpha())
+}
+
+fn light(color: Color) -> Color {
+    LIGHT
+        .iter()
+        .find(|pair| same_hue(pair.dark, color))
+        .map_or_else(
+            || inverted(color),
+            |pair| pair.light.with_alpha(color.alpha()),
+        )
+}
+
+pub(crate) const fn repaint(theme: Theme) -> Repaint {
+    match theme {
+        Theme::Dark => Repaint::NONE,
+        Theme::Light => Repaint::new(light),
+    }
+}
+
 const BASE_FONT: FontSize = FontSize::new(14);
 pub(crate) const START_CELL: ui::Extent = ui::Extent::new(Px::new(8), Px::new(16));
 const SMALLEST_FONT: FontSize = FontSize::new(8);
@@ -66,8 +130,8 @@ pub(crate) const fn start_font() -> FontSize {
     BASE_FONT
 }
 
-pub(crate) fn font(scale: Scale) -> FontSize {
-    FontSize::scaled(BASE_FONT.get(), scale, SMALLEST_FONT.get())
+pub(crate) fn font(base: BaseFontSize, scale: Scale) -> FontSize {
+    FontSize::scaled(u32::from(base.get()), scale, SMALLEST_FONT.get())
 }
 
 pub(crate) fn title_font(font: FontSize) -> FontSize {
@@ -223,6 +287,9 @@ pub(crate) const PICKER_WIDTH: Cells = Cells::new(28);
 pub(crate) const PICKER_FIELD: Cells = Cells::new(24);
 pub(crate) const PALETTE_FIELD: Cells = Cells::new(96);
 pub(crate) const PALETTE_TAG: Cells = Cells::new(8);
+pub(crate) const SETTINGS_WIDTH: Cells = Cells::new(60);
+pub(crate) const SETTINGS_HEADING: Cells = Cells::new(14);
+pub(crate) const SETTINGS_FONT_ROWS: Count = Count::new(10);
 
 pub(crate) const RATIO_WHOLE: Ratio = Ratio::permille(1000);
 pub(crate) const HALF: Ratio = Ratio::permille(500);

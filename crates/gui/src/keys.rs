@@ -229,6 +229,17 @@ pub(crate) fn palette_toggled(input: &Input) -> bool {
     chords(Feature::CommandPalette).any(|chord| chord_pressed(input, chord))
 }
 
+pub(crate) fn settings_toggled(input: &Input) -> bool {
+    chords(Feature::Settings).any(|chord| chord_pressed(input, chord))
+}
+
+pub(crate) fn escaped(input: &Input) -> bool {
+    input
+        .keys
+        .iter()
+        .any(|press| press.key == Key::Escape && !press.mods.ctrl() && !press.mods.alt())
+}
+
 pub(crate) fn palette_keys(input: &Input) -> Vec<PaletteKey> {
     input
         .keys

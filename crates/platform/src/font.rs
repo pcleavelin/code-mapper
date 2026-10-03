@@ -1,16 +1,27 @@
 use std::collections::HashMap;
 
 use fontdue::FontSettings;
+use io_fonts::FontFile;
 use ui::{Coordinate, Extent, FontSize, Glyph, Point, Px};
 
 use crate::atlas::{Bitmap, Texel};
 use crate::error::{Reason, StartError};
 
 #[derive(Clone, Copy, Debug)]
-struct FontFile(&'static [u8]);
+struct Face<'bytes>(&'bytes [u8]);
 
-const BUNDLED: FontFile = FontFile(include_bytes!("../../../assets/Hack-Regular.ttf"));
-const ICONS: FontFile = FontFile(include_bytes!("../../../assets/codicon.ttf"));
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct FamilyName(&'static str);
+
+impl FamilyName {
+    pub const fn as_str(self) -> &'static str {
+        self.0
+    }
+}
+
+const BUNDLED: Face<'static> = Face(include_bytes!("../../../assets/Hack-Regular.ttf"));
+pub const BUNDLED_FAMILY: FamilyName = FamilyName("Hack");
+const ICONS: Face<'static> = Face(include_bytes!("../../../assets/codicon.ttf"));
 
 #[derive(Clone, Copy, Debug)]
 struct Fill(f32);
@@ -38,13 +49,30 @@ pub(crate) struct Font {
 
 impl Font {
     pub(crate) fn load() -> Result<Self, StartError> {
-        let parse = |file: FontFile| {
-            fontdue::Font::from_bytes(file.0, FontSettings::default())
-                .map_err(|reason| StartError::Font(Reason::new(reason)))
+        Self::bundled().map_err(StartError::Font)
+    }
+
+    pub(crate) fn bundled() -> Result<Self, Reason> {
+        Self::of_face(BUNDLED, FontSettings::default())
+    }
+
+    pub(crate) fn of_file(file: &FontFile) -> Result<Self, Reason> {
+        Self::of_face(
+            Face(file.bytes().as_slice()),
+            FontSettings {
+                collection_index: file.index().get(),
+                ..FontSettings::default()
+            },
+        )
+    }
+
+    fn of_face(face: Face<'_>, settings: FontSettings) -> Result<Self, Reason> {
+        let parse = |embedded: Face<'_>, chosen: FontSettings| {
+            fontdue::Font::from_bytes(embedded.0, chosen).map_err(Reason::new)
         };
         Ok(Self {
-            face: parse(BUNDLED)?,
-            icons: parse(ICONS)?,
+            face: parse(face, settings)?,
+            icons: parse(ICONS, FontSettings::default())?,
             metrics: HashMap::new(),
         })
     }

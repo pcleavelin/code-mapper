@@ -11,8 +11,9 @@ use crate::ids;
 use crate::model::{Model, Scrolls, StepViews, ViewFlag};
 use crate::nav::Nav;
 use crate::palette::Palette;
-use crate::panels::Panels;
+use crate::panels::{Direction, Panels};
 use crate::peek::Peek;
+use crate::settings::{SettingsMenu, ShownFont, ThemeName};
 use crate::status::Status;
 use crate::text::Tag;
 use crate::wizard::{Line, Mode, StepState, Tick, Wizard, verdict_words};
@@ -448,6 +449,20 @@ impl Dump for domain::Map {
             model.disk.dirty,
             tour.note().map_or("", domain::Note::as_str),
             noted.join(", ")
+        ));
+    }
+}
+
+impl Dump for Option<SettingsMenu> {
+    fn dump(&self, context: &Context<'_>, lines: &mut DumpLines) {
+        let settings = &context.model.settings;
+        lines.line(format_args!(
+            "settings open={} theme={} font={} size={} graph={}",
+            self.is_some(),
+            ThemeName::new(settings.theme()),
+            ShownFont::new(settings),
+            settings.size().get(),
+            Direction::of_saved(settings.graph())
         ));
     }
 }

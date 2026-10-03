@@ -27,6 +27,10 @@ color::pub const fn blue(self) -> u8
 color::pub const fn alpha(self) -> u8
 color::pub const fn with_alpha(self, alpha: u8) -> Self
 color::pub const fn is_invisible(self) -> bool
+color::pub struct Repaint(fn(Color) -> Color);
+color::pub const NONE: Self = Self(unchanged);
+color::pub const fn new(paint: fn(Color) -> Color) -> Self
+color::pub fn paint(self, color: Color) -> Color
 geometry::pub struct Px(i32);
 geometry::pub const ZERO: Self = Self(0);
 geometry::pub const LARGEST: Self = Self(0x7fff_ffff);
@@ -89,7 +93,7 @@ geometry::pub const fn new(value: u32) -> Self
 geometry::pub const fn get(self) -> u32
 geometry::pub fn scaled(base: u32, scale: Scale, minimum: u32) -> Self
 geometry::pub fn float(self) -> f32
-icon::pub enum Icon { Add, Close, SplitRight, SplitDown, Back, Forward, Expanded, Collapsed, MoreAbove, MoreBelow, Check, Up, Down, Edit, }
+icon::pub enum Icon { Add, Close, SplitRight, SplitDown, Back, Forward, Expanded, Collapsed, MoreAbove, MoreBelow, Check, Up, Down, Edit, Settings, }
 icon::pub struct IconName(&'static str);
 icon::pub const fn as_str(self) -> &'static str
 icon::pub const fn glyph(self) -> Glyph
@@ -201,7 +205,8 @@ tree::pub enum Kind { None, Text(Text), Custom(Box<dyn Draw>), }
 tree::pub struct Scrollbar { pub track: Rect, pub thumb: Rect, }
 tree::pub const WIDTH: Px = Px::new(8);
 tree::pub fn of(rect: Rect, content_height: Px, scroll: Px) -> Option<Self>
-tree::pub struct Placement { pub rect: Rect, pub clip: Rect, pub content: Extent, }
+tree::pub struct Placement { pub rect: Rect, pub clip: Rect, pub content: Extent, layer: Layer, }
+tree::pub enum Capture { #[default] Everything, Floating, }
 tree::pub fn visible_center(self) -> Option<Point>
 tree::pub struct Interaction { signals: Signals, drag: Option<Point>, wheel: Vector, pinch: Pinch, rect: Option<Rect>, }
 tree::pub const fn hovered(self) -> bool
@@ -212,7 +217,8 @@ tree::pub const fn drag(self) -> Option<Point>
 tree::pub const fn wheel(self) -> Vector
 tree::pub const fn pinch(self) -> Pinch
 tree::pub const fn rect(self) -> Option<Rect>
-tree::pub struct Ui { roots: Vec<Element>, stack: Vec<Element>, previous: BTreeMap<Id, Placement>, hot: Option<Id>, active: Option<Id>, last_mouse: Point, scroll_drag: Option<ScrollGrab>, pointer: Pointer, size: Extent, }
+tree::pub struct Ui { roots: Vec<Element>, stack: Vec<Element>, previous: BTreeMap<Id, Placement>, hot: Option<Id>, active: Option<Id>, last_mouse: Point, scroll_drag: Option<ScrollGrab>, pointer: Pointer, size: Extent, capture: Capture, }
+tree::pub const fn capture(&mut self, capture: Capture)
 tree::pub fn begin(&mut self, input: &Input)
 tree::pub const fn hot(&self) -> Option<Id>
 tree::pub const fn active(&self) -> Option<Id>

@@ -2,6 +2,7 @@ use std::fmt;
 use std::path::PathBuf;
 
 use domain::{Line, LineCount, Map, MapError, Program, RelativePath, SymbolName, TourName};
+use platform::BUNDLED_FAMILY;
 use ui::{Count, Label};
 
 use crate::model::HitsShown;
@@ -53,6 +54,8 @@ pub(crate) enum Status {
     Saved,
     SaveFailed(Label),
     LayoutUnsaved(Label),
+    SettingsUnsaved(Label),
+    FontNotUsed(FontTrouble),
     CommandRejected(Label),
     CommandFailed(Label),
     RegexRefused(Label),
@@ -258,6 +261,8 @@ impl Status {
             | Self::SaveRefused
             | Self::SaveFailed(_)
             | Self::LayoutUnsaved(_)
+            | Self::SettingsUnsaved(_)
+            | Self::FontNotUsed(_)
             | Self::CommandRejected(_)
             | Self::CommandFailed(_)
             | Self::RegexRefused(_)
@@ -306,6 +311,10 @@ impl fmt::Display for Status {
             Self::LayoutUnsaved(error) => {
                 write!(formatter, "layout not saved: {}", error.as_str())
             }
+            Self::SettingsUnsaved(error) => {
+                write!(formatter, "settings not saved: {}", error.as_str())
+            }
+            Self::FontNotUsed(trouble) => trouble.fmt(formatter),
             Self::CommandRejected(first) => formatter.write_str(first.as_str()),
             Self::CommandFailed(error) => write!(formatter, "error: {}", error.as_str()),
             Self::RegexRefused(reason) => write!(formatter, "bad regex: {}", reason.as_str()),
@@ -434,5 +443,30 @@ impl ConsoleLog {
         self.0.push_str("error: ");
         self.0.push_str(error);
         self.0.push('\n');
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum FontTrouble {
+    Missing(Label),
+    Unloadable(Label, Label),
+}
+
+impl fmt::Display for FontTrouble {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let bundled = BUNDLED_FAMILY.as_str();
+        match self {
+            Self::Missing(family) => write!(
+                formatter,
+                "font {} is not installed; showing {bundled}",
+                family.as_str()
+            ),
+            Self::Unloadable(family, reason) => write!(
+                formatter,
+                "font {} does not load ({}); showing {bundled}",
+                family.as_str(),
+                reason.as_str()
+            ),
+        }
     }
 }

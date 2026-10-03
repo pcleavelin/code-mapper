@@ -2,9 +2,10 @@ use std::f32::consts::TAU;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use io_fonts::FontFile;
 use ui::{
     Color, Command, Coordinate, Count, DrawList, Extent, FontSize, Glyph, Grid, Label, Measure,
-    Point, Px, Rect, Scale, Vector,
+    Point, Px, Rect, Repaint, Scale, Vector,
 };
 use wgpu::{
     BindGroup, Buffer, BufferDescriptor, BufferUsages, Device, FilterMode, Instance, PresentMode,
@@ -14,7 +15,7 @@ use wgpu::{
 use winit::window::Window;
 
 use crate::atlas::{Atlas, Entry, Sprite, SpriteKey, Texel, TextureArea};
-use crate::error::StartError;
+use crate::error::{Reason, StartError};
 use crate::font::{Font, Metrics};
 use crate::gpu::{GpuBuffer, Pipeline, Vertex, atlas_texture, bind_group, block_on};
 
@@ -94,6 +95,7 @@ pub struct Renderer {
     pub(crate) size: Extent,
     pub(crate) scale: Scale,
     pub(crate) shot: Option<PathBuf>,
+    pub(crate) repaint: Repaint,
 }
 
 impl Renderer {
@@ -174,6 +176,7 @@ impl Renderer {
             size,
             scale,
             shot: None,
+            repaint: Repaint::NONE,
         })
     }
 
@@ -187,6 +190,19 @@ impl Renderer {
 
     pub fn shoot(&mut self, path: PathBuf) {
         self.shot = Some(path);
+    }
+
+    pub fn use_font_file(&mut self, file: Option<&FontFile>) -> Result<(), Reason> {
+        self.font = match file {
+            Some(file) => Font::of_file(file)?,
+            None => Font::bundled()?,
+        };
+        self.replace_atlas(Atlas::FIRST_SIDE);
+        Ok(())
+    }
+
+    pub const fn use_repaint(&mut self, repaint: Repaint) {
+        self.repaint = repaint;
     }
 
     pub(crate) fn resize(&mut self, size: Extent) {
@@ -232,7 +248,11 @@ impl Renderer {
     }
 
     fn grow_atlas(&mut self) {
-        self.atlas = Atlas::new(self.atlas.grown_side());
+        self.replace_atlas(self.atlas.grown_side());
+    }
+
+    fn replace_atlas(&mut self, side: Texel) {
+        self.atlas = Atlas::new(side);
         self.texture = atlas_texture(&self.device, self.atlas.side().square());
         self.bind_group = bind_group(
             &self.device,
@@ -287,7 +307,7 @@ impl Renderer {
             self.vertices.push(Vertex {
                 position,
                 texture,
-                color,
+                color: self.repaint.paint(color),
             });
         }
         self.indices.quad(base);
@@ -320,6 +340,7 @@ impl Renderer {
         let area = self.atlas.white();
         let base = IndexSlot::of_count(self.vertices.len());
         let texture = area.start;
+        let color = self.repaint.paint(color);
         self.vertices.push(Vertex {
             position: center,
             texture,

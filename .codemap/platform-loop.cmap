@@ -72,7 +72,7 @@ author ai
 file crates/platform/src/present.rs
 symbol render
 lines 0 23
-hash 3d37249bd2a16f12
+hash ec886428d204c430
 link platform-renderer
 note The DrawList is replayed and presented by the Renderer (see platform-renderer).
 
