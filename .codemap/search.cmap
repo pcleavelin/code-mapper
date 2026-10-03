@@ -10,9 +10,9 @@ order 1
 author ai
 file crates/gui/src/views/center.rs
 symbol search_view
-lines 0 90
-hash bec8e0966bfdca3b
-note The Search tab: a hint when there is nothing to show; an orange caption when the hits were cut at HIT_LIMIT; else the hits grouped under a row per file with its hit count (clicking it opens the file), each hit its right-aligned line number and the trimmed line (a click pushes GoTo). Only the rows in view are built.
+lines 0 92
+hash e7ff3e682d387de0
+note The Search tab: a hint when there is nothing to show; an orange wrapped note when the hits were cut at HIT_LIMIT; else the hits grouped under a row per file with its hit count (clicking it opens the file), each hit its right-aligned line number and the trimmed line (a click pushes GoTo). Only the rows in view are built.
 
 step d91liy
 order 5

@@ -50,7 +50,7 @@ parent 56ca80
 author ai
 file crates/gui/src/views/references.rs
 symbol references_panel
-lines 16 35
+lines 17 36
 hash 536206437583a0e5
 note Where references come from: for a server-backed file with none recorded, the panel queues AskReferences once per probe, and the rows fill in when the answer is merged.
 

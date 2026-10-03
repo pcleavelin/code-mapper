@@ -1,6 +1,6 @@
 use domain::SymbolName;
 use platform::Cursor;
-use ui::{Button, Icon, Label, Ui};
+use ui::{Button, Icon, Label, Run, Ui};
 
 use crate::action::Action;
 use crate::authoring::{AddOffer, Authoring, StepDrop, StepGrab, Zone};
@@ -62,7 +62,7 @@ pub(super) fn target_strip(model: &Model, frame: &mut Frame<'_>, view: View) {
                     frame.push(Action::Authoring(Authoring::AddOffered));
                 }
             } else {
-                frame.label(Status::select_symbol_or_lines(), WEAK);
+                frame.caption(vec![Run::new(Status::select_symbol_or_lines(), WEAK)]);
             }
         }
     }

@@ -11,9 +11,9 @@ parent 27nlma
 author ai
 file crates/ui/src/tree.rs
 symbol place
-lines 0 36
-hash bc581329b11aa71d
-note Positions, top-down: an element's rectangle comes from the position its parent gave it, its clip is its parent's clip narrowed by the parent's own rectangle when the parent clips, and then it walks a cursor along its own direction placing its children, applying the cross-axis alignment and subtracting the scroll offset. The extent the cursor reached is stored as the content size, which is what the next frame clamps a scroll against. A floating child is placed at its own absolute position and clipped only by the screen.
+lines 0 37
+hash 7c6a19b6b6af6059
+note Positions, top-down: an element's rectangle comes from the position its parent gave it, its clip is its parent's clip narrowed by the parent's own rectangle, so nothing ever draws or takes a click outside any of its ancestors, and then it walks a cursor along its own direction placing its children, applying the cross-axis alignment and subtracting the scroll offset. The extent the cursor reached, or the width the children had before they were squeezed when that is larger, is stored as the content size: the next frame clamps a scroll against it, and a view reads it to tell whether a row fits. A floating child is placed at its own absolute position and clipped only by the screen.
 
 step 27nlma
 order 18
@@ -61,9 +61,9 @@ parent 27nlma
 author ai
 file crates/ui/src/tree.rs
 symbol grow
-lines 0 37
-hash f47ad4c17f37ae84
-note Grow, top-down: a root or a floating element grows to the window, then each parent splits whatever it has left after its non-growing children equally among its growing ones along its direction, and gives them the full inner size across it.
+lines 0 51
+hash cdd5d8d9176a43fe
+note Grow, top-down: a root or a floating element grows to the window, and a floating element that fits its content stops at the window's right edge. Then each parent splits whatever it has left after its non-growing children equally among its growing ones along its direction (a growing child never gets less than its least width), gives them the full inner size across it, and squeezes its children horizontally when they still do not fit. Only widths are squeezed: a column taller than its parent is content to scroll, a row wider than its panel is text that would run past the panel's edge.
 
 step 7qwqcp
 order 27
@@ -146,6 +146,16 @@ lines 0 7
 hash 16303279c48af538
 note The same hash continued from a base, for an id built from a parent id and a string - the name@suffix form a script uses.
 
+step dj8h3c
+order 45
+parent 5r4iu3
+author ai
+file crates/ui/src/tree.rs
+symbol squeeze
+lines 0 44
+hash 6495f41a1458f0cf
+note Squeezing children that do not fit, horizontally only. Across a column, a fitting child wider than the column is cut to the column's width. Along a row, the overflow is taken from the widest fitting children first, bringing them down to the next widest and then shrinking that group together, never below each child's least: a long path in a step header ellipsizes before the buttons beside it lose a letter. Each child's width before the squeeze is kept as unsqueezed, for the content extent. Exact children never shrink; what is still too wide after every child is at its least is cut by the clip.
+
 step exk3z1
 order 13
 parent hndy1n
@@ -175,6 +185,16 @@ symbol draw_layer
 lines 0 18
 hash b35a64406ac59821
 note One layer's pass in tree order: an element is on the floating layer if it floats or any ancestor does, so a popup's contents rise with it. An element whose rectangle does not meet its clip is skipped outright, but its children are still walked.
+
+step hcfnrw
+order 44
+parent inr7qd
+author ai
+file crates/ui/src/tree.rs
+symbol least_leaf
+lines 0 19
+hash 92188588cc61f63e
+note The least width a childless element can be squeezed to: a one-line text keeps its first glyph and a column for the ellipsis (so an icon is never cut), a wrapped text its longest word up to LEAST_WRAP columns, anything else its fitting size.
 
 step hfrcr0
 order 36
@@ -212,9 +232,9 @@ parent 27nlma
 author ai
 file crates/ui/src/tree.rs
 symbol fit
-lines 0 25
-hash 7e720ccc14791cef
-note Fit, bottom-up: children first, then a parent's fitting size is the sum of its in-flow children along its direction and the largest across it, plus padding and gaps. Exact is taken as given and Grow counts as zero until the grow pass.
+lines 0 35
+hash 75410aeae7b3092d
+note Fit, bottom-up: children first, then a parent's fitting size is the sum of its in-flow children along its direction and the largest across it, plus padding and gaps. Exact is taken as given and Grow counts as zero until the grow pass. The same pass sums the least size each element can be squeezed to (least_leaf for a childless one): an exact element's least is its size, a fitting one's is capped at its fitting size, and a growing one keeps its content's least so the grow pass can hand it at least that much.
 
 step ipqjft
 order 0
@@ -301,8 +321,8 @@ parent ipqjft
 author ai
 file crates/ui/src/tree.rs
 symbol open
-lines 0 21
-hash 1dbe99e8c51d4fe9
+lines 0 23
+hash 3083d62e5810ac4d
 note Open an element as the last child of the currently open one: push it on the stack and answer what its id learned last frame. The one-frame lag is why that answer is available before the element has a position.
 
 step tx2hut
@@ -365,15 +385,25 @@ lines 0 4
 hash 3b06ea3cd440cb52
 note The painting an element does for itself: an optional background and any of the four borders, one pixel wide, in one colour. Anything richer is a Custom element.
 
+step wlqe6u
+order 46
+parent 5r4iu3
+author ai
+file crates/ui/src/tree.rs
+symbol squeezes
+lines 0 2
+hash b5c59af9c9aa6341
+note A child can give up width when it fits its content and is wider than its least.
+
 step xb3aih
 order 1
 parent ipqjft
 author ai
 file crates/ui/src/tree.rs
 symbol Element
-lines 0 12
-hash 4ce85fb7afb4652a
-note One element: its kind, layout, style and optional id, its children in a vector, and the fields layout fills in - size, position, rectangle, clip and content extent. lines holds a wrapped text's lines once its width is known. An element is built on the Ui's stack and moved into its parent's children when it closes, so opening one is a push and nothing links siblings by hand.
+lines 0 14
+hash 57cc25915d4d1a4c
+note One element: its kind, layout, style and optional id, its children in a vector, and the fields layout fills in - size, least (the narrowest it may be squeezed to), unsqueezed (the width it had before its parent squeezed it), position, rectangle, clip and content extent. lines holds a wrapped text's lines once its width is known. An element is built on the Ui's stack and moved into its parent's children when it closes, so opening one is a push and nothing links siblings by hand.
 
 step xg9w6m
 order 39
@@ -381,9 +411,9 @@ parent u2u7pf
 author ai
 file crates/ui/src/tree.rs
 symbol paint_text
-lines 0 29
-hash eb959c35562500e9
-note Text at the content origin: a wrapped text draws its lines a row apart in the first run's colour; an unwrapped one chains its coloured runs along the line, each starting where the last one's pen stopped; a clipped one does the same with the runs Text::clipped cut to the columns inside the element's padding.
+lines 0 23
+hash ce048fbc3ee11415
+note Text at the content origin: a wrapped text draws its lines a row apart in the first run's colour; a one-line text, unwrapped or clipped, chains its coloured runs along the line, each starting where the last one's pen stopped, after Text::clipped cut them to the columns inside the element's padding, so a label shrunk by layout ends in an ellipsis at its own edge.
 
 step yw3bj2
 order 26

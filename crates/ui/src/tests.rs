@@ -560,3 +560,223 @@ fn clipped_text_fits_its_rect_and_ends_in_an_ellipsis() {
         .collect();
     assert_eq!(texts, ["(0, 0) name", "(32, 0)  \u{2026}"]);
 }
+
+fn texts_drawn(ui: &mut Ui) -> Vec<String> {
+    ui.draw(&mut Cells, Color::rgba(255, 255, 255, 255))
+        .commands()
+        .filter_map(|command| match command {
+            Command::Text { at, text, .. } => Some(format!("{at:?} {}", text.as_str())),
+            _ => None,
+        })
+        .collect()
+}
+
+#[test]
+fn a_row_too_narrow_squeezes_its_widest_label_first_and_keeps_its_buttons() {
+    let mut ui = Ui::default();
+    ui.begin(&input(200, 100));
+    ui.open(Kind::None, Layout::row().width(px(80)), Style::NONE, None);
+    ui.leaf(
+        text("go"),
+        Layout::row(),
+        Style::NONE,
+        Some(Id::new("first")),
+    );
+    ui.leaf(
+        text("a long label"),
+        Layout::row(),
+        Style::NONE,
+        Some(Id::new("label")),
+    );
+    ui.leaf(
+        text("ok"),
+        Layout::row(),
+        Style::NONE,
+        Some(Id::new("last")),
+    );
+    ui.close();
+    ui.end(&mut Cells);
+    assert_eq!(
+        ui.placement(Id::new("first")).unwrap().rect,
+        rect(0, 0, 16, 16)
+    );
+    assert_eq!(
+        ui.placement(Id::new("label")).unwrap().rect,
+        rect(16, 0, 48, 16)
+    );
+    assert_eq!(
+        ui.placement(Id::new("last")).unwrap().rect,
+        rect(64, 0, 16, 16)
+    );
+    assert_eq!(
+        texts_drawn(&mut ui),
+        ["(0, 0) go", "(16, 0) a lon\u{2026}", "(64, 0) ok"]
+    );
+}
+
+#[test]
+fn squeezed_labels_of_one_width_share_the_loss() {
+    let mut ui = Ui::default();
+    ui.begin(&input(200, 100));
+    ui.open(Kind::None, Layout::row().width(px(64)), Style::NONE, None);
+    for name in ["one", "two"] {
+        ui.leaf(
+            text("abcdefgh"),
+            Layout::row(),
+            Style::NONE,
+            Some(Id::new(name)),
+        );
+    }
+    ui.close();
+    ui.end(&mut Cells);
+    assert_eq!(
+        ui.placement(Id::new("one")).unwrap().rect,
+        rect(0, 0, 32, 16)
+    );
+    assert_eq!(
+        ui.placement(Id::new("two")).unwrap().rect,
+        rect(32, 0, 32, 16)
+    );
+}
+
+#[test]
+fn a_column_squeezes_a_label_wider_than_itself_but_not_an_exact_child() {
+    let mut ui = Ui::default();
+    ui.begin(&input(200, 100));
+    ui.open(
+        Kind::None,
+        Layout::column().width(px(40)),
+        Style::NONE,
+        None,
+    );
+    ui.leaf(
+        text("abcdefghij"),
+        Layout::row(),
+        Style::NONE,
+        Some(Id::new("label")),
+    );
+    ui.leaf(
+        Kind::None,
+        Layout::row().width(px(100)).height(px(10)),
+        Style::NONE,
+        Some(Id::new("exact")),
+    );
+    ui.close();
+    ui.end(&mut Cells);
+    assert_eq!(ui.placement(Id::new("label")).unwrap().rect.width, px(40));
+    let exact = ui.placement(Id::new("exact")).unwrap();
+    assert_eq!(exact.rect.width, px(100));
+    assert_eq!(exact.clip, rect(0, 0, 40, 26));
+}
+
+#[test]
+fn a_floating_box_stops_at_the_window_edge() {
+    let mut ui = Ui::default();
+    ui.begin(&input(100, 100));
+    ui.open(
+        Kind::None,
+        Layout::column().floating(Point::new(px(60), px(0))),
+        Style::NONE,
+        Some(Id::new("tip")),
+    );
+    ui.leaf(text("abcdefghij"), Layout::row(), Style::NONE, None);
+    ui.close();
+    ui.end(&mut Cells);
+    assert_eq!(ui.placement(Id::new("tip")).unwrap().rect.width, px(40));
+    assert_eq!(texts_drawn(&mut ui), ["(60, 0) abcd\u{2026}"]);
+}
+
+#[test]
+fn wrapped_text_beside_a_long_label_keeps_room_for_its_longest_word() {
+    let mut ui = Ui::default();
+    ui.begin(&input(200, 100));
+    ui.open(Kind::None, Layout::row().width(px(80)), Style::NONE, None);
+    ui.leaf(
+        text("abcdefghijkl"),
+        Layout::row(),
+        Style::NONE,
+        Some(Id::new("label")),
+    );
+    ui.leaf(
+        Kind::Text(Text {
+            runs: vec![Run::new("one three", Color::rgba(255, 255, 255, 255))],
+            size: FontSize::new(14),
+            wrap: Wrap::Words,
+        }),
+        Layout::row().grow_width(),
+        Style::NONE,
+        Some(Id::new("wrapped")),
+    );
+    ui.close();
+    ui.end(&mut Cells);
+    assert_eq!(
+        ui.placement(Id::new("label")).unwrap().rect,
+        rect(0, 0, 40, 16)
+    );
+    assert_eq!(
+        ui.placement(Id::new("wrapped")).unwrap().rect,
+        rect(40, 0, 40, 32)
+    );
+}
+
+#[test]
+fn a_label_keeps_its_first_character_and_an_ellipsis_and_an_icon_stays_whole() {
+    let mut ui = Ui::default();
+    ui.begin(&input(200, 100));
+    ui.open(Kind::None, Layout::row().width(px(24)), Style::NONE, None);
+    ui.leaf(
+        text("abcdef"),
+        Layout::row(),
+        Style::NONE,
+        Some(Id::new("label")),
+    );
+    ui.leaf(
+        text(&Icon::Add.glyph().get().to_string()),
+        Layout::row(),
+        Style::NONE,
+        Some(Id::new("icon")),
+    );
+    ui.close();
+    ui.end(&mut Cells);
+    assert_eq!(ui.placement(Id::new("label")).unwrap().rect.width, px(16));
+    let icon = ui.placement(Id::new("icon")).unwrap();
+    assert_eq!(icon.rect, rect(16, 0, 16, 16));
+    assert_eq!(icon.clip, rect(0, 0, 24, 16));
+    assert_eq!(texts_drawn(&mut ui)[0], "(0, 0) a\u{2026}");
+}
+
+#[test]
+fn a_squeezed_row_still_reports_its_unsqueezed_content_width() {
+    let mut ui = Ui::default();
+    ui.begin(&input(200, 100));
+    ui.open(
+        Kind::None,
+        Layout::row().width(px(40)).gap(px(4)),
+        Style::NONE,
+        Some(Id::new("row")),
+    );
+    ui.leaf(text("abcdefgh"), Layout::row(), Style::NONE, None);
+    ui.leaf(text("abcd"), Layout::row(), Style::NONE, None);
+    ui.close();
+    ui.end(&mut Cells);
+    let row = ui.placement(Id::new("row")).unwrap();
+    assert_eq!(row.rect.width, px(40));
+    assert_eq!(row.content.width, px(100));
+}
+
+#[test]
+fn clipping_only_trailing_spaces_adds_no_ellipsis() {
+    let mut ui = Ui::default();
+    ui.begin(&input(200, 100));
+    ui.open(Kind::None, Layout::row().width(px(40)), Style::NONE, None);
+    ui.leaf(text("ab    "), Layout::row(), Style::NONE, None);
+    ui.leaf(
+        Kind::None,
+        Layout::row().width(px(24)).height(px(10)),
+        Style::NONE,
+        None,
+    );
+    ui.close();
+    ui.end(&mut Cells);
+    assert_eq!(texts_drawn(&mut ui), ["(0, 0) ab    "]);
+}

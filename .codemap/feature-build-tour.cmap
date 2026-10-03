@@ -171,8 +171,8 @@ parent lgtkew
 author ai
 file crates/gui/src/views/wizard.rs
 symbol buttons
-lines 0 32
-hash 46c4f0c0fd4942ab
+lines 0 33
+hash 9f2f5d7d44efae96
 note back (not on page 1), next or create, cancel, and a hint for the keys: enter goes on (or creates), escape cancels if nothing is entered.
 
 step 9h15aw
@@ -191,8 +191,8 @@ parent 7nnbsz
 author ai
 file crates/gui/src/views/wizard.rs
 symbol matches
-lines 0 91
-hash 1b9f6d64c8d24b08
+lines 0 92
+hash a1e36f3bc3fd98ef
 note The search field and its matches: with nothing typed, the entry points outside tests; otherwise every symbol whose name holds the text. A click on a row makes it the start; past the rows shown, how many more match.
 
 step a7104e
@@ -384,8 +384,8 @@ parent lgtkew
 author ai
 file crates/gui/src/views/wizard.rs
 symbol name_page
-lines 0 53
-hash b4f1a37d83f86a0d
+lines 0 57
+hash 129a7d2d81e8e947
 note Page 1: the name field, the three kinds as buttons each with what it means, and the group field.
 
 step hoic3c

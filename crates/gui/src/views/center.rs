@@ -14,7 +14,7 @@ use crate::text::{Counted, Noun, Tag};
 use crate::theme::{
     FIELD, GREEN, LINE_FIELD, LINES_SELECTED, ORANGE, RED, ROW_EXTRA, SOURCE_GUESS, TEXT, WEAK,
 };
-use crate::widgets::{Chosen, CodeBlock, Container, Frame, Marks, Scroller, Width};
+use crate::widgets::{Chosen, CodeBlock, Container, Frame, Marks, Padding, Scroller, Width};
 
 use super::authoring;
 
@@ -51,7 +51,7 @@ fn source_toolbar(model: &Model, frame: &mut Frame<'_>, path: &RelativePath) {
 
 pub(super) fn source(model: &Model, frame: &mut Frame<'_>) {
     let Some(file) = model.nav.file() else {
-        frame.label("click a symbol to open its file", WEAK);
+        frame.note("click a symbol to open its file", WEAK, Padding::Step);
         return;
     };
     let Some(source) = model.index.file(file) else {
@@ -164,24 +164,26 @@ fn hit_lines(model: &Model) -> Vec<HitLine> {
 pub(super) fn search_view(model: &Model, frame: &mut Frame<'_>) {
     if model.hits.is_empty() {
         let search = model.fields.get(Which::Search).text();
-        frame.label(
+        frame.note(
             if search.is_empty() {
                 "type a regex in the search box and press enter"
             } else {
                 "no hits"
             },
             WEAK,
+            Padding::Step,
         );
         return;
     }
     if model.hits_shown == HitsShown::First {
         frame.start(Container::Toolbar);
-        frame.caption(vec![Run::new(
+        frame.note(
             format!(
                 "showing the first {HIT_LIMIT} hits; the search stops there, a narrower regex finds the rest",
             ),
             ORANGE,
-        )]);
+            Padding::Step,
+        );
         frame.finish();
     }
     let lines = hit_lines(model);
@@ -376,7 +378,11 @@ pub(super) fn diff_view(model: &Model, frame: &mut Frame<'_>) {
         } else {
             model.base.why.as_str()
         };
-        frame.label(format!("no map to compare with: {why}"), WEAK);
+        frame.note(
+            format!("no map to compare with: {why}"),
+            WEAK,
+            Padding::Step,
+        );
         return;
     };
     let diffs = model.map.diff(base);

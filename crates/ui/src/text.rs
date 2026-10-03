@@ -36,6 +36,18 @@ impl Label {
             .sum()
     }
 
+    pub(crate) fn longest_word(&self) -> usize {
+        self.0
+            .split([' ', '\n'])
+            .map(|word| {
+                word.chars()
+                    .map(|character| Glyph::new(character).columns())
+                    .sum()
+            })
+            .max()
+            .unwrap_or(0)
+    }
+
     pub fn wrap(&self, columns: usize) -> Vec<Self> {
         let columns = columns.max(1);
         let mut out = Vec::new();
@@ -121,8 +133,16 @@ impl Text {
         Count::new(self.runs.iter().map(|run| run.text.columns()).sum())
     }
 
+    pub(crate) fn first_glyph_columns(&self) -> usize {
+        self.runs
+            .iter()
+            .find_map(|run| run.text.as_str().chars().next())
+            .map_or(0, |character| Glyph::new(character).columns())
+    }
+
     pub(crate) fn clipped(runs: Vec<Run>, columns: usize) -> Vec<Run> {
-        if runs.iter().map(|run| run.text.columns()).sum::<usize>() <= columns {
+        let whole: String = runs.iter().map(|run| run.text.as_str()).collect();
+        if Label::new(whole.trim_end_matches(' ')).columns() <= columns {
             return runs;
         }
         let room = columns.saturating_sub(1);

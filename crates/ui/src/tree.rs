@@ -10,6 +10,8 @@ use crate::input::{Button, Input, Pinch, Pointer};
 use crate::layout::{Align, Layout, Sides, Size, Style};
 use crate::text::{Label, Text, Wrap};
 
+const LEAST_WRAP: Count = Count::new(12);
+
 pub trait Draw {
     fn draw(self: Box<Self>, canvas: &mut Canvas<'_>, rect: Rect);
 }
@@ -147,6 +149,8 @@ struct Element {
     id: Option<Id>,
     children: Vec<Element>,
     size: Extent,
+    least: Extent,
+    unsqueezed: Extent,
     position: Point,
     content: Extent,
     lines: Vec<Label>,
@@ -176,26 +180,57 @@ impl Element {
             child.fit(axis, measure);
         }
         let padding = self.layout.padding * 2;
-        let value = match self.layout.size_along(axis) {
-            Size::Exact(value) => value,
-            Size::Grow => Px::ZERO,
-            Size::Fit => {
-                let sizes: Vec<Px> = self
-                    .laid_out()
-                    .map(|child| child.size.along(axis))
-                    .collect();
-                if sizes.is_empty() {
-                    self.fit_leaf(axis, measure, padding)
-                } else if self.along(axis) {
-                    sizes.iter().fold(Px::ZERO, |sum, size| sum + *size)
-                        + self.layout.gap * (Px::of_count(sizes.len()).get() - 1)
-                        + padding
-                } else {
-                    sizes.into_iter().max().unwrap_or(Px::ZERO) + padding
-                }
-            }
+        let sizes: Vec<(Px, Px)> = self
+            .laid_out()
+            .map(|child| (child.size.along(axis), child.least.along(axis)))
+            .collect();
+        let (fit, least) = if sizes.is_empty() {
+            let fit = self.fit_leaf(axis, measure, padding);
+            (fit, self.least_leaf(axis, measure, padding))
+        } else if self.along(axis) {
+            let gaps = self.layout.gap * (Px::of_count(sizes.len()).get() - 1) + padding;
+            let (sum, least) = sizes
+                .iter()
+                .fold((Px::ZERO, Px::ZERO), |(sum, least), (size, low)| {
+                    (sum + *size, least + *low)
+                });
+            (sum + gaps, least + gaps)
+        } else {
+            let widest = sizes.iter().map(|(size, _)| *size).max();
+            let least = sizes.iter().map(|(_, low)| *low).max();
+            (
+                widest.unwrap_or(Px::ZERO) + padding,
+                least.unwrap_or(Px::ZERO) + padding,
+            )
+        };
+        let (value, least) = match self.layout.size_along(axis) {
+            Size::Exact(value) => (value, value),
+            Size::Grow => (Px::ZERO, least),
+            Size::Fit => (fit, least.min(fit)),
         };
         self.size = self.size.with(axis, value);
+        self.least = self.least.with(axis, least);
+    }
+
+    fn least_leaf(&self, axis: Axis, measure: &mut dyn Measure, padding: Px) -> Px {
+        let Kind::Text(text) = &self.kind else {
+            return padding;
+        };
+        let cell = measure.cell(text.size);
+        match (axis, text.wrap) {
+            (Axis::Horizontal, Wrap::None) => {
+                cell.width * Count::new(text.first_glyph_columns() + 1) + padding
+            }
+            (Axis::Horizontal, Wrap::Words) => {
+                let word = text
+                    .runs
+                    .first()
+                    .map_or(0, |run| run.text.longest_word())
+                    .min(LEAST_WRAP.get());
+                cell.width * Count::new(word) + padding
+            }
+            _ => self.fit_leaf(axis, measure, padding),
+        }
     }
 
     fn fit_leaf(&self, axis: Axis, measure: &mut dyn Measure, padding: Px) -> Px {
@@ -220,6 +255,13 @@ impl Element {
         {
             self.size = self.size.with(axis, window.along(axis));
         }
+        if axis == Axis::Horizontal
+            && let Some(at) = self.layout.floating
+            && self.layout.size_along(axis) == Size::Fit
+        {
+            let room = (window.along(axis) - at.along(axis)).max(self.least.along(axis));
+            self.size = self.size.with(axis, self.size.along(axis).min(room));
+        }
         let inner = self.size.along(axis) - self.layout.padding * 2;
         let count = self.laid_out().count();
         if count > 0 {
@@ -236,7 +278,11 @@ impl Element {
                     let each = (inner - used).max(Px::ZERO) / Px::of_count(growing).get();
                     for child in self.laid_out_mut() {
                         if child.layout.size_along(axis) == Size::Grow {
-                            child.size = child.size.with(axis, each);
+                            let least = match axis {
+                                Axis::Horizontal => child.least.along(axis),
+                                Axis::Vertical => Px::ZERO,
+                            };
+                            child.size = child.size.with(axis, each.max(least));
                         }
                     }
                 }
@@ -247,9 +293,62 @@ impl Element {
                     }
                 }
             }
+            if axis == Axis::Horizontal {
+                self.squeeze(axis, inner);
+            }
         }
         for child in &mut self.children {
             child.grow(axis, window, Level::Nested);
+        }
+    }
+
+    fn squeezes(&self, axis: Axis) -> bool {
+        self.layout.size_along(axis) == Size::Fit && self.size.along(axis) > self.least.along(axis)
+    }
+
+    fn squeeze(&mut self, axis: Axis, inner: Px) {
+        for child in self.laid_out_mut() {
+            child.unsqueezed = child.unsqueezed.with(axis, child.size.along(axis));
+        }
+        if !self.along(axis) {
+            for child in self.laid_out_mut() {
+                if child.squeezes(axis) && child.size.along(axis) > inner {
+                    let to = inner.max(child.least.along(axis));
+                    child.size = child.size.with(axis, to);
+                }
+            }
+            return;
+        }
+        let count = self.laid_out().count();
+        let used = self
+            .laid_out()
+            .fold(Px::ZERO, |sum, child| sum + child.size.along(axis))
+            + self.layout.gap * (Px::of_count(count).get() - 1);
+        let mut over = used - inner;
+        while over > Px::ZERO {
+            let widths: Vec<Px> = self
+                .laid_out()
+                .filter(|child| child.squeezes(axis))
+                .map(|child| child.size.along(axis))
+                .collect();
+            let Some(widest) = widths.iter().copied().max() else {
+                break;
+            };
+            let next = widths
+                .iter()
+                .copied()
+                .filter(|width| *width < widest)
+                .max()
+                .unwrap_or(Px::ZERO);
+            let tied = Px::of_count(widths.iter().filter(|width| **width == widest).count()).get();
+            let step = (widest - next).min((over + Px::new(tied - 1)) / tied);
+            for child in self.laid_out_mut() {
+                if over > Px::ZERO && child.squeezes(axis) && child.size.along(axis) == widest {
+                    let to = (widest - step).max(child.least.along(axis));
+                    over -= widest - to;
+                    child.size = child.size.with(axis, to);
+                }
+            }
         }
     }
 
@@ -285,7 +384,9 @@ impl Element {
         let origin =
             self.rect.origin() + Point::new(padding, padding) - self.layout.scroll_offset();
         let mut cursor = Px::ZERO;
+        let mut unsqueezed = Px::ZERO;
         for child in self.laid_out_mut() {
+            unsqueezed += child.unsqueezed.along(main).max(child.size.along(main)) + gap;
             let child_size = child.size;
             let mut spot = origin.with(main, origin.along(main) + cursor);
             let shift = match cross {
@@ -296,12 +397,11 @@ impl Element {
             cursor += child_size.along(main) + gap;
             child.position = spot;
         }
-        self.content = size.with(main, (cursor - gap).max(Px::ZERO) + padding * 2);
-        let inner = if self.layout.clips() {
-            self.clip.intersect(self.rect)
-        } else {
-            self.clip
-        };
+        self.content = size.with(
+            main,
+            (cursor.max(unsqueezed) - gap).max(Px::ZERO) + padding * 2,
+        );
+        let inner = self.clip.intersect(self.rect);
         for child in &mut self.children {
             match child.layout.floating {
                 Some(at) => child.place(at, screen, screen),
@@ -378,13 +478,7 @@ impl Element {
                     top += row_height;
                 }
             }
-            Wrap::None => {
-                let mut pen = at.horizontal;
-                for run in text.runs {
-                    pen = canvas.text(Point::new(pen, at.vertical), text.size, run.text, run.color);
-                }
-            }
-            Wrap::Clip => {
+            Wrap::None | Wrap::Clip => {
                 let cell = canvas.cell(text.size).width.max(Px::new(1));
                 let room = (self.rect.width - self.layout.padding * 2)
                     .ratio(cell)
@@ -552,6 +646,8 @@ impl Ui {
             id,
             children: Vec::new(),
             size: Extent::default(),
+            least: Extent::default(),
+            unsqueezed: Extent::default(),
             position: Point::default(),
             content: Extent::default(),
             lines: Vec::new(),

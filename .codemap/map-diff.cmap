@@ -30,8 +30,8 @@ order 3
 author ai
 file crates/gui/src/views/center.rs
 symbol diff_view
-lines 0 35
-hash a8e705ac7f567ca9
+lines 0 39
+hash f439f6fe9a5c65fe
 note The Diff tab: every added, removed or changed tour with a one-line summary, and under a changed one the per-step verdicts. Click a row to read that tour's document. 'refresh' (Action::RefreshBase) reads the parent revision again, which also happens on start and whenever the map reloads from disk; with no base map the tab says why.
 
 step 965kfc

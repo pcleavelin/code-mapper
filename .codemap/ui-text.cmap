@@ -53,6 +53,16 @@ lines 0 9
 hash c51dd03a569c860c
 note Writes one cell, ignoring a position outside the grid.
 
+step g6312m
+order 11
+parent 7jbn9o
+author ai
+file crates/ui/src/text.rs
+symbol first_glyph_columns
+lines 0 5
+hash ccc79ab38391241b
+note The columns of the first glyph: a label squeezed by layout keeps that glyph and an ellipsis, so an icon stays whole and a word still shows its first letter.
+
 step kxizx8
 order 4
 parent 7jbn9o
@@ -61,7 +71,17 @@ file crates/ui/src/text.rs
 symbol Wrap
 lines 0 4
 hash f8e328ffe705b7a8
-note None keeps the text on one line and makes it as wide as its characters; Words wraps it to whatever width layout gives it and makes it as tall as its lines; Clip keeps it on one line at whatever width layout gives it and cuts it there with an ellipsis (Text::clipped), so a row of a narrow panel stays one row.
+note None keeps the text on one line, as wide as its characters while there is room and squeezed down to its first glyph and an ellipsis when its row is too narrow; Words wraps it to whatever width layout gives it and makes it as tall as its lines; Clip keeps it on one line at whatever width layout gives it and cuts it there with an ellipsis (Text::clipped), so a row of a narrow panel stays one row.
+
+step qyzien
+order 10
+parent wncz7k
+author ai
+file crates/ui/src/text.rs
+symbol longest_word
+lines 0 10
+hash c5a8f7432fbaecbe
+note The widest word in columns (icons counting two), which is how narrow a wrapped text can get before a word has to be broken across lines; least_leaf caps it so one long path does not hold a whole row open.
 
 step u32zqf
 order 9
@@ -69,9 +89,9 @@ parent 7jbn9o
 author ai
 file crates/ui/src/text.rs
 symbol clipped
-lines 0 28
-hash c68d3904c989f2e3
-note The runs cut to a column count: kept whole when they fit, otherwise filled glyph by glyph to one column short (icons counting two) and ended with an ellipsis in the colour of the run it cut; runs after the cut are dropped. paint_text calls it for Wrap::Clip with the element's inner width.
+lines 0 29
+hash 3a6dd954b0ea911b
+note The runs cut to a column count: kept whole when they fit (trailing spaces, which draw nothing, do not count), otherwise filled glyph by glyph to one column short (icons counting two) and ended with an ellipsis in the colour of the run it cut; runs after the cut are dropped. paint_text calls it for every one-line text with the element's inner width.
 
 step wncz7k
 order 0

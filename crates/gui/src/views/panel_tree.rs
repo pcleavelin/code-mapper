@@ -11,7 +11,7 @@ use crate::panels::{
 };
 use crate::theme::{PANEL_LEAST_ACROSS, PANEL_LEAST_DOWN, PICKER_FIELD, PICKER_WIDTH, TEXT, WEAK};
 use crate::views::{center, console, document, left, references};
-use crate::widgets::{Chosen, Container, Frame};
+use crate::widgets::{Chosen, Container, Frame, Padding};
 
 fn panel_id(panel: BranchId) -> ui::Id {
     ids::panel().nth(panel.number())
@@ -139,7 +139,7 @@ fn panel_box(
     frame.start(Container::Center);
     match panel.active() {
         Some(view) => body(model, frame, view, rect.extent(), graph),
-        None => frame.label("no view here: press + to choose one", WEAK),
+        None => frame.note("no view here: press + to choose one", WEAK, Padding::Step),
     }
     frame.finish();
     frame.finish();

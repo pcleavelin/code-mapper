@@ -120,7 +120,7 @@ author ai
 file crates/gui/src/views/authoring.rs
 symbol target_strip
 lines 0 55
-hash 19e4df2877990f88
+hash 6f9c038c46434151
 note The strip on the Tours list, under the Source and Symbols toolbars, and above the graph. It says 'adds to <tour> under <n> <symbol>' with a 'top level' button, 'at the top level', or 'open a tour to add steps to it'. While a tour is open it also offers add-offer@<view>, labelled with the lines or the symbol it will add, or says to select another symbol or lines in the Source view. While the build-tour wizard is open, Source and Graph show the wizard's strip in its place (feature-build-tour).
 
 step df8kp7

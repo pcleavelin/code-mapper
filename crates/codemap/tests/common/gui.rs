@@ -755,6 +755,10 @@ click-id view/8
 wait 3
 dump
 shot {shots}/split.png
+hover-id doc-delete
+wait 1
+rect tour-buttons
+dump
 hover-id tab@Console
 wait 1
 down

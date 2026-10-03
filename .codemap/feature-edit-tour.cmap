@@ -126,8 +126,8 @@ parent b5ecyo
 author ai
 file crates/gui/src/views/wizard.rs
 symbol edit_page
-lines 0 78
-hash 75732a5a91026e46
+lines 0 82
+hash de9230b867a4b05a
 note The page: a bar fixed above the scroll (edit_bar), then in one scrolling centred column the Tour section (the name field with why the pending edit is invalid beside it, the kind buttons with what the chosen one means, the group field, the note field), the Steps section (the outline, each step with its note field under it) and the Changes section.
 
 step 8iuq35

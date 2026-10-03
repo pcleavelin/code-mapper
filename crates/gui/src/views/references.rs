@@ -14,7 +14,9 @@ use crate::theme::{
     CLOSE_BUTTON, FIELD, ORANGE, PEEK_EXTRA, PEEK_LEAST, PEEK_PLACE_ROOM, PEEK_TITLE, PENDING,
     PIXEL, ROW_EXTRA, SLICE, TEXT, WEAK,
 };
-use crate::widgets::{Chosen, CodeBlock, Container, Frame, Marks, RowAction, Scroller, Width};
+use crate::widgets::{
+    Chosen, CodeBlock, Container, Frame, Marks, Padding, RowAction, Scroller, Width,
+};
 use crate::wizard::WizardAct;
 
 enum Body {
@@ -236,9 +238,10 @@ fn heading(frame: &mut Frame<'_>, symbol: &Symbol, file: &SourceFile, area: Exte
             || "the server".to_owned(),
             |language| language.program().to_string(),
         );
-        frame.label(
+        frame.note(
             format!("waiting for {server}; callers and callees may be incomplete"),
             ORANGE,
+            Padding::Step,
         );
     }
     frame.finish();
@@ -461,9 +464,10 @@ pub(super) fn references_panel(model: &Model, frame: &mut Frame<'_>, area: Exten
         .focus()
         .and_then(|current| Some((current, index.symbol(current)?, index.file(current.file())?)))
     else {
-        frame.label(
+        frame.note(
             "no symbol selected: click one in Symbols, a tour, or the Source view",
             WEAK,
+            Padding::Step,
         );
         frame.finish();
         return;

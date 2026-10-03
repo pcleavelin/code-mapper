@@ -41,8 +41,8 @@ parent q1l62e
 author ai
 file crates/gui/src/views/center.rs
 symbol search_view
-lines 0 90
-hash bec8e0966bfdca3b
+lines 0 92
+hash e7ff3e682d387de0
 note Trigger in the Search tab: each visible hit is a HIT_ROW (hit/<n>) and a click queues GoTo for its file and line; each file row (hitfile/<file number>) queues GoTo for the file's first line.
 
 step q1l62e

@@ -21,8 +21,8 @@ parent 7n3jq4
 author ai
 file crates/gui/src/views/references.rs
 symbol references_panel
-lines 0 75
-hash fd3ca97fe9501900
+lines 0 76
+hash 621269e05a78af09
 note The References panel, on the right by default: the kept peek on top when there is one, then the focused symbol with 'add step' (unless it is the selected step) and 'promote', then callers, callees and references in one windowed list, each row clickable. References are asked of the server the first time a symbol is shown, once per text of its file (the probe carries the file hash), and the references title says so while the answer is out.
 
 step 0n6ve6
@@ -101,8 +101,8 @@ parent bg9t38
 author ai
 file crates/gui/src/views/center.rs
 symbol diff_view
-lines 0 35
-hash a8e705ac7f567ca9
+lines 0 39
+hash f439f6fe9a5c65fe
 link map-diff
 note The Diff tab: the map against the parent revision's.
 
@@ -183,7 +183,7 @@ author ai
 file crates/gui/src/views/center.rs
 symbol source
 lines 0 84
-hash 90fe100f3c4de553
+hash 7bc82948c2d76638
 link source-view
 note The Source tab: the current file.
 
@@ -254,9 +254,9 @@ parent 0ewdra
 author ai
 file crates/gui/src/views/references.rs
 symbol heading
-lines 0 29
-hash 68e140a1cd8a5854
-note The symbol's name as a title, then its kind and place as one clipped caption with the place cut from the left to the panel's width, and 'waiting for' its server while its file is pending.
+lines 0 30
+hash 48d92caa46b1fd0f
+note The symbol's name as a title, then its kind and place as one clipped caption with the place cut from the left to the panel's width, and a wrapped 'waiting for' its server while its file is pending.
 
 step 9xbf1m
 order 59
@@ -944,8 +944,8 @@ parent bg9t38
 author ai
 file crates/gui/src/views/center.rs
 symbol search_view
-lines 0 90
-hash bec8e0966bfdca3b
+lines 0 92
+hash e7ff3e682d387de0
 link search
 note The Search tab: the search hits.
 

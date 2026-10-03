@@ -41,7 +41,7 @@ author ai
 file crates/gui/src/views/center.rs
 symbol source
 lines 0 84
-hash 90fe100f3c4de553
+hash 7bc82948c2d76638
 note The whole viewer: the toolbar (source_toolbar), the target strip, then the scrolling column of rows. With no current file it says so and draws nothing else.
 
 step ghy5uj

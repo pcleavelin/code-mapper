@@ -269,7 +269,7 @@ author ai
 file crates/gui/src/views/panel_tree.rs
 symbol panel_box
 lines 0 16
-hash 52c50515d5bdf2a9
+hash acb4b258ec4fc93a
 note A panel: a clipped box (panel/<n>, which drop targets read back) holding its header and the active view, or a hint when it is empty.
 
 step ec5woa

@@ -51,7 +51,7 @@ author ai
 file crates/gui/src/views/authoring.rs
 symbol target_strip
 lines 0 55
-hash 19e4df2877990f88
+hash 6f9c038c46434151
 note Trigger and display: the strip on the Tours list, under the Source and Symbols toolbars, and above the graph names the tour and the target ('under 1.2 fill' or 'at the top level'), offers add-offer@<view> for the lines or symbol in front of you, and its 'top level' button (target-top@<view>). The view name is part of the id because Tours and the centre tab are on screen together, and one shared id would run the click twice. That button queues AddAtTopLevel. With no tour being read it says to open one. While the build-tour wizard is open, Source and Graph show the wizard's strip in its place (feature-build-tour).
 
 step nioly0

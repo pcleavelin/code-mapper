@@ -373,8 +373,8 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol layout
-lines 0 76
-hash f77ba47092b925dd
+lines 0 80
+hash 6a3053c25ffe53e3
 note The panel tree: resizing the left split by its divider, splitting the centre and picking the Source by typing, splitting that down and picking References by clicking (its old panel closes), dragging Console onto the left edge of the Tours panel, a click on a tab that moves nothing, a drag released over the top bar that cancels, closing a panel, and a tab command that brings the Source back into a panel.
 
 step j8h125

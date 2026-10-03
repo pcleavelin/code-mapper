@@ -165,7 +165,7 @@ fn name_page(model: &Model, wizard: &Wizard, frame: &mut Frame<'_>) {
         {
             frame.push(Action::Wizard(WizardAct::Kind(kind)));
         }
-        frame.label(meaning(kind).as_str(), WEAK);
+        frame.note(meaning(kind).as_str(), WEAK, Padding::Step);
         frame.finish();
     }
     frame.start(Container::ToolbarSmall);
@@ -176,7 +176,11 @@ fn name_page(model: &Model, wizard: &Wizard, frame: &mut Frame<'_>) {
         &Label::new("(none)"),
         SHORT_FIELD,
     );
-    frame.label("where it sits in the Tours list, / nests", WEAK);
+    frame.note(
+        "where it sits in the Tours list, / nests",
+        WEAK,
+        Padding::Step,
+    );
     frame.finish();
 }
 
@@ -279,13 +283,14 @@ fn matches(model: &Model, wizard: &Wizard, frame: &mut Frame<'_>, columns: &Colu
         &Label::new("symbol name"),
         SHORT_FIELD,
     );
-    frame.label(
+    frame.note(
         if needle.is_empty() {
             "entry points, nothing calls them".to_owned()
         } else {
             Counted::new(Count::new(matching.len()), Noun::Symbol).to_string()
         },
         WEAK,
+        Padding::Step,
     );
     frame.finish();
     let places: Vec<(SymbolId, Place)> = matching
@@ -902,13 +907,14 @@ fn buttons(frame: &mut Frame<'_>, page: Page) {
     {
         frame.push(Action::Wizard(WizardAct::Cancel));
     }
-    frame.label(
+    frame.note(
         if page == Page::Create {
             "enter creates"
         } else {
             "enter goes on; escape cancels if nothing is entered"
         },
         WEAK,
+        Padding::Step,
     );
     frame.finish();
 }
@@ -1034,7 +1040,7 @@ fn edit_page(model: &Model, wizard: &Wizard, tour: &TourName, frame: &mut Frame<
             frame.push(Action::Wizard(WizardAct::Kind(kind)));
         }
     }
-    frame.label(meaning(wizard.kind()).as_str(), WEAK);
+    frame.note(meaning(wizard.kind()).as_str(), WEAK, Padding::Step);
     frame.finish();
     frame.start(Container::ToolbarSmall);
     frame.plain_line(caption(&Spell::new("group")), WEAK);
@@ -1044,7 +1050,11 @@ fn edit_page(model: &Model, wizard: &Wizard, tour: &TourName, frame: &mut Frame<
         &Label::new("(none)"),
         SHORT_FIELD,
     );
-    frame.label("where it sits in the Tours list, / nests", WEAK);
+    frame.note(
+        "where it sits in the Tours list, / nests",
+        WEAK,
+        Padding::Step,
+    );
     frame.finish();
     frame.start(Container::ToolbarSmall);
     frame.plain_line(caption(&Spell::new("note")), WEAK);
