@@ -11,7 +11,7 @@ parent x7w987
 author ai
 file crates/gui/src/app.rs
 symbol frame
-lines 22 28
+lines 25 31
 hash a8df20e3242f9745
 link graph-draw
 note The effect from the next frame on: while the Graph view is in front of some panel, each frame runs the graph phase (input, layout, fit, camera, scene) before the views are built, and that panel draws its scene; while it is not, the graph is marked hidden and gives up the keyboard.

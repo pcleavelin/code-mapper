@@ -8,12 +8,12 @@ use domain::{
 use features::{Feature, Trigger};
 use io_map::MapStore;
 use strum::VariantArray;
-use ui::{Count, Input, Key, Label, Mods, Press, Px};
+use ui::{Count, Input, Key, Label, Mods, Press, Px, Typed};
 
 use crate::action::{Action, Collapse, Hide};
 use crate::app::App;
 use crate::authoring::Authoring;
-use crate::field::{Attention, FieldRoom, Fields, Which};
+use crate::field::{Attention, Enter, FieldRoom, Fields, Which};
 use crate::graph::Parentage;
 use crate::graph::build::{Built, CellSize, Rank, StepInfo};
 use crate::graph::{Button, GraphState, Node};
@@ -641,6 +641,23 @@ fn the_tours_filter_lists_a_tour_by_its_steps_and_names_the_steps_that_match() {
         (1, ["1", "1.1", "1.1.1", "1.2"].map(str::to_owned).to_vec())
     );
     assert_eq!(filtered(&mut model, "absent"), (0, Vec::new()));
+}
+
+#[test]
+fn a_press_off_the_focused_field_releases_it_and_keeps_what_was_typed() {
+    let mut fields = Fields::default();
+    fields.focus(Which::Search);
+    let mut typed = Typed::default();
+    typed.push_str("half typed");
+    fields.handle(Which::Search, &[], &typed, Enter::Keep);
+    fields.press(Some(Which::Search.control().id()));
+    assert_eq!(fields.focused(), Some(Which::Search));
+    fields.press(Some(ids::document()));
+    assert_eq!(fields.focused(), None);
+    assert_eq!(fields.get(Which::Search).text().as_str(), "half typed");
+    fields.focus(Which::Command);
+    fields.press(None);
+    assert_eq!(fields.focused(), None);
 }
 
 #[test]

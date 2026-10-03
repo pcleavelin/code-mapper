@@ -51,7 +51,6 @@ impl Control {
         self.feature
     }
 
-    #[cfg(test)]
     pub(crate) const fn element(self) -> Element {
         self.element
     }

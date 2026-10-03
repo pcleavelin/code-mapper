@@ -366,9 +366,9 @@ order 32
 author ai
 file crates/gui/src/views/panel_tree.rs
 symbol picker
-lines 0 51
-hash 9e0655cca298218a
-note The picker, floating under the + of its panel: the search field, then one row per view whose name contains the text (case-insensitive), marked 'here' or 'moves here' when it is already in a panel. A click, or enter for the first row, picks. It closes when the search field loses the keyboard (escape, or another field).
+lines 0 52
+hash 50eeed71d000d71f
+note The picker, floating under the + of its panel: the search field, then one row per view whose name contains the text (case-insensitive), marked 'here' or 'moves here' when it is already in a panel. A click, or enter for the first row, picks. It closes when the search field loses the keyboard (escape, another field, or a press outside the picker); a press anywhere inside the picker keeps it.
 
 step l3vnxl
 order 41

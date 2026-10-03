@@ -423,6 +423,15 @@ impl Fields {
         }
     }
 
+    pub(crate) fn press(&mut self, hot: Option<Id>) {
+        if self
+            .focused
+            .is_some_and(|which| hot != Some(which.control().id()))
+        {
+            self.focused = None;
+        }
+    }
+
     pub(crate) fn handle(
         &mut self,
         which: Which,

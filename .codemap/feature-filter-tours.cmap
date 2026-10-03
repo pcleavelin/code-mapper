@@ -71,9 +71,9 @@ parent z6m3sw
 author ai
 file crates/gui/src/dump.rs
 symbol impl Dump for Fields
-lines 0 13
-hash 16b4f07c0ca836e2
-note What a script sees: the filter's text and how many tours listed_rows holds, as DUMP tours filter="..." listed=n; a script's dump prints this line.
+lines 0 20
+hash 486ee363ce49956c
+note What a script sees: the filter's text and how many tours listed_rows holds, as DUMP tours filter="..." listed=n; a script's dump prints this line, then DUMP field focused=<element of the field with the keyboard>.
 
 step o4hj70
 order 2

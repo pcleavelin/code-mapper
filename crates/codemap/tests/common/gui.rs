@@ -55,13 +55,7 @@ fn reload_hook(bin: &Path, root: &Path, line: &str) {
 
 const SETTLE: &str = "idle\nclick-id save\nclick-id tours/2\nwait 2\n";
 
-pub(crate) fn document() -> Scenario {
-    Scenario {
-        first: FirstScreen::Workspace,
-        setup: |bin, name| Ok(mapped(bin, name)),
-        hook: no_hook,
-        after: &[],
-        script: "SETTLE
+const DOCUMENT: &str = "SETTLE
 dump
 shot {shots}/open.png
 scroll document 2000
@@ -146,8 +140,31 @@ wait 2
 key escape
 wait 2
 dump
+key p ctrl
+wait 2
+text tot
+wait 2
+rect palette-box
+click <<DUMP rect palette-box|3,3>>
+wait 2
+text al_a
+wait 2
+dump
+shot {shots}/palette-kept.png
+click-id tab@Symbols
+wait 3
+dump
+shot {shots}/palette-left.png
 quit
-",
+";
+
+pub(crate) fn document() -> Scenario {
+    Scenario {
+        first: FirstScreen::Workspace,
+        setup: |bin, name| Ok(mapped(bin, name)),
+        hook: no_hook,
+        after: &[],
+        script: DOCUMENT,
     }
 }
 
@@ -755,6 +772,15 @@ click-id view/8
 wait 3
 dump
 shot {shots}/split.png
+click-id pick/1
+wait 2
+rect picker
+click <<DUMP rect picker|3,3>>
+wait 2
+dump
+click-id tab@Tours
+wait 2
+dump
 hover-id tab@Console
 wait 1
 down

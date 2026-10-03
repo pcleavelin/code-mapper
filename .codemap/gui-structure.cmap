@@ -731,8 +731,8 @@ parent 9pik9m
 author ai
 file crates/gui/src/ids.rs
 symbol impl Control
-lines 0 39
-hash 130e59ef971201ec
+lines 0 38
+hash bcb60fe673dc4eea
 note Ids from a Control: the plain id, the nth for a row, with a suffix for a named row, and nested for a step of a linked tour shown inline (linked/<occurrence>@<element>/<n>).
 
 step y37wqf

@@ -73,7 +73,7 @@ parent ub828q
 author ai
 file crates/gui/src/app.rs
 symbol frame
-lines 22 28
+lines 25 31
 hash a8df20e3242f9745
 note And a frame with the Graph view hidden marks the graph Hidden and its keyboard Elsewhere, so the arrows go back to walking the tour.
 

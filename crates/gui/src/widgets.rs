@@ -2,8 +2,8 @@ mod code;
 
 use platform::Cursor;
 use ui::{
-    Align, Canvas, Count, Draw, FontSize, Icon, Id, Interaction, Kind, Label, Layout, Point, Px,
-    Rect, Run, Scrollbar, Sides, Size, Style, Text, Ui, Wrap,
+    Align, Button, Canvas, Count, Draw, FontSize, Icon, Id, Interaction, Kind, Label, Layout,
+    Point, Px, Rect, Run, Scrollbar, Sides, Size, Style, Text, Ui, Wrap,
 };
 
 use crate::action::Action;
@@ -817,6 +817,17 @@ impl Frame<'_> {
     pub(crate) fn take_focus(&mut self, which: Which) {
         self.overlay.focus = Some(which);
         self.push(Action::FocusField(which));
+    }
+
+    pub(crate) fn take_focus_within(&mut self, popup: Interaction, which: Which) {
+        let pointer = self.ui.pointer();
+        if pointer.pressed.contains(Button::Left)
+            && popup
+                .rect()
+                .is_some_and(|rect| rect.contains(pointer.mouse))
+        {
+            self.take_focus(which);
+        }
     }
 
     pub(crate) fn command_row(&mut self, fields: &Fields) {

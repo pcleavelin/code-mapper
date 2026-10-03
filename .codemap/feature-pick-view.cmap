@@ -21,8 +21,8 @@ parent m2tf99
 author ai
 file crates/gui/src/views/panel_tree.rs
 symbol picker
-lines 0 51
-hash 9e0655cca298218a
+lines 0 52
+hash 50eeed71d000d71f
 note Trigger and list: the field@views search and one VIEW_ROW (view/<n>, n the view's place in View::VARIANTS) per match; a click queues Pick.
 
 step 9g2uo2

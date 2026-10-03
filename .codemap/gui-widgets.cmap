@@ -31,7 +31,7 @@ file crates/gui/src/field.rs
 symbol Fields
 lines 0 15
 hash 0eeb907f8db2227f
-note The eleven named fields, one member each, plus step_notes, a field per edit-tour outline row made on first write (an unwritten one reads as blank), reached by Which; focused names the one with the keyboard, at most one, so taking focus is setting it.
+note The eleven named fields, one member each, plus step_notes, a field per edit-tour outline row made on first write (an unwritten one reads as blank), reached by Which; focused names the one with the keyboard, at most one, so taking focus is setting it. A left press anywhere but on the focused field releases it (press), keeping its text, the same as escape.
 
 step 2yp2r2
 order 5
@@ -225,6 +225,16 @@ lines 8 36
 hash 14ebfa1d66595a34
 note The palette, in theme: a dozen colours named by role - background, panel, field, border, text, weak, accent, green, red, orange, hover, selected, and the red background a danger button takes under the pointer - and below them the tints made from those by alpha (disabled, selected lines, the slice, the steps list's top step, faint, pending, the drop band, the call tint), the graph's colours (STEP_EDGE, EXPANSION_EDGE, BACK_EDGE, STEP_BORDER, SIBLINGS_FILL, SIBLINGS_BORDER) and the panel header's TAB_STRIP. A colour decision is made once, here, and every view names one.
 
+step gp3at7
+order 49
+parent rs11uk
+author ai
+file crates/gui/src/widgets.rs
+symbol take_focus_within
+lines 0 9
+hash f9b2a1bb61ab1ff2
+note For a field inside a floating popup (the palette, the view picker): a left press anywhere inside the popup's box gives the keyboard back to its field, so a press on the popup's padding or labels does not count as outside. Tested against the box's rectangle rather than the element under the mouse, because the hit test does not prefer the floating layer and an element underneath can be the one under the mouse.
+
 step h1v6z6
 order 48
 parent v1qf6b
@@ -349,6 +359,16 @@ symbol caption
 lines 0 8
 hash 5f0dc3304a617d27
 note Text that grows to the width it is given and is cut there with an ellipsis (Wrap::Clip), with a label's padding: toolbar notes and legends, the status bar's message, a heading, anything that must not widen its bar.
+
+step r4efvv
+order 48
+parent 2havd5
+author ai
+file crates/gui/src/field.rs
+symbol press
+lines 0 7
+hash 0a723ac27a6eb4ae
+note Called by the frame on every left press with the element under the mouse: the focused field keeps the keyboard only when the press lands on its own element, otherwise it loses it. Its text, caret and history stay, as with escape, so a click away loses no typing; clicking back resumes where it was.
 
 step r5th9i
 order 39

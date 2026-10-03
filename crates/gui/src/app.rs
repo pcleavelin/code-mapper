@@ -317,6 +317,9 @@ impl platform::App for App {
         self.keys(input);
         self.model.refresh_palette();
         self.ui.begin(input);
+        if self.ui.pointer().pressed.contains(Button::Left) {
+            self.model.fields.press(self.ui.hot());
+        }
         for action in views::panel_input(&self.model, &self.ui) {
             self.apply(action);
         }

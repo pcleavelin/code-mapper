@@ -356,6 +356,15 @@ lines 0 2
 hash 42953d1e4d8efdd9
 note An App around the fixture model, for tests that go through apply.
 
+step lv5n4y
+order 35
+author ai
+file crates/gui/src/tests.rs
+symbol a_press_off_the_focused_field_releases_it_and_keeps_what_was_typed
+lines 0 14
+hash 5b1e2dca7eeb6cde
+note Fields alone, no model: a press on the focused field's own element keeps the keyboard, a press on another element or on no element releases it, and the typed text survives the release.
+
 step mqnqki
 order 37
 parent 8uitgf

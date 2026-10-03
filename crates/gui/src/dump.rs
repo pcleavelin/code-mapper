@@ -275,6 +275,13 @@ impl Dump for Fields {
             "tours filter={} listed={listed}",
             Quoted(self.get(Which::TourFilter).text().as_str())
         ));
+        lines.line(format_args!(
+            "field focused={}",
+            Optional(
+                self.focused()
+                    .map(|which| which.control().element().as_str())
+            )
+        ));
     }
 }
 

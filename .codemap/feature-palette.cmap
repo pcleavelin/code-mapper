@@ -251,9 +251,9 @@ parent wsviek
 author ai
 file crates/gui/src/views/palette.rs
 symbol palette
-lines 0 60
-hash baf8890b39064695
-note The box: centred, a tenth of the way down, the field with its hint, then PALETTE_ROWS rows from the top of the window: a coloured kind tag, the name, the detail dimmed and the chord at the right; then 'first-last of total' and the keys. A click runs the row.
+lines 0 61
+hash 90d8438e16358724
+note The box: centred, a tenth of the way down, the field with its hint, then PALETTE_ROWS rows from the top of the window: a coloured kind tag, the name, the detail dimmed and the chord at the right; then 'first-last of total' and the keys. A click runs the row. A press anywhere in the box keeps the keyboard in the field; a press outside it takes the keyboard away, which closes the palette.
 
 step uu4fo1
 order 36

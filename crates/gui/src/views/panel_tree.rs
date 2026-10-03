@@ -278,7 +278,8 @@ pub(super) fn picker(model: &Model, frame: &mut Frame<'_>) {
         at.horizontal.min(window.width - width).max(ui::Px::ZERO),
         at.vertical,
     );
-    frame.start(Container::Picker { at, width });
+    let popup = frame.start(Container::Picker { at, width });
+    frame.take_focus_within(popup, Which::ViewSearch);
     frame.field(
         &model.fields,
         Which::ViewSearch,
