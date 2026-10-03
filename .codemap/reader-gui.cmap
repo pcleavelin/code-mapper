@@ -151,9 +151,9 @@ parent bg9t38
 author ai
 file crates/gui/src/views/bars.rs
 symbol top_bar
-lines 0 61
-hash 786d646d8c5943bd
-note The top bar: the search box, back and forward, then, right-aligned, an orange 'unsaved changes' while the map has unsaved edits, and 'save', which shows a star and the selected colour while it does. Every button here only pushes an Action. Authoring controls live where the code is shown: the Tours tab, the Source view, Symbols, References and the graph.
+lines 0 54
+hash 2dca0c6001649b53
+note The top bar: back and forward, then, right-aligned, an orange 'unsaved changes' while the map has unsaved edits, and 'save', which shows a star and the selected colour while it does. Every button here only pushes an Action. Authoring controls live where the code is shown: the Tours tab, the Source view, Symbols, References and the graph.
 
 step 5j9xn1
 order 40
@@ -701,7 +701,7 @@ symbol search
 lines 0 43
 hash 9ea700a2505db91c
 link search
-note The search box's enter.
+note The Search view field's enter.
 
 step pj8e6h
 order 6
@@ -944,8 +944,8 @@ parent bg9t38
 author ai
 file crates/gui/src/views/center.rs
 symbol search_view
-lines 0 92
-hash e7ff3e682d387de0
+lines 0 100
+hash ed4dea1c2e4cdbbf
 link search
 note The Search tab: the search hits.
 

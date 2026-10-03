@@ -40,9 +40,9 @@ parent 0omynn
 author ai
 file crates/gui/src/nav.rs
 symbol set_tab
-lines 0 2
-hash b0a74509ff198664
-note Sets the centre tab through Nav::show, which takes a fresh ticket.
+lines 0 5
+hash 47e32722e4a8e029
+note Sets the centre tab through Nav::show, which takes a fresh ticket; showing Search also gives its field the keyboard.
 
 step vf7sqr
 order 4
@@ -50,6 +50,6 @@ parent 0omynn
 author ai
 file crates/gui/src/nav.rs
 symbol reveal_tab
-lines 0 3
-hash f58d3e0634186970
+lines 0 6
+hash db39035e004d3a10
 note The effect for a centre view, after the action queue: reveal fronts it in its panel.

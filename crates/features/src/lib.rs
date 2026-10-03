@@ -592,7 +592,7 @@ impl Feature {
             ),
             Self::SearchFiles => Spec::new(
                 Text::new("search-files"),
-                Text::new("search every file for a regex; the hits open in the Search tab"),
+                Text::new("search every file for a regex typed above the hits in the Search tab"),
                 Surface::Window,
                 &const {
                     [

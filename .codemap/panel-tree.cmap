@@ -531,9 +531,9 @@ order 28
 author ai
 file crates/gui/src/nav.rs
 symbol reveal_tab
-lines 0 3
-hash f58d3e0634186970
-note Called by App::frame after the action queue: shows whichever centre view navigation asked for, so every feature that switches the tab (open a tour, follow an xref, go back) also brings that view to front in whichever panel holds it.
+lines 0 6
+hash db39035e004d3a10
+note Called by App::frame after the action queue: shows whichever centre view navigation asked for, so every feature that switches the tab (open a tour, follow an xref, go back) also brings that view to front in whichever panel holds it. When that leaves the Search view in no panel's front, its field lets go of the keyboard, so typing reaches the view in front.
 
 step ycv5xc
 order 27

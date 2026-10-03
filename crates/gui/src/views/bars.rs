@@ -1,24 +1,16 @@
-use ui::{Icon, Label, Run};
+use ui::{Icon, Run};
 
 use crate::action::Action;
-use crate::field::Which;
 use crate::ids;
 use crate::model::{Dirty, Model};
 use crate::settings::SettingsAct;
 use crate::status::Tone;
 use crate::text::Clipped;
-use crate::theme::{GREEN, MAP_PLACE, ORANGE, RED, SEARCH_FIELD, TEXT, WEAK};
+use crate::theme::{GREEN, MAP_PLACE, ORANGE, RED, TEXT, WEAK};
 use crate::widgets::{Chosen, Container, Enabled, Frame};
 
 pub(super) fn top_bar(model: &Model, frame: &mut Frame<'_>) {
     frame.start(Container::TopBar);
-    frame.label("search", WEAK);
-    frame.field(
-        &model.fields,
-        Which::Search,
-        &Label::new("regex"),
-        SEARCH_FIELD,
-    );
     let enabled = |can: bool| {
         if can {
             Enabled::Enabled

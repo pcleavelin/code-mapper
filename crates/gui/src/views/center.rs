@@ -13,7 +13,7 @@ use crate::status::Status;
 use crate::text::{Counted, Noun, Tag};
 use crate::theme::{
     EDGE_SCROLL_BAND, EDGE_SCROLL_MOST, FIELD, GREEN, LINE_FIELD, LINES_SELECTED, ORANGE, PIXEL,
-    RED, ROW_EXTRA, SOURCE_GUESS, TEXT, WEAK,
+    RED, ROW_EXTRA, SEARCH_FIELD, SOURCE_GUESS, TEXT, WEAK,
 };
 use crate::widgets::{Chosen, CodeBlock, Coded, Container, Frame, Marks, Padding, Scroller, Width};
 
@@ -205,11 +205,19 @@ fn hit_lines(model: &Model) -> Vec<HitLine> {
 }
 
 pub(super) fn search_view(model: &Model, frame: &mut Frame<'_>) {
+    frame.start(Container::ToolbarSmall);
+    frame.field(
+        &model.fields,
+        Which::Search,
+        &Label::new("regex"),
+        SEARCH_FIELD,
+    );
+    frame.finish();
     if model.hits.is_empty() {
         let search = model.fields.get(Which::Search).text();
         frame.note(
             if search.is_empty() {
-                "type a regex in the search box and press enter"
+                "type a regex in the field above and press enter"
             } else {
                 "no hits"
             },

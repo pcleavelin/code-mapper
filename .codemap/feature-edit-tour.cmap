@@ -351,7 +351,7 @@ parent b5ecyo
 author ai
 file crates/gui/src/palette.rs
 symbol palette_actions
-lines 30 30
+lines 28 28
 hash 4620b44185ad3c4d
 note Trigger: the palette's 'edit tour', on the tour being read.
 

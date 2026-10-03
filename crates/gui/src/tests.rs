@@ -680,6 +680,21 @@ fn the_tours_filter_lists_a_tour_by_its_steps_and_names_the_steps_that_match() {
 }
 
 #[test]
+fn showing_the_search_view_focuses_its_field_until_the_view_is_hidden() {
+    let mut model = model();
+    model.show_view(View::Search);
+    model.reveal_tab();
+    assert_eq!(model.fields.focused(), Some(Which::Search));
+    model.show_view(View::Graph);
+    model.reveal_tab();
+    assert_eq!(model.fields.focused(), None);
+    model.show_view(View::Graph);
+    model.fields.focus(Which::Command);
+    model.reveal_tab();
+    assert_eq!(model.fields.focused(), Some(Which::Command));
+}
+
+#[test]
 fn a_press_off_the_focused_field_releases_it_and_keeps_what_was_typed() {
     let mut fields = Fields::default();
     fields.focus(Which::Search);

@@ -40,7 +40,7 @@ parent 6t9jgh
 author ai
 file crates/gui/src/views/bars.rs
 symbol top_bar
-lines 37 48
+lines 30 41
 hash cd1cd9fb32be06bd
 note Trigger in the top bar: while the map has unsaved edits, an orange 'unsaved changes' label and the SAVE button labelled 'save *' and drawn selected; otherwise a plain 'save'. A click queues Save.
 

@@ -501,7 +501,9 @@ click-id tours/1
 wait 3
 dump
 shot {shots}/shapes.png
-click-id field@search
+click-id tab@Search
+wait 2
+dump
 text self\\.\\w+
 key enter
 wait 3
