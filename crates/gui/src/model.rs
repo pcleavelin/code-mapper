@@ -4,7 +4,7 @@ use std::time::{Duration, Instant};
 
 use domain::{
     Depth, FileId, GroupName, Index, Line, LineCount, Map, Row, Span, Step, StepId, Tour, TourDiff,
-    TourKind, TourName,
+    TourName,
 };
 use io_map::{MapStore, Stamp};
 use strum::VariantArray;
@@ -386,7 +386,6 @@ pub(crate) struct Model {
     pub(crate) tip_shown: Option<Label>,
     pub(crate) fields: Fields,
     pub(crate) palette: Option<Palette>,
-    pub(crate) new_tour: Option<TourKind>,
     pub(crate) step_grab: Option<StepGrab>,
     pub(crate) hits: Vec<Hit>,
     pub(crate) hits_shown: HitsShown,
@@ -427,7 +426,6 @@ impl Model {
             tip_shown: None,
             fields: Fields::default(),
             palette: None,
-            new_tour: None,
             step_grab: None,
             hits: Vec::new(),
             hits_shown: HitsShown::All,

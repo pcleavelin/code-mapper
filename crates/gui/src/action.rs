@@ -400,8 +400,6 @@ impl App {
             | Which::SymbolFilter
             | Which::TourFilter
             | Which::GoToLine
-            | Which::NewTour
-            | Which::NewGroup
             | Which::Palette
             | Which::WizardName
             | Which::WizardGroup
@@ -430,7 +428,6 @@ impl App {
         match which {
             Which::Command => self.run_command(&line),
             Which::Search => self.search(),
-            Which::NewTour | Which::NewGroup => self.create_tour(),
             Which::GoToLine => self.go_to_line(&line),
             Which::ViewSearch => self.pick_first(&line),
             Which::SymbolFilter

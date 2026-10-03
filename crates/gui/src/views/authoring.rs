@@ -1,18 +1,16 @@
-use domain::{SymbolName, TourKind};
+use domain::SymbolName;
 use platform::Cursor;
-use strum::VariantArray;
 use ui::{Button, Icon, Label, Ui};
 
 use crate::action::Action;
 use crate::authoring::{AddOffer, Authoring, StepDrop, StepGrab, Zone};
-use crate::field::Which;
 use crate::ids;
 use crate::model::{Model, StepKey, StepSlot};
 use crate::panels::View;
 use crate::status::Status;
-use crate::text::Tag;
-use crate::theme::{ACCENT, NEW_TOUR_FIELD, TEXT, WEAK};
-use crate::widgets::{Chosen, Container, Frame};
+use crate::theme::{ACCENT, TEXT, WEAK};
+use crate::widgets::{Container, Frame};
+use crate::wizard::WizardAct;
 
 pub(super) fn target_strip(model: &Model, frame: &mut Frame<'_>, view: View) {
     if let Some(wizard) = model.wizard.as_ref()
@@ -74,50 +72,8 @@ pub(super) fn target_strip(model: &Model, frame: &mut Frame<'_>, view: View) {
 pub(super) fn new_tour_button(frame: &mut Frame<'_>) {
     let label = format!("{} new tour", Icon::Add.glyph().get());
     if frame.small_button(label, ids::NEW_TOUR.target()).clicked() {
-        frame.push(Action::Authoring(Authoring::ToggleNewTour));
+        frame.push(Action::Wizard(WizardAct::Start));
     }
-}
-
-pub(super) fn new_tour_form(model: &Model, frame: &mut Frame<'_>) {
-    let Some(chosen) = model.new_tour else {
-        return;
-    };
-    frame.start(Container::ToolbarSmall);
-    frame.label("name ", WEAK);
-    frame.field(
-        &model.fields,
-        Which::NewTour,
-        &Label::new("e.g. startup"),
-        NEW_TOUR_FIELD,
-    );
-    for kind in TourKind::VARIANTS.iter().copied() {
-        let word = Tag::kind(kind);
-        let target = ids::KIND.with(&Label::new(word.to_string()));
-        let selected = if kind == chosen {
-            Chosen::Chosen
-        } else {
-            Chosen::Plain
-        };
-        if frame.button(word.to_string(), target, selected).clicked() {
-            frame.push(Action::Authoring(Authoring::ChooseKind(kind)));
-        }
-    }
-    frame.finish();
-    frame.start(Container::ToolbarSmall);
-    frame.label("group", WEAK);
-    frame.field(
-        &model.fields,
-        Which::NewGroup,
-        &Label::new("(none)"),
-        NEW_TOUR_FIELD,
-    );
-    if frame
-        .small_button("create", ids::CREATE_TOUR.target())
-        .clicked()
-    {
-        frame.push(Action::Authoring(Authoring::CreateTour));
-    }
-    frame.finish();
 }
 
 pub(super) fn target_mark(model: &Model, step: StepSlot) -> Option<Label> {

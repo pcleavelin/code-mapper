@@ -68,7 +68,7 @@ control-codemap gui --script /path/to/script.txt --shot "$ART/after.png"
 
 Script commands: `wait n`, `pause ms`, `mouse x y`, `down`, `up`, `click x y`, `dblclick x y`, `drag …`, `wheel dy`, `pinch n`, `key <name> [ctrl] [alt]`, `text …`, `quit`; app commands `tab <name>`, `open <file> [line]`, `scroll <panel> <n>`, `idle`, `rect <id>`, `click-id <id>`, `dblclick-id <id>`, `hover-id <id>`, `absent <id>`, `shot <file.png>`, `dump`.
 
-Stable ids (`crates/gui/src/ids.rs`, `CLAUDE.md`): `tours/<n>`, `group/<n>`, `steps/<n>`, `step/<n>`, `tab@Tour` `tab@Graph` `tab@Symbols` `tab@Files` `tab@Diff` `tab@Source` `tab@Search` `tab@References` `tab@Console`, `field@search` `field@tours` `field@symbols` `field@goto-line` `field@new-tour`, `doc-graph`, `save`, `panel/<n>`. After layout changes, `wait 1` before the next `click-id`. Grep stderr for `^DUMP`.
+Stable ids (`crates/gui/src/ids.rs`, `CLAUDE.md`): `tours/<n>`, `group/<n>`, `steps/<n>`, `step/<n>`, `tab@Tour` `tab@Graph` `tab@Symbols` `tab@Files` `tab@Diff` `tab@Source` `tab@Search` `tab@References` `tab@Console`, `field@search` `field@tours` `field@symbols` `field@goto-line` `field@wizard-name`, `doc-graph`, `save`, `panel/<n>`. After layout changes, `wait 1` before the next `click-id`. Grep stderr for `^DUMP`.
 
 **CLI**
 

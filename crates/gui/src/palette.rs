@@ -65,7 +65,6 @@ pub(crate) enum PaletteCommand {
     Hide(Hide),
     Collapse(Collapse),
     ShowGraph,
-    NewTour,
     Search,
     AutoLayout,
     Fit,
@@ -91,7 +90,6 @@ pub(crate) const fn commands(feature: Feature) -> &'static [PaletteCommand] {
         Feature::GoBack => &[PaletteCommand::Back, PaletteCommand::Forward],
         Feature::Save => &[PaletteCommand::Save],
         Feature::AddStep => &[PaletteCommand::AddStep],
-        Feature::NewTour => &[PaletteCommand::NewTour],
         Feature::SearchFiles => &[PaletteCommand::Search],
         Feature::AutoLayout => &[PaletteCommand::AutoLayout],
         Feature::FitGraph => &[PaletteCommand::Fit, PaletteCommand::OneToOne],
@@ -569,7 +567,6 @@ impl Model {
                     on_tour(|tour| Action::CollapseAll(tour, Collapse::Expand))
                 }
                 PaletteCommand::ShowGraph => on_tour(|tour| Action::OpenTour(tour, Tab::Graph)),
-                PaletteCommand::NewTour => vec![Action::Authoring(Authoring::ToggleNewTour)],
                 PaletteCommand::Search => vec![Action::FocusField(Which::Search)],
                 PaletteCommand::AutoLayout => vec![Action::Graph(GraphAction::AutoLayout)],
                 PaletteCommand::Fit => vec![Action::Graph(GraphAction::WantFit)],

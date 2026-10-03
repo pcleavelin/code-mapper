@@ -64,7 +64,6 @@ pub enum Feature {
     ChooseTarget,
     MoveStep,
     PromoteSymbol,
-    NewTour,
     SearchFiles,
     RunCommand,
     FilterSymbols,
@@ -588,21 +587,6 @@ impl Feature {
                 Surface::Window,
                 &const { [Trigger::Click(Element::new("promote-focus"))] },
             ),
-            Self::NewTour => Spec::new(
-                Text::new("new-tour"),
-                Text::new("create a tour from the Tours tab, with its name, kind and group"),
-                Surface::Window,
-                &const {
-                    [
-                        Trigger::Click(Element::new("new-tour")),
-                        Trigger::Click(Element::new("kind")),
-                        Trigger::Click(Element::new("create-tour")),
-                        Trigger::Type(Element::new("field@new-tour")),
-                        Trigger::Type(Element::new("field@new-group")),
-                        Trigger::Palette(Text::new("new tour"), None),
-                    ]
-                },
-            ),
             Self::SearchFiles => Spec::new(
                 Text::new("search-files"),
                 Text::new("search every file for a regex; the hits open in the Search tab"),
@@ -935,6 +919,7 @@ impl Feature {
                 &const {
                     [
                         Trigger::Click(Element::new("build-tour")),
+                        Trigger::Click(Element::new("new-tour")),
                         Trigger::Click(Element::new("tour-from-here")),
                         Trigger::Click(Element::new("wizard-back")),
                         Trigger::Click(Element::new("wizard-next")),

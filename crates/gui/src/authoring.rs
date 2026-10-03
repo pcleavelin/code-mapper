@@ -1,10 +1,7 @@
-use domain::{
-    Author, FileId, GroupName, Map, MapError, Pruning, Span, StepId, SymbolId, TourKind, TourName,
-};
+use domain::{Author, FileId, Map, Pruning, Span, StepId, SymbolId, TourName};
 use ui::{Label, Point, Rect};
 
 use crate::app::App;
-use crate::field::Which;
 use crate::model::{Dirty, Model, StepKey, StepSlot, Tab, TourSlot};
 use crate::status::{Status, Under};
 use crate::theme::{DROP_BAND_WIDTH, GRAB_REACH};
@@ -19,9 +16,6 @@ pub(crate) enum Authoring {
     DragStep(Point),
     DropStep(Option<StepDrop>),
     Promote(SymbolId),
-    ToggleNewTour,
-    ChooseKind(TourKind),
-    CreateTour,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -182,9 +176,6 @@ impl App {
             Authoring::DragStep(mouse) => self.drag_step(mouse),
             Authoring::DropStep(target) => self.drop_step(target),
             Authoring::Promote(symbol) => self.promote(symbol),
-            Authoring::ToggleNewTour => self.toggle_new_tour(),
-            Authoring::ChooseKind(kind) => self.choose_kind(kind),
-            Authoring::CreateTour => self.create_tour(),
         }
     }
 
@@ -383,74 +374,5 @@ impl App {
             model.select_tour(slot);
             model.set_tab(Tab::Tour);
         }
-    }
-
-    pub(crate) fn toggle_new_tour(&mut self) {
-        let model = &mut self.model;
-        if model.new_tour.take().is_some() {
-            model.fields.release(Which::NewTour);
-            model.fields.release(Which::NewGroup);
-            return;
-        }
-        model.new_tour = Some(TourKind::Flow);
-        let group = model
-            .nav
-            .tour()
-            .and_then(|tour| model.tour(tour))
-            .and_then(|tour| tour.group())
-            .map_or("", GroupName::as_str);
-        model.fields.fill(Which::NewGroup, &Label::new(group));
-        model.fields.start_empty(Which::NewTour);
-    }
-
-    pub(crate) fn choose_kind(&mut self, kind: TourKind) {
-        let model = &mut self.model;
-        if model.new_tour.is_some() {
-            model.new_tour = Some(kind);
-        }
-    }
-
-    pub(crate) fn create_tour(&mut self) {
-        let model = &mut self.model;
-        let Some(kind) = model.new_tour else {
-            return;
-        };
-        let typed = model
-            .fields
-            .get(Which::NewTour)
-            .text()
-            .as_str()
-            .trim()
-            .to_owned();
-        if typed.is_empty() {
-            model.status = Status::NameTheTour;
-            model.fields.focus(Which::NewTour);
-            return;
-        }
-        let group = GroupName::new(model.fields.get(Which::NewGroup).text().as_str());
-        let created = TourName::new(&typed).and_then(|name| {
-            if model.map.tour(&name).is_some() {
-                return Err(MapError::NameTaken(name));
-            }
-            let _added = model.map.add_tour(name.clone(), kind, Author::Human)?;
-            let _grouped = model.map.set_group(&name, group)?;
-            Ok(name)
-        });
-        let name = match created {
-            Ok(name) => name,
-            Err(error) => {
-                model.status = Status::refused(&model.map, error);
-                return;
-            }
-        };
-        model.new_tour = None;
-        model.fields.fill(Which::NewTour, &Label::default());
-        model.fields.release(Which::NewTour);
-        model.fields.release(Which::NewGroup);
-        if let Some(slot) = model.find_tour(&name) {
-            model.tour_created(slot);
-        }
-        model.status = Status::TourCreated(name);
-        model.disk.dirty = Dirty::Unsaved;
     }
 }

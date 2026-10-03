@@ -480,10 +480,10 @@ order 42
 parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
-symbol panels
-lines 0 101
-hash be7946397dbb294e
-note The side panels and console: the symbol list and its filter, the file tree and a folder toggle, the tours list, search and a hit, commands typed into the console (with a bad one and clear), a new tour from the Tours tab's form, an 'add step' from the Source view, and ctrl-s to save.
+symbol PANELS
+lines 0 113
+hash a2aa371f2949fc65
+note The side panels and console: the symbol list and its filter, the file tree and a folder toggle, the tours list, search and a hit, commands typed into the console (with a bad one and clear), a new tour from the Tours tab's '+ new tour' through the build-tour wizard (a name, a searched start, one outline row toggled, create), an 'add step' from the Source view, and ctrl-s to save.
 
 step rlmca4
 order 29
@@ -549,9 +549,9 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol AUTHORING
-lines 0 106
-hash 0081cdd4c1d932b3
-note The GUI authoring gestures on a fresh tour: the new-tour form (an empty name refused, kind and group chosen), add-offer@Symbols from the Symbols strip after a symbol is focused, then '+ step' from Symbols and References, each row hovered first since its action shows only then (a repeat refused), the target strip's 'top level', 'add step' from the Source view, '+ step' on an off-tour graph node, three steps list drags (under, before, under), 'promote', and a save; the after command prints the resulting tour.
+lines 0 124
+hash ffe248cc17931a8c
+note The GUI authoring gestures on a fresh tour: a tour built in the wizard opened by '+ new tour' (an empty name refused, kind and group chosen, main as the start, three outline rows toggled), add-offer@Symbols from the Symbols strip after a symbol is focused, then '+ step' from Symbols and References, each row hovered first since its action shows only then (a repeat refused), the target strip's 'top level', 'add step' from the Source view, '+ step' on an off-tour graph node, three steps list drags (under, before, under), 'promote', and a save; the after command prints the resulting tour.
 
 step wv4hxm
 order 17

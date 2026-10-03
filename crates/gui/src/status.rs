@@ -56,7 +56,6 @@ pub(crate) enum Status {
     },
     MapRefused(Label),
     TourCreated(TourName),
-    NameTheTour,
     TourPromoted {
         name: TourName,
         steps: Count,
@@ -137,7 +136,6 @@ impl Status {
     fn authoring(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::TourCreated(name) => write!(formatter, "tour '{name}' created (unsaved)"),
-            Self::NameTheTour => formatter.write_str("type a name for the new tour"),
             Self::TourPromoted { name, steps } => write!(
                 formatter,
                 "tour '{name}' made from the symbol and its calls, {steps} steps (unsaved)"
@@ -221,7 +219,6 @@ impl Status {
                 shown: HitsShown::First,
                 ..
             }
-            | Self::NameTheTour
             | Self::AlreadyStep { .. }
             | Self::SelectLinesFirst
             | Self::SelectTourFirst
@@ -290,7 +287,6 @@ impl fmt::Display for Status {
             Self::Hits { .. } => self.hits(formatter),
             Self::MapRefused(error) => formatter.write_str(error.as_str()),
             Self::TourCreated(_)
-            | Self::NameTheTour
             | Self::TourPromoted { .. }
             | Self::AlreadyStep { .. }
             | Self::SelectLinesFirst

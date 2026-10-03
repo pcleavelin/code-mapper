@@ -201,7 +201,6 @@ pub(crate) const EXPANDER_BUTTON: Cells = Cells::new(2);
 pub(crate) const DANGER_GAP: Cells = Cells::new(2);
 pub(crate) const SEARCH_FIELD: Cells = Cells::new(24);
 pub(crate) const MAP_PLACE: Cells = Cells::new(40);
-pub(crate) const NEW_TOUR_FIELD: Cells = Cells::new(16);
 pub(crate) const FILTER_FIELD: Cells = Cells::new(16);
 pub(crate) const LINE_FIELD: Cells = Cells::new(8);
 pub(crate) const TOURS_GUESS: Cells = Cells::new(44);

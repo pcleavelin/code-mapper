@@ -101,7 +101,7 @@ impl Dump for Nav {
             Optional(selection)
         ));
         let model = context.model;
-        if self.target() != self.step() || model.step_grab.is_some() || model.new_tour.is_some() {
+        if self.target() != self.step() || model.step_grab.is_some() {
             let grab = model.step_grab.map(|grab| {
                 format!(
                     "{}{}",
@@ -110,10 +110,9 @@ impl Dump for Nav {
                 )
             });
             lines.line(format_args!(
-                "authoring target={} grab={} new_tour={}",
+                "authoring target={} grab={}",
                 Optional(self.target()),
-                Optional(grab),
-                Optional(model.new_tour.map(Tag::kind))
+                Optional(grab)
             ));
         }
     }

@@ -222,12 +222,7 @@ impl App {
         if keys::going(input, Going::Forward) {
             actions.push(Action::Forward);
         }
-        for which in [
-            Which::Command,
-            Which::Search,
-            Which::NewTour,
-            Which::NewGroup,
-        ] {
+        for which in [Which::Command, Which::Search] {
             actions.push(Action::Type(which, edits.clone(), typed.clone()));
         }
         let on_graph = self.model.panels.is_shown(View::Graph)

@@ -3,16 +3,16 @@ tour gui-authoring
 kind layer
 author ai
 group gui
-note How a human builds a tour in the GUI. The tour being read is the one steps go into; Nav's target is the step they hang under (None = top level). Selecting a step sets the target, moving the selection off the tour keeps it, and the 'top level' button in the target strip clears it, so a reader can collect several symbols under one step. Every add goes through App::add_step. The target strip's add-offer@<view> button, also the palette's 'add step', adds the selected Source lines or the focused symbol. The other adds are the Source view's 'add step' (selected lines), '+ step' on Symbols and References rows (Frame::row_with_action), 'add step' under the References heading, and '+ step' on an off-tour graph node, which hangs under the step it was revealed from as a callee. Adding moves neither the selection nor the target. Rearranging is a drag in the Tours steps list: a press grabs a row (StepGrab), travel past GRAB_REACH makes it a drag, and the release drops it onto a row's zone - top quarter before, bottom quarter after, the middle under - through Map::place; steps_moved then carries every slot-keyed thing (views, history, selection, target) to the steps' new slots. The Tours tab's 'new tour' form and the 'promote' button (promote at depth 1) make tours. The feature-add-step, feature-choose-target, feature-move-step, feature-new-tour and feature-promote-symbol tours follow each gesture. Notes, links, kind and group are written through the Console; the GUI has no text editor for them.
+note How a human builds a tour in the GUI. The tour being read is the one steps go into; Nav's target is the step they hang under (None = top level). Selecting a step sets the target, moving the selection off the tour keeps it, and the 'top level' button in the target strip clears it, so a reader can collect several symbols under one step. Every add goes through App::add_step. The target strip's add-offer@<view> button, also the palette's 'add step', adds the selected Source lines or the focused symbol. The other adds are the Source view's 'add step' (selected lines), '+ step' on Symbols and References rows (Frame::row_with_action), 'add step' under the References heading, and '+ step' on an off-tour graph node, which hangs under the step it was revealed from as a callee. Adding moves neither the selection nor the target. Rearranging is a drag in the Tours steps list: a press grabs a row (StepGrab), travel past GRAB_REACH makes it a drag, and the release drops it onto a row's zone - top quarter before, bottom quarter after, the middle under - through Map::place; steps_moved then carries every slot-keyed thing (views, history, selection, target) to the steps' new slots. The Tours tab's '+ new tour' button opens the build-tour wizard (feature-build-tour), and the 'promote' button (promote at depth 1) makes a tour from the focused symbol. The feature-add-step, feature-choose-target, feature-move-step, feature-build-tour and feature-promote-symbol tours follow each gesture. The wizard sets a new tour's kind, group and note; after that, notes, links, kind and group are written through the Console.
 
 step 1ctrkp
 order 28
 author ai
 file crates/gui/src/authoring.rs
 symbol Authoring
-lines 0 12
-hash 89859a6827fd1ff9
-note Every authoring gesture as data: the adds (AddLines, AddSymbol with its Hang, AddOffered), AddAtTopLevel, the steps list drag (GrabStep, DragStep, DropStep), Promote, and the new-tour form (ToggleNewTour, ChooseKind, CreateTour). Views push Action::Authoring(Authoring::X); apply routes it here.
+lines 0 9
+hash f8648534bd79380d
+note Every authoring gesture as data: the adds (AddLines, AddSymbol with its Hang, AddOffered), AddAtTopLevel, the steps list drag (GrabStep, DragStep, DropStep), and Promote. Views push Action::Authoring(Authoring::X); apply routes it here.
 
 step 1yd8ve
 order 12
@@ -167,8 +167,8 @@ parent 1ctrkp
 author ai
 file crates/gui/src/authoring.rs
 symbol author
-lines 0 14
-hash 152101ca14dff2f0
+lines 0 11
+hash bd2942c29a65d134
 note The dispatch from apply: one arm per Authoring variant, each a call to the App method below.
 
 step hjplhc
@@ -247,7 +247,7 @@ file crates/gui/src/nav.rs
 symbol target
 lines 0 2
 hash a4dc07dbf39429e6
-note Nav's target: the step added steps hang under, None for the top level. select_step sets it, an empty tour, tour_created and forget_tour clear it, reselect keeps it with the selection after a reload, and steps_moved shifts it with the slots. Moving the selection off the tour leaves it alone.
+note Nav's target: the step added steps hang under, None for the top level. select_step sets it, selecting an empty tour and forget_tour clear it, reselect keeps it with the selection after a reload, and steps_moved shifts it with the slots. Moving the selection off the tour leaves it alone.
 
 step p9kx6k
 order 25
@@ -257,16 +257,17 @@ file crates/gui/src/field.rs
 symbol fill
 lines 0 6
 hash 9bf18e7db9d909ea
-note Sets a field's text without giving it the keyboard: the group field's starting value.
+note Sets a field's text without giving it the keyboard: the wizard's group field starts with the group of the tour being read.
 
 step q09qk7
 order 23
 author ai
-file crates/gui/src/authoring.rs
-symbol toggle_new_tour
-lines 0 16
-hash 68f4aec935302522
-note The Tours tab's 'new tour' button opens or closes the form. Opening starts the kind at flow, fills the group field with the group of the tour being read, and gives the name field the keyboard.
+file crates/gui/src/views/authoring.rs
+symbol new_tour_button
+lines 0 5
+hash a4c9ecb2bb718db9
+link feature-build-tour
+note The Tours tab's '+ new tour' button pushes WizardAct::Start: a new tour is named, started and given its steps in the build-tour wizard, drawn in the Tour view.
 
 step q9zitp
 order 14
@@ -277,16 +278,6 @@ symbol impl StepGrab
 lines 0 26
 hash 662415d885ac9353
 note dragged_to turns the grab into a drag once the pointer has moved GRAB_REACH from the press, the same threshold a tab drag uses.
-
-step uht1sg
-order 24
-parent q09qk7
-author ai
-file crates/gui/src/views/authoring.rs
-symbol new_tour_form
-lines 0 40
-hash e6873756fa3b72fd
-note The form under the Tours toolbar: a 'name' label, the name field (hinted 'e.g. startup') and the three kind buttons (kind@flow, kind@layer, kind@data), then a 'group' label, the group field (hinted '(none)') and 'create'.
 
 step vmoykv
 order 1

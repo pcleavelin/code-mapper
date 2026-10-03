@@ -372,7 +372,11 @@ pub(crate) fn panels() -> Scenario {
         setup: |bin, name| Ok(mapped(bin, name)),
         hook: no_hook,
         after: &[&["tours"]],
-        script: "SETTLE
+        script: PANELS,
+    }
+}
+
+const PANELS: &str = "SETTLE
 click-id tab@Symbols
 wait 3
 click-id field@symbols
@@ -451,9 +455,29 @@ wait 2
 click-id new-tour
 wait 2
 text handmade
-key enter
+click-id wizard-next
+wait 2
+click-id field@wizard-search
+text add
+wait 2
+click-id wizard-sym/0
+wait 2
+dump
+click-id wizard-next
+wait 2
+dump
+click-id wizard-step/1
+wait 1
+dump
+click-id wizard-next
+wait 2
+click-id wizard-next
+wait 2
+click-id wizard-create
 wait 3
 dump
+open src/store.rs 12
+wait 3
 click-id tab@Source
 wait 2
 click-id add-lines
@@ -465,25 +489,45 @@ wait 3
 dump
 shot {shots}/saved.png
 quit
-",
-    }
-}
+";
 
 const AUTHORING: &str = "SETTLE
 click-id new-tour
 wait 2
 dump
-click-id create-tour
+click-id wizard-next
 wait 2
 dump
+click-id field@wizard-name
 text handmade
-click-id kind@layer
+click-id wizard-kind@layer
 wait 2
-click-id field@new-group
+click-id field@wizard-group
 text hand
 wait 2
 shot {shots}/form.png
-key enter
+click-id wizard-next
+wait 2
+click-id field@wizard-search
+text main
+wait 2
+click-id wizard-sym/0
+wait 2
+click-id wizard-next
+wait 2
+dump
+click-id wizard-step/1
+wait 1
+click-id wizard-step/2
+wait 1
+click-id wizard-step/3
+wait 1
+dump
+click-id wizard-next
+wait 2
+click-id wizard-next
+wait 2
+click-id wizard-create
 wait 3
 dump
 shot {shots}/empty.png
@@ -495,10 +539,6 @@ wait 3
 click-id sym@3:0
 wait 2
 click-id add-offer@Symbols
-wait 2
-hover-id sym@3:0
-wait 1
-click-id add-sym@3:0
 wait 2
 dump
 shot {shots}/symbols.png

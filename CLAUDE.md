@@ -202,7 +202,7 @@ Never claim a visual or interactive behaviour from reading the code; drive it an
   `crates/gui/src/ids.rs`: `name`, `name/<n>` for rows, `name@<key>` (every view's tab
   `tab@<View>`, e.g. `tab@Graph`, `tab@Symbols`; document steps `step/<n>`, `collapse/<n>`,
   `inline/<n>`, `hide/<n>`, `whole/<n>`, `del/<n>`, `ctx-a/<n>`, `ctx-b/<n>`; tours list `tours/<n>`,
-  `steps/<n>`; text fields `field@search`, `field@new-tour`, `field@symbols`,
+  `steps/<n>`; text fields `field@search`, `field@wizard-name`, `field@symbols`,
   `field@tours`, `field@goto-line`, `field@views`; symbol rows
   `sym@<file index>:<symbol index>`; references rows `xto/<i>`, `xfrom/<i>`, `xref/<i>`; panels
   by the number n `DUMP panels` prints: `panel/<n>`, header buttons `pick/<n>`,

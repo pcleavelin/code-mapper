@@ -29,9 +29,9 @@ order 13
 author ai
 file crates/gui/src/field.rs
 symbol Fields
-lines 0 15
-hash 7f1eee62d9378d7f
-note The thirteen fields, one named member each, reached by Which; focused names the one with the keyboard, at most one, so taking focus is setting it.
+lines 0 13
+hash a023af71bff41c12
+note The eleven fields, one named member each, reached by Which; focused names the one with the keyboard, at most one, so taking focus is setting it.
 
 step 2yp2r2
 order 5
@@ -229,9 +229,9 @@ parent 2havd5
 author ai
 file crates/gui/src/field.rs
 symbol Which
-lines 0 14
-hash f41b5867d9929359
-note The thirteen fields: search, the new tour's name and group, the Console, the symbol filter, the tour filter, the view picker's search, go-to-line, the palette's query, and the build-tour wizard's name, group, search and note. Which::control is the field's Control in ids, whose element name is its script id: field@search, field@new-tour, field@new-group, cmd, field@symbols, field@tours, field@views, field@goto-line, field@palette, field@wizard-name, field@wizard-group, field@wizard-search, field@wizard-note.
+lines 0 12
+hash 796b791c546145c4
+note The eleven fields: search, the Console, the symbol filter, the tour filter, the view picker's search, go-to-line, the palette's query, and the build-tour wizard's name, group, search and note. Which::control is the field's Control in ids, whose element name is its script id: field@search, cmd, field@symbols, field@tours, field@views, field@goto-line, field@palette, field@wizard-name, field@wizard-group, field@wizard-search, field@wizard-note.
 
 step k73r2l
 order 25
@@ -385,7 +385,7 @@ file crates/gui/src/field.rs
 symbol apply
 lines 0 67
 hash ff9e76cd41f36d85
-note The keys a field understands, as Edits from keys::edits: editing, home and end, up and down through the history, enter to submit, ctrl+a to mark all, ctrl+u to clear, escape to drop the keyboard. Enter returns the line; a field that keeps its text (Enter::Keep: search, the symbol filter, go-to-line) marks it all so the next entry replaces it, one that clears (the Console, new tour) empties. Left and right with ctrl or alt never become Edits: they are back and forward.
+note The keys a field understands, as Edits from keys::edits: editing, home and end, up and down through the history, enter to submit, ctrl+a to mark all, ctrl+u to clear, escape to drop the keyboard. Enter returns the line; a field that keeps its text (Enter::Keep: search, the symbol filter, go-to-line) marks it all so the next entry replaces it, one that clears (the Console, the view picker's search) empties. Left and right with ctrl or alt never become Edits: they are back and forward.
 
 step ug0bcn
 order 9
@@ -405,7 +405,7 @@ file crates/gui/src/field.rs
 symbol Field
 lines 0 6
 hash 8df2adeb84eb2f11
-note The one widget with state: the text, the caret in characters, whether the whole text is marked so the next character typed replaces it, and the submitted lines with which one of them up and down have recalled. Five of these live in Fields on the Model.
+note The one widget with state: the text, the caret in characters, whether the whole text is marked so the next character typed replaces it, and the submitted lines with which one of them up and down have recalled. Eleven of these live in Fields on the Model.
 
 step v1qf6b
 order 4

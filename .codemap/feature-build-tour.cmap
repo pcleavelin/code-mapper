@@ -3,7 +3,7 @@ tour feature-build-tour
 kind flow
 author ai
 group features/gui
-note The human, reading in the window, who wants a tour of a workflow no tour covers yet. Goals: the human builds tours by hand where code is shown, and understanding an unfamiliar codebase takes less friction here than in an editor. The run before this feature: a tour by hand took + new tour, a name and a kind, then + step on one symbol at a time in Symbols and a click on a step to hang the next one under it, with the controls on three tabs and a guide bar pointing at each in turn; promote, in References, wrote its two-calls-deep scaffold with no say in what it kept. Nothing showed a symbol's call tree with promote's verdicts to pick from, or went deeper than two calls. Three wizards were built and run. A dialog over the window: it blocks the window, so a start cannot be picked from the views, and it needed a change to the ui crate to stop clicks reaching beneath it. One in the References panel, opened from the focused symbol: two lines a row in a 320 px panel, and References' own callers and callees hidden while building. The kept one is drawn in the Tour view where the start page is: the rest of the window stays live, so focusing a symbol anywhere sets the start; a preview shows the tour as it will be created; and 'tour from here' in References opens it on the steps page for the focused symbol. The steps page is promote's walk with a verdict on every call (kept, cut with the reason, stopped as a leaf, a cycle back into the path), opened one level at a time as deep as wanted, with cut calls folded by reason. A run on this repo starting from Map::promote shows twelve accessors folded under hang and pruned_tree opened five calls deep; create opens the tour in the document, unsaved until ctrl+s.
+note The human, reading in the window, who wants a tour of a workflow no tour covers yet. Goals: the human builds tours by hand where code is shown, and understanding an unfamiliar codebase takes less friction here than in an editor. The run before this feature: a tour by hand took + new tour, a name and a kind, then + step on one symbol at a time in Symbols and a click on a step to hang the next one under it, with the controls on three tabs and a guide bar pointing at each in turn; promote, in References, wrote its two-calls-deep scaffold with no say in what it kept. Nothing showed a symbol's call tree with promote's verdicts to pick from, or went deeper than two calls. Three wizards were built and run. A dialog over the window: it blocks the window, so a start cannot be picked from the views, and it needed a change to the ui crate to stop clicks reaching beneath it. One in the References panel, opened from the focused symbol: two lines a row in a 320 px panel, and References' own callers and callees hidden while building. The kept one is drawn in the Tour view where the start page is: the rest of the window stays live, so focusing a symbol anywhere sets the start; a preview shows the tour as it will be created; '+ new tour' in the Tours toolbar opens it as the start page's 'Build a tour by hand' does, and 'tour from here' in References opens it on the steps page for the focused symbol. The steps page is promote's walk with a verdict on every call (kept, cut with the reason, stopped as a leaf, a cycle back into the path), opened one level at a time as deep as wanted, with cut calls folded by reason. A run on this repo starting from Map::promote shows twelve accessors folded under hang and pruned_tree opened five calls deep; create opens the tour in the document, unsaved until ctrl+s.
 
 step 0btuay
 order 47
@@ -144,6 +144,16 @@ symbol buttons
 lines 0 32
 hash 752a6346e1a1e301
 note back (not on page 1), next or create, cancel, and the keys that do the same.
+
+step 9h15aw
+order 62
+parent 3hhho6
+author ai
+file crates/gui/src/views/authoring.rs
+symbol new_tour_button
+lines 0 5
+hash a4c9ecb2bb718db9
+note Trigger: '+ new tour' in the Tours toolbar (element new-tour), one of the wizard's openers beside the start page's 'Build a tour by hand' row, pushes WizardAct::Start, so a tour started from the Tours list is built in the same wizard.
 
 step 9hl3t0
 order 41

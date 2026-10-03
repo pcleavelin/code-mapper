@@ -23,8 +23,6 @@ pub(crate) enum Edit {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum Which {
     Search,
-    NewTour,
-    NewGroup,
     Command,
     SymbolFilter,
     TourFilter,
@@ -41,8 +39,6 @@ impl Which {
     pub(crate) const fn control(self) -> Control {
         match self {
             Self::Search => ids::SEARCH_FIELD,
-            Self::NewTour => ids::NEW_TOUR_FIELD,
-            Self::NewGroup => ids::NEW_GROUP_FIELD,
             Self::Command => ids::COMMAND_FIELD,
             Self::SymbolFilter => ids::FILTER_FIELD,
             Self::TourFilter => ids::TOUR_FILTER_FIELD,
@@ -319,8 +315,6 @@ enum Focus {
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Fields {
     search: Field,
-    new_tour: Field,
-    new_group: Field,
     command: Field,
     filter: Field,
     tour_filter: Field,
@@ -338,8 +332,6 @@ impl Fields {
     pub(crate) fn get(&self, which: Which) -> &Field {
         match which {
             Which::Search => &self.search,
-            Which::NewTour => &self.new_tour,
-            Which::NewGroup => &self.new_group,
             Which::Command => &self.command,
             Which::SymbolFilter => &self.filter,
             Which::TourFilter => &self.tour_filter,
@@ -356,8 +348,6 @@ impl Fields {
     fn get_mut(&mut self, which: Which) -> &mut Field {
         match which {
             Which::Search => &mut self.search,
-            Which::NewTour => &mut self.new_tour,
-            Which::NewGroup => &mut self.new_group,
             Which::Command => &mut self.command,
             Which::SymbolFilter => &mut self.filter,
             Which::TourFilter => &mut self.tour_filter,

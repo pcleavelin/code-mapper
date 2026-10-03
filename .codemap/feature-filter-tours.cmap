@@ -61,7 +61,7 @@ parent z6m3sw
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 57 74
+lines 52 69
 hash 3d7f1ed0ae41bd08
 note The typing: the keys phase hands edits and typed text to the tour filter along with the symbol filter and go-to-line fields; only the focused field takes them.
 
@@ -121,8 +121,8 @@ parent lhcomc
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 47
-hash 8c8e2b1cecbf8aa9
+lines 0 44
+hash 2ebafe535eadcfd2
 note An edit that changes the tour filter's text scrolls the Tours list back to its top, so the matches are in view. The filter keeps its text on enter and has nothing to run.
 
 step y3c46y
@@ -140,6 +140,6 @@ order 5
 author ai
 file crates/gui/src/views/left.rs
 symbol tours_window
-lines 0 89
-hash 7c266353b360b778
+lines 0 88
+hash b2fc07d62cf316e5
 note Trigger and effect: the filter field sits in a toolbar above the list, beside the 'new tour' button; its text is read while the list is built, so there is no filter action to apply. While it holds text the toolbar shows 'n of m' tours, and an empty result says 'no tour name, step symbol or step file matches'. Under a tour that is not the one being read, found_step_rows lists the steps the filter found. A non-empty filter forces every group open. The rows come from listed_rows instead of the whole map, and removed tours pass through lists, which reads names only.

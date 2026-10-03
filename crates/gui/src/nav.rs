@@ -621,13 +621,6 @@ impl Model {
         self.panels.reveal(tab, asked);
     }
 
-    pub(crate) fn tour_created(&mut self, tour: TourSlot) {
-        self.nav.tour = Some(tour);
-        self.nav.step = None;
-        self.nav.target = None;
-        self.nav.show(Tab::Tour);
-    }
-
     pub(crate) fn forget_step(&mut self) {
         self.nav.step = None;
     }

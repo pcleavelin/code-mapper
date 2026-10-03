@@ -11,8 +11,8 @@ parent saeyu5
 author ai
 file crates/gui/src/status.rs
 symbol fmt
-lines 0 95
-hash 6da4e07892bdd496
+lines 0 94
+hash 1da2c4ae11f9b166
 note The wording. Map refusals and load failures arrive already worded by cli, so the GUI and the CLI say the same thing.
 
 step 0fz3qy
@@ -21,8 +21,8 @@ parent saeyu5
 author ai
 file crates/gui/src/status.rs
 symbol tone
-lines 0 39
-hash c78c5f8df060dcac
+lines 0 38
+hash f5953fbef9cab9a0
 note How the status bar colours each Status: Done for what the reader asked and got (saved, created, added, moved, removed, reloaded, re-indexed), Warning for what needs the reader's attention but broke nothing (a refused gesture, a clamped line, missing input, cut search hits, a change on disk), Problem for a failure (an unreadable map, a refused or failed save or command, a bad regex, a server or re-index failure), Plain for the rest.
 
 step 2e645j
@@ -89,8 +89,8 @@ order 2
 author ai
 file crates/gui/src/model.rs
 symbol Model
-lines 0 31
-hash 96cacbca253f6c62
+lines 0 30
+hash c3293445ef8a3d71
 note All the state a view can see, in one struct: the index and the map with its MapStore and disk state, the parent map for the Diff tab, Nav, the step views, the open directories and groups, the kept peek, the server Queries, the panel tree, the scroll offsets (down and across), the graph's state, the fields, search hits and whether they were cut at HIT_LIMIT, the measured heights of document steps (Measures), the console log, the status, WorkState, the font metrics, the frame time, and the build-tour wizard while one is open. gui-model has its values and queries.
 
 step 622pjb
@@ -203,8 +203,8 @@ order 26
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 192 232
-hash ba7c133169c006ec
+lines 192 231
+hash 1fcedfb9e782142a
 note Every measure counted in cells: button and field widths, column guesses before a panel has a size, the symbol table's columns, tooltip sizes, the gap before a danger button, the status bar's room for the map's place, the panels' floors and the picker's width.
 
 step an1gef
@@ -213,9 +213,9 @@ parent 7579zm
 author ai
 file crates/gui/src/dump.rs
 symbol dump
-lines 0 38
-hash ea2161377fd6aa77
-note tab, tour, step, focus, file and selection; then an authoring line (target, grab, the new-tour form's kind) whenever the target differs from the step, a grab is held or the form is open.
+lines 0 37
+hash fcdcc3f96d5d8489
+note tab, tour, step, focus, file and selection; then an authoring line (target, grab) whenever the target differs from the step or a grab is held.
 
 step c3z8pe
 order 62
@@ -447,8 +447,8 @@ parent 04jbr0
 author ai
 file crates/gui/src/status.rs
 symbol authoring
-lines 0 41
-hash ab19c6851e25dae6
+lines 0 40
+hash c71ffef55d2d5611
 note The wording of tour creation and step placement (new tour, promote, add, move, the target), split out of fmt to keep it under the length limit; fmt hands every one of these variants here.
 
 step mch588
@@ -457,8 +457,8 @@ parent 9pik9m
 author ai
 file crates/gui/src/ids.rs
 symbol CONTROLS
-lines 0 98
-hash 7e1972ba47e569ff
+lines 0 94
+hash 4e737b8b6a366e35
 note Every control, for the test that checks them against the registry.
 
 step mjhubp
@@ -583,8 +583,8 @@ order 52
 author ai
 file crates/gui/src/status.rs
 symbol Status
-lines 0 80
-hash 52a0cfc67335b441
+lines 0 79
+hash 03029a3cd11c6739
 note Everything the status line can say, as data: each outcome of a save, a command, a search, an edit, a definition lookup, a server, a re-index or a disk change. Views and apply set one; nothing formats a message where it happens.
 
 step sbpnbg

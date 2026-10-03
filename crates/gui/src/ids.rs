@@ -59,8 +59,6 @@ impl Control {
 
 pub(crate) const SEARCH_FIELD: Control =
     Control::new(Feature::SearchFiles, Element::new("field@search"));
-pub(crate) const NEW_TOUR_FIELD: Control =
-    Control::new(Feature::NewTour, Element::new("field@new-tour"));
 pub(crate) const FILTER_FIELD: Control =
     Control::new(Feature::FilterSymbols, Element::new("field@symbols"));
 pub(crate) const TOUR_FILTER_FIELD: Control =
@@ -71,11 +69,7 @@ pub(crate) const COMMAND_FIELD: Control = Control::new(Feature::RunCommand, Elem
 pub(crate) const BACK: Control = Control::new(Feature::GoBack, Element::new("back"));
 pub(crate) const FORWARD: Control = Control::new(Feature::GoBack, Element::new("forward"));
 pub(crate) const TAB: Control = Control::new(Feature::SwitchTab, Element::new("tab"));
-pub(crate) const NEW_GROUP_FIELD: Control =
-    Control::new(Feature::NewTour, Element::new("field@new-group"));
-pub(crate) const NEW_TOUR: Control = Control::new(Feature::NewTour, Element::new("new-tour"));
-pub(crate) const KIND: Control = Control::new(Feature::NewTour, Element::new("kind"));
-pub(crate) const CREATE_TOUR: Control = Control::new(Feature::NewTour, Element::new("create-tour"));
+pub(crate) const NEW_TOUR: Control = Control::new(Feature::BuildTour, Element::new("new-tour"));
 pub(crate) const ADD_LINES: Control = Control::new(Feature::AddStep, Element::new("add-lines"));
 pub(crate) const ADD_SYMBOL: Control = Control::new(Feature::AddStep, Element::new("add-sym"));
 pub(crate) const ADD_FOCUS: Control = Control::new(Feature::AddStep, Element::new("add-focus"));
@@ -205,7 +199,6 @@ pub(crate) const WIZARD_FROM_HERE: Control =
 #[cfg(test)]
 pub(crate) const CONTROLS: &[Control] = &[
     SEARCH_FIELD,
-    NEW_TOUR_FIELD,
     FILTER_FIELD,
     TOUR_FILTER_FIELD,
     LINE_FIELD,
@@ -213,10 +206,7 @@ pub(crate) const CONTROLS: &[Control] = &[
     BACK,
     FORWARD,
     TAB,
-    NEW_GROUP_FIELD,
     NEW_TOUR,
-    KIND,
-    CREATE_TOUR,
     ADD_LINES,
     ADD_SYMBOL,
     ADD_FOCUS,

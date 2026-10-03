@@ -132,8 +132,8 @@ parent zwrtqu
 author ai
 file crates/gui/src/authoring.rs
 symbol author
-lines 0 14
-hash 152101ca14dff2f0
+lines 0 11
+hash bd2942c29a65d134
 note The route in: views push Action::Authoring, apply hands it to author, and author calls add_lines, add_symbol or add_focused, which all end in add_step.
 
 step ygjbuv

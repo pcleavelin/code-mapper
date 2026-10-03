@@ -42,7 +42,7 @@ file crates/gui/src/nav.rs
 symbol select_step
 lines 0 4
 hash 355b62677895ef22
-note Where the target is set: selecting a step makes it the target. select_tour with no step, tour_created and forget_tour clear it; steps_moved shifts it with its step.
+note Where the target is set: selecting a step makes it the target. select_tour with no step and forget_tour clear it; steps_moved shifts it with its step.
 
 step hrvwma
 order 2
