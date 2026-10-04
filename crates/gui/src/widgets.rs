@@ -18,12 +18,12 @@ use crate::panels::Direction;
 use crate::peek::Tip;
 use crate::status::Status;
 use crate::theme::{
-    self, ACCENT, BACKGROUND, BAR_PADDING, BORDER, BUTTON_PADDING, Cells, DANGER_HOVER,
-    DOCUMENT_PADDING, DROP_BAND, FAINT, FIELD, FIELD_CARET_ROOM, FIELD_PADDING, GAP, HOVER,
-    INDENT_EXTRA, LABEL_PADDING, NAV_BUTTON, NAV_BUTTON_EXTRA, NOTE_ROWS_LEAST, NOTE_ROWS_MOST,
-    PALETTE_TAG, PANEL, PANEL_PADDING, RED, ROW_PADDING, SELECTED, SMALL_BUTTON_EXTRA,
-    SMALL_BUTTON_PADDING, SMALL_GAP, STATUS_GAP, STEP_SPACER, TAB_PADDING, TAB_STRIP, TEXT,
-    TIGHT_GAP, TOOLTIP_PADDING, WEAK, WIDE_GAP,
+    self, ACCENT, BACKGROUND, BAR_PADDING, BORDER, BUTTON_PADDING, CHECKBOX_COLUMNS, Cells,
+    DANGER_HOVER, DOCUMENT_PADDING, DROP_BAND, FAINT, FIELD, FIELD_CARET_ROOM, FIELD_PADDING, GAP,
+    HOVER, INDENT_EXTRA, LABEL_PADDING, NAV_BUTTON, NAV_BUTTON_EXTRA, NOTE_ROWS_LEAST,
+    NOTE_ROWS_MOST, PALETTE_TAG, PANEL, PANEL_PADDING, RED, ROW_PADDING, SELECTED,
+    SMALL_BUTTON_EXTRA, SMALL_BUTTON_PADDING, SMALL_GAP, STATUS_GAP, STEP_SPACER, TAB_PADDING,
+    TAB_STRIP, TEXT, TIGHT_GAP, TOOLTIP_PADDING, WEAK, WIDE_GAP,
 };
 
 use crate::field::Fields;
@@ -571,26 +571,48 @@ impl Frame<'_> {
         )
     }
 
-    pub(crate) fn tick_box(&mut self, tick: Tick, cells: Cells, target: Target) -> Interaction {
+    pub(crate) fn tick_row(&mut self, target: Target) -> Interaction {
         let id = target.id();
         let hovered = self.ui.interaction(id).hovered();
-        let (text, color) = match tick {
-            Tick::Ticked => ("[x]", ACCENT),
-            Tick::Unticked if hovered => ("[ ]", TEXT),
-            Tick::Unticked => ("[ ]", WEAK),
-        };
-        let size = self.metrics.font;
-        self.ui.leaf(
-            text_kind(vec![Run::new(text, color)], size, Wrap::None),
-            Layout::row()
-                .width(cells.of(self.cell_width()))
-                .padding(ROW_PADDING),
+        self.ui.open(
+            Kind::None,
+            Layout::row().grow_width().gap(GAP).cross(Align::Center),
             Style {
                 background: hovered.then_some(HOVER),
                 ..Style::NONE
             },
             Some(id),
         )
+    }
+
+    pub(crate) fn tick_box(&mut self, tick: Tick, cells: Cells, row: Interaction) {
+        let hovered = row.hovered();
+        let (mark, color, background, border) = match tick {
+            Tick::Ticked => (Label::from(Icon::Check), BACKGROUND, ACCENT, ACCENT),
+            Tick::Unticked => (
+                Label::new(" ".repeat(CHECKBOX_COLUMNS.get())),
+                TEXT,
+                FIELD,
+                if hovered { TEXT } else { WEAK },
+            ),
+        };
+        let size = self.metrics.font;
+        self.ui.open(
+            Kind::None,
+            Layout::row()
+                .width(cells.of(self.cell_width()))
+                .padding(ROW_PADDING)
+                .cross(Align::Center),
+            Style::NONE,
+            None,
+        );
+        self.ui.leaf(
+            text_kind(vec![Run::new(mark, color)], size, Wrap::None),
+            Layout::row(),
+            Style::background(background).border(Sides::ALL, border),
+            None,
+        );
+        self.ui.close();
     }
 
     pub(crate) fn row(&mut self, runs: Vec<Run>, target: Target, chosen: Chosen) -> Interaction {

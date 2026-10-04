@@ -131,6 +131,16 @@ lines 0 16
 hash 207c0f189d9d999f
 note Drawn grids are cached by (file, text hash, first line, last line), so a code block that did not change is not rebuilt, and a file whose text changed misses on its hash. The cache is dropped whole past 512 entries and on every index change.
 
+step 6hc7l6
+order 62
+parent h1v6z6
+author ai
+file crates/gui/src/widgets.rs
+symbol tick_row
+lines 0 12
+hash 176a9314d74596b2
+note Opens a row (laid out like a step row) under the tick's id, on the hover background while the pointer is on it, and returns its interaction: the caller draws the checkbox and the rest of the row inside and toggles on its click. Smaller elements inside the row, a button, win the hit test and keep their own clicks.
+
 step 6wdt9w
 order 24
 parent 2havd5
@@ -292,9 +302,9 @@ parent v1qf6b
 author ai
 file crates/gui/src/widgets.rs
 symbol tick_box
-lines 0 20
-hash 822e13aaa5477ea1
-note A tick box drawn as text: '[x]' in the accent when ticked, '[ ]' weak, brighter and on the hover background under the pointer, a fixed width in cells. Its own element, so a click on the row beside it is not a tick (the wizard's outline rows).
+lines 0 28
+hash a1c97bd59b3f2030
+note A checkbox: a two-column box with a border, filled with the accent and a Codicons check glyph in the background colour when ticked, the field colour with a weak border (bright under the pointer) when not, set in a fixed width of cells so the names beside it line up. It draws only; the row it sits in (tick_row) is the element that answers the click, so the whole row is the hit area. The wizard's ticks have two states: ticking cascades up and unticking down, so no row is ever partly ticked.
 
 step hatq2a
 order 45

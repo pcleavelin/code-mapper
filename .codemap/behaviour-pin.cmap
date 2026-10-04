@@ -41,9 +41,9 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol EDIT
-lines 0 65
-hash 27edbffaf06800fd
-note The edit-tour page on startup, the tour opened from the palette and the page from the header's pencil: rename, kind layer, a step's note typed in place, escape leaving only the field, a click on a row's text that does not tick it, a step unticked so its note field goes, '+N calls' on the start, a call opened and ticked to add it, the Changes list, apply and save; then a second edit, opened from the palette's 'edit tour', whose escape with a change pending keeps the page and says cancel discards it, and cancel. The after command prints the edited tour.
+lines 0 63
+hash c52e9b0272e21295
+note The edit-tour page on startup, the tour opened from the palette and the page from the header's pencil: rename, kind layer, a step's note typed in place, escape leaving only the field, a click on a row's text that unticks it so its note field goes, '+N calls' on the start, a call opened and ticked to add it, the Changes list, apply and save; then a second edit, opened from the palette's 'edit tour', whose escape with a change pending keeps the page and says cancel discards it, and cancel. The after command prints the edited tour.
 
 step 2kgy4u
 order 34

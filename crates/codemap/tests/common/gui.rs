@@ -1203,11 +1203,9 @@ key escape
 wait 1
 hover-id edit-apply
 dump
+hover-id edit-note/6
 rect wizard-tick/6
 click <<DUMP rect wizard-tick/6|160,8>>
-wait 1
-hover-id edit-note/6
-click-id wizard-tick/6
 wait 1
 absent edit-note/6
 click-id edit-more/0

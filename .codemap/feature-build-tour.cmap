@@ -213,7 +213,7 @@ file crates/gui/src/wizard.rs
 symbol toggle
 lines 0 17
 hash 7bd1a4c9d9840680
-note Ticking a row ticks every row above it, unticking one unticks every row under it, so the ticked rows always form a tree. Fixed rows (a cycle, and the start of a new tour) cannot be toggled. Only the row's tick box pushes Toggle; a click on its text does nothing.
+note Ticking a row ticks every row above it, unticking one unticks every row under it, so the ticked rows always form a tree. Fixed rows (a cycle, and the start of a new tour) cannot be toggled. A click anywhere on the row (its tick_row) pushes Toggle; only its expander and '+N calls' keep their own clicks.
 
 step a90vvo
 order 3
@@ -262,9 +262,9 @@ parent 474et1
 author ai
 file crates/gui/src/views/wizard.rs
 symbol branch_row
-lines 0 44
-hash 8fb1c10f0355750c
-note One branch row (Tree::branch_row): its expander, a tick box (wizard-tick/<row>), its name and file, and promote's reason (the start, test, accessor, trivial body, or which kind of leaf). A call back into the path shows as 'calls back into X' with no box. Only the tick box ticks or unticks the row, so a click meant for the row's text or a field under it never changes a tick. On the edit page the row also carries its step number, '+N calls', and its note field or the note it loses (feature-edit-tour).
+lines 0 47
+hash c4111f5a9cb70b21
+note One branch row (Tree::branch_row): its expander, a tick box (wizard-tick/<row>), its name and file, and promote's reason (the start, test, accessor, trivial body, or which kind of leaf). A call back into the path shows as 'calls back into X' with no box. The whole row is the tick's hit area (tick_row, wizard-tick/<row>), with the checkbox drawn inside it; the expander and '+N calls' are smaller elements, so they keep their own clicks, and the note field is a row of its own under it, so typing or clicking there never changes a tick. On the edit page the row also carries its step number, '+N calls', and its note field or the note it loses (feature-edit-tour).
 
 step dfowq3
 order 37
