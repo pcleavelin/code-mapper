@@ -100,7 +100,7 @@ parent sy8rfy
 author ai
 file crates/gui/src/views/left.rs
 symbol step_list
-lines 61 66
+lines 62 67
 hash 9437b35e3155bc73
 note Trigger: a press on a steps list row selects the step and grabs it.
 

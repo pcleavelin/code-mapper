@@ -31,6 +31,6 @@ parent 1tdtjx
 author ai
 file crates/gui/src/views/left.rs
 symbol tour_row
-lines 0 66
-hash f064e7bbde135f68
-note The trigger: each row of the Tours list is a TOUR_ROW numbered by the tour's slot. A click queues OpenTour with the Tour tab, which apply hands to open_tour once the frame is built. The row shows the name, then kind, author and step count dimmed; the name is red and 'n stale' follows when a step is stale, and marked + or ~ when the map diff has the tour as added or changed.
+lines 0 64
+hash 09df808d9ff8e98c
+note The trigger: each row of the Tours list is a TOUR_ROW numbered by the tour's slot. A click queues OpenTour with the Tour tab, which apply hands to open_tour once the frame is built. The row shows the name, then kind and author dimmed, and the step count as a badge at the right; the name is red and a red 'n stale' badge follows when a step is stale, and marked + or ~ when the map diff has the tour as added or changed.

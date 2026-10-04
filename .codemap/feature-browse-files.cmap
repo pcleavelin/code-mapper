@@ -11,9 +11,9 @@ parent 2xm1wz
 author ai
 file crates/gui/src/views/left.rs
 symbol files_tree
-lines 0 103
-hash 95ef6ff69fa7cfb4
-note Trigger and effect: files come sorted by path, so a directory is a run of files with the same component at this depth. A FILE_ROW click queues GoTo line one; a DIRECTORY_ROW click queues ToggleDirectory. A directory is open when it is top level XOR flipped, and an open one draws its run one level deeper. Each row's covered/total comes from the Tally list files_window built (tally_of) and is left off when the total is zero.
+lines 0 92
+hash 233464078ac09fc6
+note Trigger and effect: files come sorted by path, so a directory is a run of files with the same component at this depth. A FILE_ROW click queues GoTo line one; a DIRECTORY_ROW click queues ToggleDirectory. A directory is open when it is top level XOR flipped, and an open one draws its run one level deeper. Each row is a tree row (Frame::tree_row) at its depth, with a guide line per level; its covered/total badge comes from the Tally list files_window built (tally_of, tally_badges) and is left off when the total is zero.
 
 step 2xm1wz
 order 0
@@ -42,5 +42,5 @@ author ai
 file crates/gui/src/views/left.rs
 symbol symbol_file_row
 lines 0 34
-hash ef4301384695e463
+hash 883741da6732e08d
 note Trigger from the Symbols tab: a file row there (symfile/<file number>) queues GoTo line one too, the same as a FILE_ROW click.

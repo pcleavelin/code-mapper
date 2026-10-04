@@ -31,9 +31,9 @@ parent w6a3u3
 author ai
 file crates/gui/src/views/left.rs
 symbol symbol_row
-lines 0 65
-hash 5fb2fc57e5e94dbb
-note One symbol row: the check mark when covered, then name, line and kind, the name clipped to the room columns gives it. A click on the row queues Focus; the '+ step' action, shown on the hovered row while a tour is open, queues an AddSymbol instead (feature-add-step).
+lines 0 61
+hash 1e17fc62c39b7200
+note One symbol row, a tree row one guide under its file (two for a nested symbol): the check mark when covered, then name, line and kind, the name clipped to the room columns gives it. A click on the row queues Focus; the '+ step' action, shown on the hovered row while a tour is open, queues an AddSymbol instead (feature-add-step).
 
 step dectne
 order 5
@@ -63,8 +63,8 @@ author ai
 file crates/gui/src/views/left.rs
 symbol symbol_file_row
 lines 0 34
-hash ef4301384695e463
-note A file row: path, covered/total; a click queues GoTo the file's first line, which opens the Source view.
+hash 883741da6732e08d
+note A file row: path, then covered/total as a badge at the right; a click queues GoTo the file's first line, which opens the Source view.
 
 step j766na
 order 3

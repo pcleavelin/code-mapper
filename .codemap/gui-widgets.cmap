@@ -258,6 +258,16 @@ lines 0 8
 hash a80623c0c7604288
 note Asking the server for a hover. When the question will be sent this frame, the overlay counts it and the status line shows the server starting, so both show in the same frame as the hover.
 
+step f97azj
+order 62
+parent wysgxw
+author ai
+file crates/gui/src/widgets.rs
+symbol tree_row
+lines 0 85
+hash 3ae4e3bc2dad47af
+note A row of a tree (the Tours list with its steps, Files, Symbols): one row element under the row's id holding, per level of depth, a guide leaf whose left border (TREE_GUIDE) sits half a cell into the level, under the chevron of the row above, so consecutive rows draw continuous vertical lines like an editor's explorer; then the text, clipped to the row; then each badge, a count on the BADGE background at the right edge; then the action, shown only while the row is hovered. Hover gives the row the HOVER background unless it is marked (selected, or the steps list's top step). The action is its own id, and the smallest hovered element wins the hit, so pressing it is not a click on the row.
+
 step g0slfv
 order 49
 parent k73r2l
@@ -272,9 +282,9 @@ step gjm6fk
 order 0
 author ai
 file crates/gui/src/theme.rs
-lines 8 36
-hash 14ebfa1d66595a34
-note The palette, in theme: a dozen colours named by role - background, panel, field, border, text, weak, accent, green, red, orange, hover, selected, and the red background a danger button takes under the pointer - and below them the tints made from those by alpha (disabled, selected lines, the slice, the steps list's top step, faint, pending, the drop band, the call tint), the graph's colours (STEP_EDGE, EXPANSION_EDGE, BACK_EDGE, STEP_BORDER, SIBLINGS_FILL, SIBLINGS_BORDER) and the panel header's TAB_STRIP. A colour decision is made once, here, and every view names one.
+lines 8 38
+hash 98460824536e6e88
+note The palette, in theme: a dozen colours named by role - background, panel, field, border, text, weak, accent, green, red, orange, hover, selected, and the red background a danger button takes under the pointer - and below them the tints made from those by alpha (disabled, selected lines, the slice, the steps list's top step, faint, pending, the drop band, the call tint), the graph's colours (STEP_EDGE, EXPANSION_EDGE, BACK_EDGE, STEP_BORDER, SIBLINGS_FILL, SIBLINGS_BORDER) the panel header's TAB_STRIP, and the trees' TREE_GUIDE line and BADGE background. A colour decision is made once, here, and every view names one.
 
 step gp3at7
 order 49
@@ -539,6 +549,16 @@ lines 0 2
 hash eee3abe97d6c6f2f
 note Taking the keyboard: the overlay records it for the rest of this frame and FocusField, carrying the element it was taken through (take_focus_at), sets it on the Model when the queue is applied (Fields::focus_at).
 
+step rx54p9
+order 63
+parent wysgxw
+author ai
+file crates/gui/src/widgets.rs
+symbol TreeRow
+lines 0 6
+hash aaf65ca58fbdb52a
+note What a tree row shows: its depth in guide levels, the runs of its text, its badges (counts such as '14 steps', '3/8', '+2'), its mark colour and its optional trailing action.
+
 step ry0h5x
 order 59
 parent 2havd5
@@ -643,7 +663,7 @@ file crates/gui/src/widgets.rs
 symbol row
 lines 0 2
 hash 6927a95a29c20605
-note A selectable full-width row of coloured runs with a hover background and a selection background, its text cut with an ellipsis where the row ends (Wrap::Clip), so a long name never pushes a row wider than its panel. Every list in the app - tours, steps list, symbols, files, references, hits, diff - is this one function in a loop.
+note A selectable full-width row of coloured runs with a hover background and a selection background, for flat lists (trees use tree_row), its text cut with an ellipsis where the row ends (Wrap::Clip), so a long name never pushes a row wider than its panel. Every list in the app - tours, steps list, symbols, files, references, hits, diff - is this one function in a loop.
 
 step z678b0
 order 31

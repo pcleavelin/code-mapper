@@ -513,6 +513,9 @@ click-id dir@src
 wait 2
 click-id file/5
 wait 3
+hover-id dir@src
+wait 2
+shot {shots}/files-hover.png
 dump
 click-id tab@Tours
 wait 2

@@ -21,8 +21,8 @@ parent d1xozt
 author ai
 file crates/gui/src/views/left.rs
 symbol symbol_row
-lines 0 65
-hash 5fb2fc57e5e94dbb
+lines 0 61
+hash 1e17fc62c39b7200
 note Trigger: a Symbols row carries a '+ step' action while a tour is being read, shown while the row is hovered, so the selected symbol's one add is the strip's; the action queues AddSymbol under the target, a click elsewhere on the row focuses the symbol.
 
 step 7f4nvw

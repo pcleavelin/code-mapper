@@ -256,9 +256,9 @@ order 8
 author ai
 file crates/gui/src/widgets.rs
 symbol row_with_action
-lines 0 50
-hash b46f5899c93a533c
-note A clickable row with a trailing action (the '+ step' on Symbols and References rows): one row element holding the text, clipped to the row, and the action, which is shown only while the row is hovered and lit when hovered itself. The action is its own id, and the smallest hovered element wins the hit, so pressing the action is not a click on the row.
+lines 0 17
+hash 6bf01d5fdc6763e6
+note A clickable row with a trailing action (the '+ step' on References rows): a tree row at depth zero with no badges, so the row, its hover and its action are drawn by tree_row (gui-widgets).
 
 step nxbjm2
 order 4

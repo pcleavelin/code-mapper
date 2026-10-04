@@ -491,8 +491,8 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol PANELS
-lines 0 113
-hash d9fa0f550f9beef2
+lines 0 116
+hash e52f67ae4ddecd85
 note The side panels and console: the symbol list and its filter, the file tree and a folder toggle, the tours list, search and a hit, commands typed into the console (with a bad one and clear), a new tour from the Tours tab's '+ new tour' through the build-tour wizard (a name, a searched start, one outline row toggled, create), an 'add step' from the Source view, and ctrl-s to save.
 
 step rlmca4
