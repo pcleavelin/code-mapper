@@ -28,10 +28,6 @@ fn source_toolbar(model: &Model, frame: &mut Frame<'_>, path: &RelativePath) {
         &ui::Label::default(),
         LINE_FIELD,
     );
-    frame.caption(vec![Run::new(
-        "click a line or drag over lines to select; double-click or ctrl-click an identifier to jump, alt-click to peek",
-        WEAK,
-    )]);
     frame.finish();
 }
 
@@ -157,6 +153,7 @@ pub(super) fn source(model: &Model, frame: &mut Frame<'_>) {
             },
         );
         let scrollbar = column.and_then(|placement| placement.scrollbar(Axis::Vertical, offset));
+        frame.attach_tip(ids::LINES.target());
         select_lines(model, frame, &coded, scrollbar);
     }
     frame.rows_after(total, &window, row_height, row_height);

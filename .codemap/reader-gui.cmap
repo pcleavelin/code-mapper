@@ -182,8 +182,8 @@ parent bg9t38
 author ai
 file crates/gui/src/views/center.rs
 symbol source
-lines 0 88
-hash 12eac09a0f9bd83f
+lines 0 89
+hash dd770116a832d782
 link source-view
 note The Source tab: the current file.
 

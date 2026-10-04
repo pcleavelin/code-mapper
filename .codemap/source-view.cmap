@@ -21,8 +21,8 @@ parent azzv57
 author ai
 file crates/gui/src/views/center.rs
 symbol source
-lines 34 87
-hash b8c6abe6b88906c4
+lines 34 88
+hash 02515f7da6587595
 note The rows. rows_window turns the scroll offset into the first visible line and emits the spacer for the lines above; then one code block of the visible lines, then a spacer for the rest plus a row of slack, so the scrollbar sees the whole file while only what shows is drawn. The bar closure marks the selected tour's anchors in this file, the background closure the selected lines.
 
 step 49joa9
@@ -40,8 +40,8 @@ order 0
 author ai
 file crates/gui/src/views/center.rs
 symbol source
-lines 0 88
-hash 12eac09a0f9bd83f
+lines 0 89
+hash dd770116a832d782
 note The whole viewer: the toolbar (source_toolbar), the target strip, then the scrolling column of rows. With no current file it says so and draws nothing else.
 
 step ghy5uj
@@ -110,9 +110,9 @@ parent azzv57
 author ai
 file crates/gui/src/views/center.rs
 symbol source_toolbar
-lines 0 15
-hash 101b926c37e8fe8a
-note The toolbar: the file name, the 'line' go-to-line box, and a line of help clipped to what is left of the bar. The add for selected lines is the target strip's, under it.
+lines 0 11
+hash cc2cf1a12bd462df
+note The toolbar: the file name and the 'line' go-to-line box. How to select lines is the select-lines tip on the code area (source), and the add for selected lines is the target strip's, under the toolbar; nothing in the bar is prose that the panel's width could cut.
 
 step yfetc7
 order 1

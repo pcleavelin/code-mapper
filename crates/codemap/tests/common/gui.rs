@@ -254,6 +254,11 @@ wait 3
 dump
 shot {shots}/open.png
 rect lines
+mouse <<DUMP rect lines|880,300>>
+wait 80
+dump
+shot {shots}/code-tip.png
+rect lines
 mouse <<DUMP rect lines|200,8>>
 down
 wait 2
