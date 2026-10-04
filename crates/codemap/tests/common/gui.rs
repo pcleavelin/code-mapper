@@ -266,6 +266,15 @@ wait 2
 dump
 shot {shots}/selected.png
 absent add-lines
+rect divider/5
+drag <<DUMP rect divider/5|3,300>> 262 332
+wait 3
+rect target-top@Tours
+rect add-offer@Tours
+shot {shots}/narrow-strip.png
+rect divider/5
+drag <<DUMP rect divider/5|3,300>> 353 332
+wait 3
 click-id add-offer@Source
 wait 2
 dump

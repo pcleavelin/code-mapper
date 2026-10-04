@@ -15,7 +15,7 @@ use ui::{Count, Input, Key, Label, Mods, Press, Px, Typed};
 
 use crate::action::{Action, Collapse, Hide};
 use crate::app::App;
-use crate::authoring::Authoring;
+use crate::authoring::{Authoring, StripAct, StripButton, StripRow, TargetStrip};
 use crate::element_tip::{ElementTip, Pressing, Resting, beside};
 use crate::field::{
     AfterSubmit, Attention, Edit, EnterMods, FieldAct, FieldWindow, Fields, Handled, Motion,
@@ -32,7 +32,7 @@ use crate::palette::{Palette, commands};
 use crate::panels::{Direction, View};
 use crate::peek::Hovering;
 use crate::status::{Held, Status};
-use crate::theme::Cells;
+use crate::theme::{Cells, LABEL_PADDING, SMALL_BUTTON_EXTRA, SMALL_GAP, TEXT};
 use crate::wizard::{self, BranchId, Expander, Page, Tick, WizardAct};
 
 #[test]
@@ -1843,4 +1843,154 @@ fn opening_the_peek_closes_the_hover_card_until_the_pointer_reaches_another_word
     app.apply(Action::ReopenHover);
     assert!(shown(&app, on_report));
     assert!(shown(&app, on_fill), "back on fill the card shows again");
+}
+
+fn strip() -> TargetStrip {
+    let run = |text: &str| ui::Run::new(text, TEXT);
+    TargetStrip {
+        wordings: vec![
+            vec![run("adds to"), run("anchor"), run("under 1.1 Anchor")],
+            vec![run("anchor"), run("\u{203a} 1.1 Anchor")],
+            vec![run("1.1 Anchor")],
+        ],
+        buttons: vec![
+            StripButton {
+                act: StripAct::AddAtTopLevel,
+                text: Label::new("top level"),
+            },
+            StripButton {
+                act: StripAct::AddOffered,
+                text: Label::new("add lines 208-217 as a step"),
+            },
+        ],
+        aside: None,
+    }
+}
+
+fn unoffered() -> TargetStrip {
+    TargetStrip {
+        buttons: strip().buttons.into_iter().take(1).collect(),
+        aside: Some(Label::new("select another symbol")),
+        ..strip()
+    }
+}
+
+const STRIP_CELL_WIDTH: Px = Px::new(8);
+
+type Shape = (String, Vec<String>, Option<String>);
+
+fn shape(rows: &[StripRow<'_>]) -> Vec<Shape> {
+    rows.iter()
+        .map(|row| {
+            (
+                row.runs
+                    .iter()
+                    .map(|run| run.text.as_str())
+                    .collect::<Vec<_>>()
+                    .join(" "),
+                row.buttons
+                    .iter()
+                    .map(|button| button.text.as_str().to_owned())
+                    .collect(),
+                row.aside.map(|aside| aside.as_str().to_owned()),
+            )
+        })
+        .collect()
+}
+
+fn words(text: &str) -> Shape {
+    (text.to_owned(), Vec::new(), None)
+}
+
+fn buttons(texts: &[&str]) -> Shape {
+    (
+        String::new(),
+        texts.iter().map(|text| (*text).to_owned()).collect(),
+        None,
+    )
+}
+
+const BOTH: [&str; 2] = ["top level", "add lines 208-217 as a step"];
+
+fn row_width(row: &StripRow<'_>) -> Px {
+    let labels = row.runs.iter().map(|run| &run.text).chain(row.aside);
+    let widths = labels
+        .map(|text| STRIP_CELL_WIDTH * Count::new(text.columns()) + LABEL_PADDING * 2)
+        .chain(row.buttons.iter().map(|button| {
+            STRIP_CELL_WIDTH * Count::new(button.text.columns()) + SMALL_BUTTON_EXTRA
+        }))
+        .collect::<Vec<_>>();
+    let gaps = i32::try_from(widths.len().saturating_sub(1)).unwrap_or(0);
+    widths.into_iter().fold(Px::ZERO, |sum, width| sum + width) + SMALL_GAP * gaps
+}
+
+#[test]
+fn a_narrow_strip_shortens_its_wording_before_it_moves_the_buttons() {
+    let strip = strip();
+    let one_row = |text: &str| vec![(text.to_owned(), buttons(&BOTH).1, None)];
+    assert_eq!(
+        shape(&strip.rows(STRIP_CELL_WIDTH, Some(Px::new(600)))),
+        one_row("adds to anchor under 1.1 Anchor")
+    );
+    assert_eq!(
+        shape(&strip.rows(STRIP_CELL_WIDTH, Some(Px::new(500)))),
+        one_row("anchor \u{203a} 1.1 Anchor")
+    );
+    assert_eq!(
+        shape(&strip.rows(STRIP_CELL_WIDTH, Some(Px::new(400)))),
+        one_row("1.1 Anchor")
+    );
+}
+
+#[test]
+fn a_strip_too_narrow_for_its_buttons_beside_the_words_wraps_them_whole() {
+    let strip = strip();
+    assert_eq!(
+        shape(&strip.rows(STRIP_CELL_WIDTH, Some(Px::new(320)))),
+        vec![words("adds to anchor under 1.1 Anchor"), buttons(&BOTH)]
+    );
+    assert_eq!(
+        shape(&strip.rows(STRIP_CELL_WIDTH, Some(Px::new(240)))),
+        vec![
+            words("anchor \u{203a} 1.1 Anchor"),
+            buttons(&BOTH[..1]),
+            buttons(&BOTH[1..]),
+        ]
+    );
+}
+
+#[test]
+fn the_aside_shows_only_where_it_fits_whole() {
+    let strip = unoffered();
+    assert_eq!(
+        shape(&strip.rows(STRIP_CELL_WIDTH, Some(Px::new(600)))),
+        vec![(
+            "adds to anchor under 1.1 Anchor".to_owned(),
+            buttons(&BOTH[..1]).1,
+            Some("select another symbol".to_owned())
+        )]
+    );
+    assert_eq!(
+        shape(&strip.rows(STRIP_CELL_WIDTH, Some(Px::new(400)))),
+        vec![(
+            "adds to anchor under 1.1 Anchor".to_owned(),
+            buttons(&BOTH[..1]).1,
+            None
+        )]
+    );
+}
+
+#[test]
+fn every_strip_row_fits_a_room_wide_enough_for_its_widest_button() {
+    for strip in [strip(), unoffered()] {
+        for room in (228..800).map(Px::new) {
+            for row in strip.rows(STRIP_CELL_WIDTH, Some(room)) {
+                assert!(
+                    row_width(&row) <= room,
+                    "a row of {:?} is wider than {room:?}",
+                    shape(&[row])
+                );
+            }
+        }
+    }
 }

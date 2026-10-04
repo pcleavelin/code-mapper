@@ -105,6 +105,7 @@ pub(crate) enum Container {
     StepRow { selected: Chosen },
     CodeColumn { selected: Chosen },
     StepColumn(Id),
+    Strip(Id),
     FillRow,
     Tooltip { at: Point },
     ElementTip { at: Point },
@@ -217,6 +218,7 @@ impl Container {
                 Style::NONE,
                 Some(id),
             ),
+            Self::Strip(id) => Shape::new(Layout::column().grow_width(), Style::NONE, Some(id)),
             Self::FillRow => Shape::new(Layout::row().grow_width(), Style::NONE, None),
             Self::Tooltip { at } => Shape::new(
                 Layout::column()

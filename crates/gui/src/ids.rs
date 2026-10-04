@@ -356,6 +356,10 @@ pub(crate) fn tours() -> Id {
     TOUR_ROW.id()
 }
 
+pub(crate) fn target_strip() -> Id {
+    Id::new("target-strip")
+}
+
 pub(crate) fn symbols() -> Id {
     Id::new("symbols")
 }

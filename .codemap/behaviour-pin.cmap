@@ -81,8 +81,8 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol SOURCE
-lines 0 109
-hash a0ee651baee8552c
+lines 0 118
+hash b69dc60e66273e5b
 note The Source view: opening a file at a line, a range selected by press-drag (dumped mid-drag and after release) added to startup with the target strip's add-offer@Source, the toolbar holding no add-lines (checked by the after command), goto-line with good, past-the-end and non-numeric input, the tooltip, ctrl-click, back and forward by button and by key, with the panels shrunk so the file overflows, a drag held past the bottom edge that scrolls the view and extends the selection, then the divider moved back so every line is drawn, a split that narrows the panel and the sideways scrollbar: a swipe, a thumb drag, shift+wheel and a track click, each followed by a dump.
 
 step 62zoqn

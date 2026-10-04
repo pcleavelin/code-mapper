@@ -61,7 +61,7 @@ file crates/gui/src/authoring.rs
 symbol add_lines
 lines 0 9
 hash 21f14249bdc80886
-note 'add step' in the Source view's toolbar, the human's authoring gesture from a file: the selected lines become a step of the tour being read (add_step, authored Human), under the target the strip above the code shows. Without selected lines it only says what is missing.
+note The add for the Source view's selected lines, reached through the target strip's add-offer@Source (add_offered) while lines are selected: they become a step of the tour being read (add_step, authored Human), under the target the strip above the code shows. Without selected lines it only says what is missing.
 
 step qf86nv
 order 8

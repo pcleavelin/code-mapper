@@ -1,14 +1,12 @@
-use domain::SymbolName;
 use platform::Cursor;
-use ui::{Button, Icon, Label, Run, Ui};
+use ui::{Button, Icon, Label, Ui};
 
 use crate::action::Action;
-use crate::authoring::{AddOffer, Authoring, StepDrop, StepGrab, Zone};
+use crate::authoring::{Authoring, StepDrop, StepGrab, StripAct, Zone};
 use crate::ids;
-use crate::model::{Model, StepKey, StepSlot};
+use crate::model::{Model, StepSlot};
 use crate::panels::View;
-use crate::status::Status;
-use crate::theme::{ACCENT, TEXT, WEAK};
+use crate::theme::{BAR_PADDING, Cells, WEAK};
 use crate::widgets::{Container, Frame};
 use crate::wizard::WizardAct;
 
@@ -20,51 +18,35 @@ pub(super) fn target_strip(model: &Model, frame: &mut Frame<'_>, view: View) {
         return;
     }
     let place = Label::new(view.name().as_str());
-    frame.start(Container::ToolbarSmall);
-    match model
-        .nav
-        .tour()
-        .and_then(|tour| Some((tour, model.tour(tour)?)))
-    {
-        None => frame.label("open a tour to add steps to it", WEAK),
-        Some((tour, found)) => {
-            frame.label("adds to", WEAK);
-            frame.label(found.name().as_str(), TEXT);
-            match model.target_under() {
-                Some(step) => {
-                    let key = StepKey { tour, step };
-                    let symbol = model
-                        .step(key)
-                        .and_then(domain::Step::symbol)
-                        .map_or("(lines)", SymbolName::as_str);
-                    frame.label(
-                        format!("under {} {symbol}", model.number_of(key).as_str()),
-                        ACCENT,
-                    );
-                    if frame
-                        .small_button("top level", ids::TARGET_TOP.with(&place))
-                        .clicked()
-                    {
-                        frame.push(Action::Authoring(Authoring::AddAtTopLevel));
-                    }
-                }
-                None => frame.label("at the top level", ACCENT),
-            }
-            let offer = match model.add_offer() {
-                Some(AddOffer::Lines(label) | AddOffer::Symbol(_, label)) => Some(label),
-                None => None,
+    let id = ids::target_strip().with(place.as_str());
+    let room = frame
+        .ui
+        .placement(id)
+        .map(|placement| placement.rect.width - BAR_PADDING * 2);
+    let strip = model.target_strip();
+    frame.start(Container::Strip(id));
+    for row in strip.rows(frame.cell_width(), room) {
+        frame.start(Container::ToolbarSmall);
+        for run in row.runs {
+            frame.label(run.text.clone(), run.color);
+        }
+        for button in row.buttons {
+            let (target, act) = match button.act {
+                StripAct::AddAtTopLevel => (ids::TARGET_TOP.with(&place), Authoring::AddAtTopLevel),
+                StripAct::AddOffered => (ids::ADD_OFFER.with(&place), Authoring::AddOffered),
             };
-            if let Some(label) = offer {
-                if frame
-                    .small_button(label, ids::ADD_OFFER.with(&place))
-                    .clicked()
-                {
-                    frame.push(Action::Authoring(Authoring::AddOffered));
-                }
-            } else {
-                frame.caption(vec![Run::new(Status::select_symbol_or_lines(), WEAK)]);
+            let cells = Cells::of_count(button.text.columns());
+            if frame
+                .small_button_sized(button.text.clone(), Some(cells), target)
+                .clicked()
+            {
+                frame.push(Action::Authoring(act));
             }
         }
+        if let Some(aside) = row.aside {
+            frame.label(aside.clone(), WEAK);
+        }
+        frame.finish();
     }
     frame.finish();
 }
