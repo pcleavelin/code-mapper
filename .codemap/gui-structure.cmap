@@ -457,8 +457,8 @@ parent 9pik9m
 author ai
 file crates/gui/src/ids.rs
 symbol CONTROLS
-lines 0 110
-hash 5b971046e421bfd4
+lines 0 111
+hash 185a5b0ee20ffe95
 note Every control, for the test that checks them against the registry.
 
 step mjhubp
@@ -731,9 +731,9 @@ parent 9pik9m
 author ai
 file crates/gui/src/ids.rs
 symbol impl Control
-lines 0 45
-hash 98706fec0cafc15b
-note Ids from a Control: the plain id, the nth for a row, with a suffix for a named row, and nested for a step of a linked tour shown inline (linked/<occurrence>@<element>/<n>).
+lines 0 49
+hash 5205c6619264e782
+note Ids from a Control: the plain id, the id of another control's element (on: a feature reached through a part of a larger element, such as a node title inside the graph canvas), the nth for a row, with a suffix for a named row, and nested for a step of a linked tour shown inline (linked/<occurrence>@<element>/<n>).
 
 step y37wqf
 order 47

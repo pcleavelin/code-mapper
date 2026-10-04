@@ -11,7 +11,7 @@ parent gknv1n
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 82 86
+lines 75 79
 hash dc3130dd559484b7
 note The end of the phase: Shown once the canvas element has a rectangle, Hidden before that.
 
@@ -69,7 +69,7 @@ order 0
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 42 57
+lines 35 50
 hash 67cc42f01fd6c340
 note The frame's camera hooks in graph_phase, after the layout: the fit when one is wanted and the canvas has been placed, then this frame's cell size recorded with a Cell action so rect_at can give pixel rectangles, then the focus node looked up and move_camera, then one GlideStep with the frame's time so a glide in progress advances. The fit runs here rather than inside GraphState because it needs the renderer's Measure for the font metrics.
 

@@ -727,7 +727,7 @@ impl Feature {
             ),
             Self::MoveNode => Spec::new(
                 Text::new("move-node"),
-                Text::new("drag a graph node by its title"),
+                Text::new("drag a graph node by its title to move it"),
                 Surface::Window,
                 &const { [Trigger::Gesture(Gesture::Drag, Element::new("node"))] },
             ),

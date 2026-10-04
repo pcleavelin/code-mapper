@@ -24,13 +24,23 @@ lines 0 28
 hash 620e1ee0adefe781
 note The handler: while a node is held, each frame's drag delta is converted from pixels to cells at the current zoom and added to the node's position (the dragged one, or its computed one the first time), queued as Place. A held background pans instead.
 
+step 6cejc2
+order 6
+parent 149ydv
+author ai
+file crates/gui/src/views/center.rs
+symbol canvas_tip
+lines 0 6
+hash b28597492347560d
+note Resting the pointer on a node's title shows this feature's summary as the canvas's tooltip (the full note is in feature-pan-graph).
+
 step lv2myh
 order 2
 parent 149ydv
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 28 36
+lines 21 29
 hash adb08f9bef82fca4
 note Trigger: a click (a press) on the canvas goes to graph_click, a drag delta to graph_drag, and releasing the button clears the hold.
 

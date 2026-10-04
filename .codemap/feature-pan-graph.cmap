@@ -16,6 +16,16 @@ hash dc0295a53e49a411
 link graph-camera
 note Stores the camera; a glide in progress and a wanted zoom step are dropped.
 
+step 521us1
+order 7
+parent uyp9xc
+author ai
+file crates/gui/src/views/center.rs
+symbol canvas_tip
+lines 0 6
+hash b28597492347560d
+note The canvas's tooltip, shown once the pointer rests: over the background it is this feature's summary (how to pan), over a node's title move-node's (the title is a part of the canvas, so its target is the canvas's id with MoveNode's feature); over code lines the hover card has the pointer instead. The pinch and ctrl+wheel zoom are told by the zoom cluster's - and + tooltips. These replace a sentence of gestures the toolbar caption carried, which the toolbar's width cut mid-sentence.
+
 step 7n2j2f
 order 6
 parent uyp9xc
@@ -42,7 +52,7 @@ parent uyp9xc
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 28 36
+lines 21 29
 hash adb08f9bef82fca4
 note Trigger: a press on the canvas goes to graph_click, the drag delta to graph_drag, and release clears the hold.
 

@@ -60,17 +60,17 @@ order 6
 author ai
 file crates/gui/src/views/center.rs
 symbol graph_tab
-lines 0 57
-hash 52c5e7b03b019aa8
-note The view: the deferred actions pushed (a hover through push_hover), the tooltip set, then the toolbar - 'auto layout' which drops every dragged position, the direction button (graph-turn, labelled with the direction it switches to: 'top to bottom' or 'left to right'), and one clipped caption: while a tour is being read, its name and a legend drawn in the edge colours themselves (green step, dim revealed, orange call back up), then the pan and zoom gestures spelled out - then the canvas element whose closure paints the scene, and over it, once the canvas has a rectangle from last frame, graph_corner: a floating column the size of the canvas whose last row holds the zoom cluster in the bottom-right corner (zoom out, the zoom percentage which resets to 1:1, zoom in, fit). The overlay has no id, so only its buttons take the pointer from the canvas. The target strip above the toolbar offers add-offer@Graph. The toolbar itself holds no authoring control, and '+ step' still lives on off-tour nodes.
+lines 0 54
+hash 0ab5292d418d441e
+note The view: the deferred actions pushed (a hover through push_hover), the tooltip set, then the toolbar - 'auto layout' which drops every dragged position, the direction button (graph-turn, labelled with the direction it switches to: 'top to bottom' or 'left to right'), and one clipped caption: while a tour is being read, its name and a legend drawn in the edge colours themselves (green step, dim revealed, orange call back up) - then the canvas element whose closure paints the scene, with canvas_tip attaching a tooltip to it, and over it, once the canvas has a rectangle from last frame, graph_corner: a floating column the size of the canvas whose last row holds the zoom cluster in the bottom-right corner (zoom out, the zoom percentage which resets to 1:1, zoom in, fit). The overlay has no id, so only its buttons take the pointer from the canvas. The target strip above the toolbar offers add-offer@Graph. The toolbar itself holds no authoring control, and '+ step' still lives on off-tour nodes.
 
 step 4yhd4f
 order 0
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 0 94
-hash ed4ad7b2a5335beb
+lines 0 87
+hash 6c2edf3a42530bd2
 note The phase, in order: the canvas element's interaction and last frame's rectangle (a guessed square until it has one), the wheel, a press or drag on the minimap, the hit under the mouse from last frame's hits (the last recorded wins), a press engaging or releasing the graph's keyboard by whether it landed inside the canvas, a click, a drag, releasing the drag once the button is up, a zoom step the cluster's buttons asked for, the hover tooltip, then the rebuild and layout, the camera and its glide step, the scene, the minimap built from the same camera and stored with the hits, and finally the graph marked Shown or Hidden by whether the canvas has a rectangle. It returns the scene with the deferred actions, the tooltip, the zoom and the minimap for the canvas corner.
 
 step 5ho1e1
@@ -270,7 +270,7 @@ parent 4yhd4f
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 42 57
+lines 35 50
 hash 67cc42f01fd6c340
 link graph-camera
 note The camera's turn once the layout exists (see the graph-camera flow).
@@ -454,3 +454,13 @@ symbol graph
 lines 0 2
 hash 6070478c03704959
 note Sends one GraphAction through App::apply, so the phase changes GraphState the same way every other part of the GUI changes the model.
+
+step z7yt1z
+order 45
+parent 4yhd4f
+author ai
+file crates/gui/src/graph.rs
+symbol hit_at
+lines 0 6
+hash fdeb52ae5aab1948
+note The hit under a point from last frame's hits, the last recorded winning (buttons and lines are recorded after the node body they sit on); the input phase and the canvas tooltip both ask it.

@@ -11,7 +11,7 @@ parent q4xhps
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 80 81
+lines 73 74
 hash c7d982d8e8b47e38
 note Later in the same phase, after the camera and its glide have moved and the scene's hits are stored, the minimap is built from this frame's layout, cell size and pan, so the next frame's input maps against what was drawn.
 

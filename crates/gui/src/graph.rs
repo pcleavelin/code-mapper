@@ -310,6 +310,14 @@ impl GraphState {
         &self.hits
     }
 
+    pub(crate) fn hit_at(&self, point: Point) -> Option<Hit> {
+        self.hits
+            .iter()
+            .rev()
+            .find(|hit| hit.rect.contains(point))
+            .map(|hit| hit.hit)
+    }
+
     pub(crate) const fn built(&self) -> &Built {
         &self.built
     }

@@ -600,14 +600,7 @@ impl App {
         let mut deferred = Vec::new();
         self.graph_wheel(measure, &aim);
         self.minimap_input(canvas);
-        let hit = self
-            .model
-            .graph
-            .hits
-            .iter()
-            .rev()
-            .find(|hit| hit.rect.contains(mouse))
-            .map(|hit| hit.hit);
+        let hit = self.model.graph.hit_at(mouse);
         if aim.pointer.pressed.contains(MouseButton::Left) {
             self.graph(GraphAction::Engage(if interaction.hovered() {
                 Keyboard::Graph

@@ -53,8 +53,8 @@ parent ohhidl
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 13 30
-hash 8a0f456930fac64e
+lines 13 23
+hash aae8ce7d1503a397
 note Trigger: the graph phase, run before the views each frame on the Graph tab, finds the topmost hit rectangle under the pointer from the last drawn frame, engages the graph's keyboard on a press inside the canvas (Keyboard::Elsewhere on one outside it), and hands a click to graph_click.
 
 step ohhidl

@@ -4,7 +4,7 @@ use ui::{Axis, Count, Icon, Label, Px, Rect, Run, Scrollbar, Size};
 use crate::action::Action;
 use crate::authoring::Authoring;
 use crate::field::Which;
-use crate::graph::{GraphAction, GraphFrame, Minimap, draw_scene};
+use crate::graph::{GraphAction, GraphFrame, Hit, Minimap, draw_scene};
 use crate::ids::{self, Target};
 use crate::keys::{self, LineGesture};
 use crate::model::{HIT_LIMIT, HitsShown, Model, StepKey, Tab, TourSlot};
@@ -487,21 +487,26 @@ pub(super) fn graph_tab(model: &Model, frame: &mut Frame<'_>, graph: Option<Grap
             Run::new(format!("{}: ", tour.name()), TEXT),
             Run::new("\u{2500} step  ", GREEN),
             Run::new("\u{2500} revealed  ", WEAK),
-            Run::new("\u{2500} call back up  ", ORANGE),
+            Run::new("\u{2500} call back up", ORANGE),
         ]);
     }
-    runs.push(Run::new(
-        "drag or scroll to pan, pinch or ctrl+wheel to zoom, drag a title to move a node",
-        WEAK,
-    ));
     frame.caption(runs);
     frame.finish();
     let canvas = frame.canvas(
         move |canvas, _| draw_scene(canvas, &scene),
         ids::GRAPH_CANVAS.id(),
     );
+    canvas_tip(model, frame);
     if let Some(over) = canvas.rect() {
         graph_corner(frame, over, zoom, minimap);
+    }
+}
+
+fn canvas_tip(model: &Model, frame: &mut Frame<'_>) {
+    match model.graph.hit_at(frame.ui.pointer().mouse) {
+        None => frame.attach_tip(ids::GRAPH_CANVAS.target()),
+        Some(Hit::Header(_)) => frame.attach_tip(ids::GRAPH_NODE.on(ids::GRAPH_CANVAS)),
+        Some(_) => {}
     }
 }
 

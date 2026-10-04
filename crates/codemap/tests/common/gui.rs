@@ -705,6 +705,11 @@ drag <<DUMP minimap|4,4>> <<DUMP minimap|30,20>>
 wait 4
 dump
 shot {shots}/minimap.png
+mouse <<DUMP graph zoom|200,40>>
+wait 2
+pause 700
+wait 3
+dump
 click-id graph-fit
 wait 4
 click <<DUMP button new '+ step>>
