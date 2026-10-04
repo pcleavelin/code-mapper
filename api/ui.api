@@ -153,7 +153,7 @@ layout::pub enum Size { Exact(Px), Fit, Grow, }
 layout::pub enum Direction { Row, Column, }
 layout::pub const fn main(self) -> Axis
 layout::pub enum Align { Start, Center, }
-layout::pub struct Layout { pub direction: Direction, pub width: Size, pub height: Size, pub floating: Option<Point>, pub padding: Px, pub gap: Px, pub cross: Align, pub scroll: Option<Point>, pub scroll_axes: ScrollAxes, }
+layout::pub struct Layout { pub direction: Direction, pub width: Size, pub height: Size, pub floating: Option<Point>, pub(crate) stacking: Stacking, pub padding: Px, pub gap: Px, pub cross: Align, pub scroll: Option<Point>, pub scroll_axes: ScrollAxes, }
 layout::pub const fn row() -> Self
 layout::pub const fn column() -> Self
 layout::pub const fn size_along(self, axis: Axis) -> Size
@@ -171,6 +171,7 @@ layout::pub const fn cross(mut self, align: Align) -> Self
 layout::pub const fn scroll(mut self, offset: Point) -> Self
 layout::pub const fn scroll_axes(mut self, scroll_axes: ScrollAxes) -> Self
 layout::pub const fn floating(mut self, at: Point) -> Self
+layout::pub const fn overlay(mut self, at: Point) -> Self
 layout::pub struct ScrollAxes(u8);
 layout::pub const VERTICAL: Self = Self(1);
 layout::pub const HORIZONTAL: Self = Self(2);

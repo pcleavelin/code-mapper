@@ -170,7 +170,7 @@ impl Container {
         match self {
             Self::CanvasCorner { over } => Shape::new(
                 Layout::column()
-                    .floating(over.origin())
+                    .overlay(over.origin())
                     .width(over.width)
                     .height(over.height)
                     .padding(GRAPH_MARGIN)

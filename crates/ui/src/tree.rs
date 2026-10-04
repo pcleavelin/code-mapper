@@ -7,7 +7,7 @@ use crate::color::Color;
 use crate::geometry::{Axis, Count, Extent, Point, Px, Rect, Vector};
 use crate::id::Id;
 use crate::input::{Button, Buttons, Input, Pinch, Pointer};
-use crate::layout::{Align, Layout, ScrollAxes, Sides, Size, Style};
+use crate::layout::{Align, Layout, ScrollAxes, Sides, Size, Stacking, Style};
 use crate::text::{Label, Text, Wrap};
 
 const LEAST_WRAP: Count = Count::new(12);
@@ -513,12 +513,16 @@ impl Element {
         }
     }
 
+    const fn layer(&self, inherited: Layer) -> Layer {
+        match (self.layout.floating, self.layout.stacking) {
+            (None, _) => inherited,
+            (Some(_), Stacking::Popup) => Layer::Floating,
+            (Some(_), Stacking::Overlay) => Layer::Overlay,
+        }
+    }
+
     fn record(&self, placements: &mut BTreeMap<Id, Placement>, inherited: Layer) {
-        let layer = if self.layout.floating.is_some() {
-            Layer::Floating
-        } else {
-            inherited
-        };
+        let layer = self.layer(inherited);
         if let Some(id) = self.id {
             placements.insert(id, self.placement(layer));
         }
@@ -599,11 +603,7 @@ impl Element {
         layer: Layer,
         inherited: Layer,
     ) {
-        let own = if self.layout.floating.is_some() {
-            Layer::Floating
-        } else {
-            inherited
-        };
+        let own = self.layer(inherited);
         if own == layer && !self.rect.intersect(self.clip).is_empty() {
             self.paint(canvas, text_color);
         }
@@ -613,11 +613,7 @@ impl Element {
     }
 
     fn draw_scrollbars(&self, canvas: &mut Canvas<'_>, layer: Layer, inherited: Layer) {
-        let own = if self.layout.floating.is_some() {
-            Layer::Floating
-        } else {
-            inherited
-        };
+        let own = self.layer(inherited);
         if own == layer && self.layout.clips() {
             let placement = self.placement(own);
             for axis in Axis::BOTH {
@@ -644,6 +640,7 @@ enum Level {
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub(crate) enum Layer {
     Base,
+    Overlay,
     Floating,
 }
 
@@ -944,7 +941,7 @@ impl Ui {
     pub fn draw(&mut self, measure: &mut dyn Measure, text_color: Color) -> DrawList {
         let mut roots = mem::take(&mut self.roots);
         let mut canvas = Canvas::new(self.size, measure);
-        for layer in [Layer::Base, Layer::Floating] {
+        for layer in [Layer::Base, Layer::Overlay, Layer::Floating] {
             for root in &mut roots {
                 root.draw_layer(&mut canvas, text_color, layer, Layer::Base);
             }

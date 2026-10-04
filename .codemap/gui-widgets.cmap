@@ -371,8 +371,8 @@ author ai
 file crates/gui/src/widgets.rs
 symbol overlay_shape
 lines 0 21
-hash 46d07e86847676ba
-note The graph canvas's overlays: CanvasCorner floats a column exactly over the canvas's last rectangle, padded by GRAPH_MARGIN, with no style and no id so it never takes the pointer; Cluster is a row on PANEL with a border, holding the zoom buttons.
+hash 74f7ac2b83941d22
+note The graph canvas's overlays: CanvasCorner lays a column exactly over the canvas's last rectangle on the overlay layer, padded by GRAPH_MARGIN, with no style and no id so it never takes the pointer itself; on that layer the minimap and the zoom buttons inside it are drawn under every popup and take no click while a menu or the settings box is open. Cluster is a row on PANEL with a border, holding the zoom buttons.
 
 step i1gj5i
 order 57

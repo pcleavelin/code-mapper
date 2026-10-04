@@ -3,9 +3,9 @@ use std::rc::Rc;
 use strum::VariantArray;
 
 use crate::{
-    Axis, Button, Buttons, Canvas, Cell, Color, Command, Coordinate, Count, Extent, FontSize,
-    Glyph, Grid, Icon, Id, Input, Key, Kind, Label, Layout, Measure, Mods, Pinch, Point, Press, Px,
-    Rect, Run, Scale, ScrollAxes, Scrollbar, Sides, Style, Text, Ui, Vector, Wrap,
+    Axis, Button, Buttons, Canvas, Capture, Cell, Color, Command, Coordinate, Count, Extent,
+    FontSize, Glyph, Grid, Icon, Id, Input, Key, Kind, Label, Layout, Measure, Mods, Pinch, Point,
+    Press, Px, Rect, Run, Scale, ScrollAxes, Scrollbar, Sides, Style, Text, Ui, Vector, Wrap,
 };
 
 struct Cells;
@@ -949,4 +949,43 @@ fn a_key_a_wheel_turn_or_a_pinch_leaves_the_pointer_unaimed() {
     frame.pointer.pinch = Pinch::ZERO;
     frame.pointer.pressed.insert(Button::Left);
     assert!(!aimed_click(&mut ui, &frame));
+}
+
+#[test]
+fn an_overlay_takes_the_pointer_only_while_everything_is_captured_and_draws_under_a_popup() {
+    let mut frame = input(100, 100);
+    frame.pointer.mouse = Point::new(px(5), px(5));
+    let play = |capture: Capture| {
+        let mut ui = Ui::default();
+        ui.capture(capture);
+        for _ in 0..2 {
+            ui.begin(&frame);
+            ui.open(
+                Kind::None,
+                Layout::column().floating(Point::new(px(50), px(50))),
+                Style::NONE,
+                Some(Id::new("popup")),
+            );
+            ui.leaf(text("p"), Layout::row(), Style::NONE, None);
+            ui.close();
+            ui.open(
+                Kind::None,
+                Layout::column().overlay(Point::default()),
+                Style::NONE,
+                Some(Id::new("overlay")),
+            );
+            ui.leaf(text("o"), Layout::row(), Style::NONE, None);
+            ui.close();
+            ui.end(&mut Cells);
+        }
+        ui
+    };
+    assert_eq!(play(Capture::Everything).hot(), Some(Id::new("overlay")));
+    let mut popup_open = play(Capture::Floating);
+    assert_eq!(
+        popup_open.hot(),
+        None,
+        "an open popup keeps the overlay from the pointer"
+    );
+    assert_eq!(texts_drawn(&mut popup_open), ["(0, 0) o", "(50, 50) p"]);
 }

@@ -30,11 +30,18 @@ pub enum Align {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub(crate) enum Stacking {
+    Popup,
+    Overlay,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Layout {
     pub direction: Direction,
     pub width: Size,
     pub height: Size,
     pub floating: Option<Point>,
+    pub(crate) stacking: Stacking,
     pub padding: Px,
     pub gap: Px,
     pub cross: Align,
@@ -49,6 +56,7 @@ impl Layout {
             width: Size::Fit,
             height: Size::Fit,
             floating: None,
+            stacking: Stacking::Popup,
             padding: Px::ZERO,
             gap: Px::ZERO,
             cross: Align::Start,
@@ -151,6 +159,13 @@ impl Layout {
     #[must_use]
     pub const fn floating(mut self, at: Point) -> Self {
         self.floating = Some(at);
+        self
+    }
+
+    #[must_use]
+    pub const fn overlay(mut self, at: Point) -> Self {
+        self.floating = Some(at);
+        self.stacking = Stacking::Overlay;
         self
     }
 }

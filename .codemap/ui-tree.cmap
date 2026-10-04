@@ -51,9 +51,9 @@ parent xb3aih
 author ai
 file crates/ui/src/layout.rs
 symbol Layout
-lines 0 10
-hash d05595bd813fa21f
-note How an element lays its children out: direction, a size per axis, padding, gap, cross-axis alignment, a scroll offset applied to the children, the axes it shows a scrollbar on and scrolls along (ScrollAxes, vertical unless asked), and a floating absolute position that takes it out of the parent's flow and onto the upper layer. There is no separate clip flag: an element clips exactly when it scrolls.
+lines 0 11
+hash 2ce3f4d9ba4b4f92
+note How an element lays its children out: direction, a size per axis, padding, gap, cross-axis alignment, a scroll offset applied to the children, the axes it shows a scrollbar on and scrolls along (ScrollAxes, vertical unless asked), and a floating absolute position that takes it out of the parent's flow and onto an upper layer, the popup layer or, with Stacking::Overlay, the overlay layer under it. There is no separate clip flag: an element clips exactly when it scrolls.
 
 step 30tymq
 order 45
@@ -112,9 +112,9 @@ author ai
 file crates/ui/src/tree.rs
 symbol draw
 lines 0 12
-hash 8bd2609240a0b251
+hash d4bc0caf017b8fb2
 link ui-canvas
-note Paint the laid-out tree into a DrawList through a Canvas (see ui-canvas): the base layer, then the floating layer, each followed by its scrollbars so no child covers them. The tree is consumed - custom draw closures run once - and the list is returned for the platform to replay.
+note Paint the laid-out tree into a DrawList through a Canvas (see ui-canvas): the base layer, then the overlay layer, then the popup layer, each followed by its scrollbars so no child covers them. The tree is consumed - custom draw closures run once - and the list is returned for the platform to replay.
 
 step 8qzl72
 order 41
@@ -232,9 +232,9 @@ parent 7qwqcp
 author ai
 file crates/ui/src/tree.rs
 symbol draw_layer
-lines 0 18
-hash b35a64406ac59821
-note One layer's pass in tree order: an element is on the floating layer if it floats or any ancestor does, so a popup's contents rise with it. An element whose rectangle does not meet its clip is skipped outright, but its children are still walked.
+lines 0 14
+hash 330c2a5ce2f6bea0
+note One layer's pass in tree order: an element is on the layer layer gives it, its own when it floats and its parent's otherwise, so a popup's contents rise with it. An element whose rectangle does not meet its clip is skipped outright, but its children are still walked.
 
 step hcfnrw
 order 44
@@ -321,9 +321,9 @@ parent 2ykree
 author ai
 file crates/ui/src/layout.rs
 symbol impl Layout
-lines 0 111
-hash c61fd2799e001f59
-note The builders. Every one takes and returns a Layout by value and is const, so a call site reads as one expression - Layout::column().grow().padding(px).gap(px) - and no layout struct is ever named. scroll is also what makes clips() true, because a scrolling element that does not clip would draw its children over its neighbours.
+lines 0 119
+hash fbc45468853e4b92
+note The builders. Every one takes and returns a Layout by value and is const, so a call site reads as one expression - Layout::column().grow().padding(px).gap(px) - and no layout struct is ever named. floating lifts an element onto the popup layer and overlay onto the overlay layer, both at an absolute position. scroll is also what makes clips() true, because a scrolling element that does not clip would draw its children over its neighbours.
 
 step kgjw02
 order 2
@@ -343,7 +343,7 @@ file crates/ui/src/tree.rs
 symbol Capture
 lines 0 4
 hash 4cc39f1ebcc3af24
-note Which elements the pointer can reach this frame. Floating limits hot elements and wheel scrolling to the floating layer (the settings box), so a click or a wheel over a modal box never reaches the panels drawn under it; Placement records each element's layer for this.
+note Which elements the pointer can reach this frame. Floating limits hot elements and wheel scrolling to the popup layer (the settings box, a toolbar menu), so a click or a wheel over a modal box never reaches the panels drawn under it nor the overlays floating over them (the graph's zoom cluster and minimap); Placement records each element's layer for this.
 
 step lg4ced
 order 25
@@ -351,9 +351,9 @@ parent 27nlma
 author ai
 file crates/ui/src/tree.rs
 symbol record
-lines 0 12
-hash 7347048cc901a365
-note The frame's last act: every element with an id records its Placement (placement: its rectangle, its clip, its content extent, its scroll offset, which scrollbars it shows, and its layer: floating when it or an ancestor floats, which Capture reads to let a box over the window take every click); end then remembers the mouse so the next frame can turn it into a drag delta. This map is the only thing that crosses a frame boundary.
+lines 0 8
+hash 0c8bf0c4bc13f132
+note The frame's last act: every element with an id records its Placement (placement: its rectangle, its clip, its content extent, its scroll offset, which scrollbars it shows, and its layer from layer, which Capture reads to let a box over the window take every click); end then remembers the mouse so the next frame can turn it into a drag delta. This map is the only thing that crosses a frame boundary.
 
 step n1kzmu
 order 5
@@ -364,6 +364,16 @@ symbol Size
 lines 0 4
 hash f2535482ea10caf2
 note The three sizes, and the reason there are two fit passes and one grow pass: Exact is known, Fit is only known after the children are, Grow is only known after the parent is.
+
+step nxfp73
+order 54
+parent 2ykree
+author ai
+file crates/ui/src/layout.rs
+symbol Stacking
+lines 0 3
+hash 550e2cf1d48f2ccf
+note Which upper layer a floating element goes on: Popup (floating, the default) for a box that takes the pointer even while Capture is Floating - a menu, the settings box, the picker, a tooltip; Overlay (overlay) for controls that float over the base and belong to it - the graph's zoom cluster and minimap - drawn under every popup and out of reach while one holds the pointer. Read only when floating is set.
 
 step oo347k
 order 16
@@ -414,6 +424,16 @@ symbol open
 lines 0 23
 hash 3083d62e5810ac4d
 note Open an element as the last child of the currently open one: push it on the stack and answer what its id learned last frame. The one-frame lag is why that answer is available before the element has a position.
+
+step sdec34
+order 55
+parent lg4ced
+author ai
+file crates/ui/src/tree.rs
+symbol layer
+lines 0 6
+hash 159b3f56a69dc9fc
+note An element's layer from its parent's: its own when it floats (Floating for a popup, Overlay for an overlay), otherwise the inherited one, so a floating box's contents rise with it. record, draw_layer and draw_scrollbars all ask this, so the layer an element is drawn on is the layer Capture tests.
 
 step t0pof2
 order 44
@@ -471,8 +491,8 @@ parent 7qwqcp
 author ai
 file crates/ui/src/tree.rs
 symbol draw_scrollbars
-lines 0 20
-hash b85de783a569bc88
+lines 0 16
+hash b2912436598d2807
 note After a layer's elements, every bar of every clipping element whose content overflows it on an axis it opted into, under that element's clip, so the bar sits over whatever it scrolls.
 
 step v69i14
@@ -524,6 +544,16 @@ symbol paint_text
 lines 0 23
 hash ce048fbc3ee11415
 note Text at the content origin: a wrapped text draws its lines a row apart in the first run's colour; a one-line text, unwrapped or clipped, chains its coloured runs along the line, each starting where the last one's pen stopped, after Text::clipped cut them to the columns inside the element's padding, so a label shrunk by layout ends in an ellipsis at its own edge.
+
+step ygp2oi
+order 56
+parent lg4ced
+author ai
+file crates/ui/src/tree.rs
+symbol Layer
+lines 0 4
+hash 3c334651b71efb69
+note The three layers in drawing order: Base, the overlays floating over it, and the popups over both. Capture::Floating reaches only the last.
 
 step yswgji
 order 45

@@ -1359,6 +1359,13 @@ absent settings-box
 tab graph
 wait 5
 shot {shots}/graph.png
+key , ctrl
+wait 3
+dump
+click-id graph-zoom-in
+wait 4
+dump
+absent settings-box
 key p ctrl
 wait 2
 text settings
