@@ -118,8 +118,8 @@ parent l5and2
 author ai
 file crates/gui/src/app.rs
 symbol of_model
-lines 0 12
-hash 342da0299b2591a1
+lines 0 13
+hash f2c2eeabe3c54890
 note An App from a ready Model with fresh Services and no screenshot aid, for tests; the Services start only the idle watcher thread.
 
 step 84oxa7
@@ -400,6 +400,15 @@ symbol a_press_off_the_focused_field_releases_it_and_keeps_what_was_typed
 lines 0 14
 hash 4ac583f7eb7a043a
 note Fields alone, no model: a press on the focused field's own element keeps the keyboard, a press on another element or on no element releases it, and the typed text survives the release.
+
+step mp526s
+order 48
+author ai
+file crates/gui/src/tests.rs
+symbol a_note_reads_as_body_text_and_never_as_a_comment_a_success_or_a_link_in_both_themes
+lines 0 14
+hash 3bdeeff620aa0a66
+note Tour and step notes in NOTE keep at least 7:1 contrast against the panel in the dark and the light theme (WCAG relative luminance, through the light theme's repaint) and are never painted the comment colour, GREEN, the accent or plain text, so a palette edit cannot make the notes read as code comments, success or links.
 
 step mqnqki
 order 37

@@ -33,6 +33,7 @@ pub enum Cursor {
     RowResize,
     Grab,
     Grabbing,
+    Pointer,
 }
 
 impl Cursor {
@@ -43,6 +44,7 @@ impl Cursor {
             Self::RowResize => CursorIcon::RowResize,
             Self::Grab => CursorIcon::Grab,
             Self::Grabbing => CursorIcon::Grabbing,
+            Self::Pointer => CursorIcon::Pointer,
         }
     }
 }

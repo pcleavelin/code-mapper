@@ -94,16 +94,16 @@ dump
 click-id crumb/0
 wait 2
 dump
-click-id doc-hide-code
+click-id doc-code
 wait 2
 shot {shots}/code-hidden.png
-click-id doc-show-code
+click-id doc-code
 wait 2
 click-id doc-collapse
 wait 2
 dump
 shot {shots}/collapsed-all.png
-click-id doc-expand
+click-id doc-collapse
 wait 2
 hover-id document
 wheel -300
@@ -749,7 +749,32 @@ scroll document 0
 wait 2
 click-id del/0
 wait 3
+click-id del/0
+wait 3
 dump
+shot {shots}/clicked-twice.png
+scroll document 2000
+wait 2
+hover-id step/4
+scroll document 0
+wait 2
+absent doc-delete
+click-id doc-menu
+wait 2
+dump
+shot {shots}/menu-open.png
+key escape
+wait 2
+absent doc-delete
+click-id doc-menu
+wait 2
+hover-id doc-delete
+click-id tours/0
+wait 2
+absent doc-delete
+dump
+click-id doc-menu
+wait 2
 click-id doc-delete
 wait 3
 dump
@@ -842,7 +867,7 @@ up
 wait 2
 dump
 shot {shots}/resized.png
-hover-id doc-delete
+hover-id doc-menu
 wait 1
 click-id split-right/1
 wait 3
@@ -860,7 +885,7 @@ click-id view/8
 wait 3
 dump
 shot {shots}/split.png
-hover-id doc-delete
+hover-id doc-menu
 wait 1
 rect tour-buttons
 dump
@@ -1067,6 +1092,9 @@ wait 2
 dump
 shot {shots}/start.png
 hover-id start-ungrouped
+wait 1
+dump
+shot {shots}/start-link-hover.png
 key p ctrl
 wait 1
 text build a tour
@@ -1227,11 +1255,9 @@ key escape
 wait 1
 hover-id edit-apply
 dump
+hover-id edit-note/6
 rect wizard-tick/6
 click <<DUMP rect wizard-tick/6|160,8>>
-wait 1
-hover-id edit-note/6
-click-id wizard-tick/6
 wait 1
 absent edit-note/6
 click-id edit-more/0

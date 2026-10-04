@@ -3,7 +3,7 @@ tour feature-welcome
 kind flow
 author ai
 group features/gui
-note The human, every time they open the window on a repo, often right after an agent session changed the code and the map. Goals: understanding a change you did not write, and code no tour covers being visible. The run before this feature: the window opened on whichever tour sorts first, on this repo the scratch tour !Test/Startup, and nothing on screen said which tours the agent had changed, how much of the code the map covers, how many steps are stale, or that ctrl+p opens the palette. A tabless board from an earlier change showed actions and chords only when no layout was saved, and the layout file is per machine, so it appeared once per machine; it said nothing about the repo and its chords did not line up. The Diff view lists map changes but is a tab you must know to open; the Tours list shows groups but not changes or coverage; Files shows coverage per file, not the whole; the palette needs its chord. Three designs were built and run. A whole-window board on every launch, the saved layout held aside until dismissed: a dismissal every launch, no way back to it, and a mode that keeps a second layout. A Start tab beside Tour: a view kind that is never saved plus a hidden per-panel field for the view it covers, with the first tour still selected behind it. The kept design: the start page is what the Tour view shows when nothing is selected, so it adds no surface and no mode, it follows 'the GUI is one selection', and back or the palette's 'start page' return to it. A launch on this repo shows code-mapper, 168 tours, 51% of symbols covered and 30 stale steps in red, '+ Startup (1 step)' as changed since the parent revision, the top-level groups with their tour counts, the uncovered symbol count, 'Build a tour by hand', and the chords in one aligned column; clicking a change opens that tour, alt+left comes back. On a root with no map it lists entry points, leaving out tests. Its 'Build a tour by hand' row opens the build-tour wizard (feature-build-tour) in the same Tour view.
+note The human, every time they open the window on a repo, often right after an agent session changed the code and the map. Goals: understanding a change you did not write, and code no tour covers being visible. The run before this feature: the window opened on whichever tour sorts first, on this repo the scratch tour !Test/Startup, and nothing on screen said which tours the agent had changed, how much of the code the map covers, how many steps are stale, or that ctrl+p opens the palette. A tabless board from an earlier change showed actions and chords only when no layout was saved, and the layout file is per machine, so it appeared once per machine; it said nothing about the repo and its chords did not line up. The Diff view lists map changes but is a tab you must know to open; the Tours list shows groups but not changes or coverage; Files shows coverage per file, not the whole; the palette needs its chord. Three designs were built and run. A whole-window board on every launch, the saved layout held aside until dismissed: a dismissal every launch, no way back to it, and a mode that keeps a second layout. A Start tab beside Tour: a view kind that is never saved plus a hidden per-panel field for the view it covers, with the first tour still selected behind it. The kept design: the start page is what the Tour view shows when nothing is selected, so it adds no surface and no mode, it follows 'the GUI is one selection', and back or the palette's 'start page' return to it. A launch on this repo shows code-mapper, 168 tours, 51% of symbols covered and 30 stale steps in red, '+ Startup (1 step)' as changed since the parent revision, the top-level groups with their tour counts, the uncovered symbol count, 'Build a tour by hand', and the chords in one aligned column; clicking a change opens that tour, alt+left comes back. On a root with no map it lists entry points, leaving out tests. Its 'Build a tour by hand' row opens the build-tour wizard (feature-build-tour) in the same Tour view. Every item that opens something is drawn as a link (the link colour, an underline and the pointer cursor while the pointer is on it), and section headings and chords are plain text: a run where the clickable rows were plain text looked the same as the figures and headings beside them, so nothing said 'Build a tour by hand' or an entry point could be clicked.
 
 step 1fki4m
 order 31
@@ -51,8 +51,8 @@ parent 53u3oi
 author ai
 file crates/gui/src/views/welcome.rs
 symbol groups
-lines 0 64
-hash e011ad039aa6bcdf
+lines 0 66
+hash 980080206a8c772f
 note The top-level groups with their tour counts, a click opening the group in the Tours list; tours with no group in one row; then the uncovered symbol count, which opens Files.
 
 step gwxchy
@@ -61,9 +61,9 @@ parent m7mx38
 author ai
 file crates/gui/src/views/welcome.rs
 symbol padded
-lines 0 4
-hash 9d6ad164a880d655
-note Every left column pads its labels to the widest one in its section, so the descriptions start in one column.
+lines 0 7
+hash 9e894111a42268b3
+note Every left column pads its labels to the widest one in its section, so the descriptions start in one column. The label and its fill come back apart (Padded), so a link underlines the label and not the spaces after it; padded_hyperlink builds that Hyperlink.
 
 step i9ovn8
 order 30
@@ -110,8 +110,8 @@ parent xgs6s7
 author ai
 file crates/gui/src/views/welcome.rs
 symbol change_row
-lines 0 36
-hash 1d5fba2ad9b6fa6f
+lines 0 37
+hash 186569c1f83e7443
 note One change: + added with its step count, ~ changed with the Diff view's summary, - only in the parent revision. A click opens the tour; a removed one says where its steps went, as the Diff view does.
 
 step o55ai6
@@ -123,6 +123,16 @@ symbol in_tests
 lines 0 12
 hash b3df0ac546c3a6dd
 note The test rule promote's pruning uses: a tests path segment or file stem, or a member of mod tests. Entry points in tests are left off the start page.
+
+step okss6d
+order 45
+parent m7mx38
+author ai
+file crates/gui/src/views/welcome.rs
+symbol padded_hyperlink
+lines 0 7
+hash 4ca951fc408071ac
+note A padded label as a Hyperlink: the mark before it (+, -, ~) as the lead, the label as the link text, the fill and the description after it. Every clickable item on the page is a link drawn by Frame::hyperlink, so it reads as one: the link colour, an underline and the pointer cursor while the pointer is on it.
 
 step qjgp5t
 order 44
@@ -140,8 +150,8 @@ parent 53u3oi
 author ai
 file crates/gui/src/views/welcome.rs
 symbol build_tour
-lines 0 64
-hash ad6ac3c40f2ff723
+lines 0 60
+hash 1348ca7848d22d33
 note Build a tour by hand opens the build-tour wizard (feature-build-tour) in this same Tour view. With no tours at all, up to eight entry points follow, a click jumping to one.
 
 step sj7pxo
@@ -171,8 +181,8 @@ author ai
 file crates/gui/src/views/welcome.rs
 symbol keys
 lines 0 15
-hash 6a403db31b638397
-note The chords, padded to one width so the meanings line up.
+hash 9a76ab14eeb7475f
+note The chords, padded to one width so the meanings line up, in plain text with the meanings weak: on this page the link colour means a click goes somewhere, so nothing else wears it.
 
 step xgs6s7
 order 35
@@ -180,6 +190,6 @@ parent 53u3oi
 author ai
 file crates/gui/src/views/welcome.rs
 symbol changes
-lines 0 51
-hash efe1b4d2d7eb8bad
+lines 0 53
+hash 0e5d4260140f5ac9
 note The tours changed since the parent revision, from the same diff as the Diff view; while the parent map is read, or when there is none, the reason instead. At most twelve rows, then one that opens the Diff view.

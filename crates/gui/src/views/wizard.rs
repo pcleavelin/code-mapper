@@ -678,18 +678,21 @@ impl Tree<'_> {
             return;
         };
         let indent = indent_of(branch.depth());
-        Self::lead(frame, indent);
+        let tickable = branch.verdict() != Verdict::Cycle;
+        let ticking = if tickable {
+            let ticking = frame.tick_row(ids::WIZARD_TICK.nth(row));
+            frame.cells_gap(Cells::of_count(indent.get()));
+            Some(ticking)
+        } else {
+            Self::lead(frame, indent);
+            None
+        };
         Self::expander(frame, row, shaped.expander, WizardAct::Expand(id));
-        if branch.verdict() != Verdict::Cycle
-            && frame
-                .tick_box(
-                    branch.tick,
-                    Cells::of_count(BOX_CELLS.get()),
-                    ids::WIZARD_TICK.nth(row),
-                )
-                .clicked()
-        {
-            frame.push(Action::Wizard(WizardAct::Toggle(id)));
+        if let Some(ticking) = ticking {
+            frame.tick_box(branch.tick, Cells::of_count(BOX_CELLS.get()), ticking);
+            if ticking.clicked() {
+                frame.push(Action::Wizard(WizardAct::Toggle(id)));
+            }
         }
         frame.row_text(self.branch_runs(branch, indent));
         if let Some(count) = shaped.more {

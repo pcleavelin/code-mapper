@@ -3,9 +3,9 @@ use std::time::Duration;
 
 use domain::{
     Anchor, Author, Backend, Column, Cut, Depth, Draft, Edge, EditChange, FileId, FileText,
-    Imports, Index, Language, Line, Map, Note, RelativePath, Root, Row, SourceFile, Span, Step,
-    StepId, StepOrder, Stop, Symbol, SymbolId, SymbolKind, SymbolName, Tour, TourKind, TourName,
-    TreeEntry, Verdict,
+    HighlightClass, Imports, Index, Language, Line, Map, Note, RelativePath, Root, Row, SourceFile,
+    Span, Step, StepId, StepOrder, Stop, Symbol, SymbolId, SymbolKind, SymbolName, Theme, Tour,
+    TourKind, TourName, TreeEntry, Verdict,
 };
 use features::{Feature, Trigger};
 use io_lsp::StartError;
@@ -27,13 +27,14 @@ use crate::graph::build::{Built, CellSize, Rank, StepInfo};
 use crate::graph::{Button, GraphState, Node};
 use crate::ids::{self, CONTROLS};
 use crate::keys::{self, Extend, LineGesture, Walk, turn_wheel};
+use crate::menu::{Menu, MenuAct};
 use crate::model::{LineSelection, Model, Readable, StepKey, StepSlot, Tab, TourSlot, ViewFlag};
 use crate::nav::Scrolling;
 use crate::palette::{Palette, commands};
 use crate::panels::{Direction, View};
 use crate::peek::Hovering;
 use crate::status::{Held, Status};
-use crate::theme::Cells;
+use crate::theme::{self, ACCENT, Cells, GREEN, NOTE, PANEL, TEXT};
 use crate::wizard::{self, BranchId, Expander, Page, Tick, WizardAct};
 use crate::work::{LanguageServer, ServerState, WorkState};
 
@@ -1920,4 +1921,75 @@ fn opening_the_peek_closes_the_hover_card_until_the_pointer_reaches_another_word
     app.apply(Action::ReopenHover);
     assert!(shown(&app, on_report));
     assert!(shown(&app, on_fill), "back on fill the card shows again");
+}
+
+fn luminance(color: ui::Color) -> f32 {
+    let linear = |channel: u8| {
+        let value = f32::from(channel) / 255.0;
+        if value <= 0.040_45 {
+            value / 12.92
+        } else {
+            ((value + 0.055) / 1.055).powf(2.4)
+        }
+    };
+    0.2126 * linear(color.red()) + 0.7152 * linear(color.green()) + 0.0722 * linear(color.blue())
+}
+
+fn contrast(left: ui::Color, right: ui::Color) -> f32 {
+    let (light, dark) = {
+        let (one, two) = (luminance(left), luminance(right));
+        (one.max(two), one.min(two))
+    };
+    (light + 0.05) / (dark + 0.05)
+}
+
+#[test]
+fn a_note_reads_as_body_text_and_never_as_a_comment_a_success_or_a_link_in_both_themes() {
+    for shown in [Theme::Dark, Theme::Light] {
+        let paint = theme::repaint(shown);
+        let note = paint.paint(NOTE);
+        assert!(contrast(note, paint.paint(PANEL)) >= 7.0, "{shown:?}");
+        for other in [
+            theme::highlight(HighlightClass::Comment),
+            GREEN,
+            ACCENT,
+            TEXT,
+        ] {
+            assert_ne!(note, paint.paint(other), "{shown:?}");
+        }
+    }
+}
+
+#[test]
+fn the_code_toggle_offers_show_only_once_every_step_is_hidden() {
+    let mut app = app();
+    assert_eq!(app.model.next_hide(TOUR), Hide::Hide);
+    app.apply(Action::HideAll(TOUR, Hide::Hide));
+    assert_eq!(app.model.next_hide(TOUR), Hide::Show);
+    app.apply(Action::Toggle(key(2), ViewFlag::Hidden));
+    assert_eq!(app.model.next_hide(TOUR), Hide::Hide);
+}
+
+#[test]
+fn the_collapse_toggle_offers_expand_only_once_every_parent_is_collapsed() {
+    let mut app = app();
+    assert_eq!(app.model.next_collapse(TOUR), Collapse::Collapse);
+    app.apply(Action::Toggle(key(0), ViewFlag::Collapsed));
+    assert_eq!(app.model.next_collapse(TOUR), Collapse::Collapse);
+    app.apply(Action::CollapseAll(TOUR, Collapse::Collapse));
+    assert_eq!(app.model.next_collapse(TOUR), Collapse::Expand);
+    app.apply(Action::CollapseAll(TOUR, Collapse::Expand));
+    assert_eq!(app.model.next_collapse(TOUR), Collapse::Collapse);
+}
+
+#[test]
+fn a_menu_opens_on_its_button_closes_on_a_second_press_and_on_close() {
+    let mut app = app();
+    app.apply(Action::Menu(MenuAct::Toggle(Menu::Tour)));
+    assert_eq!(app.model.toolbar_menu, Some(Menu::Tour));
+    app.apply(Action::Menu(MenuAct::Toggle(Menu::Tour)));
+    assert_eq!(app.model.toolbar_menu, None);
+    app.apply(Action::Menu(MenuAct::Toggle(Menu::Tour)));
+    app.apply(Action::Menu(MenuAct::Close));
+    assert_eq!(app.model.toolbar_menu, None);
 }

@@ -3,7 +3,7 @@ tour feature-edit-tour
 kind flow
 author ai
 group features/gui
-note The human, reading a tour in the window, who finds a note wrong, a name or group that no longer fits, or a call the tour should also show. Goals: the map is the second channel beside the source, and the human audits what the agent mapped. The run before this feature: the window added, removed and moved steps one at a time, but renaming a tour, regrouping it, changing its kind and every note were Console commands (tour-rename, tour-group, tour-note, step-note) that take the step index the tours command prints, not the 1.1 numbers in the window. Two designs were built and run on a promoted fixture and on this repo's promote tour. The build-tour wizard's pages (Name, Steps, Notes, Apply): a step's note sat on its own page, away from the step it describes, and a one-note fix walked four pages. The kept one is a single page: the tour's name, kind, group and note; the step outline with each step's note field under it, the calls a step makes opened as deep as wanted and ticked to add them by promote's rules; a Changes list, and a bar counting what Apply will do with a red line for every note a removal loses. Apply changes the map in one step or not at all and reopens the tour unsaved. Escape in a field only leaves the field; with changes pending, escape keeps them and says cancel discards them; only the tick box changes a tick.
+note The human, reading a tour in the window, who finds a note wrong, a name or group that no longer fits, or a call the tour should also show. Goals: the map is the second channel beside the source, and the human audits what the agent mapped. The run before this feature: the window added, removed and moved steps one at a time, but renaming a tour, regrouping it, changing its kind and every note were Console commands (tour-rename, tour-group, tour-note, step-note) that take the step index the tours command prints, not the 1.1 numbers in the window. Two designs were built and run on a promoted fixture and on this repo's promote tour. The build-tour wizard's pages (Name, Steps, Notes, Apply): a step's note sat on its own page, away from the step it describes, and a one-note fix walked four pages. The kept one is a single page: the tour's name, kind, group and note; the step outline with each step's note field under it, the calls a step makes opened as deep as wanted and ticked to add them by promote's rules; a Changes list, and a bar counting what Apply will do with a red line for every note a removal loses. Apply changes the map in one step or not at all and reopens the tour unsaved. Escape in a field only leaves the field; with changes pending, escape keeps them and says cancel discards them; a click anywhere on a step's row ticks or unticks it, and a click in its note field never does.
 
 step 0hk5vf
 order 52
@@ -155,7 +155,7 @@ parent b5ecyo
 author ai
 file crates/gui/src/views/document.rs
 symbol header_bar
-lines 16 21
+lines 22 27
 hash 6cd346a90323ea03
 note Trigger: the pencil icon (doc-edit) on the tour header's title line, after the step count. An icon rather than a labelled button, so the header's buttons still fit one row at the default layout.
 
@@ -280,10 +280,10 @@ parent ox1tr8
 author ai
 file crates/gui/src/widgets.rs
 symbol tick_box
-lines 0 20
-hash 822e13aaa5477ea1
+lines 0 28
+hash a1c97bd59b3f2030
 link gui-widgets
-note The tick box (wizard-tick/<row>), the one control that pushes Toggle: a click elsewhere on the row, or in the note field under it, never changes a tick. [x] in the accent when ticked, [ ] weak, lit under the pointer.
+note The checkbox (gui-widgets): accent-filled with a check when ticked, an empty bordered box when not, lit while the pointer is on its row. It draws only; the row is what pushes Toggle.
 
 step gylctw
 order 51

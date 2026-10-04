@@ -23,6 +23,7 @@ pub enum Icon {
     Edit,
     Settings,
     Dot,
+    Ellipsis,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -59,6 +60,7 @@ impl Icon {
             Self::Edit => '\u{EA73}',
             Self::Settings => '\u{EB51}',
             Self::Dot => '\u{EA71}',
+            Self::Ellipsis => '\u{EA7C}',
         })
     }
 
@@ -80,6 +82,7 @@ impl Icon {
             Self::Edit => "edit",
             Self::Settings => "settings",
             Self::Dot => "dot",
+            Self::Ellipsis => "ellipsis",
         })
     }
 

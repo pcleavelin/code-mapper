@@ -61,7 +61,7 @@ parent z6m3sw
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 50 61
+lines 56 67
 hash 3d34d2862160fbe3
 note The typing: the keys phase hands edits and typed text to the tour filter along with the symbol filter and go-to-line fields; only the focused field takes them.
 

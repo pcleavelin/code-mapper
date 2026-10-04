@@ -5,6 +5,16 @@ author ai
 group render
 note The element tree the whole GUI is built from, the ui crate's Ui: no widget objects, no retained state, no framework. Every frame the app opens and closes elements; each is nothing, text, or a custom draw function, and each has a size per axis that is exact, fits its content, or grows into what its parent has left. Nothing is positioned while the tree is being built - layout runs once in end, as recursive passes over the finished tree: each axis gets a fit pass bottom-up and a grow pass top-down, then one pass places everything. Input is answered from the previous frame's rectangles: an element with an id learns whether it is hovered, clicked or dragged one frame late, which is what lets the caller branch on a click in the same statement that creates the element. The crate knows nothing about codemap and nothing about wgpu or winit: fonts reach it as one Measure (cell and row size at a pixel size), and drawing leaves it as a DrawList built through a Canvas (see ui-canvas), which the platform crate's Renderer replays. That boundary is why the whole tree can be built, laid out and drawn in a unit test with a fixed 8x16 cell and no GPU.
 
+step 088bk4
+order 52
+parent pu1wsd
+author ai
+file crates/ui/src/tree.rs
+symbol impl Aim
+lines 1 17
+hash 9f8ab7f67e361266
+note Advances the Aim one frame: a mouse that moved since last frame makes now Moved, otherwise now is what was kept; a press, key, wheel or pinch in this frame leaves kept Resting for the frames after, so a press in the same frame the mouse moved still counts as aimed.
+
 step 0imyya
 order 24
 parent 27nlma
@@ -54,6 +64,16 @@ symbol impl ScrollAxes
 lines 0 11
 hash 16030747cd2e31cf
 note The two axes and has, the one question asked of the set.
+
+step 3jp588
+order 53
+parent exk3z1
+author ai
+file crates/ui/src/tree.rs
+symbol when_aimed
+lines 0 9
+hash fcb3126e228c4b11
+note The interaction with hovered, clicked, double_clicked and down dropped unless the pointer moved since the last click, key or wheel turn. A destructive button reads its interaction through it, so a button that arrives under a resting pointer because the layout changed neither lights up nor fires until the pointer moves.
 
 step 3sljeg
 order 35
@@ -112,9 +132,9 @@ parent ipqjft
 author ai
 file crates/ui/src/tree.rs
 symbol begin
-lines 0 26
-hash 075c6c60d8faf807
-note Start of a frame: clear the tree, copy the pointer and the window size, and pick the hot element - of every id under the mouse last frame (inside both its rectangle and its clip), the one with the smallest visible area, so a block taller than its scroll container still wins over the container. A left press makes the hot id active; releasing the button clears it.
+lines 0 27
+hash bbeb19bce1e9013a
+note Start of a frame: clear the tree, copy the pointer and the window size, and pick the hot element - of every id under the mouse last frame (inside both its rectangle and its clip), the one with the smallest visible area, so a block taller than its scroll container still wins over the container. A left press makes the hot id active; releasing the button clears it. The Aim is advanced here, before any element asks for its interaction.
 
 step b8aeve
 order 30
@@ -252,9 +272,9 @@ parent rd9o1b
 author ai
 file crates/ui/src/tree.rs
 symbol interaction
-lines 0 20
-hash 86e90582666b85ef
-note What one id learned last frame, and the answer open gives back: hovered is 'it was the hit', clicked is that plus a left press this frame, double_clicked that plus a double click, down is that it is active and the button is still down, drag is the pointer movement since last frame while it is active (never on the press frame itself), wheel and pinch are the wheel and pinch only while hovered, and rect is where it was last frame. Callable without creating an element, for a caller that needs to know it is hovered in order to decide what the element should look like.
+lines 0 21
+hash 9dfd8f3d1e871985
+note What one id learned last frame, and the answer open gives back: hovered is 'it was the hit', clicked is that plus a left press this frame, double_clicked that plus a double click, down is that it is active and the button is still down, drag is the pointer movement since last frame while it is active (never on the press frame itself), wheel and pinch are the wheel and pinch only while hovered, aimed is that plus the pointer having moved since the last click, key or wheel turn, and rect is where it was last frame. Callable without creating an element, for a caller that needs to know it is hovered in order to decide what the element should look like.
 
 step hpkut0
 order 49
@@ -281,9 +301,9 @@ order 0
 author ai
 file crates/ui/src/tree.rs
 symbol Ui
-lines 0 11
-hash 1c091b919307660b
-note The tree itself: roots, the stack of elements still open (the top is the one being filled), and last frame's Placement per id - that map is the whole of what survives a frame, and it is what every hit test and every scroll clamp reads. hot is the id under the mouse, active the id the left button went down on and is still held over, last_mouse turns the pointer into a drag delta, scroll_drag holds the id whose scrollbar thumb is being dragged the axis and how far along the thumb the mouse grabbed it, and pointer and size are this frame's copy of the input's pointer and the window size.
+lines 0 12
+hash 8b0f83e3aba1c20d
+note The tree itself: roots, the stack of elements still open (the top is the one being filled), and last frame's Placement per id - that map is the whole of what survives a frame, and it is what every hit test and every scroll clamp reads. hot is the id under the mouse, active the id the left button went down on and is still held over, last_mouse turns the pointer into a drag delta, scroll_drag holds the id whose scrollbar thumb is being dragged the axis and how far along the thumb the mouse grabbed it, aim says whether the pointer has moved since the last click, key or wheel turn (Aim), and pointer and size are this frame's copy of the input's pointer and the window size.
 
 step iw1fmo
 order 28
@@ -364,6 +384,16 @@ symbol on_scrollbar
 lines 0 10
 hash 0779356cb2dfb2b6
 note Whether the mouse is on one of the element's scrollbar tracks, so an element that answers clicks itself (a code block) can ignore a press meant for its bar.
+
+step pu1wsd
+order 51
+parent ipqjft
+author ai
+file crates/ui/src/tree.rs
+symbol Aim
+lines 0 3
+hash ec30aa2200288ca3
+note Whether the pointer has aimed at what is under it: kept is Moved once the mouse moves and Resting again after any left press, key or wheel or pinch turn, since each of those can change the layout under a pointer that stays still; now is the value this frame's interactions read. Aiming is the two-valued state.
 
 step qf94mj
 order 29

@@ -171,8 +171,8 @@ parent w41rnw
 author ai
 file crates/gui/src/model.rs
 symbol new
-lines 0 46
-hash 51f02764d04ccf4e
+lines 0 47
+hash 5701355eaf40779b
 note Every panel in its default state, the map's stamp taken from the store, the metrics at the starting font until the first frame measures the real one.
 
 step erlcdz
@@ -211,7 +211,7 @@ parent 8ftts9
 author ai
 file crates/gui/src/model.rs
 symbol impl Model
-lines 108 122
+lines 109 123
 hash 17458e228a233098
 note Name to slot and StepId to slot: how a slot is found again after the map changed.
 
@@ -331,7 +331,7 @@ parent 8ftts9
 author ai
 file crates/gui/src/model.rs
 symbol impl Model
-lines 49 55
+lines 50 56
 hash 25d42bb761237bdd
 note Slot to Tour and to Step, None past the end.
 
@@ -355,6 +355,16 @@ lines 0 4
 hash c413607fc95327a7
 note One numbered step: slot, depth, number.
 
+step u89pe8
+order 51
+parent w429iw
+author ai
+file crates/gui/src/menu.rs
+symbol MenuAct
+lines 0 3
+hash c6e286344fdcf3c0
+note The two things that change Model::toolbar_menu: Toggle(menu) and Close. App::menu applies them.
+
 step ulo2dp
 order 38
 parent vr4u67
@@ -374,6 +384,16 @@ symbol impl Measures
 lines 0 11
 hash 79222c99d9ce456e
 note set records a measurement (Action::Measured); height gives it back only while the step's shape is the one it was measured at, so a step whose code, note, view or width changed is built again rather than reserved at a stale height.
+
+step v3tgxc
+order 52
+parent w41rnw
+author ai
+file crates/gui/src/action.rs
+symbol tour_steps
+lines 0 5
+hash 80f792b3da15bd5b
+note The steps of one tour as StepKeys, slot by slot; next_hide and next_collapse read the toolbar toggles' state through it.
 
 step vr4u67
 order 37
@@ -400,9 +420,19 @@ order 0
 author ai
 file crates/gui/src/model.rs
 symbol Model
-lines 0 35
-hash 7eac7003e64bee49
+lines 0 36
+hash 419231409e2ecad1
 note All the state a view can see (gui-structure lists the fields). Views get &Model; apply gets &mut.
+
+step w429iw
+order 50
+parent w41rnw
+author ai
+file crates/gui/src/menu.rs
+symbol Menu
+lines 0 2
+hash e66d9ad1f16dcf00
+note Which toolbar menu is open (Model::toolbar_menu, apart from the settings box's settings_menu), one at a time. Tour is the document toolbar's. word names it in dump (menu=tour).
 
 step x5fqsj
 order 9

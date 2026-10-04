@@ -11,9 +11,9 @@ parent 9c84zs
 author ai
 file crates/gui/src/views/document.rs
 symbol breadcrumb
-lines 24 43
-hash f3f8302605e120c3
-note Trigger in the breadcrumb: one crumb per ancestor of the topmost visible step, root first, each a CRUMB link. A click queues SelectStep with Scrolling::Scroll.
+lines 0 48
+hash 8bc23d5ebe9f0e95
+note Trigger in the breadcrumb: one crumb per ancestor of the topmost visible step, root first, each a CRUMB link drawn by Frame::hyperlink (link colour, underlined with the pointer cursor under the pointer). A click queues SelectStep with Scrolling::Scroll.
 
 step 95fr2n
 order 1
@@ -41,8 +41,8 @@ author ai
 file crates/gui/src/views/document.rs
 symbol step_header
 lines 39 49
-hash efd4f40df26377f7
-note Trigger in the document: the step header is a link text with the STEP_HEADER id numbered by the step's slot. A click on a step of the tour being read queues SelectStep with Scrolling::Stay, so the page does not jump under the pointer; a click on a step shown inline under a link queues Scroll, because that step opens in its own tour.
+hash 7ca5c2db38911498
+note Trigger in the document: the step header is header text with the STEP_HEADER id numbered by the step's slot. A click on a step of the tour being read queues SelectStep with Scrolling::Stay, so the page does not jump under the pointer; a click on a step shown inline under a link queues Scroll, because that step opens in its own tour.
 
 step df3vqi
 order 4

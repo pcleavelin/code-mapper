@@ -73,7 +73,7 @@ parent ub828q
 author ai
 file crates/gui/src/app.rs
 symbol frame
-lines 32 38
+lines 34 40
 hash a8df20e3242f9745
 note And a frame with the Graph view hidden marks the graph Hidden and its keyboard Elsewhere, so the arrows go back to walking the tour.
 
@@ -142,7 +142,7 @@ parent ub828q
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 39 48
+lines 45 54
 hash fc9a4dd80b236834
 note Trigger: the keys phase, while the Graph view is shown and the graph holds the keyboard, queues one GraphWalk per arrow pressed this frame; the tour walk (WalkWhenIdle) gets no arrows then.
 

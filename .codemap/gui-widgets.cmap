@@ -5,6 +5,16 @@ author ai
 group gui
 note The widgets the GUI is written in: methods on Frame in widgets.rs and widgets/code.rs, the text field's state in field.rs, and clipping, the list filter's Needle and counted nouns in text.rs. There is no widget library under this: each widget opens an element or two with the theme's layout and colours, reads what the element tree says the mouse did to that id last frame, and returns the Interaction; the view that called it decides what Action to push. A widget never changes the Model. They exist because the same three lines were being written everywhere, not because anything needed abstracting, so a view that wants something else opens elements through Frame directly. Every clickable widget takes a Target from ids, so its element id is the name a script clicks it by. The only widget with state is the text field, since a caret and a history cannot be derived from anything.
 
+step 0t2ih1
+order 67
+parent qmzfw2
+author ai
+file crates/gui/src/widgets.rs
+symbol MenuItem
+lines 0 4
+hash 9628091652a69452
+note One row of a menu: its label, the element id a script aims at, and the Action a click queues, which also decides its Weight.
+
 step 0tlkjk
 order 2
 author ai
@@ -131,6 +141,16 @@ lines 0 16
 hash 207c0f189d9d999f
 note Drawn grids are cached by (file, text hash, first line, last line), so a code block that did not change is not rebuilt, and a file whose text changed misses on its hash. The cache is dropped whole past 512 entries and on every index change.
 
+step 6hc7l6
+order 62
+parent h1v6z6
+author ai
+file crates/gui/src/widgets.rs
+symbol tick_row
+lines 0 12
+hash 176a9314d74596b2
+note Opens a row (laid out like a step row) under the tick's id, on the hover background while the pointer is on it, and returns its interaction: the caller draws the checkbox and the rest of the row inside and toggles on its click. Smaller elements inside the row, a button, win the hit test and keep their own clicks.
+
 step 6wdt9w
 order 24
 parent 2havd5
@@ -175,9 +195,9 @@ parent rcazsr
 author ai
 file crates/gui/src/widgets.rs
 symbol shape
-lines 0 99
-hash 203a1343e5c5436e
-note The one match that turns a Container into its layout, style and fixed id: the paddings, gaps and colours from theme, the accent bar on the left of a selected step row or code column, the panel header's TAB_STRIP background with no padding (its tabs carry their own), the id body the panel tree is laid out from, the picker's and the palette box's ids, and the id a StepColumn carries.
+lines 0 100
+hash b39045e54f92a883
+note The one match that turns a Container into its layout, style and fixed id: the paddings, gaps and colours from theme, the accent bar on the left of a selected step row or code column, the panel header's TAB_STRIP background with no padding (its tabs carry their own), the id body the panel tree is laid out from, the floating boxes through floating, the picker's, the palette box's, a toolbar menu's and an element tip's ids, and the id a StepColumn carries.
 
 step aidqqn
 order 3
@@ -204,9 +224,19 @@ parent 2yp2r2
 author ai
 file crates/gui/src/widgets.rs
 symbol danger_button
-lines 0 15
-hash 19610956da0a1a95
-note A small button for removing something (a tour, a step): weak text on the field colour at rest, and a red border and dark red background under the pointer, so a destructive press looks different from the buttons beside it.
+lines 0 17
+hash d09d07a637e3210f
+note A small button for removing something (a tour, a step): weak text on the field colour at rest, and a red border and dark red background under the pointer, so a destructive press looks different from the buttons beside it. Both its look and its answer go through Interaction::when_aimed: after a delete re-lays the document and the next step's delete slides under the resting pointer, it stays unlit and a second click does nothing until the pointer moves.
+
+step bhmtug
+order 63
+parent o7593r
+author ai
+file crates/gui/src/widgets.rs
+symbol hyperlink
+lines 0 41
+hash eccfc02bf3d25a54
+note The one way text acts as a hyperlink (named apart from a step's link to another tour) (the start page's items, the breadcrumb's crumbs): a fitted row under the target's id holding the lead runs, the link text in HYPERLINK and the detail runs. While the pointer is on any part of it the link text is underlined (a bottom border in HYPERLINK, which takes no room, so nothing moves) and the cursor is the pointer hand (Cursor::Pointer); the whole row answers the click.
 
 step bwqb9z
 order 37
@@ -248,6 +278,16 @@ lines 0 69
 hash b338d792f081a620
 note The field under a given element id, which field passes as the field's own Control id: a list of fields of one Which kind (the edit page's step notes) names each by its row, so a click on one takes the keyboard for that row's field.
 
+step djcnmt
+order 69
+parent 9dxpzk
+author ai
+file crates/gui/src/widgets.rs
+symbol floating
+lines 0 10
+hash 3a1fe2ec65b73d9b
+note The shape every floating box shares: a column at a point, with a width when the box has one, a PANEL background and a border on all sides. shape hands it each box's padding, border colour and id: tooltips and element tips in BORDER at their own width, the picker, palette and settings box in ACCENT, a toolbar menu in ACCENT with the tighter padding.
+
 step e2sdhm
 order 16
 parent 0tlkjk
@@ -282,9 +322,9 @@ step gjm6fk
 order 0
 author ai
 file crates/gui/src/theme.rs
-lines 8 36
-hash 14ebfa1d66595a34
-note The palette, in theme: a dozen colours named by role - background, panel, field, border, text, weak, accent, green, red, orange, hover, selected, and the red background a danger button takes under the pointer - and below them the tints made from those by alpha (disabled, selected lines, the slice, the steps list's top step, faint, pending, the drop band, the call tint), the graph's colours (STEP_EDGE, EXPANSION_EDGE, BACK_EDGE, STEP_BORDER, SIBLINGS_FILL, SIBLINGS_BORDER) and the panel header's TAB_STRIP. A colour decision is made once, here, and every view names one.
+lines 8 38
+hash 846a1fe125bbbbcf
+note The palette, in theme: a dozen colours named by role - background, panel, field, border, text, weak, accent, green, red, orange, hover, selected, the red background a danger button takes under the pointer, and NOTE, the colour of tour and step notes: a warm off-white (a dark brown in the light theme) at body-text contrast, apart from the comment green, GREEN (new, success) and the accent links use, since the notes are the most important prose in the window - and below them the tints made from those by alpha (disabled, selected lines, the slice, the steps list's top step, faint, pending, the drop band, the call tint), the graph's colours (STEP_EDGE, EXPANSION_EDGE, BACK_EDGE, STEP_BORDER, SIBLINGS_FILL, SIBLINGS_BORDER) and the panel header's TAB_STRIP. A colour decision is made once, here, and every view names one.
 
 step gp3at7
 order 49
@@ -302,9 +342,9 @@ parent v1qf6b
 author ai
 file crates/gui/src/widgets.rs
 symbol tick_box
-lines 0 20
-hash 822e13aaa5477ea1
-note A tick box drawn as text: '[x]' in the accent when ticked, '[ ]' weak, brighter and on the hover background under the pointer, a fixed width in cells. Its own element, so a click on the row beside it is not a tick (the wizard's outline rows).
+lines 0 28
+hash a1c97bd59b3f2030
+note A checkbox: a two-column box with a border, filled with the accent and a Codicons check glyph in the background colour when ticked, the field colour with a weak border (bright under the pointer) when not, set in a fixed width of cells so the names beside it line up. It draws only; the row it sits in (tick_row) is the element that answers the click, so the whole row is the hit area. The wizard's ticks have two states: ticking cascades up and unticking down, so no row is ever partly ticked.
 
 step hatq2a
 order 45
@@ -413,6 +453,16 @@ lines 0 8
 hash 5ce94e0a424fe9d1
 note A prepared list of coloured runs as one element, fitted or growing: anything that is more than one colour on a line, such as a field's text with the caret in the middle.
 
+step l4c0sc
+order 64
+parent bhmtug
+author ai
+file crates/gui/src/widgets.rs
+symbol Hyperlink
+lines 0 4
+hash 8eefe7b07d34da7e
+note What a link shows: lead runs drawn before it in their own colours (a change's +, -, ~), the label in the link colour, and detail runs after it (a file, a count, a description).
+
 step lozghr
 order 60
 parent 2havd5
@@ -427,10 +477,10 @@ step o7593r
 order 27
 author ai
 file crates/gui/src/widgets.rs
-symbol link_text
+symbol header_text
 lines 0 17
-hash 66c99ab664a7a0b3
-note Text runs that are clickable but look like text: a step's header and a breadcrumb, with the selected background when chosen.
+hash 3fd73ad9b0876dec
+note Text runs that are clickable but look like text: a step's header, with the selected background when chosen. A step header selects its step and is not a link, so it keeps the text colours; text that navigates somewhere is a link.
 
 step oqvtc9
 order 61
@@ -491,6 +541,15 @@ lines 0 14
 hash b66d465105061bb3
 note Copy, cut and paste: a press is one when it matches an edit-text chord in the registry, the letter saying which.
 
+step qmzfw2
+order 66
+author ai
+file crates/gui/src/widgets.rs
+symbol menu
+lines 0 74
+hash ea4b93bf3e3da901
+note The dropdown menu any toolbar can end with: frame.menu(Menu::Tour, model.toolbar_menu, ids::TOUR_MENU.target(), vec![MenuItem { label, target, action }]). The button is a toggle_button with Icon::Ellipsis, on while the menu is open; the floating list is right-aligned under it at the width of its longest label, and records itself in the overlay as drawn. Rows light under the pointer (danger rows red, through when_aimed); a click queues the item's action and Close, a press outside the list queues Close, and escape closes it in the keys phase.
+
 step qs75tx
 order 41
 parent aidqqn
@@ -536,9 +595,9 @@ order 1
 author ai
 file crates/gui/src/widgets.rs
 symbol Container
-lines 0 28
-hash 700161c7f7000058
-note Every box that holds other elements is one of these: the window, the body, the centre, the bars, the toolbars, a panel column, a step row or code column (with its selected mark), the column holding one step of the document (StepColumn, carrying that step's id so its height can be measured), a tooltip, a panel header, the floating view picker, the command palette's box, and the start page's centred column (Centered around StartPage, which carries the column's width). A view opens one with Frame::start and closes it with finish; it never spells out a layout or a style.
+lines 0 29
+hash c58f6b6a675bd27e
+note Every box that holds other elements is one of these: the window, the body, the centre, the bars, the toolbars, a panel column, a step row or code column (with its selected mark), the column holding one step of the document (StepColumn, carrying that step's id so its height can be measured), a tooltip, an element tip (ElementTip, at a point), a panel header, the floating view picker, the command palette's box, a toolbar menu's floating list (Menu, at a point and a width), and the start page's centred column (Centered around StartPage, which carries the column's width). A view opens one with Frame::start and closes it with finish; it never spells out a layout or a style.
 
 step rs11uk
 order 14
@@ -588,6 +647,15 @@ lines 0 63
 hash 1cb91d528640c75d
 note The keys a field understands, as Edits from keys::edits: deletes and moves by character or, with alt or ctrl, by word; moves to the row's ends and, with ctrl, the text's ends; shift makes any move extend the selection. Up and down move by row in a field of many lines and recall the history in a field of one. Enter submits, except in a field of many lines, where it breaks the line and ctrl+enter submits (FieldShape::breaks). Ctrl+a selects all, ctrl+u clears, escape drops the keyboard. Ctrl+c and ctrl+x hand the selection out as a ClipboardRequest for the platform to copy, ctrl+v asks it to paste, and the pasted text comes back next frame as typed text. A field that keeps its text on enter (AfterSubmit::Keep) selects it all so the next entry replaces it; one that clears (the Console, the view picker's search) empties.
 
+step u0coy1
+order 65
+author ai
+file crates/gui/src/widgets.rs
+symbol toggle_button
+lines 0 30
+hash 00ab14513fd7c793
+note A small toggle button of fixed width: weak text on the field colour when off, the selected background, bright text and an accent border when on, the hover background under the pointer. Its caller labels it with what a press does next, so the label and the drawn state together say both what is and what will be.
+
 step ubhhdj
 order 49
 parent 7mnsht
@@ -635,6 +703,16 @@ symbol canvas
 lines 0 12
 hash 16484cd111dc435b
 note An element that fills its container and is drawn by a closure on the Canvas: the graph.
+
+step vgfk6m
+order 68
+parent 0t2ih1
+author ai
+file crates/gui/src/widgets.rs
+symbol impl Weight
+lines 0 7
+hash ad826b5833b8f1fa
+note How a menu row looks and answers, decided by its action (Weight::of): a removal (RemoveTour, RemoveStep) is Danger (red, dark red under the pointer, only aimed clicks), anything else Plain. Whether a row is destructive is a property of what it does, so no caller can draw a delete as a plain row.
 
 step we51in
 order 34

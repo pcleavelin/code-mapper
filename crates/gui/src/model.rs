@@ -15,6 +15,7 @@ use crate::authoring::StepGrab;
 use crate::element_tip::Resting;
 use crate::field::{Fields, Which};
 use crate::graph::GraphState;
+use crate::menu::Menu;
 use crate::nav::Nav;
 use crate::palette::Palette;
 use crate::panels::Panels;
@@ -404,6 +405,7 @@ pub(crate) struct Model {
     pub(crate) settings: Settings,
     pub(crate) fonts: Option<Fonts>,
     pub(crate) settings_menu: Option<SettingsMenu>,
+    pub(crate) toolbar_menu: Option<Menu>,
 }
 
 impl Model {
@@ -452,6 +454,7 @@ impl Model {
             settings: Settings::default(),
             fonts: None,
             settings_menu: None,
+            toolbar_menu: None,
         }
     }
 

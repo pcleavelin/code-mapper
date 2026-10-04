@@ -24,7 +24,7 @@ use crate::work::{Services, WorkState};
 pub(crate) struct DumpLines(String);
 
 impl DumpLines {
-    fn line(&mut self, arguments: fmt::Arguments<'_>) {
+    pub(crate) fn line(&mut self, arguments: fmt::Arguments<'_>) {
         self.0.push_str("DUMP ");
         self.0.write_fmt(arguments).unwrap_or_default();
         self.0.push('\n');

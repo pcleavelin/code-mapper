@@ -19,9 +19,9 @@ order 0
 author ai
 file crates/ui/src/icon.rs
 symbol Icon
-lines 0 17
-hash a1c4cb0cb49f56d2
-note The icons the GUI draws, by what they mean rather than what they look like: Add (the picker), Close, SplitRight and SplitDown, Back and Forward, Expanded and Collapsed (a collapse's or a group's chevron, named after ViewFlag::Collapsed and Collapse/Expand; Close is the dismiss icon, a different thing), MoreAbove and MoreBelow (context), Check (a symbol some tour covers, in the Symbols tab), Dot (a language server's state in the status bar). A new icon is a variant here and its Codicons codepoint in glyph.
+lines 0 18
+hash 640c4f8819b0d103
+note The icons the GUI draws, by what they mean rather than what they look like: Add (the picker), Close, SplitRight and SplitDown, Back and Forward, Expanded and Collapsed (a collapse's or a group's chevron, named after ViewFlag::Collapsed and Collapse/Expand; Close is the dismiss icon, a different thing), MoreAbove and MoreBelow (context), Check (a symbol some tour covers, in the Symbols tab, and a ticked checkbox), Dot (a language server's state in the status bar), Ellipsis (a toolbar's menu button). A new icon is a variant here and its Codicons codepoint in glyph.
 
 step 979nyy
 order 8
@@ -107,9 +107,9 @@ parent 3u0ov2
 author ai
 file crates/ui/src/icon.rs
 symbol glyph
-lines 0 19
-hash e7b306c5adfccdba
-note Each icon's Codicons codepoint, from the font's own table (codicon.csv in the package): add EA60, close EA76, split-horizontal EB56, split-vertical EB57, arrow-left EA9B, arrow-right EA9C, chevron-down EAB4, chevron-right EAB6, fold-up EAF4, fold-down EAF3, check EAB2, circle-filled EA71.
+lines 0 20
+hash 52cdf8a37b1d4c31
+note Each icon's Codicons codepoint, from the font's own table (codicon.csv in the package): add EA60, close EA76, split-horizontal EB56, split-vertical EB57, arrow-left EA9B, arrow-right EA9C, chevron-down EAB4, chevron-right EAB6, fold-up EAF4, fold-down EAF3, check EAB2, circle-filled EA71, ellipsis EA7C.
 
 step xe1trh
 order 9

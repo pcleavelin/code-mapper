@@ -2,8 +2,8 @@ mod code;
 
 use platform::Cursor;
 use ui::{
-    Align, Button, Canvas, Count, Draw, FontSize, Icon, Id, Interaction, Kind, Label, Layout,
-    Point, Px, Rect, Run, Scrollbar, Sides, Size, Style, Text, Ui, Wrap,
+    Align, Button, Canvas, Color, Count, Draw, FontSize, Icon, Id, Interaction, Kind, Label,
+    Layout, Point, Px, Rect, Run, Scrollbar, Sides, Size, Style, Text, Ui, Wrap,
 };
 
 use crate::action::Action;
@@ -14,17 +14,18 @@ use crate::field::{
 use crate::grid::Grids;
 use crate::ids::{Control, Target};
 use crate::keys::Walk;
+use crate::menu::{Menu, MenuAct};
 use crate::model::Metrics;
 use crate::panels::Direction;
 use crate::peek::Tip;
 use crate::status::Status;
 use crate::theme::{
-    self, ACCENT, BACKGROUND, BAR_PADDING, BORDER, BUTTON_PADDING, Cells, DANGER_HOVER,
-    DOCUMENT_PADDING, DROP_BAND, FAINT, FIELD, FIELD_CARET_ROOM, FIELD_PADDING, GAP, HOVER,
-    INDENT_EXTRA, LABEL_PADDING, NAV_BUTTON, NAV_BUTTON_EXTRA, NOTE_ROWS_LEAST, NOTE_ROWS_MOST,
-    PALETTE_TAG, PANEL, PANEL_PADDING, RED, ROW_PADDING, SELECTED, SMALL_BUTTON_EXTRA,
-    SMALL_BUTTON_PADDING, SMALL_GAP, STATUS_GAP, STEP_SPACER, TAB_PADDING, TAB_STRIP, TEXT,
-    TIGHT_GAP, TOOLTIP_PADDING, WEAK, WIDE_GAP,
+    self, ACCENT, BACKGROUND, BAR_PADDING, BORDER, BUTTON_PADDING, CHECKBOX_COLUMNS, Cells,
+    DANGER_HOVER, DOCUMENT_PADDING, DROP_BAND, FAINT, FIELD, FIELD_CARET_ROOM, FIELD_PADDING, GAP,
+    HOVER, HYPERLINK, INDENT_EXTRA, LABEL_PADDING, MENU_BUTTON, NAV_BUTTON, NAV_BUTTON_EXTRA,
+    NOTE_ROWS_LEAST, NOTE_ROWS_MOST, PALETTE_TAG, PANEL, PANEL_PADDING, RED, ROW_PADDING, SELECTED,
+    SMALL_BUTTON_EXTRA, SMALL_BUTTON_PADDING, SMALL_GAP, STATUS_GAP, STEP_SPACER, TAB_PADDING,
+    TAB_STRIP, TEXT, TIGHT_GAP, TOOLTIP_PADDING, WEAK, WIDE_GAP,
 };
 
 use crate::field::Fields;
@@ -50,6 +51,7 @@ pub(crate) struct Overlay {
     pub(crate) focus: Option<Which>,
     pub(crate) status: Option<Status>,
     pub(crate) asked: Count,
+    pub(crate) toolbar_menu: Option<Menu>,
 }
 
 pub(crate) struct Frame<'frame> {
@@ -111,6 +113,7 @@ pub(crate) enum Container {
     Picker { at: Point, width: Px },
     Palette { at: Point, width: Px },
     Settings { at: Point, width: Px },
+    Menu { at: Point, width: Px },
     PanelHeader,
     Centered,
     StartPage { width: Px },
@@ -146,6 +149,18 @@ fn marked(selected: Chosen) -> Style {
         },
         border_color: ACCENT,
     }
+}
+
+fn floating(at: Point, width: Option<Px>, padding: Px, border: Color, id: Option<Id>) -> Shape {
+    let layout = Layout::column()
+        .floating(at)
+        .padding(padding)
+        .gap(TIGHT_GAP);
+    Shape::new(
+        width.map_or(layout, |width| layout.width(width)),
+        Style::background(PANEL).border(Sides::ALL, border),
+        id,
+    )
 }
 
 impl Container {
@@ -218,37 +233,38 @@ impl Container {
                 Some(id),
             ),
             Self::FillRow => Shape::new(Layout::row().grow_width(), Style::NONE, None),
-            Self::Tooltip { at } => Shape::new(
-                Layout::column()
-                    .floating(at)
-                    .padding(TOOLTIP_PADDING)
-                    .gap(TIGHT_GAP),
-                Style::background(PANEL).border(Sides::ALL, BORDER),
+            Self::Tooltip { at } => floating(at, None, TOOLTIP_PADDING, BORDER, None),
+            Self::ElementTip { at } => floating(
+                at,
                 None,
-            ),
-            Self::ElementTip { at } => Shape::new(
-                Layout::column()
-                    .floating(at)
-                    .padding(TOOLTIP_PADDING)
-                    .gap(TIGHT_GAP),
-                Style::background(PANEL).border(Sides::ALL, BORDER),
+                TOOLTIP_PADDING,
+                BORDER,
                 Some(ids::ELEMENT_TIP.id()),
             ),
-            Self::Picker { at, width }
-            | Self::Palette { at, width }
-            | Self::Settings { at, width } => Shape::new(
-                Layout::column()
-                    .floating(at)
-                    .width(width)
-                    .padding(TOOLTIP_PADDING)
-                    .gap(TIGHT_GAP),
-                Style::background(PANEL).border(Sides::ALL, ACCENT),
-                Some(match self {
-                    Self::Picker { .. } => ids::picker(),
-                    Self::Settings { .. } => ids::settings_box(),
-                    _ => ids::palette_box(),
-                }),
+            Self::Picker { at, width } => floating(
+                at,
+                Some(width),
+                TOOLTIP_PADDING,
+                ACCENT,
+                Some(ids::picker()),
             ),
+            Self::Palette { at, width } => floating(
+                at,
+                Some(width),
+                TOOLTIP_PADDING,
+                ACCENT,
+                Some(ids::palette_box()),
+            ),
+            Self::Settings { at, width } => floating(
+                at,
+                Some(width),
+                TOOLTIP_PADDING,
+                ACCENT,
+                Some(ids::settings_box()),
+            ),
+            Self::Menu { at, width } => {
+                floating(at, Some(width), TIGHT_GAP, ACCENT, Some(ids::menu_box()))
+            }
             Self::Centered | Self::StartPage { .. } => self.page_shape(),
             Self::PanelHeader => Shape::new(
                 Layout::row().grow_width().cross(Align::Center),
@@ -525,19 +541,129 @@ impl Frame<'_> {
 
     pub(crate) fn danger_button(&mut self, text: impl Into<Label>, target: Target) -> Interaction {
         let id = target.id();
+        let hovered = self.ui.interaction(id).when_aimed().hovered();
+        let size = self.metrics.font;
+        self.ui
+            .leaf(
+                text_kind(
+                    vec![Run::new(text, if hovered { TEXT } else { WEAK })],
+                    size,
+                    Wrap::None,
+                ),
+                Layout::row().padding(SMALL_BUTTON_PADDING),
+                Style::background(if hovered { DANGER_HOVER } else { FIELD })
+                    .border(Sides::ALL, if hovered { RED } else { BORDER }),
+                Some(id),
+            )
+            .when_aimed()
+    }
+
+    pub(crate) fn toggle_button(
+        &mut self,
+        text: impl Into<Label>,
+        cells: Cells,
+        target: Target,
+        on: Chosen,
+    ) -> Interaction {
+        let id = target.id();
         let hovered = self.ui.interaction(id).hovered();
+        let chosen = on == Chosen::Chosen;
+        let background = if chosen {
+            SELECTED
+        } else if hovered {
+            HOVER
+        } else {
+            FIELD
+        };
         let size = self.metrics.font;
         self.ui.leaf(
             text_kind(
-                vec![Run::new(text, if hovered { TEXT } else { WEAK })],
+                vec![Run::new(text, if chosen || hovered { TEXT } else { WEAK })],
                 size,
                 Wrap::None,
             ),
-            Layout::row().padding(SMALL_BUTTON_PADDING),
-            Style::background(if hovered { DANGER_HOVER } else { FIELD })
-                .border(Sides::ALL, if hovered { RED } else { BORDER }),
+            Layout::row()
+                .padding(SMALL_BUTTON_PADDING)
+                .width(cells.of(self.cell_width()) + SMALL_BUTTON_EXTRA),
+            Style::background(background).border(Sides::ALL, if chosen { ACCENT } else { BORDER }),
             Some(id),
         )
+    }
+
+    pub(crate) fn menu(
+        &mut self,
+        menu: Menu,
+        open: Option<Menu>,
+        opener: Target,
+        items: Vec<MenuItem>,
+    ) {
+        let shown = open == Some(menu);
+        let button = self.toggle_button(
+            Icon::Ellipsis,
+            MENU_BUTTON,
+            opener,
+            Chosen::of(&shown, &true),
+        );
+        if button.clicked() {
+            self.push(Action::Menu(MenuAct::Toggle(menu)));
+        }
+        let Some(under) = button.rect().filter(|_| shown) else {
+            return;
+        };
+        self.overlay.toolbar_menu = Some(menu);
+        let widest = items
+            .iter()
+            .map(|item| item.label.as_str().chars().count())
+            .max()
+            .unwrap_or(0);
+        let width =
+            Cells::of_count(widest).of(self.cell_width()) + BUTTON_PADDING * 2 + TIGHT_GAP * 2;
+        let at = Point::new((under.right() - width).max(Px::ZERO), under.bottom());
+        let popup = self.start(Container::Menu { at, width });
+        for item in items {
+            let id = item.target.id();
+            let danger = Weight::of(&item.action) == Weight::Danger;
+            let aimed = |interaction: Interaction| {
+                if danger {
+                    interaction.when_aimed()
+                } else {
+                    interaction
+                }
+            };
+            let hovered = aimed(self.ui.interaction(id)).hovered();
+            let background = match (hovered, danger) {
+                (false, _) => None,
+                (true, false) => Some(HOVER),
+                (true, true) => Some(DANGER_HOVER),
+            };
+            let color = match (hovered, danger) {
+                (false, true) => RED,
+                (true, _) => TEXT,
+                (false, false) => WEAK,
+            };
+            let size = self.metrics.font;
+            let row = self.ui.leaf(
+                text_kind(vec![Run::new(item.label, color)], size, Wrap::None),
+                Layout::row().grow_width().padding(BUTTON_PADDING),
+                Style {
+                    background,
+                    ..Style::NONE
+                },
+                Some(id),
+            );
+            if aimed(row).clicked() {
+                self.push(item.action);
+                self.push(Action::Menu(MenuAct::Close));
+            }
+        }
+        self.finish();
+        let pointer = self.ui.pointer();
+        let outside = popup
+            .rect()
+            .is_some_and(|rect| !rect.contains(pointer.mouse));
+        if pointer.pressed.contains(Button::Left) && outside {
+            self.push(Action::Menu(MenuAct::Close));
+        }
     }
 
     pub(crate) fn small_button_room(&mut self, cells: Cells) {
@@ -601,26 +727,48 @@ impl Frame<'_> {
         )
     }
 
-    pub(crate) fn tick_box(&mut self, tick: Tick, cells: Cells, target: Target) -> Interaction {
+    pub(crate) fn tick_row(&mut self, target: Target) -> Interaction {
         let id = target.id();
         let hovered = self.ui.interaction(id).hovered();
-        let (text, color) = match tick {
-            Tick::Ticked => ("[x]", ACCENT),
-            Tick::Unticked if hovered => ("[ ]", TEXT),
-            Tick::Unticked => ("[ ]", WEAK),
-        };
-        let size = self.metrics.font;
-        self.ui.leaf(
-            text_kind(vec![Run::new(text, color)], size, Wrap::None),
-            Layout::row()
-                .width(cells.of(self.cell_width()))
-                .padding(ROW_PADDING),
+        self.ui.open(
+            Kind::None,
+            Layout::row().grow_width().gap(GAP).cross(Align::Center),
             Style {
                 background: hovered.then_some(HOVER),
                 ..Style::NONE
             },
             Some(id),
         )
+    }
+
+    pub(crate) fn tick_box(&mut self, tick: Tick, cells: Cells, row: Interaction) {
+        let hovered = row.hovered();
+        let (mark, color, background, border) = match tick {
+            Tick::Ticked => (Label::from(Icon::Check), BACKGROUND, ACCENT, ACCENT),
+            Tick::Unticked => (
+                Label::new(" ".repeat(CHECKBOX_COLUMNS.get())),
+                TEXT,
+                FIELD,
+                if hovered { TEXT } else { WEAK },
+            ),
+        };
+        let size = self.metrics.font;
+        self.ui.open(
+            Kind::None,
+            Layout::row()
+                .width(cells.of(self.cell_width()))
+                .padding(ROW_PADDING)
+                .cross(Align::Center),
+            Style::NONE,
+            None,
+        );
+        self.ui.leaf(
+            text_kind(vec![Run::new(mark, color)], size, Wrap::None),
+            Layout::row(),
+            Style::background(background).border(Sides::ALL, border),
+            None,
+        );
+        self.ui.close();
     }
 
     pub(crate) fn row(&mut self, runs: Vec<Run>, target: Target, chosen: Chosen) -> Interaction {
@@ -751,7 +899,7 @@ impl Frame<'_> {
         row
     }
 
-    pub(crate) fn link_text(
+    pub(crate) fn header_text(
         &mut self,
         runs: Vec<Run>,
         target: Target,
@@ -768,6 +916,49 @@ impl Frame<'_> {
             },
             Some(id),
         )
+    }
+
+    pub(crate) fn hyperlink(&mut self, hyperlink: Hyperlink, target: Target) -> Interaction {
+        let id = target.id();
+        let hovered = self.ui.interaction(id).hovered();
+        if hovered {
+            self.cursor = Cursor::Pointer;
+        }
+        let size = self.metrics.font;
+        let clicks = self.ui.open(
+            Kind::None,
+            Layout::row().padding(LABEL_PADDING),
+            Style::NONE,
+            Some(id),
+        );
+        if !hyperlink.lead.is_empty() {
+            self.ui.leaf(
+                text_kind(hyperlink.lead, size, Wrap::None),
+                Layout::row(),
+                Style::NONE,
+                None,
+            );
+        }
+        self.ui.leaf(
+            text_kind(vec![Run::new(hyperlink.text, HYPERLINK)], size, Wrap::None),
+            Layout::row(),
+            Style {
+                background: None,
+                border: if hovered { Sides::BOTTOM } else { Sides::NONE },
+                border_color: HYPERLINK,
+            },
+            None,
+        );
+        if !hyperlink.detail.is_empty() {
+            self.ui.leaf(
+                text_kind(hyperlink.detail, size, Wrap::None),
+                Layout::row(),
+                Style::NONE,
+                None,
+            );
+        }
+        self.ui.close();
+        clicks
     }
 
     pub(crate) fn text_runs(&mut self, runs: Vec<Run>, layout: Fill) {
@@ -1242,4 +1433,31 @@ pub(crate) enum Fill {
 pub(crate) struct TabClicks {
     pub(crate) tab: Interaction,
     pub(crate) close: Interaction,
+}
+
+pub(crate) struct Hyperlink {
+    pub(crate) lead: Vec<Run>,
+    pub(crate) text: Label,
+    pub(crate) detail: Vec<Run>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Weight {
+    Plain,
+    Danger,
+}
+
+impl Weight {
+    const fn of(action: &Action) -> Self {
+        match action {
+            Action::RemoveTour(_) | Action::RemoveStep(_) => Self::Danger,
+            _ => Self::Plain,
+        }
+    }
+}
+
+pub(crate) struct MenuItem {
+    pub(crate) label: Label,
+    pub(crate) target: Target,
+    pub(crate) action: Action,
 }

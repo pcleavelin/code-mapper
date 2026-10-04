@@ -121,9 +121,9 @@ parent pucdnk
 author ai
 file crates/gui/src/app.rs
 symbol App
-lines 0 10
-hash 4d2288c1f6b5b721
-note The application in four parts: the Model (everything the views read: index, map, selection, panel state, fields, status), the Services (the threads and the channels to them), the element tree (Ui) and the cache of drawn code grids. The App is what platform calls once per frame and once per script line; shot and shot_next are the screenshot aid (CODEMAP_SHOT, and a script's shot command). gui-structure says how the parts divide the work.
+lines 0 11
+hash 385ad804c45c09a9
+note The application in four parts: the Model (everything the views read: index, map, selection, panel state, fields, status), the Services (the threads and the channels to them), the element tree (Ui) and the cache of drawn code grids. The App is what platform calls once per frame and once per script line; shot and shot_next are the screenshot aid (CODEMAP_SHOT, and a script's shot command); cursor is the pointer shape the last frame asked for, kept for dump. gui-structure says how the parts divide the work.
 
 step mlmsu7
 order 18
@@ -141,8 +141,8 @@ parent dosvcv
 author ai
 file crates/gui/src/app.rs
 symbol new
-lines 0 63
-hash 20484720919835f2
+lines 0 64
+hash 56b7cf6c07247715
 note Builds the whole application state before the first frame. The order matters: index first, then the map resolved against it, then the Model that holds both. A saved layout restores its panels, the default layout stands otherwise. The opening decides the first selection: an ordinary launch selects nothing and brings the Tour view forward in whatever layout is up, so the document shows the start page (feature-welcome); a scripted or screenshot run selects the first tour so the document, steps list, Source view, References panel and graph all have something in them. Both happen before the layout is kept as the saved one, so bringing Tour forward is not written back as a change. Then the Services with their watcher, then the language servers and the parent map. A map that did not read leaves its error in the status line; otherwise the status line says how many files and symbols were indexed.
 
 step t4wzoi
@@ -181,8 +181,8 @@ parent pucdnk
 author ai
 file crates/gui/src/model.rs
 symbol new
-lines 0 46
-hash 51f02764d04ccf4e
+lines 0 47
+hash 5701355eaf40779b
 note The Model is built around the index, the map and its store, with every panel in its default state (Nav on the Tour tab, the default panel tree, empty fields). The map's stamp is taken here, so the once-a-second disk poll starts out knowing the map as it was read.
 
 step xg2fnx

@@ -19,6 +19,8 @@ pub(crate) const ORANGE: Color = Color::rgba(220, 160, 80, 255);
 pub(crate) const HOVER: Color = Color::rgba(50, 50, 56, 255);
 pub(crate) const SELECTED: Color = Color::rgba(45, 65, 100, 255);
 pub(crate) const DANGER_HOVER: Color = Color::rgba(110, 40, 40, 255);
+pub(crate) const NOTE: Color = Color::rgba(228, 210, 178, 255);
+pub(crate) const HYPERLINK: Color = ACCENT;
 
 pub(crate) const DISABLED: Color = WEAK.with_alpha(90);
 pub(crate) const LINES_SELECTED: Color = SELECTED.with_alpha(160);
@@ -70,7 +72,7 @@ const fn theme_pair(dark: Color, light: Color) -> ThemePair {
     ThemePair { dark, light }
 }
 
-const LIGHT_PALETTE: [ThemePair; 24] = [
+const LIGHT_PALETTE: [ThemePair; 25] = [
     theme_pair(BACKGROUND, Color::rgba(250, 250, 250, 255)),
     theme_pair(PANEL, Color::rgba(243, 243, 243, 255)),
     theme_pair(FIELD, Color::rgba(255, 255, 255, 255)),
@@ -84,6 +86,7 @@ const LIGHT_PALETTE: [ThemePair; 24] = [
     theme_pair(HOVER, Color::rgba(226, 226, 232, 255)),
     theme_pair(SELECTED, Color::rgba(196, 218, 250, 255)),
     theme_pair(DANGER_HOVER, Color::rgba(250, 205, 205, 255)),
+    theme_pair(NOTE, Color::rgba(92, 64, 28, 255)),
     theme_pair(SIBLINGS_FILL, Color::rgba(238, 238, 242, 255)),
     theme_pair(SIBLINGS_BORDER, Color::rgba(214, 214, 222, 255)),
     theme_pair(TAB_STRIP, Color::rgba(232, 232, 236, 255)),
@@ -259,6 +262,9 @@ pub(crate) const EDGE_SCROLL_BAND: Ratio = Ratio::permille(250);
 pub(crate) const EDGE_SCROLL_MOST: Count = Count::new(2);
 
 pub(crate) const NAV_BUTTON: Cells = Cells::new(3);
+pub(crate) const MENU_BUTTON: Cells = Cells::new(2);
+pub(crate) const CODE_TOGGLE: Cells = Cells::new(13);
+pub(crate) const COLLAPSE_TOGGLE: Cells = Cells::new(12);
 pub(crate) const COLLAPSE_ROOM: Cells = Cells::new(3);
 pub(crate) const INDENT: Cells = Cells::new(3);
 pub(crate) const HIDE_BUTTON: Cells = Cells::new(9);
@@ -266,7 +272,7 @@ pub(crate) const WHOLE_BUTTON: Cells = Cells::new(12);
 pub(crate) const INLINE_BUTTON: Cells = Cells::new(9);
 pub(crate) const CLOSE_BUTTON: Cells = Cells::new(3);
 pub(crate) const EXPANDER_BUTTON: Cells = Cells::new(2);
-pub(crate) const DANGER_GAP: Cells = Cells::new(2);
+pub(crate) const CHECKBOX_COLUMNS: Count = Count::new(2);
 pub(crate) const SEARCH_FIELD: Cells = Cells::new(24);
 pub(crate) const MAP_PLACE: Cells = Cells::new(40);
 pub(crate) const FILTER_FIELD: Cells = Cells::new(16);

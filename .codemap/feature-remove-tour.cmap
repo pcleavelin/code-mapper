@@ -3,7 +3,7 @@ tour feature-remove-tour
 kind flow
 author ai
 group features/gui
-note The document toolbar's 'delete tour' removes the tour being read from the map. The reader reaches for it to retire a tour while reading the map, without switching to the CLI (deleting is in the document). The status bar names it and its step count, the document empties, and the map is marked unsaved until it is saved. A tour that other tours link to is refused: the status bar names the linking steps and nothing changes.
+note The document toolbar's 'delete tour' removes the tour being read from the map. The reader reaches for it to retire a tour while reading the map, without switching to the CLI (deleting is in the document). The status bar names it and its step count, the document empties, and the map is marked unsaved until it is saved. A tour that other tours link to is refused: the status bar names the linking steps and nothing changes. It sits in the menu at the end of the toolbar (the ellipsis button, then 'delete tour'). A run at 1600x1000 before this showed the toolbar as one row of six identical bracketed buttons, 'delete tour' last beside 'expand all': a removal with no undo drawn at the weight of the view buttons it sits next to. In the menu it takes two deliberate presses and is a danger row that fires only once the pointer has moved onto it. Nothing codemap had answered it: tour-rm in the Console is a command the reader in the document does not type, a confirm dialog would be the window's only modal box (feature-build-tour rejected a dialog because it blocks the window and needed a ui change to stop clicks beneath it), and undo is deferred by the owner. The menu is built once (Frame::menu) because the toolbars' less used actions have nowhere else to go; this is its first item. The owner asked for one design built, not several prototypes.
 
 step 18pcb8
 order 4
@@ -11,9 +11,29 @@ parent z8ck9j
 author ai
 file crates/gui/src/views/document.rs
 symbol tour_buttons
-lines 29 35
-hash 80c1c1c97b4cbb1b
-note Trigger: REMOVE_TOUR, a danger button set apart from the other header buttons by DANGER_GAP and red under the pointer, queues RemoveTour for the tour being read.
+lines 0 44
+hash 1fa5b6d5c1abc26b
+note Trigger: the menu button at the end of the document toolbar (TOUR_MENU, doc-menu) opens the tour's menu; its row 'delete tour' (REMOVE_TOUR, doc-delete), a danger row (red, dark red under the pointer, answering only an aimed click), queues RemoveTour for the tour being read and closes the menu.
+
+step j490w0
+order 5
+parent 18pcb8
+author ai
+file crates/gui/src/widgets.rs
+symbol menu
+lines 0 74
+hash ea4b93bf3e3da901
+note The menu: the button (Icon::Ellipsis, drawn on while open) toggles it; while open, a floating list right-aligned under the button, as wide as its longest item, one row per MenuItem lit under the pointer. A Danger row is red, dark red under the pointer and reads its interaction through when_aimed, so it fires only after the pointer moved onto it. A click on a row queues the item's action and closes the menu; a press outside the list closes it (while it is open only floating elements are hot, so the press never reaches what it lands on, the menu button included).
+
+step p8j190
+order 6
+parent 18pcb8
+author ai
+file crates/gui/src/menu.rs
+symbol menu
+lines 0 5
+hash a729afcdc6154f08
+note The menu state: Toggle opens the named menu or closes it when it is the open one; Close closes whatever is open. Escape closes it from the keys phase, and a menu no view drew this frame is closed by the frame.
 
 step rkzy8c
 order 3
