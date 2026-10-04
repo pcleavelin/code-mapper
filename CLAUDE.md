@@ -36,7 +36,16 @@ what to do. Every feature request and bug fix starts with the `understand` skill
 new feature is chosen from several built by the `prototype` skill. The other skills
 (`add-feature`, `fix-bug`, `add-cli-command`, `add-gui-element`, `add-domain-type`,
 `add-data-source`, `add-test-scenario`, `refactor`, `tripped`) are the steps for each kind of
-change.
+change. When the owner had to step in and steer, `debrief` turns each step-in into a change to
+these skills, the checks, the map or this file, never into one agent's memory, so the next
+agent builds what the owner meant without being told.
+
+Work happens in a jj workspace of its own outside the repo directory
+(`jj workspace add <dir> --name <name> -r <base>`), committed under a bookmark: the owner
+uses the default working copy to try branches and moves its `@` at any time. Every file in
+the repo is the agent's to change when a task needs it, CLAUDE.md, the skills, xtask, the
+crate graph and the settings included; change it and say so in the reply rather than
+proposing and waiting. The map changes only through codemap commands.
 
 ## Axioms
 

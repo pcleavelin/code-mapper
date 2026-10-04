@@ -17,5 +17,8 @@ description: Add or change a view, panel, button, row, field or gesture in the c
 6. What a script sees: extend the component's `Dump` so its state shows in `dump`.
 7. A scenario step in `tests/common/gui.rs` that uses it (`add-test-scenario`), aimed by id.
 8. Look at it: `CODEMAP_SHOT=<file.png> target/release/codemap .` or a script with
-   `shot`, and read the PNG. Never claim a visual result without the screenshot.
+   `shot`, and read the PNG. Never claim a visual result without the screenshot. The owner
+   reads code in this window all day, so legibility beats theme: the one readable monospace
+   font, never a pixel font, and restrained decoration. From a themed exploration take the
+   single ideas that help, not its look.
 9. `finish`.

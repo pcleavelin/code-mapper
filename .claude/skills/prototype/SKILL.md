@@ -19,7 +19,7 @@ prototypes that differ in shape, and exactly one survives.
    system temp directory), based on the current change:
    `jj workspace add <dir>/proto-<name> --name proto-<name> -r @`.
    Workspaces keep the prototypes apart without `jj new`, which the commit guard refuses
-   while the gate is red. The repo's own working copy stays untouched until step 6.
+   while the gate is red. The change's own workspace stays untouched until step 6.
 3. Build each prototype far enough to run the feature end to end in the real binary: the
    registry entry, the handler, the element. The map, scenarios, `api/` and the naming review
    are skipped, and the gate is not run on a prototype. The designs are independent: spawn
@@ -37,8 +37,8 @@ prototypes that differ in shape, and exactly one survives.
    concept where one exists); the size of the code and the number of crates it touches.
    State the winner in the reply, and for every other design the reason it lost; the
    winner's reason completes the case.
-6. Keep the winner, scrap the rest. In the repo, `jj restore --from proto-<winner>@` brings
-   the winner's files into the current change. Then `jj abandon` every prototype's change
+6. Keep the winner, scrap the rest. In the change's own workspace (CLAUDE.md),
+   `jj restore --from proto-<winner>@` brings the winner's files into the current change. Then `jj abandon` every prototype's change
    (`proto-<name>@`), `jj workspace forget` every prototype workspace, and delete their
    directories. Nothing from a scrapped design is carried over by hand.
 7. Go on with `add-feature` step 3 on the restored code: every step the prototype skipped is
