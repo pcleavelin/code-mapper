@@ -93,7 +93,7 @@ geometry::pub const fn new(value: u32) -> Self
 geometry::pub const fn get(self) -> u32
 geometry::pub fn scaled(base: u32, scale: Scale, minimum: u32) -> Self
 geometry::pub fn float(self) -> f32
-icon::pub enum Icon { Add, Close, SplitRight, SplitDown, Back, Forward, Expanded, Collapsed, MoreAbove, MoreBelow, Check, Up, Down, Edit, Settings, }
+icon::pub enum Icon { Add, Close, SplitRight, SplitDown, Back, Forward, Expanded, Collapsed, MoreAbove, MoreBelow, Check, Up, Down, Edit, Settings, Ellipsis, }
 icon::pub struct IconName(&'static str);
 icon::pub const fn as_str(self) -> &'static str
 icon::pub const fn glyph(self) -> Glyph

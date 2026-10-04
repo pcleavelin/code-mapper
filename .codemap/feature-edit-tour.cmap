@@ -155,7 +155,7 @@ parent b5ecyo
 author ai
 file crates/gui/src/views/document.rs
 symbol header_bar
-lines 16 21
+lines 22 27
 hash 6cd346a90323ea03
 note Trigger: the pencil icon (doc-edit) on the tour header's title line, after the step count. An icon rather than a labelled button, so the header's buttons still fit one row at the default layout.
 

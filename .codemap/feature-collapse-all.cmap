@@ -3,7 +3,7 @@ tour feature-collapse-all
 kind flow
 author ai
 group features/gui
-note The document toolbar's 'collapse all' collapses every step of the tour being read that has children, so only the top-level steps remain with +n counts; 'expand all' expands every step. The reader reaches for it to see the shape of a long tour without scrolling past every step. Hide and code state are untouched.
+note The document toolbar's 'collapse all' collapses every step of the tour being read that has children, so only the top-level steps remain with +n counts; 'expand all' expands every step. The reader reaches for it to see the shape of a long tour without scrolling past every step. Hide and code state are untouched. It is one toggle (doc-collapse), not a pair: in a run at 1600x1000 'collapse all' and 'expand all' were two identical buttons that never said whether the tour was collapsed. The label names what a press does next and the toggle is drawn on while every step with children is collapsed; with only some collapsed it is off and offers 'collapse all'. The palette keeps both commands (the document scenario runs '>collapse all' from it).
 
 step 40tsz9
 order 5
@@ -31,9 +31,9 @@ parent spow0g
 author ai
 file crates/gui/src/views/document.rs
 symbol tour_buttons
-lines 12 28
-hash 0d5a19a0ce93e317
-note Trigger: COLLAPSE_ALL queues CollapseAll with Collapse::Collapse and EXPAND_ALL with Collapse::Expand.
+lines 0 44
+hash 1fa5b6d5c1abc26b
+note Trigger: COLLAPSE_ALL (doc-collapse), one toggle. Model::next_collapse says what a press does: Expand while every step with children is collapsed, otherwise Collapse; the label names it ('expand all' or 'collapse all') and the toggle is drawn on while the tree is collapsed. The palette keeps both 'collapse all' and 'expand all'.
 
 step h9i1wa
 order 1
@@ -44,6 +44,26 @@ symbol descendants
 lines 0 8
 hash 20255b561ee0b98a
 note The number of steps under a step; a leaf never gets the Collapsed flag, so it has no arrow to show a stale collapse.
+
+step m71wai
+order 7
+parent dvb7o1
+author ai
+file crates/gui/src/widgets.rs
+symbol toggle_button
+lines 0 30
+hash 00ab14513fd7c793
+note The toggle, fixed at COLLAPSE_TOGGLE cells so 'collapse all' and 'expand all' take the same room, drawn on while the tree is collapsed.
+
+step qfd5oz
+order 6
+parent dvb7o1
+author ai
+file crates/gui/src/action.rs
+symbol next_collapse
+lines 0 11
+hash f144e5cf47395b8b
+note What a press of the toggle does next: Expand once every step with children is collapsed, Collapse otherwise (a tour with no step that has children included, where a press changes nothing).
 
 step snwm5q
 order 4

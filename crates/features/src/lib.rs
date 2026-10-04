@@ -452,8 +452,7 @@ impl Feature {
                 Surface::Window,
                 &const {
                     [
-                        Trigger::Click(Element::new("doc-hide-code")),
-                        Trigger::Click(Element::new("doc-show-code")),
+                        Trigger::Click(Element::new("doc-code")),
                         Trigger::Palette(Text::new("hide all code"), None),
                         Trigger::Palette(Text::new("show all code"), None),
                     ]
@@ -466,7 +465,6 @@ impl Feature {
                 &const {
                     [
                         Trigger::Click(Element::new("doc-collapse")),
-                        Trigger::Click(Element::new("doc-expand")),
                         Trigger::Palette(Text::new("collapse all"), None),
                         Trigger::Palette(Text::new("expand all"), None),
                     ]
@@ -494,9 +492,14 @@ impl Feature {
             ),
             Self::RemoveTour => Spec::new(
                 Text::new("remove-tour"),
-                Text::new("delete the tour being read"),
+                Text::new("delete the tour being read, from the menu at the end of its toolbar"),
                 Surface::Window,
-                &const { [Trigger::Click(Element::new("doc-delete"))] },
+                &const {
+                    [
+                        Trigger::Click(Element::new("doc-menu")),
+                        Trigger::Click(Element::new("doc-delete")),
+                    ]
+                },
             ),
             Self::ShowGraph => Spec::new(
                 Text::new("show-graph"),

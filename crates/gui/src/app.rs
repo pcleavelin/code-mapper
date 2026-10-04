@@ -21,6 +21,7 @@ use crate::graph::{GraphAction, Keyboard, Presence};
 use crate::grid::Grids;
 use crate::ids;
 use crate::keys::{self, Going, WizardKey};
+use crate::menu::MenuAct;
 use crate::model::{Metrics, Model, Readable, Tab, TabName, TourSlot};
 use crate::palette::PaletteAction;
 use crate::panels::{Direction, Panels, View};
@@ -249,6 +250,12 @@ impl App {
             }
             return;
         }
+        if self.model.toolbar_menu.is_some() {
+            if keys::escaped(input) {
+                self.apply(Action::Menu(MenuAct::Close));
+            }
+            return;
+        }
         if keys::palette_toggled(input) {
             self.apply(Action::Palette(PaletteAction::Toggle));
             return;
@@ -339,6 +346,9 @@ impl App {
         for part in parts {
             part.dump(&context, &mut lines);
         }
+        if let Some(menu) = self.model.toolbar_menu {
+            lines.line(format_args!("menu={}", menu.word().as_str()));
+        }
         if self.cursor != Cursor::Default {
             lines.line(format_args!("cursor={:?}", self.cursor));
         }
@@ -363,11 +373,13 @@ impl platform::App for App {
         self.model.now = input.time;
         self.keys(input);
         self.model.refresh_palette();
-        self.ui.capture(if self.model.settings_menu.is_some() {
-            Capture::Floating
-        } else {
-            Capture::Everything
-        });
+        self.ui.capture(
+            if self.model.settings_menu.is_some() || self.model.toolbar_menu.is_some() {
+                Capture::Floating
+            } else {
+                Capture::Everything
+            },
+        );
         keys::turn_wheel(&mut input.pointer);
         self.ui.begin(input);
         if self.ui.pointer().pressed.contains(Button::Left) {
@@ -399,8 +411,12 @@ impl platform::App for App {
         views::build(&self.model, &mut frame, graph);
         let cursor = frame.cursor;
         self.cursor = cursor;
+        let menu_drawn = frame.overlay.toolbar_menu;
         self.ui.end(renderer);
         let drawing = self.ui.draw(renderer, TEXT);
+        if menu_drawn.is_none() && self.model.toolbar_menu.is_some() {
+            self.apply(Action::Menu(MenuAct::Close));
+        }
         for action in queue {
             self.apply(action);
         }

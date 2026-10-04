@@ -94,16 +94,16 @@ dump
 click-id crumb/0
 wait 2
 dump
-click-id doc-hide-code
+click-id doc-code
 wait 2
 shot {shots}/code-hidden.png
-click-id doc-show-code
+click-id doc-code
 wait 2
 click-id doc-collapse
 wait 2
 dump
 shot {shots}/collapsed-all.png
-click-id doc-expand
+click-id doc-collapse
 wait 2
 hover-id document
 wheel -300
@@ -726,6 +726,23 @@ wait 2
 hover-id step/4
 scroll document 0
 wait 2
+absent doc-delete
+click-id doc-menu
+wait 2
+dump
+shot {shots}/menu-open.png
+key escape
+wait 2
+absent doc-delete
+click-id doc-menu
+wait 2
+hover-id doc-delete
+click-id tours/0
+wait 2
+absent doc-delete
+dump
+click-id doc-menu
+wait 2
 click-id doc-delete
 wait 3
 dump
@@ -818,7 +835,7 @@ up
 wait 2
 dump
 shot {shots}/resized.png
-hover-id doc-delete
+hover-id doc-menu
 wait 1
 click-id split-right/1
 wait 3
@@ -836,7 +853,7 @@ click-id view/8
 wait 3
 dump
 shot {shots}/split.png
-hover-id doc-delete
+hover-id doc-menu
 wait 1
 rect tour-buttons
 dump

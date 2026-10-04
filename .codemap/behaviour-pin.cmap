@@ -200,9 +200,9 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol delete
-lines 0 39
-hash 774df6fbf4acce9c
-note Deleting a step and a whole tour from the document, then saving; step 0's delete is clicked twice without the pointer moving, and hover-id step/4 fails the script if the second click deleted the step that slid under the pointer; the after command shows what the map lost.
+lines 0 56
+hash 1de207df6c863a09
+note Deleting a step and a whole tour from the document, then saving; step 0's delete is clicked twice without the pointer moving, and hover-id step/4 fails the script if the second click deleted the step that slid under the pointer; the tour's menu opened and closed by escape and by a click outside it (which does not reach the Tours row it lands on), then opened again for 'delete tour'; the after command shows what the map lost.
 
 step cylef2
 order 54
@@ -374,8 +374,8 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol layout
 lines 0 89
-hash 97b4c7aa7a21f8f9
-note The panel tree: resizing the left split by its divider, splitting the centre and picking the Source by typing, splitting that down and picking References by clicking (its old panel closes), dragging Console onto the left edge of the Tours panel, a click on a tab that moves nothing, a drag released over the top bar that cancels, closing a panel, and a tab command that brings the Source back into a panel. Between the split and the drag, the picker stays open on a press inside it and closes on a click outside it.
+hash ce6c250807802da5
+note The panel tree (hovering the tour menu button between steps): resizing the left split by its divider, splitting the centre and picking the Source by typing, splitting that down and picking References by clicking (its old panel closes), dragging Console onto the left edge of the Tours panel, a click on a tab that moves nothing, a drag released over the top bar that cancels, closing a panel, and a tab command that brings the Source back into a panel. Between the split and the drag, the picker stays open on a press inside it and closes on a click outside it.
 
 step j8h125
 order 33
@@ -414,8 +414,8 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol DOCUMENT
 lines 0 101
-hash e72a314007fc3061
-note The document: scrolling, selecting a step, whole-symbol and context toggles, hide and collapse, arrow keys, the breadcrumb, hide and show all code, collapse and expand all, wheel scrolling, the steps list, the jump to the graph, and the palette: a press inside its box keeps the keyboard in its field, a click outside closes it and still acts.
+hash 4cbdf435a069ad4f
+note The document: scrolling, selecting a step, whole-symbol and context toggles, hide and collapse, arrow keys, the breadcrumb, the code toggle and the collapse toggle pressed twice each, wheel scrolling, the steps list, the jump to the graph, and the palette: a press inside its box keeps the keyboard in its field, a click outside closes it and still acts.
 
 step k23duj
 order 9

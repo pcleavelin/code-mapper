@@ -132,10 +132,10 @@ parent xseveq
 author ai
 file crates/gui/src/app.rs
 symbol frame
-lines 16 20
-hash 49cbca8a2cfacbaa
+lines 16 22
+hash 851d5de2e036c836
 link ui-tree
-note Modal for the pointer too: while the box is open only floating elements can be hot or scrolled by the wheel.
+note Modal for the pointer too: while the box (or a toolbar menu) is open only floating elements can be hot or scrolled by the wheel.
 
 step uwgtmd
 order 11

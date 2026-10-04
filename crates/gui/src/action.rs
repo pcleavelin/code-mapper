@@ -8,9 +8,10 @@ use crate::field::{AfterSubmit, Edit, FieldAct, FieldText, Which};
 use crate::graph::{GraphAction, Heading};
 use crate::ids;
 use crate::keys::{LineGesture, PaletteKey, Walk};
+use crate::menu::MenuAct;
 use crate::model::{
-    Context, Dirty, HIT_LIMIT, Hit, HitsShown, Measured, Openness, Readable, StepKey, StepSlot,
-    Tab, TourSlot, ViewFlag, Warned,
+    Context, Dirty, HIT_LIMIT, Hit, HitsShown, Measured, Model, Openness, Readable, StepKey,
+    StepSlot, Tab, TourSlot, ViewFlag, Warned,
 };
 use crate::nav::{Going, Scrolling, Ticket, Tries};
 use crate::palette::{Palette, PaletteAction};
@@ -98,6 +99,7 @@ pub(crate) enum Action {
     Welcome(WelcomeAct),
     Wizard(WizardAct),
     Settings(SettingsAct),
+    Menu(MenuAct),
 }
 
 impl App {
@@ -198,6 +200,7 @@ impl App {
             Action::Welcome(act) => self.welcome(act),
             Action::Wizard(act) => self.wizard(act),
             Action::Settings(act) => self.change_setting(act),
+            Action::Menu(act) => self.menu(act),
         }
         self.model.follow_focus();
     }
@@ -582,6 +585,37 @@ impl App {
     }
 }
 
+impl Model {
+    fn tour_steps(&self, tour: TourSlot) -> impl Iterator<Item = StepKey> {
+        (0..self.step_count(tour).get()).map(move |step| StepKey {
+            tour,
+            step: StepSlot::new(step),
+        })
+    }
+
+    pub(crate) fn next_hide(&self, tour: TourSlot) -> Hide {
+        let mut steps = self.tour_steps(tour).peekable();
+        let any = steps.peek().is_some();
+        if any && steps.all(|key| self.views.get(key).flags.has(ViewFlag::Hidden)) {
+            Hide::Show
+        } else {
+            Hide::Hide
+        }
+    }
+
+    pub(crate) fn next_collapse(&self, tour: TourSlot) -> Collapse {
+        let mut parents = self
+            .tour_steps(tour)
+            .filter(|key| self.descendants(*key).get() > 0)
+            .peekable();
+        let any = parents.peek().is_some();
+        if any && parents.all(|key| self.views.get(key).flags.has(ViewFlag::Collapsed)) {
+            Collapse::Expand
+        } else {
+            Collapse::Collapse
+        }
+    }
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct Literal(&'static str);
 

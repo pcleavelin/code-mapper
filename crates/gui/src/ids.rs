@@ -112,13 +112,10 @@ pub(crate) const PEEK_CLOSE: Control =
     Control::new(Feature::PeekDefinition, Element::new("peek-x"));
 pub(crate) const SHOW_GRAPH: Control = Control::new(Feature::ShowGraph, Element::new("doc-graph"));
 pub(crate) const HIDE_ALL_CODE: Control =
-    Control::new(Feature::HideAllCode, Element::new("doc-hide-code"));
-pub(crate) const SHOW_ALL_CODE: Control =
-    Control::new(Feature::HideAllCode, Element::new("doc-show-code"));
+    Control::new(Feature::HideAllCode, Element::new("doc-code"));
 pub(crate) const COLLAPSE_ALL: Control =
     Control::new(Feature::CollapseAll, Element::new("doc-collapse"));
-pub(crate) const EXPAND_ALL: Control =
-    Control::new(Feature::CollapseAll, Element::new("doc-expand"));
+pub(crate) const TOUR_MENU: Control = Control::new(Feature::RemoveTour, Element::new("doc-menu"));
 pub(crate) const REMOVE_TOUR: Control =
     Control::new(Feature::RemoveTour, Element::new("doc-delete"));
 pub(crate) const LINKED_FROM: Control = Control::new(Feature::OpenLinkedTour, Element::new("from"));
@@ -262,9 +259,8 @@ pub(crate) const CONTROLS: &[Control] = &[
     PEEK_CLOSE,
     SHOW_GRAPH,
     HIDE_ALL_CODE,
-    SHOW_ALL_CODE,
     COLLAPSE_ALL,
-    EXPAND_ALL,
+    TOUR_MENU,
     REMOVE_TOUR,
     LINKED_FROM,
     COLLAPSE,
@@ -398,6 +394,10 @@ pub(crate) fn tooltip_code() -> Id {
 
 pub(crate) fn picker() -> Id {
     Id::new("picker")
+}
+
+pub(crate) fn menu_box() -> Id {
+    Id::new("menu")
 }
 
 pub(crate) fn tour_header() -> Id {

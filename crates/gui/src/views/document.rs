@@ -5,6 +5,7 @@ use ui::{Count, Extent, Icon, Id, Label, Px, Run};
 
 use crate::action::{Action, Collapse, ContextChange, Hide};
 use crate::ids::{self, Control, Target};
+use crate::menu::Menu;
 use crate::model::{
     Context, Measured, Model, Numbered, StepKey, StepShape, StepSlot, StepView, Tab, TourSlot,
     ViewFlag,
@@ -12,11 +13,12 @@ use crate::model::{
 use crate::nav::Scrolling;
 use crate::text::{Counted, Noun, Tag};
 use crate::theme::{
-    ACCENT, COLLAPSE_ROOM, DANGER_GAP, FAINT, GREEN, HIDE_BUTTON, INDENT, INLINE_BUTTON, NOTE,
-    PENDING, PIXEL, RED, SLICE, TEXT, WEAK, WHOLE_BUTTON, WIDE_GAP,
+    ACCENT, CODE_TOGGLE, COLLAPSE_ROOM, COLLAPSE_TOGGLE, FAINT, GREEN, HIDE_BUTTON, INDENT,
+    INLINE_BUTTON, NOTE, PENDING, PIXEL, RED, SLICE, TEXT, WEAK, WHOLE_BUTTON, WIDE_GAP,
 };
 use crate::widgets::{
-    Chosen, CodeBlock, Container, Enabled, Frame, Hyperlink, Marks, Padding, Scroller, Width,
+    Chosen, CodeBlock, Container, Enabled, Frame, Hyperlink, Marks, MenuItem, Padding, Scroller,
+    Width,
 };
 use crate::wizard::WizardAct;
 use std::mem;
@@ -122,45 +124,59 @@ fn header_rows(frame: &Frame<'_>) -> HeaderRows {
     }
 }
 
-fn tour_buttons(frame: &mut Frame<'_>, tour: TourSlot) {
-    let buttons = [
-        ("graph", ids::SHOW_GRAPH, Action::OpenTour(tour, Tab::Graph)),
-        (
-            "hide all code",
-            ids::HIDE_ALL_CODE,
-            Action::HideAll(tour, Hide::Hide),
-        ),
-        (
-            "show all code",
-            ids::SHOW_ALL_CODE,
-            Action::HideAll(tour, Hide::Show),
-        ),
-        (
-            "collapse all",
-            ids::COLLAPSE_ALL,
-            Action::CollapseAll(tour, Collapse::Collapse),
-        ),
-        (
-            "expand all",
-            ids::EXPAND_ALL,
-            Action::CollapseAll(tour, Collapse::Expand),
-        ),
-    ];
-    for (label, control, action) in buttons {
-        if frame.small_button(label, control.target()).clicked() {
-            frame.push(action);
-        }
-    }
-    frame.cells_gap(DANGER_GAP);
+fn tour_buttons(model: &Model, frame: &mut Frame<'_>, tour: TourSlot) {
     if frame
-        .danger_button("delete tour", ids::REMOVE_TOUR.target())
+        .small_button("graph", ids::SHOW_GRAPH.target())
         .clicked()
     {
-        frame.push(Action::RemoveTour(tour));
+        frame.push(Action::OpenTour(tour, Tab::Graph));
     }
+    let hide = model.next_hide(tour);
+    let (code_label, hidden) = match hide {
+        Hide::Hide => ("hide all code", Chosen::Plain),
+        Hide::Show => ("show all code", Chosen::Chosen),
+    };
+    if frame
+        .toggle_button(code_label, CODE_TOGGLE, ids::HIDE_ALL_CODE.target(), hidden)
+        .clicked()
+    {
+        frame.push(Action::HideAll(tour, hide));
+    }
+    let collapse = model.next_collapse(tour);
+    let (tree_label, collapsed) = match collapse {
+        Collapse::Collapse => ("collapse all", Chosen::Plain),
+        Collapse::Expand => ("expand all", Chosen::Chosen),
+    };
+    if frame
+        .toggle_button(
+            tree_label,
+            COLLAPSE_TOGGLE,
+            ids::COLLAPSE_ALL.target(),
+            collapsed,
+        )
+        .clicked()
+    {
+        frame.push(Action::CollapseAll(tour, collapse));
+    }
+    frame.menu(
+        Menu::Tour,
+        model.toolbar_menu,
+        ids::TOUR_MENU.target(),
+        vec![MenuItem {
+            label: Label::new("delete tour"),
+            target: ids::REMOVE_TOUR.target(),
+            action: Action::RemoveTour(tour),
+        }],
+    );
 }
 
-fn header_bar(frame: &mut Frame<'_>, tour: TourSlot, found: &Tour, diff: Option<&TourDiff>) {
+fn header_bar(
+    model: &Model,
+    frame: &mut Frame<'_>,
+    tour: TourSlot,
+    found: &Tour,
+    diff: Option<&TourDiff>,
+) {
     let rows = header_rows(frame);
     frame.start(Container::TourHeader);
     frame.title(found.name().as_str());
@@ -189,12 +205,12 @@ fn header_bar(frame: &mut Frame<'_>, tour: TourSlot, found: &Tour, diff: Option<
     }
     if rows == HeaderRows::One {
         frame.grow();
-        tour_buttons(frame, tour);
+        tour_buttons(model, frame, tour);
     }
     frame.finish();
     if rows == HeaderRows::Two {
         frame.start(Container::TourButtons);
-        tour_buttons(frame, tour);
+        tour_buttons(model, frame, tour);
         frame.finish();
     }
 }
@@ -319,7 +335,7 @@ pub(super) fn tour_document(model: &Model, frame: &mut Frame<'_>, area: Extent) 
     let numbered = model.numbered(tour);
     let mut offset = model.scrolls.get(ids::document());
     let top_step = track_steps(model, frame, &numbered, &mut offset);
-    header_bar(frame, tour, found, diff);
+    header_bar(model, frame, tour, found, diff);
     match found.note() {
         Some(note) => frame.note(note.as_str(), NOTE, Padding::Tour),
         None => frame.note("(no tour note)", WEAK, Padding::Tour),

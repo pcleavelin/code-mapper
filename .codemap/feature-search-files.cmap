@@ -21,7 +21,7 @@ parent q1l62e
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 36 38
+lines 42 44
 hash 554151a630b57545
 note Trigger: the keys phase hands the frame's edits and typed text to the search field among the others.
 

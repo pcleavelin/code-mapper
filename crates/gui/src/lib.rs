@@ -7,6 +7,7 @@ mod graph;
 mod grid;
 mod ids;
 mod keys;
+mod menu;
 mod model;
 mod nav;
 mod palette;

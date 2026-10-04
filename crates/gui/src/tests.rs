@@ -24,6 +24,7 @@ use crate::graph::build::{Built, CellSize, Rank, StepInfo};
 use crate::graph::{Button, GraphState, Node};
 use crate::ids::{self, CONTROLS};
 use crate::keys::{self, Extend, LineGesture, Walk, turn_wheel};
+use crate::menu::{Menu, MenuAct};
 use crate::model::{LineSelection, Model, Readable, StepKey, StepSlot, Tab, TourSlot, ViewFlag};
 use crate::nav::Scrolling;
 use crate::palette::{Palette, commands};
@@ -1755,4 +1756,38 @@ fn a_note_reads_as_body_text_and_never_as_a_comment_a_success_or_a_link_in_both_
             assert_ne!(note, paint.paint(other), "{shown:?}");
         }
     }
+}
+
+#[test]
+fn the_code_toggle_offers_show_only_once_every_step_is_hidden() {
+    let mut app = app();
+    assert_eq!(app.model.next_hide(TOUR), Hide::Hide);
+    app.apply(Action::HideAll(TOUR, Hide::Hide));
+    assert_eq!(app.model.next_hide(TOUR), Hide::Show);
+    app.apply(Action::Toggle(key(2), ViewFlag::Hidden));
+    assert_eq!(app.model.next_hide(TOUR), Hide::Hide);
+}
+
+#[test]
+fn the_collapse_toggle_offers_expand_only_once_every_parent_is_collapsed() {
+    let mut app = app();
+    assert_eq!(app.model.next_collapse(TOUR), Collapse::Collapse);
+    app.apply(Action::Toggle(key(0), ViewFlag::Collapsed));
+    assert_eq!(app.model.next_collapse(TOUR), Collapse::Collapse);
+    app.apply(Action::CollapseAll(TOUR, Collapse::Collapse));
+    assert_eq!(app.model.next_collapse(TOUR), Collapse::Expand);
+    app.apply(Action::CollapseAll(TOUR, Collapse::Expand));
+    assert_eq!(app.model.next_collapse(TOUR), Collapse::Collapse);
+}
+
+#[test]
+fn a_menu_opens_on_its_button_closes_on_a_second_press_and_on_close() {
+    let mut app = app();
+    app.apply(Action::Menu(MenuAct::Toggle(Menu::Tour)));
+    assert_eq!(app.model.toolbar_menu, Some(Menu::Tour));
+    app.apply(Action::Menu(MenuAct::Toggle(Menu::Tour)));
+    assert_eq!(app.model.toolbar_menu, None);
+    app.apply(Action::Menu(MenuAct::Toggle(Menu::Tour)));
+    app.apply(Action::Menu(MenuAct::Close));
+    assert_eq!(app.model.toolbar_menu, None);
 }

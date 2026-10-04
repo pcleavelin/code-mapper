@@ -260,6 +260,9 @@ pub(crate) const EDGE_SCROLL_BAND: Ratio = Ratio::permille(250);
 pub(crate) const EDGE_SCROLL_MOST: Count = Count::new(2);
 
 pub(crate) const NAV_BUTTON: Cells = Cells::new(3);
+pub(crate) const MENU_BUTTON: Cells = Cells::new(2);
+pub(crate) const CODE_TOGGLE: Cells = Cells::new(13);
+pub(crate) const COLLAPSE_TOGGLE: Cells = Cells::new(12);
 pub(crate) const COLLAPSE_ROOM: Cells = Cells::new(3);
 pub(crate) const INDENT: Cells = Cells::new(3);
 pub(crate) const HIDE_BUTTON: Cells = Cells::new(9);
@@ -268,7 +271,6 @@ pub(crate) const INLINE_BUTTON: Cells = Cells::new(9);
 pub(crate) const CLOSE_BUTTON: Cells = Cells::new(3);
 pub(crate) const EXPANDER_BUTTON: Cells = Cells::new(2);
 pub(crate) const CHECKBOX_COLUMNS: Count = Count::new(2);
-pub(crate) const DANGER_GAP: Cells = Cells::new(2);
 pub(crate) const SEARCH_FIELD: Cells = Cells::new(24);
 pub(crate) const MAP_PLACE: Cells = Cells::new(40);
 pub(crate) const FILTER_FIELD: Cells = Cells::new(16);
