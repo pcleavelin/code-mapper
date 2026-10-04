@@ -5,6 +5,7 @@ use domain::{Line, LineCount, Map, MapError, RelativePath, SymbolName, TourName}
 use platform::BUNDLED_FAMILY;
 use ui::{Count, Label};
 
+use crate::comments::CommentStatus;
 use crate::model::HitsShown;
 use crate::text::{Counted, Noun};
 
@@ -123,6 +124,7 @@ pub(crate) enum Status {
     DiskChanged,
     MapUnreadableKept(Label),
     MapReloaded,
+    Comment(CommentStatus),
     OnlyInParent {
         name: TourName,
         steps: Count,
@@ -267,6 +269,7 @@ impl Status {
             | Self::MapRefused(_)
             | Self::ReindexFailed
             | Self::MapUnreadableKept(_) => Tone::Problem,
+            Self::Comment(status) => status.tone(),
             _ => Tone::Plain,
         }
     }
@@ -377,6 +380,7 @@ impl fmt::Display for Status {
                 error.as_str()
             ),
             Self::MapReloaded => formatter.write_str("map reloaded (changed on disk)"),
+            Self::Comment(status) => status.fmt(formatter),
             Self::OnlyInParent { name, steps } => write!(
                 formatter,
                 "'{name}' exists only in the parent revision; its {steps} steps are listed under the tour it was removed from"

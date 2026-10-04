@@ -25,6 +25,16 @@ lines 0 0
 hash c04a46a315a03e36
 note The four flags as bits: whole symbol, code hidden, subtree collapsed, linked tour inlined.
 
+step 4ne1pi
+order 54
+parent plyqwj
+author ai
+file crates/gui/src/comments.rs
+symbol load
+lines 0 11
+hash 8e1a96cdf4e3405c
+note Loads and resolves the store at startup; an unreadable store starts empty rather than refusing to open the window.
+
 step 4rpslj
 order 18
 parent 61yv6r
@@ -171,9 +181,9 @@ parent w41rnw
 author ai
 file crates/gui/src/model.rs
 symbol new
-lines 0 47
-hash 5701355eaf40779b
-note Every panel in its default state, the map's stamp taken from the store, the metrics at the starting font until the first frame measures the real one.
+lines 0 51
+hash b1fe25ca184dec17
+note Every panel in its default state, the map's stamp taken from the store, the comments loaded from their store, the metrics at the starting font until the first frame measures the real one.
 
 step erlcdz
 order 11
@@ -211,7 +221,7 @@ parent 8ftts9
 author ai
 file crates/gui/src/model.rs
 symbol impl Model
-lines 109 123
+lines 113 127
 hash 17458e228a233098
 note Name to slot and StepId to slot: how a slot is found again after the map changed.
 
@@ -241,9 +251,9 @@ parent oourai
 author ai
 file crates/gui/src/model.rs
 symbol StepShape
-lines 0 6
-hash b8c07582d3730efd
-note Everything a step's height depends on: its StepView (flags and context), its span (None when its file or symbol is gone), its note's length, the document's width and the row height. Two equal shapes lay out to the same height.
+lines 0 7
+hash dfdd875d94698423
+note Everything a step's height depends on: its StepView (flags and context), its span (None when its file or symbol is gone), its note's length, its comments' and draft's size, the document's width and the row height. Two equal shapes lay out to the same height.
 
 step jfjdcd
 order 48
@@ -305,6 +315,15 @@ lines 0 3
 hash 88ccb4e99294580c
 note One measurement: the shape the step had and the height its column took.
 
+step plyqwj
+order 53
+author ai
+file crates/gui/src/comments.rs
+symbol CommentShelf
+lines 0 7
+hash c7a6be8e16445ee1
+note The window's comments: every comment as loaded and resolved, the store's stamp and when it was last polled, the open draft (DraftOn, at most one), the comment the walk stands on and the one shown under the count. Comments change only through the comment handlers, which write the store first.
+
 step qsn4qo
 order 46
 parent vr4u67
@@ -331,7 +350,7 @@ parent 8ftts9
 author ai
 file crates/gui/src/model.rs
 symbol impl Model
-lines 50 56
+lines 54 60
 hash 25d42bb761237bdd
 note Slot to Tour and to Step, None past the end.
 
@@ -420,8 +439,8 @@ order 0
 author ai
 file crates/gui/src/model.rs
 symbol Model
-lines 0 36
-hash 419231409e2ecad1
+lines 0 38
+hash a3bbe05c4cc17304
 note All the state a view can see (gui-structure lists the fields). Views get &Model; apply gets &mut.
 
 step w429iw

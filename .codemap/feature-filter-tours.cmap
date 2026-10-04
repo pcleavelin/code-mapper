@@ -61,8 +61,8 @@ parent z6m3sw
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 56 67
-hash 3d34d2862160fbe3
+lines 56 68
+hash 850d28d76f1f21db
 note The typing: the keys phase hands edits and typed text to the tour filter along with the symbol filter and go-to-line fields; only the focused field takes them.
 
 step mb3pyj
@@ -121,8 +121,8 @@ parent lhcomc
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 54
-hash fe61d47c32b1c808
+lines 0 63
+hash 6de2ac8e25f90562
 note An edit that changes the tour filter's text scrolls the Tours list back to its top, so the matches are in view. The filter keeps its text on enter and has nothing to run.
 
 step y3c46y

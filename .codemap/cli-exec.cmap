@@ -30,8 +30,8 @@ parent lwzwqw
 author ai
 file crates/cli/src/exec.rs
 symbol run
-lines 0 6
-hash 0e3308ff30da5d0e
+lines 0 7
+hash 1c3357dafc2369ce
 note Query, Edit or repin; Some(Changed) tells the front end to save or mark the map unsaved.
 
 step 42vo3w
@@ -127,9 +127,9 @@ order 0
 author ai
 file crates/cli/src/exec.rs
 symbol Run
-lines 0 6
-hash 04bf1d42a5345426
-note One command's reach. servers is None in the GUI's console, whose own threads index; every method checks it before asking a server, so the same code answers from the index as it stands there.
+lines 0 7
+hash a4b35e1f6a1289db
+note One command's reach, with the comment store the comment commands read and write. servers is None in the GUI's console, whose own threads index; every method checks it before asking a server, so the same code answers from the index as it stands there.
 
 step xu3fch
 order 8

@@ -1,0 +1,47 @@
+codemap 9
+tour feature-comment-reply
+kind flow
+author ai
+group features/cli
+note The agent, after doing what a comment asked and putting the explanation in the map, at the moment the human must learn that it was done and where to read it. Goal: the human reads the map instead of the diff, so the answer points into the map rather than into the chat. Without this command the answer lives only in the agent's transcript, which the human may have closed and which is not beside the code the question was about. A change to the note the comment sits on cannot stand in for the reply: a comment on code has no note, a fix may land in another tour, and only the reply says which. It writes the reply into the comment's file at once; an open window reads the store again within a second, turns the box green with the reply under the question and counts it in the top bar until the human dismisses it (the GUI scenario 'comments' replies from the Console and dumps the answered box). A second reply replaces the first, so after follow-up work the human reads the current answer, not a thread. An unknown id or an empty reply is refused. Why comments exist and the designs that were tried are in feature-add-comment.
+
+step 7mtwt7
+order 1
+parent py6xe1
+author ai
+file crates/domain/src/comment.rs
+symbol reply
+lines 0 7
+hash 8e7d952a53c260fd
+link comment-model
+note Sets the comment's state to Answered with the reply.
+
+step h37y5j
+order 3
+parent py6xe1
+author ai
+file crates/gui/src/comments.rs
+symbol poll_comments
+lines 0 23
+hash 430f614fbd870d54
+note The window's side: once a second it compares the store's stamp, reloads when an agent changed it, and says how many replies arrived; the boxes turn green and the count in the top bar counts them.
+
+step p7hr94
+order 2
+parent py6xe1
+author ai
+file crates/io-comments/src/lib.rs
+symbol write
+lines 0 9
+hash f3d4327a0b2c44ae
+link io-comments
+note Writes its file.
+
+step py6xe1
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol comment
+lines 5 22
+hash de77b3948883be5a
+note The handler, the Reply arm of Run::comment: an id the store does not hold is refused naming comments, an empty reply is refused, then the reply (authored by whoever runs it) replaces any earlier one and the file is written at once.

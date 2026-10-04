@@ -4,6 +4,8 @@ use domain::{Author, StepChange, TourKind};
 use std::iter;
 use ui::Count;
 
+use crate::model::Gone;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Clipped(String);
 
@@ -71,6 +73,7 @@ pub(crate) enum Noun {
     Tour,
     Hit,
     Symbol,
+    Comment,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -97,6 +100,8 @@ impl fmt::Display for Counted {
             Noun::Hit => "hits",
             Noun::Symbol if one => "symbol",
             Noun::Symbol => "symbols",
+            Noun::Comment if one => "comment",
+            Noun::Comment => "comments",
         };
         write!(formatter, "{} {word}", self.count)
     }
@@ -118,6 +123,24 @@ impl Tag {
         Self(match author {
             Author::Human => "",
             Author::Agent => " (ai)",
+        })
+    }
+
+    pub(crate) const fn author_word(author: Author) -> Self {
+        Self(match author {
+            Author::Human => "human",
+            Author::Agent => "ai",
+        })
+    }
+
+    pub(crate) const fn gone(gone: Gone) -> Self {
+        Self(match gone {
+            Gone::Nothing => "",
+            Gone::Lines => "(lines gone)",
+            Gone::Symbol => "(symbol gone)",
+            Gone::Step => "(step gone)",
+            Gone::Tour => "(tour gone)",
+            Gone::File => "(file gone)",
         })
     }
 

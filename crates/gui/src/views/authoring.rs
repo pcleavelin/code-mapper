@@ -1,8 +1,10 @@
+use domain::Span;
 use platform::Cursor;
 use ui::{Button, Icon, Label, Ui};
 
 use crate::action::Action;
-use crate::authoring::{Authoring, StepDrop, StepGrab, StripAct, Zone};
+use crate::authoring::{Authoring, StepDrop, StepGrab, StripAct, StripButton, Zone};
+use crate::comments::{CommentAct, DraftOn};
 use crate::ids;
 use crate::model::{Model, StepSlot};
 use crate::panels::View;
@@ -23,7 +25,27 @@ pub(super) fn target_strip(model: &Model, frame: &mut Frame<'_>, view: View) {
         .ui
         .placement(id)
         .map(|placement| placement.rect.width - BAR_PADDING * 2);
-    let strip = model.target_strip();
+    let mut strip = model.target_strip();
+    let lines = model
+        .nav
+        .file()
+        .zip(model.nav.lines())
+        .filter(|_| view == View::Source && model.shelf.draft.is_none());
+    if let Some((_, lines)) = lines {
+        let text = if lines.low() == lines.high() {
+            format!("comment on line {}", lines.low().number())
+        } else {
+            format!(
+                "comment on lines {}-{}",
+                lines.low().number(),
+                lines.high().number()
+            )
+        };
+        strip.buttons.push(StripButton {
+            act: StripAct::CommentOnLines,
+            text: Label::new(text),
+        });
+    }
     frame.start(Container::Strip(id));
     for row in strip.rows(frame.cell_width(), room) {
         frame.start(Container::ToolbarSmall);
@@ -32,15 +54,36 @@ pub(super) fn target_strip(model: &Model, frame: &mut Frame<'_>, view: View) {
         }
         for button in row.buttons {
             let (target, act) = match button.act {
-                StripAct::AddAtTopLevel => (ids::TARGET_TOP.with(&place), Authoring::AddAtTopLevel),
-                StripAct::AddOffered => (ids::ADD_OFFER.with(&place), Authoring::AddOffered),
+                StripAct::AddAtTopLevel => (
+                    ids::TARGET_TOP.with(&place),
+                    Action::Authoring(Authoring::AddAtTopLevel),
+                ),
+                StripAct::AddOffered => (
+                    ids::ADD_OFFER.with(&place),
+                    Action::Authoring(Authoring::AddOffered),
+                ),
+                StripAct::CommentOnLines => {
+                    let Some((file, lines)) = lines else {
+                        continue;
+                    };
+                    let Some(span) = Span::new(lines.low(), lines.high()) else {
+                        continue;
+                    };
+                    (
+                        ids::COMMENT_LINES.target(),
+                        Action::Comment(CommentAct::Start(DraftOn::Lines { file, span })),
+                    )
+                }
             };
             let cells = Cells::of_count(button.text.columns());
             if frame
                 .small_button_sized(button.text.clone(), Some(cells), target)
                 .clicked()
             {
-                frame.push(Action::Authoring(act));
+                frame.push(act);
+            }
+            if button.act == StripAct::CommentOnLines {
+                frame.attach_tip(target);
             }
         }
         if let Some(aside) = row.aside {

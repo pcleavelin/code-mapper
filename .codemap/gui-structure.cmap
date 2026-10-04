@@ -11,8 +11,8 @@ parent saeyu5
 author ai
 file crates/gui/src/status.rs
 symbol fmt
-lines 0 94
-hash 7c79d3ec684c274d
+lines 0 95
+hash 3205d1ddca83dc84
 note The wording. Map refusals and load failures arrive already worded by cli, so the GUI and the CLI say the same thing.
 
 step 0fz3qy
@@ -21,8 +21,8 @@ parent saeyu5
 author ai
 file crates/gui/src/status.rs
 symbol tone
-lines 0 41
-hash 361d9d56e316e4c3
+lines 0 42
+hash 5e432910f36f4eab
 note How the status bar colours each Status: Done for what the reader asked and got (saved, created, added, moved, removed, reloaded, re-indexed), Warning for what needs the reader's attention but broke nothing (a refused gesture, a clamped line, missing input, cut search hits, a change on disk), Problem for a failure (an unreadable map, a refused or failed save or command, a bad regex, a re-index failure), Plain for the rest.
 
 step 2e645j
@@ -89,17 +89,17 @@ order 2
 author ai
 file crates/gui/src/model.rs
 symbol Model
-lines 0 36
-hash 419231409e2ecad1
-note All the state a view can see, in one struct: the index and the map with its MapStore and disk state, the parent map for the Diff tab, Nav, the step views, the open directories and groups, the kept peek, the server Queries, the panel tree, the scroll offsets (down and across), the graph's state, the fields, search hits and whether they were cut at HIT_LIMIT, the measured heights of document steps (Measures), the console log, the status, WorkState, the font metrics, the frame time, and the build-tour wizard while one is open. gui-model has its values and queries.
+lines 0 38
+hash a3bbe05c4cc17304
+note All the state a view can see, in one struct: the index and the map with its MapStore and disk state, the CommentStore and the CommentShelf (comments, the open draft, the walk), the parent map for the Diff tab, Nav, the step views, the open directories and groups, the kept peek, the server Queries, the panel tree, the scroll offsets (down and across), the graph's state, the fields, search hits and whether they were cut at HIT_LIMIT, the measured heights of document steps (Measures), the console log, the status, WorkState, the font metrics, the frame time, and the build-tour wizard while one is open. gui-model has its values and queries.
 
 step 622pjb
 order 25
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 246 283
-hash 9b4914f8dbdc9073
+lines 249 287
+hash a32a43cae1f6e30f
 note Every padding, gap and fixed pixel measure the widgets and views use, named by where it is used.
 
 step 63vlrl
@@ -203,8 +203,8 @@ order 26
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 315 363
-hash 97cec3c6e0bc9835
+lines 322 375
+hash fce2a77dc0b7956b
 note Every measure counted in cells: button and field widths, the trees' indent per level, column guesses before a panel has a size, the symbol table's columns, tooltip sizes, the toolbar toggles' and the menu button's widths, the zoom cluster's buttons and percentage, the status bar's room for the map's place, the panels' floors and the picker's width.
 
 step an1gef
@@ -311,8 +311,8 @@ parent xjz44n
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 0 97
-hash 09bf35b072b553d9
+lines 0 98
+hash 56a33f16740868dc
 note The one place the Model changes during a frame. Each arm is a call into nav.rs, a field of the Model, or a method on the App for changes that need the Services (save, a server question, a command).
 
 step h4xmjq
@@ -350,8 +350,8 @@ parent 8978by
 author ai
 file crates/gui/src/text.rs
 symbol impl Tag
-lines 0 24
-hash 2d36e92324ac0f7a
+lines 0 42
+hash 0054254fce4acbeb
 note The words, one match each.
 
 step ho7mj8
@@ -457,8 +457,8 @@ parent 9pik9m
 author ai
 file crates/gui/src/ids.rs
 symbol CONTROLS
-lines 0 109
-hash ac504e675f0fb8e3
+lines 0 119
+hash c67e1be9c2e55414
 note Every control, for the test that checks them against the registry.
 
 step mjhubp
@@ -480,6 +480,15 @@ symbol DumpLines
 lines 0 0
 hash e0ed0e34f86a40df
 note The DUMP lines being collected, printed to stderr at once.
+
+step nfnwth
+order 79
+parent saeyu5
+author ai
+file crates/gui/src/comments.rs
+lines 315 387
+hash 5f12b191e42bddee
+note The status line's comment messages, one Status variant holding them: added, empty, dismissed or withdrawn, not saved with the store's error, replies arrived, no comments, and where the walk stands with what its place has lost. Each says its own tone.
 
 step nk2647
 order 40
@@ -593,8 +602,8 @@ order 52
 author ai
 file crates/gui/src/status.rs
 symbol Status
-lines 0 81
-hash e4f7292fbc79bb0b
+lines 0 82
+hash 161bfcc7a789b51c
 note Everything the status line can say, as data: each outcome of a save, a command, a search, an edit, a definition lookup, a re-index or a disk change. Views and apply set one; nothing formats a message where it happens.
 
 step sbpnbg
@@ -721,8 +730,8 @@ order 8
 author ai
 file crates/gui/src/action.rs
 symbol Action
-lines 0 60
-hash 3af5d268924ff7ba
+lines 0 61
+hash b539c1449c757d35
 note Every change a gesture, a key, a script line or a view's measurement can cause, as data. A view names the change; it never makes it.
 
 step xypoz6

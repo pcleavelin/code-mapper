@@ -11,9 +11,9 @@ parent pvdi25
 author ai
 file crates/gui/src/views/center.rs
 symbol source
-lines 12 20
-hash c8129284c8a07430
-note Autoscroll: while a selecting drag holds the code block, a pointer above or below the view moves the scroll offset before the column is laid out.
+lines 17 24
+hash 5b07e099e919a926
+note Autoscroll: while a selecting drag holds any code segment, a pointer above or below the view moves the scroll offset before the column is laid out.
 
 step 696yx8
 order 5
@@ -31,7 +31,7 @@ parent pvdi25
 author ai
 file crates/gui/src/app.rs
 symbol frame
-lines 75 75
+lines 76 76
 hash 84b9405a281633b5
 note While line_grab is set the window redraws at the animation rate, so a pointer held still past the edge keeps scrolling with no input events arriving.
 
@@ -90,8 +90,8 @@ parent pvdi25
 author ai
 file crates/gui/src/views/center.rs
 symbol source
-lines 64 68
-hash 29762266e34acca8
+lines 59 75
+hash e788148c8cf3b6c5
 note The effect: lines inside the selection get the LINES_SELECTED background.
 
 step t704l3
@@ -100,7 +100,7 @@ parent q4xn7z
 author ai
 file crates/gui/src/views/center.rs
 symbol source
-lines 84 84
+lines 92 92
 hash 7bd971aea4c34436
 note Discovery: the code area carries the select-lines element tip (feature-element-tip), so resting the pointer on code that is not an identifier says how to select, until the first press. On an identifier the hover card, which names ctrl-click, double-click and alt-click, shows instead.
 
@@ -110,7 +110,7 @@ parent pvdi25
 author ai
 file crates/gui/src/views/center.rs
 symbol select_lines
-lines 0 21
-hash b9363977d30d6759
+lines 0 27
+hash 67ca63ddf49cfc3b
 link source-view
-note Trigger: keys::selects_line names the frame's gesture on the code block. A Press queues SelectLine for the line under the pointer unless it landed on the scrollbar track; a Drag queues it for the line the code block reports under the held pointer; any other press, or a frame with the button up, while line_grab is set queues ClearLineSelection.
+note Trigger: keys::selects_line names the frame's gesture on each code segment of the view (the code is split into segments around the comments drawn between lines). A Press queues SelectLine for the line under the pointer unless it landed on the scrollbar track; a Drag queues it for the line under the held pointer, found across segments, so a drag runs over a comment box into the next segment; any other press, or a frame with the button up, while line_grab is set queues ClearLineSelection.

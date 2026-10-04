@@ -21,10 +21,11 @@ use crate::peek::Tip;
 use crate::status::Status;
 use crate::theme::{
     self, ACCENT, BACKGROUND, BADGE, BADGE_PADDING, BAR_PADDING, BORDER, BUTTON_PADDING,
-    CHECKBOX_COLUMNS, Cells, DANGER_HOVER, DOCUMENT_PADDING, DROP_BAND, FAINT, FIELD,
-    FIELD_CARET_ROOM, FIELD_PADDING, GAP, GRAPH_MARGIN, HOVER, HYPERLINK, INDENT_EXTRA,
+    CHECKBOX_COLUMNS, COMMENT_ANSWERED_FILL, COMMENT_DRAFT_FILL, COMMENT_OPEN_FILL,
+    COMMENT_PADDING, Cells, DANGER_HOVER, DOCUMENT_PADDING, DROP_BAND, FAINT, FIELD,
+    FIELD_CARET_ROOM, FIELD_PADDING, GAP, GRAPH_MARGIN, GREEN, HOVER, HYPERLINK, INDENT_EXTRA,
     LABEL_PADDING, MENU_BUTTON, NAV_BUTTON, NAV_BUTTON_EXTRA, NOTE_ROWS_LEAST, NOTE_ROWS_MOST,
-    PALETTE_TAG, PANEL, PANEL_PADDING, RED, ROW_PADDING, SELECTED, SMALL_BUTTON_EXTRA,
+    ORANGE, PALETTE_TAG, PANEL, PANEL_PADDING, RED, ROW_PADDING, SELECTED, SMALL_BUTTON_EXTRA,
     SMALL_BUTTON_PADDING, SMALL_GAP, STATUS_GAP, STEP_SPACER, TAB_PADDING, TAB_STRIP, TEXT,
     TIGHT_GAP, TOOLTIP_PADDING, TREE_GUIDE, TREE_LEVEL_WIDTH, WEAK, WIDE_GAP,
 };
@@ -32,7 +33,7 @@ use crate::theme::{
 use crate::field::Fields;
 use crate::ids;
 use crate::wizard::Tick;
-pub(crate) use code::{CodeBlock, Coded, Marks, Width};
+pub(crate) use code::{AcrossBar, AcrossScroll, CodeBlock, Coded, Marks, Width};
 
 #[derive(Clone, Copy, Debug)]
 struct Spot {
@@ -89,6 +90,31 @@ pub(crate) enum Enabled {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum CommentLook {
+    Open,
+    Answered,
+    Draft,
+}
+
+impl CommentLook {
+    const fn fill(self) -> Color {
+        match self {
+            Self::Open => COMMENT_OPEN_FILL,
+            Self::Answered => COMMENT_ANSWERED_FILL,
+            Self::Draft => COMMENT_DRAFT_FILL,
+        }
+    }
+
+    const fn edge(self) -> Color {
+        match self {
+            Self::Open => ORANGE,
+            Self::Answered => GREEN,
+            Self::Draft => ACCENT,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Container {
     Window,
     Body,
@@ -121,6 +147,10 @@ pub(crate) enum Container {
     StartPage { width: Px },
     CanvasCorner { over: Rect },
     Cluster,
+    Comment { look: CommentLook, id: Id },
+    CommentPopup { at: Point, width: Px },
+    CommentStack,
+    CommentRow(Id),
 }
 
 struct Shape {
@@ -201,6 +231,39 @@ impl Container {
         floating(at, Some(width), padding, ACCENT, Some(id))
     }
 
+    fn comment_shape(self) -> Shape {
+        match self {
+            Self::CommentRow(id) => Shape::new(
+                Layout::row().grow_width().padding(SMALL_GAP),
+                Style::NONE,
+                Some(id),
+            ),
+            Self::CommentPopup { at, width } => floating(
+                at,
+                Some(width),
+                TOOLTIP_PADDING,
+                ACCENT,
+                Some(ids::comment_popup()),
+            ),
+            Self::Comment { look, id } => Shape::new(
+                Layout::column()
+                    .grow_width()
+                    .padding(COMMENT_PADDING)
+                    .gap(TIGHT_GAP),
+                Style::background(look.fill()).border(Sides::ALL, look.edge()),
+                Some(id),
+            ),
+            _ => Shape::new(
+                Layout::column()
+                    .grow_width()
+                    .padding(PANEL_PADDING)
+                    .gap(SMALL_GAP),
+                Style::NONE,
+                None,
+            ),
+        }
+    }
+
     fn page_shape(self) -> Shape {
         let layout = match self {
             Self::StartPage { width } => Layout::column().width(width),
@@ -270,6 +333,10 @@ impl Container {
                 Some(id),
             ),
             Self::Strip(id) => Shape::new(Layout::column().grow_width(), Style::NONE, Some(id)),
+            Self::CommentRow(_)
+            | Self::CommentStack
+            | Self::CommentPopup { .. }
+            | Self::Comment { .. } => self.comment_shape(),
             Self::FillRow => Shape::new(Layout::row().grow_width(), Style::NONE, None),
             Self::Tooltip { at } => floating(at, None, TOOLTIP_PADDING, BORDER, None),
             Self::ElementTip { at } => floating(
@@ -498,6 +565,18 @@ impl Frame<'_> {
 
     pub(crate) fn small_button(&mut self, text: impl Into<Label>, target: Target) -> Interaction {
         self.small_button_sized(text, None, target)
+    }
+
+    pub(crate) fn runs_button(&mut self, runs: Vec<Run>, target: Target) -> Interaction {
+        let id = target.id();
+        let hovered = self.ui.interaction(id).hovered();
+        let size = self.metrics.font;
+        self.ui.leaf(
+            text_kind(runs, size, Wrap::None),
+            Layout::row().padding(BUTTON_PADDING),
+            Style::background(if hovered { HOVER } else { PANEL }).border(Sides::ALL, BORDER),
+            Some(id),
+        )
     }
 
     pub(crate) fn tab(

@@ -30,8 +30,8 @@ parent kleb0l
 author ai
 file crates/gui/src/text.rs
 symbol Noun
-lines 0 5
-hash 5b43d95ba79c755c
+lines 0 6
+hash 3f1c9be2cd843dcd
 note The nouns a count can take: step, tour, hit, symbol.
 
 step 2havd5
@@ -39,8 +39,8 @@ order 13
 author ai
 file crates/gui/src/field.rs
 symbol Fields
-lines 0 15
-hash 84f4197584d71536
+lines 0 16
+hash 78a53133706dc94d
 note The eleven named fields, one member each, plus step_notes, a field per edit-tour outline row made on first write (an unwritten one reads as blank), reached by Which; focused names the one with the keyboard and the element it was focused through (Holding), at most one, so taking focus is setting it. A left press anywhere but on the focused field releases it (press), keeping its text, the same as escape.
 
 step 2l481u
@@ -49,8 +49,8 @@ parent pk9re7
 author ai
 file crates/gui/src/widgets/code.rs
 symbol scrolled_code
-lines 0 39
-hash 54b4d10215a4f738
+lines 0 55
+hash f85e7522ab2446ea
 link feature-scroll-code
 note The block as elements: a clipping row scrolled sideways by the block's across offset with a horizontal scrollbar only, its marks painted pinned, holding one leaf at the grid's exact width that draws the grid. The offset goes through Ui::scroll_by_wheel and back as ScrollAcross; a press on the bar, or any scrollbar drag, leaves the block without an interaction.
 
@@ -195,8 +195,8 @@ parent rcazsr
 author ai
 file crates/gui/src/widgets.rs
 symbol shape
-lines 0 82
-hash 89cfb2127162a36f
+lines 0 86
+hash 3c0e69911630e1dc
 note The one match that turns a Container into its layout, style and fixed id: the paddings, gaps and colours from theme, the accent bar on the left of a selected step row or code column, the panel header's TAB_STRIP background with no padding (its tabs carry their own), the id body the panel tree is laid out from, the tooltip and element tip through floating with the element tip's id, and the id a StepColumn or a Strip carries; the accent-bordered boxes (picker, palette, settings, toolbar menu) come from box_shape, the floating graph overlays (the canvas-sized corner column and the zoom cluster's box) from overlay_shape, and the pages from page_shape, to keep this match short.
 
 step aidqqn
@@ -440,9 +440,18 @@ parent 2havd5
 author ai
 file crates/gui/src/field.rs
 symbol Which
-lines 0 13
-hash a7261b7072bbfa21
+lines 0 14
+hash 2f6d81ff93fe562e
 note The eleven named fields: search, the Console, the symbol filter, the tour filter, the view picker's search, go-to-line, the palette's query, and the wizard's name, group, search and note; and StepNote(BranchId), one note field per outline row of the edit-tour page. Which::control is the field's Control in ids, whose element name is its script id: field@search, cmd, field@symbols, field@tours, field@views, field@goto-line, field@palette, field@wizard-name, field@wizard-group, field@wizard-search, field@tour-note, and edit-note; the edit page draws each step note through Frame::field_named as edit-note/<n>, numbered by the visible row.
+
+step jjh3km
+order 72
+author ai
+file crates/gui/src/widgets.rs
+symbol impl Frame<'_>
+lines 1059 1084
+hash 913121e3813b1073
+note The virtual-list arithmetic long lists share: from the column's scroll offset and last frame's height, the first row in view and how many fit (two extra, or a guess before the column has a size), with the spacer for the rows above; the caller builds only the visible rows and ends with rows_after, the spacer for the rows below, so the column's content height is the whole list's. The Source view does its own arithmetic, since comment boxes between its lines are not rows (source-view).
 
 step k22fkd
 order 54
@@ -469,8 +478,8 @@ order 46
 author ai
 file crates/gui/src/text.rs
 symbol impl fmt::Display for Counted
-lines 0 15
-hash 0b48da3c87a8eef1
+lines 0 17
+hash f8670984bce7ec47
 note A count with its noun, singular for one ('1 step', '3 tours'), so no view spells a plural by hand.
 
 step kn1cnd
@@ -527,8 +536,8 @@ order 21
 author ai
 file crates/gui/src/widgets/code.rs
 symbol code_block
-lines 0 78
-hash 226406ddab4e15b5
+lines 0 82
+hash 0ff2079a1c8b72ef
 note The one code element in the GUI: a block of lines drawn from a cached grid by a custom element, with the hover, jump and peek gestures resolved to a (line, column) spot from the pointer. Per-row backgrounds and bars come from the two Marks closures, so the Source view's selection and anchor bars and the document's slice highlight share it. Width::Wide takes the full width rather than the grid's. It returns the Interaction, the spot under the pointer, whose column is None over the gutter, and while a press drags, the line under the pointer. A block whose lines are wider than it scrolls sideways with a horizontal scrollbar (scrolled_code, kept in the Model's across scrolls, pushed as ScrollAcross). Which gesture is peek and which is jump comes from keys::code_gesture, that is from the feature registry.
 
 step pwtsq2
@@ -620,13 +629,23 @@ lines 0 16
 hash c88b4c2f5bf4c3aa
 note The pointer to (line, column): the row from the block's top and the cell height, the column from the left edge plus the sideways scroll, minus the six-column gutter.
 
+step rboa2z
+order 73
+parent rsxs28
+author ai
+file crates/gui/src/widgets.rs
+symbol impl CommentLook
+lines 0 16
+hash f1b2505ce1d16d8a
+note A comment box's fill and border by its look: orange open, green answered, accent blue for a draft.
+
 step rcazsr
 order 1
 author ai
 file crates/gui/src/widgets.rs
 symbol Container
-lines 0 32
-hash 613695cea3b79b59
+lines 0 36
+hash 3d847814c3583a01
 note Every box that holds other elements is one of these: the window, the body, the centre, the bars, the toolbars, a panel column, a step row or code column (with its selected mark), the column holding one step of the document (StepColumn, carrying that step's id so its height can be measured), the target strip's column (Strip, carrying its id so its width can be read back), a tooltip, an element tip (ElementTip, at a point), a panel header, the floating view picker, the command palette's box, a toolbar menu's floating list (Menu, at a point and a width), the start page's centred column (Centered around StartPage, which carries the column's width), and the graph canvas's overlays (CanvasCorner, over the canvas's rectangle, and the zoom Cluster inside it). A view opens one with Frame::start and closes it with finish; it never spells out a layout or a style.
 
 step rs11uk
@@ -637,6 +656,16 @@ symbol take_focus
 lines 0 2
 hash eee3abe97d6c6f2f
 note Taking the keyboard: the overlay records it for the rest of this frame and FocusField, carrying the element it was taken through (take_focus_at), sets it on the Model when the queue is applied (Fields::focus_at).
+
+step rsxs28
+order 71
+parent 9dxpzk
+author ai
+file crates/gui/src/widgets.rs
+symbol comment_shape
+lines 0 31
+hash 2f38bf5dc5e85753
+note The comment containers: a box filled and bordered orange, green or blue (open, answered, draft), the stack of boxes under a note, the row that indents a box between Source lines, and the floating box under the comment count.
 
 step rx54p9
 order 63
@@ -779,8 +808,8 @@ parent pk9re7
 author ai
 file crates/gui/src/widgets/code.rs
 symbol CodeBlock
-lines 0 7
-hash e35892800a3edadb
+lines 0 8
+hash 879c571aecf3c407
 note What a view asks for: a file, the first and last line, the element id, the width, and the marks.
 
 step zo7d1b

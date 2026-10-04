@@ -42,8 +42,8 @@ author ai
 file crates/domain/src/map.rs
 symbol Pinned
 lines 0 3
-hash 46e91be3ad8a06bc
-note The pair pin_span returns: the anchor and its resolution.
+hash 5374ad4c34cec045
+note The pair pin_span returns: the anchor and its resolution; crate-visible so the comment model can take the anchor without the resolution.
 
 step gudtxh
 order 6
@@ -54,15 +54,23 @@ lines 0 9
 hash 2d1939e68b1cd290
 note A step: the anchor plus what the tour hangs on it. The id is set once when the step is made and is how the file names a parent and how diff matches a step; order places it in the step list, ordering siblings the code does not; parent (an id, none for a root) makes the tour a tree; then the author, the note and the link to another tour. resolution is filled in per session by resolve and never written to disk. Fields change only through the Map's methods.
 
+step h199cg
+order 14
+parent lp72jd
+author ai
+file crates/domain/src/id.rs
+lines 96 132
+hash d1a2d3a7971a23fc
+
 step lp72jd
 order 5
 parent gudtxh
 author ai
 file crates/domain/src/map/step.rs
 symbol fresh
-lines 0 20
-hash 55fbe87745c3f9f8
-note A step's id: six base36 digits of an FNV-1a hash of a seed, moved past ids the tour already holds by hashing again with a counter. add_step seeds it with the tour name, file, symbol, offsets and parent id. The digits spread new steps across the file, and two branches that add the same step add the same id and the same lines.
+lines 0 2
+hash 72dbe7d20c1cb22b
+note A step's id: six base36 digits of an FNV-1a hash of a seed, moved past ids the tour already holds by hashing again with a counter; ShortId::fresh does the hashing, shared with comment ids. add_step seeds it with the tour name, file, symbol, offsets and parent id. The digits spread new steps across the file, and two branches that add the same step add the same id and the same lines.
 
 step mlyhhl
 order 11
@@ -111,8 +119,8 @@ author ai
 file crates/domain/src/map.rs
 symbol pin_span
 lines 0 14
-hash eb22d48f99f68183
-note Where add_step, pin and promote make an anchor: the Anchor for the span, and a Resolution that is Current from birth with the innermost symbol's id, so a fresh step needs no resolve. NoSuchFile or OutsideFile when the span has nowhere to go.
+hash 24202bba449d1c5a
+note Where add_step, pin and promote make an anchor, and CommentTarget::code anchors a comment on lines of code: the Anchor for the span, and a Resolution that is Current from birth with the innermost symbol's id, so a fresh step needs no resolve. NoSuchFile or OutsideFile when the span has nowhere to go.
 
 step ulbmhn
 order 10
@@ -140,6 +148,6 @@ parent lp72jd
 author ai
 file crates/domain/src/map/step.rs
 symbol new
-lines 0 6
-hash 94769c72c3c8801f
-note The check a stored id passes on the way in: exactly six characters, each a digit or a lowercase ASCII letter.
+lines 0 2
+hash 4e10a66374b59e86
+note The check a stored id passes on the way in: exactly six characters, each a digit or a lowercase ASCII letter (ShortId::valid, shared with comment ids).

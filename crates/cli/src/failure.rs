@@ -1,4 +1,5 @@
 use domain::{MapError, RelativePath, Revision, SymbolName, TextFragment, TourName};
+use io_comments::{CommentLoadError, CommentSaveError};
 use io_map::{MapLoadError, MapSaveError, ParseError};
 use io_vcs::Program;
 
@@ -50,6 +51,11 @@ pub enum Failure {
     Parse(ParseError),
     Load(MapLoadError),
     Save(MapSaveError),
+    NoSuchComment(TextFragment),
+    EmptyComment,
+    EmptyReply,
+    CommentLoad(CommentLoadError),
+    CommentSave(CommentSaveError),
     Stale {
         steps: Count,
         links: Count,

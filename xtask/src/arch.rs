@@ -125,7 +125,7 @@ const EXPECTS: [Allowance; 27] = [
     },
 ];
 
-const DEPENDENCIES: [Allowed; 19] = [
+const DEPENDENCIES: [Allowed; 20] = [
     Allowed {
         package: Literal::new("xtask"),
         dependencies: &[
@@ -185,6 +185,15 @@ const DEPENDENCIES: [Allowed; 19] = [
         dependencies: &[Literal::new("strum"), Literal::new("domain")],
     },
     Allowed {
+        package: Literal::new("io-comments"),
+        dependencies: &[
+            Literal::new("strum"),
+            Literal::new("domain"),
+            Literal::new("io-store"),
+            Literal::new("io-vcs"),
+        ],
+    },
+    Allowed {
         package: Literal::new("io-vcs"),
         dependencies: &[Literal::new("domain"), Literal::new("io-process")],
     },
@@ -225,6 +234,7 @@ const DEPENDENCIES: [Allowed; 19] = [
             Literal::new("domain"),
             Literal::new("index"),
             Literal::new("io-map"),
+            Literal::new("io-comments"),
             Literal::new("io-vcs"),
             Literal::new("features"),
             Literal::new("clap"),
@@ -256,6 +266,7 @@ const DEPENDENCIES: [Allowed; 19] = [
             Literal::new("domain"),
             Literal::new("index"),
             Literal::new("io-map"),
+            Literal::new("io-comments"),
             Literal::new("io-config"),
             Literal::new("io-fonts"),
             Literal::new("io-vcs"),
@@ -274,6 +285,7 @@ const DEPENDENCIES: [Allowed; 19] = [
             Literal::new("domain"),
             Literal::new("index"),
             Literal::new("io-map"),
+            Literal::new("io-comments"),
             Literal::new("cli"),
             Literal::new("gui"),
         ],

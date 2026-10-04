@@ -179,3 +179,28 @@ fn a_subdirectory_finds_the_repository_above_it() {
     fs::remove_dir(scratch.0.join("inner/.jj")).unwrap();
     assert_eq!(Vcs::detect(&other).unwrap().kind(), VcsKind::Git);
 }
+
+#[test]
+fn every_jj_workspace_shares_the_main_repo_store() {
+    let scratch = Scratch::new("jj-shared");
+    fs::create_dir_all(scratch.0.join("main/.jj/repo")).unwrap();
+    scratch.put("second/.jj/repo", "../../main/.jj/repo");
+    let main = Vcs::detect(&Root::new(&scratch.0.join("main"))).unwrap();
+    let second = Vcs::detect(&Root::new(&scratch.0.join("second"))).unwrap();
+    let store = scratch.0.join("main/.jj/repo").canonicalize().unwrap();
+    assert_eq!(main.shared_directory().unwrap(), store);
+    assert_eq!(second.shared_directory().unwrap(), store);
+}
+
+#[test]
+fn every_git_worktree_shares_the_common_git_directory() {
+    let scratch = Scratch::new("git-shared");
+    scratch.put("main/.git/worktrees/side/commondir", "../..\n");
+    let pointer = scratch.0.join("main/.git/worktrees/side");
+    scratch.put("side/.git", &format!("gitdir: {}\n", pointer.display()));
+    let main = Vcs::detect(&Root::new(&scratch.0.join("main"))).unwrap();
+    let side = Vcs::detect(&Root::new(&scratch.0.join("side"))).unwrap();
+    let common = scratch.0.join("main/.git").canonicalize().unwrap();
+    assert_eq!(main.shared_directory().unwrap(), common);
+    assert_eq!(side.shared_directory().unwrap(), common);
+}

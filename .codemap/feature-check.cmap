@@ -30,7 +30,7 @@ parent ccger0
 author ai
 file crates/cli/src/wire.rs
 symbol fmt
-lines 46 50
+lines 55 59
 hash c1d6595c5d135112
 note How the failure reads on stderr: 'N stale steps', 'N broken links', or both.
 
@@ -51,6 +51,6 @@ parent ccger0
 author ai
 file crates/codemap/src/main.rs
 symbol run
-lines 0 52
-hash e19274bc89dc4430
+lines 0 53
+hash 6b17b6c80f7cf56f
 note The caller that gives check its exit status: a command error prints what the command wrote so far on stdout, the error on stderr, and exits 2.

@@ -42,6 +42,7 @@ pub(super) fn top_bar(model: &Model, frame: &mut Frame<'_>) {
     }
     frame.attach_tip(ids::FORWARD.target());
     frame.grow();
+    super::comments::comment_count(model, frame);
     let unsaved = model.disk.dirty == Dirty::Unsaved;
     if unsaved {
         frame.label("unsaved changes", ORANGE);

@@ -41,6 +41,9 @@ pub enum Feature {
     Uncovered,
     Coverage,
     Diff,
+    Comments,
+    CommentReply,
+    Comment,
     Help,
     OpenTour,
     OpenGroup,
@@ -56,6 +59,9 @@ pub enum Feature {
     MoreContext,
     RemoveStep,
     RemoveTour,
+    AddComment,
+    DismissComment,
+    NextComment,
     ShowGraph,
     SwitchTab,
     GoBack,
@@ -365,6 +371,30 @@ impl Feature {
                 Surface::Command,
                 &const { [Trigger::Command(Text::new("diff"))] },
             ),
+            Self::Comments => Spec::new(
+                Text::new("comments"),
+                Text::new(
+                    "[--all]                          open comments the human left in the GUI on a tour, a step or lines of code: one block each with its id, place and text, and the line to reply with; --all adds answered ones with their replies",
+                ),
+                Surface::Command,
+                &const { [Trigger::Command(Text::new("comments"))] },
+            ),
+            Self::CommentReply => Spec::new(
+                Text::new("comment-reply"),
+                Text::new(
+                    "<id> <reply>                     answer a comment: what was done and where the explanation lives (a tour, a step note); the human reads it in the GUI until dismissing it",
+                ),
+                Surface::Command,
+                &const { [Trigger::Command(Text::new("comment-reply"))] },
+            ),
+            Self::Comment => Spec::new(
+                Text::new("comment"),
+                Text::new(
+                    "--tour <name> [--step <index>] <text> | --file <path> --lines <start> <end> <text>   leave a comment on a tour, one of its steps, or lines of a file (1-based, inclusive); comments stay on this machine, outside the repo",
+                ),
+                Surface::Command,
+                &const { [Trigger::Command(Text::new("comment"))] },
+            ),
             Self::Help => Spec::new(
                 Text::new("help"),
                 Text::new("Print this message or the help of the given subcommand(s)"),
@@ -500,6 +530,49 @@ impl Feature {
                     [
                         Trigger::Click(Element::new("doc-menu")),
                         Trigger::Click(Element::new("doc-delete")),
+                    ]
+                },
+            ),
+            Self::AddComment => Spec::new(
+                Text::new("add-comment"),
+                Text::new(
+                    "leave a comment for the coding agent on the tour, on a step, or on the lines selected in the Source view: type it in the field that opens in place and press enter; the agent lists it with 'comments' and answers with 'comment-reply'",
+                ),
+                Surface::Window,
+                &const {
+                    [
+                        Trigger::Click(Element::new("comment-tour")),
+                        Trigger::Click(Element::new("comment")),
+                        Trigger::Click(Element::new("comment-lines")),
+                        Trigger::Click(Element::new("comment-add")),
+                        Trigger::Click(Element::new("comment-cancel")),
+                        Trigger::Type(Element::new("field@comment")),
+                    ]
+                },
+            ),
+            Self::DismissComment => Spec::new(
+                Text::new("dismiss-comment"),
+                Text::new(
+                    "delete a comment: dismiss an answered one once its reply is read, or withdraw an open one the agent has not answered",
+                ),
+                Surface::Window,
+                &const {
+                    [
+                        Trigger::Click(Element::new("dismiss")),
+                        Trigger::Click(Element::new("withdraw")),
+                    ]
+                },
+            ),
+            Self::NextComment => Spec::new(
+                Text::new("next-comment"),
+                Text::new(
+                    "go to the next answered comment, or to the next open one when none is answered: its step in the Tour view or its lines in the Source view; a comment whose tour or file is gone shows under the count",
+                ),
+                Surface::Window,
+                &const {
+                    [
+                        Trigger::Click(Element::new("comment-count")),
+                        Trigger::Click(Element::new("comment-close")),
                     ]
                 },
             ),

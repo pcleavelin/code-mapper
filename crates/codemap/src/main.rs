@@ -7,6 +7,7 @@ use std::process::ExitCode;
 use cli::{Argument, Channel, Failure, Invocation, Output};
 use domain::{Author, Root};
 use index::Servers;
+use io_comments::CommentStore;
 use io_map::MapStore;
 use strum::VariantArray;
 
@@ -84,6 +85,7 @@ fn run(root: &Root, arguments: &[Argument]) -> Status {
         invocation,
         Author::Agent,
         Some(&mut servers),
+        &CommentStore::new(root),
         &mut report,
     );
     drop(servers);

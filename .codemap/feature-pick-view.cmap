@@ -11,7 +11,7 @@ parent m2tf99
 author ai
 file crates/gui/src/app.rs
 symbol keys
-lines 75 79
+lines 76 80
 hash d0f272934b1a49d8
 note Closing by losing the keyboard: after the keys, a picker whose field no longer has focus (escape, another field clicked) is closed.
 

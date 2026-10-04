@@ -2,23 +2,26 @@ use std::cmp::Reverse;
 use std::collections::{BTreeMap, BTreeSet};
 
 use domain::{
-    Author, Backend, Change, Changed, Depth, FileId, FileText, Followed, GroupName, Index,
-    Language, Line, LineCount, Map, MapError, Note, Pruning, RelativePath, Revision, Row,
-    SourceFile, SourceLine, Span, Step, StepAddress, StepNumber, Symbol, SymbolId, SymbolName,
-    SymbolQuery, TextFragment, Tour, TourKind, TourName, follow,
+    Author, Backend, Change, Changed, Comment, CommentError, CommentId, CommentTarget, Comments,
+    Depth, FileId, FileText, Followed, GroupName, Index, Language, Line, LineCount, Map, MapError,
+    Note, Pruning, RelativePath, Reply, Revision, Row, SourceFile, SourceLine, Span, Step,
+    StepAddress, StepNumber, Symbol, SymbolId, SymbolName, SymbolQuery, TextFragment, Tour,
+    TourKind, TourName, follow,
 };
 use index::Servers;
+use io_comments::CommentStore;
 use io_map::{MapStore, MapText};
 use io_vcs::Vcs;
 use regex::Regex;
 
 use crate::convert::{
-    Count, Edit, Filter, GroupPlacement, Levels, LineNumber, Lines, LinkView, Placement, Query,
-    Request, StepIndex, Under, line_range, step_count, step_id, step_index,
+    CommentPlacement, CommentRequest, CommentView, Count, Edit, Filter, GroupPlacement, Levels,
+    LineNumber, Lines, LinkView, Placement, Query, Request, StepIndex, Under, line_range,
+    step_count, step_id, step_index,
 };
 use crate::failure::{Failure, StepPlace};
 use crate::output::Output;
-use crate::wire::{self, FollowReport, Title};
+use crate::wire::{self, CommentPlace, FollowReport, FoundStep, Title};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum LeftStale {
@@ -60,6 +63,7 @@ pub(crate) struct Run<'a> {
     pub(crate) author: Author,
     pub(crate) servers: Option<&'a mut Servers>,
     pub(crate) output: &'a mut Output,
+    pub(crate) comments: &'a CommentStore,
 }
 
 impl Run<'_> {
@@ -68,6 +72,7 @@ impl Run<'_> {
             Request::Query(query) => self.query(query).map(|()| None),
             Request::Edit(edit) => self.edit(edit).map(Some),
             Request::Repin(revision) => self.repin(revision),
+            Request::Comment(request) => self.comment(request).map(|()| None),
         }
     }
 
@@ -135,6 +140,98 @@ impl Run<'_> {
                 name,
                 pruning,
             } => self.promote(&symbol, levels, name, pruning),
+        }
+    }
+
+    fn comment(&mut self, request: CommentRequest) -> Result<(), Failure> {
+        let mut comments = self.comments.load().map_err(Failure::CommentLoad)?;
+        comments.resolve_all(self.index);
+        match request {
+            CommentRequest::List(view) => self.list_comments(&comments, view),
+            CommentRequest::Reply { id, reply } => {
+                let found = CommentId::new(id.as_str())
+                    .filter(|found| comments.get(found).is_some())
+                    .ok_or_else(|| Failure::NoSuchComment(id.clone()))?;
+                let text = reply.ok_or(Failure::EmptyReply)?;
+                let answer = Reply {
+                    text,
+                    author: self.author,
+                };
+                let answered = comments
+                    .reply(&found, answer)
+                    .map_err(|CommentError::NoSuchComment(_)| Failure::NoSuchComment(id))?;
+                let _saved = self
+                    .comments
+                    .write(answered)
+                    .map_err(Failure::CommentSave)?;
+                wire::comment_answered(self.output, &found);
+            }
+            CommentRequest::Add { placement, text } => {
+                let text = text.ok_or(Failure::EmptyComment)?;
+                let target = self.comment_target(placement)?;
+                let id = comments.add(self.index, target, self.author, text);
+                if let Some(added) = comments.get(&id) {
+                    let _saved = self.comments.write(added).map_err(Failure::CommentSave)?;
+                    wire::comment_added(self.output, &id);
+                    wire::comment_block(
+                        self.output,
+                        self.index,
+                        added,
+                        &comment_place(self.index, self.map, added),
+                    );
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn comment_target(&self, placement: CommentPlacement) -> Result<CommentTarget, Failure> {
+        match placement {
+            CommentPlacement::Tour { name, step: None } => {
+                Ok(CommentTarget::Tour(find_tour(self.map, &name)?))
+            }
+            CommentPlacement::Tour {
+                name,
+                step: Some(step),
+            } => Ok(CommentTarget::Step(find_step(self.map, &name, step)?)),
+            CommentPlacement::Code { file, lines } => {
+                let file = find_file(self.index, &file)?;
+                let span = self
+                    .index
+                    .file(file)
+                    .and_then(|source| line_range(source, lines.start, lines.end))
+                    .ok_or(Failure::LineRange)?;
+                Ok(CommentTarget::code(self.index, file, span)?)
+            }
+        }
+    }
+
+    fn list_comments(&mut self, comments: &Comments, view: CommentView) {
+        let shown: Vec<&Comment> = comments
+            .iter()
+            .filter(|comment| view == CommentView::All || comment.is_open())
+            .collect();
+        if shown.is_empty() {
+            wire::no_comments(self.output, view == CommentView::All);
+            return;
+        }
+        let mut blocks = Output::new();
+        for comment in &shown {
+            if !blocks.is_empty() {
+                wire::comment_gap(&mut blocks);
+            }
+            wire::comment_block(
+                &mut blocks,
+                self.index,
+                comment,
+                &comment_place(self.index, self.map, comment),
+            );
+        }
+        self.output.extend(&blocks);
+        let open = Count::new(comments.open().count());
+        if !open.is_zero() {
+            wire::comment_gap(self.output);
+            wire::reply_hint(self.output, self.index.root(), open);
         }
     }
 
@@ -1316,4 +1413,39 @@ fn find_step(map: &Map, name: &TextFragment, position: StepIndex) -> Result<Step
         .and_then(|found| step_id(found, position))
         .ok_or(Failure::NoSuchStep)?;
     Ok(StepAddress { tour, step })
+}
+
+fn comment_place<'c>(index: &'c Index, map: &'c Map, comment: &'c Comment) -> CommentPlace<'c> {
+    match comment.target() {
+        CommentTarget::Tour(name) => CommentPlace::Tour {
+            name,
+            gone: map.tour(name).is_none(),
+        },
+        CommentTarget::Step(address) => {
+            let found = map.tour(&address.tour).and_then(|tour| {
+                let step = tour.step(&address.step)?;
+                let position = step_index(tour, &address.step)?;
+                let number = tour
+                    .numbered(index)
+                    .into_iter()
+                    .find(|numbered| numbered.step == address.step)?
+                    .number;
+                Some(FoundStep {
+                    step,
+                    number,
+                    position,
+                })
+            });
+            CommentPlace::Step {
+                tour: &address.tour,
+                id: &address.step,
+                found,
+            }
+        }
+        CommentTarget::Code(anchor) => CommentPlace::Code {
+            anchor,
+            resolution: comment.resolution(),
+            file_gone: index.find_file(anchor.file()).is_none(),
+        },
+    }
 }

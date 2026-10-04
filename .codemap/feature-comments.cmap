@@ -1,0 +1,94 @@
+codemap 9
+tour feature-comments
+kind flow
+author ai
+group features/cli
+note The agent, at the start of a session in which the human says to address their codemap comments (the CLAUDE.md contract of every mapped repo names this loop). Goal: the agent writes the map as a side effect of writing the code, so the questions the human left on the map must reach it. diff, notes and tour read only .codemap/, and comments are deliberately kept out of it (feature-add-comment), so without this command the agent has no way to see a comment at all, short of finding the store inside .jj/repo or the git common dir and parsing its files. It prints one block per open comment: the id, open or answered, who wrote it, its place resolved against the current code (a step's number, index and file:lines; a file:lines and symbol; or what is gone: tour, step, symbol, lines or file), and the text; then how many are open and the exact comment-reply line to answer with. --all adds the answered ones with their replies. The CLI scenarios 'comments' and 'stale' show it before and after replies and after the code under a comment changes, moves or is deleted. Why comments exist and the designs that were tried are in feature-add-comment.
+
+step 34ida8
+order 3
+parent jfcp21
+author ai
+file crates/cli/src/wire.rs
+symbol comment_block
+lines 0 29
+hash 78e2cd9f31dd3c4a
+note Prints one comment's block.
+
+step bsicst
+order 7
+parent d8dzqf
+author ai
+file crates/cli/src/wire.rs
+lines 1439 1474
+hash 273d39a1feaa1ff5
+note A store that will not load fails every comment command, naming the file, its line and what is wrong; a file written by another codemap version says so.
+
+step d7vmrw
+order 6
+parent jfcp21
+author ai
+file crates/cli/src/convert.rs
+symbol from
+lines 41 45
+hash d48ab0f104916437
+note The --all flag chooses every comment instead of the open ones.
+
+step d8dzqf
+order 1
+parent jfcp21
+author ai
+file crates/cli/src/exec.rs
+symbol comment
+lines 1 2
+hash b2e006f888007514
+note Loads and resolves the store first.
+
+step g6i589
+order 2
+parent jfcp21
+author ai
+file crates/cli/src/exec.rs
+symbol comment_place
+lines 0 33
+hash 876156acf28a3f95
+note Where each comment is now: a tour (or gone), a step found by id with its number, index, file:lines and symbol (or gone), a code anchor resolved to file:lines and symbol, marked stale when its lines changed, or symbol, lines or file gone.
+
+step jfcp21
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol list_comments
+lines 0 27
+hash 8744c750bbac00c9
+note The handler: the open comments, or every comment with --all, one block each separated by a blank line; nothing to show prints that. After the blocks, when any is open, how many and the exact comment-reply command line for this root.
+
+step m3rgzu
+order 4
+parent 34ida8
+author ai
+file crates/cli/src/wire.rs
+symbol comment_place
+lines 0 56
+hash bea696485018f69f
+note Words the place.
+
+step o3knf1
+order 5
+parent jfcp21
+author ai
+file crates/cli/src/wire.rs
+symbol reply_hint
+lines 0 7
+hash 222f9270adf96cdb
+note The closing line the agent copies: how many are open and the comment-reply command for this root.
+
+step xlyrnq
+order 8
+parent g6i589
+author ai
+file crates/cli/src/wire.rs
+symbol CommentPlace
+lines 0 15
+hash 2d46f4419859f222
+note The place as found for printing, so the wording lives in wire.rs and exec only looks things up.

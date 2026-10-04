@@ -111,8 +111,8 @@ parent 176xed
 author ai
 file crates/io-vcs/src/lib.rs
 symbol detect
-lines 0 21
-hash 6bf6bc46c0a519bc
+lines 0 24
+hash 20353f7e63e0454f
 note jj when a .jj directory is at or above the root, else git when .git is; neither is an error.
 
 step z047i0

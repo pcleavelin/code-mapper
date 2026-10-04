@@ -1,0 +1,24 @@
+error::pub struct FieldKey(String);
+error::pub fn new(key: &str) -> Self
+error::pub fn as_str(&self) -> &str
+error::pub struct FieldValue(String);
+error::pub fn new(value: &str) -> Self
+error::pub fn as_str(&self) -> &str
+error::pub enum CommentFault { Version(FieldValue), NoVersion, UnknownField(FieldKey), UnknownAuthor(FieldValue), UnknownTarget(FieldValue), MissingField(FieldKey), Lines, Hash, InvalidName(FieldValue), InvalidStepId(FieldValue), EmptyText(FieldKey), }
+error::pub struct CommentParseError { pub file: PathBuf, pub line: Option<Line>, pub fault: CommentFault, }
+error::pub enum CommentLoadError { Unreadable { file: PathBuf, error: io::Error }, Parse(CommentParseError), InvalidId(PathBuf), }
+error::pub enum CommentSaveError { CreateDirectory { directory: PathBuf, error: io::Error, }, Write { file: PathBuf, error: io::Error, }, Remove { file: PathBuf, error: io::Error, }, }
+pub struct CommentVersion(&'static str);
+pub const CURRENT: Self = Self(wire::VERSION);
+pub const fn as_str(self) -> &'static str
+pub struct Saved;
+pub struct CommentCount(u32);
+pub const fn value(self) -> u32
+pub struct CommentStamp { modified: SystemTime, files: CommentCount, }
+pub struct CommentStore { directory: PathBuf, }
+pub fn new(root: &Root) -> Self
+pub fn directory(&self) -> &Path
+pub fn load(&self) -> Result<Comments, CommentLoadError>
+pub fn write(&self, comment: &Comment) -> Result<Saved, CommentSaveError>
+pub fn remove(&self, id: &CommentId) -> Result<Saved, CommentSaveError>
+pub fn stamp(&self) -> Option<CommentStamp>

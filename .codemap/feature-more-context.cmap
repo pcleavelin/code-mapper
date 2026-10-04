@@ -21,8 +21,8 @@ parent u5328q
 author ai
 file crates/gui/src/views/document.rs
 symbol step_code
-lines 10 47
-hash a673c5d7435a0ba7
+lines 10 48
+hash e492d3ca79d3bb14
 note The effect on the next frame: the shown range grows by the counts, clamped to the file, and the slice is highlighted when the range differs from it. The above button is drawn only when the range does not start at line one, the below button only when it ends before the last line.
 
 step u5328q

@@ -1,5 +1,6 @@
 use std::fmt;
 
+use crate::id::ShortId;
 use crate::index::{Index, SourceFile, SymbolId, SymbolName};
 use crate::map::name::{Author, Note, TourName};
 use crate::text::{Line, LineOffset, RelativePath, Span, TextHash};
@@ -9,14 +10,9 @@ pub struct StepId(String);
 
 impl StepId {
     const DIGITS: usize = 6;
-    const RADIX: u32 = 36;
 
     pub fn new(id: &str) -> Option<Self> {
-        let valid = id.chars().count() == Self::DIGITS
-            && id
-                .chars()
-                .all(|character| character.is_ascii_digit() || character.is_ascii_lowercase());
-        valid.then(|| Self(id.to_owned()))
+        ShortId::valid(id, Self::DIGITS).then(|| Self(id.to_owned()))
     }
 
     pub fn as_str(&self) -> &str {
@@ -24,25 +20,7 @@ impl StepId {
     }
 
     pub(crate) fn fresh(seed: &str, taken: impl Fn(&Self) -> bool) -> Self {
-        let candidate = |counter: u32| {
-            let mut hash = TextHash::of_bytes(seed.bytes().chain(counter.to_le_bytes())).value();
-            let id: String = (0..Self::DIGITS)
-                .map(|_| {
-                    let digit = u32::try_from(hash % u64::from(Self::RADIX)).unwrap_or_default();
-                    hash /= u64::from(Self::RADIX);
-                    char::from_digit(digit, Self::RADIX).unwrap_or('0')
-                })
-                .collect();
-            Self(id)
-        };
-        let mut counter: u32 = 0;
-        loop {
-            let id = candidate(counter);
-            if !taken(&id) {
-                return id;
-            }
-            counter = counter.wrapping_add(1);
-        }
+        Self(ShortId::fresh(seed, Self::DIGITS, |id| taken(&Self(id.to_owned()))).into_text())
     }
 }
 

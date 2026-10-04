@@ -35,6 +35,7 @@ pub(crate) enum AddOffer {
 pub(crate) enum StripAct {
     AddAtTopLevel,
     AddOffered,
+    CommentOnLines,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

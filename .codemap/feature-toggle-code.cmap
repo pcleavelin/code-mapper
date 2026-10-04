@@ -22,7 +22,7 @@ author ai
 file crates/gui/src/views/document.rs
 symbol step_header
 lines 50 60
-hash e6f1c558914189fd
+hash 2bab6b367dca9503
 note Trigger: the HIDE_CODE button, labelled by the current state, queues Toggle with ViewFlag::Hidden.
 
 step bdbcnr
@@ -32,7 +32,7 @@ author ai
 file crates/gui/src/views/document.rs
 symbol step_code
 lines 0 3
-hash c0f7e2206bbda653
+hash 4e5644f860e33267
 note The effect on the next frame: step_code draws nothing for a hidden step. The header also drops its whole-symbol button while the code is hidden.
 
 step vsf97x

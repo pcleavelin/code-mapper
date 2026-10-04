@@ -811,12 +811,12 @@ fn swap_places(steps: &mut [Step], one: &StepId, other: &StepId) {
     }
 }
 
-struct Pinned {
-    anchor: Anchor,
-    resolution: Resolution,
+pub(crate) struct Pinned {
+    pub(crate) anchor: Anchor,
+    pub(crate) resolution: Resolution,
 }
 
-fn pin_span(index: &Index, file: FileId, span: Span) -> Result<Pinned, MapError> {
+pub(crate) fn pin_span(index: &Index, file: FileId, span: Span) -> Result<Pinned, MapError> {
     let source = index.file(file).ok_or(MapError::NoSuchFile)?;
     let anchor = Anchor::at(source, span).ok_or(MapError::OutsideFile)?;
     let symbol = source

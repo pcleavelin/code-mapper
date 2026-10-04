@@ -21,8 +21,8 @@ parent qc5hjg
 author ai
 file crates/cli/src/wire.rs
 symbol Command
-lines 0 74
-hash 5c01624772d17384
+lines 0 80
+hash 1b12adf52e0cfdef
 note The command set as a clap enum. Each variant takes its subcommand name and about text from the feature registry, and the override_usage attribute supplies the two usage lines at the top of the help.
 
 step 51i5vc
@@ -71,8 +71,8 @@ parent k2ngxt
 author ai
 file crates/codemap/src/main.rs
 symbol run
-lines 0 52
-hash e19274bc89dc4430
+lines 0 53
+hash 6b17b6c80f7cf56f
 note The 'codemap <root> help' spelling: parsing runs before indexing, and a parse failure prints its text on the failure's channel and exits 0 for stdout (help) or 2 for stderr (a usage error).
 
 step k2ngxt

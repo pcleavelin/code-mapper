@@ -1,0 +1,192 @@
+codemap 9
+tour io-comments
+kind layer
+author ai
+group map
+note The io-comments crate's surface: the boundary between the domain Comments and the comment files. Callers (the CLI's comment commands, the GUI's comment handlers) make a CommentStore for a root, load, then write or remove one comment at a time; nothing batches or waits for a save. The store's directory is the VCS's shared directory plus codemap-comments (jj's .jj/repo, git's common dir), so every jj workspace and git worktree of one repository reads the same comments and no commit carries them; with neither VCS it is .codemap-comments under the root. One file per comment, named <id>.comment, so writing one comment never touches another and two sessions answering different comments never collide. The format is line-based key/value text with a version line first; text fields escape backslashes and newlines. Every fault comes back as a value naming the file and line.
+
+step 0kdarn
+order 16
+parent gh8wx3
+author ai
+file crates/io-comments/src/wire.rs
+lines 124 147
+hash 5d964279e86e89e8
+note Text values are one line in the file: a backslash and a newline are escaped, and unescaped on the way back, so multi-line comments and replies round-trip.
+
+step 0yijo1
+order 15
+parent gh8wx3
+author ai
+file crates/io-comments/src/wire.rs
+lines 27 64
+hash 9a640bdc47a9cd0f
+note The keys a file may hold and their spelling.
+
+step 4qxh42
+order 5
+parent h355it
+author ai
+file crates/io-comments/src/convert.rs
+symbol comment_from_wire
+lines 0 22
+hash 83917e0ab0cfddba
+note The parsed fields to a Comment: the target, author, text, and an Answered state only when both reply and reply-author are present.
+
+step 4si55v
+order 13
+parent sw18rn
+author ai
+file crates/io-comments/src/error.rs
+symbol CommentFault
+lines 0 12
+hash 65167b730a079596
+note Every way a comment file can be malformed, as data; the CLI's wire layer words them.
+
+step 6lifmh
+order 11
+parent sw18rn
+author ai
+file crates/io-comments/src/lib.rs
+symbol stamp
+lines 0 15
+hash 6460bcfd7fdaf465
+note A cheap fingerprint of the directory (latest modification time and number of comment files), so the GUI can poll once a second and reload only when an agent wrote or removed a comment.
+
+step 881akn
+order 10
+parent sw18rn
+author ai
+file crates/io-comments/src/lib.rs
+symbol remove
+lines 0 7
+hash e23148cb1043fb3a
+note Deletes one comment's file; a file already gone is success, so dismissing twice is harmless.
+
+step b1ox9g
+order 12
+parent 6lifmh
+author ai
+file crates/io-comments/src/lib.rs
+symbol CommentStamp
+lines 0 3
+hash efcca4b88440e411
+note What stamp returns: compared for equality only.
+
+step bqtyo7
+order 2
+parent sw18rn
+author ai
+file crates/io-comments/src/lib.rs
+symbol load
+lines 0 26
+hash 58a6c3e1caa6dbb9
+note Every .comment file in the directory, in file name order; a missing directory is no comments. A file not named by a valid id, unreadable, or failing to parse stops the load with that file's error, so a damaged comment is reported rather than silently dropped.
+
+step ezcfr3
+order 14
+parent gh8wx3
+author ai
+file crates/io-comments/src/wire.rs
+symbol WireComment
+lines 0 12
+hash 89a6d991a969679e
+note The fields of one file, as strings and numbers, before any domain check.
+
+step f0xzmp
+order 17
+parent qu8d6d
+author ai
+file crates/io-comments/src/wire.rs
+lines 233 250
+hash 2a2575662743b9b7
+note Collects key value lines for render, an optional field only when present.
+
+step fey4tl
+order 7
+parent sw18rn
+author ai
+file crates/io-comments/src/lib.rs
+symbol write
+lines 0 9
+hash f3d4327a0b2c44ae
+note Writes one comment's file through io-store, creating the directory first. Called on every add and reply.
+
+step g940v3
+order 18
+parent sw18rn
+author ai
+file crates/io-comments/src/error.rs
+symbol CommentSaveError
+lines 0 13
+hash f8d6809b03cc8190
+note Every way writing fails: creating the directory, writing a file, removing one; each names the path.
+
+step gh8wx3
+order 4
+parent h355it
+author ai
+file crates/io-comments/src/wire.rs
+symbol parse
+lines 0 65
+hash b39d6fe8911086b9
+note The line format: a version line, then key value lines in any order; an unknown key, a second version or a missing one is a fault with its line.
+
+step h355it
+order 3
+parent bqtyo7
+author ai
+file crates/io-comments/src/convert.rs
+symbol comment_from_text
+lines 0 12
+hash 13791b1713b9abb1
+note One file's text to a domain Comment: parse, then convert, with the file named in any fault.
+
+step iyqog4
+order 6
+parent 4qxh42
+author ai
+file crates/io-comments/src/convert.rs
+symbol target_from_wire
+lines 0 30
+hash eac067add8bbdd88
+note The target kind decides which fields must be there: tour; tour and step; or file, symbol, lines and hash for code, rebuilt into the same Anchor a step stores.
+
+step ldix85
+order 8
+parent fey4tl
+author ai
+file crates/io-comments/src/convert.rs
+symbol comment_to_wire
+lines 0 35
+hash 42dfb067fe815da1
+note A Comment to its fields, the inverse of comment_from_wire.
+
+step qu8d6d
+order 9
+parent fey4tl
+author ai
+file crates/io-comments/src/wire.rs
+symbol render
+lines 0 26
+hash 75ef9b6449a8d792
+note The fields to text in a fixed order, so an unchanged comment writes identical bytes.
+
+step sw18rn
+order 0
+author ai
+file crates/io-comments/src/lib.rs
+symbol CommentStore
+lines 0 2
+hash e415856c89b48120
+note The store: only the directory the comments live in. Made per command in the CLI and once per window in the GUI.
+
+step w0xhsw
+order 1
+parent sw18rn
+author ai
+file crates/io-comments/src/lib.rs
+symbol new
+lines 0 9
+hash b3788c54966d0e3e
+note Picks the directory: Vcs::shared_directory joined with codemap-comments when the root is in a jj or git repository, else .codemap-comments under the root.

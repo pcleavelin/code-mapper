@@ -181,9 +181,9 @@ parent pucdnk
 author ai
 file crates/gui/src/model.rs
 symbol new
-lines 0 47
-hash 5701355eaf40779b
-note The Model is built around the index, the map and its store, with every panel in its default state (Nav on the Tour tab, the default panel tree, empty fields). The map's stamp is taken here, so the once-a-second disk poll starts out knowing the map as it was read.
+lines 0 51
+hash b1fe25ca184dec17
+note The Model is built around the index, the map and its store, with every panel in its default state (Nav on the Tour tab, the default panel tree, empty fields). The comment store is made for the root and its comments loaded and resolved (CommentShelf::load). The map's stamp is taken here, so the once-a-second disk poll starts out knowing the map as it was read.
 
 step xg2fnx
 order 19

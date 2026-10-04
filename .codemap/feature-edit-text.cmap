@@ -72,9 +72,9 @@ parent 4t25bo
 author ai
 file crates/gui/src/field.rs
 symbol shape
-lines 0 15
-hash b841f392b8c3a1a0
-note Which fields hold many lines (FieldShape::Multi): the tour note on the wizard's Note page. Enter breaks the line there, up and down move by row, and the field wraps to its width.
+lines 0 16
+hash b82954a22f13d8c5
+note Which fields hold many lines (FieldShape::Multi): the tour note on the wizard's Note page. The comment field is single-line: enter adds the comment. Enter breaks the line there, up and down move by row, and the field wraps to its width.
 
 step xgxp4v
 order 3

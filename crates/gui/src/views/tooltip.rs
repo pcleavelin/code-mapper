@@ -12,7 +12,7 @@ use crate::theme::{
     TOOLTIP_MARGIN, TOOLTIP_OFFSET, TOOLTIP_ROW_GAP, TOOLTIP_RULE, TOOLTIP_SYMBOL_WIDTH,
     TOOLTIP_TEXT_WIDTH, WEAK,
 };
-use crate::widgets::{CodeBlock, Container, Fill, Frame, Marks, TipAt, Width};
+use crate::widgets::{AcrossScroll, CodeBlock, Container, Fill, Frame, Marks, TipAt, Width};
 use io_lsp::{HoverLine, HoverText, Inline};
 
 const TEXT_LINES: Count = Count::new(24);
@@ -149,6 +149,7 @@ fn symbol_tip(model: &Model, frame: &mut Frame<'_>, at: Point, symbol: SymbolId)
                     end: last,
                     id: ids::tooltip_code(),
                     width: Width::Fit,
+                    across: AcrossScroll::Own,
                     marks: Marks {
                         background: &none,
                         bar: &none,

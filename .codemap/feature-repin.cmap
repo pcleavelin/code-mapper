@@ -73,8 +73,8 @@ parent rrhv1h
 author ai
 file crates/io-vcs/src/lib.rs
 symbol detect
-lines 0 21
-hash 6bf6bc46c0a519bc
+lines 0 24
+hash 20353f7e63e0454f
 link vcs
 note jj when a .jj directory is at or above the root, else git; no repository at all is an error before anything is touched.
 

@@ -71,7 +71,7 @@ parent w7mvto
 author ai
 file crates/gui/src/widgets/code.rs
 symbol code_block
-lines 54 71
+lines 58 75
 hash 5201244658bdb3d7
 note Trigger in every code block: an alt-click over a character queues Definition with Intent::Peek.
 

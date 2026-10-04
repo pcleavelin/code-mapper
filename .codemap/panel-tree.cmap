@@ -484,7 +484,7 @@ parent wz1vr6
 author ai
 file crates/gui/src/field.rs
 symbol impl Fields
-lines 47 70
+lines 49 72
 hash 6481d7e8f75e9462
 note start_empty clears a field and gives it the keyboard; fill sets a field's text without focusing it (the wizard's fields, and every step note when a tour is edited); release takes the keyboard away only if that field has it; drop_step_notes forgets every edit-tour note field when the wizard closes. The picker uses both, so its search starts empty each time it opens.
 

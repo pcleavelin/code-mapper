@@ -20,8 +20,8 @@ order 0
 author ai
 file crates/gui/src/action.rs
 symbol run_command
-lines 0 41
-hash 6c8d6863553d1fea
+lines 0 42
+hash c6ef4deb60212ce5
 link cli-command
 note The handler. Echoes the line into the log and pins the log to its end for two frames, parses it with the CLI's own parser (a parse error, help included, goes into the log and the status bar), and runs cli::exec with the human as author and no language servers. A changed map marks it dirty; a failure goes to the log and status.
 
@@ -31,8 +31,8 @@ parent t1jwoo
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 54
-hash fe61d47c32b1c808
+lines 0 63
+hash 6de2ac8e25f90562
 link gui-widgets
 note The command field clears on enter; a submitted line goes to run_command.
 

@@ -4,6 +4,7 @@ use ui::{Count, Id, Label, Point, Px, Typed};
 
 use crate::app::App;
 use crate::authoring::Authoring;
+use crate::comments::CommentAct;
 use crate::element_tip::Pressing;
 use crate::field::{AfterSubmit, Edit, FieldAct, FieldText, Which};
 use crate::graph::{GraphAction, Heading};
@@ -103,6 +104,7 @@ pub(crate) enum Action {
     Wizard(WizardAct),
     Settings(SettingsAct),
     Menu(MenuAct),
+    Comment(CommentAct),
 }
 
 impl App {
@@ -206,6 +208,7 @@ impl App {
             Action::Wizard(act) => self.wizard(act),
             Action::Settings(act) => self.change_setting(act),
             Action::Menu(act) => self.menu(act),
+            Action::Comment(act) => self.comment(act),
         }
         self.model.follow_focus();
     }
@@ -425,9 +428,13 @@ impl App {
             | Which::WizardGroup
             | Which::WizardSearch
             | Which::TourNote
-            | Which::StepNote(_) => AfterSubmit::Keep,
+            | Which::StepNote(_)
+            | Which::Comment => AfterSubmit::Keep,
             Which::Command | Which::ViewSearch => AfterSubmit::Clear,
         };
+        let escaped = which == Which::Comment
+            && self.model.fields.focused() == Some(which)
+            && edits.contains(&Edit::Escape);
         let before = self.model.fields.get(which).text().clone();
         let handled = self.model.fields.handle(which, edits, typed, after);
         if handled.clipboard != ClipboardRequest::Keep {
@@ -448,6 +455,10 @@ impl App {
                 _ => {}
             }
         }
+        if escaped {
+            self.cancel_comment();
+            return;
+        }
         let Some(line) = entered else {
             return;
         };
@@ -459,6 +470,7 @@ impl App {
             Which::Search => self.search(),
             Which::GoToLine => self.go_to_line(&line),
             Which::ViewSearch => self.pick_first(&line),
+            Which::Comment => self.comment(CommentAct::Submit),
             Which::SymbolFilter
             | Which::TourFilter
             | Which::Palette
@@ -575,6 +587,7 @@ impl App {
             invocation,
             Author::Human,
             None,
+            &model.comments,
             &mut output,
         );
         model.console.append(output.as_str());

@@ -139,9 +139,9 @@ parent nxbjm2
 author ai
 file crates/gui/src/views/authoring.rs
 symbol target_strip
-lines 0 39
-hash 42f1caa49f478c65
-note The strip on the Tours list, under the Source and Symbols toolbars, and above the graph. It draws what Model::target_strip says, in the rows TargetStrip::rows lays out for the strip's width in the previous frame: each row a small toolbar of labels, then buttons sized exactly to their labels so the layout never squeezes one, then the aside when it fits whole. The buttons are 'top level' (target-top@<view>) and add-offer@<view>. While the build-tour wizard is open, Source and Graph show the wizard's strip in its place (feature-build-tour).
+lines 0 80
+hash e822bd14c80d3f08
+note The strip on the Tours list, under the Source and Symbols toolbars, and above the graph. It draws what Model::target_strip says, in the rows TargetStrip::rows lays out for the strip's width in the previous frame: each row a small toolbar of labels, then buttons sized exactly to their labels so the layout never squeezes one, then the aside when it fits whole. The buttons are 'top level' (target-top@<view>) and add-offer@<view>, plus comment-lines in the Source view while lines are selected and no comment draft is open. While the build-tour wizard is open, Source and Graph show the wizard's strip in its place (feature-build-tour).
 
 step df8kp7
 order 13

@@ -70,9 +70,9 @@ parent n12e84
 author ai
 file crates/gui/src/work.rs
 symbol with_index_change
-lines 0 41
-hash 6d803ad22bc47376
-note The carry-over, used by every index change (a re-index here, merged server answers in poll_backend). Symbol and file ids do not survive a new index, so the focused symbol, the kept peek (a symbol or a line) and the current file are saved as (path, symbol name) keys first and looked up again after, the graph saves and restores what it shows the same way, and the map's anchors are re-resolved, then refresh_wizard rebuilds an open wizard's rows and pending edit against the new index. Hovers are forgotten and the drawn grids dropped, since both were keyed on the old index. Anything whose symbol is gone is simply dropped.
+lines 0 42
+hash 08ab2f9706c88c1e
+note The carry-over, used by every index change (a re-index here, merged server answers in poll_backend). Symbol and file ids do not survive a new index, so the focused symbol, the kept peek (a symbol or a line) and the current file are saved as (path, symbol name) keys first and looked up again after, the graph saves and restores what it shows the same way, and the map's anchors and the comments' anchors are re-resolved, then refresh_wizard rebuilds an open wizard's rows and pending edit against the new index. Hovers are forgotten and the drawn grids dropped, since both were keyed on the old index. Anything whose symbol is gone is simply dropped.
 
 step du8yxm
 order 13

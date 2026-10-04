@@ -1,3 +1,47 @@
+comment::pub struct CommentId(String);
+comment::pub fn new(id: &str) -> Option<Self>
+comment::pub fn as_str(&self) -> &str
+comment::pub struct CommentText(String);
+comment::pub fn new(text: &str) -> Option<Self>
+comment::pub fn as_str(&self) -> &str
+comment::pub fn lines(&self) -> impl Iterator<Item = &str>
+comment::pub struct ReplyText(String);
+comment::pub fn new(text: &str) -> Option<Self>
+comment::pub fn as_str(&self) -> &str
+comment::pub fn lines(&self) -> impl Iterator<Item = &str>
+comment::pub enum CommentTarget { Step(StepAddress), Tour(TourName), Code(Anchor), }
+comment::pub fn code(index: &Index, file: FileId, span: Span) -> Result<Self, MapError>
+comment::pub fn tour(&self) -> Option<&TourName>
+comment::pub fn file(&self) -> Option<&RelativePath>
+comment::pub struct Reply { pub text: ReplyText, pub author: Author, }
+comment::pub enum CommentState { Open, Answered(Reply), }
+comment::pub struct Comment { id: CommentId, target: CommentTarget, author: Author, text: CommentText, state: CommentState, resolution: Option<Resolution>, }
+comment::pub fn new( id: CommentId, target: CommentTarget, author: Author, text: CommentText, state: CommentState, ) -> Self
+comment::pub fn id(&self) -> &CommentId
+comment::pub fn target(&self) -> &CommentTarget
+comment::pub fn author(&self) -> Author
+comment::pub fn text(&self) -> &CommentText
+comment::pub fn state(&self) -> &CommentState
+comment::pub fn reply(&self) -> Option<&Reply>
+comment::pub fn is_open(&self) -> bool
+comment::pub fn resolution(&self) -> Option<Resolution>
+comment::pub fn resolve(&mut self, index: &Index)
+comment::pub enum CommentError { NoSuchComment(CommentId), }
+comment::pub struct Comments { comments: BTreeMap<CommentId, Comment>, }
+comment::pub fn new(comments: Vec<Comment>) -> Self
+comment::pub fn add( &mut self, index: &Index, target: CommentTarget, author: Author, text: CommentText, ) -> CommentId
+comment::pub fn reply(&mut self, id: &CommentId, reply: Reply) -> Result<&Comment, CommentError>
+comment::pub fn dismiss(&mut self, id: &CommentId) -> Result<Comment, CommentError>
+comment::pub fn get(&self, id: &CommentId) -> Option<&Comment>
+comment::pub fn iter(&self) -> impl Iterator<Item = &Comment>
+comment::pub fn open(&self) -> impl Iterator<Item = &Comment>
+comment::pub fn on_tour<'a>(&'a self, name: &'a TourName) -> impl Iterator<Item = &'a Comment>
+comment::pub fn on_step<'a>(&'a self, address: &'a StepAddress) -> impl Iterator<Item = &'a Comment>
+comment::pub fn on_gone_steps<'a>(&'a self, tour: &'a Tour) -> impl Iterator<Item = &'a Comment>
+comment::pub fn next_after(&self, after: Option<&CommentId>) -> Option<&Comment>
+comment::pub fn in_file<'a>(&'a self, file: &'a RelativePath) -> impl Iterator<Item = &'a Comment>
+comment::pub fn is_empty(&self) -> bool
+comment::pub fn resolve_all(&mut self, index: &Index)
 id::pub struct Position(usize);
 id::pub trait Key: Copy
 id::pub struct Entry<K, V> { pub id: K, pub item: V, }

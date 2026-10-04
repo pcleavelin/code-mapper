@@ -1,0 +1,97 @@
+codemap 9
+tour feature-comment
+kind flow
+author ai
+group features/cli
+note The human reading the map in a terminal beside the agent, with 'codemap . tour <name>' or 'show' instead of the window, at the moment a step or lines raise a question. Goal: the map is the second channel beside the source, read in the CLI as much as in the GUI. Without this command the CLI reader, who sees every step's index in brackets and its file:lines in the 'tour' output, had no way to leave the question the window's buttons leave, and had to retype the place into the chat like the GUI reader before add-comment; the Console, which runs every other command, had the same gap. In the CLI the place is printed text the human can copy, which is what the GUI's Source view lacks. It resolves the place the way tour-add does (a tour name, a step index, a file and 1-based inclusive lines anchored to the enclosing symbol), refuses an unknown tour, step, file or range and an empty text, and writes through the same store as add-comment, authored by whoever runs it. The CLI scenario 'comments' runs each outcome. Why comments exist and the designs that were tried are in feature-add-comment.
+
+step 4c0nyo
+order 2
+parent yee88u
+author ai
+file crates/cli/src/exec.rs
+symbol comment
+lines 1 2
+hash b2e006f888007514
+note Every comment command first loads the whole store and resolves it against the index, so places print as they stand now.
+
+step 4gkyzg
+order 1
+parent yee88u
+author ai
+file crates/cli/src/convert.rs
+symbol impl From<CommentArguments> for CommentRequest
+lines 0 24
+hash 1d60eff1bf0b6e32
+note The arguments to a request: --tour with an optional --step index, or --file with --lines start end (1-based, inclusive); the text goes through CommentText, so a blank one arrives as None.
+
+step 568k2z
+order 3
+parent yee88u
+author ai
+file crates/cli/src/exec.rs
+symbol comment_target
+lines 0 19
+hash 5bfe525d1edb5a52
+note The place: a tour or step by the same lookups as the tour commands (no such tour, no such step), or lines checked against the file (no such file, a range outside it) and pinned with CommentTarget::code.
+
+step hbityz
+order 8
+parent 4gkyzg
+author ai
+file crates/cli/src/convert.rs
+symbol CommentRequest
+lines 0 10
+hash 0730eb0a6c1ff0da
+note The three comment requests: list (open or all), reply (an id as typed, so an unknown one is reported as typed), add (a place and the text).
+
+step ookxop
+order 4
+parent yee88u
+author ai
+file crates/domain/src/comment.rs
+symbol add
+lines 0 12
+hash 7f4679321e3eed15
+link comment-model
+note Adds the open comment with a fresh id.
+
+step pajn3a
+order 5
+parent yee88u
+author ai
+file crates/io-comments/src/lib.rs
+symbol write
+lines 0 9
+hash f3d4327a0b2c44ae
+link io-comments
+note Writes its file.
+
+step ujgczh
+order 7
+parent 4gkyzg
+author ai
+file crates/cli/src/wire.rs
+symbol CommentArguments
+lines 0 10
+hash e546f2f93e886acc
+note The clap arguments: one of --tour or --file is required, --step needs --tour, --lines takes exactly two numbers and needs --file.
+
+step wxhg7s
+order 6
+parent yee88u
+author ai
+file crates/cli/src/wire.rs
+symbol comment_block
+lines 0 29
+hash 78e2cd9f31dd3c4a
+note Prints a comment: its id, state, author and place on the first line, the text indented below, the reply after an arrow.
+
+step yee88u
+order 0
+author ai
+file crates/cli/src/exec.rs
+symbol comment
+lines 23 37
+hash 85831fd05ab1043c
+note The handler, the Add arm of Run::comment: an empty text is refused, the place is resolved, the comment is added as whoever runs the command (the agent from a terminal, the human from the Console), written at once, and printed back as comments would show it.

@@ -7,6 +7,7 @@ mod wire;
 use domain::{Author, Changed, Index, Map, MapError, SymbolId};
 use features::Feature;
 use index::{ServerNotice, Servers};
+use io_comments::CommentStore;
 
 use crate::convert::Request;
 use crate::exec::Run;
@@ -111,6 +112,7 @@ pub fn exec(
     invocation: Invocation,
     author: Author,
     servers: Option<&mut Servers>,
+    comments: &CommentStore,
     output: &mut Output,
 ) -> Result<Option<Changed>, Failure> {
     Run {
@@ -119,6 +121,7 @@ pub fn exec(
         author,
         servers,
         output,
+        comments,
     }
     .run(invocation.request)
 }

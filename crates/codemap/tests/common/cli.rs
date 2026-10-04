@@ -5,7 +5,7 @@ use std::path::Path;
 #[macro_export]
 macro_rules! cli_scenarios {
     ($m:ident) => {
-        $m! { cli: read, edit, stale, vcs, git, merge }
+        $m! { cli: read, comments, edit, stale, vcs, git, merge }
     };
 }
 
@@ -62,6 +62,86 @@ pub(crate) fn read(bin: &Path, name: &str) -> String {
         &["bogus-command"],
         &["tree"],
         &["roots", "many"],
+    ] {
+        transcript.run(args);
+    }
+    transcript.out
+}
+
+pub(crate) fn comments(bin: &Path, name: &str) -> String {
+    let mut transcript = Transcript {
+        bin,
+        root: fixture(name, bin, true),
+        out: String::new(),
+    };
+    for args in [
+        &["comments"][..],
+        &[
+            "comment",
+            "--tour",
+            "startup",
+            "Why does startup read the store twice?",
+        ],
+        &[
+            "comment",
+            "--tour",
+            "startup",
+            "--step",
+            "0",
+            "Is this the only entry?",
+        ],
+        &[
+            "comment",
+            "--file",
+            "src/main.rs",
+            "--lines",
+            "7",
+            "9",
+            "Rename this.",
+        ],
+        &[
+            "comment",
+            "--file",
+            "src/main.rs",
+            "--lines",
+            "9",
+            "7",
+            "Backwards.",
+        ],
+        &["comment", "--tour", "nope", "Nowhere."],
+        &["comment", "--tour", "startup", "--step", "99", "No step."],
+        &["comment", "--tour", "startup", " "],
+        &["comment", "Placeless."],
+        &["comments"],
+        &[
+            "comment-reply",
+            "3mee2z",
+            "It reads it once; see the startup tour note.",
+        ],
+        &["comment-reply", "zzzzzz", "Unknown."],
+        &["comment-reply", "3mee2z", " "],
+        &[
+            "comment",
+            "--file",
+            "nope.rs",
+            "--lines",
+            "1",
+            "1",
+            "No such file.",
+        ],
+        &[
+            "comment",
+            "--file",
+            "src/main.rs",
+            "--lines",
+            "1",
+            "999",
+            "Past the end.",
+        ],
+        &["comments"],
+        &["comments", "--all"],
+        &["tour-rename", "startup", "boot"],
+        &["comments", "--all"],
     ] {
         transcript.run(args);
     }
@@ -168,6 +248,33 @@ pub(crate) fn stale(bin: &Path, name: &str) -> String {
         out: String::new(),
     };
     transcript.run(&["check"]);
+    transcript.run(&[
+        "comment",
+        "--file",
+        "src/store.rs",
+        "--lines",
+        "30",
+        "30",
+        "Why a thousand?",
+    ]);
+    transcript.run(&[
+        "comment",
+        "--file",
+        "src/main.rs",
+        "--lines",
+        "13",
+        "14",
+        "Only two shapes?",
+    ]);
+    transcript.run(&[
+        "comment",
+        "--file",
+        "tools/helpers.py",
+        "--lines",
+        "2",
+        "2",
+        "What if xs is empty?",
+    ]);
     transcript.note("two lines above impl Store: its steps move but stay current");
     edit_file(
         &root,
@@ -180,6 +287,7 @@ pub(crate) fn stale(bin: &Path, name: &str) -> String {
     transcript.note("check's body changes: its step goes stale");
     edit_file(&root, "src/store.rs", "< 1000", "< 2000");
     transcript.run(&["stale"]);
+    transcript.run(&["comments"]);
     transcript.run(&["check"]);
     transcript.run(&["tour", "startup"]);
     transcript.run(&["uncovered", "check"]);
@@ -200,6 +308,7 @@ pub(crate) fn stale(bin: &Path, name: &str) -> String {
         "    fill_up(&mut store);",
     );
     transcript.run(&["stale"]);
+    transcript.run(&["comments"]);
     transcript
         .note("the text of report moves down unchanged in its file: stale lists where it went");
     transcript.run(&["tour-add", "startup", "src/main.rs", "18", "19", "-1"]);
@@ -213,6 +322,7 @@ pub(crate) fn stale(bin: &Path, name: &str) -> String {
     transcript.note("helpers.py is deleted: its file is gone");
     fs::remove_file(root.join("tools/helpers.py")).unwrap();
     transcript.run(&["stale"]);
+    transcript.run(&["comments"]);
     transcript.run(&["tours", "stats"]);
     transcript.note("re-pin what can be re-pinned by hand, delete the rest");
     transcript.run(&["tour-pin", "startup", "3", "src/store.rs", "31", "33"]);
@@ -237,6 +347,8 @@ pub(crate) fn vcs(bin: &Path, name: &str) -> Result<String, Missing> {
     transcript.run(&["diff"]);
     transcript.note("the map and the source are committed as the parent revision");
     jj_commit(&root, "base");
+    transcript.run(&["comment", "--tour", "startup", "Kept beside the repo."]);
+    transcript.run(&["comments"]);
     transcript.run(&["diff"]);
     transcript.run(&["step-note", "startup", "0", "A new entry note."]);
     transcript.run(&["tour-add", "startup", "describe", "-1"]);

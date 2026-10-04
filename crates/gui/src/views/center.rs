@@ -1,23 +1,28 @@
-use domain::{Change, FileId, Line, RelativePath, StepChange, SymbolName, TourDiff};
-use ui::{Axis, Count, Icon, Label, Px, Rect, Run, Scrollbar, Size};
+use domain::{Change, Comment, FileId, Line, RelativePath, Span, StepChange, SymbolName, TourDiff};
+use ui::{Axis, Count, Icon, Id, Label, Px, Rect, Run, Scrollbar, Size};
 
 use crate::action::Action;
+use crate::comments::{DraftOn, InsetAt};
 use crate::field::Which;
 use crate::graph::{GraphAction, GraphFrame, Hit, Minimap, draw_scene};
+use crate::grid::GUTTER;
 use crate::ids::{self, Target};
 use crate::keys::{self, LineGesture};
-use crate::model::{HIT_LIMIT, HitsShown, Model, StepKey, Tab, TourSlot};
+use crate::model::{Gone, HIT_LIMIT, HitsShown, Model, StepKey, Tab, TourSlot};
 use crate::panels::{Direction, View};
 use crate::status::Status;
 use crate::text::{Counted, Noun, Tag};
 use crate::theme::{
-    Cells, EDGE_SCROLL_BAND, EDGE_SCROLL_MOST, FIELD, FIT_BUTTON, GREEN, LINE_FIELD,
-    LINES_SELECTED, ORANGE, PIXEL, RED, ROW_EXTRA, SEARCH_FIELD, SOURCE_GUESS, TEXT, WEAK,
-    ZOOM_BUTTON, ZOOM_PERCENT, Zoom, ZoomStep,
+    COMMENT_ANSWERED_FILL, COMMENT_OPEN_FILL, Cells, DRAFT_FRAME, DRAFT_ROWS, EDGE_SCROLL_BAND,
+    EDGE_SCROLL_MOST, FIELD, FIT_BUTTON, GREEN, LINE_FIELD, LINES_SELECTED, ORANGE, PIXEL, RED,
+    ROW_EXTRA, SEARCH_FIELD, SOURCE_GUESS, TEXT, WEAK, ZOOM_BUTTON, ZOOM_PERCENT, Zoom, ZoomStep,
 };
-use crate::widgets::{Chosen, CodeBlock, Coded, Container, Frame, Marks, Padding, Scroller, Width};
+use crate::widgets::{
+    AcrossBar, AcrossScroll, Chosen, CodeBlock, Coded, Container, Frame, Marks, Padding, Scroller,
+    Width,
+};
 
-use super::authoring;
+use super::{authoring, comments};
 
 fn source_toolbar(model: &Model, frame: &mut Frame<'_>, path: &RelativePath) {
     frame.start(Container::Toolbar);
@@ -47,27 +52,357 @@ fn edge_scroll(vertical: Px, rect: Rect, row_height: Px) -> Px {
     }
 }
 
-fn select_lines(model: &Model, frame: &mut Frame<'_>, coded: &Coded, scrollbar: Option<Scrollbar>) {
+enum InsetKind<'inset> {
+    Comment(&'inset Comment),
+    Draft(&'inset DraftOn),
+}
+
+struct Inset<'inset> {
+    at: InsetAt,
+    height: Px,
+    kind: InsetKind<'inset>,
+}
+
+fn rows_to(line: Line) -> Count {
+    Count::new(usize::try_from(line.value()).unwrap_or(0))
+}
+
+impl Inset<'_> {
+    fn row_id(&self) -> Id {
+        match self.kind {
+            InsetKind::Comment(comment) => comments::box_id(comment).with("row"),
+            InsetKind::Draft(_) => comments::draft_id().with("row"),
+        }
+    }
+
+    fn above(&self, line: Line) -> bool {
+        match self.at {
+            InsetAt::Top => true,
+            InsetAt::After(after) => after < line,
+        }
+    }
+
+    fn rows_above(&self) -> Count {
+        match self.at {
+            InsetAt::Top => Count::ZERO,
+            InsetAt::After(after) => rows_to(after) + Count::new(1),
+        }
+    }
+}
+
+struct Start {
+    line: Line,
+    inset: Count,
+    top: Px,
+}
+
+enum Piece<'plan, 'inset> {
+    Inset(&'plan Inset<'inset>),
+    Code { id: Id, start: Line, end: Line },
+}
+
+struct Plan<'plan, 'inset> {
+    pieces: Vec<Piece<'plan, 'inset>>,
+    drawn: Px,
+}
+
+struct Insets<'inset> {
+    all: Vec<Inset<'inset>>,
+    row: Px,
+}
+
+impl<'inset> Insets<'inset> {
+    fn of(model: &'inset Model, frame: &Frame<'_>, file: FileId, last: Line) -> Self {
+        let row = frame.row_height();
+        let measured = |id: Id| {
+            frame
+                .ui
+                .placement(id)
+                .map(|placement| placement.rect.height)
+        };
+        let within = |at: InsetAt| match at {
+            InsetAt::Top => InsetAt::Top,
+            InsetAt::After(after) => InsetAt::After(after.min(last)),
+        };
+        let mut all: Vec<Inset<'inset>> = model
+            .shelf
+            .in_file(&model.index, file)
+            .map(|comment| {
+                let mut inset = Inset {
+                    at: within(InsetAt::of(comment)),
+                    height: comments::estimate(comment, row),
+                    kind: InsetKind::Comment(comment),
+                };
+                if let Some(height) = measured(inset.row_id()) {
+                    inset.height = height;
+                }
+                inset
+            })
+            .collect();
+        if let Some(draft @ DraftOn::Lines { file: on, span }) = model.shelf.draft.as_ref()
+            && *on == file
+        {
+            let mut inset = Inset {
+                at: within(InsetAt::After(span.end())),
+                height: row * DRAFT_ROWS + DRAFT_FRAME,
+                kind: InsetKind::Draft(draft),
+            };
+            if let Some(height) = measured(inset.row_id()) {
+                inset.height = height;
+            }
+            all.push(inset);
+        }
+        all.sort_by_key(|inset| inset.at);
+        Self { all, row }
+    }
+
+    fn line_top(&self, line: Line) -> Px {
+        let above: Px = self
+            .all
+            .iter()
+            .filter(|inset| inset.above(line))
+            .fold(Px::ZERO, |sum, inset| sum + inset.height);
+        self.row * rows_to(line) + above
+    }
+
+    fn height(&self, lines: Count) -> Px {
+        self.all
+            .iter()
+            .fold(self.row * lines, |sum, inset| sum + inset.height)
+    }
+
+    fn start(&self, offset: Px, last: Line) -> Start {
+        let row = self.row;
+        let line_at = |extra: Px| {
+            Line::new(u32::try_from((offset - extra).ratio(row).max(0)).unwrap_or(0)).min(last)
+        };
+        let mut extra = Px::ZERO;
+        for (position, inset) in self.all.iter().enumerate() {
+            let rows = inset.rows_above();
+            let candidate = line_at(extra);
+            if rows_to(candidate) < rows {
+                return Start {
+                    line: candidate,
+                    inset: Count::new(position),
+                    top: row * rows_to(candidate) + extra,
+                };
+            }
+            if offset < row * rows + extra + inset.height {
+                let before = Count::new(rows.get().saturating_sub(1));
+                return Start {
+                    line: Line::new(u32::try_from(before.get()).unwrap_or(0)),
+                    inset: Count::new(position),
+                    top: if rows == Count::ZERO {
+                        extra
+                    } else {
+                        row * before + extra
+                    },
+                };
+            }
+            extra += inset.height;
+        }
+        let line = line_at(extra);
+        Start {
+            line,
+            inset: Count::new(self.all.len()),
+            top: row * rows_to(line) + extra,
+        }
+    }
+
+    fn plan(&self, start: &Start, bottom: Px, last: Line, lines: Count) -> Plan<'_, 'inset> {
+        let row = self.row;
+        let mut pieces = Vec::new();
+        let mut drawn = start.top;
+        let mut next = start.inset.get();
+        let mut line = start.line;
+        loop {
+            while let Some(shown) = self.all.get(next).filter(|shown| shown.above(line)) {
+                pieces.push(Piece::Inset(shown));
+                drawn += shown.height;
+                next += 1;
+            }
+            if lines == Count::ZERO || line > last || drawn >= bottom {
+                break;
+            }
+            let fit = u32::try_from((bottom - drawn).ratio(row).max(0) + 1).unwrap_or(1);
+            let mut end = Line::new(line.value().saturating_add(fit - 1)).min(last);
+            if let Some(InsetAt::After(after)) = self.all.get(next).map(|inset| inset.at) {
+                end = end.min(after.max(line));
+            }
+            pieces.push(Piece::Code {
+                id: segment_id(Count::new(next)),
+                start: line,
+                end,
+            });
+            drawn += row * Count::new(rows_to(end).get() + 1 - rows_to(line).get());
+            line = Line::new(end.value() + 1);
+        }
+        Plan { pieces, drawn }
+    }
+
+    fn segment_ids(&self) -> impl Iterator<Item = Id> {
+        (0..=self.all.len()).map(|before| segment_id(Count::new(before)))
+    }
+}
+
+fn segment_id(before: Count) -> Id {
+    if before == Count::ZERO {
+        ids::LINES.id()
+    } else {
+        ids::LINES.id().nth(before.get())
+    }
+}
+
+fn inset(model: &Model, frame: &mut Frame<'_>, inset: &Inset<'_>, width: Option<Px>) {
+    let gutter = frame.cell_width() * GUTTER;
+    frame.start(Container::CommentRow(inset.row_id()));
+    frame.indent(gutter);
+    match inset.kind {
+        InsetKind::Comment(comment) => {
+            comments::comment_box(frame, comment, Gone::of(model, comment));
+        }
+        InsetKind::Draft(draft) => {
+            comments::draft_box(model, frame, draft, width.map(|width| width - gutter));
+        }
+    }
+    frame.finish();
+}
+
+struct Segment {
+    id: Id,
+    start: Line,
+    end: Line,
+    coded: Coded,
+}
+
+fn line_under_mouse(frame: &Frame<'_>, segments: &[Segment]) -> Option<Line> {
+    let mouse = frame.ui.pointer().mouse.vertical;
+    let row = frame.row_height();
+    segments.iter().rev().find_map(|segment| {
+        let rect = frame.ui.placement(segment.id)?.rect;
+        (mouse >= rect.top).then(|| {
+            let down = u32::try_from((mouse - rect.top).ratio(row).max(0)).unwrap_or(0);
+            Line::new(segment.start.value().saturating_add(down)).min(segment.end)
+        })
+    })
+}
+
+fn select_lines(
+    model: &Model,
+    frame: &mut Frame<'_>,
+    segments: &[Segment],
+    scrollbar: Option<Scrollbar>,
+) {
     let pointer = frame.ui.pointer();
     let on_scrollbar = scrollbar.is_some_and(|shown| shown.track.contains(pointer.mouse));
-    match (
-        keys::selects_line(coded.interaction, pointer),
-        coded.spot,
-        coded.dragged_to,
-    ) {
-        (Some(LineGesture::Press), Some(spot), _) if !on_scrollbar => {
-            frame.push(Action::SelectLine(spot.line, LineGesture::Press));
+    let mut acted = false;
+    for segment in segments {
+        let coded = &segment.coded;
+        match (
+            keys::selects_line(coded.interaction, pointer),
+            coded.spot,
+            coded.dragged_to,
+        ) {
+            (Some(LineGesture::Press), Some(spot), _) if !on_scrollbar => {
+                frame.push(Action::SelectLine(spot.line, LineGesture::Press));
+                acted = true;
+            }
+            (Some(LineGesture::Drag), _, Some(line)) => {
+                let line = line_under_mouse(frame, segments).unwrap_or(line);
+                frame.push(Action::SelectLine(line, LineGesture::Drag));
+                acted = true;
+            }
+            _ => {}
         }
-        (Some(LineGesture::Drag), _, Some(line)) => {
-            frame.push(Action::SelectLine(line, LineGesture::Drag));
-        }
-        _ if model.line_grab.is_some()
-            && (coded.interaction.clicked() || !coded.interaction.down()) =>
-        {
-            frame.push(Action::ClearLineSelection);
-        }
-        _ => {}
     }
+    let clicked = segments
+        .iter()
+        .any(|segment| segment.coded.interaction.clicked());
+    let down = segments
+        .iter()
+        .any(|segment| segment.coded.interaction.down());
+    if !acted && model.line_grab.is_some() && (clicked || !down) {
+        frame.push(Action::ClearLineSelection);
+    }
+}
+
+fn draw_plan(
+    model: &Model,
+    frame: &mut Frame<'_>,
+    file: FileId,
+    plan: &Plan<'_, '_>,
+    marks: &Marks<'_>,
+    width: Option<Px>,
+) -> Vec<Segment> {
+    let columns = plan
+        .pieces
+        .iter()
+        .filter_map(|piece| match piece {
+            Piece::Code { start, end, .. } => Span::new(*start, *end),
+            Piece::Inset(_) => None,
+        })
+        .fold(Count::ZERO, |widest, span| {
+            widest.max(frame.code_columns(model, file, span))
+        });
+    let last_code = plan
+        .pieces
+        .iter()
+        .rposition(|piece| matches!(piece, Piece::Code { .. }));
+    let mut segments = Vec::new();
+    for (position, piece) in plan.pieces.iter().enumerate() {
+        match piece {
+            Piece::Inset(shown) => inset(model, frame, shown, width),
+            Piece::Code { id, start, end } => {
+                let bar = if last_code == Some(position) {
+                    AcrossBar::Drawn
+                } else {
+                    AcrossBar::Omitted
+                };
+                let coded = frame.code_block(
+                    model,
+                    &CodeBlock {
+                        file,
+                        start: *start,
+                        end: *end,
+                        id: *id,
+                        width: Width::Wide,
+                        across: AcrossScroll::Shared {
+                            offset: ids::LINES.id(),
+                            columns,
+                            bar,
+                        },
+                        marks: Marks {
+                            background: marks.background,
+                            bar: marks.bar,
+                        },
+                    },
+                );
+                segments.push(Segment {
+                    id: *id,
+                    start: *start,
+                    end: *end,
+                    coded,
+                });
+            }
+        }
+    }
+    segments
+}
+
+fn scroll_to_request(
+    model: &Model,
+    frame: &mut Frame<'_>,
+    insets: &Insets<'_>,
+    total: Count,
+) -> Option<Px> {
+    let request = model.nav.scroll_to()?;
+    let height = frame
+        .ui
+        .placement(ids::source())
+        .map_or(SOURCE_GUESS, |placement| placement.rect.height);
+    let above = insets.line_top(Line::new(request.line.value().saturating_sub(3)));
+    frame.push(Action::ScrolledToLine(request.ticket));
+    Some(above.min((insets.height(total) - height).max(Px::ZERO)))
 }
 
 pub(super) fn source(model: &Model, frame: &mut Frame<'_>) {
@@ -78,35 +413,31 @@ pub(super) fn source(model: &Model, frame: &mut Frame<'_>) {
     let Some(source) = model.index.file(file) else {
         return;
     };
-    let id = ids::source();
+    let column_id = ids::source();
     let row_height = frame.row_height();
     let count = source.text().count();
-    let lines = Px::new(i32::try_from(count.value()).unwrap_or(0));
+    let last = count.last().unwrap_or(Line::new(0));
+    let total = Count::new(usize::try_from(count.value()).unwrap_or(0));
+    let insets = Insets::of(model, frame, file, last);
     let pointer = frame.ui.pointer();
-    let column = frame.ui.placement(id);
-    let mut offset = model.scrolls.get(id);
+    let column = frame.ui.placement(column_id);
+    let mut offset = model.scrolls.get(column_id);
     if model.line_grab.is_some()
-        && frame.ui.interaction(ids::LINES.id()).down()
+        && insets
+            .segment_ids()
+            .any(|segment| frame.ui.interaction(segment).down())
         && let Some(column) = column
     {
         offset += edge_scroll(pointer.mouse.vertical, column.rect, row_height);
     }
-    if let Some(request) = model.nav.scroll_to() {
-        let height = frame
-            .ui
-            .placement(id)
-            .map_or(SOURCE_GUESS, |placement| placement.rect.height);
-        let above = Px::new(
-            (i32::try_from(request.line.value()).unwrap_or(0) - 3).max(0) * row_height.get(),
-        );
-        offset = above.min((Px::new(lines.get() * row_height.get()) - height).max(Px::ZERO));
-        frame.push(Action::ScrolledToLine(request.ticket));
+    if let Some(asked) = scroll_to_request(model, frame, &insets, total) {
+        offset = asked;
     }
     source_toolbar(model, frame, source.path());
     authoring::target_strip(model, frame, View::Source);
-    let scrolled = frame.scroll_column(id, offset, Scroller::Plain, Some(FIELD));
+    let scrolled = frame.scroll_column(column_id, offset, Scroller::Plain, Some(FIELD));
     let selection = model.nav.lines();
-    let anchors: Vec<(domain::Span, bool)> = model
+    let anchors: Vec<(Span, bool)> = model
         .nav
         .tour()
         .and_then(|tour| model.tour(tour))
@@ -118,46 +449,58 @@ pub(super) fn source(model: &Model, frame: &mut Frame<'_>) {
                 .collect()
         })
         .unwrap_or_default();
-    let total = Count::new(usize::try_from(count.value()).unwrap_or(0));
-    let window = frame.rows_window(
-        scrolled.offset,
-        scrolled.interaction.rect(),
-        total,
-        row_height,
-        Count::new(60),
-    );
-    let end = (window.first.get() + window.visible.get()).min(total.get());
-    if total.get() > 0 && end > window.first.get() {
-        let bar = |line: Line| {
-            anchors
-                .iter()
-                .find(|(span, _)| span.contains(line))
-                .map(|(_, stale)| if *stale { RED } else { GREEN })
-        };
-        let background = |line: Line| {
-            selection
-                .filter(|chosen| chosen.low() <= line && line <= chosen.high())
-                .map(|_| LINES_SELECTED)
-        };
-        let coded = frame.code_block(
-            model,
-            &CodeBlock {
-                file,
-                start: Line::new(u32::try_from(window.first.get()).unwrap_or(0)),
-                end: Line::new(u32::try_from(end - 1).unwrap_or(0)),
-                id: ids::LINES.id(),
-                width: Width::Wide,
-                marks: Marks {
-                    background: &background,
-                    bar: &bar,
-                },
-            },
-        );
+    let commented: Vec<(Span, bool)> = model
+        .shelf
+        .in_file(&model.index, file)
+        .filter_map(|comment| {
+            comment
+                .resolution()
+                .map(|resolution| (resolution.span, comment.is_open()))
+        })
+        .collect();
+    let bar = |line: Line| {
+        anchors
+            .iter()
+            .find(|(span, _)| span.contains(line))
+            .map(|(_, stale)| if *stale { RED } else { GREEN })
+    };
+    let background = |line: Line| {
+        selection
+            .filter(|chosen| chosen.low() <= line && line <= chosen.high())
+            .map(|_| LINES_SELECTED)
+            .or_else(|| {
+                commented
+                    .iter()
+                    .find(|(span, _)| span.contains(line))
+                    .map(|(_, open)| {
+                        if *open {
+                            COMMENT_OPEN_FILL
+                        } else {
+                            COMMENT_ANSWERED_FILL
+                        }
+                    })
+            })
+    };
+    let view = scrolled
+        .interaction
+        .rect()
+        .map_or(SOURCE_GUESS, |rect| rect.height);
+    let width = scrolled.interaction.rect().map(|rect| rect.width);
+    let bottom = scrolled.offset + view;
+    let begin = insets.start(scrolled.offset, last);
+    frame.spacer(begin.top);
+    let plan = insets.plan(&begin, bottom, last, total);
+    let marks = Marks {
+        background: &background,
+        bar: &bar,
+    };
+    let segments = draw_plan(model, frame, file, &plan, &marks, width);
+    if total.get() > 0 {
         let scrollbar = column.and_then(|placement| placement.scrollbar(Axis::Vertical, offset));
         frame.attach_tip(ids::LINES.target());
-        select_lines(model, frame, &coded, scrollbar);
+        select_lines(model, frame, &segments, scrollbar);
     }
-    frame.rows_after(total, &window, row_height, row_height);
+    frame.spacer((insets.height(total) - plan.drawn).max(Px::ZERO) + row_height);
     frame.finish();
 }
 

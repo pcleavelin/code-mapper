@@ -1,16 +1,16 @@
 use std::fmt;
 
 use domain::{
-    Depth, GroupName, Line, MapError, Note, Pruning, RelativePath, Revision, SourceFile, Span,
-    StepId, SymbolName, TextFragment, Tour, TourKind, TourName,
+    CommentText, Depth, GroupName, Line, MapError, Note, Pruning, RelativePath, ReplyText,
+    Revision, SourceFile, Span, StepId, SymbolName, TextFragment, Tour, TourKind, TourName,
 };
 
 use crate::wire::{
-    Command, FilterArguments, GroupRenameArguments, NoteEditArguments, PromoteArguments,
-    RegexArguments, ShowArguments, StepArguments, StepLinkArguments, StepNoteArguments,
-    SymbolArguments, TourAddArguments, TourArguments, TourGroupArguments, TourMoveArguments,
-    TourNewArguments, TourNoteArguments, TourPinArguments, TourRenameArguments, TourRmArguments,
-    TourSwapArguments, TreeArguments,
+    Command, CommentArguments, FilterArguments, GroupRenameArguments, NoteEditArguments,
+    PromoteArguments, RegexArguments, ShowArguments, StepArguments, StepLinkArguments,
+    StepNoteArguments, SymbolArguments, TourAddArguments, TourArguments, TourGroupArguments,
+    TourMoveArguments, TourNewArguments, TourNoteArguments, TourPinArguments, TourRenameArguments,
+    TourRmArguments, TourSwapArguments, TreeArguments,
 };
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -332,6 +332,7 @@ pub(crate) enum Request {
     Query(Query),
     Edit(Edit),
     Repin(Option<Revision>),
+    Comment(CommentRequest),
 }
 
 impl From<Command> for Request {
@@ -376,6 +377,16 @@ impl From<Command> for Request {
             Command::TourSwap(arguments) => Self::Edit(arguments.into()),
             Command::TourRm(arguments) => Self::Edit(arguments.into()),
             Command::Promote(arguments) => Self::Edit(arguments.into()),
+            Command::Comments(arguments) => Self::Comment(CommentRequest::List(if arguments.all {
+                CommentView::All
+            } else {
+                CommentView::Open
+            })),
+            Command::CommentReply(arguments) => Self::Comment(CommentRequest::Reply {
+                id: TextFragment::new(&arguments.id),
+                reply: ReplyText::new(&arguments.reply),
+            }),
+            Command::Comment(arguments) => Self::Comment(arguments.into()),
         }
     }
 }
@@ -599,6 +610,63 @@ impl From<PromoteArguments> for Edit {
             } else {
                 Pruning::Pruned
             },
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum CommentView {
+    Open,
+    All,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum CommentPlacement {
+    Tour {
+        name: TextFragment,
+        step: Option<StepIndex>,
+    },
+    Code {
+        file: RelativePath,
+        lines: Lines,
+    },
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum CommentRequest {
+    List(CommentView),
+    Reply {
+        id: TextFragment,
+        reply: Option<ReplyText>,
+    },
+    Add {
+        placement: CommentPlacement,
+        text: Option<CommentText>,
+    },
+}
+
+impl From<CommentArguments> for CommentRequest {
+    fn from(arguments: CommentArguments) -> Self {
+        let placement = match (arguments.tour, arguments.file) {
+            (Some(name), _) => CommentPlacement::Tour {
+                name: TextFragment::new(&name),
+                step: arguments.step.map(StepIndex),
+            },
+            (None, file) => {
+                let number =
+                    |at: usize| LineNumber::of(arguments.lines.get(at).copied().unwrap_or(0));
+                CommentPlacement::Code {
+                    file: RelativePath::new(&file.unwrap_or_default()),
+                    lines: Lines {
+                        start: number(0),
+                        end: number(1),
+                    },
+                }
+            }
+        };
+        Self::Add {
+            placement,
+            text: CommentText::new(&arguments.text),
         }
     }
 }

@@ -22,7 +22,7 @@ author ai
 file crates/gui/src/views/document.rs
 symbol step_code
 lines 0 18
-hash 07dfe4bde390d46e
+hash 3c2b2ceab18e6812
 note The effect on the next frame: with Whole set the code block spans the resolved symbol instead of the slice, and since more than the slice now shows, the slice lines get the SLICE background.
 
 step vstr8g

@@ -2,14 +2,15 @@ use std::fmt::{self, Write as _};
 use std::io::{self, Write as _};
 use std::iter;
 
-use domain::Row;
+use domain::{Comment, Row};
 use platform::ScriptLine;
 use ui::{Axis, Count, Id, Ui};
 
+use crate::comments::CommentShelf;
 use crate::field::{Fields, Which};
 use crate::graph::{GraphState, Hit, Node};
 use crate::ids;
-use crate::model::{Model, Scrolls, StepViews, ViewFlag};
+use crate::model::{Gone, Model, Scrolls, StepViews, ViewFlag};
 use crate::nav::Nav;
 use crate::palette::Palette;
 use crate::panels::{Direction, Panels};
@@ -521,5 +522,39 @@ impl Dump for Option<SettingsMenu> {
             settings.size().get(),
             Direction::of_saved(settings.graph_direction())
         ));
+    }
+}
+
+impl Dump for CommentShelf {
+    fn dump(&self, context: &Context<'_>, lines: &mut DumpLines) {
+        let counts = self.counts();
+        if counts.total == Count::ZERO && self.draft.is_none() {
+            return;
+        }
+        lines.line(format_args!(
+            "comments total={} answered={} walked={} popup={} drafting={}",
+            counts.total,
+            counts.answered,
+            Optional(self.walked()),
+            Optional(self.popup().map(Comment::id)),
+            self.draft.is_some()
+        ));
+        for comment in self.iter() {
+            let state = if comment.is_open() {
+                "open"
+            } else {
+                "answered"
+            };
+            let shown = context
+                .ui
+                .placement(ids::comment_box().with(comment.id().as_str()))
+                .map(|placement| format!("{:?}", placement.rect));
+            lines.line(format_args!(
+                "comment {} {state} gone={:?} box={}",
+                comment.id(),
+                Gone::of(context.model, comment),
+                Optional(shown)
+            ));
+        }
     }
 }

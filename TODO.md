@@ -44,11 +44,6 @@
    on screen.
 8. Moving the cursor in a text field shifts the text around.
 
-## Features
-
-1. Comments for an agent to review and address: the owner leaves a comment on code or a
-   step, the next agent session answers it in the map and clears it.
-
 ## Deferred
 
 Each waits for its trigger.

@@ -304,6 +304,7 @@ impl App {
             Which::WizardGroup,
             Which::WizardSearch,
             Which::TourNote,
+            Which::Comment,
         ] {
             actions.push(Action::Type(which, edits.clone(), typed.clone()));
         }
@@ -329,7 +330,7 @@ impl App {
             ui: &self.ui,
             services: &self.services,
         };
-        let parts: [&dyn Dump; 12] = [
+        let parts: [&dyn Dump; 13] = [
             &model.nav,
             &model.map,
             &model.scrolls,
@@ -342,6 +343,7 @@ impl App {
             &model.palette,
             &model.wizard,
             &model.settings_menu,
+            &model.shelf,
         ];
         for part in parts {
             part.dump(&context, &mut lines);
@@ -370,6 +372,7 @@ impl platform::App for App {
         self.poll_reindex();
         self.poll_link();
         self.poll_disk();
+        self.poll_comments();
         self.model.now = input.time;
         self.keys(input);
         self.model.refresh_palette();

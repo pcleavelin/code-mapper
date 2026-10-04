@@ -129,8 +129,8 @@ order 0
 author ai
 file crates/cli/src/convert.rs
 symbol Request
-lines 0 4
-hash 05ba9b627a5e46bf
+lines 0 5
+hash 9990225d5d16d2ad
 note What exec runs: a Query, an Edit, or a repin with its optional revision. Private to the crate; only Invocation::parse makes one.
 
 step hc3wgx
@@ -149,8 +149,8 @@ parent brorqo
 author ai
 file crates/cli/src/convert.rs
 symbol from
-lines 0 42
-hash 07cef3a2582f59bc
+lines 0 52
+hash 9551609b4591aeb9
 note One arm per command. Each argument struct converts through its own From, so this match only says which kind of request a command is.
 
 step kuueng

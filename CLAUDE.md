@@ -80,6 +80,7 @@ rule applies.
 | **Kind** | `flow`: what happens when X. `layer`: an abstraction boundary and the functions forming its surface (a module is a layer rooted at its file). `data`: a data structure and what mutates it. A tag only. |
 | **Coverage** | A symbol is covered when a step's anchor overlaps it. Derived, never stored. |
 | **Map** | All tours for one root: `.codemap/`, one text file per tour, committed with the code. The only thing persisted (the manual layer). Everything derived from source (files, symbols, xrefs, roots, call trees, coverage) is the auto layer, cached in `.codemap-cache`, never committed. |
+| **Comment** | A note the human leaves for the agent on a step, a tour or lines of code (anchored like a step). Local to the machine and never part of the map. Open until the agent replies, then shown with the reply until the human dismisses it. |
 
 A tour note describes the workflow as a whole; a step note says what the step does for this
 tour. What is true of the code in every tour goes in the note of the `layer` or `data` tour
@@ -118,16 +119,24 @@ covering it: the code has no comments, so the map is the only prose about it.
 - **The UI is its own library** (`crates/ui`, in the shape of odin_editor's): elements opened
   and closed each frame, layout once at frame end, input answered from the previous frame's
   rectangles, one monospace font at whole-pixel sizes in one atlas, icons as Codicons glyphs.
+- **Comments are local and written at once.** They are a conversation between one human and
+  their agent about the map, not part of it: one file per comment in the version control's
+  shared directory (`.jj/repo`, the git common dir; `.codemap-comments` with neither), so every
+  jj workspace or git worktree of the repo sees them and no commit carries them. Each add,
+  reply and dismiss writes its file immediately rather than on save, so a question is never
+  lost to an unsaved map and a reply reaches an open window, which reads the directory again
+  when it changes.
 
 ## Crates
 
 `domain` (the model, no I/O), `io-*` (one crate per outside format or program: `io-map`
 `.codemap/`, `io-cache`, `io-config` the user's layout and settings, `io-fonts` installed fonts,
-`io-vcs` jj or git, `io-lsp`, `io-source`, `io-process`, `io-store`, `io-clipboard` the system
-clipboard), `index` (tree-sitter resolvers, server orchestration), `features` (every function a
-user can reach; CLI commands and help, GUI buttons and keys are built from it), `cli` (text
-commands, also the GUI's Console), `ui` (the element tree), `platform` (wgpu, fonts, winit, the
-script runner), `gui`, `codemap` (the binary and integration tests), `xtask` (the gate). The
+`io-vcs` jj or git, `io-comments` comments in the VCS's shared directory, `io-lsp`,
+`io-source`, `io-process`, `io-store`, `io-clipboard` the system clipboard), `index`
+(tree-sitter resolvers, server orchestration), `features` (every function a user can reach;
+CLI commands and help, GUI buttons and keys are built from it), `cli` (text commands, also the
+GUI's Console), `ui` (the element tree), `platform` (wgpu, fonts, winit, the script runner),
+`gui`, `codemap` (the binary and integration tests), `xtask` (the gate). The
 allowed edges are in `xtask/src/arch.rs`. `cli` and `gui` are two front ends over one `Index`
 and `Map`; anything that mutates the map is a method of `Map`.
 
@@ -154,6 +163,11 @@ changed, so sessions working on different tours at once keep each other's work; 
 the last writer wins. The same contract belongs in the `CLAUDE.md` of every mapped repo, with
 the map upkeep the `finish` skill does here: `stale`, `repin`, every new non-trivial symbol
 into a tour, `check` clean.
+
+When the human asks to address their codemap comments: `comments` lists every open one with
+its place; do the work each asks for, put the explanation in the map where it belongs (a step
+note, a tour note, a new tour), then `comment-reply <id> "<what was done and where the
+explanation is>"`. The human reads the reply in the GUI and dismisses it.
 
 ## Indexing
 

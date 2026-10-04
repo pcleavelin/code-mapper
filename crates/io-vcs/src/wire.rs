@@ -13,6 +13,9 @@ pub(crate) const JJ_PARENT: &str = "@-";
 pub(crate) const GIT_PARENT: &str = "HEAD";
 pub(crate) const JJ_MARKER: &str = ".jj";
 pub(crate) const GIT_MARKER: &str = ".git";
+pub(crate) const JJ_REPO: &str = "repo";
+pub(crate) const GIT_DIR_PREFIX: &str = "gitdir:";
+pub(crate) const GIT_COMMON_DIR: &str = "commondir";
 
 pub(crate) fn jj_show_file(revision: &str, path: &str) -> CommandLine {
     CommandLine {

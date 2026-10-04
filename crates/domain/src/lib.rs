@@ -1,3 +1,4 @@
+mod comment;
 mod id;
 mod index;
 mod layout;
@@ -5,6 +6,10 @@ mod map;
 mod settings;
 mod text;
 
+pub use comment::{
+    Comment, CommentError, CommentId, CommentState, CommentTarget, CommentText, Comments, Reply,
+    ReplyText,
+};
 pub use id::{Entry, IdList, Key, Position};
 pub use index::{
     Argument, Backend, Call, Cut, Depth, Edge, Extension, FileId, Highlight, HighlightClass,

@@ -22,7 +22,7 @@ author ai
 file crates/gui/src/views/document.rs
 symbol step_code
 lines 0 3
-hash c0f7e2206bbda653
+hash 4e5644f860e33267
 note The effect on the next frame: step_code draws nothing for a hidden step.
 
 step frf3py

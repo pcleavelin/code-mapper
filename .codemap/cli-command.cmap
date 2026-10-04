@@ -21,8 +21,8 @@ parent 9zzcig
 author ai
 file crates/cli/src/convert.rs
 symbol from
-lines 0 42
-hash 07cef3a2582f59bc
+lines 0 52
+hash 9551609b4591aeb9
 note Command to Request: the reading commands become a Query, the map edits an Edit, repin its own Request. Each argument struct converts through its own From, so names become TourName or TextFragment, numbers become StepIndex, Under, LineNumber, Levels or Count, and a name that cannot be a TourName is carried as the MapError for exec to report.
 
 step 7ad6e4
@@ -31,8 +31,8 @@ parent gejk1d
 author ai
 file crates/codemap/src/main.rs
 symbol run
-lines 0 52
-hash e19274bc89dc4430
+lines 0 53
+hash 6b17b6c80f7cf56f
 note Text mode. Parse before indexing so a usage error costs nothing. Then build the index from the cache and tree-sitter, load the map, and hand exec a Servers, which starts a language server only when the command needs one and reports its notices on stderr. Servers is dropped before anything is printed, so the servers shut down first. Output is printed only after the save, so a line saying a step was added never appears for a change that did not reach the disk. A command Failure prints what the command produced so far on stdout and the failure on stderr with exit 2; check relies on this.
 
 step 9zzcig
@@ -81,8 +81,8 @@ parent ckc2c3
 author ai
 file crates/cli/src/exec.rs
 symbol run
-lines 0 6
-hash 0e3308ff30da5d0e
+lines 0 7
+hash 1c3357dafc2369ce
 note Dispatch: a Query changes nothing, an Edit always returns Changed, and repin reports Changed only when it pinned something.
 
 step ckc2c3
@@ -91,8 +91,8 @@ parent 7ad6e4
 author ai
 file crates/cli/src/lib.rs
 symbol exec
-lines 0 16
-hash 6eff7cfaa794f5cc
+lines 0 18
+hash a9b47e920ed6903a
 note Runs one Invocation. Ok(Some(Changed)) means the map changed and the caller saves or marks it unsaved; Ok(None) means a read; Err is a Failure, which wire.rs words for the user. With Servers (the CLI), a command that needs a file's calls asks the language's server for that file first, and callers and refs ask it about the one symbol; without them (the GUI, which indexes in the background) every command answers from the index as it is.
 
 step dtk6tf
@@ -120,8 +120,8 @@ parent zdkp0d
 author ai
 file crates/cli/src/wire.rs
 symbol Command
-lines 0 74
-hash 5c01624772d17384
+lines 0 80
+hash 1b12adf52e0cfdef
 note The command set, one variant per command Feature. Each variant's name and about are the feature's name and summary from the registry, so the registry is the one list of commands and 'help' reads as a signature table. Arguments are plain strings and numbers here; converting them to domain values is convert.rs's job.
 
 step gejk1d
@@ -139,7 +139,7 @@ parent 7ad6e4
 author ai
 file crates/codemap/src/main.rs
 symbol run
-lines 34 51
+lines 35 52
 hash e3639bc876e21b78
 link map-file
 note A changed map is saved before the report is printed. A save that fails still prints the report, then the error, with exit 1.
@@ -190,8 +190,8 @@ order 5
 author ai
 file crates/gui/src/action.rs
 symbol run_command
-lines 0 41
-hash 6c8d6863553d1fea
+lines 0 42
+hash c6ef4deb60212ce5
 note The GUI's side of the same parse then exec, reached when the command field returns a line. 'clear' empties the log without parsing. exec gets no servers here: the GUI's own threads index. A ParseFailure, help included, is printed into the log verbatim and its first line becomes the status; a Failure is logged as 'error: ...'; a change marks the map unsaved and logs a line saying ctrl+s saves it. The log is pinned to its end for the next two frames so the newest output shows.
 
 step uzpmmo
@@ -210,8 +210,8 @@ parent 9zzcig
 author ai
 file crates/cli/src/wire.rs
 symbol feature
-lines 0 38
-hash f3d1ee0c28628740
+lines 0 41
+hash 84d9f8214aad467d
 note Which registry Feature a parsed command is, kept on the Invocation so a front end can tell what ran.
 
 step wh8ryh

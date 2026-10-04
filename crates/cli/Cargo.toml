@@ -10,6 +10,7 @@ domain = { path = "../domain" }
 index = { path = "../index" }
 io-map = { path = "../io-map" }
 io-vcs = { path = "../io-vcs" }
+io-comments = { path = "../io-comments" }
 features = { path = "../features" }
 clap = { version = "4", default-features = false, features = ["std", "derive", "help", "usage", "error-context", "suggestions"] }
 regex = "1"

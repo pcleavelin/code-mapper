@@ -6,12 +6,14 @@ use domain::{
     Depth, FileId, GroupName, Index, Line, LineCount, Map, Row, Settings, Span, Step, StepId, Tour,
     TourDiff, TourName,
 };
+use io_comments::CommentStore;
 use io_fonts::Fonts;
 use io_map::{MapStore, Stamp};
 use strum::VariantArray;
 use ui::{Count, Extent, FontSize, Id, Label, Px};
 
 use crate::authoring::StepGrab;
+use crate::comments::CommentShelf;
 use crate::element_tip::Resting;
 use crate::field::{Fields, Which};
 use crate::graph::GraphState;
@@ -63,6 +65,22 @@ impl StepSlot {
 impl fmt::Display for StepSlot {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(formatter, "{}", self.0)
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Gone {
+    Nothing,
+    Lines,
+    Symbol,
+    Step,
+    Tour,
+    File,
+}
+
+impl Gone {
+    pub(crate) const fn has_no_view(self) -> bool {
+        matches!(self, Self::Tour | Self::File)
     }
 }
 
@@ -254,6 +272,7 @@ pub(crate) struct StepShape {
     pub(crate) note: Count,
     pub(crate) width: Px,
     pub(crate) row: Px,
+    pub(crate) comments: Count,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -374,6 +393,8 @@ pub(crate) struct Model {
     pub(crate) index: Index,
     pub(crate) map: Map,
     pub(crate) store: MapStore,
+    pub(crate) comments: CommentStore,
+    pub(crate) shelf: CommentShelf,
     pub(crate) disk: MapDisk,
     pub(crate) base: Base,
     pub(crate) nav: Nav,
@@ -410,6 +431,8 @@ pub(crate) struct Model {
 
 impl Model {
     pub(crate) fn new(index: Index, map: Map, store: MapStore, readable: Readable) -> Self {
+        let comments = CommentStore::new(index.root());
+        let shelf = CommentShelf::load(&comments, &index);
         Self {
             index,
             map,
@@ -420,6 +443,8 @@ impl Model {
                 last_poll: Instant::now(),
                 warned: Warned::Quiet,
             },
+            comments,
+            shelf,
             store,
             base: Base::default(),
             nav: Nav::default(),

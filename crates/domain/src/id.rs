@@ -1,5 +1,7 @@
 use std::marker::PhantomData;
 
+use crate::text::TextHash;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Position(usize);
 
@@ -89,5 +91,43 @@ impl<K: Key, V> FromIterator<V> for IdList<K, V> {
             items: items.into_iter().collect(),
             key: PhantomData,
         }
+    }
+}
+
+pub(crate) struct ShortId(String);
+
+impl ShortId {
+    const RADIX: u32 = 36;
+
+    pub(crate) fn fresh(seed: &str, digits: usize, taken: impl Fn(&str) -> bool) -> Self {
+        let candidate = |counter: u32| -> String {
+            let mut hash = TextHash::of_bytes(seed.bytes().chain(counter.to_le_bytes())).value();
+            (0..digits)
+                .map(|_| {
+                    let digit = u32::try_from(hash % u64::from(Self::RADIX)).unwrap_or_default();
+                    hash /= u64::from(Self::RADIX);
+                    char::from_digit(digit, Self::RADIX).unwrap_or('0')
+                })
+                .collect()
+        };
+        let mut counter: u32 = 0;
+        loop {
+            let id = candidate(counter);
+            if !taken(&id) {
+                return Self(id);
+            }
+            counter = counter.wrapping_add(1);
+        }
+    }
+
+    pub(crate) fn valid(id: &str, digits: usize) -> bool {
+        id.chars().count() == digits
+            && id
+                .chars()
+                .all(|character| character.is_ascii_digit() || character.is_ascii_lowercase())
+    }
+
+    pub(crate) fn into_text(self) -> String {
+        self.0
     }
 }

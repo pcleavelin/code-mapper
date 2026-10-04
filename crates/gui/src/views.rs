@@ -1,6 +1,7 @@
 mod authoring;
 mod bars;
 mod center;
+mod comments;
 mod console;
 mod document;
 mod left;

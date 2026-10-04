@@ -63,16 +63,36 @@ file crates/gui/src/action.rs
 symbol apply
 lines 35 35
 hash c5a6628c1b2c605e
-note Stores the offset under the block's id, so the next frame starts from it.
+note Stores the offset under the key the block scrolls by (its own id, or the shared one), so the next frame starts from it.
+
+step k7ct8a
+order 9
+parent rd9sp9
+author ai
+file crates/gui/src/widgets/code.rs
+symbol wheel_across
+lines 0 9
+hash 8c49974f400f5309
+note The wheel for a segment that draws no bar: its sideways turn moves the shared offset, clamped to the shared width, the way scroll_by_wheel does for the segment with the bar.
+
+step liaxsb
+order 8
+parent rd9sp9
+author ai
+file crates/gui/src/widgets/code.rs
+symbol AcrossScroll
+lines 0 7
+hash edc7ebf2ee5dd6d7
+note Where a block's sideways offset lives: Own, under the block's id; or Shared, under one id for several blocks with a width they all take and whether this one draws the bar (AcrossBar). The Source view's code segments, split by the comments between them, share one so they scroll as one.
 
 step rd9sp9
 order 0
 author ai
 file crates/gui/src/widgets/code.rs
 symbol scrolled_code
-lines 0 39
-hash 54b4d10215a4f738
-note The handler, run as each code block is built: the block's across offset goes through Ui::scroll_by_wheel under the block's id and is queued as ScrollAcross; the block is a clipping row scrolled by that offset that only scrolls and shows a bar sideways, holding one custom leaf at the grid's full width (an exact width, so nothing squeezes it). While the pointer is on the bar, or any scrollbar is being dragged, the block reports no interaction, so a press on the bar neither selects a line nor peeks.
+lines 0 55
+hash f85e7522ab2446ea
+note The handler, run as each code block is built: the block's across offset, kept under the block's own id or, for the Source view's segments (AcrossScroll::Shared), under one id they all share, goes through Ui::scroll_by_wheel and is queued as ScrollAcross when it changed; the block is a clipping row scrolled by that offset that only scrolls and shows a bar sideways, holding one custom leaf at the grid's full width or the shared width when wider (an exact width, so nothing squeezes it). Of a Source view's segments only the last draws the bar; the others take the wheel through wheel_across. While the pointer is on the bar, or any scrollbar is being dragged, the block reports no interaction, so a press on the bar neither selects a line nor peeks.
 
 step wbxy54
 order 7

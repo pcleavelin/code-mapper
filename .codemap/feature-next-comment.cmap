@@ -1,0 +1,96 @@
+codemap 9
+tour feature-next-comment
+kind flow
+author ai
+group features/gui
+note The human, back from the agent's session, at the moment the status line says replies arrived but the green boxes are spread over the tours and files they commented on. Goal: understanding a change takes less friction than in an editor. Without this feature the human reopens each tour and file they remember commenting on and scrolls for green boxes, and a comment on code outside every tour is found only by remembering its file. A list of comments that navigates on click was the Comments view prototyped for add-comment; it showed where comments are but kept each reply away from the code it answers, so the count walks instead: each click goes to the next answered comment in id order, through the selection so back and forward return; a step comment selects its step in the Tour view, a tour comment opens its tour, a code comment opens its file in the Source view with its lines selected. With nothing answered it walks the open ones, so before starting the agent the human can reread what they asked. Comments are keyed by tour name and file path, and tour-rename and file moves do not carry them: in the GUI scenario 'comments', after 'tour-rename startup boot' the step comment on startup had no view to draw in. Such a comment shows in a box under the count when the walk reaches it, marked '(tour gone)' or '(file gone)', with its withdraw or dismiss and a close button, so the human can still read and remove it. Why comments exist is in feature-add-comment.
+
+step 3s51dk
+order 2
+parent yi2cc1
+author ai
+file crates/domain/src/comment.rs
+symbol next_after
+lines 0 8
+hash 6984e0fd83b85879
+link comment-model
+note The order: id order, wrapping; answered ones only while any is answered, else the open ones.
+
+step 5wp84j
+order 4
+parent jdv0j6
+author ai
+file crates/gui/src/model.rs
+symbol has_no_view
+lines 0 2
+hash 2e8dc1904b12c9c8
+note Tour and file are the losses with no view to open, so those comments go in the box under the count.
+
+step 6jeuuc
+order 8
+parent ls5k8p
+author ai
+file crates/gui/src/widgets.rs
+symbol runs_button
+lines 0 10
+hash bc120b27824b3430
+note The count's button: a top-bar button whose label is coloured runs, so the answered part can be green.
+
+step 6m4jew
+order 6
+parent ls5k8p
+author ai
+file crates/gui/src/comments.rs
+symbol comment
+lines 11 11
+hash da9d04b42d8f143f
+note close (comment-close) hides the box; the comment stays until it is withdrawn or dismissed.
+
+step jdv0j6
+order 3
+parent yi2cc1
+author ai
+file crates/gui/src/comments.rs
+symbol of
+lines 0 18
+hash 5541aa25322dc332
+note What a comment's place has lost against the current map and index: nothing, its lines or symbol, its step, its tour or its file.
+
+step ls5k8p
+order 1
+parent yi2cc1
+author ai
+file crates/gui/src/views/comments.rs
+symbol comment_count
+lines 0 35
+hash 21a29a8561098d45
+note The count in the top bar (comment-count): how many comments, and in green how many are answered; clicking it walks. Under it, while the walk stands on a comment with no view, a box draws that comment with its mark and a close button (comment-close).
+
+step m2i0qa
+order 5
+parent yi2cc1
+author ai
+file crates/gui/src/nav.rs
+symbol impl Model
+lines 352 362
+hash 40b53c2a0a5642d5
+note Opens a file in the Source view with a span selected and scrolled to, as a jump, so back returns from it.
+
+step yi2cc1
+order 0
+author ai
+file crates/gui/src/comments.rs
+symbol next_comment
+lines 0 41
+hash d1a45138ce66341d
+note The handler: the next comment after the last one walked to; none at all says so. A step comment opens its step through open_step, a tour comment its tour, a step comment whose step is gone its tour; a code comment opens its file in the Source view with its lines selected (or the top, where a comment whose lines are gone is drawn). Every move goes through the selection, so it is one place in back and forward. A comment whose tour or file is gone opens nothing and is shown under the count instead; the status line says which comment it is and where it is shown.
+
+step zsn8pu
+order 7
+parent ls5k8p
+author ai
+file crates/gui/src/views/comments.rs
+symbol comment_place
+lines 0 11
+hash fd1dccfdcdb65a43
+note The box's last line names the place that is gone: the tour, the step of the tour, or the file and symbol.

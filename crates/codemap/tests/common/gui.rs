@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 #[macro_export]
 macro_rules! gui_scenarios {
     ($m:ident) => {
-        $m! { gui: document, peek, source, graph, panels, delete, diff, reload, layout, links, authoring, welcome, edit, settings }
+        $m! { gui: document, peek, source, graph, panels, delete, diff, reload, layout, links, authoring, welcome, edit, settings, comments }
     };
 }
 
@@ -1405,5 +1405,87 @@ pub(crate) fn settings() -> Scenario {
         hook: no_hook,
         after: &[],
         script: SETTINGS,
+    }
+}
+
+const COMMENTS: &str = "SETTLE
+key p ctrl
+wait 1
+text startup
+wait 1
+key enter
+wait 3
+click-id comment-tour
+wait 2
+text Why does startup read the store twice?
+key enter
+wait 2
+dump
+click-id comment/1
+wait 2
+text Is fill the only writer?
+click-id comment-add
+wait 2
+dump
+click-id comment/3
+wait 2
+text never mind
+key escape
+wait 2
+absent comment-box@draft
+dump
+shot {shots}/tour.png
+open src/main.rs 13
+wait 3
+click-id comment-lines
+wait 2
+text Two shapes only?
+key enter
+wait 2
+dump
+shot {shots}/source.png
+click-id cmd
+text comment-reply 3mee2z \"It reads it once; the startup note says where.\"
+key enter
+pause 1200
+wait 3
+dump
+click-id comment-count
+wait 3
+dump
+shot {shots}/walked.png
+click-id dismiss@3mee2z
+wait 2
+absent comment-box@3mee2z
+dump
+click-id comment-count
+wait 3
+dump
+click-id cmd
+text tour-rename startup boot
+key enter
+wait 3
+click-id comment-count
+wait 3
+dump
+shot {shots}/gone.png
+click-id comment-close
+wait 2
+absent comment-popup
+dump
+click-id withdraw@l9lz5l
+wait 2
+absent comment-box@l9lz5l
+dump
+quit
+";
+
+pub(crate) fn comments() -> Scenario {
+    Scenario {
+        first: FirstScreen::Workspace,
+        setup: |bin, name| Ok(mapped(bin, name)),
+        hook: no_hook,
+        after: &[&["comments", "--all"]],
+        script: COMMENTS,
     }
 }

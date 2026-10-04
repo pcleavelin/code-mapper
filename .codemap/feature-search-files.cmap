@@ -71,7 +71,7 @@ parent f1ux4a
 author ai
 file crates/gui/src/action.rs
 symbol typed
-lines 0 54
-hash fe61d47c32b1c808
+lines 0 63
+hash 6de2ac8e25f90562
 link gui-widgets
 note The search field keeps its text on enter and marks it whole; a submitted line runs search.

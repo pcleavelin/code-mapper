@@ -93,6 +93,9 @@ fn every_subcommand_parses_to_its_own_feature() {
             };
             words.push(value.to_owned());
         }
+        if sub.get_name() == "comment" {
+            words.extend(["--tour".to_owned(), "t".to_owned()]);
+        }
         let words: Vec<&str> = words.iter().map(String::as_str).collect();
         let invocation = Invocation::parse(&arguments(&words)).unwrap();
         assert_eq!(
@@ -111,11 +114,11 @@ fn help_is_the_usage_and_one_line_per_command() {
     let text = help.as_str();
     assert!(text.starts_with("Usage: codemap <root>"));
     assert!(text.contains(
-        "  tour-group    <name> <group>                   put a tour in a group; / nests groups (flows/http), \"\" = top level\n"
+        "  tour-group     <name> <group>                   put a tour in a group; / nests groups (flows/http), \"\" = top level\n"
     ));
     assert!(
         text.ends_with(
-            "  help          Print this message or the help of the given subcommand(s)\n"
+            "  help           Print this message or the help of the given subcommand(s)\n"
         )
     );
 }

@@ -329,6 +329,7 @@ dependencies = [
  "domain",
  "features",
  "index",
+ "io-comments",
  "io-map",
  "io-vcs",
  "regex",
@@ -353,6 +354,7 @@ dependencies = [
  "features",
  "gui",
  "index",
+ "io-comments",
  "io-map",
  "strum",
 ]
@@ -821,6 +823,7 @@ dependencies = [
  "domain",
  "features",
  "index",
+ "io-comments",
  "io-config",
  "io-fonts",
  "io-lsp",
@@ -946,6 +949,16 @@ name = "io-clipboard"
 version = "0.1.0"
 dependencies = [
  "arboard",
+]
+
+[[package]]
+name = "io-comments"
+version = "0.1.0"
+dependencies = [
+ "domain",
+ "io-store",
+ "io-vcs",
+ "strum",
 ]
 
 [[package]]

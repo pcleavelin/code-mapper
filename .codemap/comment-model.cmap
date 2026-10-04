@@ -1,0 +1,193 @@
+codemap 9
+tour comment-model
+kind data
+author ai
+group map
+note A comment is a note the human leaves for the agent on a tour, a step or lines of code; this is its model. Comments are not part of the Map: they live in their own collection, are read and written by io-comments outside .codemap/, and nothing in the map refers to them. A comment's place is a CommentTarget: a tour by name, a step by tour name and step id, or an Anchor pinned exactly like a step's, so a code comment follows its symbol when code moves above it and goes stale when its lines change. Its state is open until a reply arrives, answered after; deleting it (dismiss or withdraw in the window) removes it from the collection. Every place is kept by name, so renaming a tour or moving a file leaves the comment where nothing matches; the GUI and the CLI show that as gone rather than guessing.
+
+step 0a7x0p
+order 4
+parent 4xpz78
+author ai
+file crates/domain/src/comment.rs
+symbol CommentId
+lines 0 0
+hash a629a63f17aa8494
+note Six base36 digits, the same shape as a StepId and checked by the same ShortId rule; it names the comment's file in the store.
+
+step 3fjdae
+order 8
+parent wkjk6z
+author ai
+file crates/domain/src/comment.rs
+symbol code
+lines 0 2
+hash cc5ac51dc857ed3c
+note A code target pinned with pin_span, the function every step is pinned with, so a comment on lines inside a symbol is stored relative to that symbol.
+
+step 3o5ppy
+order 3
+parent 4xpz78
+author ai
+file crates/domain/src/comment.rs
+symbol CommentState
+lines 0 3
+hash 42ee5917e42bda9f
+note Open, or Answered with the reply. There is no thread: the agent's latest reply replaces the one before.
+
+step 4xpz78
+order 1
+parent vkl068
+author ai
+file crates/domain/src/comment.rs
+symbol Comment
+lines 0 7
+hash e97ee361134564e5
+note One comment: its id, place, author, text and state, plus the resolution of a code comment for this session (never stored). Fields change only through Comments.
+
+step 7cqbbu
+order 14
+parent vkl068
+author ai
+file crates/domain/src/comment.rs
+symbol CommentError
+lines 0 2
+hash 6ed09f83190075ca
+note The one refusal: an id the collection does not hold.
+
+step 8ns1kk
+order 9
+parent 0a7x0p
+author ai
+file crates/domain/src/comment.rs
+symbol fresh
+lines 0 14
+hash e8159aaa22dcb6af
+note An id from a hash of the place and the text, moved past ids already taken, through ShortId::fresh like step ids.
+
+step c52zhr
+order 17
+parent vkl068
+author ai
+file crates/domain/src/comment.rs
+symbol resolve_all
+lines 0 4
+hash 888a2e8dcad106b5
+note Resolves every comment, after loading and after each re-index, as the map does.
+
+step gkwv6o
+order 6
+parent ytxem5
+author ai
+file crates/domain/src/comment.rs
+lines 68 83
+hash 0460264021185dcb
+note A reply's text; blank is refused.
+
+step guty85
+order 11
+parent vkl068
+author ai
+file crates/domain/src/comment.rs
+symbol add
+lines 0 12
+hash 7f4679321e3eed15
+note Adds an open comment with a fresh id and resolves it at once, so the GUI can draw it on the frame it is added.
+
+step ll3mpo
+order 10
+parent 4xpz78
+author ai
+file crates/domain/src/comment.rs
+symbol resolve
+lines 0 5
+hash 1158f0d6b1b86b78
+note Resolves a code comment's anchor against the index, as a step resolves; None for a tour or step comment, and for an anchor whose file, symbol or lines are gone.
+
+step ni6ife
+order 15
+parent vkl068
+author ai
+file crates/domain/src/comment.rs
+symbol on_gone_steps
+lines 0 8
+hash f806b088603eeac6
+note Comments on steps of this tour whose step is no longer in it, so the document can still draw them under the tour note.
+
+step q9wpfw
+order 18
+parent 4xpz78
+author ai
+file crates/domain/src/comment.rs
+symbol new
+lines 0 15
+hash 36762ad471cfc69b
+note Builds a comment as read from the store; its resolution starts empty until resolve.
+
+step qsdtj4
+order 7
+parent 4xpz78
+author ai
+file crates/domain/src/comment.rs
+lines 45 60
+hash 5d6eff85124257bd
+note A comment's text; blank is refused, so an empty field adds nothing.
+
+step sgr21v
+order 13
+parent vkl068
+author ai
+file crates/domain/src/comment.rs
+symbol dismiss
+lines 0 4
+hash 31e137abdccfdc4f
+note Removes a comment and hands it back, so the caller can say whether it was withdrawn (open) or dismissed (answered).
+
+step udo64g
+order 16
+parent vkl068
+author ai
+file crates/domain/src/comment.rs
+symbol next_after
+lines 0 8
+hash 6984e0fd83b85879
+note The walk behind the top bar's count: the next comment after the given id in id order, wrapping; only answered ones while any is answered, else the open ones.
+
+step vkl068
+order 0
+author ai
+file crates/domain/src/comment.rs
+symbol Comments
+lines 0 2
+hash be9188246c107bd6
+note Every comment of the repository, keyed by id so the walk and the store see them in one order. The GUI holds one in its CommentShelf, the CLI loads one per command; both resolve it against the index before showing anything.
+
+step wkjk6z
+order 2
+parent 4xpz78
+author ai
+file crates/domain/src/comment.rs
+symbol CommentTarget
+lines 0 4
+hash 0263a75f07a1c9b7
+note Where the comment is: Tour(name), Step(tour and step id) or Code(anchor). A step comment does not follow its step to another tour; a removed step leaves it on the tour (on_gone_steps).
+
+step ytxem5
+order 5
+parent 3o5ppy
+author ai
+file crates/domain/src/comment.rs
+symbol Reply
+lines 0 3
+hash 27c5bcabb63162c1
+note The agent's answer and who wrote it (the CLI writes as the agent, the GUI's Console as the human).
+
+step zmzx9u
+order 12
+parent vkl068
+author ai
+file crates/domain/src/comment.rs
+symbol reply
+lines 0 7
+hash 8e7d952a53c260fd
+note Answers a comment; NoSuchComment for an id not in the collection.

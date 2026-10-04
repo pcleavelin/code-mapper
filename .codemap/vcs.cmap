@@ -53,6 +53,15 @@ lines 0 3
 hash 104667a1f5e71819
 note The command line as io-process's Program and Arguments.
 
+step c1s4cm
+order 18
+author ai
+file crates/io-vcs/src/lib.rs
+symbol shared_directory
+lines 0 37
+hash d16a5732ebbd868b
+note The directory every workspace of the repository shares, where comments live: jj's .jj/repo (a directory in the main workspace, a file holding the path to it in a secondary one, resolved from the .jj directory), or git's common directory (the .git directory, or a worktree's .git file's gitdir followed by its commondir). UnreadableMarker when a pointer file cannot be read or does not lead to a directory.
+
 step c9zpo1
 order 6
 author ai
@@ -77,9 +86,9 @@ order 15
 author ai
 file crates/io-vcs/src/lib.rs
 symbol VcsError
-lines 0 13
-hash eec7c067085fd411
-note Every way asking fails, as data: no repository, an unreadable root, a program that would not start, one that failed (with status and stderr), and a revision with no map files.
+lines 0 17
+hash 06cf1ce26aa67e2b
+note Every way asking fails, as data: no repository, an unreadable root, an unreadable workspace marker, a program that would not start, one that failed (with status and stderr), and a revision with no map files.
 
 step ljlukm
 order 13
@@ -96,9 +105,9 @@ order 1
 author ai
 file crates/io-vcs/src/lib.rs
 symbol detect
-lines 0 21
-hash 6bf6bc46c0a519bc
-note Walks up from the canonical root; .jj wins over .git, and a .git that is a file (a worktree) counts. NoRepository when neither is found, UnreadableRoot when the root cannot be canonicalised.
+lines 0 24
+hash 20353f7e63e0454f
+note Walks up from the canonical root; .jj wins over .git, and a .git that is a file (a worktree) counts; the marker found is kept for shared_directory. NoRepository when neither is found, UnreadableRoot when the root cannot be canonicalised.
 
 step o7vsr0
 order 8
@@ -124,9 +133,9 @@ order 0
 author ai
 file crates/io-vcs/src/lib.rs
 symbol Vcs
-lines 0 3
-hash b8e537bef38ccf5d
-note Which program and the root it runs in; made only by detect.
+lines 0 4
+hash 9127b90985c5e8f3
+note Which program, the root it runs in and the marker detect found (the .jj directory, or .git as a directory or a worktree's file); made only by detect.
 
 step t7mf9h
 order 17

@@ -1,13 +1,18 @@
-use std::path::Path as FsPath;
+use std::env;
+use std::fs;
+use std::path::{Path as FsPath, PathBuf};
+use std::process;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
 use domain::{
-    Anchor, Author, Backend, Column, Cut, Depth, Draft, Edge, EditChange, FileId, FileText,
-    HighlightClass, Imports, Index, Language, Line, Map, Note, RelativePath, Root, Row, SourceFile,
-    Span, Step, StepId, StepOrder, Stop, Symbol, SymbolId, SymbolKind, SymbolName, Theme, Tour,
-    TourKind, TourName, TreeEntry, Verdict,
+    Anchor, Author, Backend, Column, Comment, CommentId, Cut, Depth, Draft, Edge, EditChange,
+    FileId, FileText, HighlightClass, Imports, Index, Language, Line, Map, Note, RelativePath,
+    Reply, ReplyText, Root, Row, SourceFile, Span, Step, StepAddress, StepId, StepOrder, Stop,
+    Symbol, SymbolId, SymbolKind, SymbolName, Theme, Tour, TourKind, TourName, TreeEntry, Verdict,
 };
 use features::{Feature, Trigger};
+use io_comments::CommentStore;
 use io_lsp::StartError;
 use io_map::MapStore;
 use platform::ClipboardRequest;
@@ -17,6 +22,7 @@ use ui::{Count, FontSize, Input, Key, Label, Mods, Press, Px, Typed};
 use crate::action::{Action, Collapse, Hide};
 use crate::app::App;
 use crate::authoring::{Authoring, StripAct, StripButton, StripRow, TargetStrip};
+use crate::comments::{CommentAct, CommentShelf, CommentStatus, DraftOn, InsetAt};
 use crate::element_tip::{ElementTip, Pressing, Resting, beside};
 use crate::field::{
     AfterSubmit, Attention, Edit, EnterMods, FieldAct, FieldWindow, Fields, Handled, Motion,
@@ -28,7 +34,9 @@ use crate::graph::{Button, GraphState, Minimap, Node};
 use crate::ids::{self, CONTROLS};
 use crate::keys::{self, Extend, LineGesture, Walk, turn_wheel};
 use crate::menu::{Menu, MenuAct};
-use crate::model::{LineSelection, Model, Readable, StepKey, StepSlot, Tab, TourSlot, ViewFlag};
+use crate::model::{
+    Gone, LineSelection, Model, Readable, StepKey, StepSlot, Tab, TourSlot, ViewFlag,
+};
 use crate::nav::Scrolling;
 use crate::palette::{Palette, commands};
 use crate::panels::{Direction, View};
@@ -2207,4 +2215,298 @@ fn every_strip_row_fits_a_room_wide_enough_for_its_widest_button() {
             }
         }
     }
+}
+
+static COMMENT_SCRATCH: AtomicUsize = AtomicUsize::new(0);
+
+struct CommentScratch(PathBuf);
+
+impl CommentScratch {
+    fn new() -> Self {
+        let count = COMMENT_SCRATCH.fetch_add(1, Ordering::Relaxed);
+        let path = env::temp_dir().join(format!("gui-comments-{}-{count}", process::id()));
+        drop(fs::remove_dir_all(&path));
+        fs::create_dir_all(&path).unwrap();
+        Self(path)
+    }
+
+    fn store(&self) -> CommentStore {
+        CommentStore::new(&Root::new(&self.0))
+    }
+}
+
+impl Drop for CommentScratch {
+    fn drop(&mut self) {
+        drop(fs::remove_dir_all(&self.0));
+    }
+}
+
+fn commenting(scratch: &CommentScratch) -> App {
+    let mut app = app();
+    app.model.comments = scratch.store();
+    app
+}
+
+fn step_address(step: &str) -> StepAddress {
+    StepAddress {
+        tour: TourName::new("startup").unwrap(),
+        step: StepId::new(step).unwrap(),
+    }
+}
+
+fn type_comment(app: &mut App, on: DraftOn, text: &str) {
+    app.apply(Action::Comment(CommentAct::Start(on)));
+    app.apply(Action::Type(Which::Comment, Vec::new(), typed_text(text)));
+    app.apply(Action::Type(
+        Which::Comment,
+        vec![Edit::Enter(EnterMods::Plain)],
+        Typed::default(),
+    ));
+}
+
+fn reply_to(scratch: &CommentScratch, id: &CommentId) {
+    let mut stored = scratch.store().load().unwrap();
+    let answered = stored
+        .reply(
+            id,
+            Reply {
+                text: ReplyText::new("done").unwrap(),
+                author: Author::Agent,
+            },
+        )
+        .unwrap()
+        .clone();
+    let _saved = scratch.store().write(&answered).unwrap();
+}
+
+#[test]
+fn enter_in_the_comment_field_writes_the_comment_and_shows_it_on_its_step() {
+    let scratch = CommentScratch::new();
+    let mut app = commenting(&scratch);
+    let address = step_address("bbbbbb");
+    type_comment(
+        &mut app,
+        DraftOn::Step(address.clone()),
+        "  why fill first?  ",
+    );
+    let shown: Vec<&str> = app
+        .model
+        .shelf
+        .on_step(&address)
+        .map(|comment| comment.text().as_str())
+        .collect();
+    assert_eq!(shown, ["why fill first?"]);
+    assert_eq!(app.model.shelf.draft, None);
+    let stored = scratch.store().load().unwrap();
+    assert_eq!(stored.iter().count(), 1);
+    assert!(stored.on_step(&address).all(Comment::is_open));
+}
+
+#[test]
+fn adding_a_blank_comment_is_refused_and_the_field_stays_open() {
+    let scratch = CommentScratch::new();
+    let mut app = commenting(&scratch);
+    let on = DraftOn::Tour(TourName::new("startup").unwrap());
+    type_comment(&mut app, on.clone(), "   ");
+    app.apply(Action::Comment(CommentAct::Submit));
+    assert_eq!(app.model.status, Status::Comment(CommentStatus::Empty));
+    assert_eq!(app.model.shelf.draft, Some(on));
+    assert!(scratch.store().load().unwrap().is_empty());
+}
+
+#[test]
+fn escape_in_the_comment_field_drops_the_draft_unwritten() {
+    let scratch = CommentScratch::new();
+    let mut app = commenting(&scratch);
+    app.apply(Action::Comment(CommentAct::Start(DraftOn::Tour(
+        TourName::new("startup").unwrap(),
+    ))));
+    app.apply(Action::Type(
+        Which::Comment,
+        Vec::new(),
+        typed_text("never mind"),
+    ));
+    app.apply(Action::Type(
+        Which::Comment,
+        vec![Edit::Escape],
+        Typed::default(),
+    ));
+    assert_eq!(app.model.shelf.draft, None);
+    assert!(scratch.store().load().unwrap().is_empty());
+}
+
+#[test]
+fn a_comment_the_store_cannot_write_is_not_kept() {
+    let mut app = app();
+    type_comment(
+        &mut app,
+        DraftOn::Tour(TourName::new("startup").unwrap()),
+        "lost?",
+    );
+    assert!(matches!(
+        app.model.status,
+        Status::Comment(CommentStatus::NotSaved(_))
+    ));
+    assert_eq!(app.model.shelf.counts().total, Count::ZERO);
+}
+
+#[test]
+fn withdrawing_an_open_comment_and_dismissing_an_answered_one_delete_both_files() {
+    let scratch = CommentScratch::new();
+    let mut app = commenting(&scratch);
+    let tour = TourName::new("startup").unwrap();
+    type_comment(&mut app, DraftOn::Tour(tour.clone()), "first");
+    type_comment(&mut app, DraftOn::Tour(tour.clone()), "second");
+    let ids: Vec<CommentId> = app
+        .model
+        .shelf
+        .on_tour(&tour)
+        .map(|comment| comment.id().clone())
+        .collect();
+    let [open, answered] = ids.as_slice() else {
+        panic!("two comments on the tour: {ids:?}");
+    };
+    reply_to(&scratch, answered);
+    app.model.shelf = CommentShelf::load(&app.model.comments, &app.model.index);
+    app.apply(Action::Comment(CommentAct::Dismiss(open.clone())));
+    assert_eq!(
+        app.model.status,
+        Status::Comment(CommentStatus::Withdrawn(open.clone()))
+    );
+    app.apply(Action::Comment(CommentAct::Dismiss(answered.clone())));
+    assert_eq!(
+        app.model.status,
+        Status::Comment(CommentStatus::Dismissed(answered.clone()))
+    );
+    assert_eq!(app.model.shelf.counts().total, Count::ZERO);
+    assert!(scratch.store().load().unwrap().is_empty());
+}
+
+fn code_comment(app: &mut App, start: u32, end: u32, text: &str) -> CommentId {
+    let file = app
+        .model
+        .index
+        .find_file(&RelativePath::new("src/main.rs"))
+        .unwrap();
+    let span = Span::new(Line::new(start), Line::new(end)).unwrap();
+    type_comment(app, DraftOn::Lines { file, span }, text);
+    let Status::Comment(CommentStatus::Added(id)) = app.model.status.clone() else {
+        panic!("not added: {:?}", app.model.status);
+    };
+    id
+}
+
+#[test]
+fn the_comment_count_walks_to_the_answered_comment_first_and_back_returns() {
+    let scratch = CommentScratch::new();
+    let mut app = commenting(&scratch);
+    let address = step_address("cccccc");
+    type_comment(&mut app, DraftOn::Step(address), "open on a step");
+    let answered = code_comment(&mut app, 4, 6, "answered on lines");
+    reply_to(&scratch, &answered);
+    app.model.shelf = CommentShelf::load(&app.model.comments, &app.model.index);
+    app.model.select_tour(TOUR);
+    app.model.track_navigation();
+    app.apply(Action::Comment(CommentAct::Next));
+    app.model.track_navigation();
+    assert_eq!(app.model.nav.tab(), Tab::Source);
+    assert_eq!(
+        app.model.nav.lines(),
+        Some(LineSelection {
+            from: Line::new(4),
+            to: Line::new(6)
+        })
+    );
+    app.apply(Action::Comment(CommentAct::Next));
+    assert_eq!(
+        app.model.nav.lines().map(|lines| lines.from),
+        Some(Line::new(4))
+    );
+    app.model.back();
+    assert_eq!(app.model.nav.tab(), Tab::Tour);
+}
+
+#[test]
+fn with_nothing_answered_the_comment_count_walks_to_the_open_step_comment() {
+    let scratch = CommentScratch::new();
+    let mut app = commenting(&scratch);
+    type_comment(&mut app, DraftOn::Step(step_address("dddddd")), "open");
+    app.apply(Action::Comment(CommentAct::Next));
+    assert_eq!(app.model.nav.tab(), Tab::Tour);
+    assert_eq!(app.model.nav.step(), Some(StepSlot::new(3)));
+}
+
+#[test]
+fn a_comment_whose_tour_is_gone_is_shown_under_the_count_until_closed() {
+    let scratch = CommentScratch::new();
+    let mut app = commenting(&scratch);
+    type_comment(
+        &mut app,
+        DraftOn::Tour(TourName::new("renamed").unwrap()),
+        "on a tour that is gone",
+    );
+    app.apply(Action::Comment(CommentAct::Next));
+    let shown = app
+        .model
+        .shelf
+        .popup()
+        .map(|comment| comment.text().as_str());
+    assert_eq!(shown, Some("on a tour that is gone"));
+    assert!(matches!(
+        app.model.status,
+        Status::Comment(CommentStatus::Shown {
+            gone: Gone::Tour,
+            ..
+        })
+    ));
+    app.apply(Action::Comment(CommentAct::ClosePopup));
+    assert!(app.model.shelf.popup().is_none());
+}
+
+#[test]
+fn a_code_comment_whose_symbol_is_gone_reads_as_gone() {
+    let scratch = CommentScratch::new();
+    let mut app = commenting(&scratch);
+    let id = code_comment(&mut app, 5, 5, "inside fill");
+    let shrunk = FileText::from("fn main() {}\n");
+    let highlights = vec![Vec::new(); shrunk.all().len()];
+    let hash = shrunk.whole_hash();
+    let mut index = Index::new(Root::new(FsPath::new("/nowhere")));
+    index.push(SourceFile::new(
+        RelativePath::new("src/main.rs"),
+        shrunk,
+        highlights,
+        vec![symbol("main", 0, 0)],
+        Imports::new(),
+        hash,
+        Backend::TreeSitter,
+    ));
+    app.model.index = index;
+    app.model.shelf.resolve_all(&app.model.index);
+    let comment = app
+        .model
+        .shelf
+        .in_file(
+            &app.model.index,
+            app.model
+                .index
+                .find_file(&RelativePath::new("src/main.rs"))
+                .unwrap(),
+        )
+        .next()
+        .unwrap();
+    assert_eq!(comment.id(), &id);
+    assert_eq!(Gone::of(&app.model, comment), Gone::Symbol);
+    assert_eq!(InsetAt::of(comment), InsetAt::Top);
+}
+
+#[test]
+fn the_comment_count_with_no_comments_says_so_and_moves_nowhere() {
+    let mut app = app();
+    app.model.select_tour(TOUR);
+    let before = app.model.nav.step();
+    app.apply(Action::Comment(CommentAct::Next));
+    assert_eq!(app.model.status, Status::Comment(CommentStatus::NoComments));
+    assert_eq!(app.model.nav.step(), before);
+    assert_eq!(app.model.nav.tab(), Tab::Tour);
 }

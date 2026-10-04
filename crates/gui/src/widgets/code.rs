@@ -23,12 +23,29 @@ pub(crate) struct Marks<'marks> {
     pub(crate) bar: &'marks dyn Fn(Line) -> Option<Color>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum AcrossBar {
+    Drawn,
+    Omitted,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum AcrossScroll {
+    Own,
+    Shared {
+        offset: Id,
+        columns: Count,
+        bar: AcrossBar,
+    },
+}
+
 pub(crate) struct CodeBlock<'marks> {
     pub(crate) file: FileId,
     pub(crate) start: Line,
     pub(crate) end: Line,
     pub(crate) id: Id,
     pub(crate) width: Width,
+    pub(crate) across: AcrossScroll,
     pub(crate) marks: Marks<'marks>,
 }
 
@@ -105,7 +122,11 @@ impl Frame<'_> {
         let grid = self.grids.get(block.file, source, span);
         let size = self.metrics.font;
         let cell = self.metrics.cell;
-        let extent = Extent::new(cell.width * grid.columns(), cell.height * grid.rows());
+        let columns = match block.across {
+            AcrossScroll::Own => grid.columns(),
+            AcrossScroll::Shared { columns, .. } => grid.columns().max(columns),
+        };
+        let extent = Extent::new(cell.width * columns, cell.height * grid.rows());
         let pointer = self.ui.pointer();
         let rows: Vec<RowMarks> = span
             .lines()
@@ -174,18 +195,34 @@ impl Frame<'_> {
         marks: Box<dyn Draw>,
         code: Box<dyn Draw>,
     ) -> Scrolled {
-        let mut offset = Point::new(model.across.get(block.id), Px::ZERO);
-        let across = self.ui.scroll_by_wheel(block.id, &mut offset).horizontal;
-        self.push(Action::ScrollAcross(block.id, across));
+        let (key, bar) = match block.across {
+            AcrossScroll::Own => (block.id, AcrossBar::Drawn),
+            AcrossScroll::Shared { offset, bar, .. } => (offset, bar),
+        };
+        let kept = model.across.get(key);
+        let across = match bar {
+            AcrossBar::Drawn => {
+                let mut offset = Point::new(kept, Px::ZERO);
+                self.ui.scroll_by_wheel(block.id, &mut offset).horizontal
+            }
+            AcrossBar::Omitted => self.wheel_across(block.id, kept, extent.width),
+        };
+        if across != kept {
+            self.push(Action::ScrollAcross(key, across));
+        }
         let layout = match block.width {
             Width::Wide => Layout::row().grow_width(),
             Width::Fit => Layout::row().width(extent.width),
+        };
+        let axes = match bar {
+            AcrossBar::Drawn => ScrollAxes::HORIZONTAL,
+            AcrossBar::Omitted => ScrollAxes::VERTICAL,
         };
         let interaction = self.ui.open(
             Kind::Custom(marks),
             layout
                 .scroll(Point::new(across, Px::ZERO))
-                .scroll_axes(ScrollAxes::HORIZONTAL),
+                .scroll_axes(axes),
             Style::NONE,
             Some(block.id),
         );
@@ -205,6 +242,23 @@ impl Frame<'_> {
             interaction,
             offset: across,
         }
+    }
+
+    fn wheel_across(&self, id: Id, kept: Px, content: Px) -> Px {
+        let interaction = self.ui.interaction(id);
+        let Some(rect) = interaction.rect() else {
+            return kept;
+        };
+        let most = (content - rect.width).max(Px::ZERO);
+        (kept - interaction.wheel().horizontal.truncate())
+            .min(most)
+            .max(Px::ZERO)
+    }
+
+    pub(crate) fn code_columns(&mut self, model: &Model, file: FileId, span: Span) -> Count {
+        model.index.file(file).map_or(Count::ZERO, |source| {
+            self.grids.get(file, source, span).columns()
+        })
     }
 
     pub(crate) fn hover(&mut self, model: &Model, file: FileId, line: Line, column: Column) {

@@ -87,8 +87,8 @@ parent l04dki
 author ai
 file crates/features/src/lib.rs
 symbol spec
-lines 0 942
-hash 4927f1b086764e86
+lines 0 1009
+hash 878ed7b4ac491079
 note The registry itself: one match arm per feature, built at compile time from const data. A command feature has Surface::Command and exactly one trigger, its own name as a command; a window feature lists every click, key, typed field and gesture that fires it.
 
 step k761ua
@@ -105,8 +105,8 @@ order 0
 author ai
 file crates/features/src/lib.rs
 symbol Feature
-lines 0 97
-hash 79095d5be6c7d2f9
+lines 0 103
+hash 480285e974c8fbba
 note One variant per user function, CLI commands first in help order, then the window's functions. The VariantArray derive lists them as Feature::VARIANTS in declaration order, for the tests that walk the registry.
 
 step lo42kd

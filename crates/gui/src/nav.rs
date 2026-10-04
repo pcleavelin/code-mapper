@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::mem;
 
-use domain::{FileId, Line, RelativePath, StepId, SymbolId, SymbolKey, TourName};
+use domain::{FileId, Line, RelativePath, Span, StepId, SymbolId, SymbolKey, TourName};
 use ui::{Count, Px};
 
 use crate::field::Which;
@@ -578,6 +578,17 @@ impl Model {
         self.nav.file = Some(file);
         self.nav.lines = Some(LineSelection::one(line));
         self.nav.scroll_to_line(line);
+        self.nav.show(Tab::Source);
+    }
+
+    pub(crate) fn open_lines(&mut self, file: FileId, span: Span) {
+        self.nav.moving = Move::Jump;
+        self.nav.file = Some(file);
+        self.nav.lines = Some(LineSelection {
+            from: span.start(),
+            to: span.end(),
+        });
+        self.nav.scroll_to_line(span.start());
         self.nav.show(Tab::Source);
     }
 

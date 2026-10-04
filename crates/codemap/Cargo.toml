@@ -15,6 +15,7 @@ gui = { path = "../gui" }
 domain = { path = "../domain" }
 index = { path = "../index" }
 io-map = { path = "../io-map" }
+io-comments = { path = "../io-comments" }
 
 [dev-dependencies]
 features = { path = "../features" }

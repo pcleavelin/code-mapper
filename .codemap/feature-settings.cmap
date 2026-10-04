@@ -122,7 +122,7 @@ parent xseveq
 author ai
 file crates/gui/src/views/bars.rs
 symbol top_bar
-lines 45 55
+lines 46 56
 hash cc8aeed9e3cb91fd
 note Trigger: the gear at the right end of the top bar (settings-open), marked while the box is open.
 
@@ -132,7 +132,7 @@ parent xseveq
 author ai
 file crates/gui/src/app.rs
 symbol frame
-lines 16 22
+lines 17 23
 hash 851d5de2e036c836
 link ui-tree
 note Modal for the pointer too: while the box (or a toolbar menu) is open only floating elements can be hot or scrolled by the wheel.

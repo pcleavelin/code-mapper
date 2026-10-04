@@ -133,9 +133,9 @@ order 10
 author ai
 file crates/cli/src/failure.rs
 symbol Failure
-lines 0 36
-hash 4683e651f97d93b1
-note Every way a command can fail, as data: exec returns one and wire.rs's Display words it, so the message text lives in one file and tests can match the variant. Map wraps the domain's MapError; Load, Save and Parse wrap io-map's errors; the rest are the CLI's own refusals (no such tour, step, file or symbol, an ambiguous symbol with its candidates, a line range or parent out of bounds, a bad regex, no repository, stale steps for check).
+lines 0 41
+hash 2e55a2e3179d8d45
+note Every way a command can fail, as data: exec returns one and wire.rs's Display words it, so the message text lives in one file and tests can match the variant. Map wraps the domain's MapError; Load, Save and Parse wrap io-map's errors; the rest are the CLI's own refusals (no such tour, step, file or symbol, an ambiguous symbol with its candidates, a line range or parent out of bounds, a bad regex, no repository, stale steps for check, no such comment, an empty comment or reply); CommentLoad and CommentSave wrap io-comments' errors.
 
 step pmp2cg
 order 9

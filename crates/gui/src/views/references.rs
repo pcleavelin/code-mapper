@@ -14,7 +14,7 @@ use crate::theme::{
     PIXEL, ROW_EXTRA, SLICE, TEXT, WEAK,
 };
 use crate::widgets::{
-    Chosen, CodeBlock, Container, Frame, Marks, Padding, RowAction, Scroller, Width,
+    AcrossScroll, Chosen, CodeBlock, Container, Frame, Marks, Padding, RowAction, Scroller, Width,
 };
 use crate::wizard::WizardAct;
 
@@ -177,6 +177,7 @@ fn peek_body(model: &Model, frame: &mut Frame<'_>, body: Body, area: Extent) {
                     end,
                     id: ids::peek_code(),
                     width: Width::Wide,
+                    across: AcrossScroll::Own,
                     marks: Marks {
                         background: &background,
                         bar: &bar,

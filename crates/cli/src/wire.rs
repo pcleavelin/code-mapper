@@ -3,15 +3,17 @@ use std::fmt;
 use std::iter;
 use std::mem;
 
-use clap::{Args, CommandFactory, Parser};
+use clap::{ArgGroup, Args, CommandFactory, Parser};
 use domain::{
-    Author, Cut, Depth, GroupName, Index, Line, LineCount, Location, MapError, Note, ParentLabel,
-    Program, Promoted, RelativePath, Revision, SourceFile, SourceLine, Span, Step, StepChange,
-    StepNumber, Stop, Symbol, SymbolId, SymbolKind, SymbolName, SymbolQuery, TextFragment, Tour,
-    TourCount, TourKind, TourName,
+    Anchor, Author, Comment, CommentId, CommentState, Cut, Depth, Freshness, GroupName, Index,
+    Line, LineCount, Location, MapError, Note, ParentLabel, Program, Promoted, RelativePath,
+    Resolution, Revision, Root, SourceFile, SourceLine, Span, Step, StepChange, StepId, StepNumber,
+    Stop, Symbol, SymbolId, SymbolKind, SymbolName, SymbolQuery, TextFragment, Tour, TourCount,
+    TourKind, TourName,
 };
 use features::Feature;
 use index::{ServerNotice, StartError};
+use io_comments::{CommentFault, CommentLoadError, CommentSaveError, CommentVersion};
 use io_map::{Fault, MapLoadError, MapSaveError, MapStore, MapVersion, Origin, ParseError};
 
 use crate::convert::{Count, StepIndex, Under, step_index};
@@ -117,6 +119,38 @@ pub(crate) enum Command {
     Coverage,
     #[command(name = command_name(Feature::Diff), about = summary(Feature::Diff))]
     Diff,
+    #[command(name = command_name(Feature::Comments), about = summary(Feature::Comments))]
+    Comments(CommentsArguments),
+    #[command(name = command_name(Feature::CommentReply), about = summary(Feature::CommentReply))]
+    CommentReply(CommentReplyArguments),
+    #[command(name = command_name(Feature::Comment), about = summary(Feature::Comment))]
+    Comment(CommentArguments),
+}
+
+#[derive(Args, Debug)]
+pub(crate) struct CommentsArguments {
+    #[arg(long)]
+    pub(crate) all: bool,
+}
+
+#[derive(Args, Debug)]
+pub(crate) struct CommentReplyArguments {
+    pub(crate) id: String,
+    pub(crate) reply: String,
+}
+
+#[derive(Args, Debug)]
+#[command(group(ArgGroup::new("place").required(true).args(["tour", "file"])))]
+pub(crate) struct CommentArguments {
+    #[arg(long)]
+    pub(crate) tour: Option<String>,
+    #[arg(long, value_name = "INDEX", requires = "tour")]
+    pub(crate) step: Option<usize>,
+    #[arg(long, requires = "lines")]
+    pub(crate) file: Option<String>,
+    #[arg(long, num_args = 2, value_names = ["START", "END"], requires = "file")]
+    pub(crate) lines: Vec<usize>,
+    pub(crate) text: String,
 }
 
 #[derive(Args, Debug)]
@@ -320,6 +354,9 @@ impl Command {
             Self::Uncovered(_) => Feature::Uncovered,
             Self::Coverage => Feature::Coverage,
             Self::Diff => Feature::Diff,
+            Self::Comments(_) => Feature::Comments,
+            Self::CommentReply(_) => Feature::CommentReply,
+            Self::Comment(_) => Feature::Comment,
         }
     }
 }
@@ -1234,11 +1271,216 @@ impl fmt::Display for Failure {
             Self::Parse(error) => formatter.write_str(&parse_error(error)),
             Self::Load(error) => formatter.write_str(&load_error(error)),
             Self::Save(error) => formatter.write_str(&save_error(error)),
+            Self::NoSuchComment(id) => write!(
+                formatter,
+                "no such comment: {id} ({} lists them)",
+                command_name(Feature::Comments)
+            ),
+            Self::EmptyComment => formatter.write_str("a comment needs text"),
+            Self::EmptyReply => formatter.write_str("a reply needs text"),
+            Self::CommentLoad(error) => formatter.write_str(&comment_load_error(error)),
+            Self::CommentSave(error) => formatter.write_str(&comment_save_error(error)),
             Self::Stale { steps, links } => match (steps.is_zero(), links.is_zero()) {
                 (false, true) => write!(formatter, "{steps} stale steps"),
                 (true, false) => write!(formatter, "{links} broken links"),
                 _ => write!(formatter, "{steps} stale steps, {links} broken links"),
             },
+        }
+    }
+}
+
+pub(crate) enum CommentPlace<'a> {
+    Tour {
+        name: &'a TourName,
+        gone: bool,
+    },
+    Step {
+        tour: &'a TourName,
+        id: &'a StepId,
+        found: Option<FoundStep<'a>>,
+    },
+    Code {
+        anchor: &'a Anchor,
+        resolution: Option<Resolution>,
+        file_gone: bool,
+    },
+}
+
+pub(crate) struct FoundStep<'a> {
+    pub(crate) step: &'a Step,
+    pub(crate) number: StepNumber,
+    pub(crate) position: StepIndex,
+}
+
+const fn author_word(author: Author) -> &'static str {
+    match author {
+        Author::Human => "human",
+        Author::Agent => "ai",
+    }
+}
+
+fn comment_place(index: &Index, spot: &CommentPlace<'_>) -> String {
+    match spot {
+        CommentPlace::Tour { name, gone: false } => format!("tour {name}"),
+        CommentPlace::Tour { name, gone: true } => format!("tour {name} (tour gone)"),
+        CommentPlace::Step {
+            tour,
+            id,
+            found: None,
+        } => format!("step {tour} {id} (step gone)"),
+        CommentPlace::Step {
+            tour,
+            found: Some(found),
+            ..
+        } => format!(
+            "step {tour} {} [{}] {}{} {}",
+            found.number,
+            found.position,
+            if found.step.is_stale() { "STALE " } else { "" },
+            place(index, found.step),
+            symbol_text(found.step.symbol())
+        ),
+        CommentPlace::Code {
+            anchor,
+            file_gone: true,
+            ..
+        } => format!("code {} (file gone)", anchor.file()),
+        CommentPlace::Code {
+            anchor,
+            resolution: None,
+            ..
+        } => format!(
+            "code {} {} ({} gone)",
+            anchor.file(),
+            symbol_text(anchor.symbol()),
+            if anchor.symbol().is_some() {
+                "symbol"
+            } else {
+                "lines"
+            }
+        ),
+        CommentPlace::Code {
+            anchor,
+            resolution: Some(resolution),
+            ..
+        } => format!(
+            "code {}:{} {}{}",
+            anchor.file(),
+            span_text(resolution.span),
+            symbol_text(anchor.symbol()),
+            if resolution.freshness == Freshness::Stale {
+                " (stale)"
+            } else {
+                ""
+            }
+        ),
+    }
+}
+
+pub(crate) fn comment_block(
+    output: &mut Output,
+    index: &Index,
+    comment: &Comment,
+    place: &CommentPlace<'_>,
+) {
+    let state = match comment.state() {
+        CommentState::Open => "open",
+        CommentState::Answered(_) => "answered",
+    };
+    write_line!(
+        output,
+        "{} {state} ({}) {}",
+        comment.id(),
+        author_word(comment.author()),
+        comment_place(index, place).trim_end()
+    );
+    for line in comment.text().lines() {
+        write_line!(output, "  {line}");
+    }
+    if let Some(reply) = comment.reply() {
+        let mut lines = reply.text.lines();
+        if let Some(first) = lines.next() {
+            write_line!(output, "  => ({}) {first}", author_word(reply.author));
+        }
+        for line in lines {
+            write_line!(output, "     {line}");
+        }
+    }
+}
+
+pub(crate) fn comment_gap(output: &mut Output) {
+    write_line!(output, "");
+}
+
+pub(crate) fn no_comments(output: &mut Output, all: bool) {
+    if all {
+        write_line!(output, "no comments");
+    } else {
+        write_line!(output, "no open comments");
+    }
+}
+
+pub(crate) fn reply_hint(output: &mut Output, root: &Root, open: Count) {
+    write_line!(
+        output,
+        "{open} open; when one is done, reply with: {PROGRAM} {} {} <id> \"<what you did and where the explanation is>\"",
+        root.as_path().display(),
+        command_name(Feature::CommentReply)
+    );
+}
+
+pub(crate) fn comment_added(output: &mut Output, id: &CommentId) {
+    write_line!(output, "comment {id} added");
+}
+
+pub(crate) fn comment_answered(output: &mut Output, id: &CommentId) {
+    write_line!(output, "comment {id} answered");
+}
+
+fn comment_fault(fault: &CommentFault) -> String {
+    let version = CommentVersion::CURRENT.as_str();
+    match fault {
+        CommentFault::Version(line) => {
+            format!("'{line}' is not '{version}'; this comment was written by another codemap")
+        }
+        CommentFault::NoVersion => format!("expected '{version}' first"),
+        CommentFault::UnknownField(key) => format!("unknown field '{key}' of a comment"),
+        CommentFault::UnknownAuthor(value) => format!("unknown author '{value}'"),
+        CommentFault::UnknownTarget(value) => format!("unknown target '{value}'"),
+        CommentFault::MissingField(key) => format!("a comment with no '{key}' line"),
+        CommentFault::Lines => "lines takes two numbers".to_owned(),
+        CommentFault::Hash => "hash takes 16 hex digits".to_owned(),
+        CommentFault::InvalidName(value) => format!("'{value}' cannot name a tour"),
+        CommentFault::InvalidStepId(value) => format!("'{value}' is not a step id"),
+        CommentFault::EmptyText(key) => format!("an empty '{key}'"),
+    }
+}
+
+fn comment_load_error(error: &CommentLoadError) -> String {
+    match error {
+        CommentLoadError::Unreadable { file, error } => format!("{}: {error}", file.display()),
+        CommentLoadError::Parse(error) => match error.line {
+            Some(line) => format!(
+                "{}:{}: {}",
+                error.file.display(),
+                line.number(),
+                comment_fault(&error.fault)
+            ),
+            None => format!("{}: {}", error.file.display(), comment_fault(&error.fault)),
+        },
+        CommentLoadError::InvalidId(file) => {
+            format!("{}: a comment file is named by its id", file.display())
+        }
+    }
+}
+
+fn comment_save_error(error: &CommentSaveError) -> String {
+    match error {
+        CommentSaveError::CreateDirectory { directory, error } => {
+            format!("{}: {error}", directory.display())
+        }
+        CommentSaveError::Write { file, error } | CommentSaveError::Remove { file, error } => {
+            format!("{}: {error}", file.display())
         }
     }
 }

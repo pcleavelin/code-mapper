@@ -1,0 +1,168 @@
+codemap 9
+tour feature-add-comment
+kind flow
+author ai
+group features/gui
+note The human, reading a tour or a change they did not write, at the moment the map does not explain something or the code looks wrong, and they cannot fix the note themselves because they do not know the answer. Goals: understanding a change you did not write takes less friction than in an editor; the map is the second channel beside the source, and it only gets corrected if the agent hears what the human did not understand. The run before this feature: a step row offered hide code and delete; nothing recorded a question for the agent and no Console command stored text for later, so the human retyped 'anchor, step 1.1.1, pin_span map.rs:819' and the question into Claude Code, and for code outside a tour needed a file:line they cannot copy out of Source; questions met mid-read were held in the head or lost. edit-tour helps only when the human already knows the answer. Writing the question into a step note with edit-tour puts it in .codemap/: it is committed, it merges with the agent's own edits to that note, and someone has to remember to delete it before the commit; a comment is a question, not documentation, so it lives outside the map and never reaches a commit. Comments are local to the machine, in the version control's shared directory so every jj workspace or git worktree of the repo sees them (the agent usually works in another workspace), and written at once rather than on ctrl+s, because the map's save is for edits the human may still discard while a question is meant for the agent now; a reply also reaches an open window with unsaved map edits, which reloading the map would not allow. Three designs were built and run: a Comments view listing every comment with a composer; a section of the References panel for the selection with badges on tree rows; and comments drawn inline where they are made. The view kept replies away from the code they answer, took height from References permanently and asked for the target with a radio list; the panel showed comments only for what is selected and only while References is open, and its target depended on the active tab. The inline design is the kept one, with the view's one useful part, finding every comment, moved into the count in the top bar (next-comment): a comment button on each step and tour header and 'comment on lines A-B' in the Source target strip; a one-line field opens in place, enter adds and escape cancels; the comment draws under the note or between the code lines it is on, orange while open, green with the agent's reply and dismiss once answered. The GUI scenario 'comments' adds one of each, answers one from the Console and dismisses it. The agent's side is the CLI: comments lists every open comment with its place, comment-reply answers one.
+
+step 2byvjt
+order 4
+parent zs6h1b
+author ai
+file crates/gui/src/views/comments.rs
+symbol draft_box
+lines 0 51
+hash 17856f6d34c1c353
+note The draft: a box saying where the comment goes, the field@comment field sized to the room, and add and cancel. It is drawn where the comment will be: under the tour note, under the step's note, or between the Source lines after the selection.
+
+step 86de7f
+order 14
+parent guzs6u
+author ai
+file crates/gui/src/views/document.rs
+symbol comments_shape
+lines 0 17
+hash 2ca530763b8b40e0
+note What of a step's comments its reserved height depends on, so the document re-measures a step when a comment or its reply changes, or a draft opens on it.
+
+step ahldem
+order 12
+parent d85aym
+author ai
+file crates/gui/src/views/comments.rs
+symbol comment_box
+lines 0 46
+hash 88cba0bcea986cc9
+note One comment: orange while open with withdraw, green once answered with the reply under the text and dismiss; a mark when its place is gone.
+
+step d85aym
+order 11
+parent zs6h1b
+author ai
+file crates/gui/src/views/document.rs
+symbol tour_comments
+lines 0 26
+hash db2111954dd9c454
+note Under the tour note: the tour's own comments, then comments on steps the tour no longer has, marked step gone, then the draft when the draft is on the tour.
+
+step guzs6u
+order 13
+parent zs6h1b
+author ai
+file crates/gui/src/views/document.rs
+symbol step_comments
+lines 0 23
+hash a5460d30b9380f89
+note Under a step's note: the step's comments and its draft, indented with the step.
+
+step hs09b0
+order 6
+parent 2byvjt
+author ai
+file crates/gui/src/action.rs
+symbol typed
+lines 15 17
+hash cc7a58fdd7320b98
+note Escape in the focused comment field cancels the draft instead of only leaving the field, so nothing half-typed waits on screen.
+
+step kov6mo
+order 1
+parent zs6h1b
+author ai
+file crates/gui/src/views/document.rs
+symbol header_bar
+lines 29 35
+hash 60c4308221d30663
+note The tour header's comment button (comment-tour): starts a draft on the tour being read.
+
+step kuo1gp
+order 10
+parent pgj7z1
+author ai
+file crates/io-comments/src/lib.rs
+symbol write
+lines 0 9
+hash f3d4327a0b2c44ae
+link io-comments
+note Writes its file now, not on save.
+
+step nrer9j
+order 5
+parent 2byvjt
+author ai
+file crates/gui/src/action.rs
+symbol typed
+lines 53 53
+hash 8e9b81b53506cf67
+note Enter in the comment field submits, like add.
+
+step pgj7z1
+order 8
+parent zs6h1b
+author ai
+file crates/gui/src/comments.rs
+symbol add_comment
+lines 0 40
+hash 1cafb6808f1f60aa
+note Add: a blank text is refused with a status and the field stays; lines are pinned through CommentTarget::code; the comment is added to the shelf as the human's and written to the store at once. A write that fails drops the comment again and says why, so the window never shows a comment the agent cannot see.
+
+step qb4ci0
+order 7
+parent hs09b0
+author ai
+file crates/gui/src/comments.rs
+symbol cancel_comment
+lines 0 4
+hash 0ca7563cf64c14ff
+note Cancel: drops the draft and releases the field; nothing is written.
+
+step r0bygm
+order 2
+parent zs6h1b
+author ai
+file crates/gui/src/views/document.rs
+symbol step_header
+lines 88 96
+hash a0f2d7dc3a35cbd1
+note Each step header's comment button (comment/<n>), on the step's own row only, not on an inlined copy: starts a draft on the step by tour name and step id.
+
+step rka5t1
+order 15
+parent zs6h1b
+author ai
+file crates/gui/src/views/center.rs
+symbol of
+lines 0 42
+hash 49a3e113e36e1ebe
+link source-view
+note In the Source view the file's comments become boxes between the lines (source-view).
+
+step wxfahs
+order 3
+parent zs6h1b
+author ai
+file crates/gui/src/views/authoring.rs
+symbol target_strip
+lines 14 34
+hash 08ad74c37e127150
+note In the Source view, with lines selected and no draft open, the target strip gains 'comment on line N' or 'comment on lines A-B' (comment-lines), which starts a draft on those lines.
+
+step xwvnlr
+order 9
+parent pgj7z1
+author ai
+file crates/domain/src/comment.rs
+symbol add
+lines 0 12
+hash 7f4679321e3eed15
+link comment-model
+note Adds the open comment with a fresh id, resolved at once.
+
+step zs6h1b
+order 0
+author ai
+file crates/gui/src/comments.rs
+symbol comment
+lines 0 13
+hash f6d8b9e2656c3680
+note The handler: every comment act of the window. Start opens the draft for a place (DraftOn) and focuses the one-line comment field; Submit adds it, Cancel drops it; Dismiss, Next and ClosePopup belong to dismiss-comment and next-comment.

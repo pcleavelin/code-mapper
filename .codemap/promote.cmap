@@ -139,7 +139,7 @@ author ai
 file crates/domain/src/map.rs
 symbol pin_span
 lines 0 14
-hash eb22d48f99f68183
+hash 24202bba449d1c5a
 note Anchor::at anchors the span relative to the innermost symbol that encloses it, with a hash of its text, so a promoted step stays valid while everything around it moves; the step starts resolved and current, pointing at that symbol.
 
 step ia62kn

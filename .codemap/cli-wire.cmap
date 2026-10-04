@@ -183,8 +183,8 @@ order 0
 author ai
 file crates/cli/src/wire.rs
 symbol Command
-lines 0 74
-hash 5c01624772d17384
+lines 0 80
+hash 1b12adf52e0cfdef
 note The command set, one variant per command Feature, in the order help lists them. Help is disabled as a flag and overridden as usage so the help text starts with the two ways to run codemap. note-edit, tour-add and tour-move allow negative numbers, since -1 means the tour note or the root there.
 
 step h4ludh
@@ -267,8 +267,8 @@ order 21
 author ai
 file crates/cli/src/wire.rs
 symbol impl fmt::Display for Failure
-lines 0 54
-hash 38d3742a7aa1571d
+lines 0 63
+hash 283bcc876d28b398
 note The wording of every Failure. The CLI prints it on stderr, the GUI in its log and status line. An ambiguous symbol lists each candidate's copyable name beside its label; check's failure counts stale steps and broken links.
 
 step rjntgu

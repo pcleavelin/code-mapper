@@ -101,8 +101,8 @@ parent exiaij
 author ai
 file crates/gui/src/views/tooltip.rs
 symbol symbol_tip
-lines 0 65
-hash 8e1fe0ea98b91f2a
+lines 0 66
+hash 8057d583d4386df5
 note For a symbol: name, kind and place, the first 24 lines of the definition as a code block, a count of the lines left out, and the two gestures.
 
 step 7u4q6u
@@ -190,8 +190,8 @@ order 0
 author ai
 file crates/gui/src/widgets/code.rs
 symbol code_block
-lines 0 78
-hash 226406ddab4e15b5
+lines 0 82
+hash 0ff2079a1c8b72ef
 note The one entry point for every code view: the line and text column under the pointer come from the block's rectangle and the cell size. The PeekDefinition and JumpToDefinition gestures from the feature registry (alt-click; ctrl-click or double-click) push a Definition action with the intent; with no gesture and no button down, the pointer asks for a hover.
 
 step mm42ac
@@ -329,8 +329,8 @@ parent yhnzin
 author ai
 file crates/gui/src/views/references.rs
 symbol peek_body
-lines 0 76
-hash 0d8cc2ddae6bd30f
+lines 0 77
+hash a6bfc4f8ada7aa06
 note The body: at most half the panel's height and a third of the window's, as a code block for a file in the index or the server's grid drawn directly for a file outside it, the landed line marked.
 
 step vskz44

@@ -1,11 +1,15 @@
 use std::collections::BTreeMap;
 
-use domain::{Change, Depth, FileId, Line, Span, Step, Symbol, SymbolName, Tour, TourDiff};
+use domain::{
+    Change, Depth, FileId, Line, Span, Step, StepAddress, Symbol, SymbolName, Tour, TourDiff,
+};
 use ui::{Count, Extent, Icon, Id, Label, Px, Run};
 
 use crate::action::{Action, Collapse, ContextChange, Hide};
+use crate::comments::{CommentAct, DraftOn};
 use crate::ids::{self, Control, Target};
 use crate::menu::Menu;
+use crate::model::Gone;
 use crate::model::{
     Context, Measured, Model, Numbered, StepKey, StepShape, StepSlot, StepView, Tab, TourSlot,
     ViewFlag,
@@ -17,13 +21,13 @@ use crate::theme::{
     INLINE_BUTTON, NOTE, PENDING, PIXEL, RED, SLICE, TEXT, WEAK, WHOLE_BUTTON, WIDE_GAP,
 };
 use crate::widgets::{
-    Chosen, CodeBlock, Container, Enabled, Frame, Hyperlink, Marks, MenuItem, Padding, Scroller,
-    Width,
+    AcrossScroll, Chosen, CodeBlock, Container, Enabled, Frame, Hyperlink, Marks, MenuItem,
+    Padding, Scroller, Width,
 };
 use crate::wizard::WizardAct;
 use std::mem;
 
-use super::{welcome, wizard};
+use super::{comments, welcome, wizard};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct Occurrence(usize);
@@ -199,6 +203,13 @@ fn header_bar(
         frame.push(Action::Wizard(WizardAct::Edit(tour)));
     }
     frame.attach_tip(ids::EDIT_TOUR.target());
+    let comment = ids::COMMENT_TOUR.target();
+    if frame.small_button("comment", comment).clicked() {
+        frame.push(Action::Comment(CommentAct::Start(DraftOn::Tour(
+            found.name().clone(),
+        ))));
+    }
+    frame.attach_tip(comment);
     match diff.map(TourDiff::change) {
         Some(Change::Added) => frame.label("new since the parent revision", GREEN),
         Some(Change::Changed) => frame.label("changed since the parent revision", GREEN),
@@ -214,6 +225,92 @@ fn header_bar(
         tour_buttons(model, frame, tour);
         frame.finish();
     }
+}
+
+fn document_width(frame: &Frame<'_>, indent: Px) -> Option<Px> {
+    frame
+        .ui
+        .placement(ids::document())
+        .map(|placement| placement.rect.width - indent)
+}
+
+fn tour_comments(model: &Model, frame: &mut Frame<'_>, found: &Tour) {
+    let draft = DraftOn::Tour(found.name().clone());
+    let drafting = model.shelf.drafting(&draft);
+    let mut on_tour = model
+        .shelf
+        .on_tour(found.name())
+        .map(|comment| (comment, Gone::Nothing))
+        .chain(
+            model
+                .shelf
+                .on_gone_steps(found)
+                .map(|comment| (comment, Gone::Step)),
+        )
+        .peekable();
+    if on_tour.peek().is_none() && !drafting {
+        return;
+    }
+    frame.start(Container::CommentStack);
+    for (comment, gone) in on_tour {
+        comments::comment_box(frame, comment, gone);
+    }
+    if drafting {
+        let width = document_width(frame, Px::ZERO);
+        comments::draft_box(model, frame, &draft, width);
+    }
+    frame.finish();
+}
+
+fn step_address(model: &Model, row: &Row<'_>) -> Option<StepAddress> {
+    Some(StepAddress {
+        tour: model.tour(row.key.tour)?.name().clone(),
+        step: row.step.id().clone(),
+    })
+}
+
+fn step_comments(model: &Model, frame: &mut Frame<'_>, row: &Row<'_>) {
+    let Some(address) = step_address(model, row) else {
+        return;
+    };
+    let draft = DraftOn::Step(address.clone());
+    let drafting = row.occurrence.is_none() && model.shelf.drafting(&draft);
+    let mut on_step = model.shelf.on_step(&address).peekable();
+    if on_step.peek().is_none() && !drafting {
+        return;
+    }
+    let indent = row.indent + COLLAPSE_ROOM.of(frame.cell_width());
+    frame.start(Container::FillRow);
+    frame.indent(indent);
+    frame.start(Container::CommentStack);
+    for comment in on_step {
+        comments::comment_box(frame, comment, Gone::Nothing);
+    }
+    if drafting {
+        let width = document_width(frame, indent);
+        comments::draft_box(model, frame, &draft, width);
+    }
+    frame.finish();
+    frame.finish();
+}
+
+fn comments_shape(model: &Model, row: &Row<'_>) -> Count {
+    let Some(address) = step_address(model, row) else {
+        return Count::ZERO;
+    };
+    let drafting = model.shelf.drafting(&DraftOn::Step(address.clone()));
+    let written: usize = model
+        .shelf
+        .on_step(&address)
+        .map(|comment| {
+            comment.text().as_str().len()
+                + comment
+                    .reply()
+                    .map_or(0, |reply| reply.text.as_str().len() + 1)
+                + 1
+        })
+        .sum();
+    Count::new(written + if drafting { 1 << 20 } else { 0 })
 }
 
 fn linked_from(model: &Model, frame: &mut Frame<'_>, found: &Tour) {
@@ -341,6 +438,7 @@ pub(super) fn tour_document(model: &Model, frame: &mut Frame<'_>, area: Extent) 
         Some(note) => frame.note(note.as_str(), NOTE, Padding::Tour),
         None => frame.note("(no tour note)", WEAK, Padding::Tour),
     }
+    tour_comments(model, frame, found);
     linked_from(model, frame, found);
     breadcrumb(model, frame, tour, &numbered, top_step);
     frame.scroll_column(ids::document(), offset, Scroller::Document, None);
@@ -370,12 +468,6 @@ enum First {
     Done,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Gone {
-    File,
-    Symbol,
-}
-
 struct Row<'row> {
     key: StepKey,
     step: &'row Step,
@@ -386,7 +478,7 @@ struct Row<'row> {
     occurrence: Option<Occurrence>,
     file: Option<FileId>,
     symbol_span: Option<Span>,
-    gone: Option<Gone>,
+    gone: Gone,
 }
 
 impl Row<'_> {
@@ -404,14 +496,13 @@ fn title_runs(row: &Row<'_>, frame: &Frame<'_>, walk: &Walk<'_>) -> Vec<Run> {
     let span = step.span();
     let name = step.symbol().map_or("(lines)", SymbolName::as_str);
     let place = match row.gone {
-        Some(Gone::File) => format!("{} (file gone)", step.file()),
-        Some(Gone::Symbol) => format!("{} (symbol gone)", step.file()),
-        None => format!(
+        Gone::Nothing => format!(
             "{}:{}-{}",
             step.file(),
             span.start().number(),
             span.end().number()
         ),
+        gone => format!("{} {}", step.file(), Tag::gone(gone)),
     };
     let stale = step.is_stale();
     let title = format!(
@@ -531,7 +622,7 @@ fn step_header(
         };
         frame.push(Action::SelectStep(key, scrolling));
     }
-    if row.gone.is_none()
+    if row.gone == Gone::Nothing
         && frame
             .small_button_sized(
                 if hidden { "code" } else { "hide code" },
@@ -569,6 +660,15 @@ fn step_header(
     }
     let target = link_buttons(model, frame, row, walk);
     frame.grow();
+    if row.occurrence.is_none()
+        && let Some(address) = step_address(model, row)
+    {
+        let comment = row.target(ids::COMMENT_STEP);
+        if frame.small_button("comment", comment).clicked() {
+            frame.push(Action::Comment(CommentAct::Start(DraftOn::Step(address))));
+        }
+        frame.attach_tip(comment);
+    }
     if row.occurrence.is_none() {
         let delete = row.target(ids::REMOVE_STEP);
         if frame.danger_button("delete", delete).clicked() {
@@ -591,7 +691,7 @@ fn step_note(frame: &mut Frame<'_>, row: &Row<'_>) {
 }
 
 fn step_code(model: &Model, frame: &mut Frame<'_>, row: &Row<'_>) {
-    let (Some(file), None, false) = (row.file, row.gone, row.has(ViewFlag::Hidden)) else {
+    let (Some(file), Gone::Nothing, false) = (row.file, row.gone, row.has(ViewFlag::Hidden)) else {
         return;
     };
     let span = row.step.span();
@@ -627,6 +727,7 @@ fn step_code(model: &Model, frame: &mut Frame<'_>, row: &Row<'_>) {
             end,
             id: code_id(row.occurrence, row.key.step),
             width: Width::Wide,
+            across: AcrossScroll::Own,
             marks: Marks {
                 background: &background,
                 bar: &bar,
@@ -668,7 +769,7 @@ fn step_or_reserve(
     let id = step_column(row.occurrence, row.key.step);
     let shape = StepShape {
         view: row.view,
-        span: row.gone.is_none().then(|| row.step.span()),
+        span: (row.gone == Gone::Nothing).then(|| row.step.span()),
         note: Count::new(
             row.step
                 .note()
@@ -676,6 +777,7 @@ fn step_or_reserve(
         ),
         width: view.map_or(Px::ZERO, |view| view.width),
         row: frame.row_height(),
+        comments: comments_shape(model, row),
     };
     let last = frame.ui.interaction(id).rect();
     let pinned = row.chosen == Chosen::Chosen
@@ -698,6 +800,7 @@ fn step_or_reserve(
         frame.start(Container::StepColumn(id));
         let target = step_header(model, frame, row, walk, first);
         step_note(frame, row);
+        step_comments(model, frame, row);
         step_code(model, frame, row);
         frame.step_gap();
         frame.finish();
@@ -761,9 +864,9 @@ fn steps(model: &Model, frame: &mut Frame<'_>, tour: TourSlot, walk: &mut Walk<'
             file,
             symbol_span,
             gone: match (file, step.symbol(), symbol_span) {
-                (None, _, _) => Some(Gone::File),
-                (Some(_), Some(_), None) => Some(Gone::Symbol),
-                _ => None,
+                (None, _, _) => Gone::File,
+                (Some(_), Some(_), None) => Gone::Symbol,
+                _ => Gone::Nothing,
             },
         };
         let target = step_or_reserve(model, frame, &row, walk, &mut first, view);

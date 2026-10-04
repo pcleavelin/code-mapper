@@ -146,6 +146,25 @@ pub(crate) const CONTEXT_BELOW: Control = Control::new(Feature::MoreContext, Ele
 pub(crate) const LINK: Control = Control::new(Feature::OpenLinkedTour, Element::new("link"));
 pub(crate) const INLINE: Control = Control::new(Feature::InlineLink, Element::new("inline"));
 pub(crate) const REMOVE_STEP: Control = Control::new(Feature::RemoveStep, Element::new("del"));
+pub(crate) const COMMENT_TOUR: Control =
+    Control::new(Feature::AddComment, Element::new("comment-tour"));
+pub(crate) const COMMENT_STEP: Control = Control::new(Feature::AddComment, Element::new("comment"));
+pub(crate) const COMMENT_LINES: Control =
+    Control::new(Feature::AddComment, Element::new("comment-lines"));
+pub(crate) const COMMENT_ADD: Control =
+    Control::new(Feature::AddComment, Element::new("comment-add"));
+pub(crate) const COMMENT_CANCEL: Control =
+    Control::new(Feature::AddComment, Element::new("comment-cancel"));
+pub(crate) const COMMENT_FIELD: Control =
+    Control::new(Feature::AddComment, Element::new("field@comment"));
+pub(crate) const DISMISS_COMMENT: Control =
+    Control::new(Feature::DismissComment, Element::new("dismiss"));
+pub(crate) const WITHDRAW_COMMENT: Control =
+    Control::new(Feature::DismissComment, Element::new("withdraw"));
+pub(crate) const COMMENT_COUNT: Control =
+    Control::new(Feature::NextComment, Element::new("comment-count"));
+pub(crate) const COMMENT_CLOSE: Control =
+    Control::new(Feature::NextComment, Element::new("comment-close"));
 pub(crate) const LINES: Control = Control::new(Feature::SelectLines, Element::new("lines"));
 pub(crate) const HIT_ROW: Control = Control::new(Feature::SearchFiles, Element::new("hit"));
 pub(crate) const HIT_FILE_ROW: Control =
@@ -297,6 +316,16 @@ pub(crate) const CONTROLS: &[Control] = &[
     LINK,
     INLINE,
     REMOVE_STEP,
+    COMMENT_TOUR,
+    COMMENT_STEP,
+    COMMENT_LINES,
+    COMMENT_ADD,
+    COMMENT_CANCEL,
+    COMMENT_FIELD,
+    DISMISS_COMMENT,
+    WITHDRAW_COMMENT,
+    COMMENT_COUNT,
+    COMMENT_CLOSE,
     LINES,
     HIT_ROW,
     HIT_FILE_ROW,
@@ -417,6 +446,14 @@ pub(crate) fn diff() -> Id {
 
 pub(crate) const DOCUMENT_CODE: Element = Element::new("doccode");
 pub(crate) const STEP_COLUMN: Element = Element::new("stepcolumn");
+
+pub(crate) fn comment_box() -> Id {
+    Id::new("comment-box")
+}
+
+pub(crate) fn comment_popup() -> Id {
+    Id::new("comment-popup")
+}
 
 pub(crate) fn linked() -> Id {
     Id::new("linked")

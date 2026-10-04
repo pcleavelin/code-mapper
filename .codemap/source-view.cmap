@@ -3,11 +3,11 @@ tour source-view
 kind flow
 author ai
 group gui
-note The file viewer, and where a human adds a range of lines as a step. Only the rows on screen become elements - a spacer stands in for everything above and below - which is what makes a four-thousand-line file scroll at the same cost as a short one. Each row is numbered, syntax coloured, and carries a coloured bar on the left where a step of the selected tour is anchored, green when current and red when stale. Clicking selects a line and pressing and dragging selects every line between, which the add button of the target strip below the toolbar, named for the selected lines, then turns into a step under the target the strip names (gui-authoring); double-clicking or ctrl-clicking an identifier jumps to its definition instead, and alt-clicking keeps it in the peek panel. The view only reads the Model: every click becomes an Action applied after the tree is built.
+note The file viewer, and where a human adds a range of lines as a step. Only the rows on screen become elements - a spacer stands in for everything above and below - which is what makes a four-thousand-line file scroll at the same cost as a short one. Each row is numbered, syntax coloured, and carries a coloured bar on the left where a step of the selected tour is anchored, green when current and red when stale. Comments on the file (comment-model) are drawn between the code lines, under the last line they are on, with their lines tinted orange (open) or green (answered); the code is drawn as one segment per stretch between comments, all scrolling sideways together. Clicking selects a line and pressing and dragging selects every line between, which the add button of the target strip below the toolbar, named for the selected lines, then turns into a step under the target the strip names (gui-authoring); double-clicking or ctrl-clicking an identifier jumps to its definition instead, and alt-clicking keeps it in the peek panel. The view only reads the Model: every click becomes an Action applied after the tree is built.
 
 step 1cxlr5
 order 7
-parent tx8rkt
+parent 2h2qhv
 author ai
 file crates/gui/src/widgets.rs
 symbol spacer
@@ -21,9 +21,9 @@ parent azzv57
 author ai
 file crates/gui/src/views/center.rs
 symbol source
-lines 34 88
-hash 02515f7da6587595
-note The rows. rows_window turns the scroll offset into the first visible line and emits the spacer for the lines above; then one code block of the visible lines, then a spacer for the rest plus a row of slack, so the scrollbar sees the whole file while only what shows is drawn. The bar closure marks the selected tour's anchors in this file, the background closure the selected lines.
+lines 76 95
+hash 8580f42fb6df404f
+note The rows. Insets::start turns the scroll offset into the first line and first comment in view and emits the spacer above them; Insets::plan lists the code segments and comment boxes that fill the view; draw_plan draws them; then a spacer for the rest plus a row of slack, so the scrollbar sees the whole file, comments included, while only what shows is drawn. The bar closure marks the selected tour's anchors in this file, the background closure the selected lines, then lines under a comment.
 
 step 49joa9
 order 10
@@ -35,24 +35,84 @@ lines 0 8
 hash 485c5ad014683469
 note Applies ScrolledToLine: clears the request only when its ticket is still the current one, so a newer scroll asked for meanwhile survives.
 
+step 4wx45q
+order 17
+parent h9yvvl
+author ai
+file crates/gui/src/views/center.rs
+symbol start
+lines 0 36
+hash 6367426e9bacd135
+note The first line and first box in view for a scroll offset, and the pixel top where drawing starts; an offset inside a box starts on the line just above it, so the box is drawn whole.
+
+step 55ij9g
+order 18
+parent h9yvvl
+author ai
+file crates/gui/src/views/center.rs
+symbol plan
+lines 0 29
+hash aa827a6c3efb5f13
+note From that start down to the bottom of the view: a code segment from the current line to the next box's line or the view's end, then the boxes that sit above the next line, until the view is full. Each segment gets the id lines/n by how many boxes come before it, so the select-lines drag and the tip find every segment.
+
 step azzv57
 order 0
 author ai
 file crates/gui/src/views/center.rs
 symbol source
-lines 0 89
-hash dd770116a832d782
+lines 0 97
+hash ca47ea628e573d06
 note The whole viewer: the toolbar (source_toolbar), the target strip, then the scrolling column of rows. With no current file it says so and draws nothing else.
+
+step bc78rg
+order 20
+parent ni4wuj
+author ai
+file crates/gui/src/views/center.rs
+symbol inset
+lines 0 13
+hash aa80e5111dfe6d73
+note One comment box or the draft field, indented by the gutter so it lines up with the code text.
+
+step e3jaxj
+order 13
+parent h9yvvl
+author ai
+file crates/gui/src/views/center.rs
+symbol of
+lines 0 42
+hash 49a3e113e36e1ebe
+note Collects them: each comment on the file goes under the last line of its resolved span, or at the top when its lines are gone; its height is last frame's measured box, or an estimate the first time it is drawn.
 
 step ghy5uj
 order 6
-parent 2h2qhv
+parent ni4wuj
 author ai
 file crates/gui/src/widgets/code.rs
 symbol code_block
-lines 0 78
-hash 226406ddab4e15b5
+lines 0 82
+hash 0ff2079a1c8b72ef
 note The code element: the rows drawn from a cached grid, the gutter, the marks, and the spot under the pointer.
+
+step h9yvvl
+order 12
+parent 2h2qhv
+author ai
+file crates/gui/src/views/center.rs
+symbol Insets
+lines 0 3
+hash 8b178780873ef65c
+note The comments drawn between this file's lines, each with where it goes and its height, sorted by place; the draft of a new comment on lines is one of them while it is open.
+
+step hyyvgi
+order 21
+parent ni4wuj
+author ai
+file crates/gui/src/widgets/code.rs
+symbol code_columns
+lines 0 4
+hash 83803b49be3dde91
+note The width a span of the file needs, from the cached grid: draw_plan takes the widest of the segments in view as every segment's width.
 
 step mlu0tc
 order 5
@@ -63,6 +123,16 @@ lines 0 9
 hash 21f14249bdc80886
 note The add for the Source view's selected lines, reached through the target strip's add-offer@Source (add_offered) while lines are selected: they become a step of the tour being read (add_step, authored Human), under the target the strip above the code shows. Without selected lines it only says what is missing.
 
+step ni4wuj
+order 19
+parent 2h2qhv
+author ai
+file crates/gui/src/views/center.rs
+symbol draw_plan
+lines 0 61
+hash 6428726141665236
+note Draws the plan: every code segment as one code block sharing one horizontal offset (the lines id's) and one width (the widest segment in view), so the code scrolls sideways as one; only the last segment draws the horizontal scrollbar. Boxes are drawn indented past the gutter.
+
 step qf86nv
 order 8
 parent 2h2qhv
@@ -72,6 +142,16 @@ symbol selects_line
 lines 0 10
 hash e0a5641bfc70b877
 note A plain click on a line is a Press and selects it; the button held on the code after the press is a Drag that extends it; a click with ctrl or alt, or a double click, is a definition gesture instead and selects nothing. The drag comes from the SelectLines feature's gesture in the registry.
+
+step rk8p6p
+order 15
+parent e3jaxj
+author ai
+file crates/gui/src/comments.rs
+symbol in_file
+lines 0 9
+hash 46c6646e8a4775fb
+note The comments whose target is this file, by path.
 
 step rmvq1d
 order 4
@@ -84,26 +164,6 @@ hash c9761446d25ef7df
 link peek
 note Hovering an identifier in the Source view asks for its tooltip, the same as in every code view; peek follows it.
 
-step tcde93
-order 9
-parent 2h2qhv
-author ai
-file crates/gui/src/widgets.rs
-symbol rows_after
-lines 0 5
-hash a2ad4fed4d7d5641
-note The spacer for the rows below the window, so the column's content height is the whole list's.
-
-step tx8rkt
-order 3
-parent 2h2qhv
-author ai
-file crates/gui/src/widgets.rs
-symbol rows_window
-lines 0 18
-hash 4390877ad0b25c47
-note The virtual-list arithmetic every long list in the GUI shares: from the column's scroll offset and last frame's height, the first row in view and how many fit (two extra, or a guess before the column has a size). It emits the spacer for the rows above; the caller builds only the visible rows and ends with rows_after.
-
 step ur5k1m
 order 11
 parent azzv57
@@ -114,12 +174,42 @@ lines 0 11
 hash cc2cf1a12bd462df
 note The toolbar: the file name and the 'line' go-to-line box. How to select lines is the select-lines tip on the code area (source), and the add for selected lines is the target strip's, under the toolbar; nothing in the bar is prose that the panel's width could cut.
 
+step xbbhxf
+order 22
+parent h9yvvl
+author ai
+file crates/gui/src/views/center.rs
+symbol impl Inset<'_>
+lines 0 21
+hash ca76a439fe965f13
+note Where an inset sits relative to a line: a box at the top is above every line, one after line n above every later line; rows_above is how many code rows precede it.
+
+step xww78w
+order 14
+parent e3jaxj
+author ai
+file crates/gui/src/comments.rs
+symbol of
+lines 0 4
+hash 20b5eba97dd72f1a
+note Where a comment's box goes: after the last line it resolves to, or at the top of the file when it no longer resolves (the box then says lines or symbol gone).
+
 step yfetc7
 order 1
 parent azzv57
 author ai
 file crates/gui/src/views/center.rs
-symbol source
-lines 14 31
-hash b45cba7d4cbc5ee7
-note A pending scroll: anything that selected a symbol or opened a line left a LineRequest in Nav, and it becomes a scroll offset three rows above that line, clamped to the file. The viewport height comes from what the column measured last frame. The request carries a ticket, and ScrolledToLine clears it only if no newer request replaced it meanwhile.
+symbol scroll_to_request
+lines 0 14
+hash 89f8266b0cca6112
+note A pending scroll: anything that selected a symbol or opened a line left a LineRequest in Nav, and it becomes a scroll offset three rows above that line, counting the height of every comment drawn above it, clamped to the file. The viewport height comes from what the column measured last frame. The request carries a ticket, and ScrolledToLine clears it only if no newer request replaced it meanwhile.
+
+step yi1k45
+order 16
+parent h9yvvl
+author ai
+file crates/gui/src/views/center.rs
+symbol line_top
+lines 0 7
+hash 7efb5e554c9c2ec0
+note The pixel top of a line: its row times the row height plus every box above it, which is what scroll requests and the spacer above the view use.

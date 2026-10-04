@@ -1,0 +1,47 @@
+codemap 9
+tour feature-dismiss-comment
+kind flow
+author ai
+group features/gui
+note The human, after reading the agent's reply under a comment, or after deciding an open question no longer needs an answer. Goal: the map is the second channel beside the source, so a settled question should leave it. Without this feature every answered box stays under its note or between its Source lines, the top bar keeps counting it, and the only way out is deleting the comment's file by hand in a directory inside .jj/repo or the git common dir that the human never sees. Dismissal is the human's act and never automatic: the reply may be wrong or incomplete, and only the person who asked knows whether it answers the question. dismiss on a green box and withdraw on an orange one delete the comment's file at once, the same way add-comment writes it, and the status line says which. Withdraw exists because a question the human answered for themselves would otherwise sit in the agent's next 'comments' list. The GUI scenario 'comments' dismisses the answered comment and checks its box is gone. Why comments exist and the designs that were tried are in feature-add-comment.
+
+step 2kkup2
+order 0
+author ai
+file crates/gui/src/comments.rs
+symbol dismiss_comment
+lines 0 18
+hash c2cada058b704b02
+note The handler: deletes the comment's file first, so a comment the store still holds is never dropped from the window; then drops it from the shelf, closes the box under the count if it was showing this one, and says withdrawn when it was open, dismissed when it was answered.
+
+step fdhp6f
+order 1
+parent 2kkup2
+author ai
+file crates/gui/src/views/comments.rs
+symbol comment_box
+lines 21 35
+hash dfda2ac5b476184d
+note The buttons on a comment box: withdraw (withdraw@<id>) on an open one beside 'waiting for the agent', dismiss (dismiss@<id>) on an answered one; both send Dismiss.
+
+step ipy05k
+order 3
+parent 2kkup2
+author ai
+file crates/domain/src/comment.rs
+symbol dismiss
+lines 0 4
+hash 31e137abdccfdc4f
+link comment-model
+note Takes it out of the collection and hands it back, open or answered.
+
+step oy8m69
+order 2
+parent 2kkup2
+author ai
+file crates/io-comments/src/lib.rs
+symbol remove
+lines 0 7
+hash e23148cb1043fb3a
+link io-comments
+note Deletes the file; one already gone counts as deleted.

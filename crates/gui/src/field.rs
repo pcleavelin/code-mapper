@@ -78,6 +78,7 @@ pub(crate) enum Which {
     WizardSearch,
     TourNote,
     StepNote(BranchId),
+    Comment,
 }
 
 impl Which {
@@ -99,6 +100,7 @@ impl Which {
             Self::WizardSearch => ids::WIZARD_SEARCH_FIELD,
             Self::TourNote => ids::TOUR_NOTE_FIELD,
             Self::StepNote(_) => ids::EDIT_NOTE_FIELD,
+            Self::Comment => ids::COMMENT_FIELD,
         }
     }
 
@@ -115,7 +117,8 @@ impl Which {
             | Self::WizardName
             | Self::WizardGroup
             | Self::WizardSearch
-            | Self::StepNote(_) => FieldShape::Single,
+            | Self::StepNote(_)
+            | Self::Comment => FieldShape::Single,
         }
     }
 }
@@ -770,6 +773,7 @@ pub(crate) struct Fields {
     wizard_search: Field,
     tour_note: Field,
     step_notes: BTreeMap<BranchId, Field>,
+    comment: Field,
     blank: Field,
     focused: Option<Holding>,
 }
@@ -795,6 +799,7 @@ impl Fields {
             Which::WizardSearch => &self.wizard_search,
             Which::TourNote => &self.tour_note,
             Which::StepNote(branch) => self.step_notes.get(&branch).unwrap_or(&self.blank),
+            Which::Comment => &self.comment,
         }
     }
 
@@ -812,6 +817,7 @@ impl Fields {
             Which::WizardSearch => &mut self.wizard_search,
             Which::TourNote => &mut self.tour_note,
             Which::StepNote(branch) => self.step_notes.entry(branch).or_default(),
+            Which::Comment => &mut self.comment,
         }
     }
 

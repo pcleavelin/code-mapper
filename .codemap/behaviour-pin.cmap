@@ -12,7 +12,7 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol gui_scenarios
 lines 0 4
-hash 2e1b570606218f9a
+hash 478f378abe3763c0
 note The GUI scenarios, listed once in the gui_scenarios macro that gui.rs and parity.rs both expand. Each settles with SETTLE first; its stderr and the output of its after commands go to ran, which fails on a crash or a script error.
 
 step 1wrmiq
@@ -21,8 +21,8 @@ parent ii6lor
 author ai
 file crates/codemap/tests/common/cli.rs
 symbol vcs
-lines 0 103
-hash 5f9728620265cf45
+lines 0 105
+hash 312b32995f7565f0
 note diff and repin in a jj repo (skipped without jj): diff with no VCS and with nothing changed, then every kind of map edit diffed against the parent revision, then source edits after the commit (an inserted function, a changed body, a slice, a symbol moved to another file, a rename, a deleted file) and repin from @- and from @--, and a revision that does not exist.
 
 step 216e03
@@ -268,8 +268,8 @@ parent ii6lor
 author ai
 file crates/codemap/tests/common/cli.rs
 symbol stale
-lines 0 64
-hash fef4f0a6939231c2
+lines 0 94
+hash 4034133ba0e346e4
 note Source edits that go stale in each way: text moved above a step (still current), a body changed, a slice's line changed, a symbol renamed, text moved down unchanged (stale names where it went), a file deleted; then the re-pins and removals that make check pass again.
 
 step gnnw22
@@ -364,7 +364,7 @@ author ai
 file crates/codemap/tests/common/cli.rs
 symbol cli_scenarios
 lines 0 4
-hash 9a8a912be26e3f4d
+hash ce091d3bac330a27
 note The CLI scenarios, listed once in the cli_scenarios macro, which takes the name of another macro and calls it with 'cli:' and the scenario names. cli.rs expands it into one #[test] each and parity.rs into its list, so a scenario added here runs in both. Each is a fn(bin, name) returning the transcript (or Missing).
 
 step j4zwo3

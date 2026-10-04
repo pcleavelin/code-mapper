@@ -61,8 +61,8 @@ parent 9kzjp8
 author ai
 file crates/gui/src/views/center.rs
 symbol source
-lines 83 85
-hash 09bf0123f8f37703
+lines 90 94
+hash e0bed1ae7a9efd42
 link feature-select-lines
 note Where the lines come from: pressing and dragging in the Source view sets the line selection.
 

@@ -12,6 +12,7 @@ io-map = { path = "../io-map" }
 io-config = { path = "../io-config" }
 io-fonts = { path = "../io-fonts" }
 io-vcs = { path = "../io-vcs" }
+io-comments = { path = "../io-comments" }
 io-lsp = { path = "../io-lsp" }
 cli = { path = "../cli" }
 features = { path = "../features" }

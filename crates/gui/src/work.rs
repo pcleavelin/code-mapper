@@ -744,6 +744,7 @@ impl App {
         model.queries.forget_hovers();
         self.grids.clear();
         model.map.resolve_all(&model.index);
+        model.shelf.resolve_all(&model.index);
         model.refresh_wizard();
         let focus = focus_key.and_then(|key| model.index.by_key(&key));
         let file = open_path.and_then(|path| model.index.find_file(&path));

@@ -1,6 +1,7 @@
 mod action;
 mod app;
 mod authoring;
+mod comments;
 mod dump;
 mod element_tip;
 mod field;
