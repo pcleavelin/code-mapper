@@ -5,6 +5,16 @@ author ai
 group features/gui
 note Alt-click an identifier in any code view to keep its definition at the top of the References view, above the xrefs, without leaving the place being read. The References view is brought into sight for it: its tab activated, or, when no panel holds it, a new panel split off to the right of the centre view. The reader reaches for it to check what an identifier is without losing their place in the step or file being read. The peek shows the symbol's whole text, or the lines around a definition that is not a symbol's start, or a definition outside the repo read from disk. Its 'go' button goes there (a symbol is focused, a line opens in the Source view; an outside definition has no go), and 'x' closes it. The peek stays until closed or replaced.
 
+step 0tbjf7
+order 13
+parent w7mvto
+author ai
+file crates/gui/src/peek.rs
+symbol close_hover
+lines 0 8
+hash 8c2915ee743618c5
+note Remembers the word the peek was asked from as closed, so hovering answers nothing there and the hover card is gone the moment the peek is asked for; moving onto another word reopens hovering (Action::ReopenHover).
+
 step 1h923r
 order 1
 parent w7mvto
@@ -111,9 +121,9 @@ order 0
 author ai
 file crates/gui/src/action.rs
 symbol definition
-lines 0 19
-hash 73ef9887b52192ed
-note The handler, shared with jump-to-definition, here with Intent::Peek: ask the server, or resolve the word to a symbol and land it straight away. While the server has not answered, the status line says the word is being looked up.
+lines 0 22
+hash 4c05dfd995e3efc9
+note The handler, shared with jump-to-definition, here with Intent::Peek: first close the hover card on the word (Model::close_hover), so the card does not sit over the peek, then ask the server, or resolve the word to a symbol and land it straight away. While the server has not answered, the status line says the word is being looked up.
 
 step wq172j
 order 3

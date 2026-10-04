@@ -2,9 +2,10 @@ use std::path::Path as FsPath;
 use std::time::Duration;
 
 use domain::{
-    Anchor, Author, Backend, Cut, Depth, Draft, Edge, EditChange, FileText, Imports, Index, Line,
-    Map, Note, RelativePath, Root, Row, SourceFile, Span, Step, StepId, StepOrder, Stop, Symbol,
-    SymbolId, SymbolKind, SymbolName, Tour, TourKind, TourName, TreeEntry, Verdict,
+    Anchor, Author, Backend, Column, Cut, Depth, Draft, Edge, EditChange, FileId, FileText,
+    Imports, Index, Line, Map, Note, RelativePath, Root, Row, SourceFile, Span, Step, StepId,
+    StepOrder, Stop, Symbol, SymbolId, SymbolKind, SymbolName, Tour, TourKind, TourName, TreeEntry,
+    Verdict,
 };
 use features::{Feature, Trigger};
 use io_map::MapStore;
@@ -29,6 +30,7 @@ use crate::model::{LineSelection, Model, Readable, StepKey, StepSlot, Tab, TourS
 use crate::nav::Scrolling;
 use crate::palette::{Palette, commands};
 use crate::panels::{Direction, View};
+use crate::peek::Hovering;
 use crate::status::{Held, Status};
 use crate::theme::Cells;
 use crate::wizard::{self, BranchId, Expander, Page, Tick, WizardAct};
@@ -1810,4 +1812,35 @@ fn an_element_tip_says_what_its_feature_does_and_the_key_for_it() {
         Feature::Settings.spec().summary().as_str(),
         "wrapping keeps every word in order"
     );
+}
+
+#[test]
+fn opening_the_peek_closes_the_hover_card_until_the_pointer_reaches_another_word() {
+    let mut app = app();
+    let file = app
+        .model
+        .index
+        .find_file(&RelativePath::new("src/main.rs"))
+        .unwrap();
+    let on_fill = (file, Line::new(1), Column::new(6));
+    let shown = |reader: &App, (at_file, line, column): (FileId, Line, Column)| {
+        !matches!(
+            reader.model.hovering(at_file, line, column),
+            Hovering::Nothing
+        )
+    };
+    assert!(shown(&app, on_fill), "the card is wanted on fill() before");
+    app.model.close_hover(file, Line::new(1), Column::new(4));
+    assert!(
+        !shown(&app, on_fill),
+        "the peek closed the card on the word"
+    );
+    let on_report = (file, Line::new(2), Column::new(6));
+    assert!(matches!(
+        app.model.hovering(file, Line::new(2), Column::new(6)),
+        Hovering::Reopen
+    ));
+    app.apply(Action::ReopenHover);
+    assert!(shown(&app, on_report));
+    assert!(shown(&app, on_fill), "back on fill the card shows again");
 }

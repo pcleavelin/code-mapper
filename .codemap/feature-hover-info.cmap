@@ -22,8 +22,8 @@ parent z2vf49
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_hover
-lines 0 31
-hash 5893a7d775f13fb2
+lines 0 35
+hash 2f4cb423c5c04fc6
 note Trigger on graph nodes: the same decision per code line, returning the tip for the graph tab to place or deferring the question.
 
 step ftctmw
@@ -73,9 +73,9 @@ parent z2vf49
 author ai
 file crates/gui/src/peek.rs
 symbol hovering
-lines 0 19
-hash 2a4aab6c505d8d69
-note Decides for the word under the pointer: a cached server answer becomes a text tip (or nothing if the server had none), a question in flight shows nothing yet, an unasked position asks; with only a resolver, the symbol of that name becomes a symbol tip.
+lines 0 29
+hash 7d6faa4b50145bb8
+note Decides for the word under the pointer: nothing while it is the word a peek just closed the card on, Reopen (which clears that) on any other word; otherwise a cached server answer becomes a text tip (or nothing if the server had none), a question in flight shows nothing yet, an unasked position asks; with only a resolver, the symbol of that name becomes a symbol tip.
 
 step tu5snd
 order 4
@@ -112,6 +112,6 @@ order 0
 author ai
 file crates/gui/src/widgets/code.rs
 symbol hover
-lines 0 11
-hash 62ba0b270113ea55
+lines 0 12
+hash c9761446d25ef7df
 note The handler, run while a code block is built: a known tip is shown at the pointer, an unknown position is asked for, anything else shows nothing.

@@ -217,6 +217,7 @@ impl Frame<'_> {
                 });
             }
             Hovering::Ask { language, probe } => self.push_hover(model, language, probe),
+            Hovering::Reopen => self.push(Action::ReopenHover),
             Hovering::Nothing => {}
         }
     }

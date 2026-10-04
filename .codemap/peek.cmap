@@ -41,9 +41,9 @@ parent kaqitd
 author ai
 file crates/gui/src/action.rs
 symbol definition
-lines 0 19
-hash 73ef9887b52192ed
-note Go-to and peek share this, run when the Definition action is applied: the word under the pointer decides who answers. A server is sent a Definition request and the intent remembered in Queries until poll_backend has the answer, and the status line says the word is being looked up; a grammar-only file answers from the index at once, or says there is no definition of that word in the repo.
+lines 0 22
+hash 4c05dfd995e3efc9
+note Go-to and peek share this, run when the Definition action is applied: the word under the pointer decides who answers; a peek first closes the hover card on that word. A server is sent a Definition request and the intent remembered in Queries until poll_backend has the answer, and the status line says the word is being looked up; a grammar-only file answers from the index at once, or says there is no definition of that word in the repo.
 
 step 3p7p2m
 order 18
@@ -121,8 +121,8 @@ parent kaqitd
 author ai
 file crates/gui/src/widgets/code.rs
 symbol hover
-lines 0 11
-hash 62ba0b270113ea55
+lines 0 12
+hash c9761446d25ef7df
 note The hover: when the Model already has the answer - the server's text, or the symbol for a grammar-only file - the frame gets a tooltip at the pointer; when nobody has asked, the question is pushed.
 
 step d64bbt
@@ -141,9 +141,9 @@ parent 8dz15n
 author ai
 file crates/gui/src/peek.rs
 symbol hovering
-lines 0 19
-hash 2a4aab6c505d8d69
-note The tooltip's question, answered from the Model only. It finds the identifier's first column and asks probing who answers: for a server, the hover cached under that Probe (nothing while the question is out, Ask when never asked); for a grammar-only file, symbol_at; for prose, nothing.
+lines 0 29
+hash 7d6faa4b50145bb8
+note The tooltip's question, answered from the Model only. It finds the identifier's first column; the word a peek closed the card on answers nothing, any other word Reopen until the closing is cleared; then it asks probing who answers: for a server, the hover cached under that Probe (nothing while the question is out, Ask when never asked); for a grammar-only file, symbol_at; for prose, nothing.
 
 step exiaij
 order 25
@@ -377,6 +377,6 @@ parent dqmrwj
 author ai
 file crates/gui/src/peek.rs
 symbol Queries
-lines 0 7
-hash 596cbd32444c07be
-note The requests to the servers and what came back: every hover asked, as Asked until answered and then the text (or None when the server had nothing to say), capped at 500 entries; the probe under the pointer and since when; whether a hover is in flight; how many requests are unanswered (which keeps the frame busy); the definition awaited and its intent; and the probes whose references were asked for.
+lines 0 8
+hash d2afb31bc8160a85
+note The requests to the servers and what came back: every hover asked, as Asked until answered and then the text (or None when the server had nothing to say), capped at 500 entries; the probe under the pointer and since when; whether a hover is in flight; how many requests are unanswered (which keeps the frame busy); the definition awaited and its intent; the probes whose references were asked for; and the word whose card a peek closed.

@@ -202,8 +202,8 @@ order 11
 author ai
 file crates/gui/src/action.rs
 symbol definition
-lines 0 19
-hash 73ef9887b52192ed
+lines 0 22
+hash 4c05dfd995e3efc9
 link peek
 note Go-to-definition from any code view: the identifier under the pointer is looked up by the language's server (or the index, for a grammar-only file) and, once the answer is in, selected or opened in the Source view as a Move::Jump, so even a jump to another line of the same file is a place; a definition outside the repo is kept in the peek panel instead, since there is no file to open.
 

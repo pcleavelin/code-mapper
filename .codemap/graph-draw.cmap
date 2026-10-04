@@ -109,8 +109,8 @@ parent 4yhd4f
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_hover
-lines 0 31
-hash 5893a7d775f13fb2
+lines 0 35
+hash 2f4cb423c5c04fc6
 note Hovering a code line with no button down: the column under the pointer becomes a tooltip from the model's hover cache, or a deferred Hover request to the language server when the answer is not cached yet.
 
 step ah9cdx

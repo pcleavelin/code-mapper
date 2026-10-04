@@ -311,8 +311,8 @@ parent xjz44n
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 0 95
-hash 3fa8f4038d2a6f0e
+lines 0 96
+hash ada3c4bbf8bdaa1c
 note The one place the Model changes during a frame. Each arm is a call into nav.rs, a field of the Model, or a method on the App for changes that need the Services (save, a server question, a command).
 
 step h4xmjq
@@ -721,8 +721,8 @@ order 8
 author ai
 file crates/gui/src/action.rs
 symbol Action
-lines 0 58
-hash c4e540fee3ac3ef4
+lines 0 59
+hash e1d730f79e7a48f5
 note Every change a gesture, a key, a script line or a view's measurement can cause, as data. A view names the change; it never makes it.
 
 step xypoz6

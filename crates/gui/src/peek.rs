@@ -55,6 +55,14 @@ pub(crate) struct Queries {
     asked: Count,
     want_definition: Option<WantedDefinition>,
     references_asked: BTreeSet<Probe>,
+    closed: Option<WordSpot>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct WordSpot {
+    file: FileId,
+    line: Line,
+    start: Column,
 }
 
 impl Default for Queries {
@@ -66,6 +74,7 @@ impl Default for Queries {
             asked: Count::ZERO,
             want_definition: None,
             references_asked: BTreeSet::new(),
+            closed: None,
         }
     }
 }
@@ -154,6 +163,10 @@ impl Queries {
         Some(wanted.intent)
     }
 
+    pub(crate) const fn reopen_hover(&mut self) {
+        self.closed = None;
+    }
+
     pub(crate) fn forget_hovers(&mut self) {
         self.hovers.clear();
     }
@@ -200,6 +213,7 @@ pub(crate) enum Probing {
 pub(crate) enum Hovering {
     Tip(Tip),
     Ask { language: Language, probe: Probe },
+    Reopen,
     Nothing,
 }
 
@@ -267,10 +281,30 @@ impl Model {
         }
     }
 
+    pub(crate) fn close_hover(&mut self, file: FileId, line: Line, column: Column) {
+        if let Some(word) = self.word_at(file, line, column) {
+            self.queries.closed = Some(WordSpot {
+                file,
+                line,
+                start: word.start,
+            });
+        }
+    }
+
     pub(crate) fn hovering(&self, file: FileId, line: Line, column: Column) -> Hovering {
         let Some(word) = self.word_at(file, line, column) else {
             return Hovering::Nothing;
         };
+        let spot = WordSpot {
+            file,
+            line,
+            start: word.start,
+        };
+        match self.queries.closed {
+            Some(closed) if closed == spot => return Hovering::Nothing,
+            Some(_) => return Hovering::Reopen,
+            None => {}
+        }
         match self.probing(file, line, word.start) {
             Probing::Server { language, probe } => match self.queries.hovers.get(&probe) {
                 Some(Hovered::Answered(text)) => text

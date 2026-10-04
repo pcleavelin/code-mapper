@@ -83,7 +83,7 @@ parent ub828q
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 88 88
+lines 89 89
 hash da347408f9b6ea7b
 note The apply arm.
 

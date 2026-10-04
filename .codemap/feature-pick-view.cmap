@@ -70,7 +70,7 @@ parent m2tf99
 author ai
 file crates/gui/src/action.rs
 symbol apply
-lines 70 77
+lines 71 78
 hash 08e29ba4ea3011c4
 note Trigger: + (pick/<n>) queues TogglePicker; opening starts the search empty with the keyboard, closing releases it.
 

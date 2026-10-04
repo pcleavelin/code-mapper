@@ -76,6 +76,7 @@ pub(crate) enum Action {
     ConsoleScrolled,
     TipShown(Option<Label>),
     Rest(Option<Id>, Pressing),
+    ReopenHover,
     Status(Status),
     RefreshBase,
     Hover(Language, Probe),
@@ -154,6 +155,7 @@ impl App {
             }
             Action::TipShown(tip) => model.tip_shown = tip,
             Action::Rest(on, pressing) => model.resting.rest(on, pressing, model.now),
+            Action::ReopenHover => model.queries.reopen_hover(),
             Action::Status(status) => model.status = status,
             Action::RefreshBase => self.load_base(),
             Action::Hover(language, probe) => self.hover(language, probe),
@@ -278,6 +280,9 @@ impl App {
     }
 
     fn definition(&mut self, file: FileId, line: Line, column: Column, intent: Intent) {
+        if intent == Intent::Peek {
+            self.model.close_hover(file, line, column);
+        }
         let Some(word) = self.model.word_at(file, line, column) else {
             return;
         };

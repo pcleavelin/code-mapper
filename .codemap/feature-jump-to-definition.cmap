@@ -40,8 +40,8 @@ order 0
 author ai
 file crates/gui/src/action.rs
 symbol definition
-lines 0 19
-hash 73ef9887b52192ed
+lines 0 22
+hash 4c05dfd995e3efc9
 note The handler, shared with peek-definition and told apart by the Intent. Finds the word under the pointer, then either asks the language's server for the definition (remembering what the answer is for) or, for a language with a grammar but no server, resolves the word to a symbol at once and lands on it. Asking a server sets the status to LookingUp the word, so a slow server reads as waiting rather than as nothing happening.
 
 step griplk

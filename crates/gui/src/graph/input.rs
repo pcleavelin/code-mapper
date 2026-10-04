@@ -442,6 +442,10 @@ impl App {
                 deferred.push(Action::Hover(language, probe));
                 None
             }
+            Hovering::Reopen => {
+                deferred.push(Action::ReopenHover);
+                None
+            }
             Hovering::Nothing => None,
         }
     }

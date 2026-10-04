@@ -117,8 +117,8 @@ parent pk9re7
 author ai
 file crates/gui/src/widgets/code.rs
 symbol hover
-lines 0 11
-hash 62ba0b270113ea55
+lines 0 12
+hash c9761446d25ef7df
 note Hover over an identifier: a tooltip at the pointer when the answer is already known (the server's text, or the symbol for a grammar-only file), otherwise the question is pushed.
 
 step 6dfeyu

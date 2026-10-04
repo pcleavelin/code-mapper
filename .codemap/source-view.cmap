@@ -79,8 +79,8 @@ parent ghy5uj
 author ai
 file crates/gui/src/widgets/code.rs
 symbol hover
-lines 0 11
-hash 62ba0b270113ea55
+lines 0 12
+hash c9761446d25ef7df
 link peek
 note Hovering an identifier in the Source view asks for its tooltip, the same as in every code view; peek follows it.
 
