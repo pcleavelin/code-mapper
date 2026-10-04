@@ -691,6 +691,29 @@ click-id graph-fit
 wait 4
 dump
 shot {shots}/graph.png
+click-id graph-zoom-out
+wait 4
+dump
+click-id graph-zoom-in
+wait 4
+click-id graph-zoom-in
+wait 4
+dump
+shot {shots}/zoom-in.png
+click-id graph-minimap
+wait 4
+dump
+drag <<DUMP minimap|4,4>> <<DUMP minimap|30,20>>
+wait 4
+dump
+shot {shots}/minimap.png
+mouse <<DUMP graph zoom|200,40>>
+wait 2
+pause 700
+wait 3
+dump
+click-id graph-fit
+wait 4
 click <<DUMP button new '+ step>>
 wait 4
 dump

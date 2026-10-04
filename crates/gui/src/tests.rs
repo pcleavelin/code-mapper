@@ -12,7 +12,7 @@ use io_lsp::StartError;
 use io_map::MapStore;
 use platform::ClipboardRequest;
 use strum::VariantArray;
-use ui::{Count, Input, Key, Label, Mods, Press, Px, Typed};
+use ui::{Count, FontSize, Input, Key, Label, Mods, Press, Px, Typed};
 
 use crate::action::{Action, Collapse, Hide};
 use crate::app::App;
@@ -24,7 +24,7 @@ use crate::field::{
 };
 use crate::graph::Parentage;
 use crate::graph::build::{Built, CellSize, Rank, StepInfo};
-use crate::graph::{Button, GraphState, Node};
+use crate::graph::{Button, GraphState, Minimap, Node};
 use crate::ids::{self, CONTROLS};
 use crate::keys::{self, Extend, LineGesture, Walk, turn_wheel};
 use crate::menu::{Menu, MenuAct};
@@ -34,7 +34,7 @@ use crate::palette::{Palette, commands};
 use crate::panels::{Direction, View};
 use crate::peek::Hovering;
 use crate::status::{Held, Status};
-use crate::theme::{self, ACCENT, Cells, GREEN, NOTE, PANEL, TEXT};
+use crate::theme::{self, ACCENT, Cells, GREEN, NOTE, PANEL, TEXT, Zoom, ZoomStep};
 use crate::wizard::{self, BranchId, Expander, Page, Tick, WizardAct};
 use crate::work::{LanguageServer, ServerState, WorkState};
 
@@ -1992,4 +1992,66 @@ fn a_menu_opens_on_its_button_closes_on_a_second_press_and_on_close() {
     app.apply(Action::Menu(MenuAct::Toggle(Menu::Tour)));
     app.apply(Action::Menu(MenuAct::Close));
     assert_eq!(app.model.toolbar_menu, None);
+}
+
+fn near(zoom: Zoom, expected: f32) -> bool {
+    (zoom.get() - expected).abs() < 0.001
+}
+
+#[test]
+fn the_zoom_buttons_move_to_the_next_stop_and_stay_at_the_ends() {
+    let base = FontSize::new(14);
+    let out = Zoom::ONE.next_stop(ZoomStep::Out, base);
+    assert!(near(out, 0.75), "{out:?}");
+    assert!(near(out.next_stop(ZoomStep::In, base), 1.0));
+    let between = Zoom::of_fonts(FontSize::new(10), base);
+    assert!(near(between.next_stop(ZoomStep::In, base), 0.75));
+    assert!(near(between.next_stop(ZoomStep::Out, base), 0.5));
+    let hair_over = Zoom::of_fonts(FontSize::new(1000), FontSize::new(1333));
+    assert!(
+        near(hair_over.next_stop(ZoomStep::Out, FontSize::new(1333)), 0.5),
+        "a zoom a hair past a stop steps past it, not onto it"
+    );
+    let mut zoom = Zoom::ONE;
+    for _ in 0..20 {
+        zoom = zoom.next_stop(ZoomStep::In, base);
+    }
+    assert!(near(zoom, 2.0), "{zoom:?}");
+    for _ in 0..20 {
+        zoom = zoom.next_stop(ZoomStep::Out, base);
+    }
+    assert!(near(zoom, 2.0 / 14.0), "{zoom:?}");
+}
+
+#[test]
+fn the_minimap_shows_the_graph_and_the_camera_only_while_part_of_the_graph_is_off_screen() {
+    let model = model();
+    let mut built = built(&model, &[(10, 4), (8, 3), (8, 3)]);
+    built.place_nodes(&model.index);
+    let cell = ui::Extent::new(Px::new(10), Px::new(20));
+    let canvas = ui::Rect::new(Px::new(0), Px::new(0), Px::new(400), Px::new(300));
+    let at = |across: i32, down: i32| ui::Point::new(Px::new(across), Px::new(down));
+    assert_eq!(
+        Minimap::of(&built, canvas, at(0, 0), cell, None, None),
+        None,
+        "the 300x200 graph fits the canvas"
+    );
+    let minimap = Minimap::of(&built, canvas, at(-200, 0), cell, None, None).unwrap();
+    let size = minimap.size();
+    assert_eq!((size.width, size.height), (Px::new(100), Px::new(50)));
+    let placed = ui::Rect::new(Px::new(0), Px::new(0), size.width, size.height);
+    let view = minimap.camera_on(placed);
+    assert_eq!(
+        (view.left, view.width, view.height),
+        (Px::new(33), Px::new(67), Px::new(50)),
+        "the camera covers graph x 200..600 of a world 600 wide"
+    );
+    assert_eq!(minimap.to_world(placed, at(50, 25)), at(300, 150));
+    let left = Minimap::of(&built, canvas, at(200, 0), cell, None, None).unwrap();
+    let wider = ui::Rect::new(Px::new(0), Px::new(0), Px::new(100), Px::new(60));
+    assert_eq!(
+        left.to_world(wider, at(50, 30)),
+        at(50, 150),
+        "the world starts 200 left of the graph, where the camera is"
+    );
 }

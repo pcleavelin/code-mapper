@@ -43,6 +43,10 @@ impl Control {
         self.aim(self.id())
     }
 
+    pub(crate) fn on(self, element: Self) -> Target {
+        self.aim(element.id())
+    }
+
     pub(crate) fn nth(self, number: Count) -> Target {
         self.aim(self.id().nth(number.get()))
     }
@@ -158,6 +162,13 @@ pub(crate) const GRAPH_FIT: Control = Control::new(Feature::FitGraph, Element::n
 pub(crate) const GRAPH_TURN: Control = Control::new(Feature::TurnGraph, Element::new("graph-turn"));
 pub(crate) const GRAPH_CANVAS: Control =
     Control::new(Feature::PanGraph, Element::new("graph-canvas"));
+pub(crate) const GRAPH_ZOOM_IN: Control =
+    Control::new(Feature::ZoomGraph, Element::new("graph-zoom-in"));
+pub(crate) const GRAPH_ZOOM_OUT: Control =
+    Control::new(Feature::ZoomGraph, Element::new("graph-zoom-out"));
+pub(crate) const GRAPH_MINIMAP: Control =
+    Control::new(Feature::Minimap, Element::new("graph-minimap"));
+pub(crate) const GRAPH_NODE: Control = Control::new(Feature::MoveNode, Element::new("node"));
 pub(crate) const PALETTE_FIELD: Control =
     Control::new(Feature::CommandPalette, Element::new("field@palette"));
 pub(crate) const PALETTE_ROW: Control =
@@ -298,6 +309,10 @@ pub(crate) const CONTROLS: &[Control] = &[
     GRAPH_FIT,
     GRAPH_TURN,
     GRAPH_CANVAS,
+    GRAPH_ZOOM_IN,
+    GRAPH_ZOOM_OUT,
+    GRAPH_MINIMAP,
+    GRAPH_NODE,
     PALETTE_FIELD,
     PALETTE_ROW,
     BUILD_TOUR,

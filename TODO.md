@@ -48,8 +48,6 @@
 
 1. Comments for an agent to review and address: the owner leaves a comment on code or a
    step, the next agent session answers it in the map and clears it.
-2. A graph minimap: the whole graph in a corner with the camera's view drawn on it; click
-   or drag it to move the camera. A way out of GUI 2.
 
 ## Deferred
 

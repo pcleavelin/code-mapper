@@ -178,7 +178,7 @@ order 7
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 42 44
+lines 39 41
 hash 4c53a897b47fee8a
 note The frame's cell size in pixels is recorded once per frame, after the layout, the dragged positions and any fit, with a Cell action; GraphState::rect_at turns a node's cells and rows into a pixel rectangle with it whenever the camera or the next frame's input asks.
 

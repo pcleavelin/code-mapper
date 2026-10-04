@@ -21,7 +21,7 @@ parent ub828q
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 20 26
+lines 14 20
 hash 4fab01b6ca13535c
 note What gives the graph the keyboard: any left press, in the graph phase, sends Engage - Keyboard::Graph when the pointer is over the canvas, Keyboard::Elsewhere when it is not - so a click on a node or the background turns the walk on and a click in another view turns it off.
 

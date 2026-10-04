@@ -80,7 +80,7 @@ parent rd9sp9
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_wheel
-lines 42 46
+lines 28 32
 hash ec5a28160473fd90
 link graph-camera
 note In the graph the wheel pans the camera by both components, so shift+wheel, turned sideways above, pans it sideways.

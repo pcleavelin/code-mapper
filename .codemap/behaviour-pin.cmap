@@ -559,9 +559,9 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol AUTHORING
-lines 0 122
-hash 9df798f2d8d8311c
-note The GUI authoring gestures on a fresh tour: a tour built in the wizard opened by '+ new tour' (an empty name refused, kind and group chosen, main as the start, three outline rows ticked by their tick boxes), add-offer@Symbols from the Symbols strip after a symbol is focused, then '+ step' from Symbols and References, each row hovered first since its action shows only then (a repeat refused), the target strip's 'top level', 'add step' from the Source view, '+ step' on an off-tour graph node, three steps list drags (under, before, under), 'promote', and a save; the after command prints the resulting tour.
+lines 0 145
+hash 49a2ea2d148fb6f0
+note The GUI authoring gestures on a fresh tour: a tour built in the wizard opened by '+ new tour' (an empty name refused, kind and group chosen, main as the start, three outline rows ticked by their tick boxes), add-offer@Symbols from the Symbols strip after a symbol is focused, then '+ step' from Symbols and References, each row hovered first since its action shows only then (a repeat refused), the target strip's 'top level', 'add step' from the Source view, the zoom cluster's - and + buttons and fit in the graph (zoom-in.png), a click and a drag on the minimap (minimap.png), '+ step' on an off-tour graph node, three steps list drags (under, before, under), 'promote', and a save; the after command prints the resulting tour.
 
 step wv4hxm
 order 17

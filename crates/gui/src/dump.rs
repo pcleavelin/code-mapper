@@ -394,6 +394,17 @@ impl Dump for GraphState {
             ui.placement(canvas).map(|placement| placement.rect),
             self.camera()
         ));
+        let placed = ui
+            .placement(ids::GRAPH_MINIMAP.id())
+            .map(|placement| placement.rect);
+        match (self.minimap(), placed) {
+            (Some(minimap), Some(rect)) => lines.line(format_args!(
+                "minimap rect={rect:?} camera={:?} dragged={}",
+                minimap.camera_on(rect),
+                self.drags_minimap()
+            )),
+            _ => lines.line(format_args!("minimap hidden")),
+        }
         let pointer = ui.pointer();
         lines.line(format_args!(
             "input mouse={:?} down={:?} hot_is_canvas={} active_is_canvas={} drag={}",

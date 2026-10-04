@@ -1,5 +1,6 @@
 pub(crate) mod build;
 mod input;
+mod minimap;
 mod place;
 mod scene;
 
@@ -12,10 +13,12 @@ use ui::{Coordinate, Point, Px, Rect, Vector};
 
 use crate::model::StepSlot;
 use crate::panels::Direction;
-use crate::theme::Zoom;
+use crate::theme::{Zoom, ZoomStep};
 
 pub(crate) use build::Built;
 pub(crate) use input::{GraphAction, GraphFrame, Heading};
+pub(crate) use minimap::Minimap;
+use minimap::MinimapDrag;
 #[cfg(test)]
 pub(crate) use place::Parentage;
 pub(crate) use scene::draw_scene;
@@ -163,6 +166,9 @@ pub(crate) struct GraphState {
     keyboard: Keyboard,
     presence: Presence,
     fit: Wish,
+    wanted_zoom: Option<ZoomStep>,
+    minimap: Option<Minimap>,
+    minimap_drag: Option<MinimapDrag>,
     keep: Option<Kept>,
     built: Built,
     hits: Vec<HitRect>,
@@ -189,6 +195,9 @@ impl Default for GraphState {
             keyboard: Keyboard::Elsewhere,
             presence: Presence::Hidden,
             fit: Wish::Settled,
+            wanted_zoom: None,
+            minimap: None,
+            minimap_drag: None,
             keep: None,
             built: Built::default(),
             hits: Vec::new(),
@@ -289,8 +298,24 @@ impl GraphState {
         self.pan
     }
 
+    pub(crate) const fn minimap(&self) -> Option<&Minimap> {
+        self.minimap.as_ref()
+    }
+
+    pub(crate) const fn drags_minimap(&self) -> bool {
+        self.minimap_drag.is_some()
+    }
+
     pub(crate) fn hits(&self) -> &[HitRect] {
         &self.hits
+    }
+
+    pub(crate) fn hit_at(&self, point: Point) -> Option<Hit> {
+        self.hits
+            .iter()
+            .rev()
+            .find(|hit| hit.rect.contains(point))
+            .map(|hit| hit.hit)
     }
 
     pub(crate) const fn built(&self) -> &Built {
@@ -342,6 +367,8 @@ impl GraphState {
         self.root = camera.root.as_ref().and_then(|root| node_of(index, root));
         self.look = Wish::Settled;
         self.fit = Wish::Settled;
+        self.wanted_zoom = None;
+        self.minimap_drag = None;
         self.glide = None;
         self.keep = None;
         self.steering = None;

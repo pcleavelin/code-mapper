@@ -1,0 +1,186 @@
+codemap 9
+tour feature-minimap
+kind flow
+author ai
+group features/gui
+note The human reading a tour in the Graph tab cannot see how big the graph is or where the camera sits in it, and reaching a far part of a large graph costs many gestures. Seen in a run: the default view of the anchor tour shows one node in the middle of a large empty canvas, its callees off to the right and nothing saying so; reader-gui (100 steps) is about 33 canvas heights tall at 100% (its minimap shows the camera as 32 of 150 pixels at 14%), so reading its last steps at a readable zoom means some 30 background drags, and fitted it stops at 14% because the graph font cannot shrink further (TODO.md GUI 2) with its lower half still off the canvas. What codemap has does not answer it: pan-graph moves a canvas height per drag and shows nothing of where the view is; zoom-graph and fit-graph show more of the shape but give up the zoom the reader reads at, cannot show a tall tree whole, and need a zoom back in at the right spot afterwards; walk-graph moves one node at a time; the Tour tab orders the steps but not the graph's layout. The minimap serves the goal of reading an unfamiliar flow with less friction than an editor, which has no picture of a call tree at all: the whole graph drawn small in the canvas's bottom-right corner, nodes as boxes without text, the camera as a rectangle on it; one press or drag moves the camera any distance and keeps the zoom. One design was built (the owner asked for no prototypes this time); its choices: an overlay in the canvas rather than a panel, since it is only useful beside the graph it maps; the bottom-right corner above the zoom cluster, where map and design apps put both, never covering the cluster; boxes without text, since text at that scale is what GUI 2 says cannot be read; a world that joins the graph with the camera's view, so the camera is on the minimap even after panning away from the graph, and that stays fixed while the minimap is dragged, so the mapping does not move under the pointer; a press inside the camera rectangle keeps its offset so the view does not jump, a press elsewhere centres there; hidden while the whole graph is on screen, where it would only cover nodes. It moves the camera because pressing it is explicit navigation (CLAUDE.md). It does not settle GUI 2: the graph itself still cannot fit a very tall tree; the minimap is a way to move around one.
+
+step 11b9ke
+order 3
+parent q4xhps
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_phase
+lines 73 74
+hash c7d982d8e8b47e38
+note Later in the same phase, after the camera and its glide have moved and the scene's hits are stored, the minimap is built from this frame's layout, cell size and pan, so the next frame's input maps against what was drawn.
+
+step 11zqjs
+order 4
+parent 11b9ke
+author ai
+file crates/gui/src/graph/minimap.rs
+symbol of
+lines 0 53
+hash 75b4f18a0568947c
+note None for an empty graph, while the graph lies wholly inside the camera's view (unless it is held), or when the canvas leaves no room; otherwise the world (graph bounds joined with the view, or the held world), a size that fits MINIMAP_MOST and a quarter of the canvas's width or a third of its height at one scale, and a mark per node coloured by step, off-tour or focus.
+
+step 2ukarc
+order 9
+parent 11zqjs
+author ai
+file crates/gui/src/graph/minimap.rs
+symbol Minimap
+lines 0 5
+hash a64f8e74d364cf9f
+note What one frame's minimap holds, in graph pixels at the current zoom with the graph origin at 0: the world it shows, the camera's view, the element size it asks for, and the node marks.
+
+step 57znui
+order 1
+parent q4xhps
+author ai
+file crates/gui/src/graph/minimap.rs
+symbol to_world
+lines 0 7
+hash b15871f5118c82dc
+note Minimap pixels back to world pixels: the inverse of the fold that draws it (one scale for both axes, the world centred in the element).
+
+step 5hh06x
+order 8
+parent q4xhps
+author ai
+file crates/gui/src/graph/minimap.rs
+symbol camera_on
+lines 0 2
+hash 2f758b37705d6423
+note The camera's view in minimap pixels, for the press test and for the dump.
+
+step 64w9xp
+order 13
+parent 11zqjs
+author ai
+file crates/gui/src/graph/minimap.rs
+symbol room
+lines 0 5
+hash 5b260a38fe54429a
+note The most room the minimap may take: MINIMAP_MOST, or a quarter of the canvas's width and a third of its height when the canvas is smaller.
+
+step c69n5m
+order 11
+parent 11zqjs
+author ai
+file crates/gui/src/graph/minimap.rs
+symbol joined
+lines 0 9
+hash 8343b4e7af56abab
+note The smallest rectangle holding both: the world is the graph joined with the view.
+
+step c942ef
+order 7
+parent q4xhps
+author ai
+file crates/gui/src/graph/minimap.rs
+symbol MinimapDrag
+lines 0 3
+hash 4ab4ef6e241026e5
+note The drag kept while the minimap is pressed: the offset from the camera rectangle's centre to the pressed point, and the world the press started in.
+
+step ev9civ
+order 5
+parent q4xhps
+author ai
+file crates/gui/src/views/center.rs
+symbol graph_corner
+lines 0 22
+hash 83b345d3c1100845
+note Trigger: in the canvas's corner overlay the minimap is a custom element (graph-minimap) right-aligned in the row above the zoom cluster, drawn by Minimap::draw at the size Minimap::of chose, with the feature's tooltip attached.
+
+step ijuekq
+order 14
+parent 11zqjs
+author ai
+file crates/gui/src/graph/minimap.rs
+symbol scaled
+lines 0 2
+hash 7b7ac316d4060819
+note A length times the minimap's scale, rounded to a whole pixel.
+
+step jjjmdx
+order 6
+parent ev9civ
+author ai
+file crates/gui/src/graph/minimap.rs
+symbol draw
+lines 0 11
+hash a1eaacfa59eaa6f8
+note The panel background, each node's mark folded into the element, then the camera's view as a translucent accent fill with an accent outline, clipped to the element, and a border.
+
+step lfa845
+order 16
+parent jjjmdx
+author ai
+file crates/gui/src/graph/minimap.rs
+symbol to_screen
+lines 0 8
+hash ffdd2bc430e16239
+note A world rectangle in element pixels, at least one pixel each way so a thin node still shows.
+
+step mmqcop
+order 15
+parent jjjmdx
+author ai
+file crates/gui/src/graph/minimap.rs
+symbol fold
+lines 0 10
+hash 59f0c1e5ae9c4f71
+note The one fold from world to element: the scale that fits the world in the element on both axes, and the offsets that centre it.
+
+step mnahf3
+order 10
+parent 11zqjs
+author ai
+file crates/gui/src/graph/minimap.rs
+symbol Mark
+lines 0 3
+hash ddda4bbe7d4bbed7
+note One node: its rectangle in graph pixels and its colour.
+
+step n0btv8
+order 12
+parent 11zqjs
+author ai
+file crates/gui/src/graph/minimap.rs
+symbol inside
+lines 0 5
+hash cadc7261ae789064
+note Whether the graph lies wholly inside the view: then the minimap is hidden.
+
+step n7mufx
+order 2
+parent q4xhps
+author ai
+file crates/gui/src/graph/input.rs
+symbol apply
+lines 92 92
+hash f9c99bdaec7c2251
+link graph-camera
+note DragMinimap stores or drops the drag; Camera (graph-camera) sets the pan and drops a glide in progress.
+
+step q4xhps
+order 0
+author ai
+file crates/gui/src/graph/input.rs
+symbol minimap_input
+lines 0 35
+hash fb9241cc481f8b5d
+note The handler, run each graph phase right after the wheel: while the minimap element is held down (last frame's rectangle and last frame's Minimap, the pair the reader saw), the pressed point is turned into a world point and the camera is panned so it sits at the canvas centre. The first frame of a press records the drag: the offset from the camera rectangle's centre when the press is inside it, none otherwise, and the world at that moment. Releasing, or the minimap disappearing, drops the drag.
+
+step te2ljy
+order 17
+parent 11b9ke
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_minimap
+lines 0 19
+hash acb92ece13cbfba3
+note Builds the minimap once the canvas has a rectangle (none before) and stores it with MinimapDrawn, replacing last frame's, so a minimap that no longer applies disappears.
