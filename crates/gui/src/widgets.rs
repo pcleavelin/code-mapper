@@ -324,6 +324,16 @@ impl Frame<'_> {
         );
     }
 
+    pub(crate) fn label_runs(&mut self, runs: Vec<Run>) {
+        let size = self.metrics.font;
+        self.ui.leaf(
+            text_kind(runs, size, Wrap::None),
+            Layout::row().padding(LABEL_PADDING),
+            Style::NONE,
+            None,
+        );
+    }
+
     pub(crate) fn caption(&mut self, runs: Vec<Run>) {
         let size = self.metrics.font;
         self.ui.leaf(

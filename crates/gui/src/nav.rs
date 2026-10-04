@@ -342,7 +342,7 @@ impl Model {
         self.scrolls.set(ids::document(), place.view.document);
         self.scrolls.set(ids::source(), place.view.source);
         self.graph.restore_camera(&self.index, &place.view.camera);
-        self.nav.show(place.view.tab);
+        self.set_tab(place.view.tab);
         self.nav.history.last = Some(self.here());
     }
 
@@ -606,6 +606,9 @@ impl Model {
 
     pub(crate) fn set_tab(&mut self, tab: Tab) {
         self.nav.show(tab);
+        if tab == Tab::Search {
+            self.fields.focus(Which::Search);
+        }
     }
 
     pub(crate) fn show_view(&mut self, view: View) {
@@ -626,6 +629,9 @@ impl Model {
     pub(crate) fn reveal_tab(&mut self) {
         let (tab, asked) = (self.nav.tab, self.nav.asked);
         self.panels.reveal(tab, asked);
+        if !self.panels.is_shown(View::Search) {
+            self.fields.release(Which::Search);
+        }
     }
 
     pub(crate) fn forget_step(&mut self) {

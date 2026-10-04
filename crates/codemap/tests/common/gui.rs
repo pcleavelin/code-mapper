@@ -53,7 +53,7 @@ fn reload_hook(bin: &Path, root: &Path, line: &str) {
     }
 }
 
-const SETTLE: &str = "idle\nclick-id save\nclick-id tours/2\nwait 2\n";
+const SETTLE: &str = "idle\nclick-id tours/2\nwait 2\n";
 
 const DOCUMENT: &str = "SETTLE
 dump
@@ -531,7 +531,9 @@ click-id tours/1
 wait 3
 dump
 shot {shots}/shapes.png
-click-id field@search
+click-id tab@Search
+wait 2
+dump
 text self\\.\\w+
 key enter
 wait 3

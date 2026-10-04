@@ -586,9 +586,7 @@ impl Model {
                     on_tour(|tour| Action::CollapseAll(tour, Collapse::Expand))
                 }
                 PaletteCommand::ShowGraph => on_tour(|tour| Action::OpenTour(tour, Tab::Graph)),
-                PaletteCommand::Search => {
-                    vec![Action::FocusField(Which::Search, Which::Search.id())]
-                }
+                PaletteCommand::Search => vec![Action::ShowView(View::Search)],
                 PaletteCommand::AutoLayout => vec![Action::Graph(GraphAction::AutoLayout)],
                 PaletteCommand::Fit => vec![Action::Graph(GraphAction::WantFit)],
                 PaletteCommand::OneToOne => vec![Action::Graph(GraphAction::OneToOne)],

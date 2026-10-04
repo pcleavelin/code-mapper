@@ -32,7 +32,7 @@ author ai
 file crates/gui/src/nav.rs
 symbol go
 lines 0 24
-hash 14475bdae7309b69
+hash d3eba6b1edd3eb95
 note Restores a place: the tour by name if it still exists, the step by StepId through select_step with Scrolling::Stay when it still exists, otherwise the focused symbol found again by its key, or no focus at all when the place had none (going back to the start page leaves nothing focused); then file and lines, the document and Source scroll offsets and the graph camera as they were when the place was left, and the tab. It records the restored place as the last one so the frame end does not push it again.
 
 step 7ygu48
@@ -61,7 +61,7 @@ parent y91rv4
 author ai
 file crates/gui/src/views/bars.rs
 symbol top_bar
-lines 16 36
+lines 9 29
 hash b7136cd9d48155e0
 note Trigger in the top bar: the BACK and FORWARD nav buttons, disabled when their stack is empty, queue Back or Forward.
 

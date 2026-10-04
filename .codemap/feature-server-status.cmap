@@ -1,0 +1,85 @@
+codemap 9
+tour feature-server-status
+kind flow
+author ai
+group features/gui
+note The human, opening a repo in the window and reaching for hover, go-to or references, needs to know which language servers answer for it, which are still starting or indexing, and which are missing: a missing server means its files get no hover or go-to and keep tree-sitter's calls, which reads as a broken feature unless the server is named. Goal: understanding a codebase through codemap takes less friction than through an editor with an LSP. The owner listed it in TODO.md (GUI 5: with several language servers missing, the status line names only one; Features 2: a status dot per language server). Seen in a run of the build without it, on a project of one Rust, one Python and one JavaScript file with only rust-analyzer on PATH (a script of dump, idle, wait 5, dump): the status line read 'typescript-language-server: starting', then 'typescript-language-server not on PATH: its files keep the tree-sitter resolver, no hover or go-to for them'; pyright-langserver, also missing, was never named, and rust-analyzer, which answered, was not shown at all. Whichever failure arrived last won the line, so the GUI scripts clicked save before their first dump only to overwrite it. Nothing else in codemap shows it: the backend progress label names one server only while a batch runs, and the CLI's notices go to stderr of a CLI run. The status bar holds one item per language of the index, in Language order (Rust, Odin, C, Python, JavaScript), sized to its text and grouped at the right before the map's directory: a dot and the server's program, green when ready, orange while starting or indexing, red when missing or failed to start, dim when nothing has asked it yet (a repo whose files are all cached starts no server until a hover). The status line keeps the index count and the outcome of what the reader did, so after the servers settle it reads the same on every run. The same project in this build: right after launch rust-analyzer is orange and the other two red ('DUMP servers rust-analyzer=starting pyright-langserver=missing typescript-language-server=missing'), and once idle rust-analyzer is green ('rust-analyzer=ready'). The owner asked for one design, the dots of the TODO item, so no alternatives were built.
+
+step 4c961x
+order 0
+author ai
+file crates/gui/src/views/bars.rs
+symbol status_bar
+lines 18 29
+hash a2491df56f24b424
+note The handler, in the status bar after the progress label: one non-growing item per language, a Dot icon in the state's colour and the server's program in the weak colour, so the items sit together at the right beside the map's directory.
+
+step 9cytv7
+order 3
+parent ukq540
+author ai
+file crates/gui/src/work.rs
+symbol server_started
+lines 0 2
+hash c9cdccdc41f08c29
+note Set when App::server spawns the language's thread, on the first index batch or question to it.
+
+step f99yqz
+order 4
+parent ukq540
+author ai
+file crates/gui/src/work.rs
+symbol server_answered
+lines 0 6
+hash d025e7ca43635b22
+note Set by poll_backend when any message arrives from the language's channel: the session is up, since serve answers nothing before start_session returns.
+
+step nd18gs
+order 6
+parent ukq540
+author ai
+file crates/gui/src/work.rs
+symbol ServerState
+lines 0 7
+hash db2544ebc24f6fa5
+note The six states; its Display gives the word a dump prints for each.
+
+step p4mio6
+order 7
+parent qj3kzx
+author ai
+file crates/gui/src/work.rs
+symbol LanguageServer
+lines 0 3
+hash b26e8976b5921c93
+note One row of what the status bar shows: a language and its server's state.
+
+step q1aenl
+order 5
+parent ukq540
+author ai
+file crates/gui/src/work.rs
+symbol server_unavailable
+lines 0 7
+hash b1fc818508bc4a46
+note Set by poll_backend on Answer::Failed: Missing when the program is not on PATH, Failed when it would not start; its batch ends there, and no_server keeps every later question from it.
+
+step qj3kzx
+order 1
+parent 4c961x
+author ai
+file crates/gui/src/work.rs
+symbol server_states
+lines 0 13
+hash e632c0cf2612886c
+note The languages shown: every language of a file in the index, plus any whose server was started, in Language order, each with its state. Missing servers are all listed, not only the last to fail.
+
+step ukq540
+order 2
+parent qj3kzx
+author ai
+file crates/gui/src/work.rs
+symbol server_state
+lines 0 6
+hash 5cdbc1316120fb0e
+note One language's state: not started when nothing asked its server, Indexing when it answered and a batch of its files is in flight, otherwise the stored state.

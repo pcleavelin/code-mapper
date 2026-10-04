@@ -461,6 +461,12 @@ impl Grab {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ConsoleFit {
+    Wanted,
+    Settled,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Panels {
     root: Branch,
@@ -469,6 +475,7 @@ pub(crate) struct Panels {
     picker: Option<BranchId>,
     revealed: Tab,
     answered: Ticket,
+    console_fit: ConsoleFit,
 }
 
 impl Default for Panels {
@@ -480,6 +487,7 @@ impl Default for Panels {
             picker: None,
             revealed: Tab::Tour,
             answered: Ticket::default(),
+            console_fit: ConsoleFit::Wanted,
         };
         let nav = panels.panel(vec![View::Tours, View::Symbols, View::Files]);
         let centre = panels.panel(vec![
@@ -521,11 +529,23 @@ fn layout_of(branch: &Branch) -> LayoutTree {
 }
 
 impl Panels {
+    pub(crate) fn fit_console(&mut self, room: Px, log_height: Px, target: Px) {
+        if self.console_fit == ConsoleFit::Settled {
+            return;
+        }
+        self.console_fit = ConsoleFit::Settled;
+        if let Branch::Split(split) = &mut self.root {
+            let first = split.ratio.apply(room);
+            split.ratio = Ratio::of(first + log_height - target, room);
+        }
+    }
+
     pub(crate) fn from_layout(layout: &LayoutTree) -> Self {
         let mut panels = Self::default();
         let mut placed = Vec::new();
         panels.next = BranchId(0);
         panels.root = panels.restore(layout, &mut placed);
+        panels.console_fit = ConsoleFit::Settled;
         panels
     }
 

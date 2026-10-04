@@ -8,7 +8,6 @@ use crate::authoring::{Authoring, Hang};
 use crate::ids;
 use crate::model::Model;
 use crate::peek::{Peek, Probe};
-use crate::status::Status;
 use crate::text::Clipped;
 use crate::theme::{
     CLOSE_BUTTON, FIELD, ORANGE, PEEK_EXTRA, PEEK_LEAST, PEEK_PLACE_ROOM, PEEK_TITLE, PENDING,
@@ -486,9 +485,6 @@ pub(super) fn references_panel(model: &Model, frame: &mut Frame<'_>, area: Exten
             .language()
             .filter(|language| !model.work.no_server(*language))
     {
-        if !model.work.started(language) {
-            frame.overlay.status = Some(Status::Starting(language.program()));
-        }
         frame.push(Action::AskReferences(language, probe));
         asked = true;
     }

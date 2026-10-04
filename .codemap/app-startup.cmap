@@ -32,7 +32,7 @@ author ai
 file crates/gui/src/work.rs
 symbol start_backend
 lines 0 16
-hash 0ef67aed00b2836a
+hash 4de5d3776edde24e
 note Every file the index marks pending is sent to its language's server, one batch per language. The server thread starts here and the window does not wait for it: pending files are drawn dimmed until their answers arrive. A language whose server cannot be asked gives up, and its files keep the tree-sitter resolver's answers.
 
 step 5nd6jr

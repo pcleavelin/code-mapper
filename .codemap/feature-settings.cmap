@@ -22,7 +22,7 @@ parent xseveq
 author ai
 file crates/gui/src/palette.rs
 symbol palette_actions
-lines 32 32
+lines 30 30
 hash 64ae298608291531
 note Trigger: the palette's 'settings' action.
 
@@ -122,7 +122,7 @@ parent xseveq
 author ai
 file crates/gui/src/views/bars.rs
 symbol top_bar
-lines 52 62
+lines 45 55
 hash cc8aeed9e3cb91fd
 note Trigger: the gear at the right end of the top bar (settings-open), marked while the box is open.
 

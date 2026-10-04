@@ -181,8 +181,8 @@ parent 0hd3o2
 author ai
 file crates/gui/src/palette.rs
 symbol palette_actions
-lines 0 49
-hash 1cd0f1f6a1c67c20
+lines 0 47
+hash ae4768298a489727
 note Goal to actions. An action's PaletteCommand maps to the Action its button or key pushes (collapse and hide act on the tour being read, split on the panel showing the current tab); a tour opens in the Tour tab, a step is selected, a symbol goes to its definition as a jump does, a file opens in the Source view at its top, a view is shown.
 
 step ld2inb

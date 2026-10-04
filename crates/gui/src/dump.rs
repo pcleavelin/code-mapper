@@ -360,6 +360,12 @@ impl Dump for WorkState {
             context.services.reindexing(),
             context.services.linking()
         ));
+        let servers: Vec<String> = self
+            .server_states(&context.model.index)
+            .into_iter()
+            .map(|server| format!("{}={}", server.language.program(), server.state))
+            .collect();
+        lines.line(format_args!("servers {}", servers.join(" ")));
     }
 }
 

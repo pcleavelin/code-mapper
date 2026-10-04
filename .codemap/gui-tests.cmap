@@ -142,6 +142,15 @@ lines 0 14
 hash 09f0c7eeb8f92d89
 note The build wizard: escape in the name field only leaves the field, a second escape with nothing entered closes it; after typing a name, escapes keep it open with WizardHeld(Unbuilt).
 
+step 8hdnt5
+order 48
+author ai
+file crates/gui/src/tests.rs
+symbol every_language_of_the_index_names_its_server_and_state_in_language_order
+lines 0 57
+hash ccb8d6b21095f028
+note Every language of the index is listed with its server's state in Language order, missing and failed servers alike, and the state follows the session: Starting until an answer, Indexing while a batch runs, Ready after, and a gone server stays gone.
+
 step 8uitgf
 order 36
 parent 52670m
@@ -209,6 +218,15 @@ symbol tests
 lines 0 29
 hash c9ed994967187994
 note A Job lands its result once and then reads as idle; a Job whose thread panics lands as Failed.
+
+step bnrvus
+order 49
+author ai
+file crates/gui/src/tests.rs
+symbol showing_the_search_view_focuses_its_field_until_the_view_is_hidden
+lines 0 12
+hash 0926249d15fdd85a
+note Showing the Search view gives its field the keyboard; hiding it behind another tab of its panel takes the keyboard back, and only from that field.
 
 step cxf9cf
 order 16
@@ -284,8 +302,8 @@ step hvkk6w
 order 20
 author ai
 file crates/gui/src/panels/tests.rs
-lines 0 221
-hash 3f493042a1439b8c
+lines 0 248
+hash 277bb19b12cd6254
 note The panel tree's arithmetic and edits: the default tree holds every view once, a split opens the picker and a pick moves the view, a panel emptied by a move closes, an edge drop splits (and a panel's only view on its own edge stays), closing hands the room to the sibling and never the root, navigation reveals a hidden view next to the last one shown once per ticket, a division keeps both halves above the floor, the nearest edge within a quarter picks the side, a grab moves only past its reach, views are named in any case, a tree survives its saved layout and a saved layout drops unknown and repeated views, and a view brought into sight while in no panel opens in a split beside the view it serves, while one already in a panel is only activated.
 
 step iibo2b

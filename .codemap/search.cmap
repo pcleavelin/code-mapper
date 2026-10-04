@@ -3,15 +3,15 @@ tour search
 kind flow
 author ai
 group gui
-note Search, in the GUI. Enter in the search box runs a Rust regex over the lines already in memory - there is no file I/O and no index of its own - and puts the hits into the Model, capped at HIT_LIMIT (five thousand) so a pattern like a single dot cannot freeze the window, with HitsShown recording whether the list was cut so the Search view, its tab and the status all say so, then switches to the Search tab. The tab is drawn by the frame like any other, virtualised so only the visible hits become elements, and clicking one opens that line in the Source view. A re-index drops the hits, since their file and line numbers belong to the old index. The CLI's search and notes commands use the same regex engine.
+note Search, in the GUI. Enter in the field at the top of the Search view runs a Rust regex over the lines already in memory - there is no file I/O and no index of its own - and puts the hits into the Model, capped at HIT_LIMIT (five thousand) so a pattern like a single dot cannot freeze the window, with HitsShown recording whether the list was cut so the Search view, its tab and the status all say so, then switches to the Search tab. The tab is drawn by the frame like any other, virtualised so only the visible hits become elements, and clicking one opens that line in the Source view. A re-index drops the hits, since their file and line numbers belong to the old index. The CLI's search and notes commands use the same regex engine.
 
 step 6tz50w
 order 1
 author ai
 file crates/gui/src/views/center.rs
 symbol search_view
-lines 0 92
-hash e7ff3e682d387de0
+lines 0 100
+hash ed4dea1c2e4cdbbf
 note The Search tab: a hint when there is nothing to show; an orange wrapped note when the hits were cut at HIT_LIMIT; else the hits grouped under a row per file with its hit count (clicking it opens the file), each hit its right-aligned line number and the trimmed line (a click pushes GoTo). Only the rows in view are built.
 
 step d91liy

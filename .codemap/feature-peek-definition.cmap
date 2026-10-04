@@ -81,7 +81,7 @@ parent w7mvto
 author ai
 file crates/gui/src/work.rs
 symbol poll_backend
-lines 35 39
+lines 33 37
 hash 0d766cad93d5bf15
 link peek
 note The server's answer arrives in a later frame's poll and lands only if it is the one still wanted.

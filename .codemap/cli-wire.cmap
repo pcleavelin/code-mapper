@@ -13,7 +13,7 @@ file crates/cli/src/wire.rs
 symbol start_error
 lines 0 5
 hash ef597127929bfcc6
-note start_error: 'X not on PATH' or 'X would not start'. The notice above and the GUI's status line both word a failed server start with it.
+note start_error: 'X not on PATH' or 'X would not start'. The notice above words a failed server start with it.
 
 step 0w8wf6
 order 15

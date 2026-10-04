@@ -302,6 +302,7 @@ pub(crate) const EDGE_ZONE: Ratio = Ratio::permille(250);
 pub(crate) const DEFAULT_LEFT: Ratio = Ratio::permille(220);
 pub(crate) const DEFAULT_RIGHT: Ratio = Ratio::permille(740);
 pub(crate) const DEFAULT_BOTTOM: Ratio = Ratio::permille(820);
+pub(crate) const CONSOLE_ROWS: Cells = Cells::new(4);
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) struct Cells(i32);

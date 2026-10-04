@@ -31,7 +31,7 @@ parent pvdi25
 author ai
 file crates/gui/src/app.rs
 symbol frame
-lines 64 64
+lines 68 68
 hash 84b9405a281633b5
 note While line_grab is set the window redraws at the animation rate, so a pointer held still past the edge keeps scrolling with no input events arriving.
 

@@ -21,8 +21,8 @@ parent 7n3jq4
 author ai
 file crates/gui/src/views/references.rs
 symbol references_panel
-lines 0 76
-hash 621269e05a78af09
+lines 0 73
+hash 38cbbeb05854cc5f
 note The References panel, on the right by default: the kept peek on top when there is one, then the focused symbol with 'add step' (unless it is the selected step) and 'promote', then callers, callees and references in one windowed list, each row clickable. References are asked of the server the first time a symbol is shown, once per text of its file (the probe carries the file hash), and the references title says so while the answer is out.
 
 step 0n6ve6
@@ -34,6 +34,16 @@ symbol track_steps
 lines 0 46
 hash 4f077044d95e181f
 note Which step is topmost and where a pending scroll lands, both from last frame's rectangles, looked up by the ids of the tour's own step headers. A scroll to a step whose header was not built yet retries for a few frames (Tries) before giving up. Pushes TopStep and ScrolledToStep.
+
+step 1rsd6b
+order 102
+parent 50ozko
+author ai
+file crates/gui/src/app.rs
+symbol fit_console
+lines 0 11
+hash 548f2eb2ef6127a7
+note Right after the layout, when this frame was laid out against a known body: a fresh layout's console split is fitted once (panel-tree).
 
 step 22lp24
 order 72
@@ -141,8 +151,8 @@ order 0
 author ai
 file crates/gui/src/app.rs
 symbol frame
-lines 0 76
-hash 93846cecdabeaa17
+lines 0 81
+hash 47b9aa36441b02c2
 note The frame (platform::App::frame), in order: the font and cell size for this scale factor, the screenshot aid, the five polls, the keys, then a left press releases the focused field unless the press lands on it (Fields::press), then panel_input, the steps list's drag (step_list_input) and the graph's own input phase (or, with the Graph view hidden, the graph marked Hidden and its keyboard Elsewhere, so a look snaps and the arrows walk the tour), the element tree, layout and draw, the action queue, the reveal of the centre view navigation asked for, saving the layout if it changed, and the history snapshot, which first performs a back or forward asked for this frame. It asks the loop to come back at the ANIMATING rate while the graph camera is gliding, in 50 ms while any work is in flight, and in a second otherwise, so an idle window costs one frame per second.
 
 step 5aljhx
@@ -151,9 +161,9 @@ parent bg9t38
 author ai
 file crates/gui/src/views/bars.rs
 symbol top_bar
-lines 0 65
-hash 3758fddacf8d9254
-note The top bar: the search box, back and forward, then, right-aligned, an orange 'unsaved changes' while the map has unsaved edits, and 'save', which shows a star and the selected colour while it does. Every button here only pushes an Action. Authoring controls live where the code is shown: the Tours tab, the Source view, Symbols, References and the graph.
+lines 0 58
+hash 881d21a4337eac1e
+note The top bar: back and forward, then, right-aligned, an orange 'unsaved changes' while the map has unsaved edits, and 'save', which shows a star and the selected colour while it does. Every button here only pushes an Action. Authoring controls live where the code is shown: the Tours tab, the Source view, Symbols, References and the graph.
 
 step 5j9xn1
 order 40
@@ -396,8 +406,8 @@ parent 50ozko
 author ai
 file crates/gui/src/work.rs
 symbol poll_backend
-lines 0 67
-hash 56a1a12ad5d9c5e8
+lines 0 62
+hash cc9da9121b82002d
 link peek
 note Server answers: hovers, references and definitions land, indexed files are merged into the index at most once a second, and a finished batch saves the cache.
 
@@ -558,9 +568,9 @@ parent bg9t38
 author ai
 file crates/gui/src/views/bars.rs
 symbol status_bar
-lines 0 27
-hash 63d2ca5338ba0eb4
-note The last row: the current status line in its Tone's colour (plain, green when done, orange for a warning, red for a problem), clipped to the room left; the servers' progress while a batch runs; then the map's directory, cut from the left to MAP_PLACE cells. A status set this frame by a view (the overlay) shows at once.
+lines 0 39
+hash 98f86dc8a1a02893
+note The last row: the current status line in its Tone's colour (plain, green when done, orange for a warning, red for a problem), clipped to the room left; the servers' progress while a batch runs; one dot per language of the index, beside its server's program (green ready, orange starting or indexing, red missing or failed, dim not started); then the map's directory, cut from the left to MAP_PLACE cells. A status set this frame by a view (the overlay) shows at once.
 
 step jkrf60
 order 99
@@ -701,7 +711,7 @@ symbol search
 lines 0 43
 hash 9ea700a2505db91c
 link search
-note The search box's enter.
+note The Search view field's enter.
 
 step pj8e6h
 order 6
@@ -944,8 +954,8 @@ parent bg9t38
 author ai
 file crates/gui/src/views/center.rs
 symbol search_view
-lines 0 92
-hash e7ff3e682d387de0
+lines 0 100
+hash ed4dea1c2e4cdbbf
 link search
 note The Search tab: the search hits.
 

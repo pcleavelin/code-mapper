@@ -102,8 +102,8 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol SETTLE
 lines 0 0
-hash ce8611b7ca78f67c
-note What every script starts with: wait until every server request is answered, save, then open startup by clicking tours/2, since the tours list reads c-lib, shapes, startup, stats. Without the idle and save, with several servers missing, the status line says whichever failure came last.
+hash 2e05c41e7f47652d
+note What every script starts with: wait until every server request is answered, then open startup by clicking tours/2, since the tours list reads c-lib, shapes, startup, stats. After the idle every language's server has its final state, one dot each in the status bar, and the status line holds the index count, so the first dump reads the same on every run.
 
 step 791rdb
 order 50
@@ -491,8 +491,8 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol PANELS
-lines 0 113
-hash 0b64b4ee71622674
+lines 0 115
+hash 8544411f91f6411e
 note The side panels and console: the symbol list and its filter, the file tree and a folder toggle, the tours list, search and a hit, commands typed into the console (with a bad one and clear), a new tour from the Tours tab's '+ new tour' through the build-tour wizard (a name, a searched start, one outline row toggled, create), an 'add step' from the Source view, and ctrl-s to save.
 
 step rlmca4

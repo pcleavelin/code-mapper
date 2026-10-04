@@ -3,7 +3,7 @@ tour feature-search-files
 kind flow
 author ai
 group features/gui
-note Type a regex in the search field at the left of the top bar and press enter: every line of every indexed file is matched, up to 5000 hits (when there were more, the Search tab reads '5000+' and the view and the status bar say the list was cut), and the centre switches to the Search tab listing the hits under a row per file, each with its line number and the line's text. The reader reaches for it to find text anywhere in the repo, not only in what a tour covers, without switching to an editor. The status bar gives the count. Clicking a hit opens its file in the Source view at that line; clicking a file row opens the file. A bad regex is refused in the status bar with the parser's last line. The field keeps its text, selected, so typing replaces it.
+note The human, looking for text anywhere in the repo (a name a tour does not cover, a string, a pattern), without switching to an editor. Open the Search tab by clicking it, from the palette's 'search every file', or from back and forward: its regex field sits at the top of the view, above the hits, and takes the keyboard whenever the view is shown, so the next keystrokes are the pattern. Enter matches every line of every indexed file, up to 5000 hits (when there were more, the Search tab reads '5000+' and the view and the status bar say the list was cut), and lists them under a row per file, each with its line number and the line's text; the status bar gives the count. Clicking a hit opens its file in the Source view at that line; clicking a file row opens the file. A bad regex is refused in the status bar with the parser's last line. The field keeps its text, selected, so typing replaces it. When the view is hidden behind another tab of its panel, the field lets go of the keyboard, so keys reach the view in front. Where the field sits: in a run of the window before this layout, the field was at the left end of the top bar, labelled 'search', beside the back and forward arrows, while its hits opened in the centre Search tab, which read 'type a regex in the search box and press enter': the input sat a window-width from its output, and the arrows next to it read as a search history. The owner chose the field inside the Search view; the command palette (ctrl+p) is not a substitute, since it finds names (tours, steps, symbols, files, actions), not lines of text, and back and forward stay in the top bar, where they apply to every view.
 
 step 5etsxq
 order 1
@@ -11,9 +11,19 @@ parent q1l62e
 author ai
 file crates/gui/src/nav.rs
 symbol set_tab
-lines 0 2
-hash b0a74509ff198664
-note Shows the Search tab.
+lines 0 5
+hash 47e32722e4a8e029
+note Shows the Search tab and gives its field the keyboard; every route that shows the tab (a click on it, the palette, back and forward, an enter in the field) passes here.
+
+step c4j7hx
+order 6
+parent q1l62e
+author ai
+file crates/gui/src/nav.rs
+symbol reveal_tab
+lines 0 6
+hash db39035e004d3a10
+note Release: after the action queue, once the panels show what navigation asked for, a Search view in no panel's front takes the keyboard back from its field.
 
 step f1ux4a
 order 2
@@ -41,8 +51,8 @@ parent q1l62e
 author ai
 file crates/gui/src/views/center.rs
 symbol search_view
-lines 0 92
-hash e7ff3e682d387de0
+lines 0 100
+hash ed4dea1c2e4cdbbf
 note Trigger in the Search tab: each visible hit is a HIT_ROW (hit/<n>) and a click queues GoTo for its file and line; each file row (hitfile/<file number>) queues GoTo for the file's first line.
 
 step q1l62e
