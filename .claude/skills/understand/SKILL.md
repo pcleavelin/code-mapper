@@ -13,7 +13,9 @@ message; caught after the change, it costs the change.
    - a feature: who uses it (CLAUDE.md, opening: the agent through the CLI, the human
      through the GUI), what they do, what they see afterwards, and what stays as it is;
    - a bug: what happens, what should happen instead, and the steps that get there.
-   Name every point where the request can be read two ways.
+   Name every point where the request can be read two ways. A word the owner chose for a
+   user-facing concept is not ambiguous because a code rule shares it: lint L1 forbids
+   comments in the source, and a feature where the human comments is still a comment.
 2. Why it is needed. Find the goal it serves and what it costs the user to go without it:
    - CLAUDE.md, opening (roles, goals, non-goals) and "Why it is built this way";
    - `TODO.md`: the open issues agent sessions and the owner logged because they cost them
@@ -34,7 +36,10 @@ message; caught after the change, it costs the change.
 4. Restate again with what steps 2 and 3 taught: the need in one sentence, the behaviour as
    the user will meet it, and each place the first restatement was wrong. If a question is
    left that only the owner can answer (which of two readings, a conflict with CLAUDE.md,
-   a reported bug that is the spec's own behaviour), ask it and wait for the answer.
+   a reported bug that is the spec's own behaviour), ask it and wait for the answer. Where a
+   new kind of stored data lives is always the owner's: committed with the repo, or kept on
+   the machine. CLAUDE.md says what is persisted today and does not decide it; the owner
+   keeps one person's working state (comments for their agent) on the machine.
 5. The need from step 4 has one home: for a feature, its case is the note of its
    `feature-<name>` tour (`add-feature` step 6); for a bug, the fix's commit message.
 6. Go on with `prototype` for a new feature, `fix-bug` for a bug, or the skill for the kind
