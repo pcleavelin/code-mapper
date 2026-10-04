@@ -20,6 +20,7 @@ pub(crate) const HOVER: Color = Color::rgba(50, 50, 56, 255);
 pub(crate) const SELECTED: Color = Color::rgba(45, 65, 100, 255);
 pub(crate) const DANGER_HOVER: Color = Color::rgba(110, 40, 40, 255);
 pub(crate) const NOTE: Color = Color::rgba(228, 210, 178, 255);
+pub(crate) const HYPERLINK: Color = ACCENT;
 
 pub(crate) const DISABLED: Color = WEAK.with_alpha(90);
 pub(crate) const LINES_SELECTED: Color = SELECTED.with_alpha(160);

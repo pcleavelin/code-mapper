@@ -16,7 +16,7 @@ use crate::theme::{
     PENDING, PIXEL, RED, SLICE, TEXT, WEAK, WHOLE_BUTTON, WIDE_GAP,
 };
 use crate::widgets::{
-    Chosen, CodeBlock, Container, Enabled, Frame, Marks, Padding, Scroller, Width,
+    Chosen, CodeBlock, Container, Enabled, Frame, Hyperlink, Marks, Padding, Scroller, Width,
 };
 use crate::wizard::WizardAct;
 use std::mem;
@@ -263,13 +263,15 @@ fn breadcrumb(
         let name = found_step.symbol().map_or("(lines)", SymbolName::as_str);
         let file = found_step.file().as_str().rsplit('/').next().unwrap_or("");
         let crumb = format!("{} {name}", number_of.get(step).map_or("", Label::as_str));
-        let id = ids::CRUMB.nth(Count::new(step.get()));
-        let hovered = frame.ui.interaction(id.id()).hovered();
-        let runs = vec![
-            Run::new(crumb, if hovered { ACCENT } else { TEXT }),
-            Run::new(format!(" {file}"), FAINT),
-        ];
-        if frame.link_text(runs, id, Chosen::Plain).clicked() {
+        let hyperlink = Hyperlink {
+            lead: Vec::new(),
+            text: Label::new(crumb),
+            detail: vec![Run::new(format!(" {file}"), FAINT)],
+        };
+        if frame
+            .hyperlink(hyperlink, ids::CRUMB.nth(Count::new(step.get())))
+            .clicked()
+        {
             frame.push(Action::SelectStep(key, Scrolling::Scroll));
         }
     }
@@ -503,7 +505,7 @@ fn step_header(
         runs.push(Run::new(format!("  in {name}"), WEAK));
     }
     if frame
-        .link_text(runs, row.target(ids::STEP_HEADER), row.chosen)
+        .header_text(runs, row.target(ids::STEP_HEADER), row.chosen)
         .clicked()
     {
         let scrolling = if row.occurrence.is_none() {

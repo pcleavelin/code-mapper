@@ -42,7 +42,7 @@ author ai
 file crates/gui/src/dump.rs
 symbol impl DumpLines
 lines 0 20
-hash b0e595e627eb1e87
+hash 15e49936ddfe5120
 note One DUMP line; rect prints one element's rectangle for a script's rect command.
 
 step 2k0t66
@@ -50,8 +50,8 @@ order 1
 author ai
 file crates/gui/src/app.rs
 symbol App
-lines 0 10
-hash 4d2288c1f6b5b721
+lines 0 11
+hash 385ad804c45c09a9
 note What platform::App is implemented on: the Model, the Services, the element tree and the grid cache, plus the screenshot aid. frame, script and locate are its three methods; all state changes funnel through its apply.
 
 step 3foimq
@@ -98,7 +98,7 @@ order 25
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 195 230
+lines 196 231
 hash fe6487cbe20ed276
 note Every padding, gap and fixed pixel measure the widgets and views use, named by where it is used.
 
@@ -203,7 +203,7 @@ order 26
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 260 303
+lines 261 304
 hash 995416f2b84f2d6c
 note Every measure counted in cells: button and field widths, column guesses before a panel has a size, the symbol table's columns, tooltip sizes, the gap before a danger button, the status bar's room for the map's place, the panels' floors and the picker's width.
 

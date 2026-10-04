@@ -243,9 +243,9 @@ parent pr08z4
 author ai
 file crates/platform/src/window.rs
 symbol Cursor
-lines 0 6
-hash c112bd33b9e035e4
-note The pointer shapes the app can ask for; the loop sets one on the window only when it differs from the last.
+lines 0 7
+hash e86afba42acc2079
+note The pointer shapes the app can ask for (Pointer, the hand, over a link); the loop sets one on the window only when it differs from the last.
 
 step uqjnb7
 order 21

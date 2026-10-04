@@ -48,6 +48,7 @@ pub(crate) struct App {
     layout: KeptLayout,
     pub(crate) clipboard: ClipboardRequest,
     pub(crate) settings: KeptSettings,
+    cursor: Cursor,
 }
 
 #[derive(Debug, Default)]
@@ -127,6 +128,7 @@ impl App {
             shot_next: None,
             layout,
             clipboard: ClipboardRequest::Keep,
+            cursor: Cursor::Default,
             settings,
         };
         app.model.status = match unreadable {
@@ -153,6 +155,7 @@ impl App {
             shot_next: None,
             layout: KeptLayout::default(),
             clipboard: ClipboardRequest::Keep,
+            cursor: Cursor::Default,
             settings: KeptSettings::default(),
         }
     }
@@ -336,6 +339,9 @@ impl App {
         for part in parts {
             part.dump(&context, &mut lines);
         }
+        if self.cursor != Cursor::Default {
+            lines.line(format_args!("cursor={:?}", self.cursor));
+        }
         lines.print();
     }
 }
@@ -392,6 +398,7 @@ impl platform::App for App {
         };
         views::build(&self.model, &mut frame, graph);
         let cursor = frame.cursor;
+        self.cursor = cursor;
         self.ui.end(renderer);
         let drawing = self.ui.draw(renderer, TEXT);
         for action in queue {

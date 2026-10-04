@@ -1043,6 +1043,9 @@ wait 2
 dump
 shot {shots}/start.png
 hover-id start-ungrouped
+wait 1
+dump
+shot {shots}/start-link-hover.png
 key p ctrl
 wait 1
 text build a tour

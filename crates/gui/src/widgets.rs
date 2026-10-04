@@ -20,7 +20,7 @@ use crate::status::Status;
 use crate::theme::{
     self, ACCENT, BACKGROUND, BAR_PADDING, BORDER, BUTTON_PADDING, CHECKBOX_COLUMNS, Cells,
     DANGER_HOVER, DOCUMENT_PADDING, DROP_BAND, FAINT, FIELD, FIELD_CARET_ROOM, FIELD_PADDING, GAP,
-    HOVER, INDENT_EXTRA, LABEL_PADDING, NAV_BUTTON, NAV_BUTTON_EXTRA, NOTE_ROWS_LEAST,
+    HOVER, HYPERLINK, INDENT_EXTRA, LABEL_PADDING, NAV_BUTTON, NAV_BUTTON_EXTRA, NOTE_ROWS_LEAST,
     NOTE_ROWS_MOST, PALETTE_TAG, PANEL, PANEL_PADDING, RED, ROW_PADDING, SELECTED,
     SMALL_BUTTON_EXTRA, SMALL_BUTTON_PADDING, SMALL_GAP, STATUS_GAP, STEP_SPACER, TAB_PADDING,
     TAB_STRIP, TEXT, TIGHT_GAP, TOOLTIP_PADDING, WEAK, WIDE_GAP,
@@ -743,7 +743,7 @@ impl Frame<'_> {
         row
     }
 
-    pub(crate) fn link_text(
+    pub(crate) fn header_text(
         &mut self,
         runs: Vec<Run>,
         target: Target,
@@ -760,6 +760,49 @@ impl Frame<'_> {
             },
             Some(id),
         )
+    }
+
+    pub(crate) fn hyperlink(&mut self, hyperlink: Hyperlink, target: Target) -> Interaction {
+        let id = target.id();
+        let hovered = self.ui.interaction(id).hovered();
+        if hovered {
+            self.cursor = Cursor::Pointer;
+        }
+        let size = self.metrics.font;
+        let clicks = self.ui.open(
+            Kind::None,
+            Layout::row().padding(LABEL_PADDING),
+            Style::NONE,
+            Some(id),
+        );
+        if !hyperlink.lead.is_empty() {
+            self.ui.leaf(
+                text_kind(hyperlink.lead, size, Wrap::None),
+                Layout::row(),
+                Style::NONE,
+                None,
+            );
+        }
+        self.ui.leaf(
+            text_kind(vec![Run::new(hyperlink.text, HYPERLINK)], size, Wrap::None),
+            Layout::row(),
+            Style {
+                background: None,
+                border: if hovered { Sides::BOTTOM } else { Sides::NONE },
+                border_color: HYPERLINK,
+            },
+            None,
+        );
+        if !hyperlink.detail.is_empty() {
+            self.ui.leaf(
+                text_kind(hyperlink.detail, size, Wrap::None),
+                Layout::row(),
+                Style::NONE,
+                None,
+            );
+        }
+        self.ui.close();
+        clicks
     }
 
     pub(crate) fn text_runs(&mut self, runs: Vec<Run>, layout: Fill) {
@@ -1234,4 +1277,10 @@ pub(crate) enum Fill {
 pub(crate) struct TabClicks {
     pub(crate) tab: Interaction,
     pub(crate) close: Interaction,
+}
+
+pub(crate) struct Hyperlink {
+    pub(crate) lead: Vec<Run>,
+    pub(crate) text: Label,
+    pub(crate) detail: Vec<Run>,
 }

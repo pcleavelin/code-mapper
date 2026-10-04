@@ -208,6 +208,16 @@ lines 0 17
 hash d09d07a637e3210f
 note A small button for removing something (a tour, a step): weak text on the field colour at rest, and a red border and dark red background under the pointer, so a destructive press looks different from the buttons beside it. Both its look and its answer go through Interaction::when_aimed: after a delete re-lays the document and the next step's delete slides under the resting pointer, it stays unlit and a second click does nothing until the pointer moves.
 
+step bhmtug
+order 63
+parent o7593r
+author ai
+file crates/gui/src/widgets.rs
+symbol hyperlink
+lines 0 41
+hash eccfc02bf3d25a54
+note The one way text acts as a hyperlink (named apart from a step's link to another tour) (the start page's items, the breadcrumb's crumbs): a fitted row under the target's id holding the lead runs, the link text in HYPERLINK and the detail runs. While the pointer is on any part of it the link text is underlined (a bottom border in HYPERLINK, which takes no room, so nothing moves) and the cursor is the pointer hand (Cursor::Pointer); the whole row answers the click.
+
 step bwqb9z
 order 37
 parent hnzu9x
@@ -282,8 +292,8 @@ step gjm6fk
 order 0
 author ai
 file crates/gui/src/theme.rs
-lines 8 37
-hash 6ab2cf0ac147fa80
+lines 8 38
+hash 846a1fe125bbbbcf
 note The palette, in theme: a dozen colours named by role - background, panel, field, border, text, weak, accent, green, red, orange, hover, selected, the red background a danger button takes under the pointer, and NOTE, the colour of tour and step notes: a warm off-white (a dark brown in the light theme) at body-text contrast, apart from the comment green, GREEN (new, success) and the accent links use, since the notes are the most important prose in the window - and below them the tints made from those by alpha (disabled, selected lines, the slice, the steps list's top step, faint, pending, the drop band, the call tint), the graph's colours (STEP_EDGE, EXPANSION_EDGE, BACK_EDGE, STEP_BORDER, SIBLINGS_FILL, SIBLINGS_BORDER) and the panel header's TAB_STRIP. A colour decision is made once, here, and every view names one.
 
 step gp3at7
@@ -413,6 +423,16 @@ lines 0 8
 hash 5ce94e0a424fe9d1
 note A prepared list of coloured runs as one element, fitted or growing: anything that is more than one colour on a line, such as a field's text with the caret in the middle.
 
+step l4c0sc
+order 64
+parent bhmtug
+author ai
+file crates/gui/src/widgets.rs
+symbol Hyperlink
+lines 0 4
+hash 8eefe7b07d34da7e
+note What a link shows: lead runs drawn before it in their own colours (a change's +, -, ~), the label in the link colour, and detail runs after it (a file, a count, a description).
+
 step lozghr
 order 60
 parent 2havd5
@@ -427,10 +447,10 @@ step o7593r
 order 27
 author ai
 file crates/gui/src/widgets.rs
-symbol link_text
+symbol header_text
 lines 0 17
-hash 66c99ab664a7a0b3
-note Text runs that are clickable but look like text: a step's header and a breadcrumb, with the selected background when chosen.
+hash 3fd73ad9b0876dec
+note Text runs that are clickable but look like text: a step's header, with the selected background when chosen. A step header selects its step and is not a link, so it keeps the text colours; text that navigates somewhere is a link.
 
 step oqvtc9
 order 61

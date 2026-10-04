@@ -8,10 +8,10 @@ use crate::panels::View;
 use crate::status::Status;
 use crate::text::{Clipped, Counted, Noun};
 use crate::theme::{
-    ACCENT, GREEN, PANEL_PADDING, PANEL_TEXT_ROOM, PIXEL, RED, START_PAGE_WIDTH, TEXT, WEAK,
+    GREEN, PANEL_PADDING, PANEL_TEXT_ROOM, PIXEL, RED, START_PAGE_WIDTH, TEXT, WEAK,
 };
 use crate::welcome::{MapFigures, TopGroup, WelcomeAct, key_rows};
-use crate::widgets::{Chosen, Container, Frame, Scroller};
+use crate::widgets::{Container, Frame, Hyperlink, Scroller};
 
 use super::center;
 
@@ -106,7 +106,7 @@ fn heading(model: &Model, frame: &mut Frame<'_>, figures: &MapFigures, columns: 
 fn section(frame: &mut Frame<'_>, title: &Label) {
     let line = frame.row_height();
     frame.spacer(line);
-    frame.row_text(vec![Run::new(title.clone(), ACCENT)]);
+    frame.row_text(vec![Run::new(title.clone(), TEXT)]);
 }
 
 struct Pad {
@@ -114,10 +114,27 @@ struct Pad {
     room: Count,
 }
 
-fn padded(text: &Label, pad: &Pad) -> Label {
+struct Padded {
+    shown: Label,
+    fill: Label,
+}
+
+fn padded(text: &Label, pad: &Pad) -> Padded {
     let shown = Clipped::right(text.as_str(), pad.room.get().min(pad.width.get())).to_string();
     let fill = pad.width.get().saturating_sub(shown.chars().count());
-    Label::new(format!("{shown}{}", " ".repeat(fill + GAP_CELLS.get())))
+    Padded {
+        shown: Label::new(shown),
+        fill: Label::new(" ".repeat(fill + GAP_CELLS.get())),
+    }
+}
+
+fn padded_hyperlink(lead: Vec<Run>, text: &Label, pad: &Pad, detail: Run) -> Hyperlink {
+    let Padded { shown, fill } = padded(text, pad);
+    Hyperlink {
+        lead,
+        text: shown,
+        detail: vec![Run::new(fill, WEAK), detail],
+    }
 }
 
 fn changes(model: &Model, frame: &mut Frame<'_>, columns: &Columns) {
@@ -160,16 +177,18 @@ fn changes(model: &Model, frame: &mut Frame<'_>, columns: &Columns) {
         change_row(model, frame, Count::new(position), diff, &pad);
     }
     let more = diffs.len() - shown.len();
-    if more > 0
-        && frame
-            .row(
-                vec![Run::new(format!("and {more} more in the Diff view"), WEAK)],
-                ids::START_MORE_CHANGES.target(),
-                Chosen::Plain,
-            )
+    if more > 0 {
+        let hyperlink = Hyperlink {
+            lead: Vec::new(),
+            text: Label::new(format!("and {more} more in the Diff view")),
+            detail: Vec::new(),
+        };
+        if frame
+            .hyperlink(hyperlink, ids::START_MORE_CHANGES.target())
             .clicked()
-    {
-        frame.push(Action::ShowView(View::Diff));
+        {
+            frame.push(Action::ShowView(View::Diff));
+        }
     }
 }
 
@@ -189,13 +208,14 @@ fn change_row(model: &Model, frame: &mut Frame<'_>, position: Count, diff: &Tour
         Change::Same | Change::Changed => center::summary(diff).as_str().to_owned(),
     };
     let tour = model.find_tour(diff.name());
-    let runs = vec![
-        Run::new(mark, color),
-        Run::new(padded(&Label::new(diff.name().as_str()), pad), TEXT),
+    let hyperlink = padded_hyperlink(
+        vec![Run::new(mark, color)],
+        &Label::new(diff.name().as_str()),
+        pad,
         Run::new(detail, WEAK),
-    ];
+    );
     if frame
-        .row(runs, ids::START_CHANGE.nth(position), Chosen::Plain)
+        .hyperlink(hyperlink, ids::START_CHANGE.nth(position))
         .clicked()
     {
         if let Some(open) = tour {
@@ -232,18 +252,16 @@ fn groups(model: &Model, frame: &mut Frame<'_>, columns: &Columns, figures: &Map
         match group_row {
             TopGroup::Named(group, tours) => {
                 let count = Count::new(usize::try_from(tours.value()).unwrap_or(0));
-                let runs = vec![
-                    Run::new(
-                        padded(&Label::new(format!("{}/", group.as_str())), &pad),
-                        TEXT,
-                    ),
+                let hyperlink = padded_hyperlink(
+                    Vec::new(),
+                    &Label::new(format!("{}/", group.as_str())),
+                    &pad,
                     Run::new(Counted::new(count, Noun::Tour).to_string(), WEAK),
-                ];
+                );
                 if frame
-                    .row(
-                        runs,
+                    .hyperlink(
+                        hyperlink,
                         ids::START_GROUP.with(&Label::new(group.as_str())),
-                        Chosen::Plain,
                     )
                     .clicked()
                 {
@@ -252,12 +270,14 @@ fn groups(model: &Model, frame: &mut Frame<'_>, columns: &Columns, figures: &Map
                 }
             }
             TopGroup::Ungrouped(count) => {
-                let runs = vec![
-                    Run::new(padded(&Label::new("no group"), &pad), TEXT),
+                let hyperlink = padded_hyperlink(
+                    Vec::new(),
+                    &Label::new("no group"),
+                    &pad,
                     Run::new(Counted::new(*count, Noun::Tour).to_string(), WEAK),
-                ];
+                );
                 if frame
-                    .row(runs, ids::START_UNGROUPED.target(), Chosen::Plain)
+                    .hyperlink(hyperlink, ids::START_UNGROUPED.target())
                     .clicked()
                 {
                     frame.push(Action::ShowView(View::Tours));
@@ -265,12 +285,14 @@ fn groups(model: &Model, frame: &mut Frame<'_>, columns: &Columns, figures: &Map
             }
         }
     }
-    let runs = vec![
-        Run::new(padded(&Label::new(&uncovered), &pad), TEXT),
+    let hyperlink = padded_hyperlink(
+        Vec::new(),
+        &Label::new(&uncovered),
+        &pad,
         Run::new("in no tour; Files shows covered/total per file", WEAK),
-    ];
+    );
     if frame
-        .row(runs, ids::START_UNCOVERED.target(), Chosen::Plain)
+        .hyperlink(hyperlink, ids::START_UNCOVERED.target())
         .clicked()
     {
         frame.push(Action::ShowView(View::Files));
@@ -278,17 +300,15 @@ fn groups(model: &Model, frame: &mut Frame<'_>, columns: &Columns, figures: &Map
 }
 
 fn build_tour(model: &Model, frame: &mut Frame<'_>, columns: &Columns) {
-    if frame
-        .row(
-            vec![
-                Run::new("Build a tour by hand", TEXT),
-                Run::new("   name, start symbol, steps, note: a page each", WEAK),
-            ],
-            ids::BUILD_TOUR.target(),
-            Chosen::Plain,
-        )
-        .clicked()
-    {
+    let build = Hyperlink {
+        lead: Vec::new(),
+        text: Label::new("Build a tour by hand"),
+        detail: vec![Run::new(
+            "   name, start symbol, steps, note: a page each",
+            WEAK,
+        )],
+    };
+    if frame.hyperlink(build, ids::BUILD_TOUR.target()).clicked() {
         frame.push(Action::Welcome(WelcomeAct::BuildTour));
     }
     if !model.map.tours().is_empty() {
@@ -326,16 +346,14 @@ fn build_tour(model: &Model, frame: &mut Frame<'_>, columns: &Columns) {
         room: Count::new(room),
     };
     for (position, (id, name, path, span)) in roots.iter().enumerate() {
-        let runs = vec![
-            Run::new(padded(&Label::new(*name), &pad), TEXT),
+        let hyperlink = padded_hyperlink(
+            Vec::new(),
+            &Label::new(*name),
+            &pad,
             Run::new(format!("{path}:{}", span.start().number()), WEAK),
-        ];
+        );
         if frame
-            .row(
-                runs,
-                ids::START_ROOT.nth(Count::new(position)),
-                Chosen::Plain,
-            )
+            .hyperlink(hyperlink, ids::START_ROOT.nth(Count::new(position)))
             .clicked()
         {
             frame.push(Action::Jump(*id));
@@ -353,9 +371,9 @@ fn keys(frame: &mut Frame<'_>) {
     for row in rows {
         let fill = width.saturating_sub(row.chord.as_str().chars().count()) + GAP_CELLS.get();
         frame.row_text(vec![
-            Run::new(row.chord, ACCENT),
+            Run::new(row.chord, TEXT),
             Run::new(" ".repeat(fill), WEAK),
-            Run::new(row.meaning, TEXT),
+            Run::new(row.meaning, WEAK),
         ]);
     }
 }
