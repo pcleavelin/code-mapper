@@ -43,6 +43,7 @@ const FUNCTION: Color = Color::rgba(220, 220, 170, 255);
 const TYPE: Color = Color::rgba(78, 201, 176, 255);
 const CONSTANT: Color = Color::rgba(181, 206, 168, 255);
 const PROPERTY: Color = Color::rgba(156, 220, 254, 255);
+pub(crate) const HOVER_CODE: Color = PROPERTY;
 
 pub(crate) const fn highlight(class: HighlightClass) -> Color {
     match class {

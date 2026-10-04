@@ -11,8 +11,13 @@ answer::pub struct Outline { pub name: SymbolName, pub kind: OutlineKind, pub se
 answer::pub enum Reply<T> { Given(T), Unanswered, }
 answer::pub struct CallItem(Value);
 answer::pub fn new(item: Value) -> Self
-answer::pub struct HoverText(String);
+answer::pub struct Fragment(String);
 answer::pub fn as_str(&self) -> &str
+answer::pub enum Inline { Prose(Fragment), Code(Fragment), }
+answer::pub enum HoverLine { Prose(Vec<Inline>), Heading(Vec<Inline>), Fenced(Fragment), Rule, Blank, }
+answer::pub fn plain(&self) -> Fragment
+answer::pub struct HoverText(Vec<HoverLine>);
+answer::pub fn lines(&self) -> &[HoverLine]
 answer::pub struct Definition { pub path: PathBuf, pub file: Option<RelativePath>, pub line: Line, pub character: Character, }
 answer::pub enum StartError { Missing(Program), Failed(Program), }
 session::pub struct LspSession { child: Child, input: ChildStdin, messages: Receiver<Value>, last_id: RequestId, progress: OpenProgress, last_progress: Instant, status: ServerStatus, root: PathBuf, }

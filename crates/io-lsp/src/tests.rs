@@ -5,7 +5,7 @@ use std::time::Duration;
 use domain::{Language, Line, Location, RelativePath};
 use serde_json::json;
 
-use crate::answer::{Character, HoverText, RangeEnd, Reply};
+use crate::answer::{Character, HoverLine, HoverText, Inline, RangeEnd, Reply};
 use crate::convert::{self, Uri, relative};
 use crate::session::{LspSession, WhyUnanswered, read_reply};
 use crate::wire::{self, LocationShape};
@@ -105,23 +105,77 @@ fn answers_are_told_from_server_requests() {
     );
 }
 
+fn spelled(hover: Option<HoverText>) -> Vec<String> {
+    let inlines = |inlines: &[Inline]| -> String {
+        inlines
+            .iter()
+            .map(|inline| match inline {
+                Inline::Prose(words) => words.as_str().to_owned(),
+                Inline::Code(words) => format!("{{{}}}", words.as_str()),
+            })
+            .collect()
+    };
+    hover
+        .map(|hover| {
+            hover
+                .lines()
+                .iter()
+                .map(|line| match line {
+                    HoverLine::Prose(found) => format!("text {}", inlines(found)),
+                    HoverLine::Heading(found) => format!("head {}", inlines(found)),
+                    HoverLine::Fenced(text) => format!("code {}", text.as_str()),
+                    HoverLine::Rule => "rule".to_owned(),
+                    HoverLine::Blank => String::new(),
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn hover_of(markdown: &str) -> Option<HoverText> {
+    let answer = json!({"contents": {"kind": "markdown", "value": markdown}});
+    HoverText::from_parts(&wire::hover_parts(&answer))
+}
+
 #[test]
 fn hover_drops_fences_and_leading_blank_lines() {
-    let answer =
-        json!({"contents": {"kind": "markdown", "value": "```rust\nfn a()\n```\n\n\n---\ndoc"}});
-    let hover = HoverText::from_parts(&wire::hover_parts(&answer));
     assert_eq!(
-        hover.map(|found| found.as_str().to_owned()),
-        Some("fn a()\n\n---\ndoc".to_owned())
+        spelled(hover_of("```rust\nfn a()\n```\n\n\n---\ndoc")),
+        ["code fn a()", "", "rule", "text doc"]
     );
     let list = json!({"contents": ["plain", {"value": "marked"}]});
     assert_eq!(
-        HoverText::from_parts(&wire::hover_parts(&list)).map(|found| found.as_str().to_owned()),
-        Some("plain\nmarked".to_owned())
+        spelled(HoverText::from_parts(&wire::hover_parts(&list))),
+        ["text plain", "text marked"]
     );
     assert_eq!(
         HoverText::from_parts(&wire::hover_parts(&serde_json::Value::Null)),
         None
+    );
+}
+
+#[test]
+fn hover_markdown_is_read_into_code_links_and_plain_words() {
+    let markdown = "```rust\ncore::option\n```\n\n```rust\npub enum Option<T>\n```\n\n---\n\nThe `Option` type. See [the module level documentation](https://doc.rust-lang.org/stable/core/option/index.html) for more.\n\n# Examples\n\n**Bold** and _em_ keep snake_case, a * b and [`Vec`][vec].\n\n```\nlet x = 1;\n```\n\n``a ` b`` \\*not em\\* and [no link] here";
+    assert_eq!(
+        spelled(hover_of(markdown)),
+        [
+            "code core::option",
+            "",
+            "code pub enum Option<T>",
+            "",
+            "rule",
+            "",
+            "text The {Option} type. See the module level documentation for more.",
+            "",
+            "head Examples",
+            "",
+            "text Bold and em keep snake_case, a * b and {Vec}.",
+            "",
+            "code let x = 1;",
+            "",
+            "text {a ` b} *not em* and [no link] here",
+        ]
     );
 }
 
@@ -222,5 +276,19 @@ fn a_refused_or_lost_request_is_unanswered_and_a_null_answer_is_an_empty_one() {
     assert_eq!(
         read_reply(Ok(serde_json::Value::Null), symbols),
         Reply::Given(0)
+    );
+}
+
+#[test]
+fn hover_markdown_keeps_what_only_looks_like_markup() {
+    let markdown = "\n\nfoo_ and snake_case_ and *args, ![logo](x.png) and __bold__\n```\n~~~ stays code\n```\n[vec]: https://doc.rust-lang.org/vec\n\n```one``` line\n";
+    assert_eq!(
+        spelled(hover_of(markdown)),
+        [
+            "text foo_ and snake_case_ and *args, logo and bold",
+            "code ~~~ stays code",
+            "",
+            "text {one} line",
+        ]
     );
 }

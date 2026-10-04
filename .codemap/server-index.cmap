@@ -153,7 +153,7 @@ author ai
 file crates/gui/src/work.rs
 symbol Answer
 lines 0 8
-hash af850a06c3726283
+hash d09b0c551af6adf4
 note What a server thread sends back: a finished file, a progress line, a language whose server failed to start, the end of a batch, hover and definition answers for the peek, and the references asked for the symbol in the references panel.
 
 step kn00gd
@@ -368,8 +368,8 @@ parent ywt3nh
 author ai
 file crates/gui/src/work.rs
 symbol serve
-lines 0 62
-hash 30e8edbeff89106c
+lines 0 60
+hash 7600d456e0e97be1
 note A batch is queued and worked eight files at a time through index_files; progress (counted per file asked, answered or not) and each answered file go back through the channel, Done when the queue empties. A file index_files leaves out stays pending and is asked again the next time the backend starts, after a re-index. Hover, definition and reference requests are taken between batches, so the pointer waits behind eight files at most.
 
 step ywt3nh

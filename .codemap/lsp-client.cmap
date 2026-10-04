@@ -25,6 +25,16 @@ lines 0 7
 hash e6b696d908b1fb1d
 note A symbol as the server reports it, before the index turns it into a Symbol: name, LSP SymbolKind number, the position of its name, its last line, and its children. A range ending at column 0 (RangeEnd::LineStart) does not include that line.
 
+step 2dxaml
+order 56
+parent 9penrh
+author ai
+file crates/io-lsp/src/markdown.rs
+symbol inlines
+lines 0 34
+hash b232fb289caa2b13
+note Inline: a backslash escape keeps the punctuation it escapes; backtick runs make a code span; an inline or reference link, or an image, keeps only its label; star and underscore runs are emphasis markers, dropped only in matched pairs.
+
 step 3bn4hl
 order 18
 author ai
@@ -148,9 +158,29 @@ parent xwfud3
 author ai
 file crates/io-lsp/src/answer.rs
 symbol from_parts
-lines 0 19
-hash cc09800aa3e21a09
-note Hover contents (a string, a markup object, or an array of either) joined into plain lines: code-fence lines dropped and runs of blank lines collapsed; None when nothing is left.
+lines 0 15
+hash c41d0252e8b5b2ae
+note Hover contents (a string, a markup object, or an array of either) read as markdown into typed lines: each part through Markdown::lines, leading and repeated blank lines dropped, trailing ones trimmed; None when nothing is left. The GUI draws the lines; nothing downstream sees markdown syntax.
+
+step 9vpuoc
+order 61
+parent 2dxaml
+author ai
+file crates/io-lsp/src/markdown.rs
+symbol impl InlineBuilder
+lines 0 30
+hash 69700bc24db469ff
+note Collects the pieces of one line: plain text accumulates until a code span or the end flushes it, so adjacent plain text is one piece; it also holds the stack of open emphasis runs.
+
+step 9xtxdm
+order 58
+parent 2dxaml
+author ai
+file crates/io-lsp/src/markdown.rs
+symbol code_span
+lines 0 15
+hash 60015481ce319643
+note A run of backticks opens a span that only a run of the same length closes, so a single backtick can sit inside a double-backtick span; with no closing run the backticks are text.
 
 step 9zii3n
 order 36
@@ -241,6 +271,16 @@ lines 0 19
 hash 282fe252fafdd237
 note The reverse of Uri::of's escaping: the servers answer with escaped URIs, so decoding is needed before anything can be compared to a path.
 
+step h1s5dt
+order 60
+parent 2dxaml
+author ai
+file crates/io-lsp/src/markdown.rs
+symbol emphasis
+lines 0 12
+hash da4535c550f0d4da
+note A star or underscore run is dropped when it closes the opener on top of the stack, or when it opens and a run of the same length closes later on the line; otherwise it stays as text, so snake_case_, foo_ and a lone *args keep their marks.
+
 step h4trcd
 order 13
 parent b1v4eb
@@ -289,6 +329,16 @@ lines 0 34
 hash de4f1e147c88e38d
 note Many requests with up to 64 in flight, answers returned in the order asked by matching ids; a request unanswered two minutes after the previous answer is an Err, and so is every one after it; notifications and server requests that arrive meanwhile are handled as request does. This is what lets rust-analyzer answer on its own threads instead of one request at a time.
 
+step jwgozl
+order 59
+parent 2dxaml
+author ai
+file crates/io-lsp/src/markdown.rs
+symbol link_label
+lines 0 17
+hash c91abdb8d6b56052
+note A link is a bracketed label (brackets counted, code spans and escapes skipped) followed at once by a parenthesised target or a second bracketed reference; its label is read inline again so code in it stays code. A bare [label] is text.
+
 step k7abu8
 order 7
 parent iughfk
@@ -327,6 +377,26 @@ symbol a_root_ending_in_a_separator_still_holds_its_files
 lines 0 13
 hash 19aeeb17487b3323
 note A root given with a trailing separator still turns a URI under it into the same root-relative path, so its files are not taken for outside ones.
+
+step mqup85
+order 62
+parent h1s5dt
+author ai
+file crates/io-lsp/src/markdown.rs
+symbol flanks
+lines 0 9
+hash d195f7d5c180360b
+note Whether a run can open (no space after it) and close (no space before it); an underscore with a letter or digit on the far side is inside a word and does neither.
+
+step mukz5w
+order 54
+parent 9penrh
+author ai
+file crates/io-lsp/src/markdown.rs
+symbol lines
+lines 0 25
+hash 050aa603b8e5b413
+note Block level: a line opening a backtick or tilde fence starts code that only the same kind of fence closes (a line with more of the mark after the opening, like a one-line ```code```, is prose); lines inside are kept as code verbatim.
 
 step ncjyks
 order 8
@@ -455,6 +525,16 @@ lines 0 13
 hash bc0716d3d6eeb8be
 note One request: waits up to two minutes for the matching id; everything else goes through handle. No answer (or a dead server) and an error answer both come back as Err.
 
+step v38b63
+order 55
+parent 9penrh
+author ai
+file crates/io-lsp/src/markdown.rs
+symbol block
+lines 0 16
+hash 2168c64242eb22c8
+note One prose line: blank, a link reference definition ([name]: url, dropped as blank), a thematic break (three or more of - * _), an ATX heading (one to six # and a space), or prose read inline.
+
 step vmzz2o
 order 34
 parent k7pht5
@@ -502,6 +582,16 @@ lines 0 9
 hash 1e0dc999cceebd77
 note Position request: what the server knows about the thing at a line and column, as plain text.
 
+step ybdhpt
+order 57
+parent 9penrh
+author ai
+file crates/io-lsp/src/answer.rs
+symbol HoverLine
+lines 0 6
+hash 559dd2ea6e472cba
+note What a hover is made of: prose and heading lines of inline pieces (plain fragments or code), fenced code lines, rules and blanks. The window gives each its colour; dump prints a line's plain text.
+
 step ygnj7n
 order 4
 parent 4tvs2c
@@ -521,3 +611,13 @@ symbol notice
 lines 0 33
 hash 01a1878d28265046
 note Sorts an incoming message that is not our answer: progress begin or end, rust-analyzer's quiescent status, a workspace/configuration request (answered with one null per item), any other request, or nothing to act on.
+
+step z47wr5
+order 63
+parent h1s5dt
+author ai
+file crates/io-lsp/src/markdown.rs
+symbol closer_ahead
+lines 0 14
+hash f59fa67aa6e1d9c1
+note Looks ahead on the line for a run of the same glyph and length that can close, so an opener with no partner stays text.

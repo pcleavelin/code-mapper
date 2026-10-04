@@ -21,8 +21,8 @@ parent nq4lui
 author ai
 file crates/gui/src/work.rs
 symbol serve
-lines 0 62
-hash 30e8edbeff89106c
+lines 0 60
+hash 7600d456e0e97be1
 note The thread: one LspSession for the language, a queue of files to index, and hover, definition and reference requests answered between batches of eight files, so the pointer never waits behind a whole batch. Answers go back on a channel as Answer values.
 
 step 18va46
@@ -194,6 +194,16 @@ lines 0 78
 hash 226406ddab4e15b5
 note The one entry point for every code view: the line and text column under the pointer come from the block's rectangle and the cell size. The PeekDefinition and JumpToDefinition gestures from the feature registry (alt-click; ctrl-click or double-click) push a Definition action with the intent; with no gesture and no button down, the pointer asks for a hover.
 
+step mm42ac
+order 37
+parent xmbciz
+author ai
+file crates/gui/src/views/tooltip.rs
+symbol hover_runs
+lines 0 29
+hash adff04ba6e35335c
+note One hover line as coloured runs: prose in the text colour, code spans and fenced code in CODE_SPAN, headings in the accent colour (one monospace font, so colour is the only emphasis), a rule as a line of box-drawing dashes; cut to the room the window leaves.
+
 step n2y9nl
 order 33
 parent pce95l
@@ -348,9 +358,9 @@ parent exiaij
 author ai
 file crates/gui/src/views/tooltip.rs
 symbol text_tip
-lines 0 43
-hash f68350cba8b0cf16
-note For a server's text: up to 24 lines, a line starting with --- drawn as a rule, then the two gestures.
+lines 0 29
+hash ff3ff41f133ad987
+note For a server's text: up to 24 of its typed lines, then the two gestures; the first line's words are what dump prints as tip=.
 
 step yhnzin
 order 11

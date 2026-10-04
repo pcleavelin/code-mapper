@@ -1,5 +1,5 @@
 use domain::{Line, LineCount, SymbolId};
-use ui::{Button, Count, Extent, Label, Point, Px, Run};
+use ui::{Button, Color, Count, Extent, Label, Point, Px, Run};
 
 use crate::action::Action;
 use crate::element_tip::{AttachedTip, Pressing, beside};
@@ -8,10 +8,12 @@ use crate::ids;
 use crate::model::Model;
 use crate::peek::Tip;
 use crate::theme::{
-    ACCENT, Cells, ELEMENT_TIP_WIDTH, PIXEL, TEXT, TOOLTIP_FRAME, TOOLTIP_LEAST, TOOLTIP_MARGIN,
-    TOOLTIP_OFFSET, TOOLTIP_ROW_GAP, TOOLTIP_RULE, TOOLTIP_SYMBOL_WIDTH, TOOLTIP_TEXT_WIDTH, WEAK,
+    ACCENT, Cells, ELEMENT_TIP_WIDTH, HOVER_CODE, PIXEL, TEXT, TOOLTIP_FRAME, TOOLTIP_LEAST,
+    TOOLTIP_MARGIN, TOOLTIP_OFFSET, TOOLTIP_ROW_GAP, TOOLTIP_RULE, TOOLTIP_SYMBOL_WIDTH,
+    TOOLTIP_TEXT_WIDTH, WEAK,
 };
 use crate::widgets::{CodeBlock, Container, Fill, Frame, Marks, TipAt, Width};
+use io_lsp::{HoverLine, HoverText, Inline};
 
 const TEXT_LINES: Count = Count::new(24);
 const SYMBOL_LINES: LineCount = LineCount::new(23);
@@ -172,69 +174,64 @@ fn symbol_tip(model: &Model, frame: &mut Frame<'_>, at: Point, symbol: SymbolId)
     }
 }
 
-fn text_tip(frame: &mut Frame<'_>, at: Point, text: &Label, room: Count) -> Option<Label> {
+fn text_tip(frame: &mut Frame<'_>, at: Point, text: &HoverText, room: Count) -> Option<Label> {
     let most = room.get();
-    {
-        {
-            let lines: Vec<&str> = text.as_str().lines().collect();
-            let widest = lines
-                .iter()
-                .take(TEXT_LINES.get())
-                .map(|line| line.chars().count())
-                .max()
-                .unwrap_or(0)
-                .min(most)
-                .max(usize::try_from(TOOLTIP_TEXT_WIDTH.get()).unwrap_or(0));
-            let rows = Cells::of_count(lines.len().min(TEXT_LINES.get()) + 2);
-            let spot = place_at(frame, at, Cells::of_count(widest), rows);
-            frame.start(Container::Tooltip { at: spot });
-            for line in lines.iter().take(TEXT_LINES.get()) {
-                let line: String = line.chars().take(most).collect();
-                let rule = line.starts_with(Marker::Rule.name().as_str());
-                let run = if rule {
-                    Run::new(
-                        "\u{2500}".repeat(usize::try_from(TOOLTIP_RULE.get()).unwrap_or(0)),
-                        WEAK,
-                    )
-                } else {
-                    Run::new(line, TEXT)
-                };
-                frame.text_runs(vec![run], Fill::Fit);
-            }
-            if lines.len() > TEXT_LINES.get() {
-                frame.label(
-                    format!("\u{2026} {} more lines", lines.len() - TEXT_LINES.get()),
-                    WEAK,
-                );
-            }
-            frame.label(
-                "alt-click: keep the definition in the peek panel   ctrl-click or double-click: go to it",
-                WEAK,
-            );
-            frame.finish();
-            lines.first().map(|line| Label::new(*line))
-        }
+    let lines = text.lines();
+    let widest = lines
+        .iter()
+        .take(TEXT_LINES.get())
+        .map(|line| line.plain().as_str().chars().count())
+        .max()
+        .unwrap_or(0)
+        .min(most)
+        .max(usize::try_from(TOOLTIP_TEXT_WIDTH.get()).unwrap_or(0));
+    let rows = Cells::of_count(lines.len().min(TEXT_LINES.get()) + 2);
+    let spot = place_at(frame, at, Cells::of_count(widest), rows);
+    frame.start(Container::Tooltip { at: spot });
+    for line in lines.iter().take(TEXT_LINES.get()) {
+        frame.text_runs(hover_runs(line, room), Fill::Fit);
     }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-struct Literal(&'static str);
-
-impl Literal {
-    const fn as_str(self) -> &'static str {
-        self.0
+    if lines.len() > TEXT_LINES.get() {
+        frame.label(
+            format!("\u{2026} {} more lines", lines.len() - TEXT_LINES.get()),
+            WEAK,
+        );
     }
+    frame.label(
+        "alt-click: keep the definition in the peek panel   ctrl-click or double-click: go to it",
+        WEAK,
+    );
+    frame.finish();
+    lines.first().map(|line| Label::new(line.plain().as_str()))
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Marker {
-    Rule,
-}
-
-impl Marker {
-    const fn name(self) -> Literal {
-        Literal(match self {
-            Self::Rule => "---",
+fn hover_runs(line: &HoverLine, room: Count) -> Vec<Run> {
+    let inlines = |inlines: &[Inline], prose: Color| -> Vec<(String, Color)> {
+        inlines
+            .iter()
+            .map(|inline| match inline {
+                Inline::Prose(words) => (words.as_str().to_owned(), prose),
+                Inline::Code(words) => (words.as_str().to_owned(), HOVER_CODE),
+            })
+            .collect()
+    };
+    let pieces = match line {
+        HoverLine::Prose(found) => inlines(found, TEXT),
+        HoverLine::Heading(found) => inlines(found, ACCENT),
+        HoverLine::Fenced(words) => vec![(words.as_str().to_owned(), HOVER_CODE)],
+        HoverLine::Rule => vec![(
+            "\u{2500}".repeat(usize::try_from(TOOLTIP_RULE.get()).unwrap_or(0)),
+            WEAK,
+        )],
+        HoverLine::Blank => vec![(String::new(), TEXT)],
+    };
+    let mut left = room.get();
+    pieces
+        .into_iter()
+        .map(|(text, color)| {
+            let kept: String = text.chars().take(left).collect();
+            left = left.saturating_sub(kept.chars().count());
+            Run::new(kept, color)
         })
-    }
+        .collect()
 }

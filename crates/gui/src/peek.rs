@@ -6,7 +6,7 @@ use std::time::Duration;
 use domain::{
     Column, FileId, Language, Line, Location, SourceLine, SymbolId, SymbolQuery, TextHash,
 };
-use io_lsp::{Character, DocumentPosition};
+use io_lsp::{Character, DocumentPosition, HoverText};
 use ui::{Count, Grid, Label};
 
 use crate::model::Model;
@@ -26,7 +26,7 @@ pub(crate) enum Intent {
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum Hovered {
     Asked,
-    Answered(Option<Label>),
+    Answered(Option<HoverText>),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -136,7 +136,7 @@ impl Queries {
         self.asked = Count::new(self.asked.get().saturating_sub(1));
     }
 
-    pub(crate) fn hover_answered(&mut self, probe: Probe, text: Option<Label>) {
+    pub(crate) fn hover_answered(&mut self, probe: Probe, text: Option<HoverText>) {
         self.answered();
         self.flight = Flight::Idle;
         self.hovers.insert(probe, Hovered::Answered(text));
@@ -168,7 +168,7 @@ impl Queries {
 #[derive(Clone, Debug)]
 pub(crate) enum Tip {
     Symbol(SymbolId),
-    Text(Label),
+    Text(HoverText),
 }
 
 #[derive(Clone, Debug)]

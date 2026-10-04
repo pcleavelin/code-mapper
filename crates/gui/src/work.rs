@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 use cli::Failure;
 use domain::{FileId, Index, Language, Line, LineCount, Location, Map, RelativePath, Root, Span};
 use index::{FileVersion, Indexed, Parsers, ServerFile, Stamps, read_outside};
-use io_lsp::StartError;
+use io_lsp::{HoverText, StartError};
 use io_map::{MapStore, MapText};
 use io_vcs::Vcs;
 use ui::{Count, Grid, Label};
@@ -44,7 +44,7 @@ pub(crate) enum Answer {
     Progress(Label),
     Failed(Language, StartError),
     Done(Language),
-    Hover(Probe, Option<Label>),
+    Hover(Probe, Option<HoverText>),
     Definition(Probe, Option<Found>),
     References(Probe, Vec<Location>),
 }
@@ -255,9 +255,7 @@ fn serve(root: &Root, language: Language, requests: &Receiver<Request>, answers:
                 queue.extend(files);
             }
             Some(Request::Hover(probe)) => {
-                let text = session
-                    .hover(&probe.position)
-                    .map(|text| Label::new(text.as_str()));
+                let text = session.hover(&probe.position);
                 drop(answers.send(Answer::Hover(probe, text)));
             }
             Some(Request::Definition(probe)) => {

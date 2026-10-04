@@ -1,25 +1,9 @@
-use std::fmt;
 use std::path::PathBuf;
 
 use domain::{Line, Program, RelativePath, SymbolName};
 use serde_json::Value;
 
-use crate::wire::WireName;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Mark {
-    CodeBlock,
-    Gap,
-}
-
-impl Mark {
-    fn name(self) -> WireName {
-        WireName::new(match self {
-            Self::CodeBlock => "```",
-            Self::Gap => "\n\n",
-        })
-    }
-}
+use crate::markdown::Markdown;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Character(u32);
@@ -95,29 +79,16 @@ impl CallItem {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct HoverText(String);
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+pub struct Fragment(String);
 
-impl HoverText {
-    pub(crate) fn from_parts(parts: &[String]) -> Option<Self> {
-        let mut text = String::new();
-        for part in parts {
-            for line in part.lines().filter(|line| {
-                !line
-                    .trim_start()
-                    .starts_with(Mark::CodeBlock.name().as_str())
-            }) {
-                if line.trim().is_empty()
-                    && (text.is_empty() || text.ends_with(Mark::Gap.name().as_str()))
-                {
-                    continue;
-                }
-                text.push_str(line);
-                text.push('\n');
-            }
-        }
-        let text = text.trim();
-        (!text.is_empty()).then(|| Self(text.to_owned()))
+impl Fragment {
+    pub(crate) fn new(text: &str) -> Self {
+        Self(text.to_owned())
+    }
+
+    pub(crate) fn push(&mut self, text: &str) {
+        self.0.push_str(text);
     }
 
     pub fn as_str(&self) -> &str {
@@ -125,9 +96,62 @@ impl HoverText {
     }
 }
 
-impl fmt::Display for HoverText {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(&self.0)
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum Inline {
+    Prose(Fragment),
+    Code(Fragment),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum HoverLine {
+    Prose(Vec<Inline>),
+    Heading(Vec<Inline>),
+    Fenced(Fragment),
+    Rule,
+    Blank,
+}
+
+impl HoverLine {
+    pub fn plain(&self) -> Fragment {
+        let mut plain = Fragment::default();
+        match self {
+            Self::Prose(inlines) | Self::Heading(inlines) => {
+                for inline in inlines {
+                    match inline {
+                        Inline::Prose(text) | Inline::Code(text) => plain.push(text.as_str()),
+                    }
+                }
+            }
+            Self::Fenced(text) => plain.push(text.as_str()),
+            Self::Rule | Self::Blank => {}
+        }
+        plain
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct HoverText(Vec<HoverLine>);
+
+impl HoverText {
+    pub(crate) fn from_parts(parts: &[String]) -> Option<Self> {
+        let mut lines: Vec<HoverLine> = Vec::new();
+        for part in parts {
+            for line in Markdown::new(part).lines() {
+                let gap = line == HoverLine::Blank;
+                if gap && lines.last().is_none_or(|last| *last == HoverLine::Blank) {
+                    continue;
+                }
+                lines.push(line);
+            }
+        }
+        while lines.last() == Some(&HoverLine::Blank) {
+            lines.pop();
+        }
+        (!lines.is_empty()).then_some(Self(lines))
+    }
+
+    pub fn lines(&self) -> &[HoverLine] {
+        &self.0
     }
 }
 

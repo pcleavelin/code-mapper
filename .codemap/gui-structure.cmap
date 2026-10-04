@@ -98,7 +98,7 @@ order 25
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 193 229
+lines 194 230
 hash eb40c0dc6d5ee8fa
 note Every padding, gap and fixed pixel measure the widgets and views use, named by where it is used.
 
@@ -203,7 +203,7 @@ order 26
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 259 302
+lines 260 303
 hash 76d9713c92640c8b
 note Every measure counted in cells: button and field widths, column guesses before a panel has a size, the symbol table's columns, tooltip sizes, the gap before a danger button, the status bar's room for the map's place, the panels' floors and the picker's width.
 
@@ -410,7 +410,7 @@ author ai
 file crates/gui/src/work.rs
 symbol Answer
 lines 0 8
-hash af850a06c3726283
+hash d09b0c551af6adf4
 note What a server thread sends back: an indexed file, a progress label, a start failure, the end of a batch, or the answer to a question with the Probe it was asked at.
 
 step jp7qh7
