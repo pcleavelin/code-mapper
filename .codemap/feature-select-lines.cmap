@@ -94,6 +94,16 @@ lines 64 68
 hash 29762266e34acca8
 note The effect: lines inside the selection get the LINES_SELECTED background.
 
+step t704l3
+order 10
+parent q4xn7z
+author ai
+file crates/gui/src/views/center.rs
+symbol source
+lines 84 84
+hash 7bd971aea4c34436
+note Discovery: the code area carries the select-lines element tip (feature-element-tip), so resting the pointer on code that is not an identifier says how to select, until the first press. On an identifier the hover card, which names ctrl-click, double-click and alt-click, shows instead.
+
 step v0sq8w
 order 1
 parent pvdi25

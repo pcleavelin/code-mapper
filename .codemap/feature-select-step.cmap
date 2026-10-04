@@ -50,8 +50,8 @@ parent 9c84zs
 author ai
 file crates/gui/src/views/left.rs
 symbol step_list
-lines 55 66
-hash c84a8d0bd2f49cd1
+lines 0 69
+hash 338958074f7a50e2
 note Trigger in the steps list: every row is a STEP_LIST_ROW numbered by step slot, marked when it is the selection or the topmost step visible in the document. A click queues SelectStep with Scrolling::Scroll and GrabStep, which becomes a drag when the pointer travels (feature-move-step).
 
 step moet1y

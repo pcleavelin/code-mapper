@@ -51,9 +51,9 @@ parent z6m3sw
 author ai
 file crates/gui/src/views/left.rs
 symbol found_step_rows
-lines 0 24
-hash 01727259d9c71316
-note One row per step found_steps returns, indented under the tour row, numbered as in the steps list and red when stale. A click selects the step, which makes its tour the one being read and shows it in the document. Ids are found@<tour slot>:<step slot>, a trigger of select-step.
+lines 0 29
+hash 5c36f5a18776e210
+note One row per step found_steps returns, a tree row one guide level under the tour row, numbered as in the steps list and red when stale. A click selects the step, which makes its tour the one being read and shows it in the document. Ids are found@<tour slot>:<step slot>, a trigger of select-step.
 
 step lhcomc
 order 7
@@ -111,8 +111,8 @@ parent z6m3sw
 author ai
 file crates/gui/src/views/left.rs
 symbol group_row
-lines 0 57
-hash 7b717c8d8daf48e5
+lines 0 56
+hash 163787f0c69dcb14
 note forced overrides the recorded and default openness; while it is set a click queues nothing, so a filter never records a group as closed.
 
 step wlbvu3
@@ -140,6 +140,6 @@ order 5
 author ai
 file crates/gui/src/views/left.rs
 symbol tours_window
-lines 0 88
-hash b2fc07d62cf316e5
+lines 0 87
+hash 47bcc49a11e779ca
 note Trigger and effect: the filter field sits in a toolbar above the list, beside the 'new tour' button; its text is read while the list is built, so there is no filter action to apply. While it holds text the toolbar shows 'n of m' tours, and an empty result says 'no tour name, step symbol or step file matches'. Under a tour that is not the one being read, found_step_rows lists the steps the filter found. A non-empty filter forces every group open. The rows come from listed_rows instead of the whole map, and removed tours pass through lists, which reads names only.

@@ -1,14 +1,15 @@
-use domain::{Author, FileId, Map, Pruning, Span, StepId, SymbolId, TourName};
-use ui::{Label, Point, Rect};
+use domain::{Author, FileId, Map, Pruning, Span, StepId, SymbolId, SymbolName, TourName};
+use ui::{Count, Label, Point, Px, Rect, Run};
 
 use crate::app::App;
 use crate::model::{Dirty, Model, StepKey, StepSlot, Tab, TourSlot};
 use crate::status::{Status, Under};
-use crate::theme::{DROP_BAND_WIDTH, GRAB_REACH};
+use crate::theme::{
+    ACCENT, DROP_BAND_WIDTH, GRAB_REACH, LABEL_PADDING, SMALL_BUTTON_EXTRA, SMALL_GAP, TEXT, WEAK,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) enum Authoring {
-    AddLines,
     AddSymbol(SymbolId, Hang),
     AddOffered,
     AddAtTopLevel,
@@ -28,6 +29,120 @@ pub(crate) enum Hang {
 pub(crate) enum AddOffer {
     Lines(Label),
     Symbol(SymbolId, Label),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum StripAct {
+    AddAtTopLevel,
+    AddOffered,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct StripButton {
+    pub(crate) act: StripAct,
+    pub(crate) text: Label,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct TargetStrip {
+    pub(crate) wordings: Vec<Vec<Run>>,
+    pub(crate) buttons: Vec<StripButton>,
+    pub(crate) aside: Option<Label>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct StripRow<'strip> {
+    pub(crate) runs: &'strip [Run],
+    pub(crate) buttons: &'strip [StripButton],
+    pub(crate) aside: Option<&'strip Label>,
+}
+
+fn text_width(cell_width: Px, text: &Label) -> Px {
+    cell_width * Count::new(text.columns())
+}
+
+fn label_width(cell_width: Px, text: &Label) -> Px {
+    text_width(cell_width, text) + LABEL_PADDING * 2
+}
+
+fn button_width(cell_width: Px, text: &Label) -> Px {
+    text_width(cell_width, text) + SMALL_BUTTON_EXTRA
+}
+
+fn gapped_width(widths: impl IntoIterator<Item = Px>) -> Px {
+    widths
+        .into_iter()
+        .enumerate()
+        .fold(Px::ZERO, |sum, (position, width)| {
+            sum + width + if position == 0 { Px::ZERO } else { SMALL_GAP }
+        })
+}
+
+impl TargetStrip {
+    pub(crate) fn rows(&self, cell_width: Px, room: Option<Px>) -> Vec<StripRow<'_>> {
+        let fits = |width: Px| room.is_none_or(|room| width <= room);
+        let wording_widths = |wording: &[Run]| -> Vec<Px> {
+            wording
+                .iter()
+                .map(|run| label_width(cell_width, &run.text))
+                .collect()
+        };
+        let buttons: Vec<Px> = self
+            .buttons
+            .iter()
+            .map(|button| button_width(cell_width, &button.text))
+            .collect();
+        let aside_after = |mut widths: Vec<Px>| {
+            self.aside.as_ref().filter(|aside| {
+                widths.push(label_width(cell_width, aside));
+                fits(gapped_width(widths))
+            })
+        };
+        if let Some(wording) = self.wordings.iter().find(|wording| {
+            fits(gapped_width(
+                wording_widths(wording)
+                    .into_iter()
+                    .chain(buttons.iter().copied()),
+            ))
+        }) {
+            let mut widths = wording_widths(wording);
+            widths.extend(buttons.iter().copied());
+            return vec![StripRow {
+                runs: wording,
+                buttons: &self.buttons,
+                aside: aside_after(widths),
+            }];
+        }
+        let wording = self
+            .wordings
+            .iter()
+            .find(|wording| fits(gapped_width(wording_widths(wording))))
+            .or_else(|| self.wordings.last())
+            .map(Vec::as_slice)
+            .unwrap_or_default();
+        let mut rows = vec![StripRow {
+            runs: wording,
+            buttons: &[],
+            aside: None,
+        }];
+        if self.buttons.is_empty() {
+            return rows;
+        }
+        if fits(gapped_width(buttons.iter().copied())) {
+            rows.push(StripRow {
+                runs: &[],
+                buttons: &self.buttons,
+                aside: aside_after(buttons),
+            });
+        } else {
+            rows.extend(self.buttons.chunks(1).map(|button| StripRow {
+                runs: &[],
+                buttons: button,
+                aside: None,
+            }));
+        }
+        rows
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -131,6 +246,75 @@ impl Model {
             .filter(|step| step.get() < self.step_count(tour).get())
     }
 
+    pub(crate) fn target_strip(&self) -> TargetStrip {
+        let Some((tour, found)) = self
+            .nav
+            .tour()
+            .and_then(|tour| Some((tour, self.tour(tour)?)))
+        else {
+            return TargetStrip {
+                wordings: vec![
+                    vec![Run::new("open a tour to add steps to it", WEAK)],
+                    vec![Run::new("no tour open", WEAK)],
+                ],
+                buttons: Vec::new(),
+                aside: None,
+            };
+        };
+        let name = found.name().as_str();
+        let mut buttons = Vec::new();
+        let wordings = match self.target_under() {
+            Some(step) => {
+                let key = StepKey { tour, step };
+                let symbol = self
+                    .step(key)
+                    .and_then(domain::Step::symbol)
+                    .map_or("(lines)", SymbolName::as_str);
+                let place = format!("{} {symbol}", self.number_of(key).as_str());
+                buttons.push(StripButton {
+                    act: StripAct::AddAtTopLevel,
+                    text: Label::new("top level"),
+                });
+                vec![
+                    vec![
+                        Run::new("adds to", WEAK),
+                        Run::new(name, TEXT),
+                        Run::new(format!("under {place}"), ACCENT),
+                    ],
+                    vec![
+                        Run::new(name, TEXT),
+                        Run::new(format!("\u{203a} {place}"), ACCENT),
+                    ],
+                    vec![Run::new(place, ACCENT)],
+                ]
+            }
+            None => vec![
+                vec![
+                    Run::new("adds to", WEAK),
+                    Run::new(name, TEXT),
+                    Run::new("at the top level", ACCENT),
+                ],
+                vec![Run::new(name, TEXT), Run::new("\u{203a} top level", ACCENT)],
+                vec![Run::new("top level", ACCENT)],
+            ],
+        };
+        let aside = match self.add_offer() {
+            Some(AddOffer::Lines(text) | AddOffer::Symbol(_, text)) => {
+                buttons.push(StripButton {
+                    act: StripAct::AddOffered,
+                    text,
+                });
+                None
+            }
+            None => Some(Status::select_symbol_or_lines()),
+        };
+        TargetStrip {
+            wordings,
+            buttons,
+            aside,
+        }
+    }
+
     pub(crate) fn add_offer(&self) -> Option<AddOffer> {
         self.nav.tour()?;
         if self.nav.tab() == Tab::Source
@@ -168,7 +352,6 @@ impl Model {
 impl App {
     pub(crate) fn author(&mut self, action: Authoring) {
         match action {
-            Authoring::AddLines => self.add_lines(),
             Authoring::AddSymbol(symbol, hang) => self.add_symbol(symbol, hang),
             Authoring::AddOffered => self.add_offered(),
             Authoring::AddAtTopLevel => self.add_at_top_level(),

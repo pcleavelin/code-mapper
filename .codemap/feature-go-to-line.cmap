@@ -20,7 +20,7 @@ parent zzv611
 author ai
 file crates/gui/src/views/center.rs
 symbol source_toolbar
-lines 17 23
+lines 3 9
 hash f411dd88be92460c
 note The field itself: 'line' and the LINE_FIELD in the Source toolbar (source_toolbar).
 

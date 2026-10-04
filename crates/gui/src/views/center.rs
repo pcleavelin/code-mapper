@@ -2,7 +2,6 @@ use domain::{Change, FileId, Line, RelativePath, StepChange, SymbolName, TourDif
 use ui::{Axis, Count, Icon, Label, Px, Rect, Run, Scrollbar, Size};
 
 use crate::action::Action;
-use crate::authoring::Authoring;
 use crate::field::Which;
 use crate::graph::{GraphAction, GraphFrame, Hit, Minimap, draw_scene};
 use crate::ids::{self, Target};
@@ -23,20 +22,6 @@ use super::authoring;
 fn source_toolbar(model: &Model, frame: &mut Frame<'_>, path: &RelativePath) {
     frame.start(Container::Toolbar);
     frame.label(path.as_str(), TEXT);
-    let add = match model.nav.lines() {
-        Some(chosen) if chosen.low() == chosen.high() => {
-            format!("add line {} as a step", chosen.low().number())
-        }
-        Some(chosen) => format!(
-            "add lines {}-{} as a step",
-            chosen.low().number(),
-            chosen.high().number()
-        ),
-        None => "add step".to_owned(),
-    };
-    if frame.control(add, ids::ADD_LINES).clicked() {
-        frame.push(Action::Authoring(Authoring::AddLines));
-    }
     frame.label("line", WEAK);
     frame.field(
         &model.fields,
@@ -44,10 +29,6 @@ fn source_toolbar(model: &Model, frame: &mut Frame<'_>, path: &RelativePath) {
         &ui::Label::default(),
         LINE_FIELD,
     );
-    frame.caption(vec![Run::new(
-        "click a line or drag over lines to select; double-click or ctrl-click an identifier to jump, alt-click to peek",
-        WEAK,
-    )]);
     frame.finish();
 }
 
@@ -173,6 +154,7 @@ pub(super) fn source(model: &Model, frame: &mut Frame<'_>) {
             },
         );
         let scrollbar = column.and_then(|placement| placement.scrollbar(Axis::Vertical, offset));
+        frame.attach_tip(ids::LINES.target());
         select_lines(model, frame, &coded, scrollbar);
     }
     frame.rows_after(total, &window, row_height, row_height);

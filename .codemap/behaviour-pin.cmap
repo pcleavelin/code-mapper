@@ -81,9 +81,9 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol SOURCE
-lines 0 108
-hash 3232079e3df20706
-note The Source view: opening a file at a line, a range selected by press-drag (dumped mid-drag and after release) added to startup with 'add step' (checked by the after command), goto-line with good, past-the-end and non-numeric input, the tooltip, ctrl-click, back and forward by button and by key, with the panels shrunk so the file overflows, a drag held past the bottom edge that scrolls the view and extends the selection, then the divider moved back so every line is drawn, a split that narrows the panel and the sideways scrollbar: a swipe, a thumb drag, shift+wheel and a track click, each followed by a dump.
+lines 0 123
+hash 2f19e7c22282b3fa
+note The Source view: opening a file at a line, a range selected by press-drag (dumped mid-drag and after release) added to startup with the target strip's add-offer@Source, the toolbar holding no add-lines (checked by the after command), goto-line with good, past-the-end and non-numeric input, the tooltip, ctrl-click, back and forward by button and by key, with the panels shrunk so the file overflows, a drag held past the bottom edge that scrolls the view and extends the selection, then the divider moved back so every line is drawn, a split that narrows the panel and the sideways scrollbar: a swipe, a thumb drag, shift+wheel and a track click, each followed by a dump.
 
 step 62zoqn
 order 15
@@ -491,9 +491,9 @@ parent 1hmv7q
 author ai
 file crates/codemap/tests/common/gui.rs
 symbol PANELS
-lines 0 115
-hash 8544411f91f6411e
-note The side panels and console: the symbol list and its filter, the file tree and a folder toggle, the tours list, search and a hit, commands typed into the console (with a bad one and clear), a new tour from the Tours tab's '+ new tour' through the build-tour wizard (a name, a searched start, one outline row toggled, create), an 'add step' from the Source view, and ctrl-s to save.
+lines 0 118
+hash f01598a89e4bc63f
+note The side panels and console: the symbol list and its filter, the file tree with a folder toggle and a hovered folder row (files-hover.png), the tours list, search and a hit, commands typed into the console (with a bad one and clear), a new tour from the Tours tab's '+ new tour' through the build-tour wizard (a name, a searched start, one outline row toggled, create), the Source strip's add-offer, and ctrl-s to save.
 
 step rlmca4
 order 29
@@ -560,8 +560,8 @@ author ai
 file crates/codemap/tests/common/gui.rs
 symbol AUTHORING
 lines 0 145
-hash 49a2ea2d148fb6f0
-note The GUI authoring gestures on a fresh tour: a tour built in the wizard opened by '+ new tour' (an empty name refused, kind and group chosen, main as the start, three outline rows ticked by their tick boxes), add-offer@Symbols from the Symbols strip after a symbol is focused, then '+ step' from Symbols and References, each row hovered first since its action shows only then (a repeat refused), the target strip's 'top level', 'add step' from the Source view, the zoom cluster's - and + buttons and fit in the graph (zoom-in.png), a click and a drag on the minimap (minimap.png), '+ step' on an off-tour graph node, three steps list drags (under, before, under), 'promote', and a save; the after command prints the resulting tour.
+hash d4211426fcbb25d4
+note The GUI authoring gestures on a fresh tour: a tour built in the wizard opened by '+ new tour' (an empty name refused, kind and group chosen, main as the start, three outline rows ticked by their tick boxes), add-offer@Symbols from the Symbols strip after a symbol other than the selected step is focused, then '+ step' from Symbols and References, each row hovered first since its action shows only then (a repeat refused), the target strip's 'top level', the Source strip's add-offer, the zoom cluster's - and + buttons and fit in the graph (zoom-in.png), a click and a drag on the minimap (minimap.png), '+ step' on an off-tour graph node, three steps list drags (under, before, under), 'promote', and a save; the after command prints the resulting tour.
 
 step wv4hxm
 order 17

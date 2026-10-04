@@ -20,12 +20,13 @@ use crate::panels::Direction;
 use crate::peek::Tip;
 use crate::status::Status;
 use crate::theme::{
-    self, ACCENT, BACKGROUND, BAR_PADDING, BORDER, BUTTON_PADDING, CHECKBOX_COLUMNS, Cells,
-    DANGER_HOVER, DOCUMENT_PADDING, DROP_BAND, FAINT, FIELD, FIELD_CARET_ROOM, FIELD_PADDING, GAP,
-    GRAPH_MARGIN, HOVER, HYPERLINK, INDENT_EXTRA, LABEL_PADDING, MENU_BUTTON, NAV_BUTTON,
-    NAV_BUTTON_EXTRA, NOTE_ROWS_LEAST, NOTE_ROWS_MOST, PALETTE_TAG, PANEL, PANEL_PADDING, RED,
-    ROW_PADDING, SELECTED, SMALL_BUTTON_EXTRA, SMALL_BUTTON_PADDING, SMALL_GAP, STATUS_GAP,
-    STEP_SPACER, TAB_PADDING, TAB_STRIP, TEXT, TIGHT_GAP, TOOLTIP_PADDING, WEAK, WIDE_GAP,
+    self, ACCENT, BACKGROUND, BADGE, BADGE_PADDING, BAR_PADDING, BORDER, BUTTON_PADDING,
+    CHECKBOX_COLUMNS, Cells, DANGER_HOVER, DOCUMENT_PADDING, DROP_BAND, FAINT, FIELD,
+    FIELD_CARET_ROOM, FIELD_PADDING, GAP, GRAPH_MARGIN, HOVER, HYPERLINK, INDENT_EXTRA,
+    LABEL_PADDING, MENU_BUTTON, NAV_BUTTON, NAV_BUTTON_EXTRA, NOTE_ROWS_LEAST, NOTE_ROWS_MOST,
+    PALETTE_TAG, PANEL, PANEL_PADDING, RED, ROW_PADDING, SELECTED, SMALL_BUTTON_EXTRA,
+    SMALL_BUTTON_PADDING, SMALL_GAP, STATUS_GAP, STEP_SPACER, TAB_PADDING, TAB_STRIP, TEXT,
+    TIGHT_GAP, TOOLTIP_PADDING, TREE_GUIDE, TREE_LEVEL_WIDTH, WEAK, WIDE_GAP,
 };
 
 use crate::field::Fields;
@@ -107,6 +108,7 @@ pub(crate) enum Container {
     StepRow { selected: Chosen },
     CodeColumn { selected: Chosen },
     StepColumn(Id),
+    Strip(Id),
     FillRow,
     Tooltip { at: Point },
     ElementTip { at: Point },
@@ -189,6 +191,16 @@ impl Container {
         }
     }
 
+    fn box_shape(self, at: Point, width: Px) -> Shape {
+        let (padding, id) = match self {
+            Self::Picker { .. } => (TOOLTIP_PADDING, ids::picker()),
+            Self::Palette { .. } => (TOOLTIP_PADDING, ids::palette_box()),
+            Self::Settings { .. } => (TOOLTIP_PADDING, ids::settings_box()),
+            _ => (TIGHT_GAP, ids::menu_box()),
+        };
+        floating(at, Some(width), padding, ACCENT, Some(id))
+    }
+
     fn page_shape(self) -> Shape {
         let layout = match self {
             Self::StartPage { width } => Layout::column().width(width),
@@ -257,6 +269,7 @@ impl Container {
                 Style::NONE,
                 Some(id),
             ),
+            Self::Strip(id) => Shape::new(Layout::column().grow_width(), Style::NONE, Some(id)),
             Self::FillRow => Shape::new(Layout::row().grow_width(), Style::NONE, None),
             Self::Tooltip { at } => floating(at, None, TOOLTIP_PADDING, BORDER, None),
             Self::ElementTip { at } => floating(
@@ -266,30 +279,10 @@ impl Container {
                 BORDER,
                 Some(ids::ELEMENT_TIP.id()),
             ),
-            Self::Picker { at, width } => floating(
-                at,
-                Some(width),
-                TOOLTIP_PADDING,
-                ACCENT,
-                Some(ids::picker()),
-            ),
-            Self::Palette { at, width } => floating(
-                at,
-                Some(width),
-                TOOLTIP_PADDING,
-                ACCENT,
-                Some(ids::palette_box()),
-            ),
-            Self::Settings { at, width } => floating(
-                at,
-                Some(width),
-                TOOLTIP_PADDING,
-                ACCENT,
-                Some(ids::settings_box()),
-            ),
-            Self::Menu { at, width } => {
-                floating(at, Some(width), TIGHT_GAP, ACCENT, Some(ids::menu_box()))
-            }
+            Self::Picker { at, width }
+            | Self::Palette { at, width }
+            | Self::Settings { at, width }
+            | Self::Menu { at, width } => self.box_shape(at, width),
             Self::Centered | Self::StartPage { .. } => self.page_shape(),
             Self::CanvasCorner { .. } | Self::Cluster => self.overlay_shape(),
             Self::PanelHeader => Shape::new(
@@ -834,30 +827,76 @@ impl Frame<'_> {
         marked: Option<ui::Color>,
         action: Option<RowAction>,
     ) -> RowClicks {
+        self.tree_row(
+            TreeRow {
+                level: Count::ZERO,
+                runs,
+                badges: Vec::new(),
+                marked,
+                action,
+            },
+            target,
+        )
+    }
+
+    pub(crate) fn tree_row(&mut self, tree: TreeRow, target: Target) -> RowClicks {
         let id = target.id();
-        let action_hovered = action
+        let action_hovered = tree
+            .action
             .as_ref()
             .is_some_and(|action| self.ui.interaction(action.target.id()).hovered());
         let hovered = self.ui.interaction(id).hovered() || action_hovered;
-        let background = marked.or(hovered.then_some(HOVER));
+        let background = tree.marked.or(hovered.then_some(HOVER));
         let size = self.metrics.font;
+        let cell = self.cell_width();
         let row = self.ui.open(
             Kind::None,
-            Layout::row().grow_width(),
+            Layout::row().grow_width().cross(Align::Center),
             Style {
                 background,
                 ..Style::NONE
             },
             Some(id),
         );
+        let guide_offset = ROW_PADDING + cell / 2;
+        for _ in 0..tree.level.get() {
+            self.ui.leaf(
+                Kind::None,
+                Layout::row().width(guide_offset).grow_height(),
+                Style::NONE,
+                None,
+            );
+            self.ui.leaf(
+                Kind::None,
+                Layout::row()
+                    .width(TREE_LEVEL_WIDTH.of(cell) - guide_offset)
+                    .grow_height(),
+                Style::NONE.border(Sides::LEFT, TREE_GUIDE),
+                None,
+            );
+        }
         self.ui.leaf(
-            text_kind(runs, size, Wrap::Clip),
+            text_kind(tree.runs, size, Wrap::Clip),
             Layout::row().grow_width().padding(ROW_PADDING),
             Style::NONE,
             None,
         );
-        let shown = hovered || marked.is_some();
-        let action = action.filter(|_| shown).map(|action| {
+        let has_badges = !tree.badges.is_empty();
+        for badge in tree.badges {
+            self.ui.leaf(
+                text_kind(vec![badge], size, Wrap::None),
+                Layout::row().padding(BADGE_PADDING),
+                Style::background(BADGE),
+                None,
+            );
+            self.ui.leaf(
+                Kind::None,
+                Layout::row().width(SMALL_GAP),
+                Style::NONE,
+                None,
+            );
+        }
+        let action = tree.action.filter(|_| hovered).map(|action| {
             self.ui.leaf(
                 text_kind(
                     vec![Run::new(
@@ -875,6 +914,14 @@ impl Frame<'_> {
                 Some(action.target.id()),
             )
         });
+        if has_badges {
+            self.ui.leaf(
+                Kind::None,
+                Layout::row().width(ROW_PADDING),
+                Style::NONE,
+                None,
+            );
+        }
         self.ui.close();
         RowClicks { row, action }
     }
@@ -1491,4 +1538,12 @@ pub(crate) struct MenuItem {
     pub(crate) label: Label,
     pub(crate) target: Target,
     pub(crate) action: Action,
+}
+
+pub(crate) struct TreeRow {
+    pub(crate) level: Count,
+    pub(crate) runs: Vec<Run>,
+    pub(crate) badges: Vec<Run>,
+    pub(crate) marked: Option<ui::Color>,
+    pub(crate) action: Option<RowAction>,
 }

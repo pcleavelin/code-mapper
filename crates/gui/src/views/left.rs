@@ -14,9 +14,9 @@ use crate::text::{Clipped, Counted, Needle, Noun, Tag};
 use crate::theme::{
     ACCENT, Cells, FAINT, FILTER_FIELD, GREEN, PANEL_TEXT_ROOM, PENDING, PIXEL, RED, ROW_EXTRA,
     SELECTED, STEP_LIST_TOP, SYMBOL_FIXED, SYMBOL_NAME, SYMBOL_NAME_LEAST, SYMBOLS_GUESS,
-    SYMBOLS_LEAST, TEXT, TOURS_GUESS, TOURS_LEAST, WEAK,
+    SYMBOLS_LEAST, TEXT, WEAK,
 };
-use crate::widgets::{Chosen, Container, Frame, RowAction, Scroller};
+use crate::widgets::{Chosen, Container, Frame, RowAction, Scroller, TreeRow};
 
 use super::authoring;
 
@@ -35,7 +35,7 @@ fn group_row(
     frame: &mut Frame<'_>,
     group: &GroupName,
     tours: TourCount,
-    pad: &Label,
+    level: Count,
     reading: &Label,
     forced: Option<Openness>,
 ) -> Openness {
@@ -46,8 +46,7 @@ fn group_row(
         .or_else(|| model.groups.get(group).copied())
         .map_or(holds, |openness| openness == Openness::Open);
     let label = format!(
-        "{}{} {}/",
-        pad.as_str(),
+        "{} {}/",
         if open {
             Icon::Expanded
         } else {
@@ -57,12 +56,9 @@ fn group_row(
         .get(),
         group.last_segment(),
     );
-    let tally = format!(
-        "  {}",
-        Counted::new(
-            Count::new(usize::try_from(tours.value()).unwrap_or(0)),
-            Noun::Tour
-        )
+    let tally = Counted::new(
+        Count::new(usize::try_from(tours.value()).unwrap_or(0)),
+        Noun::Tour,
     );
     let stale = model.map.tours().iter().any(|tour| {
         tour.group().is_some_and(|inside| {
@@ -70,11 +66,14 @@ fn group_row(
         }) && tour.steps().iter().any(Step::is_stale)
     });
     let id = ids::GROUP_ROW.with(&Label::new(full));
-    let runs = vec![
-        Run::new(label, if stale { RED } else { TEXT }),
-        Run::new(tally, WEAK),
-    ];
-    if frame.row(runs, id, Chosen::Plain).clicked() && forced.is_none() {
+    let row = TreeRow {
+        level,
+        runs: vec![Run::new(label, if stale { RED } else { TEXT })],
+        badges: vec![Run::new(tally.to_string(), WEAK)],
+        marked: None,
+        action: None,
+    };
+    if frame.tree_row(row, id).row.clicked() && forced.is_none() {
         let openness = if open {
             Openness::Closed
         } else {
@@ -94,14 +93,12 @@ fn tour_row(
     frame: &mut Frame<'_>,
     slot: TourSlot,
     diffs: &[TourDiff],
-    pad: &Label,
-    columns: Count,
+    level: Count,
 ) -> Chosen {
     let Some(tour) = model.tour(slot) else {
         return Chosen::Plain;
     };
     let name = tour.name();
-    let pad = pad.as_str();
     let steps = tour.steps().len();
     let stale = tour.steps().iter().filter(|step| step.is_stale()).count();
     let mark = match diffs
@@ -125,31 +122,31 @@ fn tour_row(
     } else {
         Chosen::Plain
     };
-    let tally = format!(
-        " [{}]{}  {}",
+    let tags = format!(
+        " [{}]{}",
         Tag::kind(tour.kind()),
-        Tag::author(tour.author()),
-        Counted::new(Count::new(steps), Noun::Step)
+        Tag::author(tour.author())
     );
-    let stale_note = if stale > 0 {
-        format!("  {stale} stale")
-    } else {
-        String::new()
+    let mut badges = vec![Run::new(
+        Counted::new(Count::new(steps), Noun::Step).to_string(),
+        WEAK,
+    )];
+    if stale > 0 {
+        badges.push(Run::new(format!("{stale} stale"), RED));
+    }
+    let row = TreeRow {
+        level,
+        runs: vec![
+            Run::new(format!("{mark}{name}"), color),
+            Run::new(tags, WEAK),
+        ],
+        badges,
+        marked: (chosen == Chosen::Chosen).then_some(SELECTED),
+        action: None,
     };
-    let room = columns
-        .get()
-        .saturating_sub(pad.len() + mark.len() + tally.chars().count() + stale_note.len());
-    let line = format!("{pad}{mark}{}", Clipped::right(name.as_str(), room));
     if frame
-        .row(
-            vec![
-                Run::new(line, color),
-                Run::new(tally, WEAK),
-                Run::new(stale_note, RED),
-            ],
-            ids::TOUR_ROW.nth(Count::new(slot.get())),
-            chosen,
-        )
+        .tree_row(row, ids::TOUR_ROW.nth(Count::new(slot.get())))
+        .row
         .clicked()
     {
         frame.push(Action::OpenTour(slot, Tab::Tour));
@@ -212,7 +209,6 @@ pub(super) fn tours_window(model: &Model, frame: &mut Frame<'_>) {
     let diffs = model.diffs();
     let base = ids::tours();
     let scrolled = frame.scroll_column(base, model.scrolls.get(base), Scroller::Plain, None);
-    let columns = columns(frame, scrolled.interaction.rect(), TOURS_GUESS, TOURS_LEAST);
     let reading = Label::new(
         model
             .nav
@@ -230,10 +226,10 @@ pub(super) fn tours_window(model: &Model, frame: &mut Frame<'_>) {
             continue;
         }
         closed_at = None;
-        let pad = Label::new("  ".repeat(usize::try_from(depth.value()).unwrap_or(0)));
+        let level = Count::new(usize::try_from(depth.value()).unwrap_or(0));
         match row {
             Row::Group { group, tours, .. } => {
-                if group_row(model, frame, &group, tours, &pad, &reading, forced)
+                if group_row(model, frame, &group, tours, level, &reading, forced)
                     == Openness::Closed
                 {
                     closed_at = Some(depth);
@@ -243,11 +239,11 @@ pub(super) fn tours_window(model: &Model, frame: &mut Frame<'_>) {
                 let Some(slot) = model.find_tour(&name) else {
                     continue;
                 };
-                if tour_row(model, frame, slot, &diffs, &pad, columns) == Chosen::Chosen {
-                    step_list(model, frame, slot, &pad);
+                if tour_row(model, frame, slot, &diffs, level) == Chosen::Chosen {
+                    step_list(model, frame, slot, level);
                     follow_step_list(model, frame, scrolled.offset);
                 } else {
-                    found_step_rows(model, frame, slot, &pad);
+                    found_step_rows(model, frame, slot, level);
                 }
             }
         }
@@ -268,8 +264,7 @@ pub(super) fn tours_window(model: &Model, frame: &mut Frame<'_>) {
     frame.finish();
 }
 
-fn found_step_rows(model: &Model, frame: &mut Frame<'_>, tour: TourSlot, pad: &Label) {
-    let pad = pad.as_str();
+fn found_step_rows(model: &Model, frame: &mut Frame<'_>, tour: TourSlot, level: Count) {
     for numbered in model.found_steps(tour) {
         let key = StepKey {
             tour,
@@ -280,25 +275,30 @@ fn found_step_rows(model: &Model, frame: &mut Frame<'_>, tour: TourSlot, pad: &L
         };
         let name = step.symbol().map_or("(lines)", SymbolName::as_str);
         let file = step.file().as_str().rsplit('/').next().unwrap_or("");
-        let line = format!("{pad}  {}  {name}", numbered.number.as_str());
+        let line = format!("{}  {name}", numbered.number.as_str());
         let color = if step.is_stale() { RED } else { WEAK };
-        let runs = vec![Run::new(line, color), Run::new(format!("  {file}"), FAINT)];
         let id = ids::FOUND_STEP.with(&Label::new(format!(
             "{}:{}",
             tour.get(),
             numbered.step.get()
         )));
-        if frame.row(runs, id, Chosen::Plain).clicked() {
+        let row = TreeRow {
+            level: Count::new(level.get() + 1),
+            runs: vec![Run::new(line, color), Run::new(format!("  {file}"), FAINT)],
+            badges: Vec::new(),
+            marked: None,
+            action: None,
+        };
+        if frame.tree_row(row, id).row.clicked() {
             frame.push(Action::SelectStep(key, Scrolling::Scroll));
         }
     }
 }
 
-fn step_list(model: &Model, frame: &mut Frame<'_>, tour: TourSlot, pad: &Label) {
-    let pad = pad.as_str();
+fn step_list(model: &Model, frame: &mut Frame<'_>, tour: TourSlot, level: Count) {
     let mut hide_below: Option<Depth> = None;
     for numbered in model.numbered(tour) {
-        if hide_below.is_some_and(|depth| numbered.depth > depth) {
+        if hide_below.is_some_and(|limit| numbered.depth > limit) {
             continue;
         }
         hide_below = None;
@@ -320,16 +320,7 @@ fn step_list(model: &Model, frame: &mut Frame<'_>, tour: TourSlot, pad: &Label) 
         let linked = step
             .link()
             .map_or_else(String::new, |link| format!("  \u{2192} {link}"));
-        let indent = "  ".repeat(usize::try_from(numbered.depth.value()).unwrap_or(0));
-        let more = if hidden.get() > 0 {
-            format!("  +{hidden}")
-        } else {
-            String::new()
-        };
-        let line = format!(
-            "{pad}  {indent}{}  {name}{linked}{more}",
-            numbered.number.as_str()
-        );
+        let line = format!("{}  {name}{linked}", numbered.number.as_str());
         let at_top = model.nav.top_step() == Some(numbered.step);
         let marked = if model.nav.step() == Some(numbered.step) {
             Some(SELECTED)
@@ -349,12 +340,23 @@ fn step_list(model: &Model, frame: &mut Frame<'_>, tour: TourSlot, pad: &Label) 
         if let Some(mark) = authoring::target_mark(model, numbered.step) {
             runs.push(Run::new(mark, ACCENT));
         }
+        let badges = if hidden.get() > 0 {
+            vec![Run::new(format!("+{hidden}"), WEAK)]
+        } else {
+            Vec::new()
+        };
+        let row = TreeRow {
+            level: Count::new(
+                level.get() + 1 + usize::try_from(numbered.depth.value()).unwrap_or(0),
+            ),
+            runs,
+            badges,
+            marked,
+            action: None,
+        };
         if frame
-            .marked_row(
-                runs,
-                ids::STEP_LIST_ROW.nth(Count::new(numbered.step.get())),
-                marked,
-            )
+            .tree_row(row, ids::STEP_LIST_ROW.nth(Count::new(numbered.step.get())))
+            .row
             .clicked()
         {
             let mouse = frame.ui.pointer().mouse;
@@ -494,21 +496,21 @@ fn symbol_file_row(
         .symbols()
         .filter(|symbol| coverage.covers(source.path(), symbol.span()))
         .count();
-    let tally = format!("  {covered}/{total}");
-    let room = columns.get().saturating_sub(tally.len());
-    let runs = vec![
-        Run::new(
+    let coverage_text = format!("{covered}/{total}");
+    let room = columns.get().saturating_sub(coverage_text.len() + 2);
+    let row = TreeRow {
+        level: Count::ZERO,
+        runs: vec![Run::new(
             Clipped::left(source.path().as_str(), room).to_string(),
             if source.is_pending() { PENDING } else { TEXT },
-        ),
-        Run::new(tally, WEAK),
-    ];
+        )],
+        badges: vec![Run::new(coverage_text, WEAK)],
+        marked: None,
+        action: None,
+    };
     if frame
-        .row(
-            runs,
-            ids::SYMBOL_FILE_ROW.nth(Count::new(file.number())),
-            Chosen::Plain,
-        )
+        .tree_row(row, ids::SYMBOL_FILE_ROW.nth(Count::new(file.number())))
+        .row
         .clicked()
     {
         frame.push(Action::GoTo(file, domain::Line::new(0)));
@@ -533,18 +535,13 @@ fn symbol_row(
     } else {
         Run::new("  ", WEAK)
     };
-    let indent = if symbol.depth().value() > 0 {
-        "    "
-    } else {
-        "  "
-    };
     let fixed = usize::try_from(SYMBOL_FIXED.get()).unwrap_or(0);
     let name_width = columns.get().saturating_sub(fixed).clamp(
         usize::try_from(SYMBOL_NAME_LEAST.get()).unwrap_or(0),
         usize::try_from(SYMBOL_NAME.get()).unwrap_or(0),
     );
     let name = format!(
-        "{indent}{:<name_width$} ",
+        " {:<name_width$} ",
         Clipped::right(symbol.name().as_str(), name_width).to_string()
     );
     let place = format!(
@@ -554,7 +551,6 @@ fn symbol_row(
     );
     let pending = file.is_pending();
     let runs = vec![
-        Run::new("  ", WEAK),
         mark,
         Run::new(name, if pending { PENDING } else { TEXT }),
         Run::new(place, if pending { PENDING } else { WEAK }),
@@ -566,12 +562,14 @@ fn symbol_row(
     };
     let key = Label::new(format!("{}:{}", symbol_id.file(), symbol_id.symbol()));
     let add = adding.then(|| RowAction::add_step(ids::ADD_SYMBOL.with(&key)));
-    let clicks = frame.row_with_action(
+    let row = TreeRow {
+        level: Count::new(1 + usize::try_from(symbol.depth().value()).unwrap_or(0)),
         runs,
-        ids::SYMBOL_ROW.with(&key),
-        (chosen == Chosen::Chosen).then_some(SELECTED),
-        add,
-    );
+        badges: Vec::new(),
+        marked: (chosen == Chosen::Chosen).then_some(SELECTED),
+        action: add,
+    };
+    let clicks = frame.tree_row(row, ids::SYMBOL_ROW.with(&key));
     if clicks.acted() {
         frame.push(Action::Authoring(Authoring::AddSymbol(
             symbol_id,
@@ -647,6 +645,14 @@ fn tally_of(tallies: &[Tally], file: FileId) -> Tally {
     )
 }
 
+fn tally_badges(tally: &Tally) -> Vec<Run> {
+    if tally.total.get() > 0 {
+        vec![Run::new(format!("{}/{}", tally.covered, tally.total), WEAK)]
+    } else {
+        Vec::new()
+    }
+}
+
 fn files_tree(
     model: &Model,
     frame: &mut Frame<'_>,
@@ -654,7 +660,6 @@ fn files_tree(
     depth: Count,
     tallies: &[Tally],
 ) {
-    let indent = "  ".repeat(depth.get());
     let mut rest = files;
     while let Some((first, _)) = rest.split_first() {
         let first = *first;
@@ -662,30 +667,21 @@ fn files_tree(
             let found = tally_of(tallies, first);
             let (covered, total) = (found.covered.get(), found.total.get());
             let name = component(model, first, depth);
-            let tally = if total > 0 {
-                format!("  {covered}/{total}")
-            } else {
-                String::new()
-            };
             let color = if total > 0 && covered == 0 {
                 WEAK
             } else {
                 TEXT
             };
-            let chosen = if model.nav.file() == Some(first) {
-                Chosen::Chosen
-            } else {
-                Chosen::Plain
+            let row = TreeRow {
+                level: depth,
+                runs: vec![Run::new(name.as_str(), color)],
+                badges: tally_badges(&found),
+                marked: (model.nav.file() == Some(first)).then_some(SELECTED),
+                action: None,
             };
             if frame
-                .row(
-                    vec![
-                        Run::new(format!("{indent}{}", name.as_str()), color),
-                        Run::new(tally, WEAK),
-                    ],
-                    ids::FILE_ROW.nth(Count::new(first.number())),
-                    chosen,
-                )
+                .tree_row(row, ids::FILE_ROW.nth(Count::new(first.number())))
+                .row
                 .clicked()
             {
                 frame.push(Action::GoTo(first, domain::Line::new(0)));
@@ -724,23 +720,22 @@ fn files_tree(
         } else {
             Icon::Collapsed
         };
-        let tally = if total > 0 {
-            format!("  {covered}/{total}")
-        } else {
-            String::new()
+        let row = TreeRow {
+            level: depth,
+            runs: vec![Run::new(
+                format!("{} {}/", marker.glyph().get(), directory.as_str()),
+                TEXT,
+            )],
+            badges: tally_badges(&Tally {
+                covered: Count::new(covered),
+                total: Count::new(total),
+            }),
+            marked: None,
+            action: None,
         };
         if frame
-            .row(
-                vec![
-                    Run::new(
-                        format!("{indent}{} {}/", marker.glyph().get(), directory.as_str()),
-                        TEXT,
-                    ),
-                    Run::new(tally, WEAK),
-                ],
-                ids::DIRECTORY_ROW.with(&Label::new(prefix.as_str())),
-                Chosen::Plain,
-            )
+            .tree_row(row, ids::DIRECTORY_ROW.with(&Label::new(prefix.as_str())))
+            .row
             .clicked()
         {
             frame.push(Action::ToggleDirectory(Label::new(prefix)));

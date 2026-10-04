@@ -87,7 +87,6 @@ pub(crate) const BACK: Control = Control::new(Feature::GoBack, Element::new("bac
 pub(crate) const FORWARD: Control = Control::new(Feature::GoBack, Element::new("forward"));
 pub(crate) const TAB: Control = Control::new(Feature::SwitchTab, Element::new("tab"));
 pub(crate) const NEW_TOUR: Control = Control::new(Feature::BuildTour, Element::new("new-tour"));
-pub(crate) const ADD_LINES: Control = Control::new(Feature::AddStep, Element::new("add-lines"));
 pub(crate) const ADD_SYMBOL: Control = Control::new(Feature::AddStep, Element::new("add-sym"));
 pub(crate) const ADD_FOCUS: Control = Control::new(Feature::AddStep, Element::new("add-focus"));
 pub(crate) const ADD_OFFER: Control = Control::new(Feature::AddStep, Element::new("add-offer"));
@@ -251,7 +250,6 @@ pub(crate) const CONTROLS: &[Control] = &[
     FORWARD,
     TAB,
     NEW_TOUR,
-    ADD_LINES,
     ADD_SYMBOL,
     ADD_FOCUS,
     ADD_OFFER,
@@ -367,6 +365,10 @@ pub(crate) fn panel() -> Id {
 
 pub(crate) fn tours() -> Id {
     TOUR_ROW.id()
+}
+
+pub(crate) fn target_strip() -> Id {
+    Id::new("target-strip")
 }
 
 pub(crate) fn symbols() -> Id {

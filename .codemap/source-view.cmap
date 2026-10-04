@@ -3,7 +3,7 @@ tour source-view
 kind flow
 author ai
 group gui
-note The file viewer, and where a human adds a range of lines as a step. Only the rows on screen become elements - a spacer stands in for everything above and below - which is what makes a four-thousand-line file scroll at the same cost as a short one. Each row is numbered, syntax coloured, and carries a coloured bar on the left where a step of the selected tour is anchored, green when current and red when stale. Clicking selects a line and pressing and dragging selects every line between, which the toolbar's add button, named for the selected lines, then turns into a step under the target the strip below the toolbar shows (gui-authoring); double-clicking or ctrl-clicking an identifier jumps to its definition instead, and alt-clicking keeps it in the peek panel. The view only reads the Model: every click becomes an Action applied after the tree is built.
+note The file viewer, and where a human adds a range of lines as a step. Only the rows on screen become elements - a spacer stands in for everything above and below - which is what makes a four-thousand-line file scroll at the same cost as a short one. Each row is numbered, syntax coloured, and carries a coloured bar on the left where a step of the selected tour is anchored, green when current and red when stale. Clicking selects a line and pressing and dragging selects every line between, which the add button of the target strip below the toolbar, named for the selected lines, then turns into a step under the target the strip names (gui-authoring); double-clicking or ctrl-clicking an identifier jumps to its definition instead, and alt-clicking keeps it in the peek panel. The view only reads the Model: every click becomes an Action applied after the tree is built.
 
 step 1cxlr5
 order 7
@@ -21,8 +21,8 @@ parent azzv57
 author ai
 file crates/gui/src/views/center.rs
 symbol source
-lines 34 87
-hash b8c6abe6b88906c4
+lines 34 88
+hash 02515f7da6587595
 note The rows. rows_window turns the scroll offset into the first visible line and emits the spacer for the lines above; then one code block of the visible lines, then a spacer for the rest plus a row of slack, so the scrollbar sees the whole file while only what shows is drawn. The bar closure marks the selected tour's anchors in this file, the background closure the selected lines.
 
 step 49joa9
@@ -40,8 +40,8 @@ order 0
 author ai
 file crates/gui/src/views/center.rs
 symbol source
-lines 0 88
-hash 12eac09a0f9bd83f
+lines 0 89
+hash dd770116a832d782
 note The whole viewer: the toolbar (source_toolbar), the target strip, then the scrolling column of rows. With no current file it says so and draws nothing else.
 
 step ghy5uj
@@ -61,7 +61,7 @@ file crates/gui/src/authoring.rs
 symbol add_lines
 lines 0 9
 hash 21f14249bdc80886
-note 'add step' in the Source view's toolbar, the human's authoring gesture from a file: the selected lines become a step of the tour being read (add_step, authored Human), under the target the strip above the code shows. Without selected lines it only says what is missing.
+note The add for the Source view's selected lines, reached through the target strip's add-offer@Source (add_offered) while lines are selected: they become a step of the tour being read (add_step, authored Human), under the target the strip above the code shows. Without selected lines it only says what is missing.
 
 step qf86nv
 order 8
@@ -110,9 +110,9 @@ parent azzv57
 author ai
 file crates/gui/src/views/center.rs
 symbol source_toolbar
-lines 0 29
-hash fe43aa00855fa3ef
-note The toolbar: the file name, the add button named for what it will add ('add line 12 as a step', 'add lines 12-20 as a step', or 'add step' with nothing selected), the 'line' go-to-line box, and a line of help clipped to what is left of the bar.
+lines 0 11
+hash cc2cf1a12bd462df
+note The toolbar: the file name and the 'line' go-to-line box. How to select lines is the select-lines tip on the code area (source), and the add for selected lines is the target strip's, under the toolbar; nothing in the bar is prose that the panel's width could cut.
 
 step yfetc7
 order 1

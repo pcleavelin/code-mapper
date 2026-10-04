@@ -562,7 +562,6 @@ impl Feature {
                 Surface::Window,
                 &const {
                     [
-                        Trigger::Click(Element::new("add-lines")),
                         Trigger::Click(Element::new("add-sym")),
                         Trigger::Click(Element::new("add-focus")),
                         Trigger::Click(Element::new("add-xto")),

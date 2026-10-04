@@ -87,8 +87,8 @@ parent l04dki
 author ai
 file crates/features/src/lib.rs
 symbol spec
-lines 0 943
-hash 4f9f2272c9300497
+lines 0 942
+hash 4927f1b086764e86
 note The registry itself: one match arm per feature, built at compile time from const data. A command feature has Surface::Command and exactly one trigger, its own name as a command; a window feature lists every click, key, typed field and gesture that fires it.
 
 step k761ua

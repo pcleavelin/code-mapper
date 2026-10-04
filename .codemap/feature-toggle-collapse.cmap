@@ -30,7 +30,7 @@ parent hmusxe
 author ai
 file crates/gui/src/views/left.rs
 symbol step_list
-lines 15 17
+lines 14 16
 hash 7944a343a8e8a393
 note The steps list follows the same flag: a collapsed step's row shows +n and the rows under it are skipped.
 

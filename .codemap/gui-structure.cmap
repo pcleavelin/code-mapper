@@ -98,8 +98,8 @@ order 25
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 244 280
-hash eb40c0dc6d5ee8fa
+lines 246 283
+hash 9b4914f8dbdc9073
 note Every padding, gap and fixed pixel measure the widgets and views use, named by where it is used.
 
 step 63vlrl
@@ -203,9 +203,9 @@ order 26
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 312 361
-hash f4df0db6c94c571c
-note Every measure counted in cells: button and field widths, column guesses before a panel has a size, the symbol table's columns, tooltip sizes, the toolbar toggles' and the menu button's widths, the zoom cluster's buttons and percentage, the status bar's room for the map's place, the panels' floors and the picker's width.
+lines 315 363
+hash 97cec3c6e0bc9835
+note Every measure counted in cells: button and field widths, the trees' indent per level, column guesses before a panel has a size, the symbol table's columns, tooltip sizes, the toolbar toggles' and the menu button's widths, the zoom cluster's buttons and percentage, the status bar's room for the map's place, the panels' floors and the picker's width.
 
 step an1gef
 order 59
@@ -457,8 +457,8 @@ parent 9pik9m
 author ai
 file crates/gui/src/ids.rs
 symbol CONTROLS
-lines 0 110
-hash 76efe0bfcd26c3bc
+lines 0 109
+hash ac504e675f0fb8e3
 note Every control, for the test that checks them against the registry.
 
 step mjhubp

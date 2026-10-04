@@ -3,7 +3,7 @@ tour feature-add-step
 kind flow
 author ai
 group features/gui
-note Add code to the tour being read, from wherever it is shown. The reader reaches for it to turn code already on screen into a step without switching to the CLI (the human builds tours by hand). The target strip, on the Tours list, on Symbols, on Source and on the Graph tab, names the one add for what is in front of you. On the Source tab with lines selected it adds those lines. Otherwise it adds the focused symbol, and it offers nothing when that symbol is already the selected whole-symbol step. The palette entry 'add step' does the same thing. The hover '+ step' controls stay. In the Source view, select lines (click a line, or press and drag over several) and press the toolbar's add button, which names them ('add lines 12-20 as a step'). On a Symbols row or a References caller or callee row, press '+ step', shown while the row is hovered, to add that symbol whole; 'add step' under the References heading adds the selected symbol. On an off-tour graph node, '+ step' adds its symbol. The step is authored by the human and hangs under the target (see feature-choose-target), except a graph node revealed as a callee of a step, which hangs under that step. The same lines under the same parent again is refused with the step's number; adding moves neither the selection nor the target, so the next add lands beside this one. The status names the new step's number and parent.
+note Add code to the tour being read, from wherever it is shown. The reader reaches for it to turn code already on screen into a step without switching to the CLI (the human builds tours by hand). The target strip, on the Tours list, on Symbols, on Source and on the Graph tab, names the one add for what is in front of you. On the Source tab with lines selected it adds those lines. Otherwise it adds the focused symbol, and it offers nothing when that symbol is already the selected whole-symbol step. The palette entry 'add step' does the same thing. The hover '+ step' controls stay. In the Source view, select lines (click a line, or press and drag over several) and press the target strip's add button, which names them ('add lines 12-20 as a step'); the Source toolbar holds no second add for the same lines. On a Symbols row or a References caller or callee row, press '+ step', shown while the row is hovered, to add that symbol whole; 'add step' under the References heading adds the selected symbol. On an off-tour graph node, '+ step' adds its symbol. The step is authored by the human and hangs under the target (see feature-choose-target), except a graph node revealed as a callee of a step, which hangs under that step. The same lines under the same parent again is refused with the step's number; adding moves neither the selection nor the target, so the next add lands beside this one. The status names the new step's number and parent.
 
 step 4aiwmt
 order 12
@@ -15,25 +15,15 @@ lines 0 9
 hash 78b2a1876be067c7
 note Adds the lines selected in the Source view, or the focused symbol under the target. With no tour open the status says to select one. When the focused symbol is already the selected step, the status says to select another symbol or lines in the Source view.
 
-step 5dyo4y
-order 3
-parent 9kzjp8
-author ai
-file crates/gui/src/views/center.rs
-symbol source_toolbar
-lines 3 16
-hash e855bbd2e5218110
-note Trigger: the Source toolbar's add button queues AddLines. It names the lines it will add ('add line 12 as a step', 'add lines 12-20 as a step'), or reads 'add step' while nothing is selected.
-
 step 6qgteg
 order 7
 parent d1xozt
 author ai
 file crates/gui/src/views/left.rs
 symbol symbol_row
-lines 0 65
-hash 5fb2fc57e5e94dbb
-note Trigger: a Symbols row carries a '+ step' action while a tour is being read, shown on the hovered or selected row; the action queues AddSymbol under the target, a click elsewhere on the row focuses the symbol.
+lines 0 61
+hash 1e17fc62c39b7200
+note Trigger: a Symbols row carries a '+ step' action while a tour is being read, shown while the row is hovered, so the selected symbol's one add is the strip's; the action queues AddSymbol under the target, a click elsewhere on the row focuses the symbol.
 
 step 7f4nvw
 order 13
@@ -63,7 +53,7 @@ file crates/gui/src/authoring.rs
 symbol add_lines
 lines 0 9
 hash 21f14249bdc80886
-note From the Source view: the file open there and its line selection, under the target. With no lines selected the status says to select some.
+note From the Source view, through add_offered when lines are selected there: the file open there and its line selection, under the target.
 
 step au5kh4
 order 4
@@ -71,8 +61,8 @@ parent 9kzjp8
 author ai
 file crates/gui/src/views/center.rs
 symbol source
-lines 83 84
-hash 733a36a8995760fa
+lines 83 85
+hash 09bf0123f8f37703
 link feature-select-lines
 note Where the lines come from: pressing and dragging in the Source view sets the line selection.
 
@@ -132,9 +122,9 @@ parent zwrtqu
 author ai
 file crates/gui/src/authoring.rs
 symbol author
-lines 0 11
-hash bd2942c29a65d134
-note The route in: views push Action::Authoring, apply hands it to author, and author calls add_lines, add_symbol or add_focused, which all end in add_step.
+lines 0 10
+hash 9ae219341b1f8fbc
+note The route in: views push Action::Authoring, apply hands it to author, and author calls add_symbol or add_offered, which all end in add_step.
 
 step ygjbuv
 order 9

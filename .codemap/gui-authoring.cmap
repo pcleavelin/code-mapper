@@ -3,16 +3,16 @@ tour gui-authoring
 kind layer
 author ai
 group gui
-note How a human builds a tour in the GUI. The tour being read is the one steps go into; Nav's target is the step they hang under (None = top level). Selecting a step sets the target, moving the selection off the tour keeps it, and the 'top level' button in the target strip clears it, so a reader can collect several symbols under one step. Every add goes through App::add_step. The target strip's add-offer@<view> button, also the palette's 'add step', adds the selected Source lines or the focused symbol. The other adds are the Source view's 'add step' (selected lines), '+ step' on Symbols and References rows (Frame::row_with_action), 'add step' under the References heading, and '+ step' on an off-tour graph node, which hangs under the step it was revealed from as a callee. Adding moves neither the selection nor the target. Rearranging is a drag in the Tours steps list: a press grabs a row (StepGrab), travel past GRAB_REACH makes it a drag, and the release drops it onto a row's zone - top quarter before, bottom quarter after, the middle under - through Map::place; steps_moved then carries every slot-keyed thing (views, history, selection, target) to the steps' new slots. The Tours tab's '+ new tour' button opens the build-tour wizard (feature-build-tour), and the 'promote' button (promote at depth 1) makes a tour from the focused symbol. The feature-add-step, feature-choose-target, feature-move-step, feature-build-tour and feature-promote-symbol tours follow each gesture. The wizard sets a new tour's kind, group and note; after that, the edit-tour page (the pencil on the tour header, feature-edit-tour) renames it, sets its kind, group, tour note and step notes, removes steps and adds calls in one apply; links are written through the Console.
+note How a human builds a tour in the GUI. The tour being read is the one steps go into; Nav's target is the step they hang under (None = top level). Selecting a step sets the target, moving the selection off the tour keeps it, and the 'top level' button in the target strip clears it, so a reader can collect several symbols under one step. Every add goes through App::add_step. The target strip's add-offer@<view> button, also the palette's 'add step', adds the selected Source lines or the focused symbol. The other adds are '+ step' on Symbols and References rows (Frame::row_with_action), 'add step' under the References heading, and '+ step' on an off-tour graph node, which hangs under the step it was revealed from as a callee. Adding moves neither the selection nor the target. Rearranging is a drag in the Tours steps list: a press grabs a row (StepGrab), travel past GRAB_REACH makes it a drag, and the release drops it onto a row's zone - top quarter before, bottom quarter after, the middle under - through Map::place; steps_moved then carries every slot-keyed thing (views, history, selection, target) to the steps' new slots. The Tours tab's '+ new tour' button opens the build-tour wizard (feature-build-tour), and the 'promote' button (promote at depth 1) makes a tour from the focused symbol. The feature-add-step, feature-choose-target, feature-move-step, feature-build-tour and feature-promote-symbol tours follow each gesture. The wizard sets a new tour's kind, group and note; after that, the edit-tour page (the pencil on the tour header, feature-edit-tour) renames it, sets its kind, group, tour note and step notes, removes steps and adds calls in one apply; links are written through the Console.
 
 step 1ctrkp
 order 28
 author ai
 file crates/gui/src/authoring.rs
 symbol Authoring
-lines 0 9
-hash f8648534bd79380d
-note Every authoring gesture as data: the adds (AddLines, AddSymbol with its Hang, AddOffered), AddAtTopLevel, the steps list drag (GrabStep, DragStep, DropStep), and Promote. Views push Action::Authoring(Authoring::X); apply routes it here.
+lines 0 8
+hash bd6c97e5f36194e5
+note Every authoring gesture as data: the adds (AddSymbol with its Hang, AddOffered), AddAtTopLevel, the steps list drag (GrabStep, DragStep, DropStep), and Promote. Views push Action::Authoring(Authoring::X); apply routes it here.
 
 step 1yd8ve
 order 12
@@ -23,6 +23,16 @@ symbol step_list_drop
 lines 0 18
 hash 8d3f7c6bb80a4170
 note Which steps list row the pointer is over, from last frame's row rectangles (ids are STEP_LIST_ROW numbered by step slot), with the zone and the band to draw.
+
+step 3kgey8
+order 36
+parent bsaj7u
+author ai
+file crates/gui/src/authoring.rs
+symbol StripButton
+lines 0 3
+hash 3f706beebab604fc
+note A strip button: what it does (StripAct: AddAtTopLevel for 'top level', AddOffered for the offer, the Authoring actions they queue) and its label.
 
 step 4b8wgj
 order 17
@@ -113,15 +123,25 @@ lines 0 3
 hash a27d2446ba674ba3
 note The trailing action: its label and id; add_step is the '+ step' every list uses.
 
+step 9gma2x
+order 31
+parent bsaj7u
+author ai
+file crates/gui/src/authoring.rs
+symbol TargetStrip
+lines 0 4
+hash 10177341ac14f9b7
+note The target strip before layout: its wordings, widest first, its buttons in order, and the aside shown when nothing is offered. Its words are ui Runs, so a wording is drawn as the labels it lists.
+
 step bsaj7u
 order 6
 parent nxbjm2
 author ai
 file crates/gui/src/views/authoring.rs
 symbol target_strip
-lines 0 55
-hash 6f9c038c46434151
-note The strip on the Tours list, under the Source and Symbols toolbars, and above the graph. It says 'adds to <tour> under <n> <symbol>' with a 'top level' button, 'at the top level', or 'open a tour to add steps to it'. While a tour is open it also offers add-offer@<view>, labelled with the lines or the symbol it will add, or says to select another symbol or lines in the Source view. While the build-tour wizard is open, Source and Graph show the wizard's strip in its place (feature-build-tour).
+lines 0 39
+hash 42f1caa49f478c65
+note The strip on the Tours list, under the Source and Symbols toolbars, and above the graph. It draws what Model::target_strip says, in the rows TargetStrip::rows lays out for the strip's width in the previous frame: each row a small toolbar of labels, then buttons sized exactly to their labels so the layout never squeezes one, then the aside when it fits whole. The buttons are 'top level' (target-top@<view>) and add-offer@<view>. While the build-tour wizard is open, Source and Graph show the wizard's strip in its place (feature-build-tour).
 
 step df8kp7
 order 13
@@ -167,8 +187,8 @@ parent 1ctrkp
 author ai
 file crates/gui/src/authoring.rs
 symbol author
-lines 0 11
-hash bd2942c29a65d134
+lines 0 10
+hash 9ae219341b1f8fbc
 note The dispatch from apply: one arm per Authoring variant, each a call to the App method below.
 
 step hjplhc
@@ -236,9 +256,9 @@ order 8
 author ai
 file crates/gui/src/widgets.rs
 symbol row_with_action
-lines 0 50
-hash 4902d0c9ccb25b9c
-note A clickable row with a trailing action (the '+ step' on Symbols and References rows): one row element holding the text, clipped to the row, and the action, which is shown only while the row is hovered or marked and lit when hovered itself. The action is its own id, and the smallest hovered element wins the hit, so pressing the action is not a click on the row.
+lines 0 17
+hash 6bf01d5fdc6763e6
+note A clickable row with a trailing action (the '+ step' on References rows): a tree row at depth zero with no badges, so the row, its hover and its action are drawn by tree_row (gui-widgets).
 
 step nxbjm2
 order 4
@@ -279,6 +299,16 @@ lines 0 26
 hash 662415d885ac9353
 note dragged_to turns the grab into a drag once the pointer has moved GRAB_REACH from the press, the same threshold a tab drag uses.
 
+step sq1sv0
+order 34
+parent bsaj7u
+author ai
+file crates/gui/src/authoring.rs
+symbol StripRow
+lines 0 4
+hash 088b75b87495fb63
+note One row of the laid-out strip: the words of one wording, the buttons it carries and the aside when it fits.
+
 step vmoykv
 order 1
 parent fsevck
@@ -288,3 +318,23 @@ symbol Hang
 lines 0 3
 hash 5b4d806881022189
 note Where an add hangs: the target, or under a given step (a graph node revealed as a callee of that step).
+
+step zgw7q7
+order 32
+parent bsaj7u
+author ai
+file crates/gui/src/authoring.rs
+symbol rows
+lines 0 63
+hash ab677754c3d4368a
+note Lays the strip out for a room in pixels (None before the strip was first drawn: one row, the widest wording). The first wording that fits on one row with every button wins. When none does, the widest wording that fits alone takes the first row and the buttons go on a row under it, or one row each when they do not fit together, so a button is moved before it is cut and only words shorten. The aside joins the last row only when it fits there whole. Widths are counted the way the view draws: labels with LABEL_PADDING on both sides, buttons their label's cells plus SMALL_BUTTON_EXTRA, SMALL_GAP between.
+
+step zyp0zo
+order 30
+parent bsaj7u
+author ai
+file crates/gui/src/authoring.rs
+symbol target_strip
+lines 0 67
+hash 70e04dc1deedfec5
+note What the strip says, as data: with no tour being read, 'open a tour to add steps to it' or, shorter, 'no tour open'. Otherwise three wordings of the target, widest first ('adds to <tour> under <n> <symbol>', '<tour> › <n> <symbol>', '<n> <symbol>', or the same with 'top level'), the 'top level' button while a step is the target, and the add-offer button labelled by add_offer, or, when nothing is offered, the aside telling the reader to select another symbol or lines.

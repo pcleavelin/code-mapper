@@ -11,8 +11,8 @@ parent f1nrga
 author ai
 file crates/gui/src/views/left.rs
 symbol tours_window
-lines 0 88
-hash b2fc07d62cf316e5
+lines 0 87
+hash 47bcc49a11e779ca
 note The effect in the list: a closed group sets closed_at to its depth and every following row deeper than that is skipped.
 
 step 71087f
@@ -21,8 +21,8 @@ parent f1nrga
 author ai
 file crates/gui/src/views/left.rs
 symbol group_row
-lines 0 57
-hash 7b717c8d8daf48e5
+lines 0 56
+hash 163787f0c69dcb14
 note Trigger and effect: the row's openness is the recorded one or, failing that, whether the tour being read is in this group or below it. A click on the GROUP_ROW queues OpenGroup with the opposite openness. The returned openness tells tours_window whether to draw what is inside.
 
 step f1nrga

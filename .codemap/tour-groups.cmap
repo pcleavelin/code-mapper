@@ -61,9 +61,9 @@ parent bthmeg
 author ai
 file crates/gui/src/views/left.rs
 symbol group_row
-lines 0 57
-hash 7b717c8d8daf48e5
-note One group row: an expanded or collapsed chevron icon and the last part of the name, then the tour count dimmed ('3 tours'). Open unless the reader closed it, and open by default when it holds the tour being read. Red when any tour inside it has a stale step. A click toggles it through Action::OpenGroup. While the Tours filter holds text every group is open and a click does nothing.
+lines 0 56
+hash 163787f0c69dcb14
+note One group row: an expanded or collapsed chevron icon and the last part of the name, then the tour count as a badge at the right ('3 tours'). Open unless the reader closed it, and open by default when it holds the tour being read. Red when any tour inside it has a stale step. A click toggles it through Action::OpenGroup. While the Tours filter holds text every group is open and a click does nothing.
 
 step 7qw1be
 order 0
@@ -79,8 +79,8 @@ order 8
 author ai
 file crates/gui/src/views/left.rs
 symbol tours_window
-lines 0 88
-hash b2fc07d62cf316e5
+lines 0 87
+hash 47bcc49a11e779ca
 link reader-gui
 note The Tours tab walks the same rows, narrowed to the tours the filter field lists (feature-filter-tours), skipping everything under a closed group.
 

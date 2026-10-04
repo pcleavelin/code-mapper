@@ -132,9 +132,9 @@ parent 62vg11
 author ai
 file crates/gui/src/views/left.rs
 symbol step_list
-lines 0 68
-hash 5935fac813961357
-note The steps list of the selected tour: one row per step in tree order, indented by depth, with the hierarchical number, the symbol and file, the link as an arrow and a hidden count on a collapsed subtree, whose steps are left out. The selected step has the selection background and the step at the top of the document a weaker one, so the steps list follows scrolling. The target row ends in '+ adds here', and a press on a row grabs it for dragging (gui-authoring).
+lines 0 69
+hash 338958074f7a50e2
+note The steps list of the selected tour: one tree row per step in tree order, under the tour row, with a guide line for every level above it so a deep step (1.1.1.2.1) is placed by its lines as well as its number, then the hierarchical number, the symbol and file, the link as an arrow and, on a collapsed subtree, whose steps are left out, the hidden count as a '+n' badge. The selected step has the selection background and the step at the top of the document a weaker one, so the steps list follows scrolling. The target row ends in '+ adds here', and a press on a row grabs it for dragging (gui-authoring).
 
 step 4uwoav
 order 97
@@ -182,9 +182,9 @@ parent 62vg11
 author ai
 file crates/gui/src/views/left.rs
 symbol tour_row
-lines 0 66
-hash f064e7bbde135f68
-note A tour row: the name, clipped so the rest fits the panel's width, then kind, author tag and step count dimmed, then 'n stale' in red when steps are stale. The name is red when it has stale steps and green with + or ~ when it is new or changed since the parent revision.
+lines 0 64
+hash 09df808d9ff8e98c
+note A tour row: a tree row (Frame::tree_row) with one guide line per enclosing group, the name and the kind and author tag dimmed, clipped from the end so the tag goes before the name, then the step count as a badge at the right and 'n stale' as a red badge when steps are stale. The name is red when it has stale steps and green with + or ~ when it is new or changed since the parent revision.
 
 step 5zz6b5
 order 41
@@ -192,8 +192,8 @@ parent bg9t38
 author ai
 file crates/gui/src/views/center.rs
 symbol source
-lines 0 88
-hash 12eac09a0f9bd83f
+lines 0 89
+hash dd770116a832d782
 link source-view
 note The Source tab: the current file.
 
@@ -203,8 +203,8 @@ parent myq0zo
 author ai
 file crates/gui/src/views/left.rs
 symbol tours_window
-lines 0 88
-hash b2fc07d62cf316e5
+lines 0 87
+hash 47bcc49a11e779ca
 note Tours: a filter field (feature-filter-tours) with 'n of m' while it holds text, and the '+ new tour' button, which opens the build-tour wizard (feature-build-tour), then the groups from Model::listed_rows as folders with their tour counts, then one row per tour, and the selected tour expanded into its steps list; under a tour the filter found by its steps, those steps (feature-filter-tours). Every row under a closed group is skipped. Tours removed since the parent revision are listed at the end, greyed.
 
 step 686o81
@@ -376,8 +376,8 @@ parent j7n739
 author ai
 file crates/gui/src/authoring.rs
 symbol Authoring
-lines 0 9
-hash f8648534bd79380d
+lines 0 8
+hash bd6c97e5f36194e5
 note The authoring gestures as their own enum, carried by the one Action::Authoring variant so Action stays a list of kinds of change rather than every authoring detail (gui-authoring).
 
 step dshcm5
@@ -497,8 +497,8 @@ parent sn1cn1
 author ai
 file crates/gui/src/authoring.rs
 symbol author
-lines 0 11
-hash bd2942c29a65d134
+lines 0 10
+hash 9ae219341b1f8fbc
 link gui-authoring
 note Action::Authoring's arm: author, in authoring.rs, dispatches to the add, target, drag and promote handlers.
 
@@ -598,9 +598,9 @@ parent 62vg11
 author ai
 file crates/gui/src/views/left.rs
 symbol group_row
-lines 0 57
-hash 7b717c8d8daf48e5
-note A group row: chevron and name, red when a tour under it is stale, and its tour count dimmed. A group never clicked is open while it holds the tour being read; a click records it open or closed through OpenGroup. A non-empty Tours filter forces every group open.
+lines 0 56
+hash 163787f0c69dcb14
+note A group row: chevron and name, red when a tour under it is stale, and its tour count as a badge at the right, the row indented by one guide line per enclosing group. A group never clicked is open while it holds the tour being read; a click records it open or closed through OpenGroup. A non-empty Tours filter forces every group open.
 
 step lwf851
 order 74
@@ -688,9 +688,9 @@ parent x3sfq6
 author ai
 file crates/gui/src/views/left.rs
 symbol files_tree
-lines 0 103
-hash 95ef6ff69fa7cfb4
-note The directory tree, derived rather than stored: the file list is sorted by path, so a run of entries sharing the next component is a directory and recursing one component deeper draws it. Top-level directories are open by default and the toggled set flips that, so no state is needed for the common case. A row shows its covered/total dimmed after its name, a directory's summed over its files, and none when there are no symbols; clicking a file opens it in the Source view.
+lines 0 92
+hash 233464078ac09fc6
+note The directory tree, derived rather than stored: the file list is sorted by path, so a run of entries sharing the next component is a directory and recursing one component deeper draws it. Top-level directories are open by default and the toggled set flips that, so no state is needed for the common case. A row is a tree row with a guide line per level and shows its covered/total as a badge at the right, a directory's summed over its files, and none when there are no symbols; clicking a file opens it in the Source view.
 
 step p2ewms
 order 22
@@ -721,7 +721,7 @@ file crates/gui/src/views/left.rs
 symbol symbols_window
 lines 0 70
 hash f17b761beff266a5
-note Symbols: a filter box (a Needle matched against symbol names and file paths) with the symbol count, or 'n of m' while filtering, then the symbols grouped under a row per file, each symbol with a check when a tour covers it, dimmed while its file waits for its server, and '+ step' on the hovered or selected row while a tour is open, under the target strip. symbol_lines flattens files and symbols into one list first; only the rows on screen become elements, with a spacer above and below standing in for the rest, so the table is the same cost at ten symbols or ten thousand. The Coverage is built once per frame and handed to every row.
+note Symbols: a filter box (a Needle matched against symbol names and file paths) with the symbol count, or 'n of m' while filtering, then the symbols grouped under a row per file, each symbol with a check when a tour covers it, dimmed while its file waits for its server, and '+ step' on the hovered row while a tour is open, under the target strip. symbol_lines flattens files and symbols into one list first; only the rows on screen become elements, with a spacer above and below standing in for the rest, so the table is the same cost at ten symbols or ten thousand. The Coverage is built once per frame and handed to every row.
 
 step pjv3q6
 order 85
@@ -739,9 +739,9 @@ parent pj8e6h
 author ai
 file crates/gui/src/views/left.rs
 symbol symbol_row
-lines 0 65
-hash 5fb2fc57e5e94dbb
-note One symbol row: its check when Coverage::covers says a tour holds it, the name indented under its file (deeper for a nested symbol) and clipped to its column, its line and kind, and while a tour is open the '+ step' action (Frame::row_with_action). A click focuses the symbol.
+lines 0 61
+hash 1e17fc62c39b7200
+note One symbol row: its check when Coverage::covers says a tour holds it, the name under its file's guide line (two for a nested symbol) and clipped to its column, its line and kind, and while a tour is open the '+ step' action (Frame::tree_row). A click focuses the symbol.
 
 step qbdax8
 order 75
@@ -986,8 +986,8 @@ author ai
 file crates/gui/src/views/left.rs
 symbol symbol_file_row
 lines 0 34
-hash ef4301384695e463
-note A file row: its path, clipped from the left so the file name survives, dimmed while pending, and covered/total for its symbols. A click opens the file in the Source view at its first line.
+hash 883741da6732e08d
+note A file row: its path, clipped from the left so the file name survives, dimmed while pending, and covered/total for its symbols as a badge at the right. A click opens the file in the Source view at its first line.
 
 step xltw88
 order 81
@@ -998,6 +998,16 @@ symbol columns
 lines 0 8
 hash 211f74a1d63d8e1d
 note How many characters fit across the panel, from last frame's width less the scrollbar, or a guess before it has one; tour names are clipped to it.
+
+step ygv5rk
+order 102
+parent omwlcn
+author ai
+file crates/gui/src/views/left.rs
+symbol tally_badges
+lines 0 6
+hash cce47f3f5fe6740c
+note A file's or directory's covered/total as a badge, or none when it has no symbols.
 
 step z4xk3q
 order 28

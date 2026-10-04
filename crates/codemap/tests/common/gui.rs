@@ -254,6 +254,11 @@ wait 3
 dump
 shot {shots}/open.png
 rect lines
+mouse <<DUMP rect lines|880,300>>
+wait 80
+dump
+shot {shots}/code-tip.png
+rect lines
 mouse <<DUMP rect lines|200,8>>
 down
 wait 2
@@ -265,7 +270,17 @@ up
 wait 2
 dump
 shot {shots}/selected.png
-click-id add-lines
+absent add-lines
+rect divider/5
+drag <<DUMP rect divider/5|3,300>> 262 332
+wait 3
+rect target-top@Tours
+rect add-offer@Tours
+shot {shots}/narrow-strip.png
+rect divider/5
+drag <<DUMP rect divider/5|3,300>> 353 332
+wait 3
+click-id add-offer@Source
 wait 2
 dump
 click-id field@goto-line
@@ -503,6 +518,9 @@ click-id dir@src
 wait 2
 click-id file/5
 wait 3
+hover-id dir@src
+wait 2
+shot {shots}/files-hover.png
 dump
 click-id tab@Tours
 wait 2
@@ -587,7 +605,7 @@ open src/store.rs 12
 wait 3
 click-id tab@Source
 wait 2
-click-id add-lines
+click-id add-offer@Source
 wait 2
 dump
 key escape
@@ -643,7 +661,7 @@ wait 2
 click-id field@symbols
 text main
 wait 3
-click-id sym@3:0
+click-id sym@3:2
 wait 2
 click-id add-offer@Symbols
 wait 2
@@ -675,7 +693,7 @@ wait 2
 click-id target-top@Source
 wait 2
 dump
-click-id add-lines
+click-id add-offer@Source
 wait 2
 dump
 shot {shots}/source.png

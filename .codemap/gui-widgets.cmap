@@ -195,9 +195,9 @@ parent rcazsr
 author ai
 file crates/gui/src/widgets.rs
 symbol shape
-lines 0 101
-hash bfdeb73a72e8f57a
-note The one match that turns a Container into its layout, style and fixed id: the paddings, gaps and colours from theme, the accent bar on the left of a selected step row or code column, the panel header's TAB_STRIP background with no padding (its tabs carry their own), the id body the panel tree is laid out from, the floating boxes through floating, the picker's, the palette box's, the settings box's, a toolbar menu's and an element tip's ids, and the id a StepColumn carries; the floating graph overlays (the canvas-sized corner column and the zoom cluster's box) come from overlay_shape, as the pages come from page_shape, to keep this match short.
+lines 0 82
+hash 89cfb2127162a36f
+note The one match that turns a Container into its layout, style and fixed id: the paddings, gaps and colours from theme, the accent bar on the left of a selected step row or code column, the panel header's TAB_STRIP background with no padding (its tabs carry their own), the id body the panel tree is laid out from, the tooltip and element tip through floating with the element tip's id, and the id a StepColumn or a Strip carries; the accent-bordered boxes (picker, palette, settings, toolbar menu) come from box_shape, the floating graph overlays (the canvas-sized corner column and the zoom cluster's box) from overlay_shape, and the pages from page_shape, to keep this match short.
 
 step aidqqn
 order 3
@@ -278,6 +278,16 @@ lines 0 69
 hash b338d792f081a620
 note The field under a given element id, which field passes as the field's own Control id: a list of fields of one Which kind (the edit page's step notes) names each by its row, so a click on one takes the keyboard for that row's field.
 
+step dg62tu
+order 70
+parent 9dxpzk
+author ai
+file crates/gui/src/widgets.rs
+symbol box_shape
+lines 0 8
+hash 8d477b4b6ac10e4b
+note The accent-bordered floating boxes at a point and a width: the view picker, the command palette and the settings box padded by TOOLTIP_PADDING, a toolbar menu by the tighter TIGHT_GAP, each with its own fixed id, all through floating.
+
 step djcnmt
 order 69
 parent 9dxpzk
@@ -286,7 +296,7 @@ file crates/gui/src/widgets.rs
 symbol floating
 lines 0 10
 hash 3a1fe2ec65b73d9b
-note The shape every floating box shares: a column at a point, with a width when the box has one, a PANEL background and a border on all sides. shape hands it each box's padding, border colour and id: tooltips and element tips in BORDER at their own width, the picker, palette and settings box in ACCENT, a toolbar menu in ACCENT with the tighter padding.
+note The shape every floating box shares: a column at a point, with a width when the box has one, a PANEL background and a border on all sides. Its callers hand it each box's padding, border colour and id: shape the tooltips and element tips in BORDER at their own width, box_shape the picker, palette and settings box in ACCENT and a toolbar menu in ACCENT with the tighter padding.
 
 step e2sdhm
 order 16
@@ -308,6 +318,16 @@ lines 0 5
 hash 02cc8cefea7bf995
 note Asking the server for a hover. When the question will be sent this frame, the overlay counts it, so the count shows in the same frame as the hover.
 
+step f97azj
+order 62
+parent wysgxw
+author ai
+file crates/gui/src/widgets.rs
+symbol tree_row
+lines 0 85
+hash 3ae4e3bc2dad47af
+note A row of a tree (the Tours list with its steps, Files, Symbols): one row element under the row's id holding, per level of depth, a guide leaf whose left border (TREE_GUIDE) sits half a cell into the level, under the chevron of the row above, so consecutive rows draw continuous vertical lines like an editor's explorer; then the text, clipped to the row; then each badge, a count on the BADGE background at the right edge; then the action, shown only while the row is hovered. Hover gives the row the HOVER background unless it is marked (selected, or the steps list's top step). The action is its own id, and the smallest hovered element wins the hit, so pressing it is not a click on the row.
+
 step g0slfv
 order 49
 parent k73r2l
@@ -322,9 +342,9 @@ step gjm6fk
 order 0
 author ai
 file crates/gui/src/theme.rs
-lines 8 38
-hash 846a1fe125bbbbcf
-note The palette, in theme: a dozen colours named by role - background, panel, field, border, text, weak, accent, green, red, orange, hover, selected, the red background a danger button takes under the pointer, and NOTE, the colour of tour and step notes: a warm off-white (a dark brown in the light theme) at body-text contrast, apart from the comment green, GREEN (new, success) and the accent links use, since the notes are the most important prose in the window - and below them the tints made from those by alpha (disabled, selected lines, the slice, the steps list's top step, faint, pending, the drop band, the call tint), the graph's colours (STEP_EDGE, EXPANSION_EDGE, BACK_EDGE, STEP_BORDER, SIBLINGS_FILL, SIBLINGS_BORDER) and the panel header's TAB_STRIP. A colour decision is made once, here, and every view names one.
+lines 8 43
+hash 17e46978a929af48
+note The palette, in theme: a dozen colours named by role - background, panel, field, border, text, weak, accent, green, red, orange, hover, selected, the red background a danger button takes under the pointer, and NOTE, the colour of tour and step notes: a warm off-white (a dark brown in the light theme) at body-text contrast, apart from the comment green, GREEN (new, success) and the accent links use, since the notes are the most important prose in the window - and below them the tints made from those by alpha (disabled, selected lines, the slice, the steps list's top step, faint, pending, the drop band, the call tint), the graph's colours (STEP_EDGE, EXPANSION_EDGE, BACK_EDGE, STEP_BORDER, SIBLINGS_FILL, SIBLINGS_BORDER), the panel header's TAB_STRIP, the minimap's MINIMAP_NODE, MINIMAP_STEP and MINIMAP_CAMERA, and the trees' TREE_GUIDE line and BADGE background. A colour decision is made once, here, and every view names one.
 
 step gp3at7
 order 49
@@ -605,9 +625,9 @@ order 1
 author ai
 file crates/gui/src/widgets.rs
 symbol Container
-lines 0 31
-hash 92ab07561f42382f
-note Every box that holds other elements is one of these: the window, the body, the centre, the bars, the toolbars, a panel column, a step row or code column (with its selected mark), the column holding one step of the document (StepColumn, carrying that step's id so its height can be measured), a tooltip, an element tip (ElementTip, at a point), a panel header, the floating view picker, the command palette's box, a toolbar menu's floating list (Menu, at a point and a width), the start page's centred column (Centered around StartPage, which carries the column's width), and the graph canvas's overlays (CanvasCorner, over the canvas's rectangle, and the zoom Cluster inside it). A view opens one with Frame::start and closes it with finish; it never spells out a layout or a style.
+lines 0 32
+hash 613695cea3b79b59
+note Every box that holds other elements is one of these: the window, the body, the centre, the bars, the toolbars, a panel column, a step row or code column (with its selected mark), the column holding one step of the document (StepColumn, carrying that step's id so its height can be measured), the target strip's column (Strip, carrying its id so its width can be read back), a tooltip, an element tip (ElementTip, at a point), a panel header, the floating view picker, the command palette's box, a toolbar menu's floating list (Menu, at a point and a width), the start page's centred column (Centered around StartPage, which carries the column's width), and the graph canvas's overlays (CanvasCorner, over the canvas's rectangle, and the zoom Cluster inside it). A view opens one with Frame::start and closes it with finish; it never spells out a layout or a style.
 
 step rs11uk
 order 14
@@ -617,6 +637,16 @@ symbol take_focus
 lines 0 2
 hash eee3abe97d6c6f2f
 note Taking the keyboard: the overlay records it for the rest of this frame and FocusField, carrying the element it was taken through (take_focus_at), sets it on the Model when the queue is applied (Fields::focus_at).
+
+step rx54p9
+order 63
+parent wysgxw
+author ai
+file crates/gui/src/widgets.rs
+symbol TreeRow
+lines 0 6
+hash aaf65ca58fbdb52a
+note What a tree row shows: its depth in guide levels, the runs of its text, its badges (counts such as '14 steps', '3/8', '+2'), its mark colour and its optional trailing action.
 
 step ry0h5x
 order 59
@@ -741,7 +771,7 @@ file crates/gui/src/widgets.rs
 symbol row
 lines 0 2
 hash 6927a95a29c20605
-note A selectable full-width row of coloured runs with a hover background and a selection background, its text cut with an ellipsis where the row ends (Wrap::Clip), so a long name never pushes a row wider than its panel. Every list in the app - tours, steps list, symbols, files, references, hits, diff - is this one function in a loop.
+note A selectable full-width row of coloured runs with a hover background and a selection background, for flat lists (trees use tree_row), its text cut with an ellipsis where the row ends (Wrap::Clip), so a long name never pushes a row wider than its panel. Every list in the app - tours, steps list, symbols, files, references, hits, diff - is this one function in a loop.
 
 step z678b0
 order 31
