@@ -28,6 +28,33 @@ fn the_default_tree_holds_every_view_once() {
 }
 
 #[test]
+fn a_fresh_layout_shrinks_the_console_once_to_the_wanted_log_height_and_a_saved_one_never() {
+    let console = |panels: &Panels| match panels.root() {
+        Branch::Split(split) => {
+            split
+                .divide(rect(0, 0, 1600, 940), Px::new(7), Extent::default())
+                .second
+                .extent()
+                .height
+        }
+        Branch::Panel(_) => Px::ZERO,
+    };
+    let mut fresh = Panels::default();
+    let before = console(&fresh);
+    fresh.fit_console(Px::new(933), Px::new(116), Px::new(72));
+    let after = console(&fresh);
+    assert!(
+        (before - after - Px::new(44)).get().abs() <= 1,
+        "{before:?} -> {after:?}"
+    );
+    fresh.fit_console(Px::new(933), Px::new(72 + 50), Px::new(72));
+    assert_eq!(console(&fresh), after);
+    let mut saved = Panels::from_layout(&Panels::default().layout());
+    saved.fit_console(Px::new(933), Px::new(116), Px::new(72));
+    assert_eq!(console(&saved), before);
+}
+
+#[test]
 fn a_split_opens_the_picker_on_an_empty_panel_and_a_pick_moves_the_view() {
     let mut panels = Panels::default();
     panels.split_panel(BranchId(1), Direction::Right);

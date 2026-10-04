@@ -35,6 +35,16 @@ lines 0 46
 hash 4f077044d95e181f
 note Which step is topmost and where a pending scroll lands, both from last frame's rectangles, looked up by the ids of the tour's own step headers. A scroll to a step whose header was not built yet retries for a few frames (Tries) before giving up. Pushes TopStep and ScrolledToStep.
 
+step 1rsd6b
+order 102
+parent 50ozko
+author ai
+file crates/gui/src/app.rs
+symbol fit_console
+lines 0 11
+hash 548f2eb2ef6127a7
+note Right after the layout, when this frame was laid out against a known body: a fresh layout's console split is fitted once (panel-tree).
+
 step 22lp24
 order 72
 parent vc7u1p
@@ -141,8 +151,8 @@ order 0
 author ai
 file crates/gui/src/app.rs
 symbol frame
-lines 0 75
-hash 84ecabd5fc88219c
+lines 0 79
+hash 71d07cd949dba7aa
 note The frame (platform::App::frame), in order: the font and cell size for this scale factor, the screenshot aid, the five polls, the keys, then a left press releases the focused field unless the press lands on it (Fields::press), then panel_input, the steps list's drag (step_list_input) and the graph's own input phase (or, with the Graph view hidden, the graph marked Hidden and its keyboard Elsewhere, so a look snaps and the arrows walk the tour), the element tree, layout and draw, the action queue, the reveal of the centre view navigation asked for, saving the layout if it changed, and the history snapshot, which first performs a back or forward asked for this frame. It asks the loop to come back at the ANIMATING rate while the graph camera is gliding, in 50 ms while any work is in flight, and in a second otherwise, so an idle window costs one frame per second.
 
 step 5aljhx

@@ -23,10 +23,10 @@ use crate::ids;
 use crate::keys::{self, Going, WizardKey};
 use crate::model::{Metrics, Model, Readable, Tab, TabName, TourSlot};
 use crate::palette::PaletteAction;
-use crate::panels::{Direction, Panels, View};
+use crate::panels::{self, Direction, Panels, View};
 use crate::settings::{KeptSettings, SettingsAct};
 use crate::status::Status;
-use crate::theme::{self, BACKGROUND, TEXT};
+use crate::theme::{self, BACKGROUND, CONSOLE_ROWS, PANEL_PADDING, TEXT};
 use crate::views;
 use crate::welcome::Opening;
 use crate::widgets::{Frame, Overlay};
@@ -380,6 +380,7 @@ impl platform::App for App {
             self.apply(Action::Graph(GraphAction::Engage(Keyboard::Elsewhere)));
             None
         };
+        let laid_out = self.ui.interaction(ids::body()).rect().is_some();
         let mut queue = Vec::new();
         let mut frame = Frame {
             ui: &mut self.ui,
@@ -393,6 +394,9 @@ impl platform::App for App {
         views::build(&self.model, &mut frame, graph);
         let cursor = frame.cursor;
         self.ui.end(renderer);
+        if laid_out {
+            self.fit_console();
+        }
         let drawing = self.ui.draw(renderer, TEXT);
         for action in queue {
             self.apply(action);
@@ -517,6 +521,19 @@ impl AppCommand {
 }
 
 impl App {
+    fn fit_console(&mut self) {
+        let body = self.ui.interaction(ids::body()).rect();
+        let log = self.ui.interaction(ids::console()).rect();
+        if let (Some(body), Some(log)) = (body, log) {
+            let metrics = self.model.metrics;
+            let room = body.extent().height - panels::divider_width(metrics.font);
+            let target = CONSOLE_ROWS.of(metrics.row_height()) + PANEL_PADDING * 2;
+            self.model
+                .panels
+                .fit_console(room, log.extent().height, target);
+        }
+    }
+
     fn keep_layout(&mut self) {
         let Some(store) = &self.layout.store else {
             return;

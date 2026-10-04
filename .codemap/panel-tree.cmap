@@ -89,9 +89,9 @@ order 53
 author ai
 file crates/gui/src/panels.rs
 symbol from_layout
-lines 0 6
-hash 2b7409fe994684f3
-note Loading: builds the tree from a saved layout with fresh ids, no picker and no grab. App::new calls it when the user's layout file reads.
+lines 0 7
+hash 146c4a945321b32e
+note Loading: builds the tree from a saved layout with fresh ids, no picker and no grab, and its console split kept as saved. App::new calls it when the user's layout file reads.
 
 step 4hv76a
 order 52
@@ -262,6 +262,16 @@ lines 0 27
 hash e4321ac653e57c5e
 note Called by App::frame right after the element tree begins, before anything is drawn, and applied at once, so a drag shows in the frame it happens. A held divider becomes a Resize to the ratio under the pointer, read from last frame's rectangle of its pair. A held tab is dragged; released, it becomes a Release carrying the drop target if the grab had started moving, and none otherwise.
 
+step dtba88
+order 59
+parent u315i6
+author ai
+file crates/gui/src/panels.rs
+symbol fit_console
+lines 0 9
+hash c901614917bf1bfe
+note The default tree's console fit, once: the root split's first side grows by what the console's log had over the target height, so a fresh layout gives the views above all but about four lines of log and the input. A saved layout is never fitted, and a drag on the divider afterwards is the reader's.
+
 step dxzju5
 order 11
 parent yf6cx3
@@ -395,9 +405,9 @@ order 0
 author ai
 file crates/gui/src/panels.rs
 symbol Panels
-lines 0 7
-hash d473d47c9a474335
-note The whole layout: the root of the tree, the next BranchId to hand out, the tab held for a drag, the panel whose picker is open, and what navigation last asked to be shown (revealed, answered). One Panels lives in the Model; App::keep_layout saves its layout() whenever that changes, and App::new builds it with from_layout.
+lines 0 8
+hash fe4ee514dd1b6fc8
+note The whole layout: the root of the tree, the next BranchId to hand out, the tab held for a drag, the panel whose picker is open, what navigation last asked to be shown (revealed, answered), and whether the console split still waits to be fitted. One Panels lives in the Model; App::keep_layout saves its layout() whenever that changes, and App::new builds it with from_layout.
 
 step nx4h7k
 order 43
@@ -444,7 +454,7 @@ order 49
 author ai
 file crates/gui/src/app.rs
 symbol impl App
-lines 1 17
+lines 14 30
 hash c1152652d8bba913
 note Saving: at the end of each frame, once no drag or divider is held and the left button is up, the tree's layout() is compared with the last one written and saved when it differs. A failed write shows in the status line and is not retried until the layout changes again.
 
@@ -497,15 +507,25 @@ lines 0 3
 hash 97949495d21965bd
 note A branch is a Panel (a leaf) or a Split of two branches. Every branch has a BranchId, the number the element ids and the dump use: panel/<n>, divider/<n>, pick/<n>.
 
+step u315i6
+order 60
+parent ue7mqd
+author ai
+file crates/gui/src/app.rs
+symbol fit_console
+lines 0 11
+hash 548f2eb2ef6127a7
+note Measured after a frame that was laid out against a known body (the first frame lays out against the whole window): the body's height less the divider is the room, the console's scroll column is the log, and CONSOLE_ROWS rows plus the column's padding is the target height.
+
 step ue7mqd
 order 6
 parent mp1y9p
 author ai
 file crates/gui/src/panels.rs
 symbol default
-lines 0 23
-hash 6e0dd35299dffbf6
-note The layout a launch starts with: Tours/Symbols/Files on the left (22%), the five centre views in the middle, References on the right (26% of the rest), Console along the bottom (18%).
+lines 0 24
+hash 51673e1e70038c90
+note The layout a launch starts with: Tours/Symbols/Files on the left (22%), the five centre views in the middle, References on the right (26% of the rest), Console along the bottom (18%) until the first laid-out frame, when fit_console sizes it to CONSOLE_ROWS lines of log above its input.
 
 step wz1vr6
 order 21
