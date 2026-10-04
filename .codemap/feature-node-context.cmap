@@ -50,7 +50,7 @@ parent 4ok6o9
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 12 29
+lines 13 30
 hash 8a0f456930fac64e
 note Trigger: a click on the canvas goes to graph_click with the hit under the pointer.
 

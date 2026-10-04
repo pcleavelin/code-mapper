@@ -60,8 +60,8 @@ order 6
 author ai
 file crates/gui/src/views/center.rs
 symbol graph_tab
-lines 0 56
-hash f84795bbc1c8098a
+lines 0 57
+hash 52c5e7b03b019aa8
 note The view: the deferred actions pushed (a hover through push_hover), the tooltip set, then the toolbar - 'auto layout' which drops every dragged position, the direction button (graph-turn, labelled with the direction it switches to: 'top to bottom' or 'left to right'), and one clipped caption: while a tour is being read, its name and a legend drawn in the edge colours themselves (green step, dim revealed, orange call back up), then the pan and zoom gestures spelled out - then the canvas element whose closure paints the scene, and over it, once the canvas has a rectangle from last frame, graph_corner: a floating column the size of the canvas whose last row holds the zoom cluster in the bottom-right corner (zoom out, the zoom percentage which resets to 1:1, zoom in, fit). The overlay has no id, so only its buttons take the pointer from the canvas. The target strip above the toolbar offers add-offer@Graph. The toolbar itself holds no authoring control, and '+ step' still lives on off-tour nodes.
 
 step 4yhd4f
@@ -69,9 +69,9 @@ order 0
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 0 91
-hash 2fd07e0edae11b98
-note The phase, in order: the canvas element's interaction and last frame's rectangle (a guessed square until it has one), the wheel, the hit under the mouse from last frame's hits (the last recorded wins), a press engaging or releasing the graph's keyboard by whether it landed inside the canvas, a click, a drag, releasing the drag once the button is up, a zoom step the cluster's buttons asked for, the hover tooltip, then the rebuild and layout, the camera and its glide step, the scene, and finally the graph marked Shown or Hidden by whether the canvas has a rectangle. It returns the scene with the deferred actions, the tooltip and the zoom for the toolbar.
+lines 0 94
+hash ed4ad7b2a5335beb
+note The phase, in order: the canvas element's interaction and last frame's rectangle (a guessed square until it has one), the wheel, a press or drag on the minimap, the hit under the mouse from last frame's hits (the last recorded wins), a press engaging or releasing the graph's keyboard by whether it landed inside the canvas, a click, a drag, releasing the drag once the button is up, a zoom step the cluster's buttons asked for, the hover tooltip, then the rebuild and layout, the camera and its glide step, the scene, the minimap built from the same camera and stored with the hits, and finally the graph marked Shown or Hidden by whether the canvas has a rectangle. It returns the scene with the deferred actions, the tooltip, the zoom and the minimap for the canvas corner.
 
 step 5ho1e1
 order 5
@@ -170,9 +170,9 @@ parent 4yhd4f
 author ai
 file crates/gui/src/graph/input.rs
 symbol GraphFrame
-lines 0 5
-hash bf24e375b8b61177
-note What the phase hands the view: the scene, the actions for the rest of the GUI, the tooltip, and the zoom the toolbar prints.
+lines 0 6
+hash fab956eba25e585f
+note What the phase hands the view: the scene, the actions for the rest of the GUI, the tooltip, the zoom the cluster prints, and the minimap when one is shown.
 
 step hrr274
 order 25
@@ -270,7 +270,7 @@ parent 4yhd4f
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 41 56
+lines 42 57
 hash 67cc42f01fd6c340
 link graph-camera
 note The camera's turn once the layout exists (see the graph-camera flow).
@@ -441,9 +441,9 @@ parent 2mnh2a
 author ai
 file crates/gui/src/views/center.rs
 symbol graph_corner
-lines 0 8
-hash 8fa05e5efe8fcae0
-note The overlay over the canvas: a floating column exactly the canvas's last rectangle, padded by GRAPH_MARGIN, a fill pushing its last row to the bottom, and in that row a grow before the zoom cluster so the cluster sits in the bottom-right corner without measuring itself.
+lines 0 22
+hash 83b345d3c1100845
+note The overlay over the canvas: a floating column exactly the canvas's last rectangle, padded by GRAPH_MARGIN, a fill pushing its last rows to the bottom, the minimap right-aligned in a row of its own when there is one (feature-minimap), and in the last row a grow before the zoom cluster so the cluster sits in the bottom-right corner without measuring itself.
 
 step z5x3is
 order 2

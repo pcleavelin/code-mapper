@@ -1,5 +1,6 @@
 pub(crate) mod build;
 mod input;
+mod minimap;
 mod place;
 mod scene;
 
@@ -16,6 +17,8 @@ use crate::theme::{Zoom, ZoomStep};
 
 pub(crate) use build::Built;
 pub(crate) use input::{GraphAction, GraphFrame, Heading};
+pub(crate) use minimap::Minimap;
+use minimap::MinimapDrag;
 #[cfg(test)]
 pub(crate) use place::Parentage;
 pub(crate) use scene::draw_scene;
@@ -164,6 +167,8 @@ pub(crate) struct GraphState {
     presence: Presence,
     fit: Wish,
     wanted_zoom: Option<ZoomStep>,
+    minimap: Option<Minimap>,
+    minimap_drag: Option<MinimapDrag>,
     keep: Option<Kept>,
     built: Built,
     hits: Vec<HitRect>,
@@ -191,6 +196,8 @@ impl Default for GraphState {
             presence: Presence::Hidden,
             fit: Wish::Settled,
             wanted_zoom: None,
+            minimap: None,
+            minimap_drag: None,
             keep: None,
             built: Built::default(),
             hits: Vec::new(),
@@ -291,6 +298,14 @@ impl GraphState {
         self.pan
     }
 
+    pub(crate) const fn minimap(&self) -> Option<&Minimap> {
+        self.minimap.as_ref()
+    }
+
+    pub(crate) const fn drags_minimap(&self) -> bool {
+        self.minimap_drag.is_some()
+    }
+
     pub(crate) fn hits(&self) -> &[HitRect] {
         &self.hits
     }
@@ -345,6 +360,7 @@ impl GraphState {
         self.look = Wish::Settled;
         self.fit = Wish::Settled;
         self.wanted_zoom = None;
+        self.minimap_drag = None;
         self.glide = None;
         self.keep = None;
         self.steering = None;

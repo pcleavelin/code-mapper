@@ -20,9 +20,9 @@ order 0
 author ai
 file crates/gui/src/graph.rs
 symbol GraphState
-lines 0 23
-hash f951a918b2fd4c6a
-note The fields split two ways. The reader's part survives frames: reveals opened, auto_open (the off-tour root whose callers and callees were opened for it, so closing them afterwards sticks), root (that off-tour root, kept as a root of the tree while the reader moves around inside the graph), collapsed (nodes cut to a preview), context (lines widened above and below), manual (dragged positions in fractional cells, which override the layout for as long as the node exists), the drag in progress, pan (pixels) and zoom, direction (left to right or top to bottom), the camera wishes look and fit with keep, wanted_zoom (a zoom cluster step waiting for the next phase), the node a button asked to hold still, steering (who inside the graph is about to change the focus), glide (a pan in flight), keyboard (whether the last press was inside the canvas, which gives the arrows to the graph) and presence (whether the graph was on screen last frame). The frame's part is replaced every frame: built (this frame's Built), hits (hit rectangles in window pixels, read by the next frame's input), code_top (the pixel y of each node's first code row) and cell (the frame's cell size in pixels).
+lines 0 25
+hash 97688670d8fc9b33
+note The fields split two ways. The reader's part survives frames: reveals opened, auto_open (the off-tour root whose callers and callees were opened for it, so closing them afterwards sticks), root (that off-tour root, kept as a root of the tree while the reader moves around inside the graph), collapsed (nodes cut to a preview), context (lines widened above and below), manual (dragged positions in fractional cells, which override the layout for as long as the node exists), the drag in progress, pan (pixels) and zoom, direction (left to right or top to bottom), the camera wishes look and fit with keep, wanted_zoom (a zoom cluster step waiting for the next phase), minimap_drag (the minimap's drag while it is pressed), the node a button asked to hold still, steering (who inside the graph is about to change the focus), glide (a pan in flight), keyboard (whether the last press was inside the canvas, which gives the arrows to the graph) and presence (whether the graph was on screen last frame). The frame's part is replaced every frame: built (this frame's Built), hits (hit rectangles in window pixels, read by the next frame's input), code_top (the pixel y of each node's first code row), minimap (the minimap drawn, read by the next frame's minimap input) and cell (the frame's cell size in pixels).
 
 step 1qriwj
 order 7
@@ -140,8 +140,8 @@ parent 1fwzx4
 author ai
 file crates/gui/src/graph.rs
 symbol default
-lines 0 25
-hash f211e395c558f396
+lines 0 27
+hash 18707dc4fc6584cd
 note Everything empty and settled, except the zoom, which starts at 1:1; the direction starts left to right, the keyboard elsewhere and the graph hidden.
 
 step cwymf3
@@ -150,8 +150,8 @@ parent q2lmal
 author ai
 file crates/gui/src/graph/input.rs
 symbol GraphAction
-lines 0 31
-hash 2e5dad5a8e9183da
+lines 0 33
+hash b881e658d91ab652
 note Every change the graph accepts, as data. The input phase, the toolbar, the arrow-key walk and App::frame produce them; App::apply routes them here through Action::Graph.
 
 step dckpmw
@@ -380,9 +380,9 @@ parent 1fwzx4
 author ai
 file crates/gui/src/graph/input.rs
 symbol apply
-lines 0 97
-hash 2950d418a5ab322c
-note The one writer of GraphState: each GraphAction arm changes the fields it names and nothing else. The camera arms (Camera, Pan, Look, Keep, Fitted, OneToOne, WantFit, WantZoom, GlideStep, Present; Look and GlideStep carry the frame's time) and Steer are in graph-camera; Turn flips the direction; Engage records whether the graph holds the keyboard; AutoOpen records the auto-opened node, makes it the kept root and adds its two reveals; Built, Cell and Drawn store what this frame's phase computed; the rest are the reader's own choices.
+lines 0 99
+hash 91aade20b9153937
+note The one writer of GraphState: each GraphAction arm changes the fields it names and nothing else. The camera arms (Camera, Pan, Look, Keep, Fitted, OneToOne, WantFit, WantZoom, DragMinimap, MinimapDrawn, GlideStep, Present; Look and GlideStep carry the frame's time) and Steer are in graph-camera; Turn flips the direction; Engage records whether the graph holds the keyboard; AutoOpen records the auto-opened node, makes it the kept root and adds its two reveals; Built, Cell and Drawn store what this frame's phase computed; the rest are the reader's own choices.
 
 step qac7fm
 order 16

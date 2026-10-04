@@ -31,7 +31,7 @@ parent 9fzkv2
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 12 29
+lines 13 30
 hash 8a0f456930fac64e
 note Trigger: a click on the canvas goes to graph_click with the hit under the pointer.
 
@@ -41,6 +41,6 @@ parent 9fzkv2
 author ai
 file crates/gui/src/views/center.rs
 symbol graph_tab
-lines 11 16
+lines 12 17
 hash 368e9ec1452321f2
 note Deferred actions from the graph phase are queued by the graph tab while the views are built, so they apply after the frame like any click.

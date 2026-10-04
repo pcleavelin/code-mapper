@@ -11,6 +11,7 @@ use crate::action::Action;
 use crate::app::App;
 use crate::authoring::{Authoring, Hang};
 use crate::graph::build::{self, Built, CellPoint, Origin};
+use crate::graph::minimap::{Minimap, MinimapDrag};
 use crate::graph::scene::{self, Drawn, Metrics, Scene, SceneInput};
 use crate::graph::{
     Button, Drag, Glide, GraphState, Hit, HitRect, Keyboard, Node, Presence, Reveal, Side,
@@ -59,10 +60,12 @@ pub(crate) enum GraphAction {
     AutoLayout,
     WantFit,
     WantZoom(ZoomStep),
+    DragMinimap(Option<MinimapDrag>),
     Drawn {
         hits: Vec<HitRect>,
         code_top: BTreeMap<Node, Px>,
     },
+    MinimapDrawn(Option<Minimap>),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -76,6 +79,7 @@ pub(crate) struct GraphFrame {
     pub(crate) deferred: Vec<Action>,
     pub(crate) tooltip: Option<TipAt>,
     pub(crate) zoom: Zoom,
+    pub(crate) minimap: Option<Minimap>,
 }
 
 impl GraphState {
@@ -171,10 +175,12 @@ impl GraphState {
             GraphAction::AutoLayout => self.manual.clear(),
             GraphAction::WantFit => self.fit = Wish::Wanted,
             GraphAction::WantZoom(step) => self.wanted_zoom = Some(step),
+            GraphAction::DragMinimap(minimap_drag) => self.minimap_drag = minimap_drag,
             GraphAction::Drawn { hits, code_top } => {
                 self.hits = hits;
                 self.code_top = code_top;
             }
+            GraphAction::MinimapDrawn(minimap) => self.minimap = minimap,
         }
     }
 
@@ -324,6 +330,64 @@ impl App {
             .zoom
             .next_stop(step, self.model.metrics.font);
         self.zoom_about(measure, canvas, canvas.center(), zoom);
+    }
+
+    fn minimap_input(&mut self, canvas: Rect) {
+        let interaction = self.ui.interaction(ids::GRAPH_MINIMAP.id());
+        let graph = &self.model.graph;
+        let (Some(rect), Some(minimap)) = (interaction.rect(), graph.minimap.as_ref()) else {
+            if graph.minimap_drag.is_some() {
+                self.graph(GraphAction::DragMinimap(None));
+            }
+            return;
+        };
+        if !interaction.down() {
+            if graph.minimap_drag.is_some() {
+                self.graph(GraphAction::DragMinimap(None));
+            }
+            return;
+        }
+        let mouse = self.ui.pointer().mouse;
+        let minimap_drag = graph.minimap_drag.unwrap_or_else(|| {
+            let camera = minimap.camera_on(rect);
+            MinimapDrag {
+                offset: if camera.contains(mouse) {
+                    mouse - camera.center()
+                } else {
+                    Point::default()
+                },
+                world: minimap.world(),
+            }
+        });
+        let centre = minimap.to_world(rect, mouse - minimap_drag.offset);
+        let pan = Point::new(
+            canvas.width / 2 - centre.horizontal,
+            canvas.height / 2 - centre.vertical,
+        );
+        let zoom = graph.zoom;
+        self.graph(GraphAction::DragMinimap(Some(minimap_drag)));
+        self.graph(GraphAction::Camera { zoom, pan });
+    }
+
+    fn graph_minimap(
+        &mut self,
+        placed: Option<Rect>,
+        cell: Extent,
+        focus: Option<Node>,
+    ) -> Option<Minimap> {
+        let graph = &self.model.graph;
+        let minimap = placed.and_then(|canvas| {
+            Minimap::of(
+                &graph.built,
+                canvas,
+                graph.pan,
+                cell,
+                focus,
+                graph.minimap_drag,
+            )
+        });
+        self.graph(GraphAction::MinimapDrawn(minimap.clone()));
+        minimap
     }
 
     fn graph_click(
@@ -535,6 +599,7 @@ impl App {
         let mouse = aim.pointer.mouse;
         let mut deferred = Vec::new();
         self.graph_wheel(measure, &aim);
+        self.minimap_input(canvas);
         let hit = self
             .model
             .graph
@@ -603,6 +668,7 @@ impl App {
             &mut self.grids,
         );
         self.graph(GraphAction::Drawn { hits, code_top });
+        let minimap = self.graph_minimap(placed, cell, focus);
         self.graph(GraphAction::Present(if placed.is_some() {
             Presence::Shown
         } else {
@@ -613,6 +679,7 @@ impl App {
             deferred,
             tooltip,
             zoom,
+            minimap,
         }
     }
 

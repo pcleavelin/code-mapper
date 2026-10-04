@@ -98,7 +98,7 @@ order 25
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 238 274
+lines 241 277
 hash eb40c0dc6d5ee8fa
 note Every padding, gap and fixed pixel measure the widgets and views use, named by where it is used.
 
@@ -185,9 +185,9 @@ parent 7579zm
 author ai
 file crates/gui/src/dump.rs
 symbol dump
-lines 0 59
-hash d22a29df8494da8d
-note The graph: zoom, pan, the canvas rectangle and the camera, the pointer and drag state, then every node's and node button's rectangle by name.
+lines 0 70
+hash 49841cd1ccfa040d
+note The graph: zoom, pan, the canvas rectangle and the camera, the minimap's rectangle, the camera's view on it and whether it is being dragged (or hidden), the pointer and drag state, then every node's and node button's rectangle by name.
 
 step 9pik9m
 order 36
@@ -203,7 +203,7 @@ order 26
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 304 350
+lines 309 355
 hash ef90b8775fabdf5f
 note Every measure counted in cells: button and field widths, column guesses before a panel has a size, the symbol table's columns, tooltip sizes, the gap before a danger button, the status bar's room for the map's place, the panels' floors and the picker's width.
 
@@ -457,8 +457,8 @@ parent 9pik9m
 author ai
 file crates/gui/src/ids.rs
 symbol CONTROLS
-lines 0 109
-hash 832317a9335a9668
+lines 0 110
+hash 5b971046e421bfd4
 note Every control, for the test that checks them against the registry.
 
 step mjhubp

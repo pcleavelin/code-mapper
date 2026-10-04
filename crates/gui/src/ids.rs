@@ -165,6 +165,8 @@ pub(crate) const GRAPH_ZOOM_IN: Control =
     Control::new(Feature::ZoomGraph, Element::new("graph-zoom-in"));
 pub(crate) const GRAPH_ZOOM_OUT: Control =
     Control::new(Feature::ZoomGraph, Element::new("graph-zoom-out"));
+pub(crate) const GRAPH_MINIMAP: Control =
+    Control::new(Feature::Minimap, Element::new("graph-minimap"));
 pub(crate) const PALETTE_FIELD: Control =
     Control::new(Feature::CommandPalette, Element::new("field@palette"));
 pub(crate) const PALETTE_ROW: Control =
@@ -308,6 +310,7 @@ pub(crate) const CONTROLS: &[Control] = &[
     GRAPH_CANVAS,
     GRAPH_ZOOM_IN,
     GRAPH_ZOOM_OUT,
+    GRAPH_MINIMAP,
     PALETTE_FIELD,
     PALETTE_ROW,
     BUILD_TOUR,

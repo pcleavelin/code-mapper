@@ -52,8 +52,6 @@
    step, the next agent session answers it in the map and clears it.
 2. A status dot per language server in the status line (green ready, amber starting or
    indexing, red missing) beside its name. Covers GUI 5.
-3. A graph minimap: the whole graph in a corner with the camera's view drawn on it; click
-   or drag it to move the camera. A way out of GUI 2.
 
 ## Deferred
 

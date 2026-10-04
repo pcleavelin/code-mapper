@@ -32,7 +32,7 @@ parent uounwk
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 41 44
+lines 42 45
 hash 9304b7e04b77e9e7
 note The next graph phase, after layout: a wanted fit runs once the canvas has been placed.
 

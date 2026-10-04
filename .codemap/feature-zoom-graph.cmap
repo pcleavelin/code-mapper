@@ -61,7 +61,7 @@ parent 3tcu6q
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 36 38
+lines 37 39
 hash 0bf55ca836f6ad63
 note The next graph phase runs a wanted step once the canvas has been placed, before layout and drawing, so the frame drawn shows the new zoom.
 

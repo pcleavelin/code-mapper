@@ -1,10 +1,10 @@
 use domain::{Change, FileId, Line, RelativePath, StepChange, SymbolName, TourDiff};
-use ui::{Axis, Count, Icon, Label, Px, Rect, Run, Scrollbar};
+use ui::{Axis, Count, Icon, Label, Px, Rect, Run, Scrollbar, Size};
 
 use crate::action::Action;
 use crate::authoring::Authoring;
 use crate::field::Which;
-use crate::graph::{GraphAction, GraphFrame, draw_scene};
+use crate::graph::{GraphAction, GraphFrame, Minimap, draw_scene};
 use crate::ids::{self, Target};
 use crate::keys::{self, LineGesture};
 use crate::model::{HIT_LIMIT, HitsShown, Model, StepKey, Tab, TourSlot};
@@ -453,6 +453,7 @@ pub(super) fn graph_tab(model: &Model, frame: &mut Frame<'_>, graph: Option<Grap
         deferred,
         tooltip,
         zoom,
+        minimap,
     }) = graph
     else {
         return;
@@ -500,13 +501,27 @@ pub(super) fn graph_tab(model: &Model, frame: &mut Frame<'_>, graph: Option<Grap
         ids::GRAPH_CANVAS.id(),
     );
     if let Some(over) = canvas.rect() {
-        graph_corner(frame, over, zoom);
+        graph_corner(frame, over, zoom, minimap);
     }
 }
 
-fn graph_corner(frame: &mut Frame<'_>, over: Rect, zoom: Zoom) {
+fn graph_corner(frame: &mut Frame<'_>, over: Rect, zoom: Zoom, minimap: Option<Minimap>) {
     frame.start(Container::CanvasCorner { over });
     frame.fill();
+    if let Some(minimap) = minimap {
+        let size = minimap.size();
+        frame.start(Container::FillRow);
+        frame.grow();
+        let target = ids::GRAPH_MINIMAP.target();
+        frame.custom(
+            move |canvas, rect| minimap.draw(canvas, rect),
+            Size::Exact(size.width),
+            size.height,
+            Some(target.id()),
+        );
+        frame.attach_tip(target);
+        frame.finish();
+    }
     frame.start(Container::FillRow);
     frame.grow();
     zoom_cluster(frame, zoom);

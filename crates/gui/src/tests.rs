@@ -23,7 +23,7 @@ use crate::field::{
 };
 use crate::graph::Parentage;
 use crate::graph::build::{Built, CellSize, Rank, StepInfo};
-use crate::graph::{Button, GraphState, Node};
+use crate::graph::{Button, GraphState, Minimap, Node};
 use crate::ids::{self, CONTROLS};
 use crate::keys::{self, Extend, LineGesture, Walk, turn_wheel};
 use crate::model::{LineSelection, Model, Readable, StepKey, StepSlot, Tab, TourSlot, ViewFlag};
@@ -1872,4 +1872,37 @@ fn the_zoom_buttons_move_to_the_next_stop_and_stay_at_the_ends() {
         zoom = zoom.next_stop(ZoomStep::Out, base);
     }
     assert!(near(zoom, 2.0 / 14.0), "{zoom:?}");
+}
+
+#[test]
+fn the_minimap_shows_the_graph_and_the_camera_only_while_part_of_the_graph_is_off_screen() {
+    let model = model();
+    let mut built = built(&model, &[(10, 4), (8, 3), (8, 3)]);
+    built.place_nodes(&model.index);
+    let cell = ui::Extent::new(Px::new(10), Px::new(20));
+    let canvas = ui::Rect::new(Px::new(0), Px::new(0), Px::new(400), Px::new(300));
+    let at = |across: i32, down: i32| ui::Point::new(Px::new(across), Px::new(down));
+    assert_eq!(
+        Minimap::of(&built, canvas, at(0, 0), cell, None, None),
+        None,
+        "the 300x200 graph fits the canvas"
+    );
+    let minimap = Minimap::of(&built, canvas, at(-200, 0), cell, None, None).unwrap();
+    let size = minimap.size();
+    assert_eq!((size.width, size.height), (Px::new(100), Px::new(50)));
+    let placed = ui::Rect::new(Px::new(0), Px::new(0), size.width, size.height);
+    let view = minimap.camera_on(placed);
+    assert_eq!(
+        (view.left, view.width, view.height),
+        (Px::new(33), Px::new(67), Px::new(50)),
+        "the camera covers graph x 200..600 of a world 600 wide"
+    );
+    assert_eq!(minimap.to_world(placed, at(50, 25)), at(300, 150));
+    let left = Minimap::of(&built, canvas, at(200, 0), cell, None, None).unwrap();
+    let wider = ui::Rect::new(Px::new(0), Px::new(0), Px::new(100), Px::new(60));
+    assert_eq!(
+        left.to_world(wider, at(50, 30)),
+        at(50, 150),
+        "the world starts 200 left of the graph, where the camera is"
+    );
 }
