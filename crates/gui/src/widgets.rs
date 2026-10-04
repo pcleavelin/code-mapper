@@ -667,7 +667,7 @@ impl Frame<'_> {
             Style::NONE,
             None,
         );
-        let shown = hovered || marked.is_some();
+        let shown = hovered;
         let action = action.filter(|_| shown).map(|action| {
             self.ui.leaf(
                 text_kind(

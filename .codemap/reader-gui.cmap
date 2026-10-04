@@ -366,8 +366,8 @@ parent j7n739
 author ai
 file crates/gui/src/authoring.rs
 symbol Authoring
-lines 0 9
-hash f8648534bd79380d
+lines 0 8
+hash bd6c97e5f36194e5
 note The authoring gestures as their own enum, carried by the one Action::Authoring variant so Action stays a list of kinds of change rather than every authoring detail (gui-authoring).
 
 step dshcm5
@@ -487,8 +487,8 @@ parent sn1cn1
 author ai
 file crates/gui/src/authoring.rs
 symbol author
-lines 0 11
-hash bd2942c29a65d134
+lines 0 10
+hash 9ae219341b1f8fbc
 link gui-authoring
 note Action::Authoring's arm: author, in authoring.rs, dispatches to the add, target, drag and promote handlers.
 
@@ -711,7 +711,7 @@ file crates/gui/src/views/left.rs
 symbol symbols_window
 lines 0 70
 hash f17b761beff266a5
-note Symbols: a filter box (a Needle matched against symbol names and file paths) with the symbol count, or 'n of m' while filtering, then the symbols grouped under a row per file, each symbol with a check when a tour covers it, dimmed while its file waits for its server, and '+ step' on the hovered or selected row while a tour is open, under the target strip. symbol_lines flattens files and symbols into one list first; only the rows on screen become elements, with a spacer above and below standing in for the rest, so the table is the same cost at ten symbols or ten thousand. The Coverage is built once per frame and handed to every row.
+note Symbols: a filter box (a Needle matched against symbol names and file paths) with the symbol count, or 'n of m' while filtering, then the symbols grouped under a row per file, each symbol with a check when a tour covers it, dimmed while its file waits for its server, and '+ step' on the hovered row while a tour is open, under the target strip. symbol_lines flattens files and symbols into one list first; only the rows on screen become elements, with a spacer above and below standing in for the rest, so the table is the same cost at ten symbols or ten thousand. The Coverage is built once per frame and handed to every row.
 
 step pjv3q6
 order 85

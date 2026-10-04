@@ -110,6 +110,6 @@ parent 2pn03b
 author ai
 file crates/gui/src/authoring.rs
 symbol impl App
-lines 110 117
+lines 109 116
 hash 6182ad56391d22c9
 note grab_step records the step and where the press was; drag_step marks it moving once the mouse has gone GRAB_REACH from there, the same threshold a tab drag uses.

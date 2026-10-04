@@ -2,7 +2,6 @@ use domain::{Change, FileId, Line, RelativePath, StepChange, SymbolName, TourDif
 use ui::{Axis, Count, Label, Px, Rect, Run, Scrollbar};
 
 use crate::action::Action;
-use crate::authoring::Authoring;
 use crate::field::Which;
 use crate::graph::{GraphAction, GraphFrame, draw_scene};
 use crate::ids;
@@ -22,20 +21,6 @@ use super::authoring;
 fn source_toolbar(model: &Model, frame: &mut Frame<'_>, path: &RelativePath) {
     frame.start(Container::Toolbar);
     frame.label(path.as_str(), TEXT);
-    let add = match model.nav.lines() {
-        Some(chosen) if chosen.low() == chosen.high() => {
-            format!("add line {} as a step", chosen.low().number())
-        }
-        Some(chosen) => format!(
-            "add lines {}-{} as a step",
-            chosen.low().number(),
-            chosen.high().number()
-        ),
-        None => "add step".to_owned(),
-    };
-    if frame.control(add, ids::ADD_LINES).clicked() {
-        frame.push(Action::Authoring(Authoring::AddLines));
-    }
     frame.label("line", WEAK);
     frame.field(
         &model.fields,

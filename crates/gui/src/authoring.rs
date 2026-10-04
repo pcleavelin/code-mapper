@@ -8,7 +8,6 @@ use crate::theme::{DROP_BAND_WIDTH, GRAB_REACH};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) enum Authoring {
-    AddLines,
     AddSymbol(SymbolId, Hang),
     AddOffered,
     AddAtTopLevel,
@@ -168,7 +167,6 @@ impl Model {
 impl App {
     pub(crate) fn author(&mut self, action: Authoring) {
         match action {
-            Authoring::AddLines => self.add_lines(),
             Authoring::AddSymbol(symbol, hang) => self.add_symbol(symbol, hang),
             Authoring::AddOffered => self.add_offered(),
             Authoring::AddAtTopLevel => self.add_at_top_level(),

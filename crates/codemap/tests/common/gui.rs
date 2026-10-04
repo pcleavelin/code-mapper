@@ -265,7 +265,8 @@ up
 wait 2
 dump
 shot {shots}/selected.png
-click-id add-lines
+absent add-lines
+click-id add-offer@Source
 wait 2
 dump
 click-id field@goto-line
@@ -585,7 +586,7 @@ open src/store.rs 12
 wait 3
 click-id tab@Source
 wait 2
-click-id add-lines
+click-id add-offer@Source
 wait 2
 dump
 key escape
@@ -641,7 +642,7 @@ wait 2
 click-id field@symbols
 text main
 wait 3
-click-id sym@3:0
+click-id sym@3:2
 wait 2
 click-id add-offer@Symbols
 wait 2
@@ -673,7 +674,7 @@ wait 2
 click-id target-top@Source
 wait 2
 dump
-click-id add-lines
+click-id add-offer@Source
 wait 2
 dump
 shot {shots}/source.png

@@ -10,9 +10,9 @@ order 28
 author ai
 file crates/gui/src/authoring.rs
 symbol Authoring
-lines 0 9
-hash f8648534bd79380d
-note Every authoring gesture as data: the adds (AddLines, AddSymbol with its Hang, AddOffered), AddAtTopLevel, the steps list drag (GrabStep, DragStep, DropStep), and Promote. Views push Action::Authoring(Authoring::X); apply routes it here.
+lines 0 8
+hash bd6c97e5f36194e5
+note Every authoring gesture as data: the adds (AddSymbol with its Hang, AddOffered), AddAtTopLevel, the steps list drag (GrabStep, DragStep, DropStep), and Promote. Views push Action::Authoring(Authoring::X); apply routes it here.
 
 step 1yd8ve
 order 12
@@ -167,8 +167,8 @@ parent 1ctrkp
 author ai
 file crates/gui/src/authoring.rs
 symbol author
-lines 0 11
-hash bd2942c29a65d134
+lines 0 10
+hash 9ae219341b1f8fbc
 note The dispatch from apply: one arm per Authoring variant, each a call to the App method below.
 
 step hjplhc
@@ -237,8 +237,8 @@ author ai
 file crates/gui/src/widgets.rs
 symbol row_with_action
 lines 0 50
-hash 4902d0c9ccb25b9c
-note A clickable row with a trailing action (the '+ step' on Symbols and References rows): one row element holding the text, clipped to the row, and the action, which is shown only while the row is hovered or marked and lit when hovered itself. The action is its own id, and the smallest hovered element wins the hit, so pressing the action is not a click on the row.
+hash b46f5899c93a533c
+note A clickable row with a trailing action (the '+ step' on Symbols and References rows): one row element holding the text, clipped to the row, and the action, which is shown only while the row is hovered and lit when hovered itself. The action is its own id, and the smallest hovered element wins the hit, so pressing the action is not a click on the row.
 
 step nxbjm2
 order 4

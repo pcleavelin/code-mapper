@@ -457,8 +457,8 @@ parent 9pik9m
 author ai
 file crates/gui/src/ids.rs
 symbol CONTROLS
-lines 0 107
-hash 8e526049d74675b7
+lines 0 106
+hash 9850e6773dec2854
 note Every control, for the test that checks them against the registry.
 
 step mjhubp
