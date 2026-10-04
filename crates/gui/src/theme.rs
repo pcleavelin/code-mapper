@@ -161,7 +161,7 @@ impl Zoom {
     pub(crate) const ONE: Self = Self(1.0);
     const SMALLEST: Self = Self(0.1);
     const LARGEST: Self = Self(2.0);
-    const STEP: Self = Self(1.1);
+    const NOTCH_FACTOR: Self = Self(1.1);
 
     pub(crate) const fn get(self) -> f32 {
         self.0
@@ -174,7 +174,7 @@ impl Zoom {
     #[must_use]
     pub(crate) fn wheeled(self, wheel: Coordinate, base: FontSize) -> Self {
         self.times(
-            Self(Self::STEP.0.powf(wheel.get() / WHEEL_NOTCH.get())),
+            Self(Self::NOTCH_FACTOR.0.powf(wheel.get() / WHEEL_NOTCH.get())),
             base,
         )
     }
@@ -184,13 +184,57 @@ impl Zoom {
         self.times(Self(pinch.get().exp()), base)
     }
 
+    #[must_use]
+    pub(crate) fn next_stop(self, step: ZoomStep, base: FontSize) -> Self {
+        let current = self.clamped(base).0;
+        let next = match step {
+            ZoomStep::In => ZOOM_STOPS
+                .iter()
+                .copied()
+                .map(Self::get)
+                .find(|next| *next > current * ZOOM_STOP_SLACK.0)
+                .unwrap_or(current),
+            ZoomStep::Out => ZOOM_STOPS
+                .iter()
+                .rev()
+                .copied()
+                .map(Self::get)
+                .find(|next| *next * ZOOM_STOP_SLACK.0 < current)
+                .unwrap_or(current),
+        };
+        Self(next).clamped(base)
+    }
+
     fn times(self, factor: Self, base: FontSize) -> Self {
+        Self(self.0 * factor.0).clamped(base)
+    }
+
+    fn clamped(self, base: FontSize) -> Self {
         let smallest = Self::SMALLEST
             .0
             .max(SMALLEST_GRAPH_FONT.float() / base.float());
-        Self((self.0 * factor.0).clamp(smallest, Self::LARGEST.0))
+        Self(self.0.clamp(smallest, Self::LARGEST.0))
     }
 }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ZoomStep {
+    In,
+    Out,
+}
+
+const ZOOM_STOPS: [Zoom; 9] = [
+    Zoom::SMALLEST,
+    Zoom(0.25),
+    Zoom(0.33),
+    Zoom(0.5),
+    Zoom(0.75),
+    Zoom(1.0),
+    Zoom(1.25),
+    Zoom(1.5),
+    Zoom::LARGEST,
+];
+const ZOOM_STOP_SLACK: Zoom = Zoom(1.01);
 
 pub(crate) const LABEL_PADDING: Px = Px::new(2);
 pub(crate) const BUTTON_PADDING: Px = Px::new(4);
@@ -295,6 +339,9 @@ pub(crate) const PALETTE_TAG: Cells = Cells::new(8);
 pub(crate) const SETTINGS_WIDTH: Cells = Cells::new(60);
 pub(crate) const SETTINGS_HEADING: Cells = Cells::new(14);
 pub(crate) const SETTINGS_FONT_ROWS: Count = Count::new(10);
+pub(crate) const ZOOM_PERCENT: Cells = Cells::new(6);
+pub(crate) const ZOOM_BUTTON: Cells = Cells::new(3);
+pub(crate) const FIT_BUTTON: Cells = Cells::new(5);
 
 pub(crate) const RATIO_WHOLE: Ratio = Ratio::permille(1000);
 pub(crate) const HALF: Ratio = Ratio::permille(500);

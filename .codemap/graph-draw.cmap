@@ -60,18 +60,18 @@ order 6
 author ai
 file crates/gui/src/views/center.rs
 symbol graph_tab
-lines 0 63
-hash c4c892bcc2c13c6e
-note The view: the deferred actions pushed (a hover through push_hover), the tooltip set, then the toolbar - '1:1' which resets the zoom and re-centres, 'auto layout' which drops every dragged position, 'fit' which zooms out until the whole tree is on the canvas and centres it, the direction button (graph-turn, labelled with the direction it switches to: 'top to bottom' or 'left to right'), the zoom percentage, and one clipped caption: while a tour is being read, its name and a legend drawn in the edge colours themselves (green step, dim revealed, orange call back up), then the pan and zoom gestures spelled out - then the canvas element whose closure paints the scene. The target strip above the toolbar offers add-offer@Graph. The toolbar itself holds no authoring control, and '+ step' still lives on off-tour nodes.
+lines 0 56
+hash f84795bbc1c8098a
+note The view: the deferred actions pushed (a hover through push_hover), the tooltip set, then the toolbar - 'auto layout' which drops every dragged position, the direction button (graph-turn, labelled with the direction it switches to: 'top to bottom' or 'left to right'), and one clipped caption: while a tour is being read, its name and a legend drawn in the edge colours themselves (green step, dim revealed, orange call back up), then the pan and zoom gestures spelled out - then the canvas element whose closure paints the scene, and over it, once the canvas has a rectangle from last frame, graph_corner: a floating column the size of the canvas whose last row holds the zoom cluster in the bottom-right corner (zoom out, the zoom percentage which resets to 1:1, zoom in, fit). The overlay has no id, so only its buttons take the pointer from the canvas. The target strip above the toolbar offers add-offer@Graph. The toolbar itself holds no authoring control, and '+ step' still lives on off-tour nodes.
 
 step 4yhd4f
 order 0
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 0 88
-hash 193519a399e5a90a
-note The phase, in order: the canvas element's interaction and last frame's rectangle (a guessed square until it has one), the wheel, the hit under the mouse from last frame's hits (the last recorded wins), a press engaging or releasing the graph's keyboard by whether it landed inside the canvas, a click, a drag, releasing the drag once the button is up, the hover tooltip, then the rebuild and layout, the camera and its glide step, the scene, and finally the graph marked Shown or Hidden by whether the canvas has a rectangle. It returns the scene with the deferred actions, the tooltip and the zoom for the toolbar.
+lines 0 91
+hash 2fd07e0edae11b98
+note The phase, in order: the canvas element's interaction and last frame's rectangle (a guessed square until it has one), the wheel, the hit under the mouse from last frame's hits (the last recorded wins), a press engaging or releasing the graph's keyboard by whether it landed inside the canvas, a click, a drag, releasing the drag once the button is up, a zoom step the cluster's buttons asked for, the hover tooltip, then the rebuild and layout, the camera and its glide step, the scene, and finally the graph marked Shown or Hidden by whether the canvas has a rectangle. It returns the scene with the deferred actions, the tooltip and the zoom for the toolbar.
 
 step 5ho1e1
 order 5
@@ -270,7 +270,7 @@ parent 4yhd4f
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 38 53
+lines 41 56
 hash 67cc42f01fd6c340
 link graph-camera
 note The camera's turn once the layout exists (see the graph-camera flow).
@@ -371,8 +371,8 @@ parent 4yhd4f
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_wheel
-lines 0 51
-hash 481fa99dc819a2e2
+lines 0 37
+hash 28a1aa1fd411ae9e
 note The wheel, when the canvas is hovered or a drag is in progress: a pinch or ctrl+wheel zooms in proportion to the gesture and keeps the cell under the mouse still, computed from the old and new cell sizes rather than the zoom factor; the wheel pans by its pixel delta on both axes, and shift+wheel, turned sideways by keys::turn_wheel before the frame, pans across. Both send a Camera action.
 
 step sj6fsf
@@ -434,6 +434,16 @@ symbol HitRect
 lines 0 3
 hash db6f9906b127fc56
 note A hit and its rectangle in window pixels, clipped to the canvas. GraphState keeps last frame's list in drawing order, and the input phase searches it from the end so the topmost hit wins.
+
+step xqccdb
+order 44
+parent 2mnh2a
+author ai
+file crates/gui/src/views/center.rs
+symbol graph_corner
+lines 0 8
+hash 8fa05e5efe8fcae0
+note The overlay over the canvas: a floating column exactly the canvas's last rectangle, padded by GRAPH_MARGIN, a fill pushing its last row to the bottom, and in that row a grow before the zoom cluster so the cluster sits in the bottom-right corner without measuring itself.
 
 step z5x3is
 order 2

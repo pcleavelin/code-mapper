@@ -11,10 +11,10 @@ parent ur7axf
 author ai
 file crates/gui/src/graph/input.rs
 symbol apply
-lines 2 6
-hash 90df5a483085c9cc
+lines 2 7
+hash dc0295a53e49a411
 link graph-camera
-note Stores the camera; a glide in progress is dropped.
+note Stores the camera; a glide in progress and a wanted zoom step are dropped.
 
 step 7n2j2f
 order 6
@@ -62,8 +62,8 @@ parent uyp9xc
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_wheel
-lines 15 50
-hash 0c5138e9522bcc8d
+lines 15 36
+hash f38a6a691a4cf251
 note The handler for the wheel, once zoom is ruled out: the pan moves by the wheel's pixel delta on both axes, whatever the zoom, so content follows a trackpad's two-finger swipe one to one; shift+wheel arrives here already turned sideways by keys::turn_wheel (the ScrollCode gesture), so it pans across.
 
 step uyp9xc
@@ -71,6 +71,6 @@ order 0
 author ai
 file crates/gui/src/graph/input.rs
 symbol apply
-lines 50 56
+lines 51 57
 hash bf42bfb1e4738b61
 note The handler for a background drag: adds the frame's drag delta to the pan and drops any glide in progress, so the reader's move wins over a camera glide.

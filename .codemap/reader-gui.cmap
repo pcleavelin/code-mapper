@@ -161,8 +161,8 @@ parent bg9t38
 author ai
 file crates/gui/src/views/center.rs
 symbol graph_tab
-lines 0 63
-hash c4c892bcc2c13c6e
+lines 0 56
+hash f84795bbc1c8098a
 link graph-draw
 note The Graph tab: the toolbar, and the scene the graph's input phase built, drawn on one canvas element. Actions the graph phase deferred are pushed here with the rest.
 

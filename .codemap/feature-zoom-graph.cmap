@@ -3,28 +3,37 @@ tour feature-zoom-graph
 kind flow
 author ai
 group features/gui
-note A trackpad pinch or ctrl+wheel over the graph zooms it around the pointer: the point under the pointer stays under it. The reader reaches for it to shrink a large tree to see its whole shape, or enlarge one area to read it, which 'fit' alone cannot do (TODO.md GUI item 2). The zoom changes in proportion to the gesture (a pinch's magnification, or the wheel's pixel delta, one Zoom step per WHEEL_NOTCH pixels), so a trackpad's many small scroll events add up to the same zoom as one mouse notch of the same distance. The zoom is a font size; the toolbar shows it as a percentage. It goes down until the graph font is SMALLEST_GRAPH_FONT (a few pixels, an overview where boxes and edges are legible but text is not) or Zoom::SMALLEST, whichever is larger.
+note Two ways to zoom the graph. A trackpad pinch or ctrl+wheel over the canvas zooms around the pointer: the point under the pointer stays under it. The reader reaches for it to shrink a large tree to see its whole shape, or enlarge one area to read it, which 'fit' alone cannot do (TODO.md GUI item 2). The zoom changes in proportion to the gesture (a pinch's magnification, or the wheel's pixel delta, one Zoom step per WHEEL_NOTCH pixels), so a trackpad's many small scroll events add up to the same zoom as one mouse notch of the same distance. The - and + buttons of the zoom cluster in the canvas's bottom-right corner (the map and design-app convention: zoom out, the percentage, zoom in, fit) zoom around the canvas centre to the next of a fixed set of stops (ZOOM_STOPS, 10% to 200%), for a reader with a mouse and no ctrl+wheel habit, or who wants a round zoom back; the percentage between them shows the zoom. Either way the zoom is a font size. It goes down until the graph font is SMALLEST_GRAPH_FONT (a few pixels, an overview where boxes and edges are legible but text is not) or Zoom::SMALLEST, whichever is larger.
 
 step 3tcu6q
 order 3
-parent du7vlm
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
 lines 11 11
 hash bc005286f979fffc
-note Trigger: the graph phase reads the wheel first, before clicks and drags.
+note The handler: each graph phase reads the wheel and pinch first, before clicks and drags (graph_wheel), and runs a zoom step the cluster's buttons asked for once the canvas is placed; both end in zoom_about.
+
+step 4315gh
+order 8
+parent 5pqkz3
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_zoom_step
+lines 0 7
+hash aaead0cb8e988fc1
+note The next stop from the current zoom, applied about the canvas centre through zoom_about; the Camera it sends clears the wish.
 
 step 4d9r3b
 order 2
-parent du7vlm
+parent gcs2nd
 author ai
 file crates/gui/src/graph/input.rs
 symbol apply
-lines 2 6
-hash 90df5a483085c9cc
+lines 2 7
+hash dc0295a53e49a411
 link graph-camera
-note Stores zoom and pan together and drops any glide in progress.
+note Stores zoom and pan together and drops any glide in progress and any zoom step still wanted.
 
 step 4j58dm
 order 1
@@ -36,11 +45,82 @@ lines 0 12
 hash 5819eba640507f77
 note Classifies the wheel from the registry's gestures: ctrl is zoom, shift is sideways scrolling, anything else plain scrolling.
 
+step 5egvua
+order 11
+parent jqitvx
+author ai
+file crates/gui/src/theme.rs
+symbol ZoomStep
+lines 0 3
+hash 12becf244bdf11f9
+note Which way a button steps: In to the next larger stop, Out to the next smaller.
+
+step 5pqkz3
+order 7
+parent 3tcu6q
+author ai
+file crates/gui/src/graph/input.rs
+symbol graph_phase
+lines 36 38
+hash 0bf55ca836f6ad63
+note The next graph phase runs a wanted step once the canvas has been placed, before layout and drawing, so the frame drawn shows the new zoom.
+
+step 9wzb1n
+order 6
+parent 3tcu6q
+author ai
+file crates/gui/src/graph/input.rs
+symbol apply
+lines 91 91
+hash 7fd64d7b2f1b20d3
+note Stores the wanted step; the zoom about the centre needs the canvas rectangle and the cell sizes, so it runs in the next graph phase.
+
 step du7vlm
 order 0
+parent 3tcu6q
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_wheel
-lines 0 41
-hash 29b759f7564b8bc7
-note The handler: a pinch, or the wheel with the ZoomGraph ctrl gesture held, gives the new zoom (Zoom::by_pinch, Zoom::wheeled), and the pan is recomputed so the cell-space point under the mouse lands at the same pixel with the new cell size. A pinch zooms whatever modifiers are held.
+lines 0 27
+hash 8efc9bcfd825ce63
+note The handler: a pinch, or the wheel with the ZoomGraph ctrl gesture held, gives the new zoom (Zoom::by_pinch, Zoom::wheeled), and zoom_about keeps the point under the mouse where it is. A pinch zooms whatever modifiers are held.
+
+step gcs2nd
+order 4
+parent du7vlm
+author ai
+file crates/gui/src/graph/input.rs
+symbol zoom_about
+lines 0 15
+hash 64fa984e376aad1c
+note Recomputes the pan so the cell-space point under a given screen point lands at the same pixel with the new cell size, then sets zoom and pan as one Camera action. The wheel passes the mouse, the buttons the canvas centre.
+
+step jqitvx
+order 9
+parent 4315gh
+author ai
+file crates/gui/src/theme.rs
+symbol next_stop
+lines 0 18
+hash a2a0b587d0ab4636
+note The stop strictly past the current zoom (with ZOOM_STOP_SLACK so a zoom a hair off a stop does not stop there again), clamped to the same smallest and largest zoom the gestures have, so the buttons at either end leave the zoom where it is.
+
+step o2xwmn
+order 5
+parent 3tcu6q
+author ai
+file crates/gui/src/views/center.rs
+symbol zoom_cluster
+lines 0 28
+hash 2b6dde64ad59649b
+note Trigger: the zoom cluster floats in the canvas's bottom-right corner (graph_corner); its - and + buttons queue WantZoom(Out) and WantZoom(In), and each carries the feature's tooltip.
+
+step ws1lfg
+order 10
+parent o2xwmn
+author ai
+file crates/gui/src/views/center.rs
+symbol cluster_button
+lines 0 8
+hash 7fedfaa19f020238
+note One cluster button: the label centred in a fixed number of cells, so the cluster keeps its width as the percentage changes, and the button's feature attached as its tooltip.

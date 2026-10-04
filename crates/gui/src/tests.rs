@@ -11,7 +11,7 @@ use features::{Feature, Trigger};
 use io_map::MapStore;
 use platform::ClipboardRequest;
 use strum::VariantArray;
-use ui::{Count, Input, Key, Label, Mods, Press, Px, Typed};
+use ui::{Count, FontSize, Input, Key, Label, Mods, Press, Px, Typed};
 
 use crate::action::{Action, Collapse, Hide};
 use crate::app::App;
@@ -32,7 +32,7 @@ use crate::palette::{Palette, commands};
 use crate::panels::{Direction, View};
 use crate::peek::Hovering;
 use crate::status::{Held, Status};
-use crate::theme::Cells;
+use crate::theme::{Cells, Zoom, ZoomStep};
 use crate::wizard::{self, BranchId, Expander, Page, Tick, WizardAct};
 
 #[test]
@@ -1843,4 +1843,33 @@ fn opening_the_peek_closes_the_hover_card_until_the_pointer_reaches_another_word
     app.apply(Action::ReopenHover);
     assert!(shown(&app, on_report));
     assert!(shown(&app, on_fill), "back on fill the card shows again");
+}
+
+fn near(zoom: Zoom, expected: f32) -> bool {
+    (zoom.get() - expected).abs() < 0.001
+}
+
+#[test]
+fn the_zoom_buttons_move_to_the_next_stop_and_stay_at_the_ends() {
+    let base = FontSize::new(14);
+    let out = Zoom::ONE.next_stop(ZoomStep::Out, base);
+    assert!(near(out, 0.75), "{out:?}");
+    assert!(near(out.next_stop(ZoomStep::In, base), 1.0));
+    let between = Zoom::of_fonts(FontSize::new(10), base);
+    assert!(near(between.next_stop(ZoomStep::In, base), 0.75));
+    assert!(near(between.next_stop(ZoomStep::Out, base), 0.5));
+    let hair_over = Zoom::of_fonts(FontSize::new(1000), FontSize::new(1333));
+    assert!(
+        near(hair_over.next_stop(ZoomStep::Out, FontSize::new(1333)), 0.5),
+        "a zoom a hair past a stop steps past it, not onto it"
+    );
+    let mut zoom = Zoom::ONE;
+    for _ in 0..20 {
+        zoom = zoom.next_stop(ZoomStep::In, base);
+    }
+    assert!(near(zoom, 2.0), "{zoom:?}");
+    for _ in 0..20 {
+        zoom = zoom.next_stop(ZoomStep::Out, base);
+    }
+    assert!(near(zoom, 2.0 / 14.0), "{zoom:?}");
 }

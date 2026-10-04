@@ -20,11 +20,11 @@ use crate::peek::Tip;
 use crate::status::Status;
 use crate::theme::{
     self, ACCENT, BACKGROUND, BAR_PADDING, BORDER, BUTTON_PADDING, Cells, DANGER_HOVER,
-    DOCUMENT_PADDING, DROP_BAND, FAINT, FIELD, FIELD_CARET_ROOM, FIELD_PADDING, GAP, HOVER,
-    INDENT_EXTRA, LABEL_PADDING, NAV_BUTTON, NAV_BUTTON_EXTRA, NOTE_ROWS_LEAST, NOTE_ROWS_MOST,
-    PALETTE_TAG, PANEL, PANEL_PADDING, RED, ROW_PADDING, SELECTED, SMALL_BUTTON_EXTRA,
-    SMALL_BUTTON_PADDING, SMALL_GAP, STATUS_GAP, STEP_SPACER, TAB_PADDING, TAB_STRIP, TEXT,
-    TIGHT_GAP, TOOLTIP_PADDING, WEAK, WIDE_GAP,
+    DOCUMENT_PADDING, DROP_BAND, FAINT, FIELD, FIELD_CARET_ROOM, FIELD_PADDING, GAP, GRAPH_MARGIN,
+    HOVER, INDENT_EXTRA, LABEL_PADDING, NAV_BUTTON, NAV_BUTTON_EXTRA, NOTE_ROWS_LEAST,
+    NOTE_ROWS_MOST, PALETTE_TAG, PANEL, PANEL_PADDING, RED, ROW_PADDING, SELECTED,
+    SMALL_BUTTON_EXTRA, SMALL_BUTTON_PADDING, SMALL_GAP, STATUS_GAP, STEP_SPACER, TAB_PADDING,
+    TAB_STRIP, TEXT, TIGHT_GAP, TOOLTIP_PADDING, WEAK, WIDE_GAP,
 };
 
 use crate::field::Fields;
@@ -114,6 +114,8 @@ pub(crate) enum Container {
     PanelHeader,
     Centered,
     StartPage { width: Px },
+    CanvasCorner { over: Rect },
+    Cluster,
 }
 
 struct Shape {
@@ -149,6 +151,29 @@ fn marked(selected: Chosen) -> Style {
 }
 
 impl Container {
+    fn overlay_shape(self) -> Shape {
+        match self {
+            Self::CanvasCorner { over } => Shape::new(
+                Layout::column()
+                    .floating(over.origin())
+                    .width(over.width)
+                    .height(over.height)
+                    .padding(GRAPH_MARGIN)
+                    .gap(SMALL_GAP),
+                Style::NONE,
+                None,
+            ),
+            _ => Shape::new(
+                Layout::row()
+                    .padding(TIGHT_GAP)
+                    .gap(TIGHT_GAP)
+                    .cross(Align::Center),
+                Style::background(PANEL).border(Sides::ALL, BORDER),
+                None,
+            ),
+        }
+    }
+
     fn page_shape(self) -> Shape {
         let layout = match self {
             Self::StartPage { width } => Layout::column().width(width),
@@ -250,6 +275,7 @@ impl Container {
                 }),
             ),
             Self::Centered | Self::StartPage { .. } => self.page_shape(),
+            Self::CanvasCorner { .. } | Self::Cluster => self.overlay_shape(),
             Self::PanelHeader => Shape::new(
                 Layout::row().grow_width().cross(Align::Center),
                 Style::background(TAB_STRIP).border(Sides::BOTTOM, BORDER),
@@ -381,6 +407,11 @@ impl Frame<'_> {
     pub(crate) fn grow(&mut self) {
         self.ui
             .leaf(Kind::None, Layout::row().grow_width(), Style::NONE, None);
+    }
+
+    pub(crate) fn fill(&mut self) {
+        self.ui
+            .leaf(Kind::None, Layout::column().grow(), Style::NONE, None);
     }
 
     pub(crate) fn spacer(&mut self, height: Px) {

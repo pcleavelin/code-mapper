@@ -12,7 +12,7 @@ use ui::{Coordinate, Point, Px, Rect, Vector};
 
 use crate::model::StepSlot;
 use crate::panels::Direction;
-use crate::theme::Zoom;
+use crate::theme::{Zoom, ZoomStep};
 
 pub(crate) use build::Built;
 pub(crate) use input::{GraphAction, GraphFrame, Heading};
@@ -163,6 +163,7 @@ pub(crate) struct GraphState {
     keyboard: Keyboard,
     presence: Presence,
     fit: Wish,
+    wanted_zoom: Option<ZoomStep>,
     keep: Option<Kept>,
     built: Built,
     hits: Vec<HitRect>,
@@ -189,6 +190,7 @@ impl Default for GraphState {
             keyboard: Keyboard::Elsewhere,
             presence: Presence::Hidden,
             fit: Wish::Settled,
+            wanted_zoom: None,
             keep: None,
             built: Built::default(),
             hits: Vec::new(),
@@ -342,6 +344,7 @@ impl GraphState {
         self.root = camera.root.as_ref().and_then(|root| node_of(index, root));
         self.look = Wish::Settled;
         self.fit = Wish::Settled;
+        self.wanted_zoom = None;
         self.glide = None;
         self.keep = None;
         self.steering = None;

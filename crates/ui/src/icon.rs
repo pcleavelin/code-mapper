@@ -8,6 +8,7 @@ use crate::text::Label;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, VariantArray)]
 pub enum Icon {
     Add,
+    Remove,
     Close,
     SplitRight,
     SplitDown,
@@ -43,6 +44,7 @@ impl Icon {
     pub const fn glyph(self) -> Glyph {
         Glyph::new(match self {
             Self::Add => '\u{EA60}',
+            Self::Remove => '\u{EB3B}',
             Self::Close => '\u{EA76}',
             Self::SplitRight => '\u{EB56}',
             Self::SplitDown => '\u{EB57}',
@@ -63,6 +65,7 @@ impl Icon {
     pub const fn name(self) -> IconName {
         IconName(match self {
             Self::Add => "add",
+            Self::Remove => "remove",
             Self::Close => "close",
             Self::SplitRight => "split-right",
             Self::SplitDown => "split-down",

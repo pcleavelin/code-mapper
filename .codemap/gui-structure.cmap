@@ -98,7 +98,7 @@ order 25
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 194 230
+lines 238 274
 hash eb40c0dc6d5ee8fa
 note Every padding, gap and fixed pixel measure the widgets and views use, named by where it is used.
 
@@ -203,8 +203,8 @@ order 26
 parent l7bll4
 author ai
 file crates/gui/src/theme.rs
-lines 260 303
-hash 76d9713c92640c8b
+lines 304 350
+hash ef90b8775fabdf5f
 note Every measure counted in cells: button and field widths, column guesses before a panel has a size, the symbol table's columns, tooltip sizes, the gap before a danger button, the status bar's room for the map's place, the panels' floors and the picker's width.
 
 step an1gef
@@ -380,9 +380,9 @@ parent jp7qh7
 author ai
 file crates/gui/src/theme.rs
 symbol impl Zoom
-lines 0 33
-hash 06bbf4a50bb5c6cd
-note One is 100%; of_fonts recovers a zoom from two font sizes; wheeled and by_pinch scale it in proportion to the gesture and clamp it, the lower bound being wherever the graph font would fall below SMALLEST_GRAPH_FONT so no part of the range does nothing.
+lines 0 58
+hash e23ef3e9a60d0fa9
+note One is 100%; of_fonts recovers a zoom from two font sizes; wheeled and by_pinch scale it in proportion to the gesture and clamp it, next_stop moves to the next of ZOOM_STOPS for the zoom cluster's buttons, the lower bound being wherever the graph font would fall below SMALLEST_GRAPH_FONT so no part of the range does nothing.
 
 step ig3dba
 order 15
@@ -420,7 +420,7 @@ file crates/gui/src/theme.rs
 symbol Zoom
 lines 0 0
 hash c1aa601f213b32e5
-note The graph's zoom, between 0.3 and 2, stepped by 10% a wheel notch.
+note The graph's zoom, between 0.3 and 2, scaled by NOTCH_FACTOR (10%) a wheel notch, or moved to the next of ZOOM_STOPS by the zoom cluster's buttons.
 
 step l7bll4
 order 27
@@ -457,8 +457,8 @@ parent 9pik9m
 author ai
 file crates/gui/src/ids.rs
 symbol CONTROLS
-lines 0 107
-hash 8e526049d74675b7
+lines 0 109
+hash 832317a9335a9668
 note Every control, for the test that checks them against the registry.
 
 step mjhubp

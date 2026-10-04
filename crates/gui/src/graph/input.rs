@@ -23,7 +23,7 @@ use crate::model::{Context, StepKey};
 use crate::nav::Scrolling;
 use crate::peek::Hovering;
 use crate::peek::Intent;
-use crate::theme::{self, CANVAS_GUESS, Cells, GLIDE_TIME, GRAPH_MARGIN, PIXEL, Zoom};
+use crate::theme::{self, CANVAS_GUESS, Cells, GLIDE_TIME, GRAPH_MARGIN, PIXEL, Zoom, ZoomStep};
 use crate::widgets::TipAt;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -58,6 +58,7 @@ pub(crate) enum GraphAction {
     OneToOne,
     AutoLayout,
     WantFit,
+    WantZoom(ZoomStep),
     Drawn {
         hits: Vec<HitRect>,
         code_top: BTreeMap<Node, Px>,
@@ -82,6 +83,7 @@ impl GraphState {
         match action {
             GraphAction::Camera { zoom, pan } => {
                 self.glide = None;
+                self.wanted_zoom = None;
                 self.zoom = zoom;
                 self.pan = pan;
             }
@@ -168,6 +170,7 @@ impl GraphState {
             }
             GraphAction::AutoLayout => self.manual.clear(),
             GraphAction::WantFit => self.fit = Wish::Wanted,
+            GraphAction::WantZoom(step) => self.wanted_zoom = Some(step),
             GraphAction::Drawn { hits, code_top } => {
                 self.hits = hits;
                 self.code_top = code_top;
@@ -283,21 +286,7 @@ impl App {
             None
         };
         if let Some(zoom) = zoom {
-            let old = measure.cell(self.graph_font());
-            let new = measure.cell(theme::graph_font(base, zoom));
-            let mouse_across = (mouse.horizontal - canvas.left).float();
-            let mouse_down = (mouse.vertical - canvas.top).float();
-            let unit_across = (mouse_across - pan.horizontal.float()) / old.width.float();
-            let unit_down = (mouse_down - pan.vertical.float()) / old.height.float();
-            self.graph(GraphAction::Camera {
-                zoom,
-                pan: Point::new(
-                    round(Coordinate::new(
-                        mouse_across - unit_across * new.width.float(),
-                    )),
-                    round(Coordinate::new(mouse_down - unit_down * new.height.float())),
-                ),
-            });
+            self.zoom_about(measure, canvas, mouse, zoom);
             return;
         }
         let step = |delta: f32| round(Coordinate::new(delta));
@@ -309,6 +298,32 @@ impl App {
             zoom: self.model.graph.zoom,
             pan,
         });
+    }
+
+    fn zoom_about(&mut self, measure: &mut dyn Measure, canvas: Rect, at: Point, zoom: Zoom) {
+        let pan = self.model.graph.pan;
+        let old = measure.cell(self.graph_font());
+        let new = measure.cell(theme::graph_font(self.model.metrics.font, zoom));
+        let at_across = (at.horizontal - canvas.left).float();
+        let at_down = (at.vertical - canvas.top).float();
+        let unit_across = (at_across - pan.horizontal.float()) / old.width.float();
+        let unit_down = (at_down - pan.vertical.float()) / old.height.float();
+        self.graph(GraphAction::Camera {
+            zoom,
+            pan: Point::new(
+                round(Coordinate::new(at_across - unit_across * new.width.float())),
+                round(Coordinate::new(at_down - unit_down * new.height.float())),
+            ),
+        });
+    }
+
+    fn graph_zoom_step(&mut self, measure: &mut dyn Measure, canvas: Rect, step: ZoomStep) {
+        let zoom = self
+            .model
+            .graph
+            .zoom
+            .next_stop(step, self.model.metrics.font);
+        self.zoom_about(measure, canvas, canvas.center(), zoom);
     }
 
     fn graph_click(
@@ -543,6 +558,9 @@ impl App {
         }
         if !interaction.down() {
             self.graph(GraphAction::Grab(None));
+        }
+        if let (Some(step), Some(_)) = (self.model.graph.wanted_zoom, placed) {
+            self.graph_zoom_step(measure, canvas, step);
         }
         let tooltip = self.graph_hover(measure, &aim, hit, &mut deferred);
         self.graph_layout();

@@ -3,7 +3,7 @@ tour graph-camera
 kind flow
 author ai
 group gui/graph
-note When the graph's camera moves, and why it otherwise does not. Pan and zoom are two plain fields on GraphState, and like every graph field they change only through a GraphAction applied by GraphState::apply: the wheel sends Camera, dragging the background sends Pan, and the camera's own moves arrive as Look, Keep and Fitted. The one other writer is restore_camera, which back and forward use to return a place's camera as it was left. So a rebuild, an edit or a re-index never slides the view out from under the reader. Two things ask for a move, each by setting a Wish to Wanted: a focus change (look: centre the node, or align its top when it is taller than the canvas) and the fit button (fit: the largest font at which the whole tree fits, then pan so it sits centred; 1:1 resets the zoom and asks for a look). Who changed the focus decides whether it looks: a click on a node keeps the camera still, an arrow-key walk inside the graph and any navigation from outside it look. A look glides: while the graph was on screen last frame the pan eases to the target over GLIDE_TIME, and while it was hidden it jumps, since there is nothing to watch; the reader's own camera move, a fit or 1:1 drops a glide in progress. A node button that changes the tree's shape (callees, callers, more/less) instead keeps its node still: the pan follows the relayout so the button stays under the pointer and the new nodes appear beside it. The layout is in cells and rows, which no zoom changes, so fit settles both zoom and pan in one frame instead of converging over several. Both keep GRAPH_MARGIN pixels between the canvas edge and what they bring into view, and neither runs until the canvas element has a rectangle from last frame.
+note When the graph's camera moves, and why it otherwise does not. Pan and zoom are two plain fields on GraphState, and like every graph field they change only through a GraphAction applied by GraphState::apply: the wheel and the zoom cluster's - and + buttons send Camera (the buttons through a wanted ZoomStep the next graph phase turns into a zoom about the canvas centre), dragging the background sends Pan, and the camera's own moves arrive as Look, Keep and Fitted. The one other writer is restore_camera, which back and forward use to return a place's camera as it was left. So a rebuild, an edit or a re-index never slides the view out from under the reader. Two things ask for a move, each by setting a Wish to Wanted: a focus change (look: centre the node, or align its top when it is taller than the canvas) and the fit button of the zoom cluster (fit: the largest font at which the whole tree fits, then pan so it sits centred; 1:1 resets the zoom and asks for a look). Who changed the focus decides whether it looks: a click on a node keeps the camera still, an arrow-key walk inside the graph and any navigation from outside it look. A look glides: while the graph was on screen last frame the pan eases to the target over GLIDE_TIME, and while it was hidden it jumps, since there is nothing to watch; the reader's own camera move, a fit or 1:1 drops a glide in progress. A node button that changes the tree's shape (callees, callers, more/less) instead keeps its node still: the pan follows the relayout so the button stays under the pointer and the new nodes appear beside it. The layout is in cells and rows, which no zoom changes, so fit settles both zoom and pan in one frame instead of converging over several. Both keep GRAPH_MARGIN pixels between the canvas edge and what they bring into view, and neither runs until the canvas element has a rectangle from last frame.
 
 step 1txvkk
 order 13
@@ -11,7 +11,7 @@ parent gknv1n
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 77 81
+lines 80 84
 hash dc3130dd559484b7
 note The end of the phase: Shown once the canvas element has a rectangle, Hidden before that.
 
@@ -20,8 +20,8 @@ order 19
 author ai
 file crates/gui/src/graph.rs
 symbol restore_camera
-lines 0 9
-hash 7b6a275a8136dd1f
+lines 0 10
+hash 0d98b22bf56e7ec8
 note Puts a saved camera back when back or forward returns to a place: pan, zoom and the kept root, then every wish and the glide, keep and steering are settled or dropped, so nothing looks, fits or glides away from the restored view on the next frame.
 
 step 729kbs
@@ -69,7 +69,7 @@ order 0
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 38 53
+lines 41 56
 hash 67cc42f01fd6c340
 note The frame's camera hooks in graph_phase, after the layout: the fit when one is wanted and the canvas has been placed, then this frame's cell size recorded with a Cell action so rect_at can give pixel rectangles, then the focus node looked up and move_camera, then one GlideStep with the frame's time so a glide in progress advances. The fit runs here rather than inside GraphState because it needs the renderer's Measure for the font metrics.
 

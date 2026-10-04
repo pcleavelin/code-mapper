@@ -1,19 +1,20 @@
 use domain::{Change, FileId, Line, RelativePath, StepChange, SymbolName, TourDiff};
-use ui::{Axis, Count, Label, Px, Rect, Run, Scrollbar};
+use ui::{Axis, Count, Icon, Label, Px, Rect, Run, Scrollbar};
 
 use crate::action::Action;
 use crate::authoring::Authoring;
 use crate::field::Which;
 use crate::graph::{GraphAction, GraphFrame, draw_scene};
-use crate::ids;
+use crate::ids::{self, Target};
 use crate::keys::{self, LineGesture};
 use crate::model::{HIT_LIMIT, HitsShown, Model, StepKey, Tab, TourSlot};
 use crate::panels::{Direction, View};
 use crate::status::Status;
 use crate::text::{Counted, Noun, Tag};
 use crate::theme::{
-    EDGE_SCROLL_BAND, EDGE_SCROLL_MOST, FIELD, GREEN, LINE_FIELD, LINES_SELECTED, ORANGE, PIXEL,
-    RED, ROW_EXTRA, SOURCE_GUESS, TEXT, WEAK,
+    Cells, EDGE_SCROLL_BAND, EDGE_SCROLL_MOST, FIELD, FIT_BUTTON, GREEN, LINE_FIELD,
+    LINES_SELECTED, ORANGE, PIXEL, RED, ROW_EXTRA, SOURCE_GUESS, TEXT, WEAK, ZOOM_BUTTON,
+    ZOOM_PERCENT, Zoom, ZoomStep,
 };
 use crate::widgets::{Chosen, CodeBlock, Coded, Container, Frame, Marks, Padding, Scroller, Width};
 
@@ -467,19 +468,10 @@ pub(super) fn graph_tab(model: &Model, frame: &mut Frame<'_>, graph: Option<Grap
     }
     frame.start(Container::Toolbar);
     if frame
-        .small_button("1:1", ids::GRAPH_ONE_TO_ONE.target())
-        .clicked()
-    {
-        frame.push(Action::Graph(GraphAction::OneToOne));
-    }
-    if frame
         .small_button("auto layout", ids::GRAPH_AUTO.target())
         .clicked()
     {
         frame.push(Action::Graph(GraphAction::AutoLayout));
-    }
-    if frame.small_button("fit", ids::GRAPH_FIT.target()).clicked() {
-        frame.push(Action::Graph(GraphAction::WantFit));
     }
     let turn = match model.graph.direction() {
         Direction::Right => "top to bottom",
@@ -488,7 +480,6 @@ pub(super) fn graph_tab(model: &Model, frame: &mut Frame<'_>, graph: Option<Grap
     if frame.small_button(turn, ids::GRAPH_TURN.target()).clicked() {
         frame.push(Action::Graph(GraphAction::Turn));
     }
-    frame.label(format!("{:.0}%", zoom.get() * 100.0), WEAK);
     let mut runs = Vec::new();
     if let Some(tour) = model.graph.built().tour.and_then(|tour| model.tour(tour)) {
         runs.extend([
@@ -504,8 +495,61 @@ pub(super) fn graph_tab(model: &Model, frame: &mut Frame<'_>, graph: Option<Grap
     ));
     frame.caption(runs);
     frame.finish();
-    frame.canvas(
+    let canvas = frame.canvas(
         move |canvas, _| draw_scene(canvas, &scene),
         ids::GRAPH_CANVAS.id(),
     );
+    if let Some(over) = canvas.rect() {
+        graph_corner(frame, over, zoom);
+    }
+}
+
+fn graph_corner(frame: &mut Frame<'_>, over: Rect, zoom: Zoom) {
+    frame.start(Container::CanvasCorner { over });
+    frame.fill();
+    frame.start(Container::FillRow);
+    frame.grow();
+    zoom_cluster(frame, zoom);
+    frame.finish();
+    frame.finish();
+}
+
+fn cluster_button(frame: &mut Frame<'_>, text: &Label, cells: Cells, target: Target) -> bool {
+    let width = usize::try_from(cells.get()).unwrap_or(0);
+    let text = text.as_str();
+    let clicked = frame
+        .small_button_sized(format!("{text:^width$}"), Some(cells), target)
+        .clicked();
+    frame.attach_tip(target);
+    clicked
+}
+
+fn zoom_cluster(frame: &mut Frame<'_>, zoom: Zoom) {
+    frame.start(Container::Cluster);
+    let minus = Label::from(Icon::Remove);
+    if cluster_button(frame, &minus, ZOOM_BUTTON, ids::GRAPH_ZOOM_OUT.target()) {
+        frame.push(Action::Graph(GraphAction::WantZoom(ZoomStep::Out)));
+    }
+    let percent = Label::new(format!("{:.0}%", zoom.get() * 100.0));
+    if cluster_button(
+        frame,
+        &percent,
+        ZOOM_PERCENT,
+        ids::GRAPH_ONE_TO_ONE.target(),
+    ) {
+        frame.push(Action::Graph(GraphAction::OneToOne));
+    }
+    let plus = Label::from(Icon::Add);
+    if cluster_button(frame, &plus, ZOOM_BUTTON, ids::GRAPH_ZOOM_IN.target()) {
+        frame.push(Action::Graph(GraphAction::WantZoom(ZoomStep::In)));
+    }
+    if cluster_button(
+        frame,
+        &Label::new("fit"),
+        FIT_BUTTON,
+        ids::GRAPH_FIT.target(),
+    ) {
+        frame.push(Action::Graph(GraphAction::WantFit));
+    }
+    frame.finish();
 }

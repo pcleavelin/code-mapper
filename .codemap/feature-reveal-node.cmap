@@ -62,7 +62,7 @@ order 0
 author ai
 file crates/gui/src/graph/input.rs
 symbol apply
-lines 23 33
+lines 24 34
 hash 2255eccf3772e90c
 note The handler: the Toggle arm adds the reveal (node, side) to the ordered list or removes it, after remembering where the node sits on screen, and drops any dragged position of the node.
 

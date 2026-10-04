@@ -3,7 +3,7 @@ tour feature-fit-graph
 kind flow
 author ai
 group features/gui
-note The Graph tab's 'fit' button zooms and pans so the whole graph fits the canvas with a margin, centred, shrinking the font step by step down to the smallest readable size; '1:1' sets the zoom back to 100% and centres the selected node. The reader reaches for it after panning and zooming into one part, to see the whole graph again without re-centring by hand. The camera otherwise moves only on explicit navigation.
+note The 'fit' button of the zoom cluster in the graph canvas's bottom-right corner zooms and pans so the whole graph fits the canvas with a margin, centred, shrinking the font step by step down to the smallest readable size; pressing the zoom percentage beside it sets the zoom back to 100% and centres the selected node. The reader reaches for it after panning and zooming into one part, to see the whole graph again without re-centring by hand. Both sit with the zoom buttons, where map and design apps put them, so each camera control has one place and the toolbar above keeps only layout controls and the legend. The camera otherwise moves only on explicit navigation.
 
 step 5ljx4z
 order 1
@@ -11,7 +11,7 @@ parent uounwk
 author ai
 file crates/gui/src/graph/input.rs
 symbol apply
-lines 84 87
+lines 85 88
 hash d719a8c410342f74
 note The handler for 1:1: zoom one, and a look at the focused node wanted.
 
@@ -32,7 +32,7 @@ parent uounwk
 author ai
 file crates/gui/src/graph/input.rs
 symbol graph_phase
-lines 38 41
+lines 41 44
 hash 9304b7e04b77e9e7
 note The next graph phase, after layout: a wanted fit runs once the canvas has been placed.
 
@@ -52,7 +52,7 @@ order 0
 author ai
 file crates/gui/src/graph/input.rs
 symbol apply
-lines 89 89
+lines 90 90
 hash 5b73e3ed6d27bf7f
 note The handler for fit: marks a fit as wanted; the fit itself needs the canvas size and the laid-out bounds, so it runs in the next graph phase.
 
@@ -61,10 +61,10 @@ order 6
 parent uounwk
 author ai
 file crates/gui/src/views/center.rs
-symbol graph_tab
-lines 21 35
-hash 2edfa2260736694b
-note Trigger: GRAPH_ONE_TO_ONE and GRAPH_FIT in the graph toolbar queue OneToOne and WantFit.
+symbol zoom_cluster
+lines 6 26
+hash 64be2cba17d933c1
+note Trigger: in the zoom cluster in the canvas's bottom-right corner, the percentage button (it shows the zoom) queues OneToOne and the fit button WantFit; the zoom-in button between them belongs to zoom-graph.
 
 step zita0a
 order 4
@@ -72,6 +72,6 @@ parent etvs2z
 author ai
 file crates/gui/src/graph/input.rs
 symbol apply
-lines 7 14
+lines 8 15
 hash 795465db49c0521e
 note Stores the fit's zoom and pan, drops any glide in progress and settles the wish; with no bounds (an empty graph) only the wish settles.

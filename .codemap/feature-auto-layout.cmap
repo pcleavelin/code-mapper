@@ -10,7 +10,7 @@ order 0
 author ai
 file crates/gui/src/graph/input.rs
 symbol apply
-lines 88 88
+lines 89 89
 hash 0d3bbbf6ff9744c3
 note The handler: clears every dragged (and pinned) node position.
 
@@ -20,7 +20,7 @@ parent 23x47j
 author ai
 file crates/gui/src/views/center.rs
 symbol graph_tab
-lines 27 32
+lines 21 26
 hash 6183e39cfa05db4c
 note Trigger: GRAPH_AUTO in the graph toolbar queues Graph(AutoLayout).
 

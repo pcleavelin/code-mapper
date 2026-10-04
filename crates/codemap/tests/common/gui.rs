@@ -689,6 +689,17 @@ click-id graph-fit
 wait 4
 dump
 shot {shots}/graph.png
+click-id graph-zoom-out
+wait 4
+dump
+click-id graph-zoom-in
+wait 4
+click-id graph-zoom-in
+wait 4
+dump
+shot {shots}/zoom-in.png
+click-id graph-fit
+wait 4
 click <<DUMP button new '+ step>>
 wait 4
 dump

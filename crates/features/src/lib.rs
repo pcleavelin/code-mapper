@@ -768,7 +768,9 @@ impl Feature {
             ),
             Self::FitGraph => Spec::new(
                 Text::new("fit-graph"),
-                Text::new("zoom the graph to show all of it, or back to 1:1"),
+                Text::new(
+                    "zoom the graph to show all of it with the fit button in the canvas corner, or back to 1:1 by pressing the zoom percentage beside it",
+                ),
                 Surface::Window,
                 &const {
                     [
@@ -792,12 +794,16 @@ impl Feature {
             ),
             Self::ZoomGraph => Spec::new(
                 Text::new("zoom-graph"),
-                Text::new("zoom the graph around the pointer with a pinch or ctrl+wheel"),
+                Text::new(
+                    "zoom the graph around the pointer with a pinch or ctrl+wheel, or around the canvas centre to the next stop with the - and + buttons in its corner",
+                ),
                 Surface::Window,
                 &const {
                     [
                         Trigger::Gesture(Gesture::Pinch, Element::new("graph-canvas")),
                         Trigger::Gesture(Gesture::ControlWheel, Element::new("graph-canvas")),
+                        Trigger::Click(Element::new("graph-zoom-in")),
+                        Trigger::Click(Element::new("graph-zoom-out")),
                     ]
                 },
             ),

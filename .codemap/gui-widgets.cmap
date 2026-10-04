@@ -165,9 +165,9 @@ parent rcazsr
 author ai
 file crates/gui/src/widgets.rs
 symbol shape
-lines 0 99
-hash 203a1343e5c5436e
-note The one match that turns a Container into its layout, style and fixed id: the paddings, gaps and colours from theme, the accent bar on the left of a selected step row or code column, the panel header's TAB_STRIP background with no padding (its tabs carry their own), the id body the panel tree is laid out from, the picker's and the palette box's ids, and the id a StepColumn carries.
+lines 0 100
+hash cef051300cc36831
+note The one match that turns a Container into its layout, style and fixed id: the paddings, gaps and colours from theme, the accent bar on the left of a selected step row or code column, the panel header's TAB_STRIP background with no padding (its tabs carry their own), the id body the panel tree is laid out from, the picker's and the palette box's ids, and the id a StepColumn carries; the floating graph overlays (the canvas-sized corner column and the zoom cluster's box) come from overlay_shape, as the pages come from page_shape, to keep this match short.
 
 step aidqqn
 order 3
@@ -313,6 +313,16 @@ symbol left
 lines 0 10
 hash b72ff8088652789b
 note Cuts from the front and keeps the tail: file paths are cut this way in the Symbols tab and the peek header, so the file name and line survive.
+
+step hwogh4
+order 62
+parent 9dxpzk
+author ai
+file crates/gui/src/widgets.rs
+symbol overlay_shape
+lines 0 21
+hash 46d07e86847676ba
+note The graph canvas's overlays: CanvasCorner floats a column exactly over the canvas's last rectangle, padded by GRAPH_MARGIN, with no style and no id so it never takes the pointer; Cluster is a row on PANEL with a border, holding the zoom buttons.
 
 step i1gj5i
 order 57
@@ -526,8 +536,8 @@ order 1
 author ai
 file crates/gui/src/widgets.rs
 symbol Container
-lines 0 28
-hash 700161c7f7000058
+lines 0 30
+hash 582dee1ce23dff8d
 note Every box that holds other elements is one of these: the window, the body, the centre, the bars, the toolbars, a panel column, a step row or code column (with its selected mark), the column holding one step of the document (StepColumn, carrying that step's id so its height can be measured), a tooltip, a panel header, the floating view picker, the command palette's box, and the start page's centred column (Centered around StartPage, which carries the column's width). A view opens one with Frame::start and closes it with finish; it never spells out a layout or a style.
 
 step rs11uk
